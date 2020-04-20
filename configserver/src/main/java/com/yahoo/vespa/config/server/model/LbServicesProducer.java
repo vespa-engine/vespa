@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -35,16 +34,17 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
-    private final BooleanFlag use4443Upstream;
+    private final BooleanFlag nginxUpstreamProxyProtocol;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
-        this.use4443Upstream = Flags.USE_4443_UPSTREAM.bindTo(flagSource);
+        this.nginxUpstreamProxyProtocol = Flags.NGINX_UPSTREAM_PROXY_PROTOCOL.bindTo(flagSource);
     }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
+        builder.nginxUpstreamProxyProtocol(nginxUpstreamProxyProtocol.value());
         models.keySet().stream()
                 .sorted()
                 .forEach(tenant -> {
@@ -56,8 +56,13 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         LbServicesConfig.Tenants.Builder tb = new LbServicesConfig.Tenants.Builder();
         apps.stream()
                 .sorted(Comparator.comparing(ApplicationInfo::getApplicationId))
+                .filter(applicationInfo -> generateRoutingConfig(applicationInfo.getApplicationId()))
                 .forEach(applicationInfo -> tb.applications(createLbAppIdKey(applicationInfo.getApplicationId()), getAppConfig(applicationInfo)));
         return tb;
+    }
+
+    private boolean generateRoutingConfig(ApplicationId applicationId) {
+        return ( ! applicationId.instance().isTester());
     }
 
     private String createLbAppIdKey(ApplicationId applicationId) {
@@ -67,8 +72,6 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
-        ab.use4443Upstream(
-                use4443Upstream.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
@@ -92,10 +95,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {
         LbServicesConfig.Tenants.Applications.Hosts.Builder hb = new LbServicesConfig.Tenants.Applications.Hosts.Builder();
         hb.hostname(hostInfo.getHostname());
-        hostInfo.getServices().stream()
-                 .forEach(serviceInfo -> {
-                     hb.services(serviceInfo.getServiceName(), getServiceConfig(serviceInfo));
-                 });
+        hostInfo.getServices().forEach(serviceInfo -> hb.services(serviceInfo.getServiceName(), getServiceConfig(serviceInfo)));
         return hb;
     }
 
@@ -114,12 +114,11 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
                                 filter(prop -> !"".equals(prop)).sorted((a, b) -> a.compareTo(b)).collect(Collectors.toList()))
                 .endpointaliases(endpointAliases)
                 .index(Integer.parseInt(serviceInfo.getProperty("index").orElse("999999")));
-        serviceInfo.getPorts().stream()
-                .forEach(portInfo -> {
-                    LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder pb = new LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder()
-                        .number(portInfo.getPort())
-                        .tags(Joiner.on(" ").join(portInfo.getTags()));
-                    sb.ports(pb);
+        serviceInfo.getPorts().forEach(portInfo -> {
+            LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder pb = new LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder()
+                    .number(portInfo.getPort())
+                    .tags(Joiner.on(" ").join(portInfo.getTags()));
+            sb.ports(pb);
                 });
         return sb;
     }

@@ -75,7 +75,6 @@ public class CompressedFileReference {
         int entries = 0;
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
-            log.log(LogLevel.DEBUG, "Unpacking " + entry.getName());
             File outFile = new File(outputFile, entry.getName());
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {

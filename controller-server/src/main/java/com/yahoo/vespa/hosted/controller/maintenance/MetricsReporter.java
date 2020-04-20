@@ -43,7 +43,12 @@ public class MetricsReporter extends Maintainer {
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
-    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofHours(1);
+    // The time a node belonging to a system application can spend from being told to upgrade until the upgrade is
+    // completed. Nodes exceeding this time are counted as failures.
+    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofMinutes(90);
+
+    // The time a single node can spend performing an OS upgrade after being told to upgrade. Nodes exceeding this time
+    // multiplied by the number of nodes upgrading are counted as failures.
     private static final Duration OS_UPGRADE_TIME_ALLOWANCE_PER_NODE = Duration.ofMinutes(30);
 
     private final Metric metric;
@@ -64,15 +69,15 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportRemainingRotations() {
-        try (RotationLock lock = controller().applications().rotationRepository().lock()) {
-            int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
+        try (RotationLock lock = controller().routing().rotations().lock()) {
+            int availableRotations = controller().routing().rotations().availableRotations(lock).size();
             metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Map.of()));
         }
     }
 
     private void reportDeploymentMetrics() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList())
-                                                  .withProductionDeployment();
+        ApplicationList applications = ApplicationList.from(controller().applications().readable())
+                                                      .withProductionDeployment();
         DeploymentStatusList deployments = controller().jobController().deploymentStatuses(applications);
 
         metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(deployments) * 100, metric.createContext(Map.of()));

@@ -141,8 +141,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         private void initializeService(AbstractService t, DeployState deployState,
-                                       HostSystem hostSystem, Element producerSpec)
-        {
+                                       HostSystem hostSystem, Element producerSpec) {
             initializeProducer(t, deployState, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVM_OPTIONS)) {

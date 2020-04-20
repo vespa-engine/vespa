@@ -41,7 +41,7 @@ vespalib::string escape(vespalib::stringref str) {
 } // namespace vespalib::<unnamed>
 
 vespalib::string
-Regexp::get_prefix(vespalib::stringref re)
+RegexpUtil::get_prefix(vespalib::stringref re)
 {
     vespalib::string prefix;
     if ((re.size() > 0) && (re.data()[0] == '^') && !has_option(re)) {
@@ -58,13 +58,13 @@ Regexp::get_prefix(vespalib::stringref re)
 }
 
 vespalib::string
-Regexp::make_from_suffix(vespalib::stringref suffix)
+RegexpUtil::make_from_suffix(vespalib::stringref suffix)
 {
     return escape(suffix) + "$";
 }
 
 vespalib::string
-Regexp::make_from_substring(vespalib::stringref substring)
+RegexpUtil::make_from_substring(vespalib::stringref substring)
 {
     return escape(substring);
 }

@@ -288,7 +288,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         this("");
     }
 
-
     /**
      * Construct a query from a string formatted in the http style, e.g <code>?query=test&amp;offset=10&amp;hits=13</code>
      * The query must be uri encoded.
@@ -296,7 +295,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(String query) {
         this(query, null);
     }
-
 
     /**
      * Creates a query from a request
@@ -665,7 +663,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "[Could not parse user input: " + model.getQueryString() + "]";
         }
         return "query '" + queryTree + "'";
@@ -677,7 +675,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "Could not parse user input: " + model.getQueryString();
         }
         return "query=[" + queryTree + "]" + " offset=" + getOffset() + " hits=" + getHits() + "]";

@@ -149,16 +149,12 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     private InputStream write(List<Document> docs, boolean drain, boolean useCompression)
             throws ServerResponseException, IOException {
-        HttpPost httpPost = createPost(drain, useCompression, false /* this is not hanshake */);
+        HttpPost httpPost = createPost(drain, useCompression, false);
 
-        final ByteBuffer[] buffers = getDataWithStartAndEndOfFeed(docs, negotiatedVersion);
-        final InputStream inputStream = new ByteBufferInputStream(buffers);
-        final InputStreamEntity reqEntity;
-        if (useCompression ) {
-            reqEntity = zipAndCreateEntity(inputStream);
-        } else {
-            reqEntity = new InputStreamEntity(inputStream, -1);
-        }
+        ByteBuffer[] buffers = getDataWithStartAndEndOfFeed(docs, negotiatedVersion);
+        InputStream inputStream = new ByteBufferInputStream(buffers);
+        InputStreamEntity reqEntity = useCompression ? zipAndCreateEntity(inputStream)
+                                                     : new InputStreamEntity(inputStream, -1);
         reqEntity.setChunked(true);
         httpPost.setEntity(reqEntity);
         return executePost(httpPost);

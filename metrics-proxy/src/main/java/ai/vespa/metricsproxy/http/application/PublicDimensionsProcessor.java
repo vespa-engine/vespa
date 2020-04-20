@@ -21,7 +21,7 @@ public class PublicDimensionsProcessor implements MetricsProcessor {
     private final int maxDimensions;
     private Set<DimensionId> publicDimensions = getPublicDimensions();
 
-    PublicDimensionsProcessor(int maxDimensions) {
+    public PublicDimensionsProcessor(int maxDimensions) {
         int numCommonDimensions = PublicDimensions.commonDimensions.size();
         if (numCommonDimensions > maxDimensions) {
             throw new IllegalArgumentException(String.format(

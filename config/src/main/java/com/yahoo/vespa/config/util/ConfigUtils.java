@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
  * Utilities for mangling config text, finding md5sums, finding name and namespace in .def files etc.
  */
 public class ConfigUtils {
+
     /* Patterns used for finding ranges in config definitions */
     private static final Pattern intPattern = Pattern.compile(".*int.*range.*");
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
@@ -88,6 +89,7 @@ public class ConfigUtils {
 
     /**
      * Replaces sequences of spaces with 1 space, unless inside quotes. Public for testing;
+     *
      * @param str String to strip spaces from
      * @return String with spaces stripped
      */
@@ -103,15 +105,15 @@ public class ConfigUtils {
                 }
                 if (!inSpaceSequence) {
                     // start of space sequence
-                    inSpaceSequence=true;
+                    inSpaceSequence = true;
                     ret.append(" ");
                 }
             } else {
                 if (inSpaceSequence) {
-                    inSpaceSequence=false;
+                    inSpaceSequence = false;
                 }
-                if (c=='\"') {
-                    inQuotes=!inQuotes;
+                if (c == '\"') {
+                    inQuotes = !inQuotes;
                 }
                 ret.append(c);
             }
@@ -121,7 +123,7 @@ public class ConfigUtils {
 
     /**
      * Computes Md5 hash of a list of strings with the contents of a def-file.
-     *
+     * <p>
      * Each string is normalized according to the
      * rules of Vespa config definition files before they are used:
      * <ol>
@@ -132,12 +134,12 @@ public class ConfigUtils {
      * <li>Remove 'version=&lt;version-number&gt;'</li>
      * </ol>
      *
-     * @param lines  A list of lines constituting a def-file
+     * @param lines A list of lines constituting a def-file
      * @return the Md5 hash of the list, with lowercase letters
      */
     public static String getDefMd5(List<String> lines) {
         List<String> linesCopy = new ArrayList<>(lines);
-        for (Iterator<String> it=linesCopy.iterator(); it.hasNext(); ) {
+        for (Iterator<String> it = linesCopy.iterator(); it.hasNext(); ) {
             String line = it.next().trim();
             if (! line.startsWith("#") && ! line.equals("")) {
                 if (line.startsWith("version")) {
@@ -169,7 +171,7 @@ public class ConfigUtils {
             }
             if (line.length() > 0) {
                 line = stripSpaces(line);
-                m  = spaceBeforeCommaPatter.matcher(line);
+                m = spaceBeforeCommaPatter.matcher(line);
                 line = m.replaceAll(",");   // Remove space before comma (for enums)
                 sb.append(line).append("\n");
             }
@@ -188,7 +190,7 @@ public class ConfigUtils {
     public static String getDefNamespace(Reader in) {
         List<String> defLines = getDefLines(in);
         String defPackage = getDefKeyword(defLines, "package");
-        if (! defPackage.isEmpty()) return defPackage;
+        if (!defPackage.isEmpty()) return defPackage;
         return getDefKeyword(defLines, "namespace");
     }
 
@@ -285,7 +287,7 @@ public class ConfigUtils {
      */
     public static ConfigDefinitionKey createConfigDefinitionKeyFromDefFile(File file) throws IOException {
         String[] fileName = file.getName().split("\\.");
-        assert(fileName.length >= 2);
+        assert (fileName.length >= 2);
         String name = fileName[fileName.length - 2];
         byte[] content = IOUtils.readFileBytes(file);
 
@@ -295,7 +297,7 @@ public class ConfigUtils {
     /**
      * Creates a ConfigDefinitionKey from a name and the content of a config definition
      *
-     * @param name the name of the config definition
+     * @param name    the name of the config definition
      * @param content content of a config definition
      * @return a ConfigDefinitionKey
      */
@@ -306,6 +308,7 @@ public class ConfigUtils {
 
     /**
      * Escapes a config value according to the cfg format.
+     *
      * @param input the string to escape
      * @return the escaped string
      */
@@ -350,10 +353,10 @@ public class ConfigUtils {
      * Loop through values and return the first one that is set and non-empty.
      *
      * @param defaultValue The default value to use if no environment variables are set.
-     * @param envVars one or more environment variable strings
+     * @param envVars      one or more environment variable strings
      * @return a String with the value of the environment variable
      */
-    public static String getEnvValue(String defaultValue, String ... envVars) {
+    public static String getEnvValue(String defaultValue, String... envVars) {
         String value = null;
         for (String envVar : envVars) {
             if (value == null || value.isEmpty()) {

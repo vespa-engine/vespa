@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.protocol;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.18
  */
 public enum CompressionType {
     UNCOMPRESSED, LZ4;

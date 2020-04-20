@@ -84,8 +84,12 @@ public class FetchVector {
 
     public boolean isEmpty() { return map.isEmpty(); }
 
-    /** Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}. */
+    /**
+     * Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}.
+     * Dimension is removed if the value is null.
+     */
     public FetchVector with(Dimension dimension, String value) {
+        if (value == null) return makeFetchVector(merged -> merged.remove(dimension));
         return makeFetchVector(merged -> merged.put(dimension, value));
     }
 

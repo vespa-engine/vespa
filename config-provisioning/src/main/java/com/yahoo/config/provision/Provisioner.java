@@ -19,10 +19,12 @@ public interface Provisioner {
      * @param applicationId the application requesting hosts
      * @param cluster the specification of the cluster to allocate nodes for
      * @param capacity the capacity requested
-     * @param groups the number of node groups to divide the requested capacity into
      * @param logger a logger which receives messages which are returned to the requestor
      * @return the specification of the hosts allocated
      */
+    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
+
+    @Deprecated // TODO: Remove after April 2020
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
 
     /**
@@ -40,7 +42,6 @@ public interface Provisioner {
      * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
      * @param application the application to remove
      */
-    @SuppressWarnings("deprecation")
     void remove(NestedTransaction transaction, ApplicationId application);
 
     /**

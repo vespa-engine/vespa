@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
@@ -9,6 +8,8 @@
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
@@ -18,6 +19,8 @@ using index::DocBuilder;
 using index::Schema;
 using index::schema::CollectionType;
 using index::schema::DataType;
+using vespalib::SequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 
 using namespace index;
 
@@ -117,8 +120,8 @@ public:
 struct DocumentInverterTest : public ::testing::Test {
     Schema _schema;
     DocBuilder _b;
-    SequencedTaskExecutor _invertThreads;
-    SequencedTaskExecutor _pushThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
@@ -138,26 +141,26 @@ struct DocumentInverterTest : public ::testing::Test {
     DocumentInverterTest()
         : _schema(makeSchema()),
           _b(_schema),
-          _invertThreads(2),
-          _pushThreads(2),
+          _invertThreads(SequencedTaskExecutor::create(2)),
+          _pushThreads(SequencedTaskExecutor::create(2)),
           _word_store(),
           _remover(_word_store),
           _inserter(),
           _calculator(),
           _fic(_remover, _inserter, _calculator),
-          _inv(_schema, _invertThreads, _pushThreads, _fic)
+          _inv(_schema, *_invertThreads, *_pushThreads, _fic)
     {
     }
 
     void pushDocuments() {
-        _invertThreads.sync();
+        _invertThreads->sync();
         uint32_t fieldId = 0;
         for (auto &inverter : _inv.getInverters()) {
             _inserter.setFieldId(fieldId);
             inverter->pushDocuments();
             ++fieldId;
         }
-        _pushThreads.sync();
+        _pushThreads->sync();
     }
 };
 

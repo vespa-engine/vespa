@@ -4,12 +4,15 @@ package com.yahoo.log;
 import com.yahoo.text.Utf8;
 
 import java.io.RandomAccessFile;
+import java.io.FileOutputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Enumeration;
 import java.util.TimerTask;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * @author Ulf Lilleengen
@@ -18,6 +21,7 @@ import java.util.logging.Logger;
 public class VespaLevelControllerRepo implements LevelControllerRepo {
 
     private RandomAccessFile ctlFile;
+    private FileOutputStream ctlFileAppender;
     private MappedByteBuffer mapBuf;
     private MappedLevelControllerRepo levelControllerRepo;
     private final String logControlFilename;
@@ -30,12 +34,12 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
     /**
      * length of fixed header content of a control file, constant:
      **/
-    public static final int controlFileHeaderLength;
+    static final int controlFileHeaderLength;
     /**
      * number of distinctly controlled levels (in logctl files),
      * must be compatible with C++ Vespa logging
      **/
-    public static final int numLevels = 8;
+    static final int numLevels = 8;
 
     static {
         controlFileHeaderLength = CFHEADER.length()
@@ -50,7 +54,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
      **/
     private LevelController defaultLevelCtrl;
 
-    public VespaLevelControllerRepo(String logCtlFn, String logLevel, String applicationPrefix) {
+    VespaLevelControllerRepo(String logCtlFn, String logLevel, String applicationPrefix) {
         this.logControlFilename = logCtlFn;
         this.appPrefix = applicationPrefix;
         defaultLevelCtrl = new DefaultLevelController(logLevel);
@@ -66,6 +70,12 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
             }
         } catch (java.io.IOException ign) {}
         ctlFile = null;
+        try {
+            if (ctlFileAppender != null) {
+                ctlFileAppender.close();
+            }
+        } catch (java.io.IOException ign) {}
+        ctlFileAppender = null;
         mapBuf = null;
         levelControllerRepo = null;
     }
@@ -84,6 +94,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
 
         try {
             ctlFile = new RandomAccessFile(logControlFilename, "rw");
+            ctlFileAppender = new FileOutputStream(logControlFilename, true);
             ensureHeader();
             extendMapping();
 
@@ -107,26 +118,26 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
         if (l != hbytes.length
             || !java.util.Arrays.equals(hbytes, rbytes))
         {
-            ctlFile.seek(0);
-            ctlFile.write(hbytes);
-            ctlFile.writeBytes(CFPREPRE);
+            StringBuilder sb = new StringBuilder();
+            sb.append(CFHEADER);
+            sb.append(CFPREPRE);
             int appLen = 0;
             if (appPrefix != null) {
                 appLen = appPrefix.length();
-                ctlFile.writeBytes(appPrefix);
+                sb.append(appPrefix);
             }
-            ctlFile.writeBytes("\n");
-            for (int i = appLen; i < maxPrefix; i++) {
-                byte space = ' ';
-                ctlFile.write(space);
+            sb.append('\n');
+            for (int i = appLen; i < maxPrefix + 2; i++) {
+                sb.append(' ');
             }
-            ctlFile.writeBytes("\n");
+            sb.append('\n');
+            ctlFile.write(sb.toString().getBytes(US_ASCII));
             ctlFile.setLength(ctlFile.getFilePointer());
-            if (ctlFile.getFilePointer() != controlFileHeaderLength) {
+            if (ctlFile.getFilePointer() != (controlFileHeaderLength + 2)) {
                 System.err.println("internal error, bad header length: "
                                    + ctlFile.getFilePointer()
                                    + " (should have been: "
-                                   + controlFileHeaderLength
+                                   + (controlFileHeaderLength + 2)
                                    + ")");
             }
         }
@@ -142,7 +153,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
         levelControllerRepo = new MappedLevelControllerRepo(mapBuf, controlFileHeaderLength, numLevels, logControlFilename);
     }
 
-    public LevelController getLevelControl(String suffix) {
+    private LevelController getLevelControl(String suffix) {
         LevelController ctrl = null;
         if (levelControllerRepo != null) {
             if (suffix == null || suffix.equals("default")) {
@@ -181,8 +192,10 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                         sb.append(" ");
                     }
                     sb.append(inherit.getOnOffString()).append("\n");
+                    byte[] lineBytes = sb.toString().getBytes(US_ASCII);
+                    ctlFileAppender.write(lineBytes);
+                    ctlFileAppender.flush();
                     ctlFile.seek(ctlFile.length());
-                    ctlFile.writeBytes(sb.toString());
                     extendMapping();
                     ctrl = levelControllerRepo.getLevelController(suffix);
                 } catch(java.nio.channels.ClosedByInterruptException e) {

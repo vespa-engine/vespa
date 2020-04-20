@@ -123,6 +123,15 @@ public:
         return IAttributeContext::UP();
     }
 
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
+        if (name == field) {
+            return _attribute_vector;
+        } else if (name == other) {
+            return _other;
+        }
+        return {};
+    }
+
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 

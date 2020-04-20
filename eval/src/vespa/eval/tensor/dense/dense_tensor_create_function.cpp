@@ -2,7 +2,6 @@
 
 #include "dense_tensor_create_function.h"
 #include "dense_tensor_view.h"
-#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
@@ -13,10 +12,10 @@ using eval::DoubleValue;
 using eval::ValueType;
 using eval::TensorSpec;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
-using namespace eval::operation;
 
 namespace {
 
@@ -30,7 +29,7 @@ void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param
         state.stack.pop_back();
     }
     const Value &result = state.stash.create<DenseTensorView>(self->result_type, TypedCells(cells)); 
-    state.stack.push_back(result);
+    state.stack.emplace_back(result);
 }
 
 struct MyTensorCreateOp {
@@ -59,20 +58,18 @@ DenseTensorCreateFunction::DenseTensorCreateFunction(const ValueType &res_type, 
 {
 }
 
-DenseTensorCreateFunction::~DenseTensorCreateFunction()
-{
-}
+DenseTensorCreateFunction::~DenseTensorCreateFunction() = default;
 
 void
 DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
 {
     for (const Child &c : _children) {
-        target.push_back(c);
+        target.emplace_back(c);
     }
 }
 
 eval::InterpretedFunction::Instruction
-DenseTensorCreateFunction::compile_self(Stash &) const
+DenseTensorCreateFunction::compile_self(const TensorEngine &, Stash &) const
 {
     static_assert(sizeof(uint64_t) == sizeof(&_self));
     auto op = select_1<MyTensorCreateOp>(result_type().cell_type());

@@ -6,7 +6,7 @@ import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
@@ -26,47 +26,47 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  * @author bjorncs
  */
-public class SearchOrdererTestCase extends SearchDefinitionTestCase {
+public class SearchOrdererTestCase extends SchemaTestCase {
 
-    private static Map<String, Search> createSearchDefinitions() {
-        Map<String, Search> searchDefinitions = new HashMap<>();
+    private static Map<String, Search> createSchemas() {
+        Map<String, Search> schemas = new HashMap<>();
 
-        Search grandParent = createSearchDefinition("grandParent", searchDefinitions);
+        Search grandParent = createSchema("grandParent", schemas);
 
-        Search mother = createSearchDefinition("mother", searchDefinitions);
+        Search mother = createSchema("mother", schemas);
         inherit(mother, grandParent);
 
-        Search father = createSearchDefinition("father", searchDefinitions);
+        Search father = createSchema("father", schemas);
         inherit(father, grandParent);
         createDocumentReference(father, mother, "wife_ref");
 
-        Search daugther = createSearchDefinition("daughter", searchDefinitions);
+        Search daugther = createSchema("daughter", schemas);
         inherit(daugther, father);
         inherit(daugther, mother);
 
-        Search son = createSearchDefinition("son", searchDefinitions);
+        Search son = createSchema("son", schemas);
         inherit(son, father);
         inherit(son, mother);
 
-        Search product = createSearchDefinition("product", searchDefinitions);
+        Search product = createSchema("product", schemas);
 
-        Search pc = createSearchDefinition("pc", searchDefinitions);
+        Search pc = createSchema("pc", schemas);
         inherit(pc, product);
-        Search pcAccessory = createSearchDefinition("accessory-pc", searchDefinitions);
+        Search pcAccessory = createSchema("accessory-pc", schemas);
         inherit(pcAccessory, product);
         createDocumentReference(pcAccessory, pc, "pc_ref");
 
-        createSearchDefinition("alone", searchDefinitions);
+        createSchema("alone", schemas);
 
-        return searchDefinitions;
+        return schemas;
     }
 
-    private static Search createSearchDefinition(String name, Map<String, Search> searchDefinitions) {
+    private static Search createSchema(String name, Map<String, Search> schemas) {
         Search search = new Search(name, null);
         SDDocumentType document = new SDDocumentType(name);
         document.setDocumentReferences(new DocumentReferences(emptyMap()));
         search.addDocument(document);
-        searchDefinitions.put(search.getName(), search);
+        schemas.put(search.getName(), search);
         return search;
     }
 
@@ -75,13 +75,13 @@ public class SearchOrdererTestCase extends SearchDefinitionTestCase {
     }
 
     private static void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
-        Map<String, Search> searchDefinitions = createSearchDefinitions();
-        List<Search> inputSearchDefinitions = inputNames.stream()
-                .map(searchDefinitions::get)
+        Map<String, Search> schemas = createSchemas();
+        List<Search> inputSchemas = inputNames.stream()
+                .map(schemas::get)
                 .map(Objects::requireNonNull)
                 .collect(toList());
         List<String> actualSearchOrder = new SearchOrderer()
-                .order(inputSearchDefinitions)
+                .order(inputSchemas)
                 .stream()
                 .map(Search::getName)
                 .collect(toList());
@@ -104,31 +104,37 @@ public class SearchOrdererTestCase extends SearchDefinitionTestCase {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("grandParent", "mother", "father", "daughter", "son", "product", "pc", "alone"));
     }
+
     @Test
     public void testOneLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("grandParent", "daughter", "son", "mother", "father", "pc", "product", "alone"));
     }
+
     @Test
     public void testMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("daughter", "son", "mother", "father", "grandParent", "pc", "product", "alone"));
     }
+
     @Test
     public void testAloneIsKeptInPlaceWithMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("alone", "daughter", "son", "mother", "father", "grandParent", "pc", "product"));
     }
+
     @Test
     public void testPartialMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("daughter", "grandParent", "mother", "son", "father", "product", "pc", "alone"));
     }
+
     @Test
     public void testMultilevelReorderingAccrossHierarchies() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
                     Arrays.asList("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
+
     @Test
     public void referees_are_ordered_before_referrer() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "accessory-pc", "son"),

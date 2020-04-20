@@ -61,4 +61,15 @@ public class TextTestCase {
         assertFalse(Text.isDisplayable(0));
     }
 
+    @Test
+    public void testTruncate() {
+        assertEquals("ab", Text.truncate("ab", 5));
+        assertEquals("ab", Text.truncate("ab", 6));
+        assertEquals("ab", Text.truncate("ab", 2));
+        assertEquals("a",  Text.truncate("ab", 1));
+        assertEquals("",   Text.truncate("ab", 0));
+        assertEquals("ab c",  Text.truncate("ab cde", 4));
+        assertEquals("a ...", Text.truncate("ab cde", 5));
+    }
+
 }

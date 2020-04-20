@@ -146,11 +146,10 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
             p = env.getProperties().lookup(_key2);
         }
         if (p.found()) {
-            values.push_back(asFeature(p.get()));
+            return stash.create<SingleValueExecutor>(asFeature(p.get()));
         } else {
-            values.push_back(_defaultValue);
+            return stash.create<SingleValueExecutor>(_defaultValue);
         }
-        return stash.create<ValueExecutor>(values);
     }
 }
 

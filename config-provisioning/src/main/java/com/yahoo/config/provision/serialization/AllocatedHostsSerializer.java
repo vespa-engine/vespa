@@ -3,16 +3,16 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,6 +60,9 @@ public class AllocatedHostsSerializer {
     /** Wanted version */
     private static final String hostSpecVespaVersionKey = "vespaVersion";
 
+    /** Wanted docker image repo */
+    private static final String hostSpecDockerImageRepoKey = "dockerImageRepo";
+
     /** Current version */
     private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
     private static final String hostSpecNetworkPortsKey = "ports";
@@ -83,6 +86,9 @@ public class AllocatedHostsSerializer {
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
+            membership.cluster().dockerImageRepo().ifPresent(repo -> {
+                object.setString(hostSpecDockerImageRepoKey, repo);
+            });
         });
         host.flavor().ifPresent(flavor -> toSlime(flavor, object));
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
@@ -120,7 +126,9 @@ public class AllocatedHostsSerializer {
     public static AllocatedHosts fromSlime(Inspector inspector, Optional<NodeFlavors> nodeFlavors) {
         Inspector array = inspector.field(mappingKey);
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser)(i, host) -> hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors)));
+        array.traverse((ArrayTraverser)(i, host) -> {
+            hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors));
+        });
         return AllocatedHosts.withHosts(hosts);
     }
 
@@ -131,7 +139,8 @@ public class AllocatedHostsSerializer {
                             object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty(),
                             optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                             NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
-                            nodeResourcesFromSlime(object.field(requestedResourcesKey)));
+                            nodeResourcesFromSlime(object.field(requestedResourcesKey)),
+                            optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
     }
 
     private static List<String> aliasesFromSlime(Inspector object) {
@@ -197,11 +206,20 @@ public class AllocatedHostsSerializer {
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
-                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()));
+                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
+                                      object.field(hostSpecDockerImageRepoKey).valid()
+                                              ? Optional.of(object.field(hostSpecDockerImageRepoKey).asString())
+                                              : Optional.empty());
     }
 
     private static Optional<String> optionalString(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
         return Optional.of(inspector.asString());
     }
+
+    private static Optional<DockerImage> optionalDockerImage(Inspector inspector) {
+        if ( ! inspector.valid()) return Optional.empty();
+        return Optional.of(DockerImage.fromString(inspector.asString()));
+    }
+
 }

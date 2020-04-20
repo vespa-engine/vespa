@@ -10,7 +10,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
-import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.LinkedHashMap;
@@ -18,13 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -43,9 +37,9 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
     private final ImmutableList<Group> orderedGroups;
-    private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
-    private PingFactory pingFactory;
+    private final PingFactory pingFactory;
+    private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
 
     /**
@@ -58,10 +52,12 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Optional<Node> localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize, VipStatus vipStatus) {
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize,
+                         VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
         this.vipStatus = vipStatus;
+        this.pingFactory = pingFactory;
 
         List<Node> nodes = toNodes(dispatchConfig);
         this.size = nodes.size();
@@ -82,30 +78,27 @@ public class SearchCluster implements NodeManager<Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
+        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability());
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
                                                                        size,
                                                                        containerClusterSize,
                                                                        nodesByHost,
                                                                        groups);
-
-        this.clusterMonitor = new ClusterMonitor<>(this);
     }
 
-    public void shutDown() {
-        clusterMonitor.shutdown();
+    /* Testing only */
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig,
+                         VipStatus vipStatus, PingFactory pingFactory) {
+        this(clusterId, dispatchConfig, 1, vipStatus, pingFactory);
     }
 
-    public void startClusterMonitoring(PingFactory pingFactory) {
-        this.pingFactory = pingFactory;
-
-        for (var group : orderedGroups) {
+    public void addMonitoring(ClusterMonitor clusterMonitor) {
+        for (var group : orderedGroups()) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
         }
     }
-
-    ClusterMonitor<Node> clusterMonitor() { return clusterMonitor; }
 
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
                                                                 int searchClusterSize,
@@ -157,8 +150,8 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
-        if (orderedGroups.size() > n) {
-            return Optional.of(orderedGroups.get(n));
+        if (orderedGroups().size() > n) {
+            return Optional.of(orderedGroups().get(n));
         } else {
             return Optional.empty();
         }
@@ -166,13 +159,13 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Returns the number of nodes per group - size()/groups.size() */
     public int groupSize() {
-        if (groups.size() == 0) return size();
-        return size() / groups.size();
+        if (groups().size() == 0) return size();
+        return size() / groups().size();
     }
 
     public int groupsWithSufficientCoverage() {
         int covered = 0;
-        for (Group g : orderedGroups) {
+        for (Group g : orderedGroups()) {
             if (g.hasSufficientCoverage()) {
                 covered++;
             }
@@ -188,7 +181,7 @@ public class SearchCluster implements NodeManager<Node> {
         if ( localCorpusDispatchTarget.isEmpty()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
+        Group localSearchGroup = groups().get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
@@ -227,7 +220,10 @@ public class SearchCluster implements NodeManager<Node> {
                 setInRotationOnlyIf(hasWorkingNodes());
         }
         else if (usesLocalCorpusIn(node)) { // follow the status of this node
-            setInRotationOnlyIf(nodeIsWorking);
+            // Do not take this out of rotation if we're a combined cluster of size 1,
+            // as that can't be helpful, and leads to a deadlock where this node is never taken back in servic e
+            if (nodeIsWorking || size() > 1)
+                setInRotationOnlyIf(nodeIsWorking);
         }
     }
 
@@ -247,7 +243,14 @@ public class SearchCluster implements NodeManager<Node> {
             vipStatus.removeFromRotation(clusterId);
     }
 
-    private boolean hasInformationAboutAllNodes() {
+    public int estimateHitsToFetch(int wantedHits, int numPartitions) {
+        return hitEstimator.estimateK(wantedHits, numPartitions);
+    }
+    public int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
+        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
+    }
+
+    public boolean hasInformationAboutAllNodes() {
         return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
     }
 
@@ -263,29 +266,41 @@ public class SearchCluster implements NodeManager<Node> {
         return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().group() == group.id();
     }
 
+    private static class PongCallback implements PongHandler {
+
+        private final ClusterMonitor<Node> clusterMonitor;
+        private final Node node;
+
+        PongCallback(Node node, ClusterMonitor<Node> clusterMonitor) {
+            this.node = node;
+            this.clusterMonitor = clusterMonitor;
+        }
+
+        @Override
+        public void handle(Pong pong) {
+            if (pong.badResponse()) {
+                clusterMonitor.failed(node, pong.error().get());
+            } else {
+                if (pong.activeDocuments().isPresent()) {
+                    node.setActiveDocuments(pong.activeDocuments().get());
+                    node.setBlockingWrites(pong.isBlockingWrites());
+                }
+                clusterMonitor.responded(node);
+            }
+        }
+
+    }
+
     /** Used by the cluster monitor to manage node status */
     @Override
-    public void ping(Node node, Executor executor) {
-        if (pingFactory == null) return; // not initialized yet
-
-        FutureTask<Pong> futurePong = new FutureTask<>(pingFactory.createPinger(node, clusterMonitor));
-        executor.execute(futurePong);
-        Pong pong = getPong(futurePong, node);
-        futurePong.cancel(true);
-
-        if (pong.badResponse()) {
-            clusterMonitor.failed(node, pong.error().get());
-        } else {
-            if (pong.activeDocuments().isPresent()) {
-                node.setActiveDocuments(pong.activeDocuments().get());
-            }
-            clusterMonitor.responded(node);
-        }
+    public void ping(ClusterMonitor clusterMonitor, Node node, Executor executor) {
+        Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));
+        pinger.ping();
     }
 
     private void pingIterationCompletedSingleGroup() {
-        Group group = groups.values().iterator().next();
-        group.aggregateActiveDocuments();
+        Group group = groups().values().iterator().next();
+        group.aggregateNodeValues();
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
@@ -295,21 +310,20 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void pingIterationCompletedMultipleGroups() {
-        int numGroups = orderedGroups.size();
+        int numGroups = orderedGroups().size();
         // Update active documents per group and use it to decide if the group should be active
-
         long[] activeDocumentsInGroup = new long[numGroups];
         long sumOfActiveDocuments = 0;
         for(int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
-            group.aggregateActiveDocuments();
+            Group group = orderedGroups().get(i);
+            group.aggregateNodeValues();
             activeDocumentsInGroup[i] = group.getActiveDocuments();
             sumOfActiveDocuments += activeDocumentsInGroup[i];
         }
 
         boolean anyGroupsSufficientCoverage = false;
         for (int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
+            Group group = orderedGroups().get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
             boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
@@ -326,7 +340,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        int numGroups = orderedGroups.size();
+        int numGroups = orderedGroups().size();
         if (numGroups == 1) {
             pingIterationCompletedSingleGroup();
         } else {
@@ -353,25 +367,11 @@ public class SearchCluster implements NodeManager<Node> {
         return workingNodes + nodesAllowedDown >= nodesInGroup;
     }
 
-    private Pong getPong(FutureTask<Pong> futurePong, Node node) {
-        try {
-            return futurePong.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-            return new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + node));
-        } catch (ExecutionException e) {
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-            return new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + node));
-        } catch (TimeoutException e) {
-            return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out"));
-        }
-    }
-
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
     public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
-        if (orderedGroups.size() == 1) {
+        if (orderedGroups().size() == 1) {
             boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
             return sufficient;
         }
@@ -380,14 +380,14 @@ public class SearchCluster implements NodeManager<Node> {
             return false;
         }
         int groupId = knownGroupId.getAsInt();
-        Group group = groups.get(groupId);
+        Group group = groups().get(groupId);
         if (group == null) {
             return false;
         }
         int nodesInGroup = group.nodes().size();
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;
-        for (Group g : orderedGroups) {
+        for (Group g : orderedGroups()) {
             if (g.id() != groupId) {
                 sumOfActiveDocuments += g.getActiveDocuments();
                 otherGroups++;
@@ -402,6 +402,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
+        if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;

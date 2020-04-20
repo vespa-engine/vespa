@@ -5,13 +5,13 @@ import com.yahoo.vespa.applicationmodel.HostName;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * Collection of suspended hosts.
+ * Collection of the suspended hosts of an application.
  *
  * @author hakonhall
  */
+// @Immutable
 public class HostInfos {
     private final Map<HostName, HostInfo> hostInfos;
 
@@ -19,16 +19,17 @@ public class HostInfos {
         this.hostInfos = Map.copyOf(hostInfos);
     }
 
-    /** Get all suspended hostnames. */
-    public Set<HostName> suspendedHostsnames() {
-        return hostInfos.entrySet().stream()
-                .filter(entry -> entry.getValue().status().isSuspended())
-                .map(entry -> entry.getKey())
-                .collect(Collectors.toSet());
+    public HostInfos() {
+        this.hostInfos = Map.of();
     }
 
     /** Get host info for hostname, returning a NO_REMARKS HostInfo if unknown. */
-    public HostInfo get(HostName hostname) {
+    public HostInfo getOrNoRemarks(HostName hostname) {
         return hostInfos.getOrDefault(hostname, HostInfo.createNoRemarks());
+    }
+
+    /** The set of hostnames that were set in ZooKeeper - used for removing orphaned hostnames. */
+    public Set<HostName> getZkHostnames() {
+        return Set.copyOf(hostInfos.keySet());
     }
 }

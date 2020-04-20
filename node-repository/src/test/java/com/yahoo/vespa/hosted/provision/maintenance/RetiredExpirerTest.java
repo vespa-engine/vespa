@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.DockerImage;
@@ -64,8 +64,8 @@ public class RetiredExpirerTest {
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-            new MockNameResolver().mockAnyLookup(),
-            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+                                                                     new MockNameResolver().mockAnyLookup(),
+                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
     private final NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
@@ -86,7 +86,7 @@ public class RetiredExpirerTest {
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
         activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
@@ -99,7 +99,9 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -117,7 +119,7 @@ public class RetiredExpirerTest {
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         activate(applicationId, cluster, 8, 8, provisioner);
         activate(applicationId, cluster, 2, 2, provisioner);
         assertEquals(8, nodeRepository.getNodes(applicationId, Node.State.active).size());
@@ -128,7 +130,9 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(2, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -148,7 +152,7 @@ public class RetiredExpirerTest {
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
         activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
@@ -162,7 +166,9 @@ public class RetiredExpirerTest {
                                  clock,
                                  Collections.singletonMap(
                                      applicationId,
-                                     new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                                     new MockDeployer.ApplicationContext(applicationId,
+                                                                         cluster,
+                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
 
         // Allow the 1st and 3rd retired nodes permission to inactivate
         doNothing()
@@ -198,7 +204,7 @@ public class RetiredExpirerTest {
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups, NodeRepositoryProvisioner provisioner) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodes, nodeResources), groups, null);
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.from(new ClusterResources(nodes, groups, nodeResources)), null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);
         transaction.commit();
@@ -216,7 +222,7 @@ public class RetiredExpirerTest {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "node" + i, Optional.empty(), flavor, NodeType.tenant));
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
@@ -225,7 +231,7 @@ public class RetiredExpirerTest {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
@@ -235,6 +241,7 @@ public class RetiredExpirerTest {
                 nodeRepository,
                 orchestrator,
                 deployer,
+                new TestMetric(),
                 clock,
                 Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
                 RETIRED_EXPIRATION);

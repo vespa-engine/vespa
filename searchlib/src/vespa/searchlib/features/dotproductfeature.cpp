@@ -10,12 +10,11 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <type_traits>
-
-#include <vespa/log/log.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/stash.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".features.dotproduct");
 
 using namespace search::attribute;
@@ -147,7 +146,7 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 
 namespace {
 
-class DotProductExecutorByEnum : public fef::FeatureExecutor {
+class DotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
     using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
 private:
@@ -183,7 +182,8 @@ DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * 
 
 DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 
-void DotProductExecutorByEnum::execute(uint32_t docId) {
+void
+DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
     const IWeightedIndexVector::WeightedIndex *values(nullptr);
     uint32_t sz = _attribute->getEnumHandles(docId, values);
@@ -195,6 +195,57 @@ void DotProductExecutorByEnum::execute(uint32_t docId) {
     }
     outputs().set_number(0, val);
 }
+
+class SingleDotProductExecutorByEnum final : public fef::FeatureExecutor {
+public:
+    SingleDotProductExecutorByEnum(const IWeightedIndexVector * attribute, EnumHandle key, feature_t value)
+        : _attribute(attribute),
+          _key(key),
+          _value(value)
+    {}
+
+    void execute(uint32_t docId) override {
+        const IWeightedIndexVector::WeightedIndex *values(nullptr);
+        uint32_t sz = _attribute->getEnumHandles(docId, values);
+        for (size_t i = 0; i < sz; ++i) {
+            if (values[i].value().ref() == _key) {
+                outputs().set_number(0, values[i].weight()*_value);
+                return;
+            }
+        }
+        outputs().set_number(0, 0);
+    }
+private:
+    const IWeightedIndexVector * _attribute;
+    EnumHandle                   _key;
+    feature_t                    _value;
+};
+
+template <typename A>
+class SingleDotProductExecutorByValue final : public fef::FeatureExecutor {
+public:
+    SingleDotProductExecutorByValue(const A * attribute, typename A::BaseType key, feature_t value)
+        : _attribute(attribute),
+          _key(key),
+          _value(value)
+    {}
+
+    void execute(uint32_t docId) override {
+        const multivalue::WeightedValue<typename A::BaseType> *values(nullptr);
+        uint32_t sz = _attribute->getRawValues(docId, values);
+        for (size_t i = 0; i < sz; ++i) {
+            if (values[i].value() == _key) {
+                outputs().set_number(0, values[i].weight() * _value);
+                return;
+            }
+        }
+        outputs().set_number(0, 0);
+    }
+private:
+    const A               * _attribute;
+    typename A::BaseType    _key;
+    feature_t               _value;
+};
 
 }
 
@@ -219,7 +270,7 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     size_t count = getAttributeValues(docId, values);
     size_t commonRange = std::min(count, _queryVector.size());
     static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
-    outputs().set_number(0, _multiplier->dotProduct(
+    outputs().set_number(0, _multiplier.dotProduct(
             &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values), commonRange));
 }
 
@@ -573,6 +624,27 @@ createForDirectArray(const IAttributeVector * attribute,
     return createForDirectArrayImpl<A>(attribute, arguments.values, arguments.indexes, stash);
 }
 
+template<typename T>
+size_t extractSize(const dotproduct::wset::IntegerVectorT<T> & v) {
+    return v.getVector().size();
+}
+
+template<typename T>
+std::pair<T, feature_t> extractElem(const dotproduct::wset::IntegerVectorT<T> & v, size_t idx) {
+    const auto & pair = v.getVector()[idx];
+    return std::pair<T, feature_t>(pair.first, pair.second);
+}
+
+template<typename T>
+size_t extractSize(const std::unique_ptr<dotproduct::wset::IntegerVectorT<T>> & v) {
+    return extractSize(*v);
+}
+
+template<typename T>
+std::pair<T, feature_t> extractElem(const std::unique_ptr<dotproduct::wset::IntegerVectorT<T>> & v, size_t idx) {
+    return extractElem(*v, idx);
+}
+
 template <typename A, typename V>
 FeatureExecutor &
 createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespalib::Stash & stash)
@@ -585,6 +657,10 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespali
     if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
         auto * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
+            if (extractSize(vector) == 1) {
+                auto elem = extractElem(vector, 0ul);
+                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, elem.first, elem.second);
+            }
             return stash.create<DotProductExecutor<ExactA>>(exactA, std::forward<V>(vector));
         }
         return stash.create<DotProductExecutor<A>>(iattr, std::forward<V>(vector));
@@ -643,6 +719,10 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             }
             const auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
             if (supportsGetEnumHandles(getEnumHandles)) {
+                if (vector.getVector().size() == 1) {
+                    const auto & elem = vector.getVector()[0];
+                    return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                }
                 return stash.create<DotProductExecutorByEnum>(getEnumHandles, vector);
             }
             return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, vector);
@@ -733,6 +813,10 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         vector->syncMap();
         auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
         if (supportsGetEnumHandles(getEnumHandles)) {
+            if (vector->getVector().size() == 1) {
+                const auto & elem = vector->getVector()[0];
+                return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+            }
             return stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
         }
         return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));

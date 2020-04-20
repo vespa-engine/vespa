@@ -123,6 +123,12 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     auto priv_key = load_file_referenced_by_field(files, "private-key");
     auto authorized_peers = parse_authorized_peers(root["authorized-peers"]);
     auto accepted_ciphers = parse_accepted_ciphers(root["accepted-ciphers"]);
+    // FIXME this is temporary until we know it won't break a bunch of things!
+    // It's still possible to explicitly enable hostname validation by setting this to false.
+    bool disable_hostname_validation = true;
+    if (root["disable-hostname-validation"].valid()) {
+        disable_hostname_validation = root["disable-hostname-validation"].asBool();
+    }
 
     auto options = std::make_unique<TransportSecurityOptions>(
             TransportSecurityOptions::Params()
@@ -130,7 +136,8 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
                 .cert_chain_pem(certs)
                 .private_key_pem(priv_key)
                 .authorized_peers(std::move(authorized_peers))
-                .accepted_ciphers(std::move(accepted_ciphers)));
+                .accepted_ciphers(std::move(accepted_ciphers))
+                .disable_hostname_validation(disable_hostname_validation));
     secure_memzero(&priv_key[0], priv_key.size());
     return options;
 }

@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1.7
  */
 public class FileConfigSubscriptionTest {
     private File TEST_TYPES_FILE;

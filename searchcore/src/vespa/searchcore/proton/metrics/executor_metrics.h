@@ -11,9 +11,10 @@ namespace proton {
 
 struct ExecutorMetrics : metrics::MetricSet
 {
-    metrics::LongValueMetric maxPending;
+    metrics::LongValueMetric maxPending; // TODO Remove on Vespa 8 or sooner if possible.
     metrics::LongCountMetric accepted;
     metrics::LongCountMetric rejected;
+    metrics::LongAverageMetric queueSize;
 
     void update(const vespalib::ThreadStackExecutorBase::Stats &stats);
     ExecutorMetrics(const std::string &name, metrics::MetricSet *parent);

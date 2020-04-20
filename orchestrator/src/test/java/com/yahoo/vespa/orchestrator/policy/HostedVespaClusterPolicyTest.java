@@ -101,8 +101,7 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.serviceType()).thenReturn(new ServiceType("service-type"));
         when(clusterApi.percentageOfServicesDown()).thenReturn(5);
         when(clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()).thenReturn(percentageOfServicesDownIfGroupIsAllowedToBeDown);
-        when(clusterApi.servicesDownAndNotInGroupDescription()).thenReturn("services-down-and-not-in-group");
-        when(clusterApi.nodesAllowedToBeDownNotInGroupDescription()).thenReturn("allowed-to-be-down");
+        when(clusterApi.downDescription()).thenReturn(" Down description");
 
         NodeGroup nodeGroup = mock(NodeGroup.class);
         when(clusterApi.getNodeGroup()).thenReturn(nodeGroup);
@@ -116,11 +115,9 @@ public class HostedVespaClusterPolicyTest {
             }
         } catch (HostStateChangeDeniedException e) {
             if (!expectSuccess) {
-                assertEquals("Changing the state of node-group would violate enough-services-up: "
-                        + "Suspension percentage for service type service-type would increase from "
-                        + "5% to 13%, over the limit of 10%. These instances may be down: "
-                        + "services-down-and-not-in-group and these hosts are allowed to be down: "
-                        + "allowed-to-be-down", e.getMessage());
+                assertEquals("Changing the state of node-group would violate enough-services-up: " +
+                        "Suspension for service type service-type would increase from 5% to 13%, " +
+                        "over the limit of 10%. Down description", e.getMessage());
                 assertEquals("enough-services-up", e.getConstraintName());
             }
         }

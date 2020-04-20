@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This is an interface used during plugin setup to register blueprint
@@ -23,6 +22,4 @@ public:
     virtual ~IBlueprintRegistry() {}
 };
 
-} // namespace fef
-} // namespace search
-
+}

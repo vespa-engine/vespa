@@ -2,8 +2,7 @@
 
 #include "selection.h"
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 Selection::Selection(const DocumentSelection& docSel)
     : _documentSelection(docSel),
@@ -12,8 +11,7 @@ Selection::Selection(const DocumentSelection& docSel)
       _timestampSubset()
 { }
 
-Selection::~Selection() { }
+Selection::~Selection() = default;
 
-} // spi
-} // storage
+}
 

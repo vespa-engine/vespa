@@ -2,8 +2,11 @@
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -15,6 +18,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
@@ -154,6 +158,22 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Verify log
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/auditlog/"), new File("auditlog.json"));
+    }
+
+    @Test
+    public void testMeteringApi() {
+        ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
+        Instant timestamp = Instant.ofEpochMilli(123456789);
+        ZoneId zoneId = ZoneId.defaultId();
+        List<ResourceSnapshot> snapshots = List.of(
+                new ResourceSnapshot(applicationId, 12,48,1200, timestamp, zoneId),
+                new ResourceSnapshot(applicationId, 24, 96,2400, timestamp, zoneId)
+        );
+        tester.controller().serviceRegistry().meteringService().consume(snapshots);
+        tester.assertResponse(
+                operatorRequest("http://localhost:8080/controller/v1/metering/tenant/tenantName/month/2020-02", "", Request.Method.GET),
+                new File("metering.json")
+        );
     }
 
 }

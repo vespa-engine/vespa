@@ -11,7 +11,10 @@ import java.nio.channels.SocketChannel;
  * from TLS.
  **/
 public class XorCryptoEngine implements CryptoEngine {
-    @Override public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        return new XorCryptoSocket(channel, isServer);
+    @Override public CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
+        return new XorCryptoSocket(channel, false);
+    }
+    @Override public CryptoSocket createServerCryptoSocket(SocketChannel channel) {
+        return new XorCryptoSocket(channel, true);
     }
 }

@@ -9,11 +9,10 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
  * 
  * @author bratseth
  */
-public class Controller extends AbstractComponent implements ApplicationIdSource {
+public class Controller extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
 
@@ -72,6 +71,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     private final NameServiceForwarder nameServiceForwarder;
     private final MavenRepository mavenRepository;
     private final Metric metric;
+    private final RoutingController routingController;
 
     /**
      * Creates a controller 
@@ -80,14 +80,14 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl, FlagSource flagSource,
-                      MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric) {
+                      MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore) {
         this(curator, rotationsConfig, accessControl, com.yahoo.net.HostName::getLocalhost, flagSource,
-             mavenRepository, serviceRegistry, metric);
+             mavenRepository, serviceRegistry, metric, secretStore);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
                       Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
-                      ServiceRegistry serviceRegistry, Metric metric) {
+                      ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -101,11 +101,9 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
-        applicationController = new ApplicationController(this, curator, accessControl,
-                                                          Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          clock
-        );
+        applicationController = new ApplicationController(this, curator, accessControl, clock, secretStore, flagSource);
         tenantController = new TenantController(this, curator, accessControl);
+        routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller
@@ -122,6 +120,11 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
 
     /** Returns the instance controlling deployment jobs. */
     public JobController jobController() { return jobController; }
+
+    /** Returns the instance controlling routing */
+    public RoutingController routing() {
+        return routingController;
+    }
 
     /** Returns the service registry of this */
     public ServiceRegistry serviceRegistry() {
@@ -144,13 +147,6 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
         return serviceRegistry.configServer().getApplicationView(tenantName, applicationName, instanceName, environment, region);
-    }
-
-    // TODO: Model the response properly
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
-                                          String environment, String region, String serviceName, String restPath) {
-        return serviceRegistry.configServer().getServiceApiResponse(tenantName, applicationName, instanceName, environment, region,
-                                                                    serviceName, restPath);
     }
 
     /** Replace the current version status by a new one */
@@ -274,15 +270,4 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
     }
 
-    @Override
-    public ApplicationIdSnapshot applicationIdSnapshot() {
-        ApplicationIdSnapshot.Builder snapshotBuilder = new ApplicationIdSnapshot.Builder();
-        tenants().asList().forEach(tenant -> snapshotBuilder.add(tenant.name()));
-        applications().asList().forEach(application -> {
-            snapshotBuilder.add(application.id().tenant(), application.id().application());
-            application.instances().values().stream().map(Instance::id).forEach(snapshotBuilder::add);
-        });
-
-        return snapshotBuilder.build();
-    }
 }

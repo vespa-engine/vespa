@@ -91,7 +91,7 @@ Fixture::~Fixture() = default;
 struct RemoveOperationContext
 {
     DocumentId doc_id;
-    RemoveOperation op;
+    RemoveOperationWithDocId op;
     nbostream str;
     std::unique_ptr<Packet> packet;
 

@@ -5,6 +5,7 @@
 #include "compiled_function.h"
 #include <vespa/vespalib/util/executor.h>
 #include <condition_variable>
+#include <atomic>
 #include <mutex>
 
 namespace vespalib {

@@ -2,8 +2,7 @@
 
 #include "context.h"
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 Context::Context(const LoadType& loadType, Priority pri, int maxTraceLevel)
     : _loadType(&loadType),
@@ -12,7 +11,6 @@ Context::Context(const LoadType& loadType, Priority pri, int maxTraceLevel)
       _readConsistency(ReadConsistency::STRONG)
 { }
 
-Context::~Context() { }
+Context::~Context() = default;
 
-} // spi
-} // storage
+}

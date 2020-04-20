@@ -12,15 +12,18 @@
 #include <llvm/Analysis/Passes.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/Transforms/Scalar.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+#if LLVM_VERSION_MAJOR >= 9 && defined(__clang__)
 // Avoid reference to undefined symbol llvm::cfg::Update<llvm::BasicBlock*>::dump() const
 #define NDEBUG
 #endif
 #include <llvm/LinkAllPasses.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+#if LLVM_VERSION_MAJOR >= 9 && defined(__clang__)
 #undef NDEBUG
 #endif
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#if LLVM_VERSION_MAJOR > 9
+#include <llvm/Support/ManagedStatic.h>
+#endif
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
@@ -480,6 +483,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_error(node.num_children());
     }
     void visit(const TensorCreate &node) override {
+        make_error(node.num_children());
+    }
+    void visit(const TensorLambda &node) override {
         make_error(node.num_children());
     }
     void visit(const TensorPeek &node) override {

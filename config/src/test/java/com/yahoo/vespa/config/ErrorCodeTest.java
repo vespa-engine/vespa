@@ -8,9 +8,9 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class ErrorCodeTest {
+
     @Test
     public void basic() {
         assertThat(ErrorCode.getName(ErrorCode.INTERNAL_ERROR), is("INTERNAL_ERROR"));

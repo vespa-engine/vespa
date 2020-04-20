@@ -19,17 +19,20 @@ namespace vespalib {
  **/
 class SyncCryptoSocket
 {
+public:
+    using UP = std::unique_ptr<SyncCryptoSocket>;
 private:
     CryptoSocket::UP _socket;
     SmartBuffer _buffer;
     SyncCryptoSocket(CryptoSocket::UP socket) : _socket(std::move(socket)), _buffer(0) {}
+    static UP create(CryptoSocket::UP socket);
 public:
-    using UP = std::unique_ptr<SyncCryptoSocket>;
     ~SyncCryptoSocket();
     ssize_t read(char *buf, size_t len);
     ssize_t write(const char *buf, size_t len);
     ssize_t half_close();
-    static UP create(CryptoEngine &engine, SocketHandle socket, bool is_server);
+    static UP create_client(CryptoEngine &engine, SocketHandle socket, const SocketSpec &spec);
+    static UP create_server(CryptoEngine &engine, SocketHandle socket);
 };
 
 } // namespace vespalib

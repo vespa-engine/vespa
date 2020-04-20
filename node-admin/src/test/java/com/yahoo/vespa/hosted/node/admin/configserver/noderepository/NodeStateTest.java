@@ -22,4 +22,5 @@ public class NodeStateTest {
 
         assertEquals(nodeAdminStates, nodeRepositoryStates);
     }
+
 }

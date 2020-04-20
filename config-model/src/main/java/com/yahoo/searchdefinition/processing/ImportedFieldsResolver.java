@@ -64,7 +64,7 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void resolveImportedPositionField(TemporaryImportedField importedField, DocumentReference reference,
-                                                   ImmutableSDField targetField, boolean validate) {
+                                              ImmutableSDField targetField, boolean validate) {
         TemporaryImportedField importedZCurveField = new TemporaryImportedField(PositionDataType.getZCurveFieldName(importedField.fieldName()),
                 reference.referenceField().getName(), PositionDataType.getZCurveFieldName(targetField.getName()));
         ImmutableSDField targetZCurveField = getTargetField(importedZCurveField, reference);
@@ -175,7 +175,7 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void validateTargetField(TemporaryImportedField importedField,
-                                                 ImmutableSDField targetField, DocumentReference reference) {
+                                     ImmutableSDField targetField, DocumentReference reference) {
         if (!targetField.doesAttributing()) {
             fail(importedField, targetFieldAsString(targetField.getName(), reference) +
                     ": Is not an attribute field. Only attribute fields supported");

@@ -8,6 +8,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -25,7 +27,7 @@ public class ContainerSearchTest {
         try (JDisc container = containerWithSearch(searcherId)) {
             byte[] rendered = container.search().processAndRender(ComponentSpecification.fromString("mychain"),
                     ComponentSpecification.fromString("XmlRenderer"), new Query(""));
-            String renderedAsString = new String(rendered, "utf-8");
+            String renderedAsString = new String(rendered, StandardCharsets.UTF_8);
             assertThat(renderedAsString, containsString(searcherId));
         }
     }
@@ -44,11 +46,12 @@ public class ContainerSearchTest {
 
     public JDisc containerWithSearch(String searcherId) {
         return JDisc.fromServicesXml("<container version=\"1.0\">" + //
-                "<search>" + //
-                "<chain id=\"mychain\">" + //
-                "<searcher id=\"" + searcherId + "\"/>" + //
-                "</chain>" + //
-                "</search>" + //
+                "  <search>" + //
+                "    <chain id=\"mychain\">" + //
+                "      <searcher id=\"" + searcherId + "\"/>" + //
+                "    </chain>" + //
+                "  </search>" + //
+                "  <accesslog type=\"disabled\" />" + //
                 "</container>", Networking.disable);
     }
 

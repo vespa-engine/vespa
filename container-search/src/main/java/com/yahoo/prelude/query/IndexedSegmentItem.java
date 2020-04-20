@@ -79,4 +79,5 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
         super.disclose(discloser);
         discloser.addProperty("index", index);
     }
+
 }

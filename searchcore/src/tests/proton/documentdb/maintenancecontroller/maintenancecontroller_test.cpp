@@ -110,7 +110,7 @@ public:
     MaintenanceDocumentSubDB getSubDB();
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op);
     void handlePut(PutOperation &op);
-    void handleRemove(RemoveOperation &op);
+    void handleRemove(RemoveOperationWithDocId &op);
     void prepareMove(MoveOperation &op);
     void handleMove(const MoveOperation &op);
     uint32_t getNumUsedLids() const;
@@ -565,11 +565,11 @@ MyDocumentSubDB::handlePut(PutOperation &op)
 
 
 void
-MyDocumentSubDB::handleRemove(RemoveOperation &op)
+MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
 {
     const SerialNum serialNum = op.getSerialNum();
     const DocumentId &docId = op.getDocumentId();
-    const document::GlobalId &gid = docId.getGlobalId();
+    const document::GlobalId &gid = op.getGlobalId();
     bool needCommit = false;
 
     if (op.getValidDbdId(_subDBId)) {
@@ -584,7 +584,7 @@ MyDocumentSubDB::handleRemove(RemoveOperation &op)
         assert(op.getLid() == putRes._lid);
         const document::DocumentType *docType =
             _repo->getDocumentType(_docTypeName.getName());
-        Document::UP doc(new Document(*docType, docId));
+        auto doc = std::make_unique<Document>(*docType, docId);
         doc->setRepo(*_repo);
         _docs[op.getLid()] = std::move(doc);
         needCommit = true;
@@ -948,7 +948,7 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs,
         const test::BucketDocuments &bucketDocs = itr->second;
         for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
             const test::Document &testDoc = bucketDocs.getDocs()[i];
-            RemoveOperation op(testDoc.getBucket(), timestamp, testDoc.getDoc()->getId());
+            RemoveOperationWithDocId op(testDoc.getBucket(), timestamp, testDoc.getDoc()->getId());
             op.setDbDocumentId(DbDocumentId(_removed.getSubDBId(), testDoc.getLid()));
             _fh.storeOperation(op, std::make_shared<search::IgnoreCallback>());
             _removed.handleRemove(op);

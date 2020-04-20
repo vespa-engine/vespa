@@ -6,16 +6,19 @@
 #include <vespa/searchlib/index/schema_index_fields.h>
 
 namespace document {
-class DataType;
-class Document;
-class DocumentType;
-class Field;
-class FieldValue;
+    class DataType;
+    class Document;
+    class DocumentType;
+    class Field;
+    class FieldValue;
 }
 
 namespace search {
-    class ISequencedTaskExecutor;
     class IDestructorCallback;
+}
+
+namespace vespalib {
+    class ISequencedTaskExecutor;
 }
 
 namespace search::memoryindex {
@@ -31,6 +34,7 @@ class IFieldIndexCollection;
  */
 class DocumentInverter {
 private:
+    using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     DocumentInverter(const DocumentInverter &) = delete;
     DocumentInverter &operator=(const DocumentInverter &) = delete;
 

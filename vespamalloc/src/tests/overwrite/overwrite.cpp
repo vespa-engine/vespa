@@ -10,6 +10,13 @@ void check_ptr_real(void *ptr)
 
 void (*check_ptr)(void *ptr) = check_ptr_real;
 
+void overwrite_memory_real(char *ptr, int offset)
+{
+    *(ptr + offset) = 0;
+}
+
+void (*overwrite_memory)(char *ptr, int offset) = overwrite_memory_real;
+
 class Test : public TestApp
 {
 public:
@@ -63,16 +70,14 @@ void Test::testFillValue(char *a)
 void Test::verifyPreWriteDetection()
 {
     char * a = new char[8];
-    *(a-1) = 0;
-    check_ptr(a);
+    overwrite_memory(a, -1);
     delete [] a;
 }
 
 void Test::verifyPostWriteDetection()
 {
     char * a = new char[8];
-    a[8] = 0;
-    check_ptr(a);
+    overwrite_memory(a, 8);
     delete [] a;
 }
 

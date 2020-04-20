@@ -8,85 +8,45 @@ package com.yahoo.search.cluster;
  */
 public class MonitorConfiguration  {
 
-    /**
-     * The interval in ms between consecutive checks of the monitored
-     * nodes
-     */
+    /** The interval in ms between consecutive checks of the monitored nodes */
     private long checkInterval=1000;
 
-    /**
-     * The number of times a failed node must respond before getting
-     * traffic again
-     */
-    private int responseAfterFailLimit=3;
+    /** The number of milliseconds to attempt to complete a request before giving up */
+    private final long requestTimeout = 980;
+
+    /** The number of milliseconds a node is allowed to fail before we mark it as not working */
+    private long failLimit = 5000;
+
+    /** Sets the interval between each ping of idle or failing nodes. Default is 1000 ms. */
+    public void setCheckInterval(long intervalMs) { this.checkInterval = intervalMs; }
+
+    /** Returns the interval between each ping of idle or failing nodes. Default is 1000 ms. */
+    public long getCheckInterval() { return checkInterval; }
 
     /**
-     * The number of ms a node is allowed to stay idle before it is
-     * pinged
+     * Sets the number of times a failed node must respond before it is put  back in service. Default is 3.
+     *
+     * @deprecated will go away in Vespa 8
      */
-    private long idleLimit=3000;
+    @Deprecated // TODO: Remove on Vespa 8
+    public void setResponseAfterFailLimit(int responseAfterFailLimit) { }
 
     /**
-     * The number of milliseconds to attempt to complete a request
-     * before giving up
+     * Sets the number of ms a node (failing or working) is allowed to stay idle before it is pinged. Default is 3000.
+     *
+     * @deprecated Will go away in Vespa 8
      */
-    private long requestTimeout = 5000;
+    @Deprecated // TODO: Remove on Vespa 8
+    public void setIdleLimit(int idleLimit) { }
 
     /**
-     * The number of milliseconds a node is allowed to fail before we
-     * mark it as not working
+     * Gets the number of ms a node (failing or working) is allowed to stay idle before it is pinged. Default is 3000.
+     *
+     * @deprecated Will go away in Vespa 8
      */
-    private long failLimit=5000;
-
-    /**
-     * The number of times a node is allowed to fail in one hour
-     * before it is quarantined for an hour
-     */
-    private int failQuarantineLimit=3;
-
-    /**
-     * The number of ms to quarantine an unstable node
-     */
-    private long quarantineTime=1000*60*60;
-
-    /**
-     * Sets the interval between each ping of idle or failing nodes
-     * Default is 1000ms
-     */
-    public void setCheckInterval(long intervalMs) {
-        this.checkInterval=intervalMs;
-    }
-
-    /**
-     * Returns the interval between each ping of idle or failing nodes
-     * Default is 1000ms
-     */
-    public long getCheckInterval() {
-        return checkInterval;
-    }
-
-    /**
-     * Sets the number of times a failed node must respond before it is put
-     * back in service. Default is 3.
-     */
-    public void setResponseAfterFailLimit(int responseAfterFailLimit) {
-        this.responseAfterFailLimit=responseAfterFailLimit;
-    }
-
-    /**
-     * Sets the number of ms a node (failing or working) is allowed to
-     * stay idle before it is pinged. Default is 3000
-     */
-    public void setIdleLimit(int idleLimit) {
-        this.idleLimit=idleLimit;
-    }
-
-    /**
-     * Gets the number of ms a node (failing or working)
-     * is allowed to stay idle before it is pinged. Default is 3000
-     */
+    @Deprecated // TODO: Remove on Vespa 8
     public long getIdleLimit() {
-        return idleLimit;
+        return 3000;
     }
 
     /**
@@ -112,29 +72,26 @@ public class MonitorConfiguration  {
      * in quarantine.  Once in quarantine it won't be put back in
      * productuion before quarantineTime has expired even if it is
      * working. Default is 3
+     *
+     * @deprecated Will go away in Vespa 8
      */
-    public void setFailQuarantineLimit(int failQuarantineLimit) {
-        this.failQuarantineLimit=failQuarantineLimit;
-    }
+    @Deprecated // TODO: Remove on Vespa 8
+    public void setFailQuarantineLimit(int failQuarantineLimit) { }
 
     /**
-     * The number of ms an unstable node is quarantined. Default is
-     * 100*60*60
+     * The number of ms an unstable node is quarantined. Default is 100*60*60
+     *
+     * @deprecated Will go away in Vespa 8
      */
-    public void setQuarantineTime(long quarantineTime) {
-        this.quarantineTime=quarantineTime;
-    }
+    @Deprecated // TODO: Remove on Vespa 8
+    public void setQuarantineTime(long quarantineTime) { }
 
     public String toString() {
         return "monitor configuration [" +
-            "checkInterval: " + checkInterval +
-            " responseAfterFailLimit: " + responseAfterFailLimit +
-            " idleLimit: " + idleLimit +
-            " requestTimeout " + requestTimeout +
-            " feilLimit " + failLimit +
-            " failQuerantineLimit " + failQuarantineLimit +
-            " quarantineTime " + quarantineTime +
-            "]";
+               "checkInterval: " + checkInterval +
+               " requestTimeout " + requestTimeout +
+               " failLimit " + failLimit +
+               "]";
     }
 
 }

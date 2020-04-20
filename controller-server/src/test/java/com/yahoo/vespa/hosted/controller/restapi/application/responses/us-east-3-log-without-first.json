@@ -1,50 +1,27 @@
 {
+  "active": false,
+  "status": "deploymentFailed",
   "log": {
-    "deployTester": [
+    "deployReal": [
       {
         "at": 1000,
         "type": "info",
         "message": "Failed to deploy application: ERROR!"
       }
-    ],
-    "deactivateTester": [
-      {
-        "at": 1000,
-        "type": "info",
-        "message": "Deactivating tester of tenant.application in prod.us-east-3 ..."
-      }
     ]
   },
-  "active": false,
-  "lastId": 2,
+  "lastId": 1,
   "steps": {
-    "startTests": {
-      "status": "unfinished"
-    },
-    "deployTester": {
-      "startMillis": 1000,
-      "status": "failed"
-    },
-    "report": {
-      "startMillis": 1000,
-      "status": "succeeded"
-    },
-    "installTester": {
-      "status": "unfinished"
-    },
     "deployReal": {
-      "status": "unfinished"
+      "status": "failed",
+      "startMillis": 1000
     },
     "installReal": {
       "status": "unfinished"
     },
-    "deactivateTester": {
-      "startMillis": 1000,
-      "status": "succeeded"
-    },
-    "endTests": {
-      "status": "unfinished"
+    "report": {
+      "status": "succeeded",
+      "startMillis": 1000
     }
-  },
-  "status": "deploymentFailed"
+  }
 }

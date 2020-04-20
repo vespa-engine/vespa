@@ -6,8 +6,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Represents the type of a parameter.
@@ -248,5 +247,4 @@ public:
     ParameterDescriptions & repeat(size_t n = 1);
 };
 
-} // namespace fef
-} // namespace search
+}

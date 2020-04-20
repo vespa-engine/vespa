@@ -12,7 +12,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;

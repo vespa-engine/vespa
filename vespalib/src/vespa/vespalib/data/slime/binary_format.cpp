@@ -7,10 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.data.slime.binary_format");
 
-namespace vespalib {
-namespace slime {
-
-namespace binary_format {
+namespace vespalib::slime::binary_format {
 
 struct BinaryEncoder : public ArrayTraverser,
                        public ObjectSymbolTraverser
@@ -242,32 +239,6 @@ size_t decode(const Memory &memory, Slime &slime, const Inserter &inserter) {
     return input.failed() ? 0 : input.get_offset();
 }
 
-} // namespace vespalib::slime::binary_format
-
-void
-BinaryFormat::encode(const Slime &slime, Output &output)
-{
-    size_t chunk_size = 8000;
-    OutputWriter out(output, chunk_size);
-    binary_format::BinaryEncoder encoder(out);
-    encoder.encodeSymbolTable(slime);
-    encoder.encodeValue(slime.get());
-}
-
-size_t
-BinaryFormat::decode(const Memory &memory, Slime &slime)
-{
-    return binary_format::decode<false>(memory, slime, SlimeInserter(slime));
-}
-
-size_t
-BinaryFormat::decode_into(const Memory &memory, Slime &slime, const Inserter &inserter)
-{
-    return binary_format::decode<true>(memory, slime, inserter);
-}
-
-namespace binary_format {
-
 void
 write_cmpr_ulong(OutputWriter &out, uint64_t value) {
     out.commit(encode_cmpr_ulong(out.reserve(10), value));
@@ -288,5 +259,25 @@ write_type_and_size(OutputWriter &out, uint32_t type, uint64_t size) {
 
 }
 
-} // namespace vespalib::slime
-} // namespace vespalib
+namespace vespalib::slime {
+
+void
+BinaryFormat::encode(const Slime &slime, Output &output) {
+    size_t chunk_size = 8000;
+    OutputWriter out(output, chunk_size);
+    binary_format::BinaryEncoder encoder(out);
+    encoder.encodeSymbolTable(slime);
+    encoder.encodeValue(slime.get());
+}
+
+size_t
+BinaryFormat::decode(const Memory &memory, Slime &slime) {
+    return binary_format::decode<false>(memory, slime, SlimeInserter(slime));
+}
+
+size_t
+BinaryFormat::decode_into(const Memory &memory, Slime &slime, const Inserter &inserter) {
+    return binary_format::decode<true>(memory, slime, inserter);
+}
+
+}

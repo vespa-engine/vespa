@@ -2,12 +2,20 @@
 
 #include "signalhandler.h"
 #include <cassert>
+#include <atomic>
+#include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
 
 namespace vespalib {
 
 std::vector<SignalHandler*> SignalHandler::_handlers;
 
 namespace {
+
+// 31 bit concurrency counter, 1 (lsb) bit indicating shutdown
+std::atomic<int> signal_counter;
 
 class Shutdown
 {
@@ -18,9 +26,6 @@ public:
 };
 
 }
-
-// Clear SignalHandler::_handlers in a slightly less unsafe manner.
-Shutdown shutdown;
 
 SignalHandler SignalHandler::HUP(SIGHUP);
 SignalHandler SignalHandler::INT(SIGINT);
@@ -36,12 +41,19 @@ SignalHandler SignalHandler::FPE(SIGFPE);
 SignalHandler SignalHandler::QUIT(SIGQUIT);
 SignalHandler SignalHandler::USR1(SIGUSR1);
 
+// Clear SignalHandler::_handlers in a slightly less unsafe manner.
+Shutdown shutdown;
+
 void
 SignalHandler::handleSignal(int signal)
 {
-    if ((((size_t)signal) < _handlers.size()) && (_handlers[signal] != 0)) {
-        _handlers[signal]->gotSignal();
+    static_assert(std::atomic<int>::is_always_lock_free, "signal_counter must be lock free");
+    if ((signal_counter.fetch_add(2) & 1) == 0) {
+        if ((((size_t)signal) < _handlers.size()) && (_handlers[signal] != 0)) {
+            _handlers[signal]->gotSignal();
+        }
     }
+    signal_counter.fetch_sub(2);
 }
 
 void
@@ -108,12 +120,21 @@ SignalHandler::unhook()
 void
 SignalHandler::shutdown()
 {
+    while ((signal_counter.fetch_or(1) & ~1) != 0) {
+        std::this_thread::sleep_for(10ms);
+    }
     for (std::vector<SignalHandler*>::iterator
              it = _handlers.begin(), ite = _handlers.end();
          it != ite;
          ++it) {
-        if (*it != nullptr)
-            (*it)->unhook();
+        if (*it != nullptr) {
+            // Ignore SIGTERM at shutdown in case valgrind is used.
+            if ((*it)->_signal == SIGTERM) {
+                (*it)->ignore();
+            } else {
+                (*it)->unhook();
+            }
+        }
     }
     std::vector<SignalHandler *>().swap(_handlers);
 }

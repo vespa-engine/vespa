@@ -3,7 +3,9 @@
 
 #include "attributevector.h"
 #include "integerbase.h"
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <cmath>
 
 namespace search {
@@ -46,6 +48,32 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> > & changes, DocI
                 changes.push_back(ChangeTemplate<T>(ChangeBase::DIVWEIGHT, doc, v, w));
             } else {
                 divideByZeroWarning();
+            }
+        } else {
+            retval = false;
+        }
+        if (retval) {
+            const size_t diff = changes.size() - oldSz;
+            _status.incNonIdempotentUpdates(diff);
+            _status.incUpdates(diff);
+        }
+    }
+    return retval;
+}
+
+template<typename T>
+bool
+AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId doc, const T& v, const document::AssignValueUpdate& wu)
+{
+    bool retval(hasWeightedSetType() && (doc < getNumDocs()));
+    if (retval) {
+        size_t oldSz(changes.size());
+        if (wu.hasValue()) {
+            const FieldValue &wv = wu.getValue();
+            if (wv.inherits(document::IntFieldValue::classId)) {
+                changes.push_back(ChangeTemplate<T>(ChangeBase::SETWEIGHT, doc, v, wv.getAsInt()));
+            } else {
+                retval = false;
             }
         } else {
             retval = false;

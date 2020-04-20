@@ -136,7 +136,7 @@ public class UpgraderTest {
 
         canary1.deployPlatform(version3);
 
-        tester.controllerTester().computeVersionStatus();;
+        tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         tester.triggerJobs();

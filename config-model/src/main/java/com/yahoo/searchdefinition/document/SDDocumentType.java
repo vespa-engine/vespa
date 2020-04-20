@@ -47,6 +47,7 @@ public class SDDocumentType implements Cloneable, Serializable {
     private FieldSets fieldSets;
     // Document references
     private Optional<DocumentReferences> documentReferences = Optional.empty();
+    private TemporaryImportedFields temporaryImportedFields;
 
     static {
         VESPA_DOCUMENT = new SDDocumentType(VespaDocumentType.INSTANCE.getFullName().getName());
@@ -58,6 +59,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         type.docType = docType.clone();
         type.inheritedTypes.putAll(inheritedTypes);
         type.structType = structType;
+        // TODO this isn't complete; should it be..?!
         return type;
     }
 
@@ -334,4 +336,11 @@ public class SDDocumentType implements Cloneable, Serializable {
         this.documentReferences = Optional.of(documentReferences);
     }
 
+    public TemporaryImportedFields getTemporaryImportedFields() {
+        return temporaryImportedFields;
+    }
+
+    public void setTemporaryImportedFields(TemporaryImportedFields temporaryImportedFields) {
+        this.temporaryImportedFields = temporaryImportedFields;
+    }
 }

@@ -30,20 +30,19 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, int groups, int nodesPerGroup) {
-        super(clusterId, dispatchConfig, 1, null);
+        super(clusterId, dispatchConfig, null, null);
 
         ImmutableList.Builder<Group> orderedGroupBuilder = ImmutableList.builder();
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
         ImmutableMultimap.Builder<String, Node> hostBuilder = ImmutableMultimap.builder();
-        int dk = 1;
+        int distributionKey = 0;
         for (int group = 0; group < groups; group++) {
             List<Node> nodes = new ArrayList<>();
             for (int node = 0; node < nodesPerGroup; node++) {
-                Node n = new Node(dk, "host" + dk, group);
-                n.setWorking(true);
+                Node n = new Node(distributionKey, "host" + distributionKey, group);
                 nodes.add(n);
                 hostBuilder.put(n.hostname(), n);
-                dk++;
+                distributionKey++;
             }
             Group g = new Group(group, nodes);
             groupBuilder.put(group, g);

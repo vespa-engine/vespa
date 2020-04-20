@@ -144,12 +144,13 @@ public:
         FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx,
                                                   PriorityIdx::iterator iter);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
-        const FileStorHandlerImpl  &_owner;
-        MessageSender              &_messageSender;
-        FileStorStripeMetrics      *_metrics;
-        vespalib::Monitor           _lock;
-        PriorityQueue               _queue;
-        LockedBuckets               _lockedBuckets;
+        const FileStorHandlerImpl &_owner;
+        MessageSender             &_messageSender;
+        FileStorStripeMetrics     *_metrics;
+        vespalib::Monitor          _lock;
+        PriorityQueue             _queue;
+        LockedBuckets             _lockedBuckets;
+        uint32_t                  _active_merges;
     };
     struct Disk {
         FileStorDiskMetrics * metrics;
@@ -169,7 +170,7 @@ public:
             state.store(s, std::memory_order_relaxed);
         }
 
-        Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numThreads);
+        Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes);
         Disk(Disk &&) noexcept;
         ~Disk();
 
@@ -206,8 +207,12 @@ public:
             // and the stripe an operation ends up on.
             return bucket.getBucketId().getId() * 1099511628211ULL;
         }
+        // We make a fairly reasonable assumption that there will be less than 64k stripes.
+        uint16_t stripe_index(const document::Bucket& bucket) const noexcept {
+            return static_cast<uint16_t>(dispersed_bucket_bits(bucket) % _stripes.size());
+        }
         Stripe & stripe(const document::Bucket & bucket) {
-            return _stripes[dispersed_bucket_bits(bucket) % _stripes.size()];
+            return _stripes[stripe_index(bucket)];
         }
         std::vector<Stripe> & getStripes() { return _stripes; }
     private:
@@ -222,7 +227,7 @@ public:
         BucketLock(const vespalib::MonitorGuard & guard, Stripe& disk, const document::Bucket &bucket,
                    uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
                    api::LockingRequirements lockReq);
-        ~BucketLock();
+        ~BucketLock() override;
 
         const document::Bucket &getBucket() const override { return _bucket; }
         api::LockingRequirements lockingRequirements() const noexcept override { return _lockReq; }
@@ -287,20 +292,15 @@ public:
 
 private:
     ServiceLayerComponent _component;
-    std::vector<Disk> _diskInfo;
-    MessageSender& _messageSender;
+    std::vector<Disk>     _diskInfo;
+    MessageSender&        _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
-
-    vespalib::Lock _mergeStatesLock;
-
+    vespalib::Lock        _mergeStatesLock;
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
-
-    uint32_t _getNextMessageTimeout;
-
-    uint32_t _activeMergesSoftLimit;
-    mutable std::atomic<uint32_t> _activeMerges;
-    vespalib::Monitor _pauseMonitor;
-    std::atomic<bool> _paused;
+    uint32_t              _getNextMessageTimeout;
+    const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
+    vespalib::Monitor     _pauseMonitor;
+    std::atomic<bool>     _paused;
 
     void reply(api::StorageMessage&, DiskState state) const;
 

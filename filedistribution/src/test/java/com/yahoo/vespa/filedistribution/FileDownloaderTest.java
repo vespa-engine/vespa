@@ -27,6 +27,10 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static org.junit.Assert.assertEquals;
@@ -35,6 +39,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class FileDownloaderTest {
+    private static final Duration sleepBetweenRetries = Duration.ofMillis(10);
 
     private MockConnection connection;
     private FileDownloader fileDownloader;
@@ -47,7 +52,7 @@ public class FileDownloaderTest {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
             tempDir = Files.createTempDirectory("download").toFile();
             connection = new MockConnection();
-            fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(2), Duration.ofMillis(100));
+            fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(1), sleepBetweenRetries);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -108,7 +113,7 @@ public class FileDownloaderTest {
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
-            receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
+            receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
@@ -142,7 +147,7 @@ public class FileDownloaderTest {
 
             File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
-            receiveFile(fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
+            receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
@@ -158,7 +163,7 @@ public class FileDownloaderTest {
 
     @Test
     public void getFileWhenConnectionError() throws IOException {
-        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(3), Duration.ofMillis(100));
+        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(1), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         int timesToFail = 2;
@@ -175,7 +180,7 @@ public class FileDownloaderTest {
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
-        receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
+        receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
         Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
         assertTrue(downloadedFile.isPresent());
         File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
@@ -189,26 +194,68 @@ public class FileDownloaderTest {
     }
 
     @Test
+    public void getFileWhenDownloadInProgress() throws IOException, ExecutionException, InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        String filename = "abc.jar";
+        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(3), sleepBetweenRetries);
+        File downloadDir = fileDownloader.downloadDirectory();
+
+        // Delay response so that we can make a second request while downloading the file from the first request
+        connection.setResponseHandler(new MockConnection.WaitResponseHandler(Duration.ofSeconds(1)));
+
+        FileReference fileReference = new FileReference("fileReference");
+        File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
+        FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(fileReference);
+
+        Future<Future<Optional<File>>> future1 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
+        do {
+            Thread.sleep(10);
+        } while (! fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+
+        // Request file while download is in progress
+        Future<Future<Optional<File>>> future2 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
+
+        // Receive file, will complete downloading and futures
+        receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
+
+        // Check that we got file correctly with first request
+        Optional<File> downloadedFile = future1.get().get();
+        assertTrue(downloadedFile.isPresent());
+        File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
+        assertEquals(downloadedFileFullPath.getAbsolutePath(), downloadedFile.get().getAbsolutePath());
+        assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
+
+        // Check that request done while downloading works
+        downloadedFile = future2.get().get();
+        assertTrue(downloadedFile.isPresent());
+        executor.shutdownNow();
+    }
+
+    @Test
     public void setFilesToDownload() throws IOException {
         Duration timeout = Duration.ofMillis(200);
-        Duration sleepBetweenRetries = Duration.ofMillis(200);
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         // Should download since we do not have the file on disk
-        assertTrue(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
+        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(foo));
+        assertFalse(fileDownloader.getFile(foo).isPresent());
         // Receive files to simulate download
         receiveFile();
         // Should not download, since file has already been downloaded
-        assertFalse(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
+        // and file should be available
+        assertTrue(fileDownloader.getFile(foo).isPresent());
     }
 
     @Test
     public void receiveFile() throws IOException {
         FileReference foo = new FileReference("foo");
         String filename = "foo.jar";
-        receiveFile(foo, filename, FileReferenceData.Type.file, "content");
+        receiveFile(fileDownloader, foo, filename, FileReferenceData.Type.file, "content");
         File downloadedFile = new File(fileReferenceFullPath(downloadDir, foo), filename);
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
@@ -229,16 +276,19 @@ public class FileDownloaderTest {
         assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
     }
 
-    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
-        receiveFile(fileReference, filename, type, Utf8.toBytes(content));
+    private void receiveFile(FileDownloader fileDownloader, FileReference fileReference, String filename,
+                             FileReferenceData.Type type, String content) {
+        receiveFile(fileDownloader, fileReference, filename, type, Utf8.toBytes(content));
     }
 
-    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, byte[] content) {
+    private void receiveFile(FileDownloader fileDownloader, FileReference fileReference, String filename,
+                             FileReferenceData.Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         FileReceiver.Session session =
                 new FileReceiver.Session(downloadDir, tempDir, 1, fileReference, type, filename, content.length);
         session.addPart(0, content);
-        session.close(hasher.hash(ByteBuffer.wrap(content), 0));
+        File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
+        fileDownloader.fileReferenceDownloader().completedDownloading(fileReference, file);
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

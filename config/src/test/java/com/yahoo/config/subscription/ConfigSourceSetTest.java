@@ -13,6 +13,7 @@ import static org.junit.Assert.*;
  * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
  */
 public class ConfigSourceSetTest {
+
     @Test
     public void testEquals() {
         assertEquals(new ConfigSourceSet(), new ConfigSourceSet());

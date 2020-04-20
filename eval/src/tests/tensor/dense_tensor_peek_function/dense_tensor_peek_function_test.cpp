@@ -73,13 +73,13 @@ TEST("require that tensor peek is not optimized for mixed tensor") {
     TEST_DO(verify("xmy2{x:(a),y:(b)}", 0.0, 0, 1));
 }
 
-TEST("require that indexes are rounded to nearest integer") {
-    TEST_DO(verify("x3{x:(a-0.3)}", 2.0, 1, 0));
+TEST("require that indexes are truncated when converted to integers") {
+    TEST_DO(verify("x3{x:(a+0.7)}", 2.0, 1, 0));
     TEST_DO(verify("x3{x:(a+0.3)}", 2.0, 1, 0));
-    TEST_DO(verify("xm{x:(a-0.3)}", 1.0, 0, 1));
+    TEST_DO(verify("xm{x:(a+0.7)}", 1.0, 0, 1));
     TEST_DO(verify("xm{x:(a+0.3)}", 1.0, 0, 1));
+    TEST_DO(verify("xm{x:(-a-0.7)}", 4.0, 0, 1));
     TEST_DO(verify("xm{x:(-a-0.3)}", 4.0, 0, 1));
-    TEST_DO(verify("xm{x:(-a+0.3)}", 4.0, 0, 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

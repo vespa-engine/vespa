@@ -16,11 +16,12 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
+import com.yahoo.vespa.orchestrator.DummyAntiServiceMonitor;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -36,10 +37,13 @@ import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.orchestrator.status.ZkStatusService;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,13 +58,13 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -76,13 +80,13 @@ public class HostResourceTest {
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
-    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(
-            new MockCurator(), mock(Metric.class), new TestTimer());
+    private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
+    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
+            new MockCurator(), mock(Metric.class), new TestTimer(), new DummyAntiServiceMonitor());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
-    private static final InstanceLookupService mockInstanceLookupService = mock(InstanceLookupService.class);
     static {
-        when(mockInstanceLookupService.findInstanceByHost(any()))
+        when(serviceMonitor.getApplication(any(HostName.class)))
                 .thenReturn(Optional.of(
                         new ApplicationInstance(
                                 TENANT_ID,
@@ -90,21 +94,14 @@ public class HostResourceTest {
                                 makeServiceClusterSet())));
     }
 
-    private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
-        @Override
-        public Optional<ApplicationInstance> findInstanceById(
-                final ApplicationInstanceReference applicationInstanceReference) {
-            return Optional.empty();
-        }
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+
+    private static final ServiceMonitor alwaysEmptyServiceMonitor = new ServiceMonitor() {
+        private final ServiceModel emptyServiceModel = new ServiceModel(Map.of());
 
         @Override
-        public Optional<ApplicationInstance> findInstanceByHost(final HostName hostName) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Set<ApplicationInstanceReference> knownInstances() {
-            return Collections.emptySet();
+        public ServiceModel getServiceModelSnapshot() {
+            return emptyServiceModel;
         }
     };
 
@@ -125,27 +122,29 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) {
+                ApplicationLock hostStatusRegistry) {
         }
     }
 
-    private static final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+            serviceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
-    private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+            alwaysEmptyServiceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
     private final UriInfo uriInfo = mock(UriInfo.class);
 
@@ -163,7 +162,7 @@ public class HostResourceTest {
 
         UpdateHostResponse response = hostResource.suspend(hostName);
 
-        assertThat(response.hostname()).isEqualTo(hostName);
+        assertEquals(hostName, response.hostname());
     }
 
     @Test
@@ -171,14 +170,14 @@ public class HostResourceTest {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
         BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname",
                                                                           Arrays.asList("hostname1", "hostname2"));
-        assertThat(response.success());
+        assertTrue(response.success());
     }
 
     @Test
     public void returns_200_empty_batch() {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
         BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname", List.of());
-        assertThat(response.success());
+        assertTrue(response.success());
     }
 
     @Test
@@ -189,7 +188,7 @@ public class HostResourceTest {
             hostResource.suspend("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(404);
+            assertEquals(404, w.getResponse().getStatus());
         }
     }
 
@@ -203,7 +202,7 @@ public class HostResourceTest {
             hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(400);
+            assertEquals(400, w.getResponse().getStatus());
         }
     }
 
@@ -227,7 +226,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
+                ApplicationLock hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
         }
 
@@ -244,17 +243,19 @@ public class HostResourceTest {
         final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
-                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
+                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+                serviceMonitor,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
             hostResource.suspend("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 
@@ -264,17 +265,18 @@ public class HostResourceTest {
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
-                mockInstanceLookupService,
+                serviceMonitor,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);
             hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 
@@ -343,7 +345,7 @@ public class HostResourceTest {
 
         Host host = new Host(
                 hostName,
-                HostStatus.ALLOWED_TO_BE_DOWN,
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH),
                 new ApplicationInstanceReference(
                         new TenantId("tenantId"),
                         new ApplicationInstanceId("applicationId")),
@@ -353,6 +355,7 @@ public class HostResourceTest {
         assertEquals("https://foo.com/bar", response.applicationUrl());
         assertEquals("hostname", response.hostname());
         assertEquals("ALLOWED_TO_BE_DOWN", response.state());
+        assertEquals("1970-01-01T00:00:00Z", response.suspendedSince());
         assertEquals(1, response.services().size());
         assertEquals("clusterId", response.services().get(0).clusterId);
         assertEquals("configId", response.services().get(0).configId);
@@ -361,7 +364,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_504_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
+    public void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
 
@@ -370,13 +373,13 @@ public class HostResourceTest {
             hostResource.resume("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertEquals(409, w.getResponse().getStatus());
             assertEquals("resume failed: Timeout Message [deadline]", w.getMessage());
         }
     }
 
     @Test
-    public void throws_504_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+    public void throws_409_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).suspendAll(any(), any());
 
@@ -385,7 +388,7 @@ public class HostResourceTest {
             resource.suspendAll("parenthost", Arrays.asList("h1", "h2", "h3"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 }

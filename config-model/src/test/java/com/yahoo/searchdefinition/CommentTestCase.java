@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class CommentTestCase extends SearchDefinitionTestCase {
+public class CommentTestCase extends SchemaTestCase {
 
     @Test
     public void testComments() throws IOException, ParseException {

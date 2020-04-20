@@ -2,11 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import org.junit.Test;
 
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
@@ -26,15 +24,7 @@ public class RestartTest {
             String hostname = "host1.test.yahoo.com";
             DockerImage dockerImage = DockerImage.fromString("dockerImage:1.2.3");
 
-            tester.addChildNodeRepositoryNode(new NodeSpec.Builder()
-                    .hostname(hostname)
-                    .state(NodeState.active)
-                    .wantedDockerImage(dockerImage)
-                    .type(NodeType.tenant)
-                    .flavor("docker")
-                    .wantedRestartGeneration(1)
-                    .currentRestartGeneration(1)
-                    .build());
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
             tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(

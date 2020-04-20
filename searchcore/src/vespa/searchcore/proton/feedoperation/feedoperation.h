@@ -36,7 +36,8 @@ public:
         MOVE                    = 15,
         CREATE_BUCKET           = 16,
         COMPACT_LID_SPACE       = 17,
-        UPDATE                  = 18
+        UPDATE                  = 18,
+        REMOVE_GID              = 19
     };
 
 private:

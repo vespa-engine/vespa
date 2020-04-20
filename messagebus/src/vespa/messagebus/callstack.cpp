@@ -20,7 +20,7 @@ CallStack::discard()
     }
 }
 
-CallStack::~CallStack() { }
+CallStack::~CallStack() = default;
 
 IReplyHandler &
 CallStack::pop(Reply &reply)

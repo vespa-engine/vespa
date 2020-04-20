@@ -10,7 +10,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;

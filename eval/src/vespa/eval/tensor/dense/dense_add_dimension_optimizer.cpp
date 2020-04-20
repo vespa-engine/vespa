@@ -2,9 +2,7 @@
 
 #include "dense_add_dimension_optimizer.h"
 #include "dense_replace_type_function.h"
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/value.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.dense.add_dimension_optimizer");

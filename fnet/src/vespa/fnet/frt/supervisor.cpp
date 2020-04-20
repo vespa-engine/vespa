@@ -409,7 +409,7 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_threa
 namespace fnet::frt {
 
 StandaloneFRT::StandaloneFRT()
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {
@@ -417,7 +417,7 @@ StandaloneFRT::StandaloneFRT()
 }
 
 StandaloneFRT::StandaloneFRT(vespalib::CryptoEngine::SP crypto)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
       _transport(std::make_unique<FNET_Transport>(std::move(crypto), 1)),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {

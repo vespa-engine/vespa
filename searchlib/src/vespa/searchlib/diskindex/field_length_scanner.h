@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <limits>
+#include <cstdint>
 
 namespace search::index { class DocIdAndFeatures; }
 

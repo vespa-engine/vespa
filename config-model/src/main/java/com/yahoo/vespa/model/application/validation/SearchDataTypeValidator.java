@@ -15,7 +15,7 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class SearchDataTypeValidator extends Validator {
             if (cluster.isStreaming()) {
                 continue;
             }
-            for (AbstractSearchCluster.SearchDefinitionSpec spec : cluster.getLocalSDS()) {
+            for (AbstractSearchCluster.SchemaSpec spec : cluster.getLocalSDS()) {
                 SDDocumentType docType = spec.getSearchDefinition().getSearch().getDocument();
                 if (docType == null) {
                     continue;
@@ -44,7 +44,7 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private void validateDocument(AbstractSearchCluster cluster, SearchDefinition def, SDDocumentType doc) {
+    private void validateDocument(AbstractSearchCluster cluster, NamedSchema def, SDDocumentType doc) {
         for (SDDocumentType child : doc.getTypes()) {
             validateDocument(cluster, def, child);
         }
@@ -84,7 +84,7 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private void disallowIndexingOfMaps(AbstractSearchCluster cluster, SearchDefinition def, Field field) {
+    private void disallowIndexingOfMaps(AbstractSearchCluster cluster, NamedSchema def, Field field) {
         DataType fieldType = field.getDataType();
         if ((fieldType instanceof MapDataType) && (((SDField) field).doesIndexing())) {
             throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' cannot be indexed for search " +

@@ -12,10 +12,10 @@ namespace storage::api { class MergeBucketReply; }
 namespace storage::lib { class ClusterStateBundle; }
 namespace storage {
    class DistributorConfiguration;
-   class DistributorMetricSet;
 }
 namespace storage::distributor {
 
+class DistributorMetricSet;
 class PendingMessageTracker;
 
 class DistributorInterface : public DistributorMessageSender

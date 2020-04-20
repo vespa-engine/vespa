@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -83,12 +84,14 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     protected Application buildModelVersion(ModelFactory modelFactory,
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId,
+                                            Optional<String> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion,
                                             Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.version(), appGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
+        Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
@@ -96,9 +99,13 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
-                createStaticProvisioner(applicationPackage.getAllocatedHosts(), modelContextProperties),
+                createStaticProvisioner(applicationPackage.getAllocatedHosts(),
+                                        modelContextProperties.applicationId(),
+                                        provisioned),
+                provisioned,
                 modelContextProperties,
                 Optional.empty(),
+                wantedDockerImageRepository,
                 modelFactory.version(),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
@@ -138,7 +145,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                flagSource,
                                                new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readEndpointCertificateMetadata(applicationId)
-                                                       .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets));
+                                                       .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets),
+                                               zkClient.readAthenzDomain());
 
     }
 

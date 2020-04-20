@@ -45,4 +45,13 @@ public class TestAndSetCondition {
                 .orElse(TestAndSetCondition.NOT_PRESENT_CONDITION);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder string = new StringBuilder();
+        string.append("condition '");
+        string.append(conditionStr);
+        string.append("'");
+
+        return string.toString();
+    }
 }

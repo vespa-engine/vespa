@@ -6,7 +6,7 @@ import java.io.File;
 /**
  * Source specifying config from one local file
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class FileSource implements ConfigSource {
 

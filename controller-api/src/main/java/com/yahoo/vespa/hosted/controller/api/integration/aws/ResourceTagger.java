@@ -18,11 +18,7 @@ public interface ResourceTagger {
     int tagResources(ZoneApi zone, Map<HostName, ApplicationId> tenantOfHosts);
 
     static ResourceTagger empty() {
-        return new ResourceTagger() {
-            @Override
-            public int tagResources(ZoneApi zone, Map<HostName, ApplicationId> tenantOfHosts) {
-                return 0;
-            }
-        };
+        return (zone, tenantOfHosts) -> 0;
     }
+
 }

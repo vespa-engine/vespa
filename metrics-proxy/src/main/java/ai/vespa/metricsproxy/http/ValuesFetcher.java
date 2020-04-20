@@ -21,6 +21,7 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
  * @author gjoranv
  */
 public class ValuesFetcher {
+
     private static final Logger log = Logger.getLogger(ValuesFetcher.class.getName());
 
     public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default");
@@ -45,6 +46,16 @@ public class ValuesFetcher {
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
                 .collect(Collectors.toList());
     }
+
+    public List<MetricsPacket.Builder> fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
+
+        return metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now())
+                .stream()
+                .filter(builder -> builder.hasConsumer(consumer))
+                .collect(Collectors.toList());
+    }
+
 
     public List<MetricsPacket> fetchAllMetrics() throws JsonRenderingException {
         return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());

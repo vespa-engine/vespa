@@ -222,6 +222,7 @@
                         <systemPropertyVariables>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -414,6 +415,11 @@
                 <version>${aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>java-jwt</artifactId>
+                <version>3.10.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
                 <artifactId>expect4j</artifactId>
                 <version>1.6</version>
@@ -471,6 +477,11 @@
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zts-java-client</artifactId>
                 <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>${commons.math3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
@@ -735,11 +746,11 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
-        <apache.httpclient.version>4.5.10</apache.httpclient.version>
-        <apache.httpcore.version>4.4.12</apache.httpcore.version>
+        <apache.httpclient.version>4.5.11</apache.httpclient.version>
+        <apache.httpcore.version>4.4.13</apache.httpcore.version>
         <asm.version>7.0</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.8.44</athenz.version>
+        <athenz.version>1.8.49</athenz.version>
         <aws.sdk.version>1.11.542</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
@@ -749,6 +760,7 @@
         -->
         <curator.version>2.9.1</curator.version>
         <jna.version>4.5.2</jna.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
         <junit.version>5.4.2</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>3.5.0</maven-bundle-plugin.version>

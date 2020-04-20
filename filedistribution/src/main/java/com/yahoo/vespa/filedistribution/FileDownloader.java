@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
-import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.config.FileReference;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -13,6 +12,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -57,21 +57,14 @@ public class FileDownloader {
         }
     }
 
-    private Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
+    Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Objects.requireNonNull(fileReference, "file reference cannot be null");
-        log.log(LogLevel.DEBUG, () -> "Checking if file reference '" + fileReference.value() + "' exists in '" +
-                downloadDirectory.getAbsolutePath() + "' ");
-        Optional<File> file = getFileFromFileSystem(fileReference, downloadDirectory);
-        if (file.isPresent()) {
-            SettableFuture<Optional<File>> future = SettableFuture.create();
-            future.set(file);
-            return future;
-        } else {
-            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' not found in " +
-                    downloadDirectory.getAbsolutePath() + ", starting download");
-            return download(fileReferenceDownload);
-        }
+
+        Optional<File> file = getFileFromFileSystem(fileReference);
+        return (file.isPresent())
+                ? CompletableFuture.completedFuture(file)
+                : download(fileReferenceDownload);
     }
 
     double downloadStatus(FileReference fileReference) {
@@ -86,9 +79,10 @@ public class FileDownloader {
         return downloadDirectory;
     }
 
-    private Optional<File> getFileFromFileSystem(FileReference fileReference, File directory) {
-        File[] files = new File(directory, fileReference.value()).listFiles();
-        if (directory.exists() && directory.isDirectory() && files != null && files.length > 0) {
+    // Files are moved atomically, so if file reference exists and is accessible we can use it
+    private Optional<File> getFileFromFileSystem(FileReference fileReference) {
+        File[] files = new File(downloadDirectory, fileReference.value()).listFiles();
+        if (downloadDirectory.exists() && downloadDirectory.isDirectory() && files != null && files.length > 0) {
             File file = files[0];
             if (!file.exists()) {
                 throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
@@ -105,33 +99,25 @@ public class FileDownloader {
 
     private boolean alreadyDownloaded(FileReference fileReference) {
         try {
-            return (getFileFromFileSystem(fileReference, downloadDirectory).isPresent());
+            return (getFileFromFileSystem(fileReference).isPresent());
         } catch (RuntimeException e) {
             return false;
         }
     }
 
-    public boolean downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        if (!alreadyDownloaded(fileReferenceDownload.fileReference())) {
-            download(fileReferenceDownload);
-            return true;
-        } else {
-            log.log(LogLevel.DEBUG, () -> "Download not needed, " + fileReferenceDownload.fileReference() + " already downloaded" );
-            return false;
-        }
+    /** Start a download, don't wait for result */
+    public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
+        FileReference fileReference = fileReferenceDownload.fileReference();
+        if (alreadyDownloaded(fileReference)) return;
+
+        download(fileReferenceDownload);
     }
 
+    /** Download, the future returned will be complete()d by receiving method in {@link FileReceiver} */
     private synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReferenceDownload));
-        if (inProgress != null) {
-            log.log(LogLevel.DEBUG, () -> "Already downloading '" + fileReference.value() + "'");
-            return inProgress;
-        }
-
-        Future<Optional<File>> future = queueForDownload(fileReferenceDownload);
-        log.log(LogLevel.DEBUG, () -> "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
-        return future;
+        FileReferenceDownload inProgress = fileReferenceDownloader.getDownloadInProgress(fileReference);
+        return (inProgress == null) ? queueForDownload(fileReferenceDownload) : inProgress.future();
     }
 
     private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {

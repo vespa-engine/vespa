@@ -61,7 +61,7 @@ public class ApplicationTest {
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
-                                                                                 new Query("?query=substring:foobar&tracelevel=3"));
+                                                                                 new Query("?query=substring:foobar&timeout=20000"));
             assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar",
                          result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
@@ -183,6 +183,7 @@ public class ApplicationTest {
     }
 
     @Test
+    // TODO: Creates access log
     public void renderer() throws Exception {
         try (
                 ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
@@ -203,7 +204,7 @@ public class ApplicationTest {
                 ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
                         .searcher(MockSearcher.class))))
         ) {
-            Result result = app.search(new Query("?query=foo"));
+            Result result = app.search(new Query("?query=foo&timeout=20000"));
             assertEquals(1, result.hits().size());
         }
     }
@@ -214,7 +215,7 @@ public class ApplicationTest {
                 ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
                         .searcher("foo", MockSearcher.class))))
         ) {
-            Result result = app.search("foo", new Query("?query=foo"));
+            Result result = app.search("foo", new Query("?query=foo&timeout=20000"));
             assertEquals(1, result.hits().size());
         }
     }
@@ -375,7 +376,8 @@ public class ApplicationTest {
     private static String servicesXmlWithServer(int port) {
         return "<container version='1.0'>" +
                 "  <http> <server port='" + port +"' id='foo'/> </http>" +
-                "</container>";
+               "  <accesslog type=\"disabled\" />" +
+               "</container>";
     }
 
     @Test
@@ -392,7 +394,8 @@ public class ApplicationTest {
                 "      <access-control domain='foo' />" +
                 "    </filtering>" +
                 "  </http>" +
-                "</container>";
+               "  <accesslog type=\"disabled\" />" +
+               "</container>";
     }
 
 }

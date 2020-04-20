@@ -15,6 +15,7 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _maxInputBufferSize(256*1024),
     _maxOutputBufferSize(256*1024),
     _numThreads(4),
+    _tcpNoDelay(true),
     _dispatchOnEncode(true),
     _dispatchOnDecode(false),
     _connectionExpireSecs(600),

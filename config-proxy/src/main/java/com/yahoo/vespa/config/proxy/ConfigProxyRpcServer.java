@@ -13,21 +13,17 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
-import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
 
 /**
  * An RPC server that handles config and file distribution requests.
@@ -132,12 +128,8 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     private void getConfigV3(Request req) {
         dispatchRpcRequest(req, () -> {
             JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
-            if (isProtocolVersionSupported(request)) {
-                req.target().addWatcher(this);
-                getConfigImpl(request);
-                return;
-            }
-            req.returnRequest();
+            req.target().addWatcher(this);
+            getConfigImpl(request);
         });
     }
 
@@ -162,9 +154,9 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         dispatchRpcRequest(req, () -> {
             StringBuilder sb = new StringBuilder();
             sb.append("\nDelayed responses queue size: ");
-            sb.append(proxyServer.delayedResponses.size());
+            sb.append(proxyServer.delayedResponses().size());
             sb.append("\nContents: ");
-            for (DelayedResponse delayed : proxyServer.delayedResponses.responses()) {
+            for (DelayedResponse delayed : proxyServer.delayedResponses().responses()) {
                 sb.append(delayed.getRequest().toString()).append("\n");
             }
 
@@ -271,19 +263,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         return String.format("%s/%08X", request.methodName(), request.hashCode());
     }
 
-    private boolean isProtocolVersionSupported(JRTServerConfigRequest request) {
-        Set<Long> supportedProtocolVersions = JRTConfigRequestFactory.supportedProtocolVersions();
-        if (supportedProtocolVersions.contains(request.getProtocolVersion())) {
-            return true;
-        } else {
-            String message = "Illegal protocol version " + request.getProtocolVersion() +
-                    " in request " + request.getShortDescription() + ", only protocol versions " + supportedProtocolVersions + " are supported";
-            log.log(LogLevel.ERROR, message);
-            request.addErrorResponse(ErrorCode.ILLEGAL_PROTOCOL_VERSION, message);
-        }
-        return false;
-    }
-
     /**
      * Handles all versions of "getConfig" requests.
      *
@@ -357,7 +336,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     @Override
     public void notifyTargetInvalid(Target target) {
         log.log(LogLevel.DEBUG, () -> "Target invalid " + target);
-        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses.responses().iterator(); it.hasNext(); ) {
+        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses().responses().iterator(); it.hasNext(); ) {
             DelayedResponse delayed = it.next();
             JRTServerConfigRequest request = delayed.getRequest();
             if (request.getRequest().target().equals(target)) {

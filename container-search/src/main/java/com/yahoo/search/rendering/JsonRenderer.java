@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Inspector;
@@ -44,8 +45,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.yolean.trace.TraceNode;
-import com.yahoo.yolean.trace.TraceVisitor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -111,10 +110,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String ROOT = "root";
     private static final String SOURCE = "source";
     private static final String TOTAL_COUNT = "totalCount";
-    private static final String TRACE = "trace";
-    private static final String TRACE_CHILDREN = "children";
-    private static final String TRACE_MESSAGE = "message";
-    private static final String TRACE_TIMESTAMP = "timestamp";
     private static final String TIMING = "timing";
     private static final String QUERY_TIME = "querytime";
     private static final String SUMMARY_FETCH_TIME = "summaryfetchtime";
@@ -131,145 +126,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private boolean debugRendering;
     private LongSupplier timeSource;
     private OutputStream stream;
-
-    private class TraceRenderer extends TraceVisitor {
-        private final long basetime;
-        private boolean hasFieldName = false;
-        int emittedChildNesting = 0;
-        int currentChildNesting = 0;
-        private boolean insideOpenObject = false;
-
-        TraceRenderer(long basetime) {
-            this.basetime = basetime;
-        }
-
-        @Override
-        public void entering(TraceNode node) {
-            ++currentChildNesting;
-        }
-
-        @Override
-        public void leaving(TraceNode node) {
-            conditionalEndObject();
-            if (currentChildNesting == emittedChildNesting) {
-                try {
-                    generator.writeEndArray();
-                    generator.writeEndObject();
-                } catch (IOException e) {
-                    throw new TraceRenderWrapper(e);
-                }
-                --emittedChildNesting;
-            }
-            --currentChildNesting;
-        }
-
-        @Override
-        public void visit(TraceNode node) {
-            try {
-                doVisit(node.timestamp(), node.payload(), node.children().iterator().hasNext());
-            } catch (IOException e) {
-                throw new TraceRenderWrapper(e);
-            }
-        }
-
-        private void doVisit(long timestamp, Object payload, boolean hasChildren) throws IOException {
-            boolean dirty = false;
-            if (timestamp != 0L) {
-                header();
-                generator.writeStartObject();
-                generator.writeNumberField(TRACE_TIMESTAMP, timestamp - basetime);
-                dirty = true;
-            }
-            if (payload != null) {
-                if (!dirty) {
-                    header();
-                    generator.writeStartObject();
-                }
-                generator.writeFieldName(TRACE_MESSAGE);
-                fieldConsumer.renderFieldContentsDirect(payload);
-                dirty = true;
-            }
-            if (dirty) {
-                if (!hasChildren) {
-                    generator.writeEndObject();
-                } else {
-                    setInsideOpenObject(true);
-                }
-            }
-        }
-
-        private void header() {
-            fieldName();
-            for (int i = 0; i < (currentChildNesting - emittedChildNesting); ++i) {
-                startChildArray();
-            }
-            emittedChildNesting = currentChildNesting;
-        }
-
-        private void startChildArray() {
-            try {
-                conditionalStartObject();
-                generator.writeArrayFieldStart(TRACE_CHILDREN);
-            } catch (IOException e) {
-                throw new TraceRenderWrapper(e);
-            }
-        }
-
-        private void conditionalStartObject() throws IOException {
-            if (!isInsideOpenObject()) {
-                generator.writeStartObject();
-            } else {
-                setInsideOpenObject(false);
-            }
-        }
-
-        private void conditionalEndObject() {
-            if (isInsideOpenObject()) {
-                // This triggers if we were inside a data node with payload and
-                // subnodes, but none of the subnodes contained data
-                try {
-                    generator.writeEndObject();
-                    setInsideOpenObject(false);
-                } catch (IOException e) {
-                    throw new TraceRenderWrapper(e);
-                }
-            }
-        }
-
-        private void fieldName() {
-            if (hasFieldName) {
-                return;
-            }
-
-            try {
-                generator.writeFieldName(TRACE);
-            } catch (IOException e) {
-                throw new TraceRenderWrapper(e);
-            }
-            hasFieldName = true;
-        }
-
-        boolean isInsideOpenObject() {
-            return insideOpenObject;
-        }
-
-        void setInsideOpenObject(boolean insideOpenObject) {
-            this.insideOpenObject = insideOpenObject;
-        }
-    }
-
-    private static final class TraceRenderWrapper extends RuntimeException {
-
-        /**
-         * Should never be serialized, but this is still needed.
-         */
-        private static final long serialVersionUID = 2L;
-
-        TraceRenderWrapper(IOException wrapped) {
-            super(wrapped);
-        }
-
-    }
 
     public JsonRenderer() {
         this(null);
@@ -352,8 +208,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             long basetime = trace.traceNode().timestamp();
             if (basetime == 0L)
                 basetime = getResult().getElapsedTime().first();
-            trace.accept(new TraceRenderer(basetime));
-        } catch (TraceRenderWrapper e) {
+            trace.accept(new TraceRenderer(generator, fieldConsumer, basetime));
+        } catch (TraceRenderer.TraceRenderWrapper e) {
             throw new IOException(e);
         }
     }
@@ -641,11 +497,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private String getJsonCallback() {
         Result result = getResult();
-        if (result != null) {
-            Query query = result.getQuery();
-            if (query != null) {
-                return query.properties().getString(JSON_CALLBACK, null);
-            }
+        Query query = result.getQuery();
+        if (query != null) {
+            return query.properties().getString(JSON_CALLBACK, null);
         }
         return null;
     }
@@ -671,7 +525,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * This instance is reused for all hits of a Result since we are in a single-threaded context
      * and want to limit object creation.
      */
-    public static class FieldConsumer implements Hit.RawUtf8Consumer {
+    public static class FieldConsumer implements Hit.RawUtf8Consumer, TraceRenderer.FieldConsumer {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
@@ -788,11 +642,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             if (field instanceof Inspectable && ! (field instanceof FeatureData)) {
                 renderInspector(((Inspectable)field).inspect());
             } else {
-                renderFieldContentsDirect(field);
+                accept(field);
             }
         }
 
-        private void renderFieldContentsDirect(Object field) throws IOException {
+        @Override
+        public void accept(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
             } else if (field instanceof Boolean) {

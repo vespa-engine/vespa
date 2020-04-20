@@ -13,7 +13,7 @@ class AttributeReadGuard;
  */
 class ReadableAttributeVector {
 public:
-    virtual ~ReadableAttributeVector() {}
+    virtual ~ReadableAttributeVector() = default;
     virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const = 0;
 };
 

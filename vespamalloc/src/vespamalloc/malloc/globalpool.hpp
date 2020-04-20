@@ -15,12 +15,13 @@ size_t AllocPoolT<MemBlockPtrT>::_alwaysReuseLimit __attribute__((visibility("hi
 template <typename MemBlockPtrT>
 AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment<MemBlockPtrT> & ds)
     : _chunkPool(NULL),
+      _scList(),
       _dataSegment(ds),
       _getChunks(0),
       _getChunksSum(0),
-      _allocChunkList(0)
+      _allocChunkList(0),
+      _stat()
 {
-    memset(_scList, 0, sizeof(_scList));
 }
 
 template <typename MemBlockPtrT>

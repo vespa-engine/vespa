@@ -71,11 +71,6 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .data("{\"token\":\"hello\"}"),
                               new File("tenant-without-applications.json"));
 
-        // PUT a tenant is not available to anyone.
-        tester.assertResponse(request("/application/v4/user/", PUT)
-                                      .roles(operator),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Not authenticated or not a user.\"}", 403);
-
         // GET at user/v1 root fails as no access control is defined there.
         tester.assertResponse(request("/user/v1/"),
                               accessDenied, 403);
@@ -102,7 +97,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
                                       .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
                                       .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
-                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"NullPointerException\"}", 500);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
 
         // POST an application is allowed for a tenant developer.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", POST)
@@ -193,17 +188,20 @@ public class UserApiTest extends ControllerContainerCloudTest {
                              .data("{\"user\":\"administrator@tenant\",\"roleName\":\"administrator\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can't remove the last administrator of a tenant.\"}", 400);
 
-        // DELETE the tenant is available to the tenant owner.
+        // DELETE the tenant is not allowed
         tester.assertResponse(request("/application/v4/tenant/my-tenant", DELETE)
-                                      .roles(Set.of(Role.tenantOwner(id.tenant()))),
-                              new File("tenant-without-applications.json"));
+                                      .roles(Set.of(Role.developer(id.tenant()))),
+                              "{\n" +
+                              "  \"code\" : 403,\n" +
+                              "  \"message\" : \"Access denied\"\n" +
+                              "}", 403);
     }
 
     @Test
     public void userMetadataTest() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         ControllerTester controller = new ControllerTester(tester);
-        Set<Role> operator = Set.of(Role.hostedOperator());
+        Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter());
         User user = new User("dev@domail", "Joe Developer", "dev", null);
 
         tester.assertResponse(request("/api/user/v1/user")

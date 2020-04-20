@@ -85,13 +85,13 @@ makeDocumentTypeRepo()
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
+std::unique_ptr<DocumentTypeRepo> repo = makeDocumentTypeRepo();
+
 struct Fixture {
-    std::unique_ptr<DocumentTypeRepo> repo;
     const DocumentType *docType;
 
     Fixture()
-        : repo(makeDocumentTypeRepo()),
-          docType(repo->getDocumentType("testdoc"))
+        : docType(repo->getDocumentType("testdoc"))
     {
     }
 
@@ -460,6 +460,14 @@ TEST_F("require that tensor add update is applied",
         TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
+    f.applyValueUpdate(*f.attribute, 1,
+                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
+    f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
+}
+
+TEST_F("require that tensor add update to non-existing tensor creates empty tensor first",
+       TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+{
     f.applyValueUpdate(*f.attribute, 1,
                        TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));

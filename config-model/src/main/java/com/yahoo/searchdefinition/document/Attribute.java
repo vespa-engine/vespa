@@ -24,6 +24,7 @@ import com.yahoo.document.datatypes.Float16FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
+import static com.yahoo.searchdefinition.Index.DistanceMetric;
 
 import java.io.Serializable;
 import java.util.LinkedHashSet;
@@ -65,6 +66,10 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** This is set if the type of this is REFERENCE */
     private final Optional<StructuredDataType> referenceDocumentType;
+
+    private Optional<DistanceMetric> distanceMetric = Optional.empty();
+
+    private Optional<HnswIndexParams> hnswIndexParams = Optional.empty();
 
     private boolean isPosition = false;
     private final Sorting sorting = new Sorting();
@@ -195,6 +200,12 @@ public final class Attribute implements Cloneable, Serializable {
     public Optional<TensorType> tensorType() { return tensorType; }
     public Optional<StructuredDataType> referenceDocumentType() { return referenceDocumentType; }
 
+    public static final DistanceMetric DEFAULT_DISTANCE_METRIC = DistanceMetric.EUCLIDEAN;
+    public DistanceMetric distanceMetric() {
+        return distanceMetric.orElse(DEFAULT_DISTANCE_METRIC);
+    }
+    public Optional<HnswIndexParams> hnswIndexParams() { return hnswIndexParams; }
+
     public Sorting getSorting() { return sorting; }
 
     public void setRemoveIfZero(boolean remove)                  { this.removeIfZero = remove; }
@@ -217,6 +228,8 @@ public final class Attribute implements Cloneable, Serializable {
     public void setUpperBound(long upperBound)                   { this.upperBound = upperBound; }
     public void setDensePostingListThreshold(double threshold)   { this.densePostingListThreshold = threshold; }
     public void setTensorType(TensorType tensorType)             { this.tensorType = Optional.of(tensorType); }
+    public void setDistanceMetric(Optional<DistanceMetric> dm)   { this.distanceMetric = dm; }
+    public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }
@@ -335,7 +348,7 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType);
+                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, hnswIndexParams);
     }
 
     @Override
@@ -349,8 +362,8 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** Returns whether these attributes describes the same entity, even if they have different names */
     public boolean isCompatible(Attribute other) {
-        if ( ! this.type.equals(other.type)) return false;
-        if ( ! this.collectionType.equals(other.collectionType)) return false;
+        if (! this.type.equals(other.type)) return false;
+        if (! this.collectionType.equals(other.collectionType)) return false;
         if (this.isPrefetch() != other.isPrefetch()) return false;
         if (this.removeIfZero != other.removeIfZero) return false;
         if (this.createIfNonExistent != other.createIfNonExistent) return false;
@@ -359,9 +372,11 @@ public final class Attribute implements Cloneable, Serializable {
         // if (this.noSearch != other.noSearch) return false; No backend consequences so compatible for now
         if (this.fastSearch != other.fastSearch) return false;
         if (this.huge != other.huge) return false;
-        if ( ! this.sorting.equals(other.sorting)) return false;
-        if (!this.tensorType.equals(other.tensorType)) return false;
-        if (!this.referenceDocumentType.equals(other.referenceDocumentType)) return false;
+        if (! this.sorting.equals(other.sorting)) return false;
+        if (! Objects.equals(tensorType, other.tensorType)) return false;
+        if (! Objects.equals(referenceDocumentType, other.referenceDocumentType)) return false;
+        if (! Objects.equals(distanceMetric, other.distanceMetric)) return false;
+        if (! Objects.equals(hnswIndexParams, other.hnswIndexParams)) return false;
 
         return true;
     }

@@ -9,7 +9,6 @@ import com.yahoo.yolean.trace.TraceNode;
  * Deserializing from a {@link Inspector} (slime) representation to a {@link TraceNode}
  *
  * @author Ulf Lilleengen
- * @since 5.5
  */
 public class SlimeTraceDeserializer {
     private final Inspector entry;

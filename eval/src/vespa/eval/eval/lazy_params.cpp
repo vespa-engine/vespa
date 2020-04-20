@@ -1,19 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lazy_params.h"
-#include <assert.h>
+#include <vespa/vespalib/util/stash.h>
+#include <cassert>
 
 namespace vespalib::eval {
 
-LazyParams::~LazyParams()
-{
-}
+LazyParams::~LazyParams() = default;
 
 //-----------------------------------------------------------------------------
 
-SimpleObjectParams::~SimpleObjectParams()
-{
-}
+SimpleObjectParams::~SimpleObjectParams() = default;
 
 const Value &
 SimpleObjectParams::resolve(size_t idx, Stash &) const
@@ -24,9 +21,7 @@ SimpleObjectParams::resolve(size_t idx, Stash &) const
 
 //-----------------------------------------------------------------------------
 
-SimpleParams::~SimpleParams()
-{
-}
+SimpleParams::~SimpleParams() = default;
 
 const Value &
 SimpleParams::resolve(size_t idx, Stash &stash) const

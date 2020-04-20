@@ -8,6 +8,7 @@ vespa_add_library(searchcore_test STATIC
     documentdb_config_builder.cpp
     dummy_feed_view.cpp
     userdocumentsbuilder.cpp
+    threading_service_observer.cpp
     DEPENDS
     searchcore_fconfig
 )

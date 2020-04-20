@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -59,7 +60,6 @@ import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
@@ -94,6 +94,10 @@ public final class ControllerTester {
              curatorDb,
              rotationsConfig,
              new ServiceRegistryMock());
+    }
+
+    public ControllerTester(ServiceRegistryMock serviceRegistryMock) {
+        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock);
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
@@ -160,7 +164,9 @@ public final class ControllerTester {
 
     public AthenzDbMock athenzDb() { return athenzDb; }
 
-    public MemoryNameService nameService() { return serviceRegistry.nameServiceMock(); }
+    public MemoryNameService nameService() {
+        return serviceRegistry.nameService();
+    }
 
     public ZoneRegistryMock zoneRegistry() { return serviceRegistry.zoneRegistry(); }
 
@@ -186,27 +192,6 @@ public final class ControllerTester {
         if (inContainer)
             throw new UnsupportedOperationException("Cannot recreate this controller");
         controller = createController(curator, rotationsConfig, athenzDb, serviceRegistry);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
-        createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName,
-                                    String instanceName, ZoneId zone, long projectId, Long propertyId) {
-        throw new AssertionError("Not supposed to use this");
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
-        createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
-        createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
     /** Upgrade controller to given version */
@@ -308,9 +293,8 @@ public final class ControllerTester {
         AthenzCredentials credentials = new AthenzCredentials(
                 new AthenzPrincipal(user), domain, new OktaIdentityToken("okta-identity-token"), new OktaAccessToken("okta-access-token"));
         controller().tenants().create(tenantSpec, credentials);
-        if (contact.isPresent())
-            controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
-                    controller().tenants().store(tenant.with(contact.get())));
+        contact.ifPresent(value -> controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
+                controller().tenants().store(tenant.with(value))));
         assertNotNull(controller().tenants().get(name));
         return name;
     }
@@ -322,20 +306,20 @@ public final class ControllerTester {
         return tenant;
     }
 
-    public Optional<Credentials> credentialsFor(TenantName tenantName) {
+    public Credentials credentialsFor(TenantName tenantName) {
         Tenant tenant = controller().tenants().require(tenantName);
 
         switch (tenant.type()) {
             case athenz:
-                return Optional.of(new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                return new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                              ((AthenzTenant) tenant).domain(),
                                                                              new OktaIdentityToken("okta-identity-token"),
-                                                                             new OktaAccessToken("okta-access-token")));
+                                                                             new OktaAccessToken("okta-access-token"));
             case cloud:
-                return Optional.of(new Credentials(new SimplePrincipal("dev")));
+                return new Credentials(new SimplePrincipal("dev"));
 
             default:
-                return Optional.empty();
+                throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'");
         }
     }
 
@@ -356,14 +340,6 @@ public final class ControllerTester {
         return application;
     }
 
-    public void deploy(ApplicationId id, ZoneId zone) {
-        deploy(id, zone, new ApplicationPackage(new byte[0]));
-    }
-
-    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage) {
-        deploy(id, zone, applicationPackage, false);
-    }
-
     public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
         deploy(id, zone, Optional.of(applicationPackage), deployCurrentVersion);
     }
@@ -379,10 +355,6 @@ public final class ControllerTester {
                                            new DeployOptions(false, version, false, deployCurrentVersion));
     }
 
-    public Supplier<Instance> application(ApplicationId application) {
-        return () -> controller().applications().requireInstance(application);
-    }
-
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                AthenzDbMock athensDb,
                                                ServiceRegistryMock serviceRegistry) {
@@ -393,7 +365,7 @@ public final class ControllerTester {
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
                                                serviceRegistry,
-                                               new MetricsMock());
+                                               new MetricsMock(), new SecretStoreMock());
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

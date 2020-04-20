@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
@@ -12,6 +12,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -21,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -104,8 +104,8 @@ public class MultigroupProvisioningTest {
 
         tester.makeReadyNodes(10, small);
 
-        deploy(application1, Capacity.fromCount(1, Optional.of(small), true, true), 1, tester);
-        deploy(application1, Capacity.fromCount(2, Optional.of(small), true, true), 2, tester);
+        deploy(application1, Capacity.from(new ClusterResources(1, 1, small), true, true), tester);
+        deploy(application1, Capacity.from(new ClusterResources(2, 2, small), true, true), tester);
     }
 
     @Test
@@ -117,8 +117,8 @@ public class MultigroupProvisioningTest {
         tester.makeReadyNodes(10, small);
         tester.makeReadyNodes(10, large);
 
-        deploy(application1, Capacity.fromCount(1, Optional.of(small), true, true), 1, tester);
-        deploy(application1, Capacity.fromCount(2, Optional.of(large), true, true), 2, tester);
+        deploy(application1, Capacity.from(new ClusterResources(1, 1, small), true, true), tester);
+        deploy(application1, Capacity.from(new ClusterResources(2, 2, large), true, true), tester);
     }
 
     @Test
@@ -140,30 +140,35 @@ public class MultigroupProvisioningTest {
                              tester.clock(),
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
-                                                                                          Capacity.fromCount(8, Optional.of(large), false, true), 1)));
-        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
-                Duration.ofHours(12)).run();
+                                                                                          Capacity.from(new ClusterResources(8, 1, large), false, true))));
+        new RetiredExpirer(tester.nodeRepository(),
+                           tester.orchestrator(),
+                           deployer,
+                           new TestMetric(),
+                           tester.clock(),
+                           Duration.ofDays(30),
+                           Duration.ofHours(12)).run();
 
         assertEquals(8, tester.getNodes(application1, Node.State.inactive).resources(small).size());
         deploy(application1, 8, 8, large, tester);
     }
 
     private void deploy(ApplicationId application, int nodeCount, int groupCount, NodeResources resources, ProvisioningTester tester) {
-        deploy(application, Capacity.fromCount(nodeCount, Optional.of(resources), false, true), groupCount, tester);
+        deploy(application, Capacity.from(new ClusterResources(nodeCount, groupCount, resources), false, true), tester);
     }
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
-        deploy(application, Capacity.fromCount(nodeCount, Optional.of(large), false, true), groupCount, tester);
+        deploy(application, Capacity.from(new ClusterResources(nodeCount, groupCount, large), false, true), tester);
     }
 
-    private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
-        int nodeCount = capacity.nodeCount();
-        NodeResources nodeResources = capacity.nodeResources().get();
+    private void deploy(ApplicationId application, Capacity capacity, ProvisioningTester tester) {
+        int nodeCount = capacity.minResources().nodes();
+        NodeResources nodeResources = capacity.minResources().nodeResources();
 
         int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
 
-        tester.activate(application, prepare(application, capacity, wantedGroups, tester));
+        tester.activate(application, prepare(application, capacity, tester));
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
-                     Math.max(0, previousActiveNodeCount - capacity.nodeCount()),
+                     Math.max(0, previousActiveNodeCount - capacity.minResources().nodes()),
                      tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
         assertEquals("Other flavors are retired",
                      0, tester.getNodes(application, Node.State.active).not().retired().not().resources(nodeResources).size());
@@ -188,26 +193,27 @@ public class MultigroupProvisioningTest {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             nonretiredGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
 
-            if (wantedGroups > 1)
-                assertTrue("Group indexes are always in [0, wantedGroups>", group.index() < wantedGroups);
+            if (capacity.minResources().groups() > 1)
+                assertTrue("Group indexes are always in [0, wantedGroups>",
+                           group.index() < capacity.minResources().groups());
         }
         assertEquals("Total nonretired nodes", nodeCount, indexes.size());
-        assertEquals("Total nonretired groups", wantedGroups, nonretiredGroups.size());
+        assertEquals("Total nonretired groups", capacity.minResources().groups(), nonretiredGroups.size());
         for (Integer groupSize : nonretiredGroups.values())
-            assertEquals("Group size", (long)nodeCount / wantedGroups, (long)groupSize);
+            assertEquals("Group size", (long)nodeCount / capacity.minResources().groups(), (long)groupSize);
 
         Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
         for (Node node : tester.getNodes(application, Node.State.active).resources(nodeResources)) {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
         }
-        assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
+        assertEquals("No additional groups are retained containing retired nodes", capacity.minResources().groups(), allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false); }
+    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build(); }
 
-    private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
-        return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));
+    private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, ProvisioningTester tester) {
+        return new HashSet<>(tester.prepare(application, cluster(), capacity));
     }
 
 }

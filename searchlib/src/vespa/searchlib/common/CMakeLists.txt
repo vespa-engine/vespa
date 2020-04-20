@@ -11,11 +11,9 @@ vespa_add_library(searchlib_common OBJECT
     documentsummary.cpp
     featureset.cpp
     fileheadercontext.cpp
-    foregroundtaskexecutor.cpp
     gatecallback.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
-    isequencedtaskexecutor.cpp
     location.cpp
     locationiterators.cpp
     mapnames.cpp
@@ -23,8 +21,6 @@ vespa_add_library(searchlib_common OBJECT
     packets.cpp
     partialbitvector.cpp
     resultset.cpp
-    sequencedtaskexecutor.cpp
-    sequencedtaskexecutorobserver.cpp
     serialnumfileheadercontext.cpp
     sort.cpp
     sortdata.cpp

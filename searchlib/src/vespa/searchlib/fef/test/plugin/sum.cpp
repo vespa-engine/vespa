@@ -2,10 +2,9 @@
 
 #include "sum.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 void
 SumExecutor::execute(uint32_t)
@@ -73,6 +72,4 @@ SumBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash 
     return stash.create<SumExecutor>();
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

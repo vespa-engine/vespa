@@ -7,21 +7,23 @@
 #include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
+#include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 
-using vespalib::eval::SimpleTensor;
-using vespalib::eval::ValueType;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedDenseTensorBuilder;
-using vespalib::tensor::dispatch_0;
-using vespalib::tensor::SparseTensor;
-using vespalib::tensor::WrappedSimpleTensor;
 using document::TensorDataType;
 using document::WrongTensorTypeException;
+using vespalib::eval::SimpleTensor;
+using vespalib::eval::ValueType;
+using vespalib::tensor::SparseTensor;
+using vespalib::tensor::Tensor;
+using vespalib::tensor::TypedDenseTensorBuilder;
+using vespalib::tensor::WrappedSimpleTensor;
+using vespalib::tensor::dispatch_0;
+using search::StateExplorerUtils;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
@@ -71,7 +73,6 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
 {
 }
 
-
 TensorAttribute::~TensorAttribute() = default;
 
 const ITensorAttribute *
@@ -93,7 +94,6 @@ TensorAttribute::clearDoc(DocId docId)
     return 0u;
 }
 
-
 void
 TensorAttribute::onCommit()
 {
@@ -110,14 +110,10 @@ TensorAttribute::onCommit()
     }
 }
 
-
 void
 TensorAttribute::onUpdateStat()
 {
-    // update statistics
-    vespalib::MemoryUsage total = _refVector.getMemoryUsage();
-    total.merge(_tensorStore.getMemoryUsage());
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    vespalib::MemoryUsage total = memory_usage();
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),
                            total.allocatedBytes(),
@@ -125,7 +121,6 @@ TensorAttribute::onUpdateStat()
                            total.deadBytes(),
                            total.allocatedBytesOnHold());
 }
-
 
 void
 TensorAttribute::removeOldGenerations(generation_t firstUsed)
@@ -140,7 +135,6 @@ TensorAttribute::onGenerationChange(generation_t generation)
     getGenerationHolder().transferHoldLists(generation - 1);
     _tensorStore.transferHoldLists(generation - 1);
 }
-
 
 bool
 TensorAttribute::addDoc(DocId &docId)
@@ -183,6 +177,25 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     }
 }
 
+vespalib::MemoryUsage
+TensorAttribute::memory_usage() const
+{
+    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
+    result.merge(_tensorStore.getMemoryUsage());
+    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    return result;
+}
+
+void
+TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
+{
+    object.setLong("compact_generation", _compactGeneration);
+    StateExplorerUtils::memory_usage_to_slime(_refVector.getMemoryUsage(),
+                                              object.setObject("ref_vector").setObject("memory_usage"));
+    StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
+                                              object.setObject("tensor_store").setObject("memory_usage"));
+}
+
 Tensor::UP
 TensorAttribute::getEmptyTensor() const
 {
@@ -193,6 +206,13 @@ vespalib::eval::ValueType
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
+}
+
+void
+TensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    auto& object = inserter.insertObject();
+    populate_state(object);
 }
 
 void
@@ -209,7 +229,6 @@ TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     }
 }
 
-
 void
 TensorAttribute::onShrinkLidSpace()
 {
@@ -220,13 +239,11 @@ TensorAttribute::onShrinkLidSpace()
     setNumDocs(committedDocIdLimit);
 }
 
-
 uint32_t
 TensorAttribute::getVersion() const
 {
     return TENSOR_ATTRIBUTE_VERSION;
 }
-
 
 TensorAttribute::RefCopyVector
 TensorAttribute::getRefCopy() const
@@ -238,6 +255,4 @@ TensorAttribute::getRefCopy() const
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
 
-}  // namespace search::tensor
-
-}  // namespace search
+}

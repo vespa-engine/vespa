@@ -56,9 +56,9 @@ public class Run {
         this.testerCertificate = testerCertificate;
     }
 
-    public static Run initial(RunId id, Versions versions, Instant now) {
+    public static Run initial(RunId id, Versions versions, Instant now, JobProfile profile) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
-        JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
+        profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
                        -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty());
     }
@@ -268,9 +268,9 @@ public class Run {
     private List<Step> forcedSteps() {
         return ImmutableList.copyOf(steps.entrySet().stream()
                                          .filter(entry ->    entry.getValue().status() == unfinished
-                                                          && JobProfile.of(id.type()).alwaysRun().contains(entry.getKey())
+                                                          && entry.getKey().alwaysRun()
                                                           && entry.getKey().prerequisites().stream()
-                                                                  .filter(JobProfile.of(id.type()).alwaysRun()::contains)
+                                                                  .filter(Step::alwaysRun)
                                                                   .allMatch(step ->    steps.get(step) == null
                                                                                     || steps.get(step).status() != unfinished))
                                          .map(Map.Entry::getKey)

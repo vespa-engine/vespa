@@ -97,7 +97,7 @@
                                                 <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                                 <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
                                                 <include>net.jcip:jcip-annotations:[1.0]:jar:provided</include>
-                                                <include>net.jpountz.lz4:lz4:[${lz4.version}]:jar:provided</include>
+                                                <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>

@@ -80,15 +80,16 @@ public class History {
         // If the event is a re-reservation, allow the new one to override the older one.
         if (from == to && from != Node.State.reserved) return this;
         switch (to) {
-            case provisioned: return this.with(new Event(Event.Type.provisioned, agent, at));
-            case ready:       return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
-            case active:      return this.with(new Event(Event.Type.activated, agent, at));
-            case inactive:    return this.with(new Event(Event.Type.deactivated, agent, at));
-            case reserved:    return this.with(new Event(Event.Type.reserved, agent, at));
-            case failed:      return this.with(new Event(Event.Type.failed, agent, at));
-            case dirty:       return this.with(new Event(Event.Type.deallocated, agent, at));
-            case parked:      return this.with(new Event(Event.Type.parked, agent, at));
-            default:          return this;
+            case provisioned:   return this.with(new Event(Event.Type.provisioned, agent, at));
+            case deprovisioned: return this.with(new Event(Event.Type.deprovisioned, agent, at));
+            case ready:         return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
+            case active:        return this.with(new Event(Event.Type.activated, agent, at));
+            case inactive:      return this.with(new Event(Event.Type.deactivated, agent, at));
+            case reserved:      return this.with(new Event(Event.Type.reserved, agent, at));
+            case failed:        return this.with(new Event(Event.Type.failed, agent, at));
+            case dirty:         return this.with(new Event(Event.Type.deallocated, agent, at));
+            case parked:        return this.with(new Event(Event.Type.parked, agent, at));
+            default:            return this;
         }
     }
     
@@ -128,7 +129,7 @@ public class History {
 
         public enum Type { 
             // State move events
-            provisioned(false), readied, reserved, activated, deactivated, deallocated, parked,
+            provisioned(false), deprovisioned(false), readied, reserved, activated, deactivated, deallocated, parked,
             // The node was scheduled for retirement
             wantToRetire,
             // The active node was retired

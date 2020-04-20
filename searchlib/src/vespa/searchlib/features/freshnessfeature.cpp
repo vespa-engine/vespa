@@ -3,14 +3,14 @@
 #include "freshnessfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.freshnessfeature");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 FreshnessExecutor::FreshnessExecutor(feature_t maxAge, feature_t scaleAge) :
     FeatureExecutor(),
@@ -86,7 +86,7 @@ FreshnessBlueprint::setup(const IIndexEnvironment & env,
 Blueprint::UP
 FreshnessBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FreshnessBlueprint());
+    return std::make_unique<FreshnessBlueprint>();
 }
 
 fef::ParameterDescriptions
@@ -101,7 +101,4 @@ FreshnessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &s
     return stash.create<FreshnessExecutor>(_maxAge, _scaleAge);
 }
 
-
-} // namespace features
-} // namespace search
-
+}

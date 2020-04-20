@@ -77,7 +77,8 @@ public:
      * @param i The index of the directive to return.
      * @return The item.
      */
-    IHopDirective::SP getDirective(uint32_t i) const { return _selector[i]; }
+    const IHopDirective & getDirective(uint32_t i) const { return *_selector[i]; }
+    IHopDirective::SP getDirectiveSP(uint32_t i) const { return _selector[i]; }
 
     /**
      * Sets the directive at a given index.
@@ -87,21 +88,6 @@ public:
      * @return This, to allow chaining.
      */
     Hop &setDirective(uint32_t i, IHopDirective::SP dir);
-
-    /**
-     * Removes the directive at the given index.
-     *
-     * @param i The index of the directive to remove.
-     * @return The removed directive.
-     */
-    IHopDirective::SP removeDirective(uint32_t i);
-
-    /**
-     * Clears all directives from this hop.
-     *
-     * @return This, to allow chaining.
-     */
-    Hop &clearDirectives();
 
     /**
      * Returns the service name referenced by this hop. This is the concatenation of all selector primitives,
@@ -124,7 +110,10 @@ public:
      * @param ignoreResult Whether or not to ignore the result.
      * @return This, to allow chaining.
      */
-    Hop &setIgnoreResult(bool ignoreResult);
+    Hop &setIgnoreResult(bool ignoreResult) {
+        _ignoreResult = ignoreResult;
+        return *this;
+    }
 
     /**
      * Parses the given string as a single hop. The {@link this#toString()} method is compatible with this parser.

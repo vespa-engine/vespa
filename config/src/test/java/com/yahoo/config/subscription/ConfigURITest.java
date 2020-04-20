@@ -12,9 +12,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigURITest {
+
     @Test
     public void testDefaultUri() {
         ConfigURI uri = ConfigURI.createFromId("foo");

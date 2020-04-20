@@ -7,11 +7,12 @@ vespa_add_library(storage_storageserver
     changedbucketownershiphandler.cpp
     communicationmanager.cpp
     communicationmanagermetrics.cpp
-    configurable_bucket_resolver.cpp
     config_logging.cpp
+    configurable_bucket_resolver.cpp
     distributornode.cpp
     distributornodecontext.cpp
     documentapiconverter.cpp
+    fnet_metrics_wrapper.cpp
     fnetlistener.cpp
     mergethrottler.cpp
     messagesink.cpp

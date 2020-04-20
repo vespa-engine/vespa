@@ -3,21 +3,16 @@
 #include "interpreted_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
-#include "check_type.h"
-#include "tensor_spec.h"
-#include "operation.h"
 #include "tensor_nodes.h"
 #include "tensor_engine.h"
+#include "make_tensor_function.h"
+#include "compile_tensor_function.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <set>
 
-#include "make_tensor_function.h"
-#include "compile_tensor_function.h"
-
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
@@ -42,11 +37,12 @@ InterpretedFunction::State::State(const TensorEngine &engine_in)
       params(nullptr),
       stash(),
       stack(),
-      program_offset(0)
+      program_offset(0),
+      if_cnt(0)
 {
 }
 
-InterpretedFunction::State::~State() {}
+InterpretedFunction::State::~State() = default;
 
 void
 InterpretedFunction::State::init(const LazyParams &params_in) {
@@ -65,24 +61,22 @@ InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
 InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const TensorFunction &function)
     : _program(),
       _stash(),
-      _num_params(0),
       _tensor_engine(engine)
 {
-    _program = compile_tensor_function(function, _stash);
+    _program = compile_tensor_function(engine, function, _stash);
 }
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types)
+InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types)
     : _program(),
       _stash(),
-      _num_params(num_params_in),
       _tensor_engine(engine)
 {
     const TensorFunction &plain_fun = make_tensor_function(engine, root, types, _stash);
     const TensorFunction &optimized = engine.optimize(plain_fun, _stash);
-    _program = compile_tensor_function(optimized, _stash);
+    _program = compile_tensor_function(engine, optimized, _stash);
 }
 
-InterpretedFunction::~InterpretedFunction() {}
+InterpretedFunction::~InterpretedFunction() = default;
 
 const Value &
 InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
@@ -123,5 +117,4 @@ InterpretedFunction::detect_issues(const Function &function)
     return Function::Issues(std::move(checker.issues));
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

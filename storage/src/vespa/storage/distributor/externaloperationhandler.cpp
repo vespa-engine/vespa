@@ -241,7 +241,8 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 {
-    auto& metrics = getMetrics().puts[cmd->getLoadType()];
+    const documentapi::LoadType & loadType = cmd->getLoadType();
+    auto& metrics = getMetrics().puts[loadType];
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -252,9 +253,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
+        document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
         _op = std::make_shared<PutOperation>(*this,
-                                             _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                             cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
+                                             _bucketSpaceRepo.get(bucketSpace),
+                                             std::move(cmd), getMetrics().puts[loadType], std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -265,7 +267,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 {
-    auto& metrics = getMetrics().updates[cmd->getLoadType()];
+    const documentapi::LoadType & loadType = cmd->getLoadType();
+    auto& metrics = getMetrics().updates[loadType];
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -275,9 +278,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
     }
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
+        document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
         _op = std::make_shared<TwoPhaseUpdateOperation>(*this,
-                                                        _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                                        cmd, getMetrics(), std::move(handle));
+                                                        _bucketSpaceRepo.get(bucketSpace),
+                                                        std::move(cmd), getMetrics(), std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -288,7 +292,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 {
-    auto& metrics = getMetrics().removes[cmd->getLoadType()];
+    const documentapi::LoadType & loadType = cmd->getLoadType();
+    auto& metrics = getMetrics().removes[loadType];
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -299,8 +304,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
         auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-        _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, cmd,
-                                                getMetrics().removes[cmd->getLoadType()], std::move(handle));
+
+        _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, std::move(cmd),
+                                                getMetrics().removes[loadType], std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -320,7 +326,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     }
 
     _op = std::make_shared<RemoveLocationOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                                    cmd, getMetrics().removelocations[cmd->getLoadType()]);
+                                                    std::move(cmd), getMetrics().removelocations[cmd->getLoadType()]);
     return true;
 }
 

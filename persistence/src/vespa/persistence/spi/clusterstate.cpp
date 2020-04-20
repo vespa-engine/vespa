@@ -12,9 +12,9 @@ namespace storage::spi {
 ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
                            const lib::Distribution& distribution)
-    : _state(new lib::ClusterState(state)),
+    : _state(std::make_unique<lib::ClusterState>(state)),
       _nodeIndex(nodeIndex),
-      _distribution(new lib::Distribution(distribution.serialize()))
+      _distribution(std::make_unique<lib::Distribution>(distribution.serialize()))
 {
 }
 
@@ -26,8 +26,8 @@ void ClusterState::deserialize(vespalib::nbostream& i) {
     i >> _nodeIndex;
     i >> distribution;
 
-    _state.reset(new lib::ClusterState(clusterState));
-    _distribution.reset(new lib::Distribution(distribution));
+    _state = std::make_unique<lib::ClusterState>(clusterState);
+    _distribution = std::make_unique<lib::Distribution>(distribution);
 }
 
 ClusterState::ClusterState(vespalib::nbostream& i) {

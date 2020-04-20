@@ -4,6 +4,9 @@ package com.yahoo.container.handler;
 import static org.junit.Assert.*;
 
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.core.VipStatusConfig;
+import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.jdisc.core.SystemTimer;
 import org.junit.Test;
 
 /**
@@ -13,44 +16,101 @@ import org.junit.Test;
  */
 public class VipStatusTestCase {
 
-    @Test
-    public void testVipStatusWorksWithClusters() {
+    private static QrSearchersConfig getSearchersConfig(String[] clusters) {
         var b = new QrSearchersConfig.Builder();
-        var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
-        searchClusterB.name("cluster1");
-        searchClusterB.name("cluster2");
-        searchClusterB.name("cluster3");
-        b.searchcluster(searchClusterB);
-        VipStatus v = new VipStatus(b.build());
+        if (clusters.length > 0) {
+            var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
+            for (String cluster : clusters) {
+                searchClusterB.name(cluster);
+            }
+            b.searchcluster(searchClusterB);
+        }
+        return b.build();
+    }
 
-        String cluster1 = "cluster1";
-        String cluster2 = "cluster2";
-        String cluster3 = "cluster3";
+    private static VipStatus getVipStatus(String[] clusters, StateMonitor.Status startState, boolean initiallyInRotation) {
+        return new VipStatus(getSearchersConfig(clusters),
+                             new VipStatusConfig.Builder().initiallyInRotation(initiallyInRotation).build(),
+                             new ClustersStatus(),
+                             new StateMonitor(1000, startState, new SystemTimer(), runnable -> {
+                                 Thread thread = new Thread(runnable, "StateMonitor");
+                                 thread.setDaemon(true);
+                                 return thread;
+                             }));
+    }
 
+    private static void remove(String[] clusters, VipStatus v) {
+        for (String s : clusters) {
+            v.removeFromRotation(s);
+        }
+    }
+
+    private static void add(String[] clusters, VipStatus v) {
+        for (String s : clusters) {
+            v.addToRotation(s);
+        }
+    }
+
+    private static void verifyUpOrDown(String[] clusters, StateMonitor.Status status) {
+        VipStatus v = getVipStatus(clusters, status, true);
+        remove(clusters, v);
         // initial state
         assertFalse(v.isInRotation());
-
-        // one cluster becomes up
-        v.addToRotation(cluster1);
-        assertTrue(v.isInRotation());
-
-        // all clusters down
-        v.removeFromRotation(cluster1);
-        v.removeFromRotation(cluster2);
-        v.removeFromRotation(cluster3);
+        v.addToRotation(clusters[0]);
         assertFalse(v.isInRotation());
-        // some clusters down
-        v.addToRotation(cluster2);
-        assertTrue(v.isInRotation());
-        // all clusters up
-        v.addToRotation(cluster1);
-        v.addToRotation(cluster3);
-        assertTrue(v.isInRotation());
-        // and down again
-        v.removeFromRotation(cluster1);
-        v.removeFromRotation(cluster2);
-        v.removeFromRotation(cluster3);
+        v.addToRotation(clusters[1]);
         assertFalse(v.isInRotation());
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());
+    }
+
+    @Test
+    public void testInitializingOrDownRequireAllUp() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+        verifyUpOrDown(clusters, StateMonitor.Status.initializing);
+        verifyUpOrDown(clusters, StateMonitor.Status.down);
+    }
+
+    @Test
+    public void testUpRequireAllDown() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true);
+        assertFalse(v.isInRotation());
+        add(clusters, v);
+        assertTrue(v.isInRotation());
+
+        v.removeFromRotation(clusters[0]);
+        assertTrue(v.isInRotation());
+        v.removeFromRotation(clusters[1]);
+        assertTrue(v.isInRotation());
+        v.removeFromRotation(clusters[2]);
+        assertFalse(v.isInRotation());  // All down
+        v.addToRotation(clusters[1]);
+        assertFalse(v.isInRotation());
+        v.addToRotation(clusters[0]);
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());   // All up
+        v.removeFromRotation(clusters[0]);
+        v.removeFromRotation(clusters[2]);
+        assertTrue(v.isInRotation());
+        v.addToRotation(clusters[0]);
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());
+    }
+
+    @Test
+    public void testNoClustersConfiguringInitiallyInRotationFalse() {
+        String[] clusters = {};
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, false);
+        assertFalse(v.isInRotation());
+    }
+
+    @Test
+    public void testNoClustersConfiguringInitiallyInRotationTrue() {
+        String[] clusters = {};
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true);
+        assertTrue(v.isInRotation());
     }
 
 }

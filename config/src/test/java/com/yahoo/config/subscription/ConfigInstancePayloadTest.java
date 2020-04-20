@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
- * @since 5.1.6
  */
 public class ConfigInstancePayloadTest {
 

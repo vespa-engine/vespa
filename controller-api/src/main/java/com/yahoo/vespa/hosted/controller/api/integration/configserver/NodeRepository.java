@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -111,7 +112,7 @@ public interface NodeRepository {
                         Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
                         Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
                         fromBoolean(node.getAllowedToBeDown()),
-                        Optional.ofNullable(node.suspendedSince()).map(Instant::ofEpochMilli),
+                        Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),
                         toInt(node.getRestartGeneration()),
                         toInt(node.getCurrentRebootGeneration()),
@@ -122,7 +123,9 @@ public interface NodeRepository {
                         clusterTypeOf(node.getMembership()),
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
-                        Optional.ofNullable(node.getReservedTo()).map(name -> TenantName.from(name)));
+                        Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
+                        dockerImageFrom(node.getWantedDockerImage()),
+                        dockerImageFrom(node.getCurrentDockerImage()));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
@@ -203,6 +206,10 @@ public interface NodeRepository {
 
     private static Version versionFrom(String s) {
         return s == null ? Version.emptyVersion : Version.fromString(s);
+    }
+
+    private static DockerImage dockerImageFrom(String s) {
+        return s == null ? DockerImage.EMPTY : DockerImage.fromString(s);
     }
 
 }

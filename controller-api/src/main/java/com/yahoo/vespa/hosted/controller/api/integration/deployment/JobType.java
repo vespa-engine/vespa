@@ -88,6 +88,12 @@ public enum JobType {
                             Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
                                    Public,   ZoneId.from("prod", "aws-us-east-1c")), true),
 
+    productionAwsApNortheast1a  ("production-aws-ap-northeast-1a",
+                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a"))),
+
+    testAwsApNortheast1a   ("test-aws-ap-northeast-1a",
+                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true),
+
     productionAwsUsWest2a  ("production-aws-us-west-2a",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a"))),
 
@@ -143,15 +149,15 @@ public enum JobType {
 
     private final String jobName;
     private final Map<SystemName, ZoneId> zones;
-    private final boolean isTest;
+    private final boolean isProductionTest;
 
-    JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isTest) {
+    JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isProductionTest) {
         if (zones.values().stream().map(ZoneId::environment).distinct().count() > 1)
             throw new IllegalArgumentException("All zones of a job must be in the same environment");
 
         this.jobName = jobName;
         this.zones = zones;
-        this.isTest = isTest;
+        this.isProductionTest = isProductionTest;
     }
 
     JobType(String jobName, Map<SystemName, ZoneId> zones) {
@@ -176,10 +182,10 @@ public enum JobType {
     public boolean isProduction() { return environment() == Environment.prod; }
 
     /** Returns whether this job runs tests */
-    public boolean isTest() { return isTest; }
+    public boolean isTest() { return isProductionTest || environment().isTest(); }
 
     /** Returns whether this job deploys to a zone */
-    public boolean isDeployment() { return ! (isProduction() && isTest); }
+    public boolean isDeployment() { return ! (isProduction() && isProductionTest); }
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {
@@ -206,7 +212,7 @@ public enum JobType {
 
     /** Returns the job type for the given zone */
     public static Optional<JobType> from(SystemName system, ZoneId zone) {
-        return from(system, zone, false);
+        return from(system, zone, zone.environment().isTest());
     }
 
     /** Returns the production test job type for the given environment and region or null if none */

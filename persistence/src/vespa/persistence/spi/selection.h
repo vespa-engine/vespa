@@ -10,12 +10,7 @@
 
 #include "documentselection.h"
 
-namespace storage {
-namespace spi {
-
-class MetaData {
-    Timestamp timestamp;
-};
+namespace storage::spi {
 
 class Selection {
 public:
@@ -67,13 +62,6 @@ public:
 
     Timestamp getFromTimestamp() const { return _fromTimestamp; }
     Timestamp getToTimestamp() const { return _toTimestamp; }
-
-    /**
-     * Regular usage.
-     */
-    bool match(const Document& doc, const MetaData& metaData) const;
 };
 
-} // spi
-} // storage
-
+}

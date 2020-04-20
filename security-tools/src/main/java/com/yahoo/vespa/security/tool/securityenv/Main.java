@@ -54,6 +54,9 @@ public class Main {
             MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
             if (options.isPresent() && mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
                 outputVariables.put(OutputVariable.TLS_ENABLED, "1");
+                if (options.get().isHostnameValidationDisabled()) {
+                    outputVariables.put(OutputVariable.DISABLE_HOSTNAME_VALIDATION, "1");
+                }
                 options.get().getCaCertificatesFile()
                         .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
                 options.get().getCertificatesFile()

@@ -78,7 +78,7 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         if (!(o instanceof ConfigKey)) {
             return false;
         }
-        ConfigKey<?> key = (ConfigKey) o;
+        ConfigKey<?> key = (ConfigKey<?>) o;
         return (name.equals(key.name) &&
                 configId.equals(key.configId) &&
                 namespace.equals(key.namespace));

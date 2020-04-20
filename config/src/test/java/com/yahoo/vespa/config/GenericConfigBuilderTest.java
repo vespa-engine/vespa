@@ -13,9 +13,9 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class GenericConfigBuilderTest {
+
     @Test
     public void require_that_builder_can_be_overridden() throws IOException {
         ConfigPayloadBuilder ba = new ConfigPayloadBuilder();

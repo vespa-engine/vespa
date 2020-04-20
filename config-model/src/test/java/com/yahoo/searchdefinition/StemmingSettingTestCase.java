@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNull;
  *
  * @author bratseth
  */
-public class StemmingSettingTestCase extends SearchDefinitionTestCase {
+public class StemmingSettingTestCase extends SchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {

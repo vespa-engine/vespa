@@ -2,11 +2,8 @@
 
 #include "persistenceprovider.h"
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
-PersistenceProvider::~PersistenceProvider() { }
+PersistenceProvider::~PersistenceProvider() = default;
 
-} // spi
-} // storage
-
+}

@@ -34,6 +34,7 @@ private:
     void testGuards();
     void testConfigConvert();
     void testContext();
+    void can_get_readable_attribute_vector_by_name();
 
     bool
     assertDataType(BT::Type exp,
@@ -277,6 +278,26 @@ AttributeManagerTest::testConfigConvert()
         AttributeVector::Config out = ConfigConverter::convert(a);
         EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());
     }
+    { // hnsw index params (enabled)
+        auto dm_in = AttributesConfig::Attribute::Index::Hnsw::Distancemetric::ANGULAR;
+        auto dm_out = search::attribute::DistanceMetric::Angular;
+        CACA a;
+        a.index.hnsw.enabled = true;
+        a.index.hnsw.maxlinkspernode = 32;
+        a.index.hnsw.neighborstoexploreatinsert = 300;
+        a.index.hnsw.distancemetric = dm_in;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.hnsw_index_params().has_value());
+        EXPECT_EQUAL(32u, out.hnsw_index_params().value().max_links_per_node());
+        EXPECT_EQUAL(300u, out.hnsw_index_params().value().neighbors_to_explore_at_insert());
+        EXPECT_TRUE(out.hnsw_index_params().value().distance_metric() == dm_out);
+    }
+    { // hnsw index params (disabled)
+        CACA a;
+        a.index.hnsw.enabled = false;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_FALSE(out.hnsw_index_params().has_value());
+    }
 }
 
 bool gt_attribute(const attribute::IAttributeVector * a, const attribute::IAttributeVector * b) {
@@ -377,6 +398,21 @@ AttributeManagerTest::testContext()
     }
 }
 
+void
+AttributeManagerTest::can_get_readable_attribute_vector_by_name()
+{
+    auto attr = AttributeFactory::createAttribute("cool_attr", Config(BT::INT32, CT::SINGLE));
+    // Ensure there's something to actually load, or fetching the attribute will throw.
+    attr->addDocs(64);
+    attr->commit();
+    AttributeManager manager;
+    manager.add(attr);
+    auto av = manager.readable_attribute_vector("cool_attr");
+    EXPECT_EQUAL(av.get(), static_cast<ReadableAttributeVector*>(attr.get()));
+    av = manager.readable_attribute_vector("uncool_attr");
+    EXPECT_TRUE(av.get() == nullptr);
+}
+
 int AttributeManagerTest::Main()
 {
     TEST_INIT("attributemanager_test");
@@ -385,6 +421,7 @@ int AttributeManagerTest::Main()
     testGuards();
     testConfigConvert();
     testContext();
+    can_get_readable_attribute_vector_by_name();
 
     TEST_DONE();
 }

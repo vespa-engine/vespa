@@ -314,8 +314,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         tenant.getLocalSessionRepo().addSession(newSession);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, newSession.getVespaVersion(),
-                                                 bootstrap));
+                                                 false /* don't validate as this is already deployed */, bootstrap));
     }
 
     @Override
@@ -893,11 +892,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         public void close() {
             metric.set(name,
                        Duration.between(start, clock.instant()).toMillis(),
-                       metric.createContext(Map.of("tenant", id.tenant().value(),
-                                                   "application", id.application().value(),
-                                                   "instance", id.instance().value(),
-                                                   "environment", environment,
-                                                   "region", region)));
+                       metric.createContext(Map.of("applicationId", id.toFullString(),
+                                                   "tenantName", id.tenant().value(),
+                                                   "app", id.application().value() + "." + id.instance().value(),
+                                                   "zone", environment + "." + region)));
         }
 
     }

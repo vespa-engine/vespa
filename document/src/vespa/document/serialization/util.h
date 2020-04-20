@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace document {
 
 // Sets the value of a variable for the duration of this object's lifetime.

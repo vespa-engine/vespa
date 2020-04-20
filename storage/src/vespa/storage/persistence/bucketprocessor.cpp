@@ -4,6 +4,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
+#include <stdexcept>
 
 namespace storage {
 

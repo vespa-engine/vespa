@@ -112,16 +112,50 @@ public class StorageClusterTest {
                 "<cluster id=\"bees\">\n" +
                 "    <documents/>" +
                 "    <tuning>\n" +
-                "        <persistence-threads>\n" +
-                "            <thread lowest-priority=\"VERY_LOW\" count=\"2\"/>\n" +
-                "            <thread lowest-priority=\"VERY_HIGH\" count=\"1\"/>\n" +
-                "            <thread count=\"1\"/>\n" +
-                "        </persistence-threads>\n" +
+                "        <persistence-threads count=\"7\"/>\n" +
                 "    </tuning>\n" +
                 "  <group>" +
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
                 "</cluster>",
+                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
+        );
+
+        {
+            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
+            stc.getConfig(builder);
+            StorFilestorConfig config = new StorFilestorConfig(builder);
+
+            assertEquals(7, config.num_threads());
+            assertEquals(false, config.enable_multibit_split_optimalization());
+        }
+        {
+            assertEquals(1, stc.getChildren().size());
+            StorageNode sn = stc.getChildren().values().iterator().next();
+            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
+            sn.getConfig(builder);
+            StorFilestorConfig config = new StorFilestorConfig(builder);
+            assertEquals(7, config.num_threads());
+        }
+    }
+
+    @Test
+    public void testPersistenceThreadsOld() throws Exception {
+
+        StorageCluster stc = parse(
+                "<cluster id=\"bees\">\n" +
+                        "    <documents/>" +
+                        "    <tuning>\n" +
+                        "        <persistence-threads>\n" +
+                        "            <thread lowest-priority=\"VERY_LOW\" count=\"2\"/>\n" +
+                        "            <thread lowest-priority=\"VERY_HIGH\" count=\"1\"/>\n" +
+                        "            <thread count=\"1\"/>\n" +
+                        "        </persistence-threads>\n" +
+                        "    </tuning>\n" +
+                        "  <group>" +
+                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                        "  </group>" +
+                        "</cluster>",
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
 
@@ -161,7 +195,7 @@ public class StorageClusterTest {
             StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
             stc.getConfig(builder);
             StorFilestorConfig config = new StorFilestorConfig(builder);
-            assertEquals(6, config.num_threads());
+            assertEquals(8, config.num_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());

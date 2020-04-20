@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author dybis
  */
 @Command(name = "vespa-http-client",
-        description = "This is a tool for feeding xml or json data to a Vespa application.")
+         description = "This is a tool for feeding xml or json data to a Vespa application.")
 public class CommandLineArguments {
 
     /**
@@ -44,7 +44,7 @@ public class CommandLineArguments {
      * @return null on failure or if help option is set to true.
      */
     static CommandLineArguments build(String[] args) {
-        final CommandLineArguments cmdArgs;
+        CommandLineArguments cmdArgs;
         try {
             cmdArgs =  SingleCommand.singleCommand(CommandLineArguments.class).parse(args);
         } catch (Exception e) {
@@ -115,7 +115,7 @@ public class CommandLineArguments {
                 return true;
             default:
                 System.err.println("Not valid value for priority. Allowed values are HIGHEST, VERY_HIGH, HIGH_[1-3], " +
-                        "NORMAL_[1-6], LOW_[1-3], VERY_LOW, and LOWEST.");
+                                   "NORMAL_[1-6], LOW_[1-3], VERY_LOW, and LOWEST.");
                 return false;
         }
     }
@@ -254,7 +254,7 @@ public class CommandLineArguments {
     public boolean getAddRootElementToXml() { return addRootElementToXml; }
 
     SessionParams createSessionParams(boolean useJson) {
-        final int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
+        int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
         Path privateKeyPath = Optional.ofNullable(this.privateKeyPath).map(Paths::get).orElse(null);
         Path certificatePath = Optional.ofNullable(this.certificatePath).map(Paths::get).orElse(null);
         Path caCertificatesPath = Optional.ofNullable(this.caCertificatesPath).map(Paths::get).orElse(null);
@@ -307,8 +307,7 @@ public class CommandLineArguments {
         else {
             Iterable<String> hosts = Splitter.on(',').trimResults().split(hostArg);
             for (String host : hosts) {
-                builder.addCluster(new Cluster.Builder()
-                        .addEndpoint(Endpoint.create(host, portArg, useTls))
+                builder.addCluster(new Cluster.Builder().addEndpoint(Endpoint.create(host, portArg, useTls))
                         .build());
             }
         }

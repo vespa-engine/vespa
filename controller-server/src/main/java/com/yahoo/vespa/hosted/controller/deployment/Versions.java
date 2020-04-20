@@ -58,9 +58,9 @@ public class Versions {
 
     /** Returns whether source versions are present and match those of the given job other versions. */
     public boolean sourcesMatchIfPresent(Versions versions) {
-        return ( ! sourcePlatform.filter(version -> ! version.equals(targetPlatform)).isPresent() ||
+        return (sourcePlatform.filter(version -> ! version.equals(targetPlatform)).isEmpty() ||
                 sourcePlatform.equals(versions.sourcePlatform())) &&
-               ( ! sourceApplication.filter(version -> ! version.equals(targetApplication)).isPresent() ||
+               (sourceApplication.filter(version -> ! version.equals(targetApplication)).isEmpty() ||
                 sourceApplication.equals(versions.sourceApplication()));
     }
 
@@ -136,7 +136,7 @@ public class Versions {
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {
-        return ! o1.isPresent() ? o2 : ! o2.isPresent() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
+        return o1.isEmpty() ? o2 : o2.isEmpty() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
     }
 
 }

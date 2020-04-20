@@ -98,13 +98,13 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         assertFalse(new DocIdOnly().contains(headerField));
 
         assertTrue(new HeaderFields().contains(headerField));
-        assertFalse(new HeaderFields().contains(bodyField));
+        assertTrue(new HeaderFields().contains(bodyField));
         assertTrue(new HeaderFields().contains(new DocIdOnly()));
         assertTrue(new HeaderFields().contains(new NoFields()));
 
-        assertContains("[body]", "testdoc:rawattr");
+        assertNotContains("[body]", "testdoc:rawattr");
         assertContains("[header]", "testdoc:intattr");
-        assertNotContains("[header]", "testdoc:rawattr");
+        assertContains("[header]", "testdoc:rawattr");
         assertContains("testdoc:rawattr,intattr", "testdoc:intattr");
         assertNotContains("testdoc:intattr", "testdoc:rawattr,intattr");
         assertContains("testdoc:intattr,rawattr", "testdoc:rawattr,intattr");
@@ -141,10 +141,10 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("floatattr:3.56", doCopyFields(doc, "[body]"));
-        assertEquals("stringattr:tjohei,intattr:50,byteattr:30,floatattr:3.56", doCopyFields(doc, "[all]"));
-        assertEquals("stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[header]"));
-        assertEquals("byteattr:30,floatattr:3.56", doCopyFields(doc, "testdoc:floatattr,byteattr"));
+        assertEquals("", doCopyFields(doc, "[body]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[header]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,byteattr:30", doCopyFields(doc, "testdoc:floatattr,byteattr"));
     }
 
     String doStripFields(Document source, String fieldSet) {
@@ -159,10 +159,10 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("floatattr:3.56", doStripFields(doc, "[body]"));
-        assertEquals("stringattr:tjohei,intattr:50,byteattr:30,floatattr:3.56", doStripFields(doc, "[all]"));
-        assertEquals("stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[header]"));
-        assertEquals("byteattr:30,floatattr:3.56", doStripFields(doc, "testdoc:floatattr,byteattr"));
+        assertEquals("", doStripFields(doc, "[body]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[header]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,byteattr:30", doStripFields(doc, "testdoc:floatattr,byteattr"));
     }
 
     @Test

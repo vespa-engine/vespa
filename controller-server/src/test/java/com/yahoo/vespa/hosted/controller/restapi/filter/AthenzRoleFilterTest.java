@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -39,7 +38,6 @@ public class AthenzRoleFilterTest {
     private static final TenantName TENANT = TenantName.from("mytenant");
     private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationName APPLICATION = ApplicationName.from("myapp");
-    private static final InstanceName INSTANCE = InstanceName.from("john");
     private static final URI NO_CONTEXT_PATH = URI.create("/application/v4/");
     private static final URI TENANT_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/");
     private static final URI APPLICATION_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/");
@@ -48,12 +46,11 @@ public class AthenzRoleFilterTest {
     private static final URI INSTANCE_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/john");
     private static final URI INSTANCE2_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/jane");
 
-    private ControllerTester tester;
     private AthenzRoleFilter filter;
 
     @Before
     public void setup() {
-        tester = new ControllerTester();
+        ControllerTester tester = new ControllerTester();
         filter = new AthenzRoleFilter(new AthenzClientFactoryMock(tester.athenzDb()),
                                       tester.controller());
 
@@ -70,16 +67,16 @@ public class AthenzRoleFilterTest {
     }
 
     @Test
-    public void testTranslations() {
+    public void testTranslations() throws Exception {
 
         // Hosted operators are always members of the hostedOperator role.
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.paymentProcessor(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.paymentProcessor(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.paymentProcessor(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH));
 
         // Tenant admins are members of the athenzTenantAdmin role within their tenant subtree.
@@ -98,14 +95,14 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN, APPLICATION2_CONTEXT_PATH));
 
-        // Build services are members of the tenantPipeline role within their application subtree.
+        // Build services are members of the buildService role within their application subtree.
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, NO_CONTEXT_PATH));
 
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.tenantPipeline(TENANT, APPLICATION)),
+        assertEquals(Set.of(Role.buildService(TENANT, APPLICATION)),
                      filter.roles(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH));
 
         assertEquals(Set.of(Role.everyone()),
@@ -115,7 +112,7 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.tenantPipeline(TENANT, APPLICATION)),
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.buildService(TENANT, APPLICATION)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, APPLICATION_CONTEXT_PATH));
 
         // Users have nothing special under their instance

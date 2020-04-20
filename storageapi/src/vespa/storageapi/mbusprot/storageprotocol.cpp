@@ -25,7 +25,7 @@ StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentT
 {
 }
 
-StorageProtocol::~StorageProtocol() {}
+StorageProtocol::~StorageProtocol() = default;
 
 mbus::IRoutingPolicy::UP
 StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const

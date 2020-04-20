@@ -30,7 +30,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
                                  .map(node -> new NodeWithServices(node,
                                                                    parentsByHostName.get(node.parentHostname().get()),
                                                                    services.wantedGeneration(),
-                                                                   servicesByHostName.get(node.hostname())))
+                                                                   servicesByHostName.getOrDefault(node.hostname(), List.of())))
                                  .collect(Collectors.toList()),
                             false,
                             services.wantedGeneration());
@@ -68,6 +68,11 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
 
     /** The nodes currently allowed to be down. */
     public NodeList allowedDown() {
+        return matching(node -> node.isAllowedDown());
+    }
+
+    /** The nodes currently expected to be down. */
+    public NodeList expectedDown() {
         return matching(node -> node.isAllowedDown() || node.isNewlyProvisioned());
     }
 
@@ -83,7 +88,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
 
     /** Returns a summary of the convergence status of the nodes in this list. */
     public ConvergenceSummary summary() {
-        NodeList allowedDown = allowedDown();
+        NodeList allowedDown = expectedDown();
         return new ConvergenceSummary(size(),
                                       allowedDown.size(),
                                       withParentDown().needsOsUpgrade().size(),

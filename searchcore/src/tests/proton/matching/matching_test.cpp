@@ -289,7 +289,7 @@ struct MyWorld {
         DocsumReply::UP getDocsums(const DocsumRequest &) override {
             return DocsumReply::UP();
         }
-        SearchReply::UP match(const ISearchHandler::SP &, const SearchRequest &, vespalib::ThreadBundle &) const override {
+        SearchReply::UP match(const SearchRequest &, vespalib::ThreadBundle &) const override {
             return SearchReply::UP();
         }
     };

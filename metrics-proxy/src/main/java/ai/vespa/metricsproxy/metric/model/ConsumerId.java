@@ -7,6 +7,7 @@ import java.util.Objects;
  * @author gjoranv
  */
 public class ConsumerId {
+
     public final String id;
     private ConsumerId(String id) { this.id = id; }
 

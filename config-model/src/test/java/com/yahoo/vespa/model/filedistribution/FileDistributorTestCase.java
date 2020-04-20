@@ -10,31 +10,34 @@ import org.junit.Test;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author bratseth
  */
 public class FileDistributorTestCase {
+
     @Test
     public void fileDistributor() {
         MockHosts hosts = new MockHosts();
 
-        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), null);
+        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), List.of(), false);
 
         String file1 = "component/path1";
         String file2 = "component/path2";
-        FileReference ref1 = fileDistributor.sendFileToHosts(file1, Arrays.asList(hosts.host1, hosts.host2));
-        FileReference ref2 = fileDistributor.sendFileToHosts(file2, Arrays.asList(hosts.host3));
+        FileReference ref1 = fileDistributor.sendFileToHost(file1, hosts.host1);
+        fileDistributor.sendFileToHost(file1, hosts.host2); // same file reference as above
+        FileReference ref2 = fileDistributor.sendFileToHost(file2, hosts.host3);
 
         assertEquals(new HashSet<>(Arrays.asList(hosts.host1, hosts.host2, hosts.host3)),
                 fileDistributor.getTargetHosts());
 
-        assertTrue( ref1 != null );
-        assertTrue( ref2 != null );
+        assertNotNull(ref1);
+        assertNotNull(ref2);
 
         MockFileDistribution dbHandler = new MockFileDistribution();
         fileDistributor.sendDeployedFiles(dbHandler);
@@ -54,4 +57,5 @@ public class FileDistributorTestCase {
             return null;
         }
     }
+
 }

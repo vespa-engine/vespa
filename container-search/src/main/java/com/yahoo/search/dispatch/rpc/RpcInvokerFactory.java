@@ -1,28 +1,24 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.Optional;
-import java.util.concurrent.Callable;
 
 /**
  * @author ollivir
  */
-public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
+public class RpcInvokerFactory extends InvokerFactory {
 
     /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
@@ -60,12 +56,4 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
         return new RpcFillInvoker(rpcResourcePool, documentDb);
     }
 
-    public void release() {
-        rpcResourcePool.release();
-    }
-
-    @Override
-    public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
-        return new RpcPing(node, monitor, rpcResourcePool);
-    }
 }

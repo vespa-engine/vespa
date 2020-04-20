@@ -16,6 +16,14 @@ import com.yahoo.collections.Pair;
  */
 public class ProcessExecuter {
 
+    private final boolean override_log_control;
+    public ProcessExecuter(boolean override_log_control) {
+        this.override_log_control = override_log_control;
+    }
+    public ProcessExecuter() {
+        this(false);
+    }
+
     /**
      * Executes the given command synchronously without timeout.
      * 
@@ -39,6 +47,10 @@ public class ProcessExecuter {
         ProcessBuilder pb = new ProcessBuilder(command);        
         StringBuilder ret = new StringBuilder();
         pb.environment().remove("VESPA_LOG_TARGET");
+        if (override_log_control) {
+            pb.environment().remove("VESPA_LOG_CONTROL_FILE");
+            pb.environment().put("VESPA_SERVICE_NAME", "exec-" + command[0]);
+        }
         pb.redirectErrorStream(true);
         Process p = pb.start();
         InputStream is = p.getInputStream();

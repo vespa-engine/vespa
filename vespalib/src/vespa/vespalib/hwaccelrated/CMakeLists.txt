@@ -3,8 +3,6 @@ vespa_add_library(vespalib_vespalib_hwaccelrated OBJECT
     SOURCES
     iaccelrated.cpp
     generic.cpp
-    sse2.cpp
-    avx.cpp
     avx2.cpp
     avx512.cpp
     DEPENDS

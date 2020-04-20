@@ -27,6 +27,9 @@ protected:
     void doCompactWorst();
     void checkTensorType(const Tensor &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
+    virtual vespalib::MemoryUsage memory_usage() const;
+    void populate_state(vespalib::slime::Cursor& object) const;
+
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<EntryRef>;
@@ -42,6 +45,7 @@ public:
     bool addDoc(DocId &docId) override;
     std::unique_ptr<Tensor> getEmptyTensor() const override;
     vespalib::eval::ValueType getTensorType() const override;
+    void get_state(const vespalib::slime::Inserter& inserter) const override;
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override;
     uint32_t getVersion() const override;

@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,7 +41,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Status of the deployment jobs of an {@link Application}.
@@ -236,10 +234,17 @@ public class DeploymentStatus {
                     && testJobs.keySet().stream()
                                .noneMatch(test ->    test.type() == testType
                                                   && testJobs.get(test).contains(versions)))
-                    testJobs.merge(new JobId(job.application(), testType), List.of(versions), DeploymentStatus::union);
+                    testJobs.merge(anyDeclaredTest(testType).orElse(new JobId(job.application(), testType)), List.of(versions), DeploymentStatus::union);
             });
         }
         return ImmutableMap.copyOf(testJobs);
+    }
+
+    private Optional<JobId> anyDeclaredTest(JobType testJob) {
+        return application.deploymentSpec().instanceNames().stream()
+                .map(application.id()::instance)
+                .flatMap(id -> declaredTest(id, testJob).stream())
+                .findFirst();
     }
 
     /** JobId of any declared test of the given type, for the given instance. */
@@ -579,8 +584,11 @@ public class DeploymentStatus {
                     Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);
                     return job.lastSuccess()
                               .filter(run -> versions.targetsMatch(run.versions()))
-                              .filter(run -> status.instanceJobs(instance).get(prodType).lastCompleted()
-                                                   .map(last -> ! last.end().get().isAfter(run.start())).orElse(false))
+                              .filter(run -> ! status.jobs()
+                                                     .instance(instance)
+                                                     .type(prodType)
+                                                     .lastCompleted().endedNoLaterThan(run.start())
+                                                     .isEmpty())
                               .map(run -> run.end().get());
                 }
             };

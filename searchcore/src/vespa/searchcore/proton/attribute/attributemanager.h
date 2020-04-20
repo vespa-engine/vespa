@@ -77,7 +77,7 @@ private:
     const search::common::FileHeaderContext &_fileHeaderContext;
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
+    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
@@ -103,14 +103,14 @@ public:
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
-                     search::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      const HwInfo &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
-                     search::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      const IAttributeFactory::SP &factory,
                      const HwInfo &hwInfo);
 
@@ -164,7 +164,7 @@ public:
 
     const IAttributeFactory::SP &getFactory() const override { return _factory; }
 
-    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
+    vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
 
     search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
 
@@ -178,6 +178,8 @@ public:
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 
     const ImportedAttributesRepo *getImportedAttributes() const override { return _importedAttributes.get(); }
+
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 };
 
 } // namespace proton

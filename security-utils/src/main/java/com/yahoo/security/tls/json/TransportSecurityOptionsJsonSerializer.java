@@ -77,6 +77,9 @@ public class TransportSecurityOptionsJsonSerializer {
             }
             builder.withAcceptedCiphers(entity.acceptedCiphers);
         }
+        if (entity.isHostnameValidationDisabled != null) {
+            builder.withHostnameValidationDisabled(entity.isHostnameValidationDisabled);
+        }
         return builder.build();
     }
 
@@ -157,6 +160,9 @@ public class TransportSecurityOptionsJsonSerializer {
                         .collect(toList()));
         if (!options.getAcceptedCiphers().isEmpty()) {
             entity.acceptedCiphers = options.getAcceptedCiphers();
+        }
+        if (options.isHostnameValidationDisabled()) {
+            entity.isHostnameValidationDisabled = true;
         }
         return entity;
     }

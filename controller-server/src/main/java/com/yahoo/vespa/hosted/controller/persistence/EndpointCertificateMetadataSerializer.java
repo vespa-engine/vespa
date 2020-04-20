@@ -3,8 +3,14 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * (de)serializes endpoint certificate metadata
@@ -26,42 +32,53 @@ public class EndpointCertificateMetadataSerializer {
     private final static String keyNameField = "keyName";
     private final static String certNameField = "certName";
     private final static String versionField = "version";
+    private final static String requestIdField = "requestId";
+    private final static String requestedDnsSansField = "requestedDnsSans";
+    private final static String issuerField = "issuer";
 
-    public static void toSlime(EndpointCertificateMetadata metadata, Cursor object) {
+    public static Slime toSlime(EndpointCertificateMetadata metadata) {
+        Slime slime = new Slime();
+        Cursor object = slime.setObject();
         object.setString(keyNameField, metadata.keyName());
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
+
+        metadata.request_id().ifPresent(id -> object.setString(requestIdField, id));
+        metadata.requestedDnsSans().ifPresent(sans -> {
+            Cursor cursor = object.setArray(requestedDnsSansField);
+            sans.forEach(cursor::addString);
+        });
+        metadata.issuer().ifPresent(id -> object.setString(issuerField, id));
+
+        return slime;
     }
 
     public static EndpointCertificateMetadata fromSlime(Inspector inspector) {
-        switch (inspector.type()) {
-            case STRING: // TODO: Remove once all are transmitted and stored as JSON
-                return new EndpointCertificateMetadata(
-                        inspector.asString() + "-key",
-                        inspector.asString() + "-cert",
-                        0
-                );
-            case OBJECT:
-                return new EndpointCertificateMetadata(
-                        inspector.field(keyNameField).asString(),
-                        inspector.field(certNameField).asString(),
-                        Math.toIntExact(inspector.field(versionField).asLong())
-                );
+        if (inspector.type() != Type.OBJECT)
+            throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
+        Optional<String> request_id = inspector.field(requestIdField).valid() ?
+                Optional.of(inspector.field(requestIdField).asString()) :
+                Optional.empty();
 
-            default:
-                throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
-        }
+        Optional<List<String>> requestedDnsSans = inspector.field(requestedDnsSansField).valid() ?
+                Optional.of(IntStream.range(0, inspector.field(requestedDnsSansField).entries())
+                        .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList())) :
+                Optional.empty();
+
+        Optional<String> issuer = inspector.field(issuerField).valid() ?
+                Optional.of(inspector.field(issuerField).asString()) :
+                Optional.empty();
+
+        return new EndpointCertificateMetadata(
+                inspector.field(keyNameField).asString(),
+                inspector.field(certNameField).asString(),
+                Math.toIntExact(inspector.field(versionField).asLong()),
+                request_id,
+                requestedDnsSans,
+                issuer);
     }
 
-    public static EndpointCertificateMetadata fromTlsSecretsKeysString(String tlsSecretsKeys) {
-        return fromSlime(new Slime().setString(tlsSecretsKeys));
-    }
-
-    public static EndpointCertificateMetadata fromJsonOrTlsSecretsKeysString(String zkdata) {
-        if(zkdata.strip().startsWith("{")) {
-            return fromSlime(SlimeUtils.jsonToSlime(zkdata).get());
-        } else {
-            return fromTlsSecretsKeysString(zkdata);
-        }
+    public static EndpointCertificateMetadata fromJsonString(String zkData) {
+        return fromSlime(SlimeUtils.jsonToSlime(zkData).get());
     }
 }

@@ -159,7 +159,7 @@ public class SpecialTokens {
         @Override
         public int hashCode() { return token.hashCode(); }
 
-        public Token toToken(int start,String rawSource) {
+        public Token toToken(int start, String rawSource) {
             return new Token(Token.Kind.WORD, replace(), true, new Substring(start, start + token.length(), rawSource)); // XXX: Unsafe?
         }
 

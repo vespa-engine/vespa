@@ -22,7 +22,7 @@ class SparseTensor : public Tensor
 {
 public:
     using Cells = hash_map<SparseTensorAddressRef, double, hash<SparseTensorAddressRef>,
-            std::equal_to<SparseTensorAddressRef>, hashtable_base::and_modulator>;
+                           std::equal_to<>, hashtable_base::and_modulator>;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
 

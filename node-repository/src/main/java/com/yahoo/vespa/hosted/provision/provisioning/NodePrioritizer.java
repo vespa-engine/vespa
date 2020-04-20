@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -31,9 +32,6 @@ import java.util.stream.Collectors;
  */
 public class NodePrioritizer {
 
-    /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
-    public static final List<Node.State> ALLOCATABLE_HOST_STATES =
-            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
@@ -46,13 +44,14 @@ public class NodePrioritizer {
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final boolean isTopologyChange;
-    private final boolean inPlaceResizeEnabled;
+    /** If set, a host can only have nodes by single tenant and does not allow in-place resizing.  */
+    private final boolean allocateFully;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator,
-                    boolean inPlaceResizeEnabled) {
+                    boolean allocateFully) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
@@ -60,7 +59,7 @@ public class NodePrioritizer {
         this.application = application;
         this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
-        this.inPlaceResizeEnabled = inPlaceResizeEnabled;
+        this.allocateFully = allocateFully;
 
         NodeList nodesInCluster = allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -117,20 +116,15 @@ public class NodePrioritizer {
         }
     }
 
-    /**
-     * Add a node on each docker host with enough capacity for the requested flavor
-     *
-     * @param exclusively whether the ready docker nodes should only be added on hosts that
-     *                    already have nodes allocated to this tenant
-     */
-    void addNewDockerNodes(boolean exclusively) {
+    /** Add a node on each docker host with enough capacity for the requested flavor  */
+    void addNewDockerNodes(Predicate<Node> canAllocateTenantNodeTo) {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
-                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()))
+                .filter(node -> node.type() != NodeType.host || canAllocateTenantNodeTo.test(node))
                 .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
 
-        if (exclusively) {
+        if (allocateFully) {
             Set<String> candidateHostnames = candidates.asList().stream()
                                                        .filter(node -> node.type() == NodeType.tenant)
                                                        .filter(node -> node.allocation()
@@ -149,9 +143,6 @@ public class NodePrioritizer {
         NodeResources wantedResources = resources(requestedNodes);
 
         for (Node host : candidates) {
-            if (!host.type().canRun(requestedNodes.type())) continue;
-            if (host.status().wantToRetire()) continue;
-
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);
             boolean conflictingCluster = allNodes.childrenOf(host).owner(application).asList().stream()
                                                  .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
@@ -218,7 +209,7 @@ public class NodePrioritizer {
             builder.parent(parent).freeParentCapacity(parentCapacity);
 
             if (!isNewNode)
-                builder.resizable(inPlaceResizeEnabled && requestedNodes.canResize(
+                builder.resizable(!allocateFully && requestedNodes.canResize(
                         node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
 
             if (spareHosts.contains(parent))

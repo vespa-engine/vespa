@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
@@ -53,7 +54,7 @@ public class LbServicesProducerTest {
     private static final Set<ContainerEndpoint> endpoints = Set.of(
             new ContainerEndpoint("mydisc", List.of("rotation-1", "rotation-2"))
     );
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final boolean useGlobalServiceId;
 
     @Parameterized.Parameters
@@ -141,6 +142,23 @@ public class LbServicesProducerTest {
         assertThat("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
     }
 
+
+    @Test
+    public void testRoutingConfigForTesterApplication() throws IOException, SAXException {
+        assumeFalse(useGlobalServiceId);
+
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
+        LbServicesConfig conf = getLbServicesConfig(Zone.defaultZone(), testModel);
+        LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);
+        assertThat(services.servicealiases().size(), is(1));
+        assertThat(services.endpointaliases().size(), is(2));
+
+        // No config for tester application
+        assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)
+                           .tenants("foo")
+                           .applications("baz:prod:default:custom-t"));
+    }
+
     private Map<TenantName, Set<ApplicationInfo>> randomizeApplications(Map<TenantName, Set<ApplicationInfo>> testModel, int seed) {
         Map<TenantName, Set<ApplicationInfo>> randomizedApplications = new LinkedHashMap<>();
         List<TenantName> keys = new ArrayList<>(testModel.keySet());
@@ -166,7 +184,7 @@ public class LbServicesProducerTest {
         Set<ApplicationInfo> aMap = new LinkedHashSet<>();
         ApplicationId fooApp = new ApplicationId.Builder().tenant(tenant).applicationName("foo").build();
         ApplicationId barApp = new ApplicationId.Builder().tenant(tenant).applicationName("bar").build();
-        ApplicationId bazApp = new ApplicationId.Builder().tenant(tenant).applicationName("baz").build();
+        ApplicationId bazApp = new ApplicationId.Builder().tenant(tenant).applicationName("baz").instanceName("custom-t").build(); // tester app
         aMap.add(createApplication(fooApp, deploystateBuilder));
         aMap.add(createApplication(barApp, deploystateBuilder));
         aMap.add(createApplication(bazApp, deploystateBuilder));

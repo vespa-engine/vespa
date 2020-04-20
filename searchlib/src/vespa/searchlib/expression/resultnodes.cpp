@@ -11,6 +11,7 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <stdexcept>
 
 namespace search::expression {
 

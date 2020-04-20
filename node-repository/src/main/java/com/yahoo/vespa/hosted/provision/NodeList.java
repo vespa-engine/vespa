@@ -50,6 +50,11 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.allocation().get().membership().retired());
     }
 
+    /** Returns the subset of nodes which are removable */
+    public NodeList removable() {
+        return filter(node -> node.allocation().get().isRemovable());
+    }
+
     /** Returns the subset of nodes having exactly the given resources */
     public NodeList resources(NodeResources resources) { return filter(node -> node.flavor().resources().equals(resources)); }
 
@@ -73,6 +78,11 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.status().vespaVersion().isPresent() &&
                               node.allocation().isPresent() &&
                               !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
+    /** Returns the subset of nodes that are currently changing their OS version to given version */
+    public NodeList changingOsVersionTo(Version version) {
+        return filter(node -> node.status().osVersion().changingTo(version));
     }
 
     /** Returns the subset of nodes that are currently changing their OS version */

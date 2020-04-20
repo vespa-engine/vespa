@@ -6,4 +6,4 @@ namespace=container.jdisc.config
 snapshot_interval double default=300
 
 # Initial status used in /state/v1/health API (value for 'code' in 'status'). See StateMonitor for valid values
-initialStatus string default="up"
+initialStatus string default="initializing"

@@ -32,15 +32,15 @@ public final class ComponentId implements Comparable<ComponentId> {
         private int count = 0;
         public int getAndIncrement() { return count++; }
     }
-    private static ThreadLocal<Counter> gid = new ThreadLocal<Counter>() {
+    private static ThreadLocal<Counter> threadLocalUniqueId = new ThreadLocal<Counter>() {
         @Override protected Counter initialValue() {
             return new Counter();
         }
     };
-    private static AtomicInteger uniqueTid = new AtomicInteger(0);
-    private static ThreadLocal<String> tid = new ThreadLocal<String>() {
+    private static AtomicInteger threadIdCounter = new AtomicInteger(0);
+    private static ThreadLocal<String> threadId = new ThreadLocal<String>() {
         @Override protected String initialValue() {
-            return new String("_"+uniqueTid.getAndIncrement()+"_");
+            return new String("_" + threadIdCounter.getAndIncrement() + "_");
         }
     };
 
@@ -58,7 +58,7 @@ public final class ComponentId implements Comparable<ComponentId> {
     }
 
     private String createAnonymousName(String name) {
-        return new StringBuilder(name).append(tid.get()).append(gid.get().getAndIncrement()).toString();
+        return new StringBuilder(name).append(threadId.get()).append(threadLocalUniqueId.get().getAndIncrement()).toString();
     }
 
     public ComponentId(String name, Version version, ComponentId namespace) {
@@ -148,10 +148,7 @@ public final class ComponentId implements Comparable<ComponentId> {
         return spec.compareTo(other.spec);
     }
 
-    /**
-     * Creates a componentId that is unique for this run-time instance
-     */
-    // TODO: Check if we really need this. -JB
+    /** Creates a componentId that is unique for this run-time instance */
     public static ComponentId createAnonymousComponentId(String baseName) {
         return new ComponentId(baseName, null, null, true);
     }
@@ -196,27 +193,27 @@ public final class ComponentId implements Comparable<ComponentId> {
      * Creates an id from a file <b>first</b> name string encoded in the standard translation (see {@link #toFileName}).
      * <b>Note</b> that any file last name, like e.g ".xml" must be stripped off before handoff to this method.
      */
-    public static ComponentId fromFileName(final String fileName) {
+    public static ComponentId fromFileName(String fileName) {
         // Initial assumptions
-        String id=fileName;
-        Version version =null;
-        ComponentId namespace=null;
+        String id = fileName;
+        Version version = null;
+        ComponentId namespace = null;
 
         // Split out namespace, if any
-        int at=id.indexOf("@");
-        if (at>0) {
-            String newId=id.substring(0,at);
-            namespace=ComponentId.fromString(id.substring(at+1));
-            id=newId;
+        int at = id.indexOf("@");
+        if (at > 0) {
+            String newId = id.substring(0, at);
+            namespace = ComponentId.fromString(id.substring(at + 1));
+            id = newId;
         }
 
         // Split out version, if any
-        int dash=id.lastIndexOf("-");
-        if (dash>0) {
-            String newId=id.substring(0,dash);
+        int dash = id.lastIndexOf("-");
+        if (dash > 0) {
+            String newId = id.substring(0, dash);
             try {
-                version=new Version(id.substring(dash+1));
-                id=newId;
+                version = new Version(id.substring(dash + 1));
+                id = newId;
             }
             catch (IllegalArgumentException e) {
                 // don't interpret the text following the dash as a version
@@ -227,6 +224,12 @@ public final class ComponentId implements Comparable<ComponentId> {
         id=id.replace(".","/");
 
         return new ComponentId(id,version,namespace);
+    }
+
+    /** WARNING: For testing only: Resets counters creating anonymous component ids for this thread. */
+    public static void resetGlobalCountersForTests() {
+        threadId.set("_0_");
+        threadLocalUniqueId.set(new Counter());
     }
 
 }

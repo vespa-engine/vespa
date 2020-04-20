@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -139,8 +140,11 @@ public class SessionPreparer {
         final Path tenantPath;
         final ApplicationId applicationId;
 
+        /** The repository part of docker image to be used for this deployment */
+        final Optional<String> dockerImageRepository;
+
         /** The version of Vespa the application to be prepared specifies for its nodes */
-        final com.yahoo.component.Version vespaVersion;
+        final Version vespaVersion;
 
         final ContainerEndpointsCache containerEndpoints;
         final Set<ContainerEndpoint> endpointsSet;
@@ -149,6 +153,7 @@ public class SessionPreparer {
         private final EndpointCertificateRetriever endpointCertificateRetriever;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
+        private final Optional<AthenzDomain> athenzDomain;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -165,6 +170,7 @@ public class SessionPreparer {
             this.tenantPath = tenantPath;
 
             this.applicationId = params.getApplicationId();
+            this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
@@ -178,6 +184,7 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
 
             this.endpointsSet = getEndpoints(params.containerEndpoints());
+            this.athenzDomain = params.athenzDomain();
 
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
@@ -191,7 +198,8 @@ public class SessionPreparer {
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
                                                               context.getFlagSource(),
-                                                              endpointCertificateSecrets);
+                                                              endpointCertificateSecrets,
+                                                              athenzDomain);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
@@ -223,7 +231,7 @@ public class SessionPreparer {
 
         AllocatedHosts buildModels(Instant now) {
             SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
-            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, 
+            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, dockerImageRepository, vespaVersion,
                                                                      applicationPackage, allocatedHosts, now);
             checkTimeout("build models");
             return allocatedHosts.get();
@@ -239,10 +247,12 @@ public class SessionPreparer {
             writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
                                   applicationPackage,
                                   applicationId,
+                                  dockerImageRepository,
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(), 
-                                  prepareResult.allocatedHosts());
+                                  prepareResult.allocatedHosts(),
+                                  athenzDomain);
             checkTimeout("write state to zookeeper");
         }
 
@@ -281,15 +291,20 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       com.yahoo.component.Version vespaVersion,
+                                       Optional<String> dockerImageRepository,
+                                       Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
-                                       AllocatedHosts allocatedHosts) {
+                                       AllocatedHosts allocatedHosts,
+                                       Optional<AthenzDomain> athenzDomain) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
+            // Note: When changing the below you need to also change similar calls in SessionFactoryImpl.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
+            zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+            zooKeeperClient.writeAthenzDomain(athenzDomain);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

@@ -23,22 +23,29 @@ class NodeTypes
 private:
     ValueType _not_found;
     std::map<const nodes::Node*,ValueType> _type_map;
+    std::vector<vespalib::string> _errors;
 public:
     NodeTypes();
+    NodeTypes(NodeTypes &&rhs) = default;
+    NodeTypes &operator=(NodeTypes &&rhs) = default;
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
+    ~NodeTypes();
+    const std::vector<vespalib::string> &errors() const { return _errors; }
+    NodeTypes export_types(const nodes::Node &root) const;
     const ValueType &get_type(const nodes::Node &node) const;
-    template <typename P>
-    bool check_types(const P &pred) const {
+    template <typename F>
+    void each(F &&f) const {
         for (const auto &entry: _type_map) {
-            if (!pred(entry.second)) {
-                return false;
-            }
+            f(*entry.first, entry.second);
         }
-        return (_type_map.size() > 0);
     }
     bool all_types_are_double() const {
-        return check_types([](const ValueType &type)
-                           { return type.is_double(); });
+        bool all_double = true;
+        each([&all_double](const nodes::Node &, const ValueType &type)
+             {
+                 all_double &= type.is_double();
+             });
+        return (all_double && (_type_map.size() > 0));
     }
 };
 

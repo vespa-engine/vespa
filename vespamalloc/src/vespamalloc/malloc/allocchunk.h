@@ -24,12 +24,55 @@ struct TaggedPtr {
     size_t _tag;
 };
 
+#if defined(__x86_64__)
+struct AtomicTaggedPtr {
+    AtomicTaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
+    AtomicTaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
+
+    AtomicTaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
+        // Note that this is NOT an atomic load. The current use as the initial load
+        // in a compare_exchange loop is safe as a teared load will just give a retry.
+        return *this;
+    }
+    void store(AtomicTaggedPtr ptr) {
+        // Note that this is NOT an atomic store. The current use is in a unit test as an initial
+        // store before any threads are started. Just done so to keep api compatible with std::atomic as
+        // that is the preferred implementation..
+        *this = ptr;
+    }
+    bool
+    compare_exchange_weak(AtomicTaggedPtr & oldPtr, AtomicTaggedPtr newPtr, std::memory_order, std::memory_order) {
+        char result;
+        __asm__ volatile (
+        "lock ;"
+        "cmpxchg16b %6;"
+        "setz %1;"
+        : "+m" (*this),
+          "=q" (result),
+          "+a" (oldPtr._ptr),
+          "+d" (oldPtr._tag)
+        : "b" (newPtr._ptr),
+          "c" (newPtr._tag)
+        : "cc", "memory"
+        );
+        return result;
+    }
+
+    void *_ptr;
+    size_t _tag;
+} __attribute__ ((aligned (16)));
+#else
+    using AtomicTaggedPtr = TaggedPtr;
+#endif
+
+
 class AFListBase
 {
 public:
-    using HeadPtr = TaggedPtr;
-    using AtomicHeadPtr = std::atomic<HeadPtr>;
-    AFListBase() : _next(NULL) { }
+    using HeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, TaggedPtr, AtomicTaggedPtr>::type;
+    using AtomicHeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, std::atomic<TaggedPtr>, AtomicTaggedPtr>::type;
+
+    AFListBase() : _next(nullptr) { }
     void setNext(AFListBase * csl)           { _next = csl; }
     static void init();
     static void linkInList(AtomicHeadPtr & head, AFListBase * list);

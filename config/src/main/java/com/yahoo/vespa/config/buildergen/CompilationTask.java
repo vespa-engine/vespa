@@ -11,7 +11,6 @@ import javax.tools.JavaFileObject;
  * TODO: Assumes that diagnostics is the same as given to the task, not ideal.
  *
  * @author Ulf Lilleengen
- * @since 5.2
  */
 class CompilationTask {
     private final JavaCompiler.CompilationTask task;

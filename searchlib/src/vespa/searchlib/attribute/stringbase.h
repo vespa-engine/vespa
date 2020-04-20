@@ -9,10 +9,10 @@
 #include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/loadedenumvalue.h>
 #include <vespa/searchlib/util/foldedstringcompare.h>
+#include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <optional>
-#include <regex>
 
 namespace search {
 
@@ -44,6 +44,7 @@ public:
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     bool findEnum(const char * value, EnumHandle & e) const override = 0;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override = 0;
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override;
@@ -103,7 +104,7 @@ protected:
         const QueryTermUCS4 * queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
-                return _regex ? std::regex_search(src, *_regex) : false;
+                return _regex ? _regex->partial_match(std::string_view(src)) : false;
             }
             vespalib::Utf8ReaderForZTS u8reader(src);
             uint32_t j = 0;
@@ -162,7 +163,7 @@ protected:
         bool  isRegex() const { return _isRegex; }
         QueryTermSimpleUP         _queryTerm;
         std::vector<ucs4_t>       _termUCS4;
-        const std::optional<std::regex>& getRegex() const { return _regex; }
+        const std::optional<vespalib::Regex>& getRegex() const { return _regex; }
     private:
         WeightedConstChar * getBuffer() const {
             if (_buffer == nullptr) {
@@ -170,9 +171,9 @@ protected:
             }
             return _buffer;
         }
-        unsigned                    _bufferLen;
-        mutable WeightedConstChar * _buffer;
-        std::optional<std::regex>   _regex;
+        unsigned                       _bufferLen;
+        mutable WeightedConstChar *    _buffer;
+        std::optional<vespalib::Regex> _regex;
     };
 private:
     SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

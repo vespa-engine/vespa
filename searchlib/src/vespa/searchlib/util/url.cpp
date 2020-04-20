@@ -2,6 +2,7 @@
 
 #include "url.h"
 #include <algorithm>
+#include <cstdio>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.util.url");

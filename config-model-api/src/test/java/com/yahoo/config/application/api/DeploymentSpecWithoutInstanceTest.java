@@ -318,6 +318,7 @@ public class DeploymentSpecWithoutInstanceTest {
 
     @Test
     public void testEmpty() {
+        assertEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment version='1.0'>\n</deployment>"));
         assertEquals(0, DeploymentSpec.empty.steps().size());
         assertTrue(DeploymentSpec.empty.athenzDomain().isEmpty());
         assertTrue(DeploymentSpec.empty.athenzService().isEmpty());

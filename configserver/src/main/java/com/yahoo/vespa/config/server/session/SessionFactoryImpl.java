@@ -127,10 +127,13 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
         long activeSessionId = getActiveSessionId(existingApplicationId);
-        logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", active session id is " + activeSessionId);
+        logger.log(LogLevel.DEBUG, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
+        // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
+        session.setDockerImageRepository(existingSession.getDockerImageRepository());
+        session.setAthenzDomain(existingSession.getAthenzDomain());
         return session;
     }
 
@@ -138,7 +141,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
         try {
             ensureZKPathDoesNotExist(sessionIdPath);
             SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator,

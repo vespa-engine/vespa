@@ -20,14 +20,16 @@ public class JobControlTest {
     public void testJobControl() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         JobControl jobControl = new JobControl(tester.nodeRepository().database());
-        
+
+        MockMaintainer maintainer1 = new MockMaintainer(tester.nodeRepository());
+        MockMaintainer maintainer2 = new MockMaintainer(tester.nodeRepository());
         assertTrue(jobControl.jobs().isEmpty());
 
         String job1 = "Job1";
         String job2 = "Job2";
         
-        jobControl.started(job1);
-        jobControl.started(job2);
+        jobControl.started(job1, maintainer1);
+        jobControl.started(job2, maintainer2);
         assertEquals(2, jobControl.jobs().size());
         assertTrue(jobControl.jobs().contains(job1));
         assertTrue(jobControl.jobs().contains(job2));
@@ -50,6 +52,18 @@ public class JobControlTest {
         jobControl.setActive(job2, true);
         assertTrue(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
+
+        // Run jobs on-demand
+        jobControl.run(job1);
+        jobControl.run(job1);
+        assertEquals(2, maintainer1.maintenanceInvocations);
+        jobControl.run(job2);
+        assertEquals(1, maintainer2.maintenanceInvocations);
+
+        // Running jobs on-demand ignores inactive flag
+        jobControl.setActive(job1, false);
+        jobControl.run(job1);
+        assertEquals(3, maintainer1.maintenanceInvocations);
     }
     
     @Test

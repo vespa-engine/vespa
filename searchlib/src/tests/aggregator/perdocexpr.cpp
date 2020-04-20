@@ -1209,7 +1209,7 @@ TEST("testArithmeticOperations") {
     testAdd(createScalarInt(I1), createScalarInt(I2), 3469774562ull, 3469774562ull);
     testAdd(createScalarInt(I1), createScalarFloat(F2), 1793253251ull, 1793253250.767681239);
     testAdd(createScalarFloat(F1), createScalarFloat(F2), 11, 10.878668839 );
-    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, 3006427292488851361ull);
+    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, static_cast<double>(3006427292488851361ull));
     testMultiply(createScalarInt(I1), createScalarFloat(F2), 17515926039ull, 1793253241.0*9.767681239);
     testMultiply(createScalarFloat(F1), createScalarFloat(F2), 11, 10.8517727372816364 );
 

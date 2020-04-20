@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -26,11 +27,15 @@ public interface ModelContext {
     Optional<Model> previousModel();
     Optional<ApplicationPackage> permanentApplicationPackage();
     Optional<HostProvisioner> hostProvisioner();
+    Provisioned provisioned();
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();
     FileRegistry getFileRegistry();
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
+
+    /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
+    default Optional<String> wantedDockerImageRepository() { return Optional.empty(); }
 
     /** The Vespa version this model is built for */
     Version modelVespaVersion();
@@ -51,15 +56,40 @@ public interface ModelContext {
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
-        // TODO: Remove when Vespa 7.112 is the oldest config model in use
+
+        // TODO: Only needed for LbServicesProducerTest
         default boolean useDedicatedNodeForLogserver() { return true; }
+
+        // TODO Revisit in May or June 2020
         boolean useAdaptiveDispatch();
-        // TODO: Remove temporary default implementations
+
+        // TODO: Remove after April 2020
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
+
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
+
+        // TODO Revisit in May or June 2020
         double defaultTermwiseLimit();
+
+        // TODO Revisit in May or June 2020
+        double defaultSoftStartSeconds();
+
+        // TODO Revisit in May or June 2020
+        double defaultTopKProbability();
+
         // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();
+
+        default boolean useNewAthenzFilter() { return true; } // TODO bjorncs: Remove after end of April
+
+        // TODO: Remove after April 2020
+        default boolean usePhraseSegmenting() { return false; }
+
+        default String proxyProtocol() { return "https-only"; }
+        default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
+
+        // TODO(mpolden): Remove after May 2020
+        default boolean useDedicatedNodesWhenUnspecified() { return true; }
     }
 
 }

@@ -3,20 +3,19 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -33,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -158,6 +156,34 @@ public class ProvisioningTest {
 
         host1 = state2.container0.iterator().next();
         assertEquals(Version.fromString("1.2.3"), host1.version().get());
+    }
+
+    @Test
+    public void dockerImageRepoIsReturnedIfSet() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
+        // deploy
+        ApplicationId application1 = tester.makeApplicationId();
+        SystemState state1 = prepare(application1, tester, 1, 1, 1, 1, defaultResources, "1.2.3");
+        String dockerImageRepo = "docker.domain.tld/my/image";
+        prepare(application1, tester, 1, 1, 1 , 1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
+        tester.activate(application1, state1.allHosts);
+
+        HostSpec host1 = state1.container0.iterator().next();
+        Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
+        DockerImage dockerImage = DockerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
+        tester.nodeRepository().write(node1.with(node1.status().withDockerImage(dockerImage)), () -> {});
+
+        // redeploy
+        SystemState state2 = prepare(application1, tester, 1, 1, 1 ,1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
+        tester.activate(application1, state2.allHosts);
+
+        host1 = state2.container0.iterator().next();
+        node1 = tester.nodeRepository().getNode(host1.hostname()).get();
+        assertEquals(dockerImage, node1.status().dockerImage().get());
     }
 
     @Test
@@ -328,6 +354,17 @@ public class ProvisioningTest {
             assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.fast));
             assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
         }
+
+        {
+            // Go back to any
+            SystemState state = prepare(application, 0, 0, 5, 3,
+                                        defaultResources.justNumbers(),
+                                        tester);
+            assertEquals(8, state.allHosts.size());
+            tester.activate(application, state.allHosts);
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+        }
     }
 
     @Test
@@ -338,7 +375,21 @@ public class ProvisioningTest {
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = tester.makeApplicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, Version.fromString("6.91"), tester);
+        SystemState state = prepare(application, tester, 2, 2, 3, 3, defaultResources, "6.91");
+        assertEquals(4, state.allHosts.size());
+        tester.activate(application, state.allHosts);
+    }
+
+    @Test
+    public void deploy_specific_vespa_version_and_docker_image() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
+        ApplicationId application = tester.makeApplicationId();
+        String dockerImageRepo = "docker.domain.tld/my/image";
+        SystemState state = prepare(application, tester, 2, 2, 3, 3, false, defaultResources, "6.91", Optional.of(dockerImageRepo));
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -361,6 +412,21 @@ public class ProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(10, defaultResources);
         prepare(application, 1, 2, 3, 3, defaultResources, tester);
+    }
+
+    @Test
+    public void below_resource_limit() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyNodes(10, defaultResources);
+        try {
+            prepare(application, 2, 2, 3, 3,
+                    new NodeResources(2, 2, 10, 2), tester);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Must specify at least 4.00 Gb of memory for container cluster 'container0', was: 2.00 Gb", e.getMessage());
+        }
     }
 
     /** Dev always uses the zone default flavor */
@@ -453,7 +519,7 @@ public class ProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("6 nodes [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42 exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
+            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42. Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
                          e.getMessage());
         }
     }
@@ -474,11 +540,8 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyNodes(4, defaultResources);
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("music"),
-                                                  new com.yahoo.component.Version(4, 5, 6),
-                                                  false);
-        tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified), false, false));
         // No exception; Success
     }
 
@@ -501,8 +564,8 @@ public class ProvisioningTest {
 
     @Test
     public void want_to_retire_but_cannot_fail() {
-        Capacity capacity =       Capacity.fromCount(5, Optional.of(defaultResources), false, true);
-        Capacity capacityFORCED = Capacity.fromCount(5, Optional.of(defaultResources), false, false);
+        Capacity capacity =       Capacity.from(new ClusterResources(5, 1, defaultResources), false, true);
+        Capacity capacityFORCED = Capacity.from(new ClusterResources(5, 1, defaultResources), false, false);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
@@ -511,18 +574,15 @@ public class ProvisioningTest {
         // Create 10 nodes
         tester.makeReadyNodes(10, defaultResources);
         // Allocate 5 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("music"),
-                                                  new com.yahoo.component.Version(4, 5, 6),
-                                                  false);
-        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        tester.activate(application, tester.prepare(application, cluster, capacity));
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
         // redeploy without allow failing
-        tester.activate(application, tester.prepare(application, cluster, capacityFORCED, 1));
+        tester.activate(application, tester.prepare(application, cluster, capacityFORCED));
 
         // Nodes are not retired since that is unsafe when we cannot fail
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
@@ -531,7 +591,7 @@ public class ProvisioningTest {
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
 
         // redeploy with allowing failing
-        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        tester.activate(application, tester.prepare(application, cluster, capacity));
         // ... old nodes are now retired
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
@@ -640,7 +700,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ApplicationId application = tester.makeApplicationId();
         try {
-            prepare(application, 1, 0, 1, 0, true, defaultResources, Version.fromString("6.42"), tester);
+            prepare(application, tester, 1, 0, 1, 0, true, defaultResources, "6.42", Optional.empty());
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
     }
@@ -662,44 +722,74 @@ public class ProvisioningTest {
     public void cluster_spec_update_for_already_reserved_nodes() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
         ApplicationId application = tester.makeApplicationId();
-        Version version1 = Version.fromString("6.42");
-        Version version2 = Version.fromString("6.43");
+        String version1 = "6.42";
+        String version2 = "6.43";
         tester.makeReadyNodes(2, defaultResources);
 
-        prepare(application, 1, 0, 1, 0, true, defaultResources, version1, tester);
+        prepare(application, tester, 1, 0, 1, 0, true, defaultResources, version1, Optional.empty());
         tester.getNodes(application, Node.State.reserved).forEach(node ->
-                assertEquals(version1, node.allocation().get().membership().cluster().vespaVersion()));
+                assertEquals(Version.fromString(version1), node.allocation().get().membership().cluster().vespaVersion()));
 
-        prepare(application, 1, 0, 1, 0, true, defaultResources, version2, tester);
+        prepare(application, tester, 1, 0, 1, 0, true, defaultResources, version2, Optional.empty());
         tester.getNodes(application, Node.State.reserved).forEach(node ->
-                assertEquals(version2, node.allocation().get().membership().cluster().vespaVersion()));
+                assertEquals(Version.fromString(version2), node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
+    @Test
+    public void change_to_and_from_combined_cluster_does_not_change_node_allocation() {
+        var tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        var application = tester.makeApplicationId();
+
+        tester.makeReadyNodes(4, defaultResources);
+
+        // Application allocates two content nodes initially, with cluster type content
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        var initialNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                       Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+
+        // Application is redeployed with cluster type combined
+        cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        var newNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                   Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+
+        assertEquals("Node allocation remains the same", initialNodes, newNodes);
+        assertEquals("Cluster type is updated",
+                     Set.of(ClusterSpec.Type.combined),
+                     newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
+
+        // Application is redeployed with cluster type content again
+        cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        newNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                               Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+        assertEquals("Node allocation remains the same", initialNodes, newNodes);
+        assertEquals("Cluster type is updated",
+                     Set.of(ClusterSpec.Type.content),
+                     newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,
-                       Version.fromString("6.42"), tester);
+        return prepare(application, tester, container0Size, container1Size, content0Size, content1Size, flavor, "6.42");
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, NodeResources nodeResources, Version wantedVersion, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, false, nodeResources,
-                       wantedVersion, tester);
+    private SystemState prepare(ApplicationId application, ProvisioningTester tester, int container0Size, int container1Size, int content0Size,
+                                int content1Size, NodeResources nodeResources, String wantedVersion) {
+        return prepare(application, tester, container0Size, container1Size, content0Size, content1Size, false, nodeResources,
+                       wantedVersion, Optional.empty());
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
-                                ProvisioningTester tester) {
+    private SystemState prepare(ApplicationId application, ProvisioningTester tester, int container0Size, int container1Size, int content0Size,
+                                int content1Size, boolean required, NodeResources nodeResources, String wantedVersion, Optional<String> dockerImageRepo) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false);
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0")).vespaVersion(wantedVersion).build();
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion(wantedVersion).build();
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0")).vespaVersion(wantedVersion).build();
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion(wantedVersion).build();
 
-        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
-        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);
-        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, required, nodeResources, tester);
-        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, required, nodeResources, tester);
+        Set<HostSpec> container0 = prepare(application, tester, containerCluster0, container0Size, 1, required, nodeResources);
+        Set<HostSpec> container1 = prepare(application, tester, containerCluster1, container1Size, 1, required, nodeResources);
+        Set<HostSpec> content0 = prepare(application, tester, contentCluster0, content0Size, 1, required, nodeResources);
+        Set<HostSpec> content1 = prepare(application, tester, contentCluster1, content1Size, 1, required, nodeResources);
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
@@ -707,11 +797,11 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, Optional.empty(), required, true);
-        int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0.type(), application);
-        int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1.type(), application);
-        int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0.type(), application);
-        int expectedContent1Size = tester.capacityPolicies().decideSize(capacity.apply(content1Size), contentCluster1.type(), application);
+        Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified), required, true);
+        int expectedContainer0Size = tester.capacityPolicies().decideSize(container0Size, capacity.apply(container0Size), containerCluster0, application);
+        int expectedContainer1Size = tester.capacityPolicies().decideSize(container1Size, capacity.apply(container1Size), containerCluster1, application);
+        int expectedContent0Size = tester.capacityPolicies().decideSize(content0Size, capacity.apply(content0Size), contentCluster0, application);
+        int expectedContent1Size = tester.capacityPolicies().decideSize(content1Size, capacity.apply(content1Size), contentCluster1, application);
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,
@@ -730,8 +820,8 @@ public class ProvisioningTest {
         return new SystemState(allHosts, container0, container1, content0, content1);
     }
 
-    private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups,
-                                  boolean required, NodeResources nodeResources, ProvisioningTester tester) {
+    private Set<HostSpec> prepare(ApplicationId application, ProvisioningTester tester, ClusterSpec cluster, int nodeCount, int groups,
+                                  boolean required, NodeResources nodeResources) {
         if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
         return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, nodeResources));
     }

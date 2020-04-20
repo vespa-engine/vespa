@@ -12,7 +12,7 @@ public class EndpointCertificateSecretsValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         if (deployState.endpointCertificateSecrets().isPresent() && deployState.endpointCertificateSecrets().get() == EndpointCertificateSecrets.MISSING) {
-            throw new CertificateNotReadyException("TLS enabled, but could not retrieve certificate yet");
+            throw new CertificateNotReadyException("TLS enabled, but could not yet retrieve certificate for application " + deployState.getProperties().applicationId().serializedForm());
         }
     }
 }

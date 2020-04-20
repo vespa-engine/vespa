@@ -8,9 +8,9 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigInterruptedExceptionTest {
+
     @Test
     public void require_that_throwable_is_preserved() {
         ConfigInterruptedException e = new ConfigInterruptedException(new RuntimeException("foo"));

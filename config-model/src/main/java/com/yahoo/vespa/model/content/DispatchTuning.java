@@ -11,18 +11,25 @@ public class DispatchTuning {
 
     public static final DispatchTuning empty = new DispatchTuning.Builder().build();
 
-    public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE};
+    public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE}
 
     private final Integer maxHitsPerPartition;
     private DispatchPolicy dispatchPolicy;
     private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
+    public Double getTopkProbability() {
+        return topkProbability;
+    }
+
+    private final Double topkProbability;
+
     private DispatchTuning(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
         minGroupCoverage = builder.minGroupCoverage;
         minActiveDocsCoverage = builder.minActiveDocsCoverage;
+        topkProbability = builder.topKProbability;
     }
 
     /** Returns the max number of hits to fetch from each partition, or null to fetch all */
@@ -46,6 +53,7 @@ public class DispatchTuning {
         private DispatchPolicy dispatchPolicy;
         private Double minGroupCoverage;
         private Double minActiveDocsCoverage;
+        private Double topKProbability;
 
         public DispatchTuning build() {
             return new DispatchTuning(this);
@@ -53,6 +61,10 @@ public class DispatchTuning {
 
         public Builder setMaxHitsPerPartition(Integer maxHitsPerPartition) {
             this.maxHitsPerPartition = maxHitsPerPartition;
+            return this;
+        }
+        public Builder setTopKProbability(Double topKProbability) {
+            this.topKProbability = topKProbability;
             return this;
         }
         public Builder setDispatchPolicy(String policy) {

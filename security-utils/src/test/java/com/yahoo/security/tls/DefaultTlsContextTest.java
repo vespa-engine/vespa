@@ -46,7 +46,9 @@ public class DefaultTlsContextTest {
                                 singletonList(new RequiredPeerCredential(RequiredPeerCredential.Field.CN, new HostGlobPattern("dummy"))))));
 
         DefaultTlsContext tlsContext =
-                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, PeerAuthentication.NEED);
+                new DefaultTlsContext(
+                        singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers,
+                        AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.ENABLED);
 
         SSLEngine sslEngine = tlsContext.createSslEngine();
         assertThat(sslEngine).isNotNull();

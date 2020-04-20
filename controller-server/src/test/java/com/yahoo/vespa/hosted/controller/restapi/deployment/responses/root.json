@@ -29,7 +29,87 @@
           "productionSuccesses": 1
         }
       ],
-      "deployingApplications": []
+      "deployingApplications": [],
+      "applications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "upgrading": false,
+          "upgradePolicy": "default",
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
+            "production-us-west-1": {
+              "success": {
+                "number": 1,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          },
+          "upgradeRuns": {
+            "production-us-west-1": {
+              "success": {
+                "number": 1,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          }
+        },
+        {
+          "tenant": "tenant2",
+          "application": "application2",
+          "instance": "i2",
+          "upgrading": false,
+          "upgradePolicy": "default",
+          "jobs": [
+            {
+              "name": "system-test"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
+            "production-us-west-1": {
+              "success": {
+                "number": 1,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          },
+          "upgradeRuns": {
+            "production-us-west-1": {
+              "success": {
+                "number": 1,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "version": "5.1",
@@ -47,6 +127,15 @@
         }
       ],
       "failingApplications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default",
+          "failing": "system-test",
+          "status": "error"
+        },
         {
           "tenant": "tenant1",
           "application": "application1",
@@ -75,6 +164,14 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
+          "running": "system-test"
+        },
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default",
           "running": "staging-test"
         },
         {
@@ -85,8 +182,217 @@
           "upgradePolicy": "default",
           "running": "production-us-west-1"
         }
+      ],
+      "applications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "upgrading": true,
+          "upgradePolicy": "default",
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
+            "system-test": {
+              "failing": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              },
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "staging-test": {
+              "failing": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              },
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            }
+          },
+          "upgradeRuns": {
+            "system-test": {
+              "failing": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              },
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "staging-test": {
+              "failing": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              },
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            }
+          }
+        },
+        {
+          "tenant": "tenant2",
+          "application": "application2",
+          "instance": "i1",
+          "upgrading": false,
+          "upgradePolicy": "default",
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
+            "system-test": {
+              "failing": {
+                "number": 3,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              }
+            },
+            "staging-test": {
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "production-us-west-1": {
+              "success": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          },
+          "upgradeRuns": {
+            "system-test": {},
+            "staging-test": {},
+            "production-us-west-1": {
+              "success": {
+                "number": 2,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "success"
+              }
+            }
+          }
+        },
+        {
+          "tenant": "tenant2",
+          "application": "application2",
+          "instance": "i2",
+          "upgrading": true,
+          "upgradePolicy": "default",
+          "jobs": [
+            {
+              "name": "system-test"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
+            "production-us-west-1": {
+              "running": {
+                "number": 2,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "system-test": {
+              "running": {
+                "number": 1,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "staging-test": {
+              "running": {
+                "number": 1,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            }
+          },
+          "upgradeRuns": {
+            "production-us-west-1": {
+              "running": {
+                "number": 2,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "system-test": {},
+            "staging-test": {}
+          }
+        }
       ]
     }
+  ],
+  "jobs": [
+    "system-test",
+    "staging-test",
+    "production-us-east-3",
+    "test-us-east-3",
+    "production-us-west-1",
+    "test-us-west-1",
+    "production-us-central-1",
+    "test-us-central-1",
+    "production-ap-northeast-1",
+    "test-ap-northeast-1",
+    "production-ap-northeast-2",
+    "test-ap-northeast-2",
+    "production-ap-southeast-1",
+    "test-ap-southeast-1",
+    "production-eu-west-1",
+    "test-eu-west-1",
+    "production-aws-us-east-1a",
+    "test-aws-us-east-1a",
+    "production-aws-us-west-2a",
+    "test-aws-us-west-2a",
+    "production-aws-us-east-1b",
+    "test-aws-us-east-1b"
   ]
 }
-

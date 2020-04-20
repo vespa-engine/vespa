@@ -3,15 +3,14 @@
 #include "querycompletenessfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/vespalib/util/stash.h>
 #include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.querycompleteness");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 QueryCompletenessConfig::QueryCompletenessConfig() :
     fieldId(search::fef::IllegalHandle),
@@ -106,7 +105,7 @@ QueryCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 QueryCompletenessBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new QueryCompletenessBlueprint());
+    return std::make_unique<QueryCompletenessBlueprint>();
 }
 
 search::fef::FeatureExecutor &
@@ -115,4 +114,4 @@ QueryCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment 
     return stash.create<QueryCompletenessExecutor>(env, _config);
 }
 
-}}
+}

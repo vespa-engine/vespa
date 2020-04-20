@@ -116,6 +116,8 @@ void
 Watcher::watchfile()
 {
     struct donecache already;
+    char newfn[FILENAME_MAX];
+    int spamfill_counter = 0;
 
     char *target = getenv("VESPA_LOG_TARGET");
     if (target == nullptr || strncmp(target, "file:", 5) != 0) {
@@ -214,17 +216,30 @@ Watcher::watchfile()
 
         if (rotate) {
             vespalib::duration rotTime = rotTimer.elapsed();
-            if (rotTime > 59s || (sb.st_size == offset && rotTime > 4s)) {
-                removeOldLogs(filename);
+            off_t overflow_size = (1.1 * _confsubscriber.getRotateSize());
+            if ((rotTime > 59s) ||
+                (sb.st_size == offset && rotTime > 4s) ||
+                (sb.st_size > overflow_size && rotTime > 2s))
+            {
                 if (sb.st_size != offset) {
                     LOG(warning, "logfile rotation incomplete after %2.3f s (dropping %" PRIu64 " bytes)",
                         vespalib::to_s(rotTime), static_cast<uint64_t>(sb.st_size - offset));
                 } else {
                     LOG(debug, "logfile rotation complete after %2.3f s", vespalib::to_s(rotTime));
                 }
+                if (((now - created) < (rotTime + 180s)) && (sb.st_size > overflow_size)) {
+                    ++spamfill_counter;
+                } else {
+                    spamfill_counter = 0;
+                }
                 created = now;
                 rotate = false;
                 close(_wfd);
+                if (spamfill_counter > 2) {
+                    LOG(warning, "logfile spamming %d times, aggressively removing %s", spamfill_counter, newfn);
+                    unlink(newfn);
+                }
+                removeOldLogs(filename);
                 goto again;
             }
         } else if (stat(filename, &sb) != 0
@@ -240,7 +255,6 @@ Watcher::watchfile()
             rotTimer = vespalib::Timer();
             LOG(debug, "preparing to rotate logfile, old logfile size %d, age %2.3f seconds",
                 (int)offset, vespalib::to_s(now-created));
-            char newfn[FILENAME_MAX];
             int l = strlen(filename);
             strcpy(newfn, filename);
             time_t seconds = vespalib::count_s(now.time_since_epoch());

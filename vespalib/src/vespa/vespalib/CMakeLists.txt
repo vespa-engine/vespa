@@ -3,6 +3,7 @@ vespa_add_library(vespalib
     SOURCES
     $<TARGET_OBJECTS:vespalib_vespalib_btree>
     $<TARGET_OBJECTS:vespalib_vespalib_component>
+    $<TARGET_OBJECTS:vespalib_vespalib_crypto>
     $<TARGET_OBJECTS:vespalib_vespalib_data>
     $<TARGET_OBJECTS:vespalib_vespalib_data_slime>
     $<TARGET_OBJECTS:vespalib_vespalib_datastore>
@@ -15,6 +16,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_net_tls_impl>
     $<TARGET_OBJECTS:vespalib_vespalib_objects>
     $<TARGET_OBJECTS:vespalib_vespalib_portal>
+    $<TARGET_OBJECTS:vespalib_vespalib_regex>
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:vespalib_vespalib_test>
     $<TARGET_OBJECTS:vespalib_vespalib_testkit>
@@ -28,4 +30,8 @@ vespa_add_library(vespalib
     ${VESPA_GCC_LIB}
 )
 
+set(BLA_VENDOR OpenBLAS)
+vespa_add_target_package_dependency(vespalib BLAS)
 vespa_add_target_package_dependency(vespalib OpenSSL)
+vespa_add_target_package_dependency(vespalib RE2)
+

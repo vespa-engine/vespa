@@ -4,23 +4,23 @@ package com.yahoo.vespa.orchestrator;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 
 import java.util.List;
 
 public class Host {
 
     private final HostName hostName;
-    private final HostStatus hostStatus;
+    private final HostInfo hostInfo;
     private final ApplicationInstanceReference applicationInstanceReference;
     private final List<ServiceInstance> serviceInstances;
 
     public Host(HostName hostName,
-                HostStatus hostStatus,
+                HostInfo hostInfo,
                 ApplicationInstanceReference applicationInstanceReference,
                 List<ServiceInstance> serviceInstances) {
         this.hostName = hostName;
-        this.hostStatus = hostStatus;
+        this.hostInfo = hostInfo;
         this.applicationInstanceReference = applicationInstanceReference;
         this.serviceInstances = serviceInstances;
     }
@@ -29,8 +29,8 @@ public class Host {
         return hostName;
     }
 
-    public HostStatus getHostStatus() {
-        return hostStatus;
+    public HostInfo getHostInfo() {
+        return hostInfo;
     }
 
     public ApplicationInstanceReference getApplicationInstanceReference() {

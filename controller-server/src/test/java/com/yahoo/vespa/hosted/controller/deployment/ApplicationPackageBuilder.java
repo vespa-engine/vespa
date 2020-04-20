@@ -1,17 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -52,6 +58,7 @@ public class ApplicationPackageBuilder {
     private String searchDefinition = "search test { }";
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
+    private Version compileVersion = Version.fromString("6.1");
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -159,6 +166,11 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder compileVersion(Version version) {
+        compileVersion = version;
+        return this;
+    }
+
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
         this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
                                                       service.value());
@@ -186,6 +198,24 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder trustDefaultCertificate() {
+        try {
+            var generator = KeyPairGenerator.getInstance("RSA");
+            var builder = X509CertificateBuilder.fromKeypair(
+                    generator.generateKeyPair(),
+                    new X500Principal("CN=name"),
+                    Instant.now(),
+                    Instant.now().plusMillis(300_000),
+                    SignatureAlgorithm.SHA256_WITH_RSA,
+                    X509CertificateBuilder.generateRandomSerialNumber()
+            );
+            this.trustedCertificates.add(builder.build());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
@@ -201,11 +231,11 @@ public class ApplicationPackageBuilder {
             xml.append("'/>\n");
         }
         xml.append(notifications);
-        xml.append(blockChange);
         if (explicitSystemTest)
             xml.append("    <test />\n");
         if (explicitStagingTest)
             xml.append("    <staging />\n");
+        xml.append(blockChange);
         xml.append("    <");
         xml.append(environment.value());
         if (globalServiceId != null) {
@@ -237,8 +267,8 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(UTF_8);
     }
 
-    private static byte[] buildMeta() {
-        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(UTF_8);
+    private static byte[] buildMeta(Version compileVersion) {
+        return ("{\"compileVersion\":\"" + compileVersion.toFullString() + "\",\"buildTime\":1000}").getBytes(UTF_8);
     }
 
     public ApplicationPackage build() {
@@ -262,7 +292,7 @@ public class ApplicationPackageBuilder {
             out.write(searchDefinition());
             out.closeEntry();
             out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
-            out.write(buildMeta());
+            out.write(buildMeta(compileVersion));
             out.closeEntry();
             out.putNextEntry(new ZipEntry(dir + "security/clients.pem"));
             out.write(X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
@@ -284,7 +314,7 @@ public class ApplicationPackageBuilder {
             out.write(deploymentXml.getBytes(UTF_8));
             out.closeEntry();
             out.putNextEntry(new ZipEntry("build-meta.json"));
-            out.write(buildMeta());
+            out.write(buildMeta(Version.fromString("6.1")));
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

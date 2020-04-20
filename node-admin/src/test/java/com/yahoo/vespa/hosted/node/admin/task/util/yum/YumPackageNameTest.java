@@ -56,7 +56,7 @@ public class YumPackageNameTest {
                 "1.el7",
                 null,
                 "docker-engine-selinux-1.12.6-1.el7",
-                null);
+                "0:docker-engine-selinux-1.12.6-1.el7.*");
 
         // name-ver-rel.arch
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7.x86_64",
@@ -66,7 +66,7 @@ public class YumPackageNameTest {
                 "1.el7",
                 "x86_64",
                 "docker-engine-selinux-1.12.6-1.el7.x86_64",
-                null);
+                "0:docker-engine-selinux-1.12.6-1.el7.*");
 
         // name-epoch:ver-rel.arch
         verifyPackageName(
@@ -112,7 +112,7 @@ public class YumPackageNameTest {
                 yumPackageName.toVersionLockName();
                 fail();
             } catch (IllegalStateException e) {
-                assertThat(e.getMessage(), containsStringIgnoringCase("epoch is missing"));
+                assertThat(e.getMessage(), containsStringIgnoringCase("Version is missing "));
             }
         } else {
             assertEquals(toVersionName, yumPackageName.toVersionLockName());

@@ -9,8 +9,8 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-INSTANTIATE_TEST_CASE_P(BTreeDatabase, BucketDatabaseTest,
-                        ::testing::Values(std::make_shared<BTreeBucketDatabase>()));
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(BTreeDatabase, BucketDatabaseTest,
+                                     ::testing::Values(std::make_shared<BTreeBucketDatabase>()));
 
 using document::BucketId;
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportCons
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.time.Clock;
@@ -31,7 +30,6 @@ import java.time.Clock;
  *
  * @author mpolden
  */
-// TODO(mpolden): Access all services through this
 public interface ServiceRegistry {
 
     ConfigServer configServer();
@@ -42,11 +40,9 @@ public interface ServiceRegistry {
 
     GlobalRoutingService globalRoutingService();
 
-    RoutingGenerator routingGenerator();
-
     Mailer mailer();
 
-    ApplicationCertificateProvider applicationCertificateProvider();
+    EndpointCertificateProvider endpointCertificateProvider();
 
     MeteringClient meteringService();
 

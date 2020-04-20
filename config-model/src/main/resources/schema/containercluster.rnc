@@ -96,7 +96,9 @@ Ssl = element ssl {
     element private-key-file { string } &
     element certificate-file { string } &
     element ca-certificates-file { string }? &
-    element client-authentication { string "disabled" | string "want" | string "need" }?
+    element client-authentication { string "disabled" | string "want" | string "need" }? &
+    element cipher-suites { string }? &
+    element protocols { string }?
 }
 
 SslProvider = element ssl-provider {
@@ -237,7 +239,7 @@ NodesOfContainerCluster = element nodes {
       attribute type { xsd:string }
       |
       (
-        attribute count { xsd:positiveInteger } &
+        attribute count { xsd:positiveInteger | xsd:string  } &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &

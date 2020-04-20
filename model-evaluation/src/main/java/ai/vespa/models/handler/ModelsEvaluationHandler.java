@@ -77,8 +77,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         property(request, missingValueKey).ifPresent(missingValue -> evaluator.setMissingValue(Tensor.from(missingValue)));
 
         for (Map.Entry<String, TensorType> argument : evaluator.function().argumentTypes().entrySet()) {
-            property(request, argument.getKey()).ifPresent(value -> evaluator.bind(argument.getKey(),
-                                                                                   Tensor.from(argument.getValue(), value)));
+            Optional<String> value = property(request, argument.getKey());
+            if (value.isPresent()) {
+                try {
+                    evaluator.bind(argument.getKey(), Tensor.from(argument.getValue(), value.get()));
+                } catch (IllegalArgumentException e) {
+                    evaluator.bind(argument.getKey(), value.get());  // since we don't yet support tensors with string values
+                }
+            }
         }
         Tensor result = evaluator.evaluate();
         return new Response(200, JsonFormat.encode(result));

@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
+import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -23,7 +25,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -35,6 +36,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -65,6 +67,17 @@ class FlagsClient {
         });
     }
 
+    List<FlagId> listDefinedFlags(FlagsTarget target) {
+        HttpGet request = new HttpGet(createUri(target, "/defined", List.of()));
+        return executeRequest(request, response -> {
+            verifySuccess(response, null);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            List<FlagId> flagIds = new ArrayList<>();
+            json.fieldNames().forEachRemaining(fieldName -> flagIds.add(new FlagId(fieldName)));
+            return flagIds;
+        });
+    }
+
     void putFlagData(FlagsTarget target, FlagData flagData) throws FlagsException, UncheckedIOException {
         HttpPut request = new HttpPut(createUri(target, "/data/" + flagData.id().toString(), List.of()));
         request.setEntity(jsonContent(flagData.serializeToJson()));
@@ -82,11 +95,12 @@ class FlagsClient {
         });
     }
 
-
     private static CloseableHttpClient createClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
+        DelayedConnectionLevelRetryHandler retryHandler = DelayedConnectionLevelRetryHandler.Builder
+                .withExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(20), 5)
+                .build();
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
-                .setRetryHandler(new DefaultHttpRequestRetryHandler(5, /*retry on non-idempotent requests*/true))
                 .setSSLContext(identityProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(new FlagTargetsHostnameVerifier(targets))
                 .setDefaultRequestConfig(RequestConfig.custom()
@@ -96,6 +110,7 @@ class FlagsClient {
                                                  .build())
                 .setMaxConnPerRoute(2)
                 .setMaxConnTotal(100)
+                .setRetryHandler(retryHandler)
                 .build();
     }
 

@@ -4,10 +4,11 @@ package com.yahoo.config.model.deploy;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -39,9 +40,11 @@ public class TestProperties implements ModelContext.Properties {
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useAdaptiveDispatch = false;
+    private double topKProbability = 1.0;
     private double defaultTermwiseLimit = 1.0;
+    private double softStartSeconds = 0.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
-
+    private AthenzDomain athenzDomain;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -60,10 +63,27 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+
+    @Override
+    public double defaultSoftStartSeconds() {
+        return softStartSeconds;
+    }
+
+    @Override public double defaultTopKProbability() { return topKProbability; }
     @Override public boolean useBucketSpaceMetric() { return true; }
+    @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
+        return this;
+    }
+
+    public TestProperties setTopKProbability(double probability) {
+        topKProbability = probability;
+        return this;
+    }
+    public TestProperties setSoftStartSeconds(double softStartSeconds) {
+        this.softStartSeconds = softStartSeconds;
         return this;
     }
 
@@ -99,6 +119,16 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setEndpointCertificateSecrets(Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
         this.endpointCertificateSecrets = endpointCertificateSecrets;
+        return this;
+    }
+
+    public TestProperties setZone(Zone zone) {
+        this.zone = zone;
+        return this;
+    }
+
+    public TestProperties setAthenzDomain(AthenzDomain domain) {
+        this.athenzDomain = domain;
         return this;
     }
 

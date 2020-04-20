@@ -7,7 +7,7 @@
 
 namespace search::features {
 
-class ValueExecutor : public fef::FeatureExecutor
+class ValueExecutor final : public fef::FeatureExecutor
 {
 private:
     std::vector<feature_t> _values;
@@ -19,7 +19,18 @@ public:
     const std::vector<feature_t> & getValues() const { return _values; }
 };
 
-class SingleZeroValueExecutor : public fef::FeatureExecutor
+class SingleValueExecutor final : public fef::FeatureExecutor
+{
+private:
+    feature_t _value;
+
+public:
+    SingleValueExecutor(feature_t value) : _value(value) { }
+    bool isPure() override { return true; }
+    void execute(uint32_t docId) override;
+};
+
+class SingleZeroValueExecutor final : public fef::FeatureExecutor
 {
 public:
     SingleZeroValueExecutor() : FeatureExecutor() {}

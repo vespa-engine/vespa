@@ -11,6 +11,7 @@
 #include "ipostinglistattributebase.h"
 #include "ipostinglistsearchcontext.h"
 #include "stringbase.h"
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -28,6 +29,7 @@ LOG_SETUP(".searchlib.attribute.attributevector");
 using vespalib::getLastErrorString;
 
 using document::ValueUpdate;
+using document::AssignValueUpdate;
 using vespalib::make_string;
 using vespalib::Array;
 using vespalib::IllegalStateException;
@@ -266,79 +268,6 @@ const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
 
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::openFile(fileName);
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openDAT()
-{
-    return openFile(".dat");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openIDX()
-{
-    return openFile(".idx");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openWeight()
-{
-    return openFile(".weight");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openUDAT()
-{
-    return openFile(".dat");
-}
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadDAT()
-{
-    return loadFile(".dat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadIDX()
-{
-    return loadFile(".idx");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadWeight()
-{
-    return loadFile(".weight");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadUDAT()
-{
-    return loadFile(".udat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::loadFile(fileName);
-}
-
-
 bool
 AttributeVector::save(vespalib::stringref fileName)
 {
@@ -379,19 +308,19 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref file
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
     return attribute::AttributeHeader(fileName,
-                                   getConfig().basicType(),
-                                   getConfig().collectionType(),
-                                   getConfig().basicType().type() == BasicType::Type::TENSOR
-                                      ? getConfig().tensorType()
-                                      : vespalib::eval::ValueType::error_type(),
-                                   getEnumeratedSave(),
-                                   getConfig().predicateParams(),
-                                   getCommittedDocIdLimit(),
-                                   getFixedWidth(),
-                                   getUniqueValueCount(),
-                                   getTotalValueCount(),
-                                   getCreateSerialNum(),
-                                   getVersion());
+                                      getConfig().basicType(),
+                                      getConfig().collectionType(),
+                                      (getConfig().basicType().type() == BasicType::Type::TENSOR
+                                       ? getConfig().tensorType()
+                                       : vespalib::eval::ValueType::error_type()),
+                                      getEnumeratedSave(),
+                                      getConfig().predicateParams(),
+                                      getConfig().hnsw_index_params(),
+                                      getCommittedDocIdLimit(),
+                                      getUniqueValueCount(),
+                                      getTotalValueCount(),
+                                      getCreateSerialNum(),
+                                      getVersion());
 }
 
 void AttributeVector::onSave(IAttributeSaveTarget &)
@@ -540,6 +469,9 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
         if (vu.inherits(ArithmeticValueUpdate::classId)) {
             const ArithmeticValueUpdate &au(static_cast<const ArithmeticValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
+        } else if (vu.inherits(AssignValueUpdate::classId)) {
+            const AssignValueUpdate &au(static_cast<const AssignValueUpdate &>(vu));
+            retval = applyWeight(doc, map.getKey(), au);
         } else {
             retval = false;
         }
@@ -550,6 +482,7 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
 
 bool AttributeVector::applyWeight(DocId, const FieldValue &, const ArithmeticValueUpdate &) { return false; }
 
+bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpdate&) { return false; }
 
 void
 AttributeVector::removeAllOldGenerations() {

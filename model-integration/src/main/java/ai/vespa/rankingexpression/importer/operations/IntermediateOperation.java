@@ -45,6 +45,7 @@ public abstract class IntermediateOperation {
     protected OrderedTensorType type;
     protected TensorFunction function;
     protected TensorFunction rankingExpressionFunction = null;
+    protected boolean exportAsRankingFunction = false;
 
     private final List<String> importWarnings = new ArrayList<>();
     private Value constantValue = null;
@@ -78,7 +79,7 @@ public abstract class IntermediateOperation {
             if (isConstant()) {
                 ExpressionNode constant = new ReferenceNode(Reference.simple("constant", vespaName()));
                 function = new TensorFunctionNode.ExpressionTensorFunction(constant);
-            } else if (outputs.size() > 1) {
+            } else if (outputs.size() > 1 || exportAsRankingFunction) {
                 rankingExpressionFunction = lazyGetFunction();
                 function = new VariableTensor(rankingExpressionFunctionName(), type.type());
             } else {
@@ -137,7 +138,7 @@ public abstract class IntermediateOperation {
             return Optional.of(constantValue);
         }
         if (constantValueFunction != null) {
-            return Optional.of(constantValueFunction.apply(type));
+            return Optional.of(constantValueFunction.apply(type().orElse(null)));
         }
         return Optional.empty();
     }
@@ -188,7 +189,7 @@ public abstract class IntermediateOperation {
             throw new IllegalArgumentException("Attempted to evaluate non-constant operation as a constant.");
         }
         Value val = evaluateAsConstant(new MapContext(DoubleValue.NaN));
-        if ( ! val.asTensor().type().equals(type.type()) ) {
+        if (type != null && ! val.asTensor().type().equals(type.type()) ) {
             throw new IllegalArgumentException("Constant evaluation in " + name + " resulted in wrong type. " +
                     "Expected: " + type.type() + " Got: " + val.asTensor().type());
         }
@@ -211,6 +212,9 @@ public abstract class IntermediateOperation {
                 result = new TensorValue(lazyGetFunction().evaluate(context));
             }
             context.put(constantName, result);
+            if (outputs.size() > 1 || exportAsRankingFunction) {
+                context.put(rankingExpressionFunctionName(), result);
+            }
         }
         return result;
     }

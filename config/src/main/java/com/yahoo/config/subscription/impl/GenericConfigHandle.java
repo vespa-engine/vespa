@@ -7,7 +7,7 @@ import com.yahoo.vespa.config.RawConfig;
 /**
  * A config handle which does not use the config class, but payload instead. Used in config proxy.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class GenericConfigHandle extends ConfigHandle {

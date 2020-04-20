@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -17,7 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -93,7 +92,7 @@ public class AllocationSimulator {
     private Optional<Allocation> allocation(Optional<String> tenant, Flavor flavor) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
-                                                   ClusterMembership.from("container/id1/3", new Version()),
+                                                   ClusterMembership.from("container/id1/3", new Version(), Optional.empty()),
                                                    flavor.resources(),
                                                    Generation.initial(),
                                                    false);
@@ -107,10 +106,6 @@ public class AllocationSimulator {
                 .tenant(tenant)
                 .applicationName("test")
                 .instanceName("default").build();
-    }
-
-    private ClusterSpec cluster() {
-        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false);
     }
 
     /* ------------ Methods to add events to the system ----------------*/

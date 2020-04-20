@@ -9,6 +9,7 @@ namespace vespalib::tensor {
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using namespace eval::tensor_function;
 
@@ -38,7 +39,7 @@ DenseReplaceTypeFunction::~DenseReplaceTypeFunction()
 }
 
 eval::InterpretedFunction::Instruction
-DenseReplaceTypeFunction::compile_self(Stash &) const
+DenseReplaceTypeFunction::compile_self(const TensorEngine &, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_replace_type_op, (uint64_t)&(result_type()));
 }

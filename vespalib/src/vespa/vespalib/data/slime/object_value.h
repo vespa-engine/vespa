@@ -12,8 +12,7 @@
 #include <vespa/vespalib/stllike/vector_map.h>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class representing a collection of unordered values that can be
@@ -32,7 +31,7 @@ private:
 
     Cursor &setIfUnset(SymbolInserter &symbol, const ValueFactory &input) {
         Value *&pos = _fields[symbol.insert()];
-        if (pos != 0) {
+        if (pos != nullptr) {
             return *NixValue::invalid();
         }
         pos = input.create(_stash);
@@ -40,7 +39,7 @@ private:
     }
 
     Value *lookup(const SymbolLookup &symbol) const {
-        SymbolValueMap::const_iterator pos = _fields.find(symbol.lookup());
+        auto pos = _fields.find(symbol.lookup());
         if (pos == _fields.end()) {
             return NixValue::invalid();
         }
@@ -81,9 +80,7 @@ public:
     Cursor &setObject(Memory name) override;
     Symbol resolve(Memory symbol_name) override;
 
-    ~ObjectValue() { }
+    ~ObjectValue() override = default;
 };
 
-} // namespace vespalib::slime
-} // namespace vespalib
-
+}

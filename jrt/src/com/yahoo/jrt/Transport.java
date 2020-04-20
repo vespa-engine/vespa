@@ -4,7 +4,6 @@ package com.yahoo.jrt;
 
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -19,16 +18,17 @@ import java.util.logging.Logger;
  **/
 public class Transport {
 
-    private static Logger log = Logger.getLogger(Transport.class.getName());
+    private static final Logger log = Logger.getLogger(Transport.class.getName());
 
     private final FatalErrorHandler fatalHandler; // NB: this must be set first
     private final CryptoEngine      cryptoEngine;
     private final Connector         connector;
     private final Worker            worker;
     private final AtomicInteger     runCnt;
+    private final boolean tcpNoDelay;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
-    private final ArrayList<TransportThread> threads = new ArrayList<TransportThread>();
+    private final ArrayList<TransportThread> threads = new ArrayList<>();
     private final Random rnd = new Random();
 
     /**
@@ -41,22 +41,21 @@ public class Transport {
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
      **/
-    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads) {
-        synchronized (this) {
-            this.fatalHandler = fatalHandler; // NB: this must be set first
-        }
+    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay) {
+        this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
-        connector = new Connector(this);
+        this.tcpNoDelay = tcpNoDelay;
+        connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
         for (int i = 0; i < numThreads; ++i) {
             threads.add(new TransportThread(this));
         }
     }
-    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads); }
-    public Transport(FatalErrorHandler fatalHandler, int numThreads) { this(fatalHandler, CryptoEngine.createDefault(), numThreads); }
-    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads); }
-    public Transport() { this(null, CryptoEngine.createDefault(), 1); }
+    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads, true); }
+    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads, true); }
+    public Transport(int numThreads, boolean tcpNoDelay) { this(null, CryptoEngine.createDefault(), numThreads, tcpNoDelay); }
+    public Transport() { this(null, CryptoEngine.createDefault(), 1, true); }
 
     /**
      * Select a random transport thread
@@ -67,15 +66,29 @@ public class Transport {
         return threads.get(rnd.nextInt(threads.size()));
     }
 
+    boolean getTcpNoDelay() { return tcpNoDelay; }
+
     /**
-     * Use the underlying CryptoEngine to create a CryptoSocket.
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the client side of a connection.
      *
      * @return CryptoSocket handling appropriate encryption
      * @param channel low-level socket channel to be wrapped by the CryptoSocket
-     * @param isServer flag indicating which end of the connection we are
+     * @param spec who we are connecting to, for hostname validation
      **/
-    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        return cryptoEngine.createCryptoSocket(channel, isServer);
+    CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
+        return cryptoEngine.createClientCryptoSocket(channel, spec);
+    }
+
+    /**
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the server side of a connection.
+     *
+     * @return CryptoSocket handling appropriate encryption
+     * @param channel low-level socket channel to be wrapped by the CryptoSocket
+     **/
+    CryptoSocket createServerCryptoSocket(SocketChannel channel) {
+        return cryptoEngine.createServerCryptoSocket(channel);
     }
 
     /**
@@ -119,7 +132,7 @@ public class Transport {
      * @param context application context for the new connection
      */
     Connection connect(Supervisor owner, Spec spec, Object context) {
-        Connection conn = new Connection(selectThread(), owner, spec, context);
+        Connection conn = new Connection(selectThread(), owner, spec, context, getTcpNoDelay());
         connector.connectLater(conn);
         return conn;
     }
@@ -162,7 +175,7 @@ public class Transport {
      * @return this object, to enable chaining with join
      **/
     public Transport shutdown() {
-        connector.shutdown().waitDone();
+        connector.close();
         for (TransportThread thread: threads) {
             thread.shutdown();
         }
@@ -181,7 +194,6 @@ public class Transport {
     void notifyDone(TransportThread self) {
         if (runCnt.decrementAndGet() == 0) {
             worker.shutdown().join();
-            connector.exit().join();
             try { cryptoEngine.close(); } catch (Exception e) {}
         }
     }

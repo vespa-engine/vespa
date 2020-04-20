@@ -38,16 +38,10 @@ public class CuratorDatabase {
     /** A partial cache of the Curator database, which is only valid if generations match */
     private final AtomicReference<Cache> cache = new AtomicReference<>();
 
-    /** Whether we should return data from the cache or always read fro ZooKeeper */
+    /** Whether we should return data from the cache or always read from ZooKeeper */
     private final boolean useCache;
 
     private final Object cacheCreationLock = new Object();
-
-    /**
-     * All keys, to allow reentrancy.
-     * This will grow forever with the number of applications seen, but this should be too slow to be a problem.
-     */
-    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /**
      * Creates a curator database
@@ -72,11 +66,8 @@ public class CuratorDatabase {
     }
 
     /** Create a reentrant lock */
-    // Locks are not cached in the in-memory state
     public Lock lock(Path path, Duration timeout) {
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
-        lock.acquire(timeout);
-        return lock;
+        return curator.lock(path, timeout);
     }
 
     // --------- Write operations ------------------------------------------------------------------------------

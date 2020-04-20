@@ -1,17 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_inplace_join_function.h"
-#include "dense_tensor.h"
 #include "dense_tensor_view.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib::tensor {
 
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using namespace eval::tensor_function;
 
@@ -76,7 +75,7 @@ DenseInplaceJoinFunction::~DenseInplaceJoinFunction()
 }
 
 eval::InterpretedFunction::Instruction
-DenseInplaceJoinFunction::compile_self(Stash &) const
+DenseInplaceJoinFunction::compile_self(const TensorEngine &, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type(),
                         rhs().result_type().cell_type(), _write_left);

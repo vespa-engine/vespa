@@ -99,7 +99,7 @@ public:
     };
     VariableSizeVector(const VariableSizeVector &) = delete;
     VariableSizeVector & operator = (const VariableSizeVector &) = delete;
-    VariableSizeVector(size_t initialSize=256);
+    VariableSizeVector(size_t initialCount, size_t initialBufferSize);
     ~VariableSizeVector();
     iterator begin() { return iterator(_vector, 0); }
     iterator end() { return iterator(_vector, size()); }

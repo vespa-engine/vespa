@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -14,13 +13,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import org.junit.After;
 import org.junit.Before;
 
-import java.io.UncheckedIOException;
-import java.nio.charset.CharacterCodingException;
-
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_ACCESS_TOKEN_HEADER_NAME;
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_IDENTITY_TOKEN_HEADER_NAME;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Superclass of REST API tests which needs to set up a functional container instance.
@@ -65,6 +60,8 @@ public class ControllerContainerTest {
                "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
                "    </rotations>\n" +
                "  </config>\n" +
+               "  " +
+               "<accesslog type='disabled'/>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
@@ -89,9 +86,6 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
                "    <binding>http://*/os/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
-               "    <binding>http://*/cost/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v2</binding>\n" +
@@ -149,17 +143,6 @@ public class ControllerContainerTest {
                "      </request-chain>\n" +
                "    </filtering>\n" +
                "  </http>\n";
-    }
-
-    protected void assertResponse(Request request, int responseStatus, String responseMessage) {
-        Response response = container.handleRequest(request);
-        // Compare both status and message at once for easier diagnosis
-        try {
-            assertEquals("status: " + responseStatus + "\nmessage: " + responseMessage,
-                         "status: " + response.getStatus() + "\nmessage: " + response.getBodyAsString());
-        } catch (CharacterCodingException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     protected static Request authenticatedRequest(String uri) {

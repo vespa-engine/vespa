@@ -6,7 +6,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
@@ -19,7 +18,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -29,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -55,7 +53,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -92,6 +89,7 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
+    private static final String assignedRotationRegionsField = "regions";
     private static final String versionField = "version";
 
     // Instance fields
@@ -127,16 +125,6 @@ public class ApplicationSerializer {
     // JobStatus field
     private static final String jobTypeField = "jobType";
     private static final String pausedUntilField = "pausedUntil";
-
-    // ClusterInfo fields
-    private static final String clusterInfoField = "clusterInfo";
-    private static final String clusterInfoFlavorField = "flavor";
-    private static final String clusterInfoCostField = "cost";
-    private static final String clusterInfoCpuField = "flavorCpu";
-    private static final String clusterInfoMemField = "flavorMem";
-    private static final String clusterInfoDiskField = "flavorDisk";
-    private static final String clusterInfoTypeField = "clusterType";
-    private static final String clusterInfoHostnamesField = "hostnames";
 
     // Deployment metrics fields
     private static final String deploymentMetricsField = "metrics";
@@ -190,7 +178,7 @@ public class ApplicationSerializer {
             instanceObject.setString(instanceNameField, instance.name().value());
             deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
-            assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
+            assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
             toSlime(instance.change(), instanceObject, deployingField);
         }
@@ -210,7 +198,6 @@ public class ApplicationSerializer {
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
-        clusterInfoToSlime(deployment.clusterInfo(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -232,41 +219,19 @@ public class ApplicationSerializer {
         }
     }
 
-    private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
-        Cursor root = object.setObject(clusterInfoField);
-        for (Map.Entry<ClusterSpec.Id, ClusterInfo> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
-        }
-    }
-
-    private void toSlime(ClusterInfo info, Cursor object) {
-        object.setString(clusterInfoFlavorField, info.getFlavor());
-        object.setLong(clusterInfoCostField, info.getFlavorCost());
-        object.setDouble(clusterInfoCpuField, info.getFlavorCPU());
-        object.setDouble(clusterInfoMemField, info.getFlavorMem());
-        object.setDouble(clusterInfoDiskField, info.getFlavorDisk());
-        object.setString(clusterInfoTypeField, info.getClusterType().name());
-        Cursor array = object.setArray(clusterInfoHostnamesField);
-        for (String host : info.getHostnames()) {
-            array.addString(host);
-        }
-    }
-
     private void zoneIdToSlime(ZoneId zone, Cursor object) {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        if (applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent()) {
-            object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().getAsLong());
-            toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
-            applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
-            applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
-            applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
-            applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
-            applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
-        }
+        applicationVersion.buildNumber().ifPresent(number -> object.setLong(applicationBuildNumberField, number));
+        applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
+        applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
+        applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
+        applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
+        applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
+        applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -310,13 +275,17 @@ public class ApplicationSerializer {
         });
     }
 
-    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        var rotationsArray = parent.setArray(fieldName);
+    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent) {
+        var rotationsArray = parent.setArray(assignedRotationsField);
         for (var rotation : rotations) {
             var object = rotationsArray.addObject();
             object.setString(assignedRotationEndpointField, rotation.endpointId().id());
             object.setString(assignedRotationRotationField, rotation.rotationId().asString());
             object.setString(assignedRotationClusterField, rotation.clusterId().value());
+            var regionsArray = object.setArray(assignedRotationRegionsField);
+            for (var region : rotation.regions()) {
+                regionsArray.addString(region.value());
+            }
         }
     }
 
@@ -345,7 +314,7 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
-        List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
+        List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
 
@@ -355,19 +324,17 @@ public class ApplicationSerializer {
     }
 
     private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
-        if (latestVersionObject.valid())
-            return Optional.of(applicationVersionFromSlime(latestVersionObject));
-
-        return Optional.empty();
+        return Optional.of(applicationVersionFromSlime(latestVersionObject))
+                       .filter(version -> ! version.isUnknown());
     }
 
-    private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
+    private List<Instance> instancesFromSlime(TenantAndApplicationId id, Inspector field) {
         List<Instance> instances = new ArrayList<>();
         field.traverse((ArrayTraverser) (name, object) -> {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
             List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
             Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
-            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, instanceName, object);
+            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             Change change = changeFromSlime(object.field(deployingField));
             instances.add(new Instance(id.instance(instanceName),
@@ -397,7 +364,6 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
@@ -448,25 +414,6 @@ public class ApplicationSerializer {
         return Collections.unmodifiableMap(rotationStatus);
     }
 
-    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime   (Inspector object) {
-        Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
-        return map;
-    }
-
-    private ClusterInfo clusterInfoFromSlime(Inspector inspector) {
-        String flavor = inspector.field(clusterInfoFlavorField).asString();
-        int cost = (int)inspector.field(clusterInfoCostField).asLong();
-        String type = inspector.field(clusterInfoTypeField).asString();
-        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
-        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
-        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
-
-        List<String> hostnames = new ArrayList<>();
-        inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
-        return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
-    }
-
     private ZoneId zoneIdFromSlime(Inspector object) {
         return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
@@ -474,21 +421,15 @@ public class ApplicationSerializer {
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
         OptionalLong applicationBuildNumber = Serializers.optionalLong(object.field(applicationBuildNumberField));
-        Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        if (sourceRevision.isEmpty() || applicationBuildNumber.isEmpty()) {
+        if (applicationBuildNumber.isEmpty())
             return ApplicationVersion.unknown;
-        }
+
+        Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         Optional<String> authorEmail = Serializers.optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = Serializers.optionalString(object.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = Serializers.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = Serializers.optionalString(object.field(sourceUrlField));
         Optional<String> commit = Serializers.optionalString(object.field(commitField));
-
-        if (authorEmail.isEmpty())
-            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
-
-        if (compileVersion.isEmpty() || buildTime.isEmpty())
-            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get());
 
         return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit);
     }
@@ -522,32 +463,20 @@ public class ApplicationSerializer {
         return change;
     }
 
-    private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {
+    private List<AssignedRotation> assignedRotationsFromSlime(Inspector root) {
         var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
-
-        root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
+        root.field(assignedRotationsField).traverse((ArrayTraverser) (i, inspector) -> {
             var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
-            var regions = deploymentSpec.instance(instance)
-                                        .map(spec -> globalEndpointRegions(spec, endpointId))
-                                        .orElse(Set.of());
+            var regions = new LinkedHashSet<RegionName>();
+            inspector.field(assignedRotationRegionsField).traverse((ArrayTraverser) (j, regionInspector) -> {
+                regions.add(RegionName.from(regionInspector.asString()));
+            });
             assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
         return List.copyOf(assignedRotations.values());
-    }
-
-    private Set<RegionName> globalEndpointRegions(DeploymentInstanceSpec spec, EndpointId endpointId) {
-        if (spec.globalServiceId().isPresent())
-            return spec.zones().stream()
-                       .flatMap(zone -> zone.region().stream())
-                       .collect(Collectors.toSet());
-
-        return spec.endpoints().stream()
-                   .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
-                   .flatMap(endpoint -> endpoint.regions().stream())
-                   .collect(Collectors.toSet());
     }
 
 }

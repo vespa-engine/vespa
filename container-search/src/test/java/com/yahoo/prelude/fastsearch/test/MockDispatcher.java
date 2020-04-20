@@ -2,8 +2,10 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
+import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
@@ -13,25 +15,27 @@ import java.util.List;
 
 class MockDispatcher extends Dispatcher {
 
+    public final ClusterMonitor clusterMonitor;
+
     public static MockDispatcher create(List<Node> nodes) {
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
-        return create(nodes, rpcResourcePool, 1, new VipStatus());
+        return create(nodes, rpcResourcePool, new VipStatus());
     }
 
-    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool,
-            int containerClusterSize, VipStatus vipStatus) {
+    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig(nodes);
-        var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus);
-        return new MockDispatcher(searchCluster, dispatchConfig, rpcResourcePool);
+        var searchCluster = new SearchCluster("a", dispatchConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
+        return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 
-    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
-        this(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster));
+    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
+        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster));
     }
 
-    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
+        super(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+        this.clusterMonitor = clusterMonitor;
     }
 
     static DispatchConfig toDispatchConfig(List<Node> nodes) {

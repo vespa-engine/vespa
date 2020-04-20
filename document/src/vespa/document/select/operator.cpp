@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operator.h"
-#include <regex>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/regex/regex.h>
 #include <cassert>
 #include <ostream>
 
@@ -96,23 +96,25 @@ RegexOperator::trace(const Value& a, const Value& b, std::ostream& out) const
 ResultList
 RegexOperator::compareImpl(const Value& a, const Value& b) const
 {
-    const StringValue* left(dynamic_cast<const StringValue*>(&a));
-    const StringValue* right(dynamic_cast<const StringValue*>(&b));
-    if (left == 0 || right == 0) return ResultList(Result::Invalid);
+    const auto* left(dynamic_cast<const StringValue*>(&a));
+    const auto* right(dynamic_cast<const StringValue*>(&b));
+    if (left == nullptr || right == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return match(left->getValue(), right->getValue());
 }
 
 ResultList
 RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) const
 {
-    const StringValue* left(dynamic_cast<const StringValue*>(&a));
-    const StringValue* right(dynamic_cast<const StringValue*>(&b));
-    if (left == 0) {
+    const auto* left(dynamic_cast<const StringValue*>(&a));
+    const auto* right(dynamic_cast<const StringValue*>(&b));
+    if (left == nullptr) {
         out << "Operator(" << getName() << ") - Left value not a string. "
             << "Returning invalid.\n";
         return ResultList(Result::Invalid);
     }
-    if (right == 0) {
+    if (right == nullptr) {
         out << "Operator(" << getName() << ") - Right value not a string. "
             << "Returning invalid.\n";
         return ResultList(Result::Invalid);
@@ -126,14 +128,12 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
 ResultList
 RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) const
 {
-        // Should we catch this in parsing?
-    if (expr.size() == 0) return ResultList(Result::True);
-    try {
-        std::regex expression(expr.data(), expr.size());
-        return ResultList(Result::get(std::regex_search(val.c_str(), val.c_str() + val.size(), expression)));
-    } catch (std::regex_error &) {
-        return ResultList(Result::False);
+    if (expr.empty()) {
+        return ResultList(Result::True); // Should we catch this in parsing?
     }
+    return ResultList(Result::get(
+            vespalib::Regex::partial_match(std::string_view(val.data(), val.size()),
+                                           std::string_view(expr.data(), expr.size()))));
 }
 
 const RegexOperator RegexOperator::REGEX("=~");
@@ -158,13 +158,15 @@ GlobOperator::trace(const Value& a, const Value& b, std::ostream& out) const
 ResultList
 GlobOperator::compareImpl(const Value& a, const Value& b) const
 {
-    const StringValue* right(dynamic_cast<const StringValue*>(&b));
-        // Fall back to operator== if it isn't string matching
-    if (right == 0) {
+    const auto* right(dynamic_cast<const StringValue*>(&b));
+    // Fall back to operator== if it isn't string matching
+    if (right == nullptr) {
         return FunctionOperator::EQ.compare(a, b);
     }
-    const StringValue* left(dynamic_cast<const StringValue*>(&a));
-    if (left == 0) return ResultList(Result::Invalid);
+    const auto* left(dynamic_cast<const StringValue*>(&a));
+    if (left == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     vespalib::string regex(convertToRegex(right->getValue()));
     return match(left->getValue(), regex);
 }
@@ -172,15 +174,15 @@ GlobOperator::compareImpl(const Value& a, const Value& b) const
 ResultList
 GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
 {
-    const StringValue* right(dynamic_cast<const StringValue*>(&b));
-        // Fall back to operator== if it isn't string matching
-    if (right == 0) {
+    const auto* right(dynamic_cast<const StringValue*>(&b));
+    // Fall back to operator== if it isn't string matching
+    if (right == nullptr) {
         ost << "Operator(" << getName() << ") - Right val not a string, "
             << "falling back to == behavior.\n";
         return FunctionOperator::EQ.trace(a, b, ost);
     }
-    const StringValue* left(dynamic_cast<const StringValue*>(&a));
-    if (left == 0) {
+    const auto* left(dynamic_cast<const StringValue*>(&a));
+    if (left == nullptr) {
         ost << "Operator(" << getName() << ") - Left value is not a string, "
             << "returning invalid.\n";
         return ResultList(Result::Invalid);
@@ -191,35 +193,64 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
     return match(left->getValue(), regex);
 }
 
+namespace {
+
+// Returns the number of consecutive wildcard ('*') characters found from
+// _and including_ the character at `i`, i.e. the wildcard run length.
+size_t wildcard_run_length(size_t i, vespalib::stringref str) {
+    size_t n = 0;
+    for (; (i < str.size()) && (str[i] == '*'); ++n, ++i) {}
+    return n;
+}
+
+}
+
 vespalib::string
-GlobOperator::convertToRegex(vespalib::stringref globpattern) const
+GlobOperator::convertToRegex(vespalib::stringref globpattern)
 {
+    if (globpattern.empty()) {
+        return "^$"; // Empty glob can only match the empty string.
+    }
     vespalib::asciistream ost;
-    ost << '^';
-    for(uint32_t i=0, n=globpattern.size(); i<n; ++i) {
+    size_t i = 0;
+    if (globpattern[0] != '*') {
+        ost << '^';
+    } else {
+        i += wildcard_run_length(0, globpattern); // Skip entire prefix wildcard run.
+    }
+    const size_t n = globpattern.size();
+    for (; i < n; ++i) {
         switch(globpattern[i]) {
-            case '*': ost << ".*";
-                      break;
-            case '?': ost << ".";
-                      break;
-            case '^':
-            case '$':
-            case '|':
-            case '{':
-            case '}':
-            case '(':
-            case ')':
-            case '[':
-            case ']':
-            case '\\':
-            case '+':
-            case '.': ost << '\\' << globpattern[i];
-                      break;
-                // Are there other regex special chars we need to escape?
-            default: ost << globpattern[i];
+        case '*':
+            i += wildcard_run_length(i, globpattern) - 1; // -1 since we always inc by 1 anyway.
+            if (i != (n - 1)) { // Don't emit trailing wildcard.
+                ost << ".*";
+            }
+            break;
+        case '?':
+            ost << '.';
+            break;
+        case '^':
+        case '$':
+        case '|':
+        case '{':
+        case '}':
+        case '(':
+        case ')':
+        case '[':
+        case ']':
+        case '\\':
+        case '+':
+        case '.':
+            ost << '\\' << globpattern[i];
+            break;
+        // Are there other regex special chars we need to escape?
+        default: ost << globpattern[i];
         }
     }
-    ost << '$';
+    if (globpattern[n - 1] != '*') {
+        ost << '$';
+    }
     return ost.str();
 }
 

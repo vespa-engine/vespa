@@ -21,7 +21,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
 
     protected DataType dataType;
     protected int fieldId;
-    private boolean isHeader;
     private boolean forcedId;
 
     /**
@@ -32,11 +31,14 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @param isHeader Whether this is a "header" field or a "content" field
      *                 (true = "header").
      */
+    @Deprecated
     public Field(String name, int id, DataType dataType, boolean isHeader) {
+        this(name, id, dataType);
+    }
+    public Field(String name, int id, DataType dataType) {
         super(name);
         this.fieldId = id;
         this.dataType = dataType;
-        this.isHeader = isHeader;
         this.forcedId = true;
         validateId(id, null);
     }
@@ -55,8 +57,13 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      *                 (true = "header").
      * @param owner    the owning document (used to check for id collisions)
      */
+    @Deprecated
     public Field(String name, DataType dataType, boolean isHeader, DocumentType owner) {
-        this(name, 0, dataType, isHeader);
+        this(name, dataType, owner);
+    }
+
+    public Field(String name, DataType dataType, DocumentType owner) {
+        this(name, 0, dataType);
         this.fieldId = calculateIdV7(owner);
         this.forcedId = false;
     }
@@ -69,8 +76,9 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @param isHeader Whether this is a "header" field or a "content" field
      *                 (true = "header").
      */
+    @Deprecated
     public Field(String name, DataType dataType, boolean isHeader) {
-        this(name, dataType, isHeader, null);
+        this(name, dataType);
     }
 
     /**
@@ -80,7 +88,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @param dataType The datatype of the field
      */
     public Field(String name, DataType dataType) {
-        this(name, dataType, true);
+        this(name, dataType, null);
     }
 
     /**
@@ -89,7 +97,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      */
     // TODO: Decide on one copy/clone idiom and do it for this and all it is calling
     public Field(String name, Field field) {
-        this(name, field.dataType, field.isHeader, null);
+        this(name, field.dataType, null);
     }
 
     public int compareTo(Object o) {
@@ -196,14 +204,12 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
     @Deprecated // TODO: Remove on Vespa 8
     public boolean isHeader() {
-        return isHeader;
+        return true;
     }
 
     /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
     @Deprecated // TODO: Remove on Vespa 8
-    public void setHeader(boolean header) {
-        this.isHeader = header;
-    }
+    public void setHeader(boolean header) { }
 
     /** Two fields are equal if they have the same name and the same data type */
     @Override

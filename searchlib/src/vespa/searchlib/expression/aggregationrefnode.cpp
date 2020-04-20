@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "aggregationrefnode.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <stdexcept>
 
 namespace search {
 namespace expression {

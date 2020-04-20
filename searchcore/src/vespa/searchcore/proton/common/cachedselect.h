@@ -15,6 +15,8 @@ namespace search {
     class IAttributeManager;
 }
 
+namespace search::attribute { class ReadableAttributeVector; }
+
 namespace proton {
 
 class SelectContext;
@@ -44,7 +46,7 @@ public:
         const document::select::Node &selectNode() const;
     };
 
-    using AttributeVectors = std::vector<std::shared_ptr<search::AttributeVector>>;
+    using AttributeVectors = std::vector<std::shared_ptr<search::attribute::ReadableAttributeVector>>;
 
 private:
     // Single value attributes referenced from selection expression

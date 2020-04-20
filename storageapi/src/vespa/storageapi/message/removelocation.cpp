@@ -25,8 +25,9 @@ RemoveLocationCommand::print(std::ostream& out, bool verbose, const std::string&
     BucketInfoCommand::print(out, verbose, indent);
 }
 
-RemoveLocationReply::RemoveLocationReply(const RemoveLocationCommand& cmd)
-    : BucketInfoReply(cmd)
+RemoveLocationReply::RemoveLocationReply(const RemoveLocationCommand& cmd, uint32_t docs_removed)
+    : BucketInfoReply(cmd),
+      _documents_removed(docs_removed)
 {
 }
 

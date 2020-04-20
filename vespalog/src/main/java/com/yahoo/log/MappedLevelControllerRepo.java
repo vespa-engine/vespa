@@ -13,14 +13,14 @@ import java.util.Map;
  * @author Ulf Lilleengen
  * @since 5.1
  */
-public class MappedLevelControllerRepo {
+class MappedLevelControllerRepo {
     private final Map<String, LevelController> levelControllerMap = new HashMap<>();
     private final MappedByteBuffer mapBuf;
     private final int controlFileHeaderLength;
     private final int numLevels;
     private final String logControlFilename;
 
-    public MappedLevelControllerRepo(MappedByteBuffer mapBuf, int controlFileHeaderLength, int numLevels, String logControlFilename) {
+    MappedLevelControllerRepo(MappedByteBuffer mapBuf, int controlFileHeaderLength, int numLevels, String logControlFilename) {
         this.mapBuf = mapBuf;
         this.controlFileHeaderLength = controlFileHeaderLength;
         this.numLevels = numLevels;
@@ -101,12 +101,12 @@ public class MappedLevelControllerRepo {
         return MappedLevelController.checkOnOff(mapBuf, levstart);
     }
 
-    public LevelController getLevelController(String suffix) {
+    LevelController getLevelController(String suffix) {
 
         return levelControllerMap.get(suffix);
     }
 
-    public void checkBack() {
+    void checkBack() {
         for (LevelController ctrl : levelControllerMap.values()) {
             ctrl.checkBack();
         }

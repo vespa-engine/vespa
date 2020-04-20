@@ -27,6 +27,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     private double windowSizeIncrement = 20;
     private double windowSize = windowSizeIncrement;
     private double minWindowSize = windowSizeIncrement;
+    private double decrementFactor = 2.0;
     private double maxWindowSize = Integer.MAX_VALUE;
     private double windowSizeBackOff = 0.9;
     private double weight = 1.0;
@@ -93,15 +94,15 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         numSent = 0;
         numOk = 0;
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "windowSize " + windowSize + " throughput " + throughput);
-        }
 
         if (maxThroughput > 0 && throughput > maxThroughput * 0.95) {
             // No need to increase window when we're this close to max.
         } else if (throughput > localMaxThroughput * 1.01) {
             localMaxThroughput = throughput;
             windowSize += weight*windowSizeIncrement;
+            if (log.isLoggable(LogLevel.DEBUG)) {
+                log.log(LogLevel.DEBUG, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput);
+            }
         } else {
             // scale up/down throughput for comparing to window size
             double period = 1;
@@ -113,10 +114,13 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             }
             double efficiency = throughput*period/windowSize;
             if (efficiency < efficiencyThreshold) {
-                windowSize = Math.min(windowSize * windowSizeBackOff, windowSize - 2* windowSizeIncrement);
+                windowSize = Math.min(windowSize * windowSizeBackOff, windowSize - decrementFactor * windowSizeIncrement);
                 localMaxThroughput = 0;
             } else {
                 windowSize += weight*windowSizeIncrement;
+            }
+            if (log.isLoggable(LogLevel.DEBUG)) {
+                log.log(LogLevel.DEBUG, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput + " efficiency " + efficiency);
             }
         }
         windowSize = Math.max(minWindowSize, windowSize);
@@ -153,6 +157,17 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      */
     public DynamicThrottlePolicy setWindowSizeIncrement(double windowSizeIncrement) {
         this.windowSizeIncrement = windowSizeIncrement;
+        return this;
+    }
+
+    /**
+     * Sets the relative stepsize when decreasing window size.
+     *
+     * @param decrementFactor the step size to set
+     * @return this, to allow chaining
+     */
+    public DynamicThrottlePolicy setWindowSizeDecrementFactor(double decrementFactor) {
+        this.decrementFactor = decrementFactor;
         return this;
     }
 

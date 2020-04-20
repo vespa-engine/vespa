@@ -35,22 +35,14 @@ public abstract class SearchCluster extends AbstractSearchCluster
         super(parent, clusterName, index);
     }
 
-    public void writeFiles(File directory) throws java.io.IOException {
-        if (!directory.isDirectory() && !directory.mkdirs()) {
-            throw new java.io.IOException("Cannot create directory: "+ directory);
-        }
-        writeSdFiles(directory);
-        super.writeFiles(directory);
-    }
-
    /**
      * Must be called after cluster is built, to derive SD configs
      * Derives the search definitions from the application package..
      * Also stores the document names contained in the search
      * definitions.
      */
-    public void deriveSearchDefinitions(DeployState deployState) {
-        deriveAllSearchDefinitions(getLocalSDS(), deployState);
+    public void deriveSchemas(DeployState deployState) {
+        deriveAllSchemas(getLocalSDS(), deployState);
     }
 
     @Override
@@ -140,7 +132,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState);
+    protected abstract void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();

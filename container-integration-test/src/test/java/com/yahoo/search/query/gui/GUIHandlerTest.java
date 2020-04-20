@@ -72,6 +72,7 @@ public class GUIHandlerTest {
 
     private String servicesXml() {
         return "<container version='1.0'>\n" +
+                "  <accesslog type='disabled'/>\n" +
                 "  <handler id='com.yahoo.search.query.gui.GUIHandler'>\n" +
                 "    <binding>http://*/querybuilder/*</binding>\n" +
                 "  </handler>\n" +

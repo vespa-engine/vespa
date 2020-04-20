@@ -183,14 +183,14 @@ private:
     using PostingList = typename AggregationTraits::PostingList;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using FoldedComparatorType = typename Parent::EnumStore::FoldedComparatorType;
-    using Regexp = vespalib::Regexp;
+    using RegexpUtil = vespalib::RegexpUtil;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_toBeSearched;
     using Parent::_enumStore;
     using Parent::isRegex;
     using Parent::getRegex;
     bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return isRegex() ? (getRegex() ? std::regex_search(_enumStore.get_value(it.getKey()), *getRegex()) : false ) : true;
+        return isRegex() ? (getRegex() ? getRegex()->partial_match(_enumStore.get_value(it.getKey())) : false ) : true;
     }
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
@@ -288,7 +288,7 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
             auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm(), true);
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(Regexp::get_prefix(this->queryTerm()->getTerm()));
+            vespalib::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
             auto comp = _enumStore.make_folded_comparator(prefix.c_str(), true);
             this->lookupRange(comp, comp);
         } else {

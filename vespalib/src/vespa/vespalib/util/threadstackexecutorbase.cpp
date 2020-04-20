@@ -168,6 +168,12 @@ size_t ThreadStackExecutorBase::getNumThreads() const {
 }
 
 void
+ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
+{
+    internalSetTaskLimit(taskLimit);
+}
+
+void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
     MonitorGuard monitor(_monitor);
@@ -190,7 +196,7 @@ ThreadStackExecutorBase::getStats()
     LockGuard lock(_monitor);
     Stats stats = _stats;
     _stats = Stats();
-    _stats.maxPendingTasks = _taskCount;
+    _stats.queueSize.add(_taskCount);
     return stats;
 }
 
@@ -202,8 +208,7 @@ ThreadStackExecutorBase::execute(Task::UP task)
         TaggedTask taggedTask(std::move(task), _barrier.startEvent());
         ++_taskCount;
         ++_stats.acceptedTasks;
-        _stats.maxPendingTasks = (_taskCount > _stats.maxPendingTasks)
-                                 ?_taskCount : _stats.maxPendingTasks;
+        _stats.queueSize.add(_taskCount);
         if (!_workers.empty()) {
             Worker *worker = _workers.back();
             _workers.popBack();

@@ -29,7 +29,8 @@ Socket::Socket(SyncCryptoSocket::UP socket)
 }
 
 Socket::Socket(CryptoEngine &crypto, const string &host, int port)
-    : _socket(SyncCryptoSocket::create(crypto, connect(host, port), false)),
+    : _socket(SyncCryptoSocket::create_client(crypto, connect(host, port),
+                                              vespalib::SocketSpec::from_host_port(host, port))),
       _input(),
       _output(),
       _taint(),

@@ -137,10 +137,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               ThreadingServiceConfig::make(protonCfg,
                       findDocumentDB(protonCfg.documentdb, docTypeName.getName())->feeding.concurrency,
                       hwInfo.cpu())),
-      _writeService(sharedExecutor,
-                    _writeServiceConfig.indexingThreads(),
-                    indexing_thread_stack_size,
-                    _writeServiceConfig.defaultTaskLimit()),
+      _writeService(sharedExecutor, _writeServiceConfig, indexing_thread_stack_size),
       _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
@@ -150,6 +147,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
       _activeConfigSnapshotSerialNum(0u),
+      _validateAndSanitizeDocStore(protonCfg.validateAndSanitizeDocstore == vespa::config::search::core::ProtonConfig::ValidateAndSanitizeDocstore::YES),
       _initGate(),
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
@@ -664,6 +662,12 @@ DocumentDB::onTransactionLogReplayDone()
         // must signal that all existing buckets must be checked.
         notifyAllBucketsChanged();
     }
+    if (_validateAndSanitizeDocStore) {
+        LOG(info, "Validating documentdb %s", getName().c_str());
+        SerialNum serialNum = _feedHandler.getSerialNum();
+        sync(serialNum);
+        _subDBs.validateDocStore(_feedHandler, serialNum);
+    }
 }
 
 
@@ -756,11 +760,11 @@ DocumentDB::getNewestFlushedSerial()
 }
 
 std::unique_ptr<SearchReply>
-DocumentDB::match(const ISearchHandler::SP &, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
+DocumentDB::match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
 {
     // Ignore input searchhandler. Use readysubdb's searchhandler instead.
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());
-    return view->match(view, req, threadBundle);
+    return view->match(req, threadBundle);
 }
 
 std::unique_ptr<DocsumReply>

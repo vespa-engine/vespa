@@ -36,11 +36,11 @@ public:
     MatchView(const MatchView &) = delete;
     MatchView & operator = (const MatchView &) = delete;
 
-    MatchView(const Matchers::SP &matchers,
-              const searchcorespi::IndexSearchable::SP &indexSearchable,
-              const IAttributeManager::SP &attrMgr,
-              const SessionManagerSP &sessionMgr,
-              const IDocumentMetaStoreContext::SP &metaStore,
+    MatchView(Matchers::SP matchers,
+              searchcorespi::IndexSearchable::SP indexSearchable,
+              IAttributeManager::SP attrMgr,
+              SessionManagerSP sessionMgr,
+              IDocumentMetaStoreContext::SP metaStore,
               DocIdLimit &docIdLimit);
     ~MatchView();
 
@@ -62,7 +62,7 @@ public:
     matching::MatchContext::UP createContext() const;
 
     std::unique_ptr<search::engine::SearchReply>
-    match(const std::shared_ptr<ISearchHandler> &searchHandler,
+    match(std::shared_ptr<const ISearchHandler> searchHandler,
           const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;
 };

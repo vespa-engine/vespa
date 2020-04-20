@@ -3,6 +3,7 @@
 #include <vespamalloc/util/callgraph.h>
 #include <vespamalloc/util/callstack.h>
 #include <vespamalloc/util/traceutil.h>
+#include <string>
 
 using namespace vespamalloc;
 

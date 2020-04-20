@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <stdexcept>
 
 namespace search {
 namespace common {

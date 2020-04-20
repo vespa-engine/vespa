@@ -6,6 +6,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
@@ -14,6 +15,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.INFO;
 
 /**
  * Periodically fetch and store contact information for tenants.
@@ -35,16 +38,21 @@ public class ContactInformationMaintainer extends Maintainer {
     protected void maintain() {
         TenantController tenants = controller().tenants();
         for (Tenant tenant : tenants.asList()) {
+            log.log(INFO, "Updating contact information for " + tenant);
             try {
                 switch (tenant.type()) {
-                    case athenz: tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(lockedTenant.get().propertyId()))));
-                        return;
-                    case user: tenants.lockIfPresent(tenant.name(), LockedTenant.User.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(Optional.empty()))));
-                        return;
-                    case cloud: return;
-                    default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
+                    case athenz:
+                        tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant -> {
+                            Contact contact = contactRetriever.getContact(lockedTenant.get().propertyId());
+                            log.log(INFO, "Contact found for " + tenant + " was " +
+                                          (Optional.of(contact).equals(tenant.contact()) ? "un" : "") + "changed");
+                            tenants.store(lockedTenant.with(contact));
+                        });
+                        break;
+                    case cloud:
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update contact information for " + tenant + ": " +

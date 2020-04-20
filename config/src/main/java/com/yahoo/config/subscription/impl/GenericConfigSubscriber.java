@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.TimingValues;
 /**
  * A subscriber that can subscribe without the class. Used by configproxy.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class GenericConfigSubscriber extends ConfigSubscriber {
 
@@ -24,16 +24,12 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
      * Constructs a new subscriber using the given pool of requesters (JRTConfigRequester holds 1 connection which in
      * turn is subject to failover across the elems in the source set.)
      * The behaviour is undefined if the map key is different from the source set the requester was built with.
-     * See also {@link JRTConfigRequester#get(com.yahoo.vespa.config.ConnectionPool, com.yahoo.vespa.config.TimingValues)}
+     * See also {@link JRTConfigRequester#JRTConfigRequester(com.yahoo.vespa.config.ConnectionPool, com.yahoo.vespa.config.TimingValues)}
      *
      * @param requesters a map from config source set to config requester
      */
     public GenericConfigSubscriber(Map<ConfigSourceSet, JRTConfigRequester> requesters) {
         this.requesters = requesters;
-    }
-
-    public GenericConfigSubscriber() {
-        super();
     }
 
     /**

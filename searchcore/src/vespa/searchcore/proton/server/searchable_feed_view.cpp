@@ -4,13 +4,9 @@
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchable_feed_view");
@@ -23,8 +19,6 @@ using document::DocumentUpdate;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
-using vespalib::IllegalStateException;
-using vespalib::make_string;
 using vespalib::makeLambdaTask;
 
 namespace proton {

@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "openssl_typedefs.h"
+#include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/tls/tls_context.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
@@ -13,7 +13,7 @@
 namespace vespalib::net::tls::impl {
 
 class OpenSslTlsContextImpl : public TlsContext {
-    SslCtxPtr _ctx;
+    crypto::SslCtxPtr _ctx;
     AuthorizationMode _authorization_mode;
     std::shared_ptr<CertificateVerificationCallback> _cert_verify_callback;
     TransportSecurityOptions _redacted_transport_options;

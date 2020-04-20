@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockNodeMetrics;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.junit.Test;
@@ -54,8 +55,8 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
@@ -92,11 +93,8 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate and deallocate a single node
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"),
-                                                  false);
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
@@ -121,16 +119,14 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.makeReadyNodes(5, nodeResources);
 
         // Allocate two nodes
         {
             List<HostSpec> hostSpecs = tester.prepare(applicationId,
                                                       cluster,
-                                                      Capacity.fromCount(2, nodeResources),
-                                                      1);
+                                                      Capacity.from(new ClusterResources(2, 1, nodeResources)));
             tester.activate(applicationId, new HashSet<>(hostSpecs));
             assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         }
@@ -139,7 +135,7 @@ public class InactiveAndFailedExpirerTest {
         {
             Node toRetire = tester.getNodes(applicationId, Node.State.active).asList().get(0);
             tester.patchNode(toRetire.withWantToRetire(true, Agent.operator, tester.clock().instant()));
-            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
+            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
             tester.activate(applicationId, new HashSet<>(hostSpecs));
         }
 
@@ -151,15 +147,13 @@ public class InactiveAndFailedExpirerTest {
                 Collections.singletonMap(
                         applicationId,
                         new MockDeployer.ApplicationContext(applicationId, cluster,
-                                                            Capacity.fromCount(2,
-                                                                               nodeResources,
-                                                                               false, true),
-                                                            1)
+                                                            Capacity.from(new ClusterResources(2, 1, nodeResources),
+                                                                          false, true))
                 )
         );
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
+        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, new TestMetric(), tester.clock(), Duration.ofDays(30),
                            Duration.ofMinutes(10)).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
 
@@ -178,8 +172,8 @@ public class InactiveAndFailedExpirerTest {
         // Allocate then deallocate a node
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyNodes(1, nodeResources);
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
-        List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.fromCount(2, nodeResources), 1);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
         tester.activate(testerId, new HashSet<>(preparedNodes));
         assertEquals(1, tester.getNodes(testerId, Node.State.active).size());
         tester.deactivate(testerId);

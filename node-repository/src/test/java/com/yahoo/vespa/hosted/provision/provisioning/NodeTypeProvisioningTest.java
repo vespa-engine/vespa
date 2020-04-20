@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -9,6 +8,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Before;
@@ -35,10 +35,7 @@ public class NodeTypeProvisioningTest {
 
     private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
-    private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
-                                                                ClusterSpec.Id.from("test"),
-                                                                Version.fromString("6.42"),
-                                                                false);
+    private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
 
     @Before
     public void setup() {
@@ -97,9 +94,14 @@ public class NodeTypeProvisioningTest {
                 tester.provisioner(),
                 tester.clock(),
                 Collections.singletonMap(
-                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
-        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
-                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
+                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
+        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
+                                                            tester.orchestrator(),
+                                                            deployer,
+                                                            new TestMetric(),
+                                                            tester.clock(),
+                                                            Duration.ofDays(30),
+                                                            Duration.ofMinutes(10));
 
         { // Deploy
             List<HostSpec> hosts = deployProxies(application, tester);
@@ -161,10 +163,11 @@ public class NodeTypeProvisioningTest {
         MockDeployer deployer = new MockDeployer(tester.provisioner(),
                                                  tester.clock(),
                                                  Collections.singletonMap(application,
-                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
+                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             tester.orchestrator(),
                                                             deployer,
+                                                            new TestMetric(),
                                                             tester.clock(),
                                                             Duration.ofDays(30),
                                                             Duration.ofMinutes(10));
@@ -267,7 +270,7 @@ public class NodeTypeProvisioningTest {
     }
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
-        return tester.prepare(application, clusterSpec, capacity, 1);
+        return tester.prepare(application, clusterSpec, capacity);
     }
 
 }

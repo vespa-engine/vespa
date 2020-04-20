@@ -7,8 +7,8 @@
 
 namespace proton {
 
-SearchHandlerProxy::SearchHandlerProxy(const DocumentDB::SP &documentDB)
-    : _documentDB(documentDB)
+SearchHandlerProxy::SearchHandlerProxy(DocumentDB::SP documentDB)
+    : _documentDB(std::move(documentDB))
 {
     _documentDB->retain();
 }
@@ -25,11 +25,9 @@ SearchHandlerProxy::getDocsums(const DocsumRequest & request)
 }
 
 std::unique_ptr<search::engine::SearchReply>
-SearchHandlerProxy::match(const ISearchHandler::SP &searchHandler,
-                          const SearchRequest &req,
-                          vespalib::ThreadBundle &threadBundle) const
+SearchHandlerProxy::match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
 {
-    return _documentDB->match(searchHandler, req, threadBundle);
+    return _documentDB->match(req, threadBundle);
 }
 
 } // namespace proton

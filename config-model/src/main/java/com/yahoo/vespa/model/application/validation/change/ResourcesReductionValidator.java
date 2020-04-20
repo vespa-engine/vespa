@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.HostResource;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,52 +29,49 @@ public class ResourcesReductionValidator implements ChangeValidator {
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
-        var currentRequestedResourcesByClusterId = getRequestedResourcesByClusterId(current);
-        var nextRequestedResourcesByClusterId = getRequestedResourcesByClusterId(next);
-
-        for (var clusterTypeAndId : currentRequestedResourcesByClusterId.keySet()) {
-            if (!nextRequestedResourcesByClusterId.containsKey(clusterTypeAndId)) continue;
-            validate(currentRequestedResourcesByClusterId.get(clusterTypeAndId),
-                     nextRequestedResourcesByClusterId.get(clusterTypeAndId),
-                     clusterTypeAndId.getSecond(),
-                     overrides,
-                     now);
+        for (var clusterId : current.allClusters()) {
+            Capacity currentCapacity = current.provisioned().all().get(clusterId);
+            Capacity nextCapacity = next.provisioned().all().get(clusterId);
+            if (currentCapacity == null || nextCapacity == null) continue;
+            validate(currentCapacity, nextCapacity, clusterId, overrides, now);
         }
 
         return List.of();
     }
 
-    private void validate(NodeResources currentResources, NodeResources nextResources, ClusterSpec.Id clusterId,
-                          ValidationOverrides overrides, Instant now) {
+    private void validate(Capacity current,
+                          Capacity next,
+                          ClusterSpec.Id clusterId,
+                          ValidationOverrides overrides,
+                          Instant now) {
+        if (current.minResources().nodeResources() == NodeResources.unspecified) return;
+        if (next.minResources().nodeResources() == NodeResources.unspecified) return;
+
         List<String> illegalChanges = Stream.of(
-                validateResource("vCPU", currentResources.vcpu(), nextResources.vcpu()),
-                validateResource("memory GB", currentResources.memoryGb(), nextResources.memoryGb()),
-                validateResource("disk GB", currentResources.diskGb(), nextResources.diskGb()))
+                validateResource("vCPU",
+                                 current.minResources().nodeResources().vcpu(),
+                                 next.minResources().nodeResources().vcpu()),
+                validateResource("memory GB",
+                                 current.minResources().nodeResources().memoryGb(),
+                                 next.minResources().nodeResources().memoryGb()),
+                validateResource("disk GB",
+                                 current.minResources().nodeResources().diskGb(),
+                                 next.minResources().nodeResources().diskGb()))
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
         if (illegalChanges.isEmpty()) return;
 
         overrides.invalid(ValidationId.resourcesReduction,
-                "Resource reduction in '" + clusterId.value() + "' is too large. " +
-                String.join(" ", illegalChanges) + " New resources must be at least 50% of the current resources",
-                now);
+                          "Resource reduction in '" + clusterId.value() + "' is too large. " +
+                          String.join(" ", illegalChanges) +
+                          " New min resources must be at least 50% of the current min resources",
+                          now);
     }
 
     private static Optional<String> validateResource(String resourceName, double currentValue, double nextValue) {
         // don't allow more than 50% reduction, but always allow to reduce by 1
         if (nextValue >= currentValue * 0.5 || nextValue >= currentValue - 1) return Optional.empty();
         return Optional.of(String.format(Locale.ENGLISH ,"Current %s: %.2f, new: %.2f.", resourceName, currentValue, nextValue));
-    }
-
-    private static Map<Pair<ClusterSpec.Type, ClusterSpec.Id>, NodeResources> getRequestedResourcesByClusterId(VespaModel vespaModel) {
-        return vespaModel.hostSystem().getHosts().stream()
-                .map(HostResource::spec)
-                .filter(spec -> spec.membership().isPresent() && spec.requestedResources().isPresent())
-                .filter(spec -> !spec.membership().get().retired())
-                .collect(Collectors.toMap(
-                        spec -> new Pair<>(spec.membership().get().cluster().type(), spec.membership().get().cluster().id()),
-                        spec -> spec.requestedResources().get(),
-                        (e1, e2) -> e1));
     }
 
 }

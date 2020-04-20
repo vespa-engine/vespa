@@ -6,6 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -51,7 +52,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.name = name;
         this.activeSystems = Set.copyOf(activeSystems);
 
-        service = new ScheduledThreadPoolExecutor(1);
+        service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);
         service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
@@ -75,13 +76,23 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
             // another controller instance is running this job at the moment; ok
         }
         catch (Throwable t) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
+            log.log(Level.WARNING, "Maintainer " + name() + " failed. Will retry in " +
+                                   maintenanceInterval + ": " + Exceptions.toMessageString(t));
         }
     }
 
     @Override
     public void deconstruct() {
-        this.service.shutdown();
+        var timeout = Duration.ofSeconds(30);
+        service.shutdown();
+        try {
+            if (!service.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Maintainer " + name() + " failed to shutdown " +
+                                       "within " + timeout);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Called once each time this maintenance job should run */
@@ -104,8 +115,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
             return interval.toMillis();
 
         long offset = cluster.indexOf(host) * interval.toMillis() / cluster.size();
-        long timeUntilNextRun = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
-        return timeUntilNextRun + interval.toMillis() / cluster.size();
+        return Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
     }
 
 }

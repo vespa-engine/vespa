@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
@@ -9,6 +10,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
+import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -17,8 +21,10 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
@@ -45,7 +51,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
-        ContainerMbusConfig.Producer {
+        ContainerMbusConfig.Producer,
+        MetricsProxyApiConfig.Producer {
+
+    public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
+    public static final String METRICS_V2_HANDLER_BINDING_1 = "http://*" + MetricsV2Handler.V2_PATH;
+    public static final String METRICS_V2_HANDLER_BINDING_2 = METRICS_V2_HANDLER_BINDING_1 + "/*";
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
@@ -58,6 +69,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
+    private final double softStartSeconds;
 
     private Integer memoryPercentage = null;
 
@@ -72,7 +84,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
+        addMetricsV2Handler();
         addTestrunnerComponentsIfTester(deployState);
+        softStartSeconds = deployState.getProperties().defaultSoftStartSeconds();
     }
 
     @Override
@@ -97,6 +111,13 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         for (Component<?, ?> component : getAllComponents()) {
             FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
         }
+    }
+
+    public void addMetricsV2Handler() {
+        Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+                new ComponentModel(METRICS_V2_HANDLER_CLASS, null, null, null));
+        handler.addServerBindings(METRICS_V2_HANDLER_BINDING_1, METRICS_V2_HANDLER_BINDING_2);
+        addComponent(handler);
     }
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
@@ -188,10 +209,17 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     @Override
+    public void getConfig(MetricsProxyApiConfig.Builder builder) {
+        builder.metricsPort(MetricsProxyContainer.BASEPORT)
+                .metricsApiPath(ApplicationMetricsHandler.VALUES_PATH);
+    }
+
+    @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
+                .compressedClassSpaceSize(0)  //TODO Reduce, next step is 512m
                 .minHeapsize(1536)
                 .heapsize(1536);
         if (getMemoryPercentage().isPresent()) {
@@ -221,6 +249,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.softStartSeconds(softStartSeconds);
     }
 
     public static class MbusParams {

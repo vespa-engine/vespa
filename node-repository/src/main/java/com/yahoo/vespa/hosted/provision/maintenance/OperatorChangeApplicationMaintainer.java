@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -31,8 +32,8 @@ import java.util.stream.Collectors;
  */
 public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
     
-    OperatorChangeApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        super(deployer, nodeRepository, interval);
+    OperatorChangeApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository, Duration interval) {
+        super(deployer, metric, nodeRepository, interval);
     }
 
     @Override

@@ -57,7 +57,8 @@ public class StateHandlerTestBase {
         HealthMonitorConfig healthMonitorConfig =
                 new HealthMonitorConfig(
                         new HealthMonitorConfig.Builder()
-                                .snapshot_interval(TimeUnit.MILLISECONDS.toSeconds(SNAPSHOT_INTERVAL)));
+                                .snapshot_interval(TimeUnit.MILLISECONDS.toSeconds(SNAPSHOT_INTERVAL))
+                                .initialStatus("up"));
         ThreadFactory threadFactory = ignored -> mock(Thread.class);
         this.monitor = new StateMonitor(healthMonitorConfig, timer, threadFactory);
         builder.guiceModules().install(new AbstractModule() {

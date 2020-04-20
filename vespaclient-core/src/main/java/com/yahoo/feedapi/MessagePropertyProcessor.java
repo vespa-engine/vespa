@@ -208,14 +208,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             this.route = route;
         }
 
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
-        }
-
         public DocumentProtocol.Priority getPriority() {
             return priority;
         }

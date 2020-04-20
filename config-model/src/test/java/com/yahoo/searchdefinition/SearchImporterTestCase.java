@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.RankType;
@@ -31,7 +30,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class SearchImporterTestCase extends SearchDefinitionTestCase {
+public class SearchImporterTestCase extends SchemaTestCase {
 
     @Test
     @SuppressWarnings("deprecation")

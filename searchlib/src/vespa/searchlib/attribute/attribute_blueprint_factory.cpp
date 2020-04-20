@@ -519,12 +519,12 @@ public:
 
     void visit(StringTerm & n) override { visitTerm(n, true); }
     void visit(SubstringTerm & n) override {
-        query::SimpleRegExpTerm re(vespalib::Regexp::make_from_substring(n.getTerm()),
+        query::SimpleRegExpTerm re(vespalib::RegexpUtil::make_from_substring(n.getTerm()),
                                    n.getView(), n.getId(), n.getWeight());
         visitTerm(re);
     }
     void visit(SuffixTerm & n) override {
-        query::SimpleRegExpTerm re(vespalib::Regexp::make_from_suffix(n.getTerm()),
+        query::SimpleRegExpTerm re(vespalib::RegexpUtil::make_from_suffix(n.getTerm()),
                                    n.getView(), n.getId(), n.getWeight());
         visitTerm(re);
     }
@@ -646,7 +646,9 @@ public:
         query_tensor.release();
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
                                                                         std::move(dense_query_tensor_up),
-                                                                        n.get_target_num_hits()));
+                                                                        n.get_target_num_hits(),
+                                                                        n.get_allow_approximate(),
+                                                                        n.get_explore_additional_hits()));
     }
 };
 

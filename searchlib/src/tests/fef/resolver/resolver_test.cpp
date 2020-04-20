@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/features/rankingexpressionfeature.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("resolver_test");
-
-namespace search {
-namespace fef {
+using namespace search;
+using namespace search::fef;
+using search::features::RankingExpressionBlueprint;
 
 class BaseBlueprint : public Blueprint {
 public:
@@ -43,9 +42,9 @@ public:
     virtual bool setup(const IIndexEnvironment & indexEnv,
                        const ParameterList & params) override {
         (void) indexEnv; (void) params;
-        defineInput("base.foo");
-        defineInput("base.bar");
-        defineInput("base.baz");
+        ASSERT_TRUE(defineInput("base.foo"));
+        ASSERT_TRUE(defineInput("base.bar"));
+        ASSERT_TRUE(defineInput("base.baz"));
         describeOutput("out", "out");
         return true;
     }
@@ -54,48 +53,37 @@ public:
     }
 };
 
-class Test : public vespalib::TestApp {
-private:
-    BlueprintFactory _factory;
-    void requireThatWeGetUniqueBlueprints();
-public:
-    Test();
-    ~Test();
-    int Main() override;
+struct Fixture {
+    BlueprintFactory factory;    
+    Fixture() {
+        factory.addPrototype(Blueprint::SP(new BaseBlueprint()));
+        factory.addPrototype(Blueprint::SP(new CombineBlueprint()));
+        factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
+    }
 };
 
-Test::Test() :
-    _factory()
-{
-    _factory.addPrototype(Blueprint::SP(new BaseBlueprint()));
-    _factory.addPrototype(Blueprint::SP(new CombineBlueprint()));
-}
-Test::~Test() {}
-
-void
-Test::requireThatWeGetUniqueBlueprints()
-{
+TEST_F("requireThatWeGetUniqueBlueprints", Fixture()) {
     test::IndexEnvironment ienv;
-    BlueprintResolver::SP res(new BlueprintResolver(_factory, ienv));
+    BlueprintResolver::SP res(new BlueprintResolver(f.factory, ienv));
     res->addSeed("combine");
     EXPECT_TRUE(res->compile());
     const BlueprintResolver::ExecutorSpecList & spec = res->getExecutorSpecs();
-    EXPECT_EQUAL(2u, spec.size());
+    ASSERT_EQUAL(2u, spec.size());
     EXPECT_TRUE(dynamic_cast<BaseBlueprint *>(spec[0].blueprint.get()) != NULL);
     EXPECT_TRUE(dynamic_cast<CombineBlueprint *>(spec[1].blueprint.get()) != NULL);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("resolver_test");
-
-    requireThatWeGetUniqueBlueprints();
-
-    TEST_DONE();
+TEST_F("require_that_bad_input_is_handled", Fixture) {
+    test::IndexEnvironment ienv;
+    ienv.getProperties().add(indexproperties::eval::LazyExpressions::NAME, "false");
+    ienv.getProperties().add("rankingExpression(badinput).rankingScript", "base.foobad + base.bar");
+    BlueprintResolver::SP res(new BlueprintResolver(f.factory, ienv));
+    res->addSeed("rankingExpression(badinput)");
+    EXPECT_FALSE(res->compile());
+    const BlueprintResolver::ExecutorSpecList & spec = res->getExecutorSpecs();
+    ASSERT_EQUAL(2u, spec.size());
+    EXPECT_TRUE(dynamic_cast<BaseBlueprint *>(spec[0].blueprint.get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<RankingExpressionBlueprint *>(spec[1].blueprint.get()) != nullptr);
 }
 
-}
-}
-
-TEST_APPHOOK(search::fef::Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

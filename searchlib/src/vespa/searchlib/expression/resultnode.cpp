@@ -3,6 +3,7 @@
 #include "resultnode.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exception.h>
+#include <stdexcept>
 
 namespace search {
 namespace expression {

@@ -559,6 +559,24 @@ public:
      *                           This value is always set.
      * @return Alligned pointer value or nullptr if out of memory
      */
+    static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
+
+    /**
+     * Get maximum memory alignment for directio buffers.
+     * @return maximum memory alignment for directio buffers.
+     */
+    static size_t getMaxDirectIOMemAlign();
+
+    /**
+     * Allocate a buffer properly alligned with regards to direct io
+     * access restrictions.
+     * @param  byteSize          Number of bytes to be allocated
+     * @param  realPtr           Reference where the actual pointer returned
+     *                           from malloc will be saved.  Use free() with
+     *                           this pointer to deallocate the buffer.
+     *                           This value is always set.
+     * @return Alligned pointer value or nullptr if out of memory
+     */
     virtual void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr);
 
     /**

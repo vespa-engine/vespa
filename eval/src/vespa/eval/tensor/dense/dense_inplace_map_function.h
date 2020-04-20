@@ -18,7 +18,7 @@ public:
                             map_fun_t function_in);
     ~DenseInplaceMapFunction();
     bool result_is_mutable() const override { return true; }
-    eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

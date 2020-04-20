@@ -5,7 +5,7 @@
 #include "i_attribute_writer.h"
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/document/base/fieldpath.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace document { class DocumentType; }
@@ -25,8 +25,8 @@ private:
     typedef document::DocumentType DocumentType;
     typedef document::FieldValue FieldValue;
     const IAttributeManager::SP _mgr;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
-    using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
+    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
+    using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 public:
     class WriteField
     {
@@ -74,7 +74,7 @@ private:
                         bool immediateCommit, OnWriteDoneType onWriteDone);
 
 public:
-    AttributeWriter(const proton::IAttributeManager::SP &mgr);
+    AttributeWriter(proton::IAttributeManager::SP mgr);
     ~AttributeWriter();
 
     /* Only for in tests that add attributes after AttributeWriter construction. */

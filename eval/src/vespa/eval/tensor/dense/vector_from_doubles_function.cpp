@@ -1,21 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vector_from_doubles_function.h"
-#include "dense_tensor.h"
 #include "dense_tensor_view.h"
-#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib::tensor {
 
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
-using namespace eval::operation;
 
 namespace {
 
@@ -38,7 +35,7 @@ void my_vector_from_doubles_op(eval::InterpretedFunction::State &state, uint64_t
     size_t numCells = self->resultSize;
     TypedCells cells = dispatch_0<CallVectorFromDoubles>(ct, state, numCells);
     const Value &result = state.stash.create<DenseTensorView>(self->resultType, cells);
-    state.stack.push_back(result);
+    state.stack.emplace_back(result);
 }
 
 size_t vector_size(const TensorFunction &child, const vespalib::string &dimension) {
@@ -55,7 +52,7 @@ size_t vector_size(const TensorFunction &child, const vespalib::string &dimensio
 
 void flatten_into(const TensorFunction &child, std::vector<Child> &vec) {
     if (child.result_type().is_double()) {
-        vec.push_back(child);
+        vec.emplace_back(child);
     } else {
         std::vector<Child::CREF> tmp;
         child.push_children(tmp);
@@ -83,20 +80,18 @@ VectorFromDoublesFunction::VectorFromDoublesFunction(std::vector<Child> children
 {
 }
 
-VectorFromDoublesFunction::~VectorFromDoublesFunction()
-{
-}
+VectorFromDoublesFunction::~VectorFromDoublesFunction() = default;
 
 void
 VectorFromDoublesFunction::push_children(std::vector<Child::CREF> &target) const
 {
     for (const Child &c : _children) {
-        target.push_back(c);
+        target.emplace_back(c);
     }
 }
 
 eval::InterpretedFunction::Instruction
-VectorFromDoublesFunction::compile_self(Stash &) const
+VectorFromDoublesFunction::compile_self(const TensorEngine &, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_vector_from_doubles_op, (uint64_t)&_self);
 }

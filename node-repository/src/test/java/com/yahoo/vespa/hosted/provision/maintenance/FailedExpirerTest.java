@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -54,10 +54,7 @@ public class FailedExpirerTest {
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
 
     private static final ClusterSpec tenantHostApplicationClusterSpec =
-            ClusterSpec.request(ClusterSpec.Type.container,
-                                ClusterSpec.Id.from("node-admin"),
-                                Version.fromString("6.42"),
-                                false);
+            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
 
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
@@ -143,9 +140,9 @@ public class FailedExpirerTest {
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy2")
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
                 .setReady("proxy1", "proxy2", "proxy3")
-                .allocate( ApplicationId.from("vespa", "zone-app", "default"),
-                        ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false),
-                        Capacity.fromRequiredNodeType(NodeType.proxy))
+                .allocate(ApplicationId.from("vespa", "zone-app", "default"),
+                          ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build(),
+                          Capacity.fromRequiredNodeType(NodeType.proxy))
                 .failNode(1, "proxy1");
 
         for (int i = 0; i < 10; i++) {
@@ -275,10 +272,12 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario withNode(NodeType type, NodeResources flavor, String hostname, String parentHostname) {
-            nodeRepository.addNodes(List.of(
-                    nodeRepository.createNode(UUID.randomUUID().toString(), hostname,
-                                              Optional.ofNullable(parentHostname), new Flavor(flavor), type)
-            ));
+            nodeRepository.addNodes(List.of(nodeRepository.createNode(UUID.randomUUID().toString(),
+                                                                      hostname,
+                                                                      Optional.ofNullable(parentHostname),
+                                                                      new Flavor(flavor),
+                                                                      type)),
+                                    Agent.system);
             return this;
         }
 
@@ -293,7 +292,7 @@ public class FailedExpirerTest {
         public FailureScenario failNode(int times, String... hostname) {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
-                nodeRepository.write(node.with(node.status().setFailCount(times)), () -> {});
+                nodeRepository.write(node.with(node.status().withFailCount(times)), () -> {});
                 nodeRepository.fail(h, Agent.system, "Failed by unit test");
             });
             return this;
@@ -323,17 +322,13 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
-            ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
-                                                          ClusterSpec.Id.from("test"),
-                                                          Version.fromString("6.42"),
-                                                          false
-            );
-            Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
+            ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+            Capacity capacity = Capacity.from(new ClusterResources(hostname.length, 1, flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 
         public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
-            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, 1, null);
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, Set.copyOf(preparedNodes));
             transaction.commit();

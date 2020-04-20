@@ -7,6 +7,7 @@
 #include <new>         // for placement new
 #include <cstdlib>     // for malloc
 #include <cstring>     // for memset
+#include <cstdarg>     // for va_list
 #include <cinttypes>
 
 /**

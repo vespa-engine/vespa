@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
  * A JRT subscription which does not use the config class, but {@link com.yahoo.vespa.config.RawConfig} instead.
  * Used by config proxy.
  *
- * @author vegardh
+ * @author Vegard Havdal
  *
  */
 public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
@@ -33,9 +33,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), RawConfig.createFromResponseParameters(jrtReq) );
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.getConfigState().getConfig());
-        }
+        log.log(LogLevel.DEBUG, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
     // This method is overridden because config needs to have its generation

@@ -35,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -52,7 +53,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     private final ComponentRegistry<DocprocService> docprocServiceRegistry;
     private final ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry;
     private final ChainRegistry<DocumentProcessor> chainRegistry = new ChainRegistry<>();
-    private DocprocThreadPoolExecutor threadPool;
+    private ThreadPoolExecutor threadPool;
     private final ScheduledThreadPoolExecutor laterExecutor =
             new ScheduledThreadPoolExecutor(2, new DaemonThreadFactory("docproc-later-"));
     private ContainerDocumentConfig containerDocConfig;
@@ -61,7 +62,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     public DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                      ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
-                                     DocprocThreadPoolExecutor threadPool, DocumentTypeManager documentTypeManager,
+                                     ThreadPoolExecutor threadPool, DocumentTypeManager documentTypeManager,
                                      ChainsModel chainsModel, SchemaMap schemaMap, Statistics statistics,
                                      Metric metric,
                                      ContainerDocumentConfig containerDocConfig) {
@@ -88,26 +89,25 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         }
     }
 
+    private static int computeNumThreads(int maxThreads) {
+        return (maxThreads > 0) ? maxThreads : Runtime.getRuntime().availableProcessors();
+    }
+
     public DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                      ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
                                      DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
-             new DocprocThreadPoolExecutor(params.getMaxNumThreads(),
-                                           chooseQueueType(params.getMaxNumThreads()),
-                                           new DocprocThreadManager(params.getMaxConcurrentFactor(),
-                                                                    params.getDocumentExpansionFactor(),
-                                                                    params.getContainerCoreMemoryMb())),
+             new ThreadPoolExecutor(computeNumThreads(params.getMaxNumThreads()),
+                                    computeNumThreads(params.getMaxNumThreads()),
+                                   0,TimeUnit.SECONDS,
+                                    new LinkedBlockingQueue<>(),
+                                    new DaemonThreadFactory("docproc-")
+                                           ),
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
              params.getStatisticsManager(),
              params.getMetric(),
              params.getContainerDocConfig());
-    }
-
-    private static BlockingQueue<Runnable> chooseQueueType(int maxNumThreads) {
-        return (maxNumThreads > 0)
-                ? new LinkedBlockingQueue<>()
-                : new SynchronousQueue<>();
     }
 
     @Inject
@@ -124,9 +124,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         this(new ComponentRegistry<>(),
              documentProcessorComponentRegistry, docFactoryRegistry, new DocumentProcessingHandlerParameters().setMaxNumThreads
                 (docprocConfig.numthreads())
-                     .setMaxConcurrentFactor(containerMbusConfig.maxConcurrentFactor())
-                     .setDocumentExpansionFactor(containerMbusConfig.documentExpansionFactor())
-                     .setContainerCoreMemoryMb(containerMbusConfig.containerCoreMemory())
                      .setDocumentTypeManager(new DocumentTypeManager(docManConfig))
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setStatisticsManager(manager)
@@ -198,14 +195,10 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     }
 
     private void submit(DocumentProcessingTask task) {
-        if (threadPool.isAboveLimit()) {
+        try {
+            threadPool.execute(task);
+        } catch (RejectedExecutionException ree) {
             task.queueFull();
-        } else {
-            try {
-                threadPool.execute(task);
-            } catch (RejectedExecutionException ree) {
-                task.queueFull();
-            }
         }
     }
 

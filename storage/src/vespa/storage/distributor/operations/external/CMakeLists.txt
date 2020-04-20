@@ -2,6 +2,7 @@
 vespa_add_library(storage_distributoroperationexternal OBJECT
     SOURCES
     getoperation.cpp
+    newest_replica.cpp
     putoperation.cpp
     removelocationoperation.cpp
     removeoperation.cpp

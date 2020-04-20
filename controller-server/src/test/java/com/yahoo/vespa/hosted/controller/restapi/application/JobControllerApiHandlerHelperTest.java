@@ -34,12 +34,10 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -52,6 +50,9 @@ public class JobControllerApiHandlerHelperTest {
     public void testResponses() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .stagingTest()
+                .blockChange(true, true, "mon,tue", "7-13", "UTC")
+                .blockChange(false, true, "sun", "0-23", "CET")
+                .blockChange(true, false, "fri-sat", "8", "America/Los_Angeles")
                 .region("us-central-1")
                 .test("us-central-1")
                 .parallel("us-west-1", "us-east-3")
@@ -80,15 +81,10 @@ public class JobControllerApiHandlerHelperTest {
         tester.runner().run();
         assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
-        ZoneId usWest1 = productionUsWest1.zone(tester.controller().system());
-        tester.configServer().convergeServices(app.instanceId(), usWest1);
-        tester.configServer().convergeServices(app.testerId().id(), usWest1);
-        tester.setEndpoints(app.instanceId(), usWest1);
-        tester.setEndpoints(app.testerId().id(), usWest1);
         tester.runner().run();
-        tester.cloud().set(FAILURE);
+        tester.clock().advance(Duration.ofHours(2).plusSeconds(1));
         tester.runner().run();
-        assertEquals(testFailure, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
+        assertEquals(installationFailed, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
         assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).applicationVersion());
         assertEquals(revision1, app.deployment(productionUsEast3.zone(tester.controller().system())).applicationVersion());
         assertEquals(revision2, app.deployment(productionUsWest1.zone(tester.controller().system())).applicationVersion());
@@ -140,7 +136,6 @@ public class JobControllerApiHandlerHelperTest {
         userApp.runJob(devAwsUsEast2a, applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
-
         assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
     }
 
@@ -157,7 +152,6 @@ public class JobControllerApiHandlerHelperTest {
 
         tester.configServer().setLogStream("Nope, this won't be logged");
         tester.configServer().convergeServices(app.instanceId(), zone);
-        tester.setEndpoints(app.instanceId(), zone);
         tester.runner().run();
 
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
@@ -183,7 +177,6 @@ public class JobControllerApiHandlerHelperTest {
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        System.err.println(baos.toString());
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());

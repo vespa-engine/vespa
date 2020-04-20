@@ -20,14 +20,15 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
+#include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
@@ -41,8 +42,6 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-
-
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
@@ -75,6 +74,8 @@ using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DefaultTensorEngine;
+using vespalib::ForegroundTaskExecutor;
+using vespalib::SequencedTaskExecutorObserver;
 
 using AVConfig = search::attribute::Config;
 using AVBasicType = search::attribute::BasicType;
@@ -588,8 +589,8 @@ struct FilterFixture
 
 TEST_F("require that filter attribute manager can filter attributes", FilterFixture)
 {
-    EXPECT_TRUE(f._filterMgr.getAttribute("a1").get() == NULL);
-    EXPECT_TRUE(f._filterMgr.getAttribute("a2").get() != NULL);
+    EXPECT_TRUE(f._filterMgr.getAttribute("a1").get() == nullptr);
+    EXPECT_TRUE(f._filterMgr.getAttribute("a2").get() != nullptr);
     std::vector<AttributeGuard> attrs;
     f._filterMgr.getAttributeList(attrs);
     EXPECT_EQUAL(1u, attrs.size());
@@ -605,6 +606,16 @@ TEST_F("require that filter attribute manager can return flushed serial number",
     f._baseMgr->flushAll(100);
     EXPECT_EQUAL(0u, f._filterMgr.getFlushedSerialNum("a1"));
     EXPECT_EQUAL(100u, f._filterMgr.getFlushedSerialNum("a2"));
+}
+
+TEST_F("readable_attribute_vector filters attributes", FilterFixture)
+{
+    auto av = f._filterMgr.readable_attribute_vector("a2");
+    ASSERT_TRUE(av);
+    EXPECT_EQUAL("a2", av->makeReadGuard(false)->attribute()->getName());
+
+    av = f._filterMgr.readable_attribute_vector("a1");
+    EXPECT_FALSE(av);
 }
 
 namespace {

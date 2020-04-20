@@ -5,12 +5,13 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
+import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -54,8 +55,8 @@ public class RunSerializerTest {
     private static final RunSerializer serializer = new RunSerializer();
     private static final Path runFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/run-status.json");
     private static final RunId id = new RunId(ApplicationId.from("tenant", "application", "default"),
-                                               JobType.productionUsEast3,
-                                               (long) 112358);
+                                              JobType.productionUsEast3,
+                                              112358);
     private static final Instant start = Instant.parse("2007-12-03T10:15:30.00Z");
 
     @Test
@@ -148,7 +149,7 @@ public class RunSerializerTest {
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
 
-        Run initial = Run.initial(id, run.versions(), run.start());
+        Run initial = Run.initial(id, run.versions(), run.start(), JobProfile.production);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 

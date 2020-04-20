@@ -6,10 +6,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -82,8 +80,8 @@ public class NodeRepositoryNode {
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
     private Boolean allowedToBeDown;
-    @JsonProperty("suspendedSince")
-    private Long suspendedSince;
+    @JsonProperty("suspendedSinceMillis")
+    private Long suspendedSinceMillis;
     @JsonProperty("reports")
     private Map<String, JsonNode> reports;
     @JsonProperty("modelName")
@@ -317,12 +315,12 @@ public class NodeRepositoryNode {
         return allowedToBeDown;
     }
 
-    public Long suspendedSince() {
-        return suspendedSince;
+    public Long suspendedSinceMillis() {
+        return suspendedSinceMillis;
     }
 
-    public void setSuspendedSince(long suspendedSinceMillis) {
-        this.suspendedSince = suspendedSinceMillis;
+    public void setSuspendedSinceMillis(long suspendedSinceMillis) {
+        this.suspendedSinceMillis = suspendedSinceMillis;
     }
 
     public String getCurrentOsVersion() {

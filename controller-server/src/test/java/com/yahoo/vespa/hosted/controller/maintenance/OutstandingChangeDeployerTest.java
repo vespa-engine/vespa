@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -17,6 +15,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,7 +46,7 @@ public class OutstandingChangeDeployerTest {
         assertFalse(app1.deploymentStatus().outstandingChange(app1.instance().name()).hasTargets());
 
         assertEquals(1, app1.application().latestVersion().get().buildNumber().getAsLong());
-        app1.submit(applicationPackage, new SourceRevision("repository1", "master", "cafed00d"));
+        app1.submit(applicationPackage, Optional.of(new SourceRevision("repository1", "master", "cafed00d")));
 
         assertTrue(app1.deploymentStatus().outstandingChange(app1.instance().name()).hasTargets());
         assertEquals("1.0.2-cafed00d", app1.deploymentStatus().outstandingChange(app1.instance().name()).application().get().id());

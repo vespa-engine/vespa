@@ -119,6 +119,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
     queries.inc(stats.queries());
     queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
                                       stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
+    querySetupTime.addValueBatch(stats.querySetupTimeAvg(), stats.querySetupTimeCount(),
+                                      stats.querySetupTimeMin(), stats.querySetupTimeMax());
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
 }
@@ -131,6 +133,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       queries("queries", {}, "Number of queries executed", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
       queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
 }
@@ -152,6 +155,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
       rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
       queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
     softDoomFactor.set(MatchingStats::INITIAL_SOFT_DOOM_FACTOR);
@@ -204,6 +208,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
                              stats.rerankTimeMin(), stats.rerankTimeMax());
     queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
                                       stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
+    querySetupTime.addValueBatch(stats.querySetupTimeAvg(), stats.querySetupTimeCount(),
+                                      stats.querySetupTimeMin(), stats.querySetupTimeMax());
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {

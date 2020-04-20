@@ -14,7 +14,7 @@ namespace search::index {
     class IndexBuilder;
 }
 
-namespace search { class ISequencedTaskExecutor; }
+namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace document { class Document; }
 
@@ -40,6 +40,7 @@ class FieldIndexCollection;
  */
 class MemoryIndex : public queryeval::Searchable {
 private:
+    using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;

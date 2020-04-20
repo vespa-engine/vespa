@@ -55,6 +55,9 @@ class NodeAllocation {
     /** The number of nodes in the accepted nodes which are of the requested flavor */
     private int acceptedOfRequestedFlavor = 0;
 
+    /** The number of nodes in the accepted nodes which are of the requested flavor and not already retired */
+    private int acceptedNonretiredOfRequestedFlavor = 0;
+
     /** The number of nodes rejected because of clashing parentHostname */
     private int rejectedWithClashingParentHost = 0;
 
@@ -100,7 +103,6 @@ class NodeAllocation {
         List<Node> accepted = new ArrayList<>();
         for (PrioritizableNode node : nodesPrioritized) {
             Node offered = node.node;
-
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
@@ -116,7 +118,7 @@ class NodeAllocation {
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
                         wantToRetireNode = true;
-                    if (( ! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
+                    if (( ! saturatedByNonretired() && hasCompatibleFlavor(node)) || acceptToRetire(node))
                         accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
                 }
                 else {
@@ -214,6 +216,7 @@ class NodeAllocation {
     private boolean acceptToRetire(PrioritizableNode node) {
         if (node.node.state() != Node.State.active) return false;
         if (! node.node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
+        if (node.node.allocation().get().membership().retired()) return true; // don't second-guess if already retired
 
         return cluster.type().isContent() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(node));
@@ -230,17 +233,15 @@ class NodeAllocation {
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
-            if (resize) {
-                NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
-                node = node.with(new Flavor(requestedNodes.resources().get()
-                        .with(hostResources.diskSpeed())
-                        .with(hostResources.storageType())));
-            }
+            if (resize && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+                node = resize(node);
 
             if (node.state() != Node.State.active) // reactivated node - make sure its not retired
                 node = node.unretire();
 
             acceptedOfRequestedFlavor++;
+            if ( ! (node.allocation().isPresent() && node.allocation().get().membership().retired()))
+                acceptedNonretiredOfRequestedFlavor++;
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
@@ -257,6 +258,13 @@ class NodeAllocation {
         return node;
     }
 
+    private Node resize(Node node) {
+        NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
+        return node.with(new Flavor(requestedNodes.resources().get()
+                                                  .with(hostResources.diskSpeed())
+                                                  .with(hostResources.storageType())));
+    }
+
     private Node setCluster(ClusterSpec cluster, Node node) {
         ClusterMembership membership = node.allocation().get().membership().with(cluster);
         return node.with(node.allocation().get().with(membership));
@@ -265,6 +273,11 @@ class NodeAllocation {
     /** Returns true if no more nodes are needed in this list */
     private boolean saturated() {
         return requestedNodes.saturatedBy(acceptedOfRequestedFlavor);
+    }
+
+    /** Returns true if no more nodes are needed in this list to not make changes to the retired set */
+    private boolean saturatedByNonretired() {
+        return requestedNodes.saturatedBy(acceptedNonretiredOfRequestedFlavor);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
@@ -321,8 +334,10 @@ class NodeAllocation {
             }
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
-            for (PrioritizableNode node : byIncreasingIndex(nodes)) {
-                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node)) {
+            for (PrioritizableNode node : byUnretiringPriority(nodes)) {
+                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node) ) {
+                    if (node.isResizable)
+                        node.node = resize(node.node);
                     node.node = node.node.unretire();
                     if (++deltaRetiredCount == 0) break;
                 }
@@ -333,7 +348,7 @@ class NodeAllocation {
             // Set whether the node is exclusive
             Allocation allocation = node.node.allocation().get();
             node.node = node.node.with(allocation.with(allocation.membership()
-                           .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
+                                .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
         }
 
         return nodes.stream().map(n -> n.node).collect(Collectors.toList());
@@ -364,8 +379,12 @@ class NodeAllocation {
         return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
     }
 
-    private List<PrioritizableNode> byIncreasingIndex(Set<PrioritizableNode> nodes) {
-        return nodes.stream().sorted(nodeIndexComparator()).collect(Collectors.toList());
+    /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
+    private List<PrioritizableNode> byUnretiringPriority(Set<PrioritizableNode> nodes) {
+        return nodes.stream()
+                    .sorted(Comparator.comparing((PrioritizableNode n) -> n.node.status().wantToRetire())
+                                      .thenComparing(n -> n.node.allocation().get().membership().index()))
+                    .collect(Collectors.toList());
     }
 
     private Comparator<PrioritizableNode> nodeIndexComparator() {
@@ -390,4 +409,5 @@ class NodeAllocation {
             return count;
         }
     }
+
 }

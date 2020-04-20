@@ -42,7 +42,8 @@ public class NodeHistory {
         FailedExpirer,
         InactiveExpirer,
         ProvisionedExpirer,
-        ReservationExpirer
+        ReservationExpirer,
+        DynamicProvisioningMaintainer
     }
 
 }

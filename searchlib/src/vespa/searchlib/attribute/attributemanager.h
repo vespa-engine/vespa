@@ -49,6 +49,8 @@ public:
     void getAttributeList(AttributeList & list) const override;
     attribute::IAttributeContext::UP createContext() const override;
 
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
+
     const Snapshot & getSnapshot()         const { return _snapShot; }
     const string & getBaseDir()       const { return _baseDir; }
     void setBaseDir(const string & base);

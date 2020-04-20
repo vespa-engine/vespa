@@ -37,8 +37,8 @@ public class ProcessingUpdateTestCase {
     @Test
     public void testProcessingUpdates() {
         DocumentType articleType = new DocumentType("article");
-        Field bodyField = new Field("body", DataType.STRING, true);
-        Field titleField = new Field("title", DataType.STRING, true);
+        Field bodyField = new Field("body", DataType.STRING);
+        Field titleField = new Field("title", DataType.STRING);
         articleType.addField(bodyField);
         articleType.addField(titleField);
         dtm = new DocumentTypeManager();

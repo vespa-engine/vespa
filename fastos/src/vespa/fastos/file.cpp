@@ -184,12 +184,23 @@ FastOS_FileInterface::DirectIOPadding(int64_t offset,
 
 
 void *
-FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize, void *&realPtr)
+FastOS_FileInterface::allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
 {
     realPtr = malloc(byteSize);    // Default - use malloc allignment
     return realPtr;
 }
 
+size_t
+FastOS_FileInterface::getMaxDirectIOMemAlign()
+{
+    return 1u;
+}
+
+void *
+FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize, void *&realPtr)
+{
+    return allocateGenericDirectIOBuffer(byteSize, realPtr);
+}
 
 void
 FastOS_FileInterface::enableMemoryMap(int mmapFlags)

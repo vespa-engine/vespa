@@ -112,13 +112,13 @@ StartCommand() {
 
     local service_regex='^[0-9a-zA-Z_-]+$'
     if ! [[ "$service" =~ $service_regex ]]; then
-	Fail "Service must match regex '$service_regex'"
+        Fail "Service must match regex '$service_regex'"
     fi
 
     local pidfile="$VESPA_HOME/var/run/$service.pid"
     if [ "$force" = false ] && test -r "$pidfile"; then
-	echo "$service is already running as PID $(< "$pidfile") according to $pidfile"
-	return
+        echo "$service is already running as PID $(< "$pidfile") according to $pidfile"
+        return
     fi
 
     # common setup
@@ -199,71 +199,71 @@ Kill() {
 
     local -i now
     if ! now=$(date +%s); then
-	Fail "Failed to get the current date in seconds since epoch"
+        Fail "Failed to get the current date in seconds since epoch"
     fi
     local -i timeout=$(( now + 300 ))
 
     local has_killed=false
 
     while true; do
-	local ps_output=""
-	if ! ps_output=$(ps -p "$pid" -o user= -o comm=); then
-	    # success
-	    return
-	fi
+        local ps_output=""
+        if ! ps_output=$(ps -p "$pid" -o user= -o comm=); then
+            # success
+            return
+        fi
 
-	local user comm
-	read -r user comm <<< "$ps_output"
+        local user comm
+        read -r user comm <<< "$ps_output"
 
-	if test "$user" != "$expected_user"; then
-	    echo "Warning: Pid collision ($pid): Expected user $expected_user but found $user."
-	    echo "Will assume original process has died."
-	    return
-	fi
+        if test "$user" != "$expected_user"; then
+            echo "Warning: Pid collision ($pid): Expected user $expected_user but found $user."
+            echo "Will assume original process has died."
+            return
+        fi
 
-	if test "$comm" != "$expected_comm"; then
-	    echo "Warning: Pid collision ($pid): Expected program $expected_comm but found $comm."
-	    echo "Will assume original process has died."
-	    return
-	fi
+        if test "$comm" != "$expected_comm"; then
+            echo "Warning: Pid collision ($pid): Expected program $expected_comm but found $comm."
+            echo "Will assume original process has died."
+            return
+        fi
 
-	if ! "$has_killed"; then
-	    if $force; then
-		if ! kill -KILL "$pid"; then
-		    Fail "Failed to kill $pid"
-		fi
-	    else
-		if ! kill "$pid"; then
-		    Fail "Failed to kill $pid"
-		fi
-	    fi
+        if ! "$has_killed"; then
+            if $force; then
+                if ! kill -KILL "$pid"; then
+                    Fail "Failed to kill $pid"
+                fi
+            else
+                if ! kill "$pid"; then
+                    Fail "Failed to kill $pid"
+                fi
+            fi
 
-	    has_killed=true
-	fi
+            has_killed=true
+        fi
 
-	sleep 1
+        sleep 1
 
-	now=$(date +%s)
-	if (( now >= timeout )); then
-	    Fail "Process $pid still exists after $timeout seconds, giving up"
-	fi
+        now=$(date +%s)
+        if (( now >= timeout )); then
+            Fail "Process $pid still exists after $timeout seconds, giving up"
+        fi
     done
 }
 
 StopCommand() {
     local user="$1"
-    local force="$2"
-    local service="$3"
+    local service="$2"
+    local force="$3"
 
     local pidfile="$VESPA_HOME/var/run/$service.pid"
     if ! test -r "$pidfile"; then
-	echo "$service is not running"
-	return
+        echo "$service is not running"
+        return
     fi
 
     local pid=$(< "$pidfile")
     if ! [[ "$pid" =~ ^[0-9]+$ ]]; then
-	Fail "Pid file '$pidfile' does not contain a valid pid: $pid"
+        Fail "Pid file '$pidfile' does not contain a valid pid: $pid"
     fi
 
     Kill "$force" "$user" java "$pid"
@@ -272,7 +272,7 @@ StopCommand() {
 
 Main() {
     if (( $# == 0 )); then
-	Usage
+        Usage
     fi
 
     local command="$1"
@@ -284,49 +284,49 @@ Main() {
     local -a jvm_arguments=()
 
     while (( $# > 0 )); do
-	case "$1" in
-	    --help|-h) Usage ;;
-	    --service|-s)
-		service="$2"
-		shift 2
-		;;
-	    --user|-u)
-		user="$2"
-		shift 2
-		;;
-	    --force|-f)
-		force=true
-		shift
-		;;
-	    --)
-		shift
-		jvm_arguments=("$@")
-		break
-		;;
-	    *) break ;;
-	esac
+        case "$1" in
+            --help|-h) Usage ;;
+            --service|-s)
+                service="$2"
+                shift 2
+                ;;
+            --user|-u)
+                user="$2"
+                shift 2
+                ;;
+            --force|-f)
+                force=true
+                shift
+                ;;
+            --)
+                shift
+                jvm_arguments=("$@")
+                break
+                ;;
+            *) break ;;
+        esac
     done
 
     # Service name will be included in paths and possibly environment variable
     # names, so be restrictive.
     local service_regex='^[a-zA-Z0-9_-]+$'
     if test -z "$service"; then
-	Fail "SERVICE not specified"
+        Fail "SERVICE not specified"
     elif ! [[ "$service" =~ $service_regex ]]; then
-	Fail "Service must math the regex '$service_regex'"
+        Fail "Service must math the regex '$service_regex'"
     fi
 
     if ! getent passwd "$user" &> /dev/null; then
-	Fail "Bad user ($user): not found in passwd"
+        Fail "Bad user ($user): not found in passwd"
     elif test "$(id -un)" != "$user"; then
-	Fail "${0##*/} must be started by $user"
+        Fail "${0##*/} must be started by $user"
     fi
 
     case "$command" in
-	help) Usage ;;
-	start) StartCommand "$service" "$force" "${jvm_arguments[@]}" ;;
-	stop) StopCommand "$user" "$service" "$force" "$@" ;;
-	*) Fail "Unknown command '$command'" ;;
+        help) Usage ;;
+        start) StartCommand "$service" "$force" "${jvm_arguments[@]}" ;;
+        stop) StopCommand "$user" "$service" "$force" "$@" ;;
+        *) Fail "Unknown command '$command'" ;;
     esac
 }
 

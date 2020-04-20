@@ -61,4 +61,9 @@ MockAttributeManager::addAttribute(const AttributeVector::SP &attr) {
     addAttribute(attr->getName(), attr);
 }
 
+std::shared_ptr<attribute::ReadableAttributeVector>
+MockAttributeManager::readable_attribute_vector(const string& name) const {
+    return findAttribute(name);
+}
+
 }

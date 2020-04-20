@@ -47,7 +47,7 @@ public class EndpointCertificateSecretsValidatorTest {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         exceptionRule.expect(CertificateNotReadyException.class);
-        exceptionRule.expectMessage("TLS enabled, but could not retrieve certificate yet");
+        exceptionRule.expectMessage("TLS enabled, but could not yet retrieve certificate for application default:default:default");
 
         new EndpointCertificateSecretsValidator().validate(model, deployState);
     }

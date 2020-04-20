@@ -4,7 +4,10 @@
 search parent {
     document parent {
         field dummy type string {
-
+            indexing: attribute
+        }
+        field foo type string {
+            indexing: attribute
         }
     }
 }

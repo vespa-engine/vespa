@@ -1,14 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-package com.yahoo.prelude.searcher;
+package com.yahoo.search.searchers;
 
 import com.google.common.util.concurrent.MoreExecutors;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -20,14 +17,10 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.Searcher;
-import com.yahoo.search.searchers.ValidateNearestNeighborSearcher;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-
-import java.util.*;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -139,12 +132,24 @@ public class ValidateNearestNeighborTestCase {
         assertEquals(ErrorMessage.createIllegalQuery(message), r.hits().getError());
     }
 
+    static String desc(String field, String qt, int th, String errmsg) {
+        StringBuilder r = new StringBuilder();
+        r.append("NEAREST_NEIGHBOR {");
+        r.append("field=").append(field);
+        r.append(",queryTensorName=").append(qt);
+        r.append(",hnsw.exploreAdditionalHits=0");
+        r.append(",approximate=true");
+        r.append(",targetNumHits=").append(th);
+        r.append("} ").append(errmsg);
+        return r.toString();
+    }
+
     @Test
     public void testMissingTargetNumHits() {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector);";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=0} has invalid targetNumHits", r);
+        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetNumHits 0: Must be >= 1"), r);
     }
 
     @Test
@@ -152,16 +157,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "foo");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=foo,targetNumHits=1} query tensor not found", r);
-    }
-
-    @Test
-    public void testQueryTensorWrongType() {
-        String q = makeQuery("dvector", "qvector");
-        Result r = doSearch(searcher, q, "tensor string");
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} query tensor should be a tensor, was: class java.lang.String", r);
-        r = doSearch(searcher, q, null);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} query tensor should be a tensor, was: null", r);
+        assertErrMsg(desc("dvector", "foo", 1, "requires a tensor rank feature query(foo) but this is not present"), r);
     }
 
     @Test
@@ -169,7 +165,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_2, 2);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} field type tensor(x[3]) does not match query tensor type tensor(x[2])", r);
+        assertErrMsg(desc("dvector", "qvector", 1, "field type tensor(x[3]) does not match query type tensor(x[2])"), r);
     }
 
     @Test
@@ -177,7 +173,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("foo", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=foo,queryTensorName=qvector,targetNumHits=1} field is not an attribute", r);
+        assertErrMsg(desc("foo", "qvector", 1, "field is not an attribute"), r);
     }
 
     @Test
@@ -185,7 +181,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("simple", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=simple,queryTensorName=qvector,targetNumHits=1} field is not a tensor", r);
+        assertErrMsg(desc("simple", "qvector", 1, "field is not a tensor"), r);
     }
 
     @Test
@@ -193,7 +189,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("sparse", "qvector");
         Tensor t = makeTensor(tt_sparse_vector_x);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=sparse,queryTensorName=qvector,targetNumHits=1} tensor type tensor(x{}) is not a dense vector", r);
+        assertErrMsg(desc("sparse", "qvector", 1, "tensor type tensor(x{}) is not a dense vector"), r);
     }
 
     @Test
@@ -201,14 +197,14 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("matrix", "qvector");
         Tensor t = makeMatrix(tt_dense_matrix_xy);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=matrix,queryTensorName=qvector,targetNumHits=1} tensor type tensor(x[3],y[1]) is not a dense vector", r);
+        assertErrMsg(desc("matrix", "qvector", 1, "tensor type tensor(x[3],y[1]) is not a dense vector"), r);
     }
 
-    private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Object qTensor) {
+    private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Tensor qTensor) {
         QueryTree queryTree = new YqlParser(new ParserEnvironment()).parse(new Parsable().setQuery(yqlQuery));
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(queryTree.getRoot());
-        query.getRanking().getProperties().put("qvector", qTensor);
+        query.getRanking().getFeatures().put("query(qvector)", qTensor);
         SearchDefinition searchDefinition = new SearchDefinition("document");
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
         Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());

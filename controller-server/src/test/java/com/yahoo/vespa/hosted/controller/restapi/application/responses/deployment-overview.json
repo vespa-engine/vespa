@@ -1,37 +1,66 @@
 {
   "tenant": "tenant1",
   "application": "application1",
+  "projectId": 123,
   "steps": [
     {
       "type": "instance",
       "dependencies": [],
       "declared": true,
-      "instance": "instance1"
+      "instance": "instance1",
+      "readyAt": 0,
+      "deploying": {
+        "application": {
+          "build": 4,
+          "compileVersion": "6.1.0",
+          "sourceUrl": "repository1/tree/commit1",
+          "commit": "commit1"
+        }
+      },
+      "latestVersions": {
+        "platform": {
+          "platform": "6.1.0",
+          "at": "(ignore)",
+          "upgrade": false,
+          "blockers": []
+        },
+        "application": {
+          "application": {
+            "build": 4,
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
+          },
+          "at": 1000,
+          "upgrade": false,
+          "blockers": []
+        }
+      }
     },
     {
       "type": "test",
       "dependencies": [],
       "declared": false,
       "instance": "instance1",
+      "readyAt": 0,
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
-      "readyAt": 0,
       "runs": [
         {
           "id": 2,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/run 2 of system-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2",
           "start": "(ignore)",
           "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -79,17 +108,17 @@
         },
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/run 1 of system-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -142,25 +171,25 @@
       "dependencies": [],
       "declared": false,
       "instance": "instance1",
+      "readyAt": 0,
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
       "region": "staging.us-east-3",
       "toRun": [],
-      "readyAt": 0,
       "runs": [
         {
           "id": 2,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/run 2 of staging-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/2",
           "start": "(ignore)",
           "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -224,17 +253,17 @@
         },
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/run 1 of staging-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -314,10 +343,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -325,46 +354,26 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/run 1 of production-us-central-1 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
-            {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
             {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "deactivateTester",
               "status": "succeeded"
             },
             {
@@ -391,10 +400,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -402,44 +411,24 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/run 1 of production-us-west-1 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/1",
           "start": "(ignore)",
           "status": "aborted",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
-              "sourceUrl": "repository1/tree/commit1"
+              "build": 1,
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
-            {
-              "name": "deployTester",
-              "status": "unfinished"
-            },
-            {
-              "name": "installTester",
-              "status": "unfinished"
-            },
             {
               "name": "deployReal",
               "status": "unfinished"
             },
             {
               "name": "installReal",
-              "status": "unfinished"
-            },
-            {
-              "name": "startTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "endTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "deactivateTester",
               "status": "unfinished"
             },
             {
@@ -466,38 +455,30 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
       ],
       "runs": [
         {
-          "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/run 1 of production-us-east-3 for tenant1.application1.instance1",
+          "id": 2,
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/2",
           "start": "(ignore)",
           "status": "aborted",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
-            {
-              "name": "deployTester",
-              "status": "unfinished"
-            },
-            {
-              "name": "installTester",
-              "status": "unfinished"
-            },
             {
               "name": "deployReal",
               "status": "unfinished"
@@ -507,20 +488,33 @@
               "status": "unfinished"
             },
             {
-              "name": "startTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "endTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "deactivateTester",
-              "status": "unfinished"
-            },
-            {
               "name": "report",
               "status": "unfinished"
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/1",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {}
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
             }
           ]
         }
@@ -533,19 +527,39 @@
         5
       ],
       "declared": true,
-      "instance": "instance2"
+      "instance": "instance2",
+      "deploying": {},
+      "latestVersions": {
+        "platform": {
+          "platform": "6.1.0",
+          "at": "(ignore)",
+          "upgrade": false,
+          "blockers": []
+        },
+        "application": {
+          "application": {
+            "build": 4,
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
+          },
+          "at": 1000,
+          "upgrade": false,
+          "blockers": []
+        }
+      }
     },
     {
       "type": "test",
       "dependencies": [],
       "declared": false,
       "instance": "instance2",
+      "readyAt": 0,
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
-      "readyAt": 0,
       "runs": []
     },
     {
@@ -553,12 +567,12 @@
       "dependencies": [],
       "declared": false,
       "instance": "instance2",
+      "readyAt": 0,
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/staging-test",
       "environment": "staging",
       "region": "staging.us-east-3",
       "toRun": [],
-      "readyAt": 0,
       "runs": []
     },
     {
@@ -577,10 +591,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -603,10 +617,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -629,10 +643,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }

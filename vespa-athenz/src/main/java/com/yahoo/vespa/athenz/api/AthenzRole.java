@@ -7,6 +7,8 @@ import java.util.Objects;
  * @author tokle
  */
 public class AthenzRole {
+    private static final String ROLE_RESOURCE_PREFIX = "role.";
+
     private final AthenzDomain domain;
     private final String roleName;
 
@@ -20,6 +22,19 @@ public class AthenzRole {
         this.roleName = roleName;
     }
 
+    public static AthenzRole fromResourceNameString(String string) {
+        return fromResourceName(AthenzResourceName.fromString(string));
+    }
+
+    public static AthenzRole fromResourceName(AthenzResourceName resourceName) {
+        String entityName = resourceName.getEntityName();
+        if (!entityName.startsWith(ROLE_RESOURCE_PREFIX)) {
+            throw new IllegalArgumentException("Not a valid role: " + resourceName.toResourceNameString());
+        }
+        String roleName = entityName.substring(ROLE_RESOURCE_PREFIX.length());
+        return new AthenzRole(resourceName.getDomain(), roleName);
+    }
+
     public AthenzDomain domain() {
         return domain;
     }
@@ -27,6 +42,10 @@ public class AthenzRole {
     public String roleName() {
         return roleName;
     }
+
+    public String toResourceNameString() { return toResourceName().toResourceNameString(); }
+
+    public AthenzResourceName toResourceName() { return new AthenzResourceName(domain, ROLE_RESOURCE_PREFIX + roleName); }
 
     @Override
     public boolean equals(Object o) {

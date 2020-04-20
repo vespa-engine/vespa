@@ -11,7 +11,10 @@ import com.yahoo.vespa.model.Host;
 import java.util.*;
 
 /**
- * Responsible for directing distribution of files to hosts.
+ * Sends RPC requests to hosts (tenant hosts and config servers) to start download of files. This is used during prepare
+ * of an application. Services themselves will also request files, the work done in this class is done so that hosts can
+ * start downloading files before services gets new config that needs these files. This also tries to make sure that
+ * all config servers (not just the one where the application was deployed) have the files available.
  *
  * @author Tony Vaagenes
  */
@@ -19,61 +22,42 @@ public class FileDistributor {
 
     private final FileRegistry fileRegistry;
     private final List<ConfigServerSpec> configServerSpecs;
+    private final boolean isHosted;
 
-    /** A map from files to the hosts to which that file should be distributed */
+    /** A map from file reference to the hosts to which that file reference should be distributed */
     private final Map<FileReference, Set<Host>> filesToHosts = new LinkedHashMap<>();
 
-    /**
-     * Adds the given file to the associated application packages' registry of file and marks the file
-     * for distribution to the given hosts.
-     * <b>Note: This class receives ownership of the given collection.</b>
-     *
-     * @return the reference to the file, created by the application package
-     */
-    public FileReference sendFileToHosts(String relativePath, Collection<Host> hosts) {
-        FileReference reference = fileRegistry.addFile(relativePath);
-        addToFilesToDistribute(reference, hosts);
-
-        return reference;
-    }
-
-    /**
-     * Adds the given file to the associated application packages' registry of file and marks the file
-     * for distribution to the given hosts.
-     * <b>Note: This class receives ownership of the given collection.</b>
-     *
-     * @return the reference to the file, created by the application package
-     */
-    public FileReference sendUriToHosts(String uri, Collection<Host> hosts) {
-        FileReference reference = fileRegistry.addUri(uri);
-        if (reference != null) {
-            addToFilesToDistribute(reference, hosts);
-        }
-
-        return reference;
-    }
-
-    /** Same as sendFileToHost(relativePath,Collections.singletonList(host) */
-    public FileReference sendFileToHost(String relativePath, Host host) {
-        return sendFileToHosts(relativePath, Arrays.asList(host));
-    }
-
-    public FileReference sendUriToHost(String uri, Host host) {
-        return sendUriToHosts(uri, Arrays.asList(host));
-    }
-
-    private void addToFilesToDistribute(FileReference reference, Collection<Host> hosts) {
-        Set<Host> oldHosts = getHosts(reference);
-        oldHosts.addAll(hosts);
-    }
-
-    private Set<Host> getHosts(FileReference reference) {
-        return filesToHosts.computeIfAbsent(reference, k -> new HashSet<>());
-    }
-
-    public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs) {
+    public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs, boolean isHosted) {
         this.fileRegistry = fileRegistry;
         this.configServerSpecs = configServerSpecs;
+        this.isHosted = isHosted;
+    }
+
+    /**
+     * Adds the given file to the associated application packages' registry of file and marks the file
+     * for distribution to the given host.
+     * <b>Note: This class receives ownership of the given collection.</b>
+     *
+     * @return the reference to the file, created by the application package
+     */
+    public FileReference sendFileToHost(String relativePath, Host host) {
+        return addFileReference(fileRegistry.addFile(relativePath), host);
+    }
+
+    /**
+     * Adds the given file to the associated application packages' registry of file and marks the file
+     * for distribution to the given host.
+     * <b>Note: This class receives ownership of the given collection.</b>
+     *
+     * @return the reference to the file, created by the application package
+     */
+    public FileReference sendUriToHost(String uri, Host host) {
+        return addFileReference(fileRegistry.addUri(uri), host);
+    }
+
+    private FileReference addFileReference(FileReference reference, Host host) {
+        filesToHosts.computeIfAbsent(reference, k -> new HashSet<>()).add(host);
+        return reference;
     }
 
     /** Returns the files which has been marked for distribution to the given host */
@@ -107,16 +91,20 @@ public class FileDistributor {
     // should only be called during deploy
     public void sendDeployedFiles(FileDistribution dbHandler) {
         String fileSourceHost = fileSourceHost();
-        for (Host host : getTargetHosts()) {
-            if ( ! host.getHostname().equals(fileSourceHost)) {
-                dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host));
-            }
-        }
+
         // Ask other config servers to download, for redundancy
-        if (configServerSpecs != null)
-            configServerSpecs.stream()
-                    .filter(configServerSpec -> !configServerSpec.getHostName().equals(fileSourceHost))
-                    .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
+        configServerSpecs.stream()
+                .filter(spec -> !spec.getHostName().equals(fileSourceHost))
+                .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
+
+        // Skip starting download for application hosts when on hosted, since this is just a hint and requests for files
+        // will fail until the application is activated (this call is done when preparing an application deployment)
+        // due to authorization of RPC requests on config servers only considering files belonging to active applications
+        if (isHosted) return;
+
+        getTargetHosts().stream()
+                .filter(host -> ! host.getHostname().equals(fileSourceHost))
+                .forEach(host -> dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host)));
     }
 
 }

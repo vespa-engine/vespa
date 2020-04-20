@@ -107,26 +107,26 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         docMan = new DocumentTypeManager();
 
         DocumentType docInDocType = new DocumentType("docindoc");
-        docInDocType.addField(new Field("tull", 2, docMan.getDataType(2), true));
+        docInDocType.addField(new Field("tull", 2, docMan.getDataType(2)));
 
         docMan.registerDocumentType(docInDocType);
 
         DocumentType sertestDocType = new DocumentType("sertest");
-        sertestDocType.addField(new Field("mailid", 2, docMan.getDataType(2), true));
-        sertestDocType.addField(new Field("date", 3, docMan.getDataType(0), true));
-        sertestDocType.addField(new Field("from", 4, docMan.getDataType(2), true));
-        sertestDocType.addField(new Field("to", 6, docMan.getDataType(2), true));
-        sertestDocType.addField(new Field("subject", 9, docMan.getDataType(2), true));
-        sertestDocType.addField(new Field("body", 10, docMan.getDataType(2), false));
-        sertestDocType.addField(new Field("attachmentcount", 11, docMan.getDataType(0), false));
-        sertestDocType.addField(new Field("attachments", 1081629685, DataType.getArray(docMan.getDataType(2)), false));
-        sertestDocType.addField(new Field("rawfield", 879, DataType.RAW, false));
-        sertestDocType.addField(new Field("weightedfield", 880, DataType.getWeightedSet(DataType.STRING), false));
-        sertestDocType.addField(new Field("weightedfieldCreate", 881, DataType.getWeightedSet(DataType.STRING, true, false), false));
-        sertestDocType.addField(new Field("docindoc", 882, docInDocType, false));
-        sertestDocType.addField(new Field("mapfield", 883, new MapDataType(DataType.STRING, DataType.STRING), false));
-        sertestDocType.addField(new Field("myposfield", 884, PositionDataType.INSTANCE, false));
-        sertestDocType.addField(new Field("myboolfield", 885, DataType.BOOL, false));
+        sertestDocType.addField(new Field("mailid", 2, docMan.getDataType(2)));
+        sertestDocType.addField(new Field("date", 3, docMan.getDataType(0)));
+        sertestDocType.addField(new Field("from", 4, docMan.getDataType(2)));
+        sertestDocType.addField(new Field("to", 6, docMan.getDataType(2)));
+        sertestDocType.addField(new Field("subject", 9, docMan.getDataType(2)));
+        sertestDocType.addField(new Field("body", 10, docMan.getDataType(2)));
+        sertestDocType.addField(new Field("attachmentcount", 11, docMan.getDataType(0)));
+        sertestDocType.addField(new Field("attachments", 1081629685, DataType.getArray(docMan.getDataType(2))));
+        sertestDocType.addField(new Field("rawfield", 879, DataType.RAW));
+        sertestDocType.addField(new Field("weightedfield", 880, DataType.getWeightedSet(DataType.STRING)));
+        sertestDocType.addField(new Field("weightedfieldCreate", 881, DataType.getWeightedSet(DataType.STRING, true, false)));
+        sertestDocType.addField(new Field("docindoc", 882, docInDocType));
+        sertestDocType.addField(new Field("mapfield", 883, new MapDataType(DataType.STRING, DataType.STRING)));
+        sertestDocType.addField(new Field("myposfield", 884, PositionDataType.INSTANCE));
+        sertestDocType.addField(new Field("myboolfield", 885, DataType.BOOL));
 
         docMan.registerDocumentType(sertestDocType);
     }
@@ -880,13 +880,13 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     public void testInheritance() {
         // Create types that inherit each other.. And test that it works..
         DocumentType parentType = new DocumentType("parent");
-        parentType.addField(new Field("parentbodyint", DataType.INT, false));
-        parentType.addField(new Field("parentheaderint", DataType.INT, true));
-        parentType.addField(new Field("overwritten", DataType.INT, true));
+        parentType.addField(new Field("parentbodyint", DataType.INT));
+        parentType.addField(new Field("parentheaderint", DataType.INT));
+        parentType.addField(new Field("overwritten", DataType.INT));
         DocumentType childType = new DocumentType("child");
-        childType.addField(new Field("childbodyint", DataType.INT, false));
-        childType.addField(new Field("childheaderint", DataType.INT, true));
-        childType.addField(new Field("overwritten", DataType.INT, true));
+        childType.addField(new Field("childbodyint", DataType.INT));
+        childType.addField(new Field("childheaderint", DataType.INT));
+        childType.addField(new Field("overwritten", DataType.INT));
         childType.inherit(parentType);
 
         DocumentTypeManager manager = new DocumentTypeManager();
@@ -914,13 +914,13 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     @Test
     public void testInheritanceTypeMismatch() {
         DocumentType parentType = new DocumentType("parent");
-        parentType.addField(new Field("parentbodyint", DataType.INT, false));
-        parentType.addField(new Field("parentheaderint", DataType.INT, true));
-        parentType.addField(new Field("overwritten", DataType.STRING, true));
+        parentType.addField(new Field("parentbodyint", DataType.INT));
+        parentType.addField(new Field("parentheaderint", DataType.INT));
+        parentType.addField(new Field("overwritten", DataType.STRING));
         DocumentType childType = new DocumentType("child");
-        childType.addField(new Field("childbodyint", DataType.INT, false));
-        childType.addField(new Field("childheaderint", DataType.INT, true));
-        childType.addField(new Field("overwritten", DataType.INT, true));
+        childType.addField(new Field("childbodyint", DataType.INT));
+        childType.addField(new Field("childheaderint", DataType.INT));
+        childType.addField(new Field("overwritten", DataType.INT));
         try {
             childType.inherit(parentType);
             fail("Inheritance with conflicting types worked.");
@@ -934,7 +934,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     public void testFieldValueImplementations() {
         docMan = new DocumentTypeManager();
         DocumentType docType = new DocumentType("impl");
-        docType.addField(new Field("something", DataType.getArray(DataType.STRING), false));
+        docType.addField(new Field("something", DataType.getArray(DataType.STRING)));
         docMan.register(docType);
 
         //just checks that isAssignableFrom() in Document.setFieldValue() goes the right way
@@ -1276,9 +1276,9 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     public void testDocumentComparisonDoesNotCorruptStateBug6394548() {
         DocumentTypeManager docMan = new DocumentTypeManager();
         DocumentType docType = new DocumentType("bug2354045");
-        docType.addField(new Field("string", 2, DataType.STRING, true));
-        docType.addField(new Field("int", 1, DataType.INT, true));
-        docType.addField(new Field("float", 0, DataType.FLOAT, true));
+        docType.addField(new Field("string", 2, DataType.STRING));
+        docType.addField(new Field("int", 1, DataType.INT));
+        docType.addField(new Field("float", 0, DataType.FLOAT));
         docMan.register(docType);
 
         Document doc1 = new Document(docType, new DocumentId("id:ns:bug2354045::bug6394548"));

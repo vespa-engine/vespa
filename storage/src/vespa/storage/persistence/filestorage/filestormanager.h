@@ -45,65 +45,43 @@ class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
                         public StateListener,
                         private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
-                        private MessageSender
+                        public MessageSender
 {
-    ServiceLayerComponentRegister& _compReg;
-    ServiceLayerComponent _component;
-    const spi::PartitionStateList& _partitions;
-    spi::PersistenceProvider& _providerCore;
-    ProviderErrorWrapper _providerErrorWrapper;
-    spi::PersistenceProvider* _provider;
+    ServiceLayerComponentRegister & _compReg;
+    ServiceLayerComponent          _component;
+    const spi::PartitionStateList & _partitions;
+    spi::PersistenceProvider      & _providerCore;
+    ProviderErrorWrapper            _providerErrorWrapper;
+    spi::PersistenceProvider      * _provider;
     
     const document::BucketIdFactory& _bucketIdFactory;
-    config::ConfigUri _configUri;
+    config::ConfigUri                _configUri;
 
     typedef std::vector<DiskThread::SP> DiskThreads;
-    std::vector<DiskThreads> _disks;
+    std::vector<DiskThreads>                 _disks;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
     config::ConfigFetcher _configFetcher;
-    uint32_t _threadLockCheckInterval; // In seconds
-    bool _failDiskOnError;
-    int _killSignal;
+    uint32_t              _threadLockCheckInterval; // In seconds
+    bool                  _failDiskOnError;
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
-    lib::ClusterState _lastState;
 
-    struct ReplyHolder {
-        int refCount;
-        std::unique_ptr<api::StorageReply> reply;
-
-        ReplyHolder(int rc, std::unique_ptr<api::StorageReply> r)
-            : refCount(rc), reply(std::move(r)) {};
-    };
-
-    std::map<api::StorageMessage::Id,
-             std::shared_ptr<ReplyHolder> > _splitMessages;
-    vespalib::Lock _splitLock;
     mutable vespalib::Monitor _threadMonitor; // Notify to stop sleeping
-    bool _closed;
+    bool                      _closed;
 
-    FileStorManager(const FileStorManager &);
-    FileStorManager& operator=(const FileStorManager &);
-
-    std::vector<DiskThreads> getThreads() { return _disks; }
-
-    friend class BucketMergeTest;
     friend struct FileStorManagerTest;
-    friend class MessageTest;
 
 public:
-    explicit FileStorManager(const config::ConfigUri &,
-                             const spi::PartitionStateList&,
-                             spi::PersistenceProvider&,
-                             ServiceLayerComponentRegister&);
-    ~FileStorManager();
+    FileStorManager(const config::ConfigUri &, const spi::PartitionStateList&,
+                    spi::PersistenceProvider&, ServiceLayerComponentRegister&);
+    FileStorManager(const FileStorManager &) = delete;
+    FileStorManager& operator=(const FileStorManager &) = delete;
+
+    ~FileStorManager() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    // Return true if we are currently merging the given bucket.
-    bool isMerging(const document::Bucket& bucket) const;
 
     FileStorHandler& getFileStorHandler() {
         return *_filestorHandler;

@@ -1,24 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastore.h"
-#include "search_context.h"
 #include "documentmetastoresaver.h"
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/readerbase.h>
-#include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
-#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include "search_context.h"
+#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/load_utils.h>
+#include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
-#include <vespa/fastos/file.h>
 #include "document_meta_store_versions.h"
 
 #include <vespa/log/log.h>
@@ -32,7 +33,7 @@ using search::FileReader;
 using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
-using vespalib::MemoryUsage;
+using search::attribute::LoadUtils;
 using search::attribute::SearchContextParams;
 using search::btree::BTreeNoLeafData;
 using search::fef::TermFieldMatchData;
@@ -42,6 +43,7 @@ using storage::spi::Timestamp;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
+using vespalib::MemoryUsage;
 using vespalib::make_string;
 
 namespace proton {
@@ -260,7 +262,7 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Bui
 bool
 DocumentMetaStore::onLoad()
 {
-    documentmetastore::Reader reader(openDAT());
+    documentmetastore::Reader reader(LoadUtils::openDAT(*this));
     unload();
     size_t numElems = reader.getNumElems();
     size_t docIdLimit = reader.getDocIdLimit();

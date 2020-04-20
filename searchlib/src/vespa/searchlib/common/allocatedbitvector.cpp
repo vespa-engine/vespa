@@ -52,6 +52,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
         }
         setBit(size()); // Guard bit
     }
+    updateCount();
 }
 
 AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs) :
@@ -70,6 +71,8 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, Index capacity_) :
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     memcpy(_alloc.get(),  rhs.getStart(), rhs.sizeBytes());
     init(_alloc.get(), 0, rhs.size());
+    setBit(size());
+    updateCount();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -121,12 +124,9 @@ AllocatedBitVector::grow(Index newSize, Index newCapacity)
     if (newCapacity != capacity()) {
         AllocatedBitVector tbv(newSize, newCapacity, _alloc.get(), size());
         if (newSize > size()) {
-            tbv.clearBit(size());  // Clear old guard bit.
+            tbv.clearBitAndMaintainCount(size());  // Clear old guard bit.
         }
-        ret.reset(new GenerationHeldAlloc<Alloc>(_alloc));
-        if (( newSize >= size()) && isValidCount()) {
-            tbv.setTrueBits(countTrueBits());
-        }
+        ret = std::make_unique<GenerationHeldAlloc<Alloc>>(_alloc);
         swap(tbv);
     } else {
         if (newSize > size()) {

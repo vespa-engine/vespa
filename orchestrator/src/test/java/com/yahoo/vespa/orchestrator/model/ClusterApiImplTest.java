@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import org.junit.Test;
 
@@ -20,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -75,20 +75,15 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
-        assertEquals("[ServiceInstance{configId=service-2, hostName=host2, serviceStatus=" +
-                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}, "
-                        + "ServiceInstance{configId=service-3, hostName=host3, serviceStatus=" +
-                        "ServiceStatusInfo{status=UP, since=Optional.empty, lastChecked=Optional.empty}}, "
-                        + "ServiceInstance{configId=service-4, hostName=host4, serviceStatus=" +
-                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}]",
-                clusterApi.servicesDownAndNotInGroupDescription());
-        assertEquals("[host3, host4]",
-                clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+        assertEquals(" Suspended hosts: [host3, host4]. Services down on resumed hosts: [" +
+                        "ServiceInstance{configId=service-2, hostName=host2, serviceStatus=" +
+                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}].",
+                clusterApi.downDescription());
         assertEquals(60, clusterApi.percentageOfServicesDown());
         assertEquals(80, clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown());
     }
@@ -109,9 +104,9 @@ public class ClusterApiImplTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: Suspension percentage " +
-                            "for service type configserver would increase from 33% to 66%, over the limit of 10%. " +
-                            "These instances may be down: [1 missing config server] and these hosts are allowed to be down: []"));
+                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
+                            "Suspension for service type configserver would increase from 33% to 66%, " +
+                            "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
         }
     }
 
@@ -184,7 +179,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals(expectedNoServicesInGroupIsUp, clusterApi.noServicesInGroupIsUp());
@@ -214,7 +209,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(applicationInstance, hostName1, hostName3),
-                new HashMap<>(),
+                new HostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertTrue(clusterApi.isStorageCluster());
@@ -254,7 +249,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(application, hostnames.get(0)),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), clusterSize);
 
         assertEquals(clusterSize - serviceStatusList.size(), clusterApi.missingServices());

@@ -17,9 +17,9 @@ public class IncompatibleFieldTypesTest {
     public void setUp() {
         arrayOfStrings = new ArrayDataType(DataType.STRING);
         struct = new StructDataType("fancypants");
-        struct.addField(new Field("stringarray", arrayOfStrings, false));
+        struct.addField(new Field("stringarray", arrayOfStrings));
         DataType weightedSetOfStrings = DataType.getWeightedSet(DataType.STRING, false, false);
-        struct.addField(new Field("stringws", weightedSetOfStrings, false));
+        struct.addField(new Field("stringws", weightedSetOfStrings));
 
         root = struct.createFieldValue();
         root.setFieldValue("stringarray", arrayOfStrings.createFieldValue());

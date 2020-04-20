@@ -8,7 +8,7 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
-import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
+import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
-import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
+import static com.yahoo.vespa.model.content.utils.SchemaBuilder.createSchemas;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,7 +38,7 @@ public class ContentSearchClusterTest {
 
     private static ContentCluster createClusterWithTwoDocumentType() throws Exception {
         return createCluster(new ContentClusterBuilder().docTypes("foo", "bar").getXml(),
-                createSearchDefinitions("foo", "bar"));
+                             createSchemas("foo", "bar"));
     }
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
@@ -55,7 +55,7 @@ public class ContentSearchClusterTest {
                 "<node distribution-key='1' hostalias='mockhost'/>",
                 "</group>"));
         String clusterXml = builder.getXml();
-        return createCluster(clusterXml, createSearchDefinitions(docTypes));
+        return createCluster(clusterXml, createSchemas(docTypes));
     }
 
     private static ContentClusterBuilder createClusterBuilderWithGlobalType() {
@@ -127,18 +127,19 @@ public class ContentSearchClusterTest {
     }
 
     private static ContentCluster createClusterWithThreeDocumentTypes() throws Exception {
-        List<String> searchDefinitions = new ArrayList<>();
-        searchDefinitions.add(new SearchDefinitionBuilder().name("a")
-                .content(joinLines("field ref_to_b type reference<b> { indexing: attribute }",
-                                   "field ref_to_c type reference<c> { indexing: attribute }")).build());
-        searchDefinitions.add(new SearchDefinitionBuilder().name("b")
-                .content("field ref_to_c type reference<c> { indexing: attribute }").build());
-        searchDefinitions.add(new SearchDefinitionBuilder().name("c").build());
-        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
-                DocType.index("a"),
-                DocType.indexGlobal("b"),
-                DocType.indexGlobal("c"))).getXml(),
-                searchDefinitions);
+        List<String> schemas = new ArrayList<>();
+        schemas.add(new SchemaBuilder().name("a")
+                                       .content(joinLines("field ref_to_b type reference<b> { indexing: attribute }",
+                                                          "field ref_to_c type reference<c> { indexing: attribute }"))
+                                       .build());
+        schemas.add(new SchemaBuilder().name("b")
+                                       .content("field ref_to_c type reference<c> { indexing: attribute }")
+                                       .build());
+        schemas.add(new SchemaBuilder().name("c").build());
+        return createCluster(new ContentClusterBuilder().docTypes(List.of(DocType.index("a"),
+                                                                          DocType.indexGlobal("b"),
+                                                                          DocType.indexGlobal("c"))).getXml(),
+                             schemas);
     }
 
     private static BucketspacesConfig getBucketspacesConfig(ContentCluster cluster) {

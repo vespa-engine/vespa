@@ -21,10 +21,6 @@ LOG_SETUP(".document.select.valuenode");
 namespace document::select {
 
 namespace {
-    static const std::regex FIELD_NAME_REGEX("^([_A-Za-z][_A-Za-z0-9]*).*");
-}
-
-namespace {
     bool documentTypeEqualsName(const DocumentType& type, vespalib::stringref name)
     {
         if (type.getName() == name) return true;
@@ -40,7 +36,7 @@ namespace {
 
 InvalidValueNode::InvalidValueNode(vespalib::stringref name)
     : _name(name)
-{ }
+{}
 
 
 void
@@ -194,15 +190,33 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 
 FieldValueNode::~FieldValueNode() = default;
 
-vespalib::string
-FieldValueNode::extractFieldName(const std::string & fieldExpression) {
-    std::smatch match;
+namespace {
 
-    if (std::regex_match(fieldExpression, match, FIELD_NAME_REGEX) && match[1].matched) {
-        return vespalib::string(match[1].first, match[1].second);
+size_t first_ident_length_or_npos(const vespalib::string& expr) {
+    for (size_t i = 0; i < expr.size(); ++i) {
+        switch (expr[i]) {
+        case '.':
+        case '{':
+        case '[':
+        case ' ':
+        case '\n':
+        case '\t':
+            return i;
+        default:
+            continue;
+        }
     }
+    return vespalib::string::npos;
+}
 
-    throw ParsingFailedException("Fatal: could not extract field name from field expression '" + fieldExpression + "'");
+}
+
+// TODO remove this pile of fun in favor of actually parsed AST nodes...!
+vespalib::string
+FieldValueNode::extractFieldName(const vespalib::string & fieldExpression) {
+    // When we get here the actual contents of the field expression shall already
+    // have been structurally and syntactically verified by the parser.
+    return fieldExpression.substr(0, first_ident_length_or_npos(fieldExpression));
 }
 
 namespace {
@@ -340,10 +354,34 @@ FieldValueNode::initFieldPath(const DocumentType& type) const {
     }
 }
 
+namespace {
+
+bool looks_like_complex_field_path(const vespalib::string& expr) {
+    for (const char c : expr) {
+        switch (c) {
+        case '.':
+        case '[':
+        case '{':
+            return true;
+        default: continue;
+        }
+    }
+    return false;
+}
+
+bool is_simple_imported_field(const vespalib::string& expr, const DocumentType& doc_type) {
+    if (looks_like_complex_field_path(expr)) {
+        return false;
+    }
+    return (doc_type.has_imported_field_name(expr));
+}
+
+}
+
 std::unique_ptr<Value>
 FieldValueNode::getValue(const Context& context) const
 {
-    if (context._doc == NULL) {
+    if (context._doc == nullptr) {
         return std::make_unique<InvalidValue>();
     }
 
@@ -352,7 +390,17 @@ FieldValueNode::getValue(const Context& context) const
     if (!documentTypeEqualsName(doc.getType(), _doctype)) {
         return std::make_unique<InvalidValue>();
     }
-    try{
+    // Imported fields can only be meaningfully evaluated inside Proton, so we
+    // explicitly treat them as if they are valid fields with missing values. This
+    // will be treated the same as if it's a normal field by the selection operators.
+    // This avoids any awkward interaction with Invalid values or having to
+    // augment the FieldPath code with knowledge of imported fields.
+    // When a selection is running inside Proton, it will patch FieldValueNodes for
+    // imported fields, which removes this check entirely.
+    if (is_simple_imported_field(_fieldExpression, doc.getType())) {
+        return std::make_unique<NullValue>();
+    }
+    try {
         initFieldPath(doc.getType());
 
         IteratorHandler handler;
@@ -363,7 +411,7 @@ FieldValueNode::getValue(const Context& context) const
         } else {
             const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
 
-            if (values.size() == 0) {
+            if (values.empty()) {
                 return std::make_unique<NullValue>();
             } else {
                 return std::make_unique<ArrayValue>(handler.getValues());
@@ -399,7 +447,7 @@ FieldValueNode::print(std::ostream& out, bool verbose,
 std::unique_ptr<Value>
 FieldValueNode::traceValue(const Context &context, std::ostream& out) const
 {
-    if (context._doc == NULL) {
+    if (context._doc == nullptr) {
         return defaultTrace(getValue(context), out);
     }
     const Document &doc(*context._doc);
@@ -408,7 +456,12 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
             << _doctype << " document, thus resolving invalid.\n";
         return std::make_unique<InvalidValue>();
     }
-    try{
+    if (is_simple_imported_field(_fieldExpression, doc.getType())) {
+        out << "Field '" << _fieldExpression << "' refers to an imported field; "
+            << "returning NullValue to treat this as an unset field value.\n";
+        return std::make_unique<NullValue>();
+    }
+    try {
         initFieldPath(doc.getType());
 
         IteratorHandler handler;
@@ -805,7 +858,8 @@ FunctionValueNode::print(std::ostream& out, bool verbose,
 ArithmeticValueNode::ArithmeticValueNode(
         std::unique_ptr<ValueNode> left, vespalib::stringref op,
         std::unique_ptr<ValueNode> right)
-    : _operator(),
+    : ValueNode(std::max(left->max_depth(), right->max_depth()) + 1),
+      _operator(),
       _left(std::move(left)),
       _right(std::move(right))
 {

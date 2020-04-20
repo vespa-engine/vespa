@@ -30,6 +30,7 @@ public class TransportSecurityOptions {
     private final Path caCertificatesFile;
     private final AuthorizedPeers authorizedPeers;
     private final List<String> acceptedCiphers;
+    private final boolean isHostnameValidationDisabled;
 
     private TransportSecurityOptions(Builder builder) {
         this.privateKeyFile = builder.privateKeyFile;
@@ -37,6 +38,7 @@ public class TransportSecurityOptions {
         this.caCertificatesFile = builder.caCertificatesFile;
         this.authorizedPeers = builder.authorizedPeers;
         this.acceptedCiphers = builder.acceptedCiphers;
+        this.isHostnameValidationDisabled = builder.isHostnameValidationDisabled;
     }
 
     public Optional<Path> getPrivateKeyFile() {
@@ -56,6 +58,8 @@ public class TransportSecurityOptions {
     }
 
     public List<String> getAcceptedCiphers() { return acceptedCiphers; }
+
+    public boolean isHostnameValidationDisabled() { return isHostnameValidationDisabled; }
 
     public static TransportSecurityOptions fromJsonFile(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
@@ -90,6 +94,7 @@ public class TransportSecurityOptions {
         private Path caCertificatesFile;
         private AuthorizedPeers authorizedPeers;
         private List<String> acceptedCiphers = new ArrayList<>();
+        private boolean isHostnameValidationDisabled;
 
         public Builder() {}
 
@@ -114,6 +119,11 @@ public class TransportSecurityOptions {
             return this;
         }
 
+        public Builder withHostnameValidationDisabled(boolean isDisabled) {
+            this.isHostnameValidationDisabled = isDisabled;
+            return this;
+        }
+
         public TransportSecurityOptions build() {
             return new TransportSecurityOptions(this);
         }
@@ -127,6 +137,7 @@ public class TransportSecurityOptions {
                 ", caCertificatesFile=" + caCertificatesFile +
                 ", authorizedPeers=" + authorizedPeers +
                 ", acceptedCiphers=" + acceptedCiphers +
+                ", isHostnameValidationDisabled=" + isHostnameValidationDisabled +
                 '}';
     }
 
@@ -135,7 +146,8 @@ public class TransportSecurityOptions {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TransportSecurityOptions that = (TransportSecurityOptions) o;
-        return Objects.equals(privateKeyFile, that.privateKeyFile) &&
+        return isHostnameValidationDisabled == that.isHostnameValidationDisabled &&
+                Objects.equals(privateKeyFile, that.privateKeyFile) &&
                 Objects.equals(certificatesFile, that.certificatesFile) &&
                 Objects.equals(caCertificatesFile, that.caCertificatesFile) &&
                 Objects.equals(authorizedPeers, that.authorizedPeers) &&
@@ -144,6 +156,6 @@ public class TransportSecurityOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, authorizedPeers, acceptedCiphers);
+        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, authorizedPeers, acceptedCiphers, isHostnameValidationDisabled);
     }
 }

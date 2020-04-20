@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "singlenumericattribute.h"
+#include "attributeiterators.hpp"
 #include "attributevector.hpp"
-#include "singlenumericattributesaver.h"
 #include "load_utils.h"
 #include "primitivereader.h"
-#include "attributeiterators.hpp"
+#include "singlenumericattribute.h"
+#include "singlenumericattributesaver.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
@@ -114,7 +114,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     this->setCommittedDocIdLimit(numDocs);
     _data.unsafe_reserve(numDocs);
 
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));

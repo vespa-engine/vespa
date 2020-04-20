@@ -263,6 +263,8 @@ class QueryNodeConverter : public QueryVisitor {
         createTermNode(node, ParseItem::ITEM_NEAREST_NEIGHBOR);
         appendString(node.get_query_tensor_name());
         appendCompressedPositiveNumber(node.get_target_num_hits());
+        appendCompressedPositiveNumber(node.get_allow_approximate() ? 1 : 0);
+        appendCompressedPositiveNumber(node.get_explore_additional_hits());
     }
 
 public:

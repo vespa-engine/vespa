@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cstddef>
-#include <cstdint>
 #include "threaded_compactable_lid_space.h"
-#include "isequencedtaskexecutor.h"
 #include <future>
 
 namespace search::common {

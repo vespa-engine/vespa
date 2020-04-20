@@ -15,6 +15,7 @@ import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,6 @@ public class GroupPreparer {
     private final Optional<HostProvisioner> hostProvisioner;
     private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
-    private final BooleanFlag enableInPlaceResize;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
@@ -40,7 +40,6 @@ public class GroupPreparer {
         this.hostProvisioner = hostProvisioner;
         this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
-        this.enableInPlaceResize = Flags.ENABLE_IN_PLACE_RESIZE.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
@@ -65,11 +64,7 @@ public class GroupPreparer {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
-        // Do not in-place resize in dynamically provisioned zones
-        boolean inPlaceResizeEnabled = enableInPlaceResize
-                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value() && !dynamicProvisioningEnabled;
-
+        boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
         try (Mutex lock = nodeRepository.lock(application)) {
 
             // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
@@ -79,12 +74,12 @@ public class GroupPreparer {
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, wantedGroups, nodeRepository.nameResolver(),
-                                                                  hostResourcesCalculator, inPlaceResizeEnabled);
+                                                                  hostResourcesCalculator, allocateFully);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty());
+                prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
@@ -104,7 +99,7 @@ public class GroupPreparer {
                     List<Node> hosts = provisionedHosts.stream()
                                                        .map(ProvisionedHost::generateHost)
                                                        .collect(Collectors.toList());
-                    nodeRepository.addNodes(hosts);
+                    nodeRepository.addNodes(hosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<PrioritizableNode> nodes = provisionedHosts.stream()

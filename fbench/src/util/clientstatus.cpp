@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "clientstatus.h"
-#include <string.h>
+#include <cstring>
 #include <cmath>
 
 
@@ -24,9 +24,7 @@ ClientStatus::ClientStatus()
 {
 }
 
-ClientStatus::~ClientStatus()
-{
-}
+ClientStatus::~ClientStatus() = default;
 
 void
 ClientStatus::SetError(const char *errorMsg)

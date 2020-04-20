@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
+import org.junit.ComparisonFailure;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
@@ -13,6 +14,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author hakonhall
@@ -122,6 +124,46 @@ public class UnixPathTest {
         assertFalse(dir1 + " deleted recursively", Files.exists(file1));
         assertFalse(dir1 + " deleted recursively", Files.exists(dir2));
         assertFalse(dir1 + " deleted recursively", Files.exists(dir1));
+    }
+
+    @Test
+    public void atomicWrite() {
+        var path = new UnixPath(fs.getPath("/dir/foo"));
+        path.createParents();
+        path.writeUtf8File("bar");
+        path.atomicWriteUt8("bar v2");
+        assertEquals("bar v2", path.readUtf8File());
+    }
+
+    @Test
+    public void testParentAndFilename() {
+        var absolutePath = new UnixPath("/foo/bar");
+        assertEquals("/foo", absolutePath.getParent().toString());
+        assertEquals("bar", absolutePath.getFilename());
+
+        var pathWithoutSlash = new UnixPath("foo");
+        assertRuntimeException(IllegalStateException.class, "Path has no parent directory: 'foo'", () -> pathWithoutSlash.getParent());
+        assertEquals("foo", pathWithoutSlash.getFilename());
+
+        var pathWithSlash = new UnixPath("/foo");
+        assertEquals("/", pathWithSlash.getParent().toString());
+        assertEquals("foo", pathWithSlash.getFilename());
+
+        assertRuntimeException(IllegalStateException.class, "Path has no parent directory: '/'", () -> new UnixPath("/").getParent());
+        assertRuntimeException(IllegalStateException.class, "Path has no filename: '/'", () -> new UnixPath("/").getFilename());
+    }
+
+    private <T extends RuntimeException> void assertRuntimeException(Class<T> baseClass, String message, Runnable runnable) {
+        try {
+            runnable.run();
+            fail("No exception was thrown");
+        } catch (RuntimeException e) {
+            if (!baseClass.isInstance(e)) {
+                throw new ComparisonFailure("Exception class mismatch", baseClass.getName(), e.getClass().getName());
+            }
+
+            assertEquals(message, e.getMessage());
+        }
     }
 
 }

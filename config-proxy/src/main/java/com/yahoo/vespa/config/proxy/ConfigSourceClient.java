@@ -26,4 +26,6 @@ interface ConfigSourceClient {
 
     void updateSubscribers(RawConfig config);
 
+    DelayedResponses delayedResponses();
+
 }

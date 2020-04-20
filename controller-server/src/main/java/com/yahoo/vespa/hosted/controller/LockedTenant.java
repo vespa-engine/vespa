@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.security.Principal;
 import java.security.PublicKey;
@@ -40,7 +39,6 @@ public abstract class LockedTenant {
     static LockedTenant of(Tenant tenant, Lock lock) {
         switch (tenant.type()) {
             case athenz: return new Athenz((AthenzTenant) tenant);
-            case user:   return new User((UserTenant) tenant);
             case cloud:  return new Cloud((CloudTenant) tenant);
             default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.getClass().getName() + "'.");
         }
@@ -94,32 +92,6 @@ public abstract class LockedTenant {
 
         public Athenz with(Contact contact) {
             return new Athenz(name, domain, property, propertyId, Optional.of(contact));
-        }
-
-    }
-
-
-    /** A locked UserTenant. */
-    public static class User extends LockedTenant {
-
-        private final Optional<Contact> contact;
-
-        private User(TenantName name, Optional<Contact> contact) {
-            super(name);
-            this.contact = contact;
-        }
-
-        private User(UserTenant tenant) {
-            this(tenant.name(), tenant.contact());
-        }
-
-        @Override
-        public UserTenant get() {
-            return new UserTenant(name, contact);
-        }
-
-        public User with(Contact contact) {
-            return new User(name, Optional.of(contact));
         }
 
     }

@@ -18,30 +18,22 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
- * @since 5.5
  */
 public class AccessLogTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void default_access_log_is_only_added_when_search_is_present() {
+    public void default_access_log_is_added_by_default() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
-                "<search />",
-                nodesXml,
-                "</container>");
-        Element cluster2Elem = DomBuilderTest.parse(
-                "<container id='cluster2' version='1.0'>",
                 "  <nodes>",
                 "    <node hostalias='mockhost' baseport='1234' />",
                 "  </nodes>",
                 "</container>" );
 
-        createModel(root, cluster1Elem, cluster2Elem);
+        createModel(root, cluster1Elem);
 
         assertNotNull(getJsonAccessLog("cluster1"));
-        assertNull(   getJsonAccessLog("cluster2"));
         assertNull(getVespaAccessLog("cluster1"));
-        assertNull(getVespaAccessLog("cluster2"));
     }
 
     @Test

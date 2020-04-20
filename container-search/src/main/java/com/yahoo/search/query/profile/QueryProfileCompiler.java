@@ -71,6 +71,7 @@ public class QueryProfileCompiler {
      */
     private static Set<DimensionBindingForPath> collectVariants(CompoundName path, QueryProfile profile, DimensionBinding currentVariant) {
         Set<DimensionBindingForPath> variants = new HashSet<>();
+
         variants.addAll(collectVariantsFromValues(path, profile.getContent(), currentVariant));
         variants.addAll(collectVariantsInThis(path, profile, currentVariant));
         if (profile instanceof BackedOverridableQueryProfile)
@@ -157,6 +158,7 @@ public class QueryProfileCompiler {
 
                 if (combinedVariant.isInvalid()) continue; // values at this point in the graph are unreachable
 
+                variants.add(new DimensionBindingForPath(combinedVariant, path));
                 variants.addAll(collectVariantsFromValues(path, variant.values(), combinedVariant));
                 for (QueryProfile variantInheritedProfile : variant.inherited())
                     variants.addAll(collectVariants(path, variantInheritedProfile, combinedVariant));
@@ -169,9 +171,6 @@ public class QueryProfileCompiler {
                                                                            Map<String, Object> values,
                                                                            DimensionBinding currentVariant) {
         Set<DimensionBindingForPath> variants = new HashSet<>();
-        if ( ! values.isEmpty())
-            variants.add(new DimensionBindingForPath(currentVariant, path)); // there are actual values for this variant
-
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (entry.getValue() instanceof QueryProfile)
                 variants.addAll(collectVariants(path.append(entry.getKey()), (QueryProfile)entry.getValue(), currentVariant));
@@ -202,7 +201,7 @@ public class QueryProfileCompiler {
 
         @Override
         public int hashCode() {
-           return binding.hashCode() + 17*path.hashCode();
+           return binding.hashCode() + 17 * path.hashCode();
         }
 
         @Override

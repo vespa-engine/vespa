@@ -64,14 +64,6 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
     String getNewConfigMd5();
 
     /**
-     * Test whether or not the payload is contained in this response or not.
-     * Should return false for error responses as well.
-     *
-     * @return true if empty, false if not.
-     */
-    boolean containsPayload();
-
-    /**
      * Test whether or not the response contains an updated config or not.
      * False if no response has been returned.
      *

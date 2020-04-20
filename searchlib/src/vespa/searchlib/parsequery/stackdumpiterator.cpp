@@ -21,9 +21,11 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
     _currUniqueId(0),
     _currFlags(0),
     _currArity(0),
-    _currArg1(0),
-    _currArg2(0),
-    _currArg3(0),
+    _extraIntArg1(0),
+    _extraIntArg2(0),
+    _extraIntArg3(0),
+    _extraDoubleArg4(0),
+    _extraDoubleArg5(0),
     _predicate_query_term(),
     _curr_index_name(),
     _curr_term(),
@@ -138,7 +140,6 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_ANY:
         try {
             _currArity = readCompressedPositiveInt(p);
-            _currArg1 = 0;
             _curr_index_name = vespalib::stringref();
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -150,7 +151,7 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_ONEAR:
         try {
             _currArity = readCompressedPositiveInt(p);
-            _currArg1 = readCompressedPositiveInt(p);
+            _extraIntArg1 = readCompressedPositiveInt(p);
             _curr_index_name = vespalib::stringref();
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -161,7 +162,7 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_WEAK_AND:
         try {
             _currArity = readCompressedPositiveInt(p);
-            _currArg1 = readCompressedPositiveInt(p);
+            _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
             _curr_index_name = read_stringref(p);
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -171,7 +172,6 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_SAME_ELEMENT:
         try {
             _currArity = readCompressedPositiveInt(p);
-            _currArg1 = 0;
             _curr_index_name = read_stringref(p);
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -182,7 +182,6 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
         try {
             _curr_term = read_stringref(p);
-            _currArg1 = 0;
             _currArity = 0;
         } catch (...) {
             return false;
@@ -196,7 +195,6 @@ SimpleQueryStackDumpIterator::next()
         p += sizeof(int64_t);
         if (p > _bufEnd) return false;
 
-        _currArg1 = 0;
         _currArity = 0;
         break;
     case ParseItem::ITEM_WORD_ALTERNATIVES:
@@ -218,7 +216,6 @@ SimpleQueryStackDumpIterator::next()
         try {
             _curr_index_name = read_stringref(p);
             _curr_term = read_stringref(p);
-            _currArg1 = 0;
             _currArity = 0;
         } catch (...) {
             return false;
@@ -258,11 +255,9 @@ SimpleQueryStackDumpIterator::next()
             _currArity = readCompressedPositiveInt(p);
             _curr_index_name = read_stringref(p);
             if (_currType == ParseItem::ITEM_WAND) {
-                _currArg1 = readCompressedPositiveInt(p); // targetNumHits
-                _currArg2 = read_double(p); // scoreThreshold
-                _currArg3 = read_double(p); // thresholdBoostFactor
-            } else {
-                _currArg1 = 0;
+                _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
+                _extraDoubleArg4 = read_double(p); // scoreThreshold
+                _extraDoubleArg5 = read_double(p); // thresholdBoostFactor
             }
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -274,7 +269,9 @@ SimpleQueryStackDumpIterator::next()
         try {
             _curr_index_name = read_stringref(p);
             _curr_term = read_stringref(p); // query_tensor_name
-            _currArg1 = readCompressedPositiveInt(p); // target_num_hits;
+            _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
+            _extraIntArg2 = readCompressedPositiveInt(p); // allow_approximate
+            _extraIntArg3 = readCompressedPositiveInt(p); // explore_additional_hits
             _currArity = 0;
         } catch (...) {
             return false;

@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -72,14 +73,15 @@ public class HostResource implements HostApi {
 
             return new GetHostResponse(
                     host.getHostName().s(),
-                    host.getHostStatus().name(),
+                    host.getHostInfo().status().name(),
+                    host.getHostInfo().suspendedSince().map(Instant::toString).orElse(null),
                     applicationUri.toString(),
                     hostServices);
         } catch (UncheckedTimeoutException e) {
-            log.log(LogLevel.INFO, "Failed to get host " + hostName + ": " + e.getMessage());
+            log.log(LogLevel.DEBUG, "Failed to get host " + hostName + ": " + e.getMessage());
             throw webExceptionFromTimeout("getHost", hostName, e);
         } catch (HostNameNotFoundException e) {
-            log.log(LogLevel.INFO, "Host not found: " + hostName);
+            log.log(LogLevel.DEBUG, "Host not found: " + hostName);
             throw new NotFoundException(e);
         }
     }
@@ -99,14 +101,14 @@ public class HostResource implements HostApi {
             try {
                 orchestrator.setNodeStatus(hostName, state);
             } catch (HostNameNotFoundException e) {
-                log.log(LogLevel.INFO, "Host not found: " + hostName);
+                log.log(LogLevel.DEBUG, "Host not found: " + hostName);
                 throw new NotFoundException(e);
             } catch (UncheckedTimeoutException e) {
-                log.log(LogLevel.INFO, "Failed to patch " + hostName + ": " + e.getMessage());
+                log.log(LogLevel.DEBUG, "Failed to patch " + hostName + ": " + e.getMessage());
                 throw webExceptionFromTimeout("patch", hostName, e);
             } catch (OrchestrationException e) {
                 String message = "Failed to set " + hostName + " to " + state + ": " + e.getMessage();
-                log.log(LogLevel.INFO, message, e);
+                log.log(LogLevel.DEBUG, message, e);
                 throw new InternalServerErrorException(message);
             }
         }
@@ -122,13 +124,13 @@ public class HostResource implements HostApi {
         try {
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
-            log.log(LogLevel.INFO, "Host not found: " + hostName);
+            log.log(LogLevel.DEBUG, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (UncheckedTimeoutException e) {
-            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
+            log.log(LogLevel.DEBUG, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw webExceptionFromTimeout("suspend", hostName, e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
+            log.log(LogLevel.DEBUG, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason("suspend", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
@@ -140,13 +142,13 @@ public class HostResource implements HostApi {
         try {
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
-            log.log(LogLevel.INFO, "Host not found: " + hostName);
+            log.log(LogLevel.DEBUG, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (UncheckedTimeoutException e) {
-            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
+            log.log(LogLevel.DEBUG, "Failed to resume " + hostName + ": " + e.getMessage());
             throw webExceptionFromTimeout("resume", hostName, e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
+            log.log(LogLevel.DEBUG, "Failed to resume " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason("resume", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
@@ -155,8 +157,9 @@ public class HostResource implements HostApi {
     private static WebApplicationException webExceptionFromTimeout(String operationDescription,
                                                                    HostName hostName,
                                                                    UncheckedTimeoutException e) {
-        return createWebException(operationDescription, hostName, e, HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(),
-                Response.Status.GATEWAY_TIMEOUT);
+        // Return timeouts as 409 Conflict instead of 504 Gateway Timeout to reduce noise in 5xx graphs.
+        return createWebException(operationDescription, hostName, e,
+                HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(), Response.Status.CONFLICT);
     }
 
     private static WebApplicationException webExceptionWithDenialReason(

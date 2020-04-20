@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
  * Static utility methods for verifying common request properties.
  *
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class RequestValidation {
     private static final Logger log = Logger.getLogger(RequestValidation.class.getName());

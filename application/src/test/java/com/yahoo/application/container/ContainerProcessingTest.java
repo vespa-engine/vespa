@@ -31,6 +31,7 @@ public class ContainerProcessingTest {
         xml +=
                 "    </chain>\n" +
                 "  </processing>\n" +
+                "  <accesslog type=\"disabled\" />" +
                 "</container>\n";
         return xml;
     }

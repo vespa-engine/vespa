@@ -7,7 +7,7 @@ namespace search::test::statestring {
 bool
 testStartPos(vespalib::string &s, size_t pos)
 {
-    return (pos < s.size() && (pos == 0 || s[pos - 1] == ' '));
+    return ((pos >= s.size()) || (pos == 0) || (s[pos - 1] == ' '));
 }
 
 size_t

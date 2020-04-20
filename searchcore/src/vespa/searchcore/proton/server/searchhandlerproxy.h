@@ -13,11 +13,11 @@ class SearchHandlerProxy : public ISearchHandler
 private:
     std::shared_ptr<DocumentDB> _documentDB;
 public:
-    SearchHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
+    SearchHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 
-    virtual~SearchHandlerProxy();
+    ~SearchHandlerProxy() override;
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) override;
-    std::unique_ptr<SearchReply> match(const ISearchHandler::SP &searchHandler, const SearchRequest &req, ThreadBundle &threadBundle) const override;
+    std::unique_ptr<SearchReply> match(const SearchRequest &req, ThreadBundle &threadBundle) const override;
 };
 
 } // namespace proton

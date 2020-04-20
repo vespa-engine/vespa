@@ -11,7 +11,7 @@ public interface FieldOperationContainer {
     /** Adds an operation */
     void addOperation(FieldOperation op);
 
-    /** Apply all operations. Operations must be sorted in thjeir natural order before applying each operation. */
+    /** Apply all operations. Operations must be sorted in their natural order before applying each operation. */
     void applyOperations(SDField field);
 
     String getName();

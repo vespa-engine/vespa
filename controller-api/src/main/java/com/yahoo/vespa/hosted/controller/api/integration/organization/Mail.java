@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
 /**

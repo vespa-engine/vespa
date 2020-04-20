@@ -22,6 +22,14 @@ public class MockUserManagement implements UserManagement {
 
     private final Map<Role, Set<User>> memberships = new HashMap<>();
 
+    private Set<User> get(Role role) {
+        var membership = memberships.get(role);
+        if (membership == null) {
+            throw new IllegalArgumentException(role + " not found");
+        }
+        return membership;
+    }
+
     @Override
     public void createRole(Role role) {
         if (memberships.containsKey(role))
@@ -40,7 +48,7 @@ public class MockUserManagement implements UserManagement {
         List<User> userObjs = users.stream()
                                    .map(id -> new User(id.value(), id.value(), null, null))
                                    .collect(Collectors.toList());
-        memberships.get(role).addAll(userObjs);
+        get(role).addAll(userObjs);
     }
 
     @Override
@@ -52,7 +60,7 @@ public class MockUserManagement implements UserManagement {
 
     @Override
     public void removeUsers(Role role, Collection<UserId> users) {
-        memberships.get(role).removeIf(user -> users.contains(new UserId(user.email())));
+        get(role).removeIf(user -> users.contains(new UserId(user.email())));
     }
 
     @Override
@@ -64,7 +72,7 @@ public class MockUserManagement implements UserManagement {
 
     @Override
     public List<User> listUsers(Role role) {
-        return List.copyOf(memberships.get(role));
+        return List.copyOf(get(role));
     }
 
 }

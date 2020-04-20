@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -74,41 +73,22 @@ public class YumTest {
     }
 
     @Test
-    public void testArrayConversion() {
-        YumPackageName[] expected = new YumPackageName[] { new YumPackageName.Builder("1").build() };
-        assertArrayEquals(expected, Yum.toYumPackageNameArray("1"));
-
-        YumPackageName[] expected2 = new YumPackageName[] {
-                new YumPackageName.Builder("1").build(),
-                new YumPackageName.Builder("2").build()
-        };
-        assertArrayEquals(expected2, Yum.toYumPackageNameArray("1", "2"));
-
-        YumPackageName[] expected3 = new YumPackageName[] {
-                new YumPackageName.Builder("1").build(),
-                new YumPackageName.Builder("2").build(),
-                new YumPackageName.Builder("3").build()
-        };
-        assertArrayEquals(expected3, Yum.toYumPackageNameArray("1", "2", "3"));
-    }
-
-    @Test
     public void testAlreadyInstalled() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do\n");
 
         assertFalse(yum
                 .install("package-1", "package-2")
-                .enableRepos("repo1", "repo2")
+                .enableRepo("repo1", "repo2")
                 .converge(taskContext));
     }
 
     @Test
     public void testAlreadyUpgraded() {
         terminal.expectCommand(
-                "yum upgrade --assumeyes package-1 package-2 2>&1",
+                "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
                 0,
                 "foobar\nNo packages marked for update\n");
 
@@ -132,7 +112,7 @@ public class YumTest {
     @Test
     public void testInstall() {
         terminal.expectCommand(
-                "yum install --assumeyes package-1 package-2 2>&1",
+                "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
@@ -144,13 +124,13 @@ public class YumTest {
     @Test
     public void testInstallWithEnablerepo() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
         assertTrue(yum
                 .install("package-1", "package-2")
-                .enableRepos("repo-name")
+                .enableRepo("repo-name")
                 .converge(taskContext));
     }
 
@@ -160,14 +140,13 @@ public class YumTest {
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
                         "0:chef-12.21.1-1.el7.*\n");
-        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --assumeyes \"0:package-1-0.10-654.el7.*\" 2>&1");
         terminal.expectCommand(
                 "yum install --assumeyes 0:package-1-0.10-654.el7.x86_64 2>&1",
                 0,
                 "installing");
 
-        assertTrue(yum.installFixedVersion(taskContext,
-                YumPackageName.fromString("0:package-1-0.10-654.el7.x86_64")));
+        assertTrue(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7.x86_64")).converge(taskContext));
     }
 
     @Test
@@ -180,15 +159,18 @@ public class YumTest {
 
         terminal.expectCommand("yum versionlock delete \"0:package-1-0.1-8.el7.*\" 2>&1");
 
-        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --assumeyes --enablerepo=somerepo \"0:package-1-0.10-654.el7.*\" 2>&1");
 
         terminal.expectCommand(
-                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
+                "yum install --assumeyes --enablerepo=somerepo 0:package-1-0.10-654.el7 2>&1",
                 0,
                 "Nothing to do\n");
 
 
-        assertTrue(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+        assertTrue(yum
+                .installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7"))
+                .enableRepo("somerepo")
+                .converge(taskContext));
     }
 
     @Test
@@ -203,7 +185,7 @@ public class YumTest {
                 0,
                 "Nothing to do\n");
 
-        assertFalse(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+        assertFalse(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7")).converge(taskContext));
     }
 
     @Test
@@ -222,18 +204,19 @@ public class YumTest {
 
         terminal.expectCommand("yum downgrade --assumeyes 0:package-1-0.10-654.el7 2>&1");
 
-        assertTrue(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+        assertTrue(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7")).converge(taskContext));
     }
 
     @Test(expected = ChildProcessFailureException.class)
     public void testFailedInstall() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 1,
                 "error");
 
-        yum.install("package-1", "package-2")
-                .enableRepos("repo-name")
+        yum
+                .install("package-1", "package-2")
+                .enableRepo("repo-name")
                 .converge(taskContext);
         fail();
     }
@@ -241,7 +224,7 @@ public class YumTest {
     @Test
     public void testUnknownPackages() {
         terminal.expectCommand(
-                "yum install --assumeyes package-1 package-2 package-3 2>&1",
+                "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 package-3 2>&1",
                 0,
                 "Loaded plugins: fastestmirror, langpacks\n" +
                         "Loading mirror speeds from cached hostfile\n" +
@@ -249,10 +232,9 @@ public class YumTest {
                         "No package package-2 available.\n" +
                         "Nothing to do\n");
 
-        Yum.GenericYumCommand install = yum.install("package-1", "package-2", "package-3");
-
+        var command = yum.install("package-1", "package-2", "package-3");
         try {
-            install.converge(taskContext);
+            command.converge(taskContext);
             fail();
         } catch (Exception e) {
             assertNotNull(e.getCause());

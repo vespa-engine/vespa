@@ -33,7 +33,6 @@ import java.util.logging.Logger;
  * TODO: This can be refactored a lot, since many of the reflection methods are duplicated
  *
  * @author Ulf Lilleengen, hmusum, Tony Vaagenes
- * @since 5.1.6
  */
 public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private final static Logger log = Logger.getLogger(ConfigPayloadApplier.class.getPackage().getName());
@@ -480,15 +479,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void debug(String message) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, message);
-        }
+        log.log(LogLevel.DEBUG, () -> message);
     }
 
     private void trace(String message) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, message);
-        }
+        log.log(LogLevel.SPAM, () -> message);
     }
 
     private void printStack() {

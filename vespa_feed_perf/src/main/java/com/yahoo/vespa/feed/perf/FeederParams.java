@@ -34,7 +34,15 @@ class FeederParams {
     private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
     private int maxPending = 0;
-    private int numConnectionsPerTarget = 2;
+    private double timeout = 180.0;
+
+    private double windowSizeBackOff = 0.95;
+    private double windowDecrementFactor = 1.2;
+    private double windowResizeRate = 3;
+    private int windowIncrementSize = 20;
+
+    private int numConnectionsPerTarget = 1;
+    private long numMessagesToSend = Long.MAX_VALUE;
     private List<InputStream> inputStreams = new ArrayList<>();
 
     FeederParams() {
@@ -82,12 +90,29 @@ class FeederParams {
         this.configId = configId;
         return this;
     }
+    public double getWindowSizeBackOff() {
+        return windowSizeBackOff;
+    }
+
+    public double getWindowDecrementFactor() {
+        return windowDecrementFactor;
+    }
+
+    public double getWindowResizeRate() {
+        return windowResizeRate;
+    }
+    public double getTimeout() {
+        return timeout;
+    }
+
+    public int getWindowIncrementSize() {
+        return windowIncrementSize;
+    }
 
     int getNumConnectionsPerTarget() { return numConnectionsPerTarget; }
-    FeederParams setNumConnectionsPerTarget(int numConnectionsPerTarget) {
-        this.numConnectionsPerTarget = numConnectionsPerTarget;
-        return this;
-    }
+
+    long getNumMessagesToSend() { return numMessagesToSend; }
+
     boolean isSerialTransferEnabled() {
         return maxPending == 1;
     }
@@ -116,6 +141,12 @@ class FeederParams {
         opts.addOption("b", "mode", true, "Mode for benchmarking.");
         opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
         opts.addOption("c", "numconnections", true, "Number of connections per host.");
+        opts.addOption("t", "timeout", true, "Timeout for a message in seconds. default = " + timeout);
+        opts.addOption("l", "nummessages", true, "Number of messages to send (all is default).");
+        opts.addOption("wi", "window_incrementsize", true, "Dynamic window increment step size. default = " + windowIncrementSize);
+        opts.addOption("wd", "window_decrementfactor", true, "Dynamic window decrement step size factor. default = " + windowDecrementFactor);
+        opts.addOption("wb", "window_backoffactor", true, "Dynamic window backoff factor. default = " + windowSizeBackOff);
+        opts.addOption("wr", "window_resizerate", true, "Dynamic window resize rate. default = " + windowResizeRate);
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
 
@@ -128,8 +159,23 @@ class FeederParams {
         if (cmd.hasOption('c')) {
             numConnectionsPerTarget = Integer.valueOf(cmd.getOptionValue('c').trim());
         }
+        if (cmd.hasOption("wi")) {
+            windowIncrementSize = Integer.valueOf(cmd.getOptionValue("wi").trim());
+        }
+        if (cmd.hasOption("wd")) {
+            windowDecrementFactor = Double.valueOf(cmd.getOptionValue("wd").trim());
+        }
+        if (cmd.hasOption("wb")) {
+            windowSizeBackOff = Double.valueOf(cmd.getOptionValue("wb").trim());
+        }
+        if (cmd.hasOption("wr")) {
+            windowResizeRate = Double.valueOf(cmd.getOptionValue("wr").trim());
+        }
         if (cmd.hasOption('r')) {
             route = Route.parse(cmd.getOptionValue('r').trim());
+        }
+        if (cmd.hasOption("t")) {
+            timeout = Double.valueOf(cmd.getOptionValue("t").trim());
         }
         benchmarkMode =  cmd.hasOption('b');
         if (cmd.hasOption('o')) {
@@ -141,6 +187,9 @@ class FeederParams {
         }
         if (cmd.hasOption('s')) {
             setSerialTransfer();
+        }
+        if (cmd.hasOption('l')) {
+            numMessagesToSend = Long.valueOf(cmd.getOptionValue('l').trim());
         }
 
         if ( !cmd.getArgList().isEmpty()) {

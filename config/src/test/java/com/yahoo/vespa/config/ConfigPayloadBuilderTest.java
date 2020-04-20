@@ -17,7 +17,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigPayloadBuilderTest {
 

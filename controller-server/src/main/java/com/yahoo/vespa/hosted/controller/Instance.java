@@ -4,20 +4,15 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
@@ -72,7 +67,6 @@ public class Instance {
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
                                                                                       version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
-                                                  previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity());
         return with(newDeployment);
@@ -86,12 +80,6 @@ public class Instance {
             jobPauses.remove(jobType);
 
         return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
-    }
-
-    public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterInfo(clusterInfo));
     }
 
     public Instance recordActivityAt(Instant instant, ZoneId zone) {
@@ -164,20 +152,6 @@ public class Instance {
     /** Returns all rotations assigned to this */
     public List<AssignedRotation> rotations() {
         return rotations;
-    }
-
-    /** Returns the default global endpoints for this in given system - for a given endpoint ID */
-    public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.create(id, endpointId, system);
-    }
-
-    /** Returns the default global endpoints for this in given system */
-    public EndpointList endpointsIn(SystemName system) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        final var endpointStream = rotations.stream()
-                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
-        return EndpointList.of(endpointStream);
     }
 
     /** Returns the status of the global rotation(s) assigned to this */

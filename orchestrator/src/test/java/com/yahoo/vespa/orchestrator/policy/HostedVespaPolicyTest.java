@@ -120,7 +120,7 @@ public class HostedVespaPolicyTest {
         when(applicationApi.getStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
 
         List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
-        when(applicationApi.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)).thenReturn(noRemarksHostNames);
+        when(applicationApi.getNodesInGroupWith(any())).thenReturn(noRemarksHostNames);
 
         InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);
 
@@ -136,7 +136,7 @@ public class HostedVespaPolicyTest {
         order.verify(storageNode1).setNodeState(context, ClusterControllerNodeState.DOWN);
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.DOWN);
 
-        order.verify(applicationApi).getNodesInGroupWithStatus(HostStatus.NO_REMARKS);
+        order.verify(applicationApi).getNodesInGroupWith(any());
         order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
         order.verify(applicationApi).setHostState(context, hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
         order.verify(applicationApi).setHostState(context, hostName3, HostStatus.ALLOWED_TO_BE_DOWN);

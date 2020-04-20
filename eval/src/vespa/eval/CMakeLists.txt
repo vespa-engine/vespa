@@ -14,3 +14,6 @@ vespa_add_library(vespaeval
     DEPENDS
     ${VESPA_LLVM_LIB}
 )
+
+set(BLA_VENDOR OpenBLAS)
+vespa_add_target_package_dependency(vespaeval BLAS)

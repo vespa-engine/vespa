@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include "iattributesavetarget.h"
 #include "attributememoryfilewriter.h"
-#include <vespa/searchlib/util/rawbuf.h>
-#include <memory>
+#include "iattributesavetarget.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/util/rawbuf.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
+#include <memory>
+#include <unordered_map>
 
 namespace search::common { class FileHeaderContext; }
 
@@ -16,13 +18,22 @@ class AttributeVector;
 /**
  * Class used to save an attribute vector to memory buffer(s).
  **/
-class AttributeMemorySaveTarget : public IAttributeSaveTarget
-{
+class AttributeMemorySaveTarget : public IAttributeSaveTarget {
 private:
+    using FileWriterUP = std::unique_ptr<AttributeMemoryFileWriter>;
+    struct WriterEntry {
+        FileWriterUP writer;
+        vespalib::string desc;
+        WriterEntry(FileWriterUP writer_in, const vespalib::string& desc_in)
+            : writer(std::move(writer_in)), desc(desc_in) {}
+    };
+    using WriterMap = std::unordered_map<vespalib::string, WriterEntry, vespalib::hash<vespalib::string>>;
+
     AttributeMemoryFileWriter _datWriter;
     AttributeMemoryFileWriter _idxWriter;
     AttributeMemoryFileWriter _weightWriter;
     AttributeMemoryFileWriter _udatWriter;
+    WriterMap _writers;
 
 public:
     AttributeMemorySaveTarget();
@@ -40,6 +51,11 @@ public:
     IAttributeFileWriter &idxWriter() override;
     IAttributeFileWriter &weightWriter() override;
     IAttributeFileWriter &udatWriter() override;
+
+    bool setup_writer(const vespalib::string& file_suffix,
+                      const vespalib::string& desc) override;
+    IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) override;
+
 };
 
 } // namespace search

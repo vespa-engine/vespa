@@ -13,9 +13,12 @@
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
+
+using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
@@ -99,9 +102,9 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _bucketSpacesStats(),
       _bucketDbStats(),
       _hostInfoReporter(*this, *this),
-      _ownershipSafeTimeCalc(
-            std::make_unique<OwnershipTransferSafeTimePointCalculator>(
-                std::chrono::seconds(0))), // Set by config later
+      _ownershipSafeTimeCalc(std::make_unique<OwnershipTransferSafeTimePointCalculator>(0s)), // Set by config later
+      _db_memory_sample_interval(30s),
+      _last_db_memory_sample_time_point(),
       _must_send_updated_host_info(false),
       _use_btree_database(use_btree_database)
 {
@@ -768,6 +771,24 @@ Distributor::updateInternalMetricsForCompletedScan()
         _must_send_updated_host_info = true;
     }
     _bucketSpacesStats = std::move(new_space_stats);
+    maybe_update_bucket_db_memory_usage_stats();
+}
+
+void Distributor::maybe_update_bucket_db_memory_usage_stats() {
+    auto now = _component.getClock().getMonotonicTime();
+    if ((now - _last_db_memory_sample_time_point) > _db_memory_sample_interval) {
+        for (auto& space : *_bucketSpaceRepo) {
+            _bucketDBMetricUpdater.update_db_memory_usage(space.second->getBucketDatabase().memory_usage(), true);
+        }
+        for (auto& space : *_readOnlyBucketSpaceRepo) {
+            _bucketDBMetricUpdater.update_db_memory_usage(space.second->getBucketDatabase().memory_usage(), false);
+        }
+        _last_db_memory_sample_time_point = now;
+    } else {
+        // Reuse previous memory statistics instead of sampling new.
+        _bucketDBMetricUpdater.update_db_memory_usage(_bucketDbStats._mutable_db_mem_usage, true);
+        _bucketDBMetricUpdater.update_db_memory_usage(_bucketDbStats._read_only_db_mem_usage, false);
+    }
 }
 
 void

@@ -34,11 +34,11 @@ public class DocumentIdTestCase {
     public void setUp() {
         DocumentType testDocType = new DocumentType("testdoc");
 
-        testDocType.addHeaderField("intattr", DataType.INT);
+        testDocType.addField("intattr", DataType.INT);
         testDocType.addField("rawattr", DataType.RAW);
         testDocType.addField("floatattr", DataType.FLOAT);
-        testDocType.addHeaderField("stringattr", DataType.STRING);
-        testDocType.addHeaderField("Minattr", DataType.INT);
+        testDocType.addField("stringattr", DataType.STRING);
+        testDocType.addField("Minattr", DataType.INT);
 
         manager.registerDocumentType(testDocType);
     }

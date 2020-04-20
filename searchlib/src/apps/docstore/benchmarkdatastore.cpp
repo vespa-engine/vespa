@@ -9,6 +9,7 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/app.h>
 #include <unistd.h>
+#include <random>
 
 #include <vespa/log/log.h>
 LOG_SETUP("documentstore.benchmark");
@@ -65,17 +66,13 @@ BenchmarkDataStoreApp::Main()
 void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataStore * dataStore)
 {
     vespalib::DataBuffer buf;
-    struct random_data rstate;
-    char state[8];
-    memset(state, 0, sizeof(state));
-    memset(&rstate, 0, sizeof(rstate));
+    std::minstd_rand rng;
     const size_t docIdLimit(dataStore->getDocIdLimit());
     assert(docIdLimit > 0);
-    initstate_r(getpid(), state, sizeof(state), &rstate);
-    assert(srandom_r(getpid(), &rstate) == 0);
+    rng.seed(getpid());
     int32_t rnd(0);
     for ( size_t i(0); i < numReads; i++) {
-        random_r(&rstate, &rnd);
+        rnd = rng();
         uint32_t lid(rnd%docIdLimit);
         for (uint32_t j(lid); j < std::min(docIdLimit, lid+perChunk); j++) {
             dataStore->read(j, buf);

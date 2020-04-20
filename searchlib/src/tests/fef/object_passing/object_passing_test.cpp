@@ -59,10 +59,13 @@ struct ProxyBlueprint : Blueprint {
     }
     bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
         ASSERT_EQUAL(1u, params.size());
-        object_input = defineInput(params[0], accept_input);
-        describeOutput("value", "the value", object_output ? FeatureType::object(ValueType::double_type()) : FeatureType::number());
-        describeOutput("was_object", "whether input was object", FeatureType::number());
-        return true;
+        if (auto input = defineInput(params[0], accept_input)) {
+            object_input = input.value().is_object();
+            describeOutput("value", "the value", object_output ? FeatureType::object(ValueType::double_type()) : FeatureType::number());
+            describeOutput("was_object", "whether input was object", FeatureType::number());
+            return true;
+        }
+        return false;
     }
     FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
         return stash.create<ProxyExecutor>(object_input, object_output);

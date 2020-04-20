@@ -19,7 +19,7 @@ vespalib::string fetch(int port, const vespalib::string &path) {
     auto crypto = vespalib::CryptoEngine::get_default();
     auto socket = vespalib::SocketSpec::from_port(port).client_address().connect();
     assert(socket.valid());
-    auto conn = vespalib::SyncCryptoSocket::create(*crypto, std::move(socket), false);
+    auto conn = vespalib::SyncCryptoSocket::create_client(*crypto, std::move(socket), vespalib::SocketSpec::from_host_port("localhost", port));
     vespalib::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
                                                       "Host: localhost:%d\r\n"
                                                       "\r\n", path.c_str(), port);

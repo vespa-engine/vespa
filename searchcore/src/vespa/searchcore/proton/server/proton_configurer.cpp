@@ -39,7 +39,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 }
 
 
-ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
+ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
                                    IProtonConfigurerOwner &owner,
                                    const std::unique_ptr<IProtonDiskLayout> &diskLayout)
     : IProtonConfigurer(),

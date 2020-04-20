@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.OverloadException;
+import com.yahoo.jdisc.http.HttpRequest.Method;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,12 +12,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 
@@ -78,8 +79,6 @@ class JDiscHttpServlet extends HttpServlet {
         dispatchHttpRequest(request, response);
     }
 
-    private static final Set<String> JETTY_UNSUPPORTED_METHODS = new HashSet<>(Arrays.asList("PATCH"));
-
     /**
      * Override to set connector attribute before the request becomes an upgrade request in the web socket case.
      * (After the upgrade, the HttpConnection is no longer available.)
@@ -93,12 +92,24 @@ class JDiscHttpServlet extends HttpServlet {
         context.metric.add(JettyHttpServer.Metrics.NUM_REQUESTS, 1, metricContext);
         context.metric.add(JettyHttpServer.Metrics.JDISC_HTTP_REQUESTS, 1, metricContext);
 
-        if (JETTY_UNSUPPORTED_METHODS.contains(request.getMethod().toUpperCase())) {
+
+        Set<String> servletSupportedMethods =
+                Stream.of(Method.OPTIONS, Method.GET, Method.HEAD, Method.POST, Method.PUT, Method.DELETE, Method.TRACE)
+                        .map(Method::name)
+                        .collect(Collectors.toSet());
+        String method = request.getMethod().toUpperCase();
+        if (servletSupportedMethods.contains(method)) {
+            super.service(request, response);
+        } else if (method.equals(Method.PATCH.name())) {
+            // PATCH method is not handled by the Servlet spec
             dispatchHttpRequest(request, response);
         } else {
-            super.service(request, response);
+            // Divergence from HTTP / Servlet spec: JDisc returns 405 for both unknown and known (but unsupported) methods.
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
+
+
 
     static JDiscServerConnector getConnector(HttpServletRequest request) {
         return (JDiscServerConnector)getConnection(request).getConnector();

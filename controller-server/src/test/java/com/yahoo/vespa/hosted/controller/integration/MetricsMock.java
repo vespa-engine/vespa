@@ -21,7 +21,8 @@ public class MetricsMock implements Metric {
 
     @Override
     public void set(String key, Number val, Context ctx) {
-        Map<String, Number> metricsMap = metrics.getOrDefault(ctx, new HashMap<>());
+        metrics.putIfAbsent(ctx, new HashMap<>());
+        Map<String, Number> metricsMap = metrics.get(ctx);
         metricsMap.put(key, val);
     }
 
@@ -43,10 +44,6 @@ public class MetricsMock implements Metric {
         return ctx;
     }
 
-    public Map<Context, Map<String, Number>> getMetrics() {
-        return metrics;
-    }
-    
     /** Returns a zero-context metric by name, or null if it is not present */
     public Number getMetric(String name) {
         Map<String, Number> valuesForEmptyContext = metrics.get(createContext(Collections.emptyMap()));
@@ -64,9 +61,8 @@ public class MetricsMock implements Metric {
 
     /** Returns metric filtered by dimension and name */
     public Optional<Number> getMetric(Predicate<Map<String, String>> dimensionMatcher, String name) {
-        Map<String, Number> metrics = getMetrics(dimensionMatcher).entrySet()
+        Map<String, Number> metrics = getMetrics(dimensionMatcher).values()
                                                                   .stream()
-                                                                  .map(Map.Entry::getValue)
                                                                   .findFirst()
                                                                   .orElseGet(Collections::emptyMap);
         return Optional.ofNullable(metrics.get(name));
@@ -81,13 +77,16 @@ public class MetricsMock implements Metric {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            return Objects.deepEquals(obj, dimensions);
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MapContext that = (MapContext) o;
+            return dimensions.equals(that.dimensions);
         }
 
         @Override
         public int hashCode() {
-            return Objects.toString(dimensions).hashCode();
+            return Objects.hash(dimensions);
         }
 
         public Map<String, String> getDimensions() {

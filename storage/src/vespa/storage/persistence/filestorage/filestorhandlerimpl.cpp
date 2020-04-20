@@ -24,15 +24,14 @@ namespace storage {
 
 namespace {
 
-uint32_t merge_soft_limit_from_thread_count(uint32_t num_threads) noexcept {
+uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noexcept {
     // Rationale: to avoid starving client ops we want to ensure that not all persistence
-    // threads can be blocked by processing merges all at the same time. We therefore allocate
-    // half of the threads to non-merge operations.
-    // This a _soft_ limit since the current operation locking design means there is a small
-    // window of time between when the limit is checked and when its updated. There are no
-    // correctness violations as a consequence of this, but non-merge liveness may be impacted.
-    // There must always be at least 1 thread that can process merges, or the system would stall.
-    return std::max(1u, num_threads / 2);
+    // threads in any given stripe can be blocked by processing merges all at the same time.
+    // We therefore allocate half of the per-stripe threads to non-merge operations.
+    // Note that if the _total_ number of threads is small and odd (e.g. 3 or 5), it's still
+    // possible to have a stripe where all threads are busy processing merges because there
+    // is only 1 thread in the stripe in total.
+    return std::max(1u, (num_threads / num_stripes) / 2);
 }
 
 }
@@ -46,8 +45,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _getNextMessageTimeout(100),
-      _activeMergesSoftLimit(merge_soft_limit_from_thread_count(numThreads)),
-      _activeMerges(0),
+      _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
       _paused(false)
 {
     _diskInfo.reserve(_component.getDiskCount());
@@ -56,7 +54,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
     }
     for (uint32_t i=0; i<_diskInfo.size(); ++i) {
         _diskInfo[i].metrics = metrics.disks[i].get();
-        assert(_diskInfo[i].metrics != 0);
+        assert(_diskInfo[i].metrics != nullptr);
         uint32_t j(0);
         for (Stripe & stripe : _diskInfo[i].getStripes()) {
             stripe.setMetrics(metrics.disks[i]->stripes[j++].get());
@@ -401,13 +399,30 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
 
 namespace {
     struct MultiLockGuard {
-        std::map<uint16_t, vespalib::Monitor*> monitors;
+        struct DiskAndStripe {
+            uint16_t disk;
+            uint16_t stripe;
+
+            DiskAndStripe(uint16_t disk_, uint16_t stripe_) noexcept : disk(disk_), stripe(stripe_) {}
+
+            bool operator==(const DiskAndStripe& rhs) const noexcept {
+                return (disk == rhs.disk) && (stripe == rhs.stripe);
+            }
+            bool operator<(const DiskAndStripe& rhs) const noexcept {
+                if (disk != rhs.disk) {
+                    return disk < rhs.disk;
+                }
+                return stripe < rhs.stripe;
+            }
+        };
+
+        std::map<DiskAndStripe, vespalib::Monitor*> monitors;
         std::vector<std::shared_ptr<vespalib::MonitorGuard>> guards;
 
         MultiLockGuard() = default;
 
-        void addLock(vespalib::Monitor& monitor, uint16_t index) {
-            monitors[index] = &monitor;
+        void addLock(vespalib::Monitor& monitor, uint16_t disk_index, uint16_t stripe_index) {
+            monitors[DiskAndStripe(disk_index, stripe_index)] = &monitor;
         }
         void lock() {
             for (auto & entry : monitors) {
@@ -760,6 +775,9 @@ FileStorHandlerImpl::remapQueueNoLock(Disk& from, const RemapInfo& source,
         } else {
             entry._bucket = bucket;
             // Move to correct disk queue if needed
+            assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
+                return e->bucket == bucket;
+            }) != targets.end());
             _diskInfo[targetDisk].stripe(bucket).exposeQueue().emplace_back(std::move(entry));
         }
     }
@@ -774,11 +792,11 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target, Oper
     MultiLockGuard guard;
 
     Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex);
+    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
 
     Disk& to1(_diskInfo[target.diskIndex]);
     if (target.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target.bucket).exposeLock(), target.diskIndex);
+        guard.addLock(to1.stripe(target.bucket).exposeLock(), target.diskIndex, to1.stripe_index(target.bucket));
     }
 
     std::vector<RemapInfo*> targets;
@@ -797,16 +815,16 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target1, Rem
     MultiLockGuard guard;
 
     Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex);
+    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
 
     Disk& to1(_diskInfo[target1.diskIndex]);
     if (target1.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target1.bucket).exposeLock(), target1.diskIndex);
+        guard.addLock(to1.stripe(target1.bucket).exposeLock(), target1.diskIndex, to1.stripe_index(target1.bucket));
     }
 
     Disk& to2(_diskInfo[target2.diskIndex]);
     if (target2.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to2.stripe(target2.bucket).exposeLock(), target2.diskIndex);
+        guard.addLock(to2.stripe(target2.bucket).exposeLock(), target2.diskIndex, to2.stripe_index(target2.bucket));
     }
 
     guard.lock();
@@ -879,15 +897,15 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry) noexcept
       _priority(entry._priority)
 { }
 
-FileStorHandlerImpl::MessageEntry::~MessageEntry() { }
+FileStorHandlerImpl::MessageEntry::~MessageEntry() = default;
 
-FileStorHandlerImpl::Disk::Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numThreads)
+FileStorHandlerImpl::Disk::Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes)
     : metrics(0),
       _nextStripeId(0),
-      _stripes(numThreads, Stripe(owner, messageSender)),
+      _stripes(numStripes, Stripe(owner, messageSender)),
       state(FileStorHandler::AVAILABLE)
 {
-    assert(numThreads > 0);
+    assert(numStripes > 0);
 }
 
 FileStorHandlerImpl::Disk::Disk(Disk && rhs) noexcept
@@ -930,8 +948,10 @@ FileStorHandlerImpl::Disk::schedule(const std::shared_ptr<api::StorageMessage>& 
 
 FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender)
     : _owner(owner),
-      _messageSender(messageSender)
-{ }
+      _messageSender(messageSender),
+      _active_merges(0)
+{}
+
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
 {
@@ -1112,6 +1132,23 @@ FileStorHandlerImpl::Stripe::flush()
     }
 }
 
+namespace {
+
+bool message_type_is_merge_related(api::MessageType::Id msg_type_id) {
+    switch (msg_type_id) {
+    case api::MessageType::MERGEBUCKET_ID:
+    case api::MessageType::MERGEBUCKET_REPLY_ID:
+    case api::MessageType::GETBUCKETDIFF_ID:
+    case api::MessageType::GETBUCKETDIFF_REPLY_ID:
+    case api::MessageType::APPLYBUCKETDIFF_ID:
+    case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
+        return true;
+    default: return false;
+    }
+}
+
+}
+
 void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
                                           api::LockingRequirements reqOfReleasedLock,
                                           api::StorageMessage::Id lockMsgId) {
@@ -1123,9 +1160,9 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
-        if (entry._exclusiveLock->msgType == api::MessageType::MERGEBUCKET_ID) {
-            auto before = _owner._activeMerges.fetch_sub(1, std::memory_order_relaxed);
-            assert(before > 0);
+        if (message_type_is_merge_related(entry._exclusiveLock->msgType)) {
+            assert(_active_merges > 0);
+            --_active_merges;
         }
         entry._exclusiveLock.reset();
     } else {
@@ -1147,8 +1184,8 @@ void FileStorHandlerImpl::Stripe::lock(const vespalib::MonitorGuard &, const doc
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
         assert(entry._sharedLocks.empty());
-        if (lockEntry.msgType == api::MessageType::MERGEBUCKET_ID) {
-            _owner._activeMerges.fetch_add(1, std::memory_order_relaxed);
+        if (message_type_is_merge_related(lockEntry.msgType)) {
+            ++_active_merges;
         }
         entry._exclusiveLock = lockEntry;
     } else {
@@ -1183,8 +1220,8 @@ bool
 FileStorHandlerImpl::Stripe::operationIsInhibited(const vespalib::MonitorGuard& guard, const document::Bucket& bucket,
                                                   const api::StorageMessage& msg) const noexcept
 {
-    if ((msg.getType() == api::MessageType::MERGEBUCKET)
-        && (_owner._activeMerges.load(std::memory_order_relaxed) > _owner._activeMergesSoftLimit))
+    if (message_type_is_merge_related(msg.getType().getId())
+        && (_active_merges >= _owner._max_active_merges_per_stripe))
     {
         return true;
     }

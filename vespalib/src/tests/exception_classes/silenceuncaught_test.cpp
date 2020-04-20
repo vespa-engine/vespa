@@ -30,11 +30,14 @@ TEST("that caught silenced exception causes exitcode 0") {
 }
 
 TEST("that mmap within limits are fine cause exitcode 0") {
-    SlaveProc proc("exec ./vespalib_mmap_app 100000000 10485760 1");
+    SlaveProc proc("exec ./vespalib_mmap_app 150000000 10485760 1");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }
 
+#ifdef __APPLE__
+// setrlimit with RLIMIT_AS is broken on Darwin
+#else
 TEST("that mmap beyond limits cause negative exitcode.") {
     SlaveProc proc("ulimit -c 0 && exec ./vespalib_mmap_app 100000000 10485760 10");
     proc.wait();
@@ -46,5 +49,6 @@ TEST("that mmap beyond limits with set VESPA_SILENCE_CORE_ON_OOM cause exitcode 
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 66);
 }
+#endif
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }

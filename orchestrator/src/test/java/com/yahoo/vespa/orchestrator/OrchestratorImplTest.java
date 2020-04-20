@@ -17,6 +17,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
@@ -25,10 +26,12 @@ import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +39,9 @@ import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
@@ -55,6 +60,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.mockito.internal.verification.VerificationModeFactory.atLeastOnce;
 
 /**
  * Test Orchestrator with a mock backend (the MockCurator)
@@ -64,6 +74,13 @@ import static org.mockito.Mockito.spy;
 public class OrchestratorImplTest {
 
     private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final MockCurator curator = new MockCurator();
+    private ZkStatusService statusService = new ZkStatusService(
+            curator,
+            mock(Metric.class),
+            new TestTimer(),
+            new DummyAntiServiceMonitor());
 
     private ApplicationId app1;
     private ApplicationId app2;
@@ -75,20 +92,21 @@ public class OrchestratorImplTest {
     @Before
     public void setUp() {
         // Extract applications and hosts from dummy instance lookup service
-        Iterator<ApplicationInstance> iterator = DummyInstanceLookupService.getApplications().iterator();
+        Iterator<ApplicationInstance> iterator = DummyServiceMonitor.getApplications().iterator();
         ApplicationInstanceReference app1_ref = iterator.next().reference();
         app1 = OrchestratorUtil.toApplicationId(app1_ref);
-        app1_host1 = DummyInstanceLookupService.getContentHosts(app1_ref).iterator().next();
+        app1_host1 = DummyServiceMonitor.getContentHosts(app1_ref).iterator().next();
         app2 = OrchestratorUtil.toApplicationId(iterator.next().reference());
 
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clustercontroller, applicationApiFactory),
                                             clustercontroller,
-                                            new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
-                                            new DummyInstanceLookupService(),
+                                            statusService,
+                                            new DummyServiceMonitor(),
                                             0,
                                             new ManualClock(),
-                                            applicationApiFactory);
+                                            applicationApiFactory,
+                                            flagSource);
 
         clustercontroller.setAllDummyNodesAsUp();
     }
@@ -230,8 +248,8 @@ public class OrchestratorImplTest {
 
     @Test
     public void applicationReferenceHasTenantAndAppInstance() {
-        InstanceLookupService service = new DummyInstanceLookupService();
-        String applicationInstanceId = service.findInstanceByHost(DummyInstanceLookupService.TEST1_HOST_NAME).get()
+        ServiceMonitor service = new DummyServiceMonitor();
+        String applicationInstanceId = service.getApplication(DummyServiceMonitor.TEST1_HOST_NAME).get()
                 .reference().toString();
         assertEquals("test-tenant-id:application:prod:utopia-1:instance", applicationInstanceId);
     }
@@ -253,21 +271,21 @@ public class OrchestratorImplTest {
         orchestrator.suspendAll(
                 new HostName("parentHostname"),
                 Arrays.asList(
-                        DummyInstanceLookupService.TEST1_HOST_NAME,
-                        DummyInstanceLookupService.TEST3_HOST_NAME,
-                        DummyInstanceLookupService.TEST6_HOST_NAME));
+                        DummyServiceMonitor.TEST1_HOST_NAME,
+                        DummyServiceMonitor.TEST3_HOST_NAME,
+                        DummyServiceMonitor.TEST6_HOST_NAME));
 
         // As of 2016-06-07 the order of the node groups are as follows:
         //   TEST3: mediasearch:imagesearch:default
         //   TEST6: tenant-id-3:application-instance-3:default
         //   TEST1: test-tenant-id:application:instance
         InOrder order = inOrder(orchestrator);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST3_NODE_GROUP, true);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST6_NODE_GROUP, true);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST1_NODE_GROUP, true);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST3_NODE_GROUP, false);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST6_NODE_GROUP, false);
-        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST1_NODE_GROUP, false);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST3_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST6_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST1_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST3_NODE_GROUP, false);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST6_NODE_GROUP, false);
+        verifySuspendGroup(order, orchestrator, DummyServiceMonitor.TEST1_NODE_GROUP, false);
         order.verifyNoMoreInteractions();
     }
 
@@ -284,18 +302,18 @@ public class OrchestratorImplTest {
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
         Throwable supensionFailure = new HostStateChangeDeniedException(
-                DummyInstanceLookupService.TEST6_HOST_NAME,
+                DummyServiceMonitor.TEST6_HOST_NAME,
                 "some-constraint",
                 "error message");
-        doThrow(supensionFailure).when(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
+        doThrow(supensionFailure).when(orchestrator).suspendGroup(any(), eq(DummyServiceMonitor.TEST6_NODE_GROUP));
 
         try {
             orchestrator.suspendAll(
                     new HostName("parentHostname"),
                     Arrays.asList(
-                            DummyInstanceLookupService.TEST1_HOST_NAME,
-                            DummyInstanceLookupService.TEST3_HOST_NAME,
-                            DummyInstanceLookupService.TEST6_HOST_NAME));
+                            DummyServiceMonitor.TEST1_HOST_NAME,
+                            DummyServiceMonitor.TEST3_HOST_NAME,
+                            DummyServiceMonitor.TEST6_HOST_NAME));
             fail();
         } catch (BatchHostStateChangeDeniedException e) {
             assertEquals("Failed to suspend NodeGroup{application=tenant-id-3:application-instance-3:prod:utopia-1:default, " +
@@ -306,15 +324,85 @@ public class OrchestratorImplTest {
         }
 
         InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST3_NODE_GROUP));
-        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyServiceMonitor.TEST3_NODE_GROUP));
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyServiceMonitor.TEST6_NODE_GROUP));
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void testLargeLocks() throws Exception {
+        var tenantId = new TenantId("tenant");
+        var applicationInstanceId = new ApplicationInstanceId("app:dev:us-east-1:default");
+        var applicationInstanceReference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
+
+        var policy = mock(HostedVespaPolicy.class);
+        var zookeeperStatusService = mock(ZkStatusService.class);
+        var serviceMonitor = mock(ServiceMonitor.class);
+        var applicationInstance = mock(ApplicationInstance.class);
+        var clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
+        var clock = new ManualClock();
+        var applicationApiFactory = mock(ApplicationApiFactory.class);
+        var lock = mock(ApplicationLock.class);
+
+        when(serviceMonitor.getApplication(any(HostName.class))).thenReturn(Optional.of(applicationInstance));
+        when(applicationInstance.reference()).thenReturn(applicationInstanceReference);
+        when(zookeeperStatusService.lockApplication(any(), any())).thenReturn(lock);
+        when(lock.getApplicationInstanceStatus()).thenReturn(NO_REMARKS);
+
+        var orchestrator = new OrchestratorImpl(
+                policy,
+                clusterControllerClientFactory,
+                zookeeperStatusService,
+                serviceMonitor,
+                20,
+                clock,
+                applicationApiFactory,
+                flagSource);
+
+        HostName parentHostname = new HostName("parent.vespa.ai");
+
+        verify(serviceMonitor, atLeastOnce()).registerListener(zookeeperStatusService);
+        verifyNoMoreInteractions(serviceMonitor);
+
+        orchestrator.suspendAll(parentHostname, List.of(parentHostname));
+
+        ArgumentCaptor<OrchestratorContext> contextCaptor = ArgumentCaptor.forClass(OrchestratorContext.class);
+        verify(zookeeperStatusService, times(2)).lockApplication(contextCaptor.capture(), any());
+        List<OrchestratorContext> contexts = contextCaptor.getAllValues();
+
+        // First invocation is probe, second is not.
+        assertEquals(2, contexts.size());
+        assertTrue(contexts.get(0).isProbe());
+        assertTrue(contexts.get(0).largeLocks());
+        assertFalse(contexts.get(1).isProbe());
+        assertTrue(contexts.get(1).largeLocks());
+
+        verify(applicationApiFactory, times(2)).create(any(), any(), any());
+        verify(policy, times(2)).grantSuspensionRequest(any(), any());
+        verify(serviceMonitor, atLeastOnce()).getApplication(any(HostName.class));
+        verify(lock, times(2)).getApplicationInstanceStatus();
+
+        // Each zookeeperStatusService that is created, is closed.
+        verify(zookeeperStatusService, times(2)).lockApplication(any(), any());
+        verify(lock, times(2)).close();
+
+        verifyNoMoreInteractions(
+                policy,
+                clusterControllerClientFactory,
+                zookeeperStatusService,
+                lock,
+                serviceMonitor,
+                applicationApiFactory);
     }
 
     @Test
     public void testGetHost() throws Exception {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
-        StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+        StatusService statusService = new ZkStatusService(
+                new MockCurator(),
+                mock(Metric.class),
+                new TestTimer(),
+                new DummyAntiServiceMonitor());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");
@@ -340,29 +428,30 @@ public class OrchestratorImplTest {
                                                hostName,
                                                ServiceStatus.NOT_CHECKED)))));
 
-        InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
-                () -> new ServiceModel(Map.of(reference, applicationInstance)));
+        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory),
                                             clusterControllerClientFactory,
                                             statusService,
-                                            lookupService,
+                                            serviceMonitor,
                                             0,
                                             new ManualClock(),
-                                            applicationApiFactory);
+                                            applicationApiFactory,
+                                            flagSource);
 
         orchestrator.setNodeStatus(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
 
         Host host = orchestrator.getHost(hostName);
         assertEquals(reference, host.getApplicationInstanceReference());
         assertEquals(hostName, host.getHostName());
-        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostStatus());
+        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostInfo().status());
+        assertTrue(host.getHostInfo().suspendedSince().isPresent());
         assertEquals(2, host.getServiceInstances().size());
     }
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
-        for (ApplicationInstance app : DummyInstanceLookupService.getApplications()) {
-            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService()))) {
+        for (ApplicationInstance app : DummyServiceMonitor.getApplications()) {
+            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId, new DummyServiceMonitor()))) {
                 return clustercontroller.isInMaintenance(app, hostName);
             }
         }

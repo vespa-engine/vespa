@@ -224,6 +224,11 @@ public class DimensionRenamer {
         /** Returns whether this is an opposite of another constraint */
         boolean isOpposite() { return opposite; }
 
+        public static Constraint equal() { return new EqualConstraint(false, false); }
+        public static Constraint notEqual() { return new NotEqualConstraint(false, false); }
+        public static Constraint lessThan() { return new LessThanConstraint(false, false); }
+        public static Constraint greaterThan() { return new GreaterThanConstraint(false, false); }
+
         public static Constraint equal(boolean soft) { return new EqualConstraint(soft, false); }
         public static Constraint notEqual(boolean soft) { return new NotEqualConstraint(soft, false); }
         public static Constraint lessThan(boolean soft) { return new LessThanConstraint(soft, false); }

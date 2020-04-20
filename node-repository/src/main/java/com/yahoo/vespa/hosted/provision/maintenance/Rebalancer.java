@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -92,7 +91,8 @@ public class Rebalancer extends Maintainer {
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
             if (node.allocation().get().owner().instance().isTester()) continue;
-            for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
+            if (node.allocation().get().owner().application().value().equals("lsbe-dictionaries")) continue; // TODO: Remove
+            for (Node toHost : allNodes.filter(nodeRepository()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
 
@@ -128,7 +128,7 @@ public class Rebalancer extends Maintainer {
      */
     private boolean deployTo(Move move) {
         ApplicationId application = move.node.allocation().get().owner();
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return false;
 
             boolean couldMarkRetiredNow = markWantToRetire(move.node, true);

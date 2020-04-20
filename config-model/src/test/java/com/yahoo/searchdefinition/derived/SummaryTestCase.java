@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNull;
  *
  * @author bratseth
  */
-public class SummaryTestCase extends SearchDefinitionTestCase {
+public class SummaryTestCase extends SchemaTestCase {
 
     @Test
     public void testDeriving() throws IOException, ParseException {

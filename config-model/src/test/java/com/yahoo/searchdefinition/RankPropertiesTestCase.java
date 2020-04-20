@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class RankPropertiesTestCase extends SearchDefinitionTestCase {
+public class RankPropertiesTestCase extends SchemaTestCase {
 
     @Test
     public void testRankPropertyInheritance() throws ParseException {

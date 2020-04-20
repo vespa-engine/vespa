@@ -146,6 +146,7 @@ PingProxy::Main()
             retval = 1;
         }
     }
+    req->SubRef();
     finiRPC();
     return retval;
 }

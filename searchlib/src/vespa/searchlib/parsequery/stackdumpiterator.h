@@ -42,12 +42,13 @@ private:
 
     /** The arity of the current item */
     uint32_t _currArity;
-    /** The first argument of the current item (length of NEAR/ONEAR area for example) */
-    uint32_t _currArg1;
-    /** The second argument of the current item (score threshold of WAND for example) */
-    double _currArg2;
-    /** The third argument of the current item (threshold boost factor of WAND for example) */
-    double _currArg3;
+
+    /* extra arguments */
+    uint32_t _extraIntArg1;
+    uint32_t _extraIntArg2;
+    uint32_t _extraIntArg3;
+    double _extraDoubleArg4;
+    double _extraDoubleArg5;
     /** The predicate query specification */
     query::PredicateQueryTerm::UP _predicate_query_term;
     /** The index name (field name) in the current item */
@@ -118,11 +119,12 @@ public:
 
     uint32_t getArity() const { return _currArity; }
 
-    uint32_t getArg1() const { return _currArg1; }
-
-    double getArg2() const { return _currArg2; }
-
-    double getArg3() const { return _currArg3; }
+    uint32_t getNearDistance() const { return _extraIntArg1; }
+    uint32_t getTargetNumHits() const { return _extraIntArg1; }
+    double getScoreThreshold() const { return _extraDoubleArg4; }
+    double getThresholdBoostFactor() const { return _extraDoubleArg5; }
+    bool getAllowApproximate() const { return (_extraIntArg2 != 0); }
+    uint32_t getExploreAdditionalHits() const { return _extraIntArg3; }
 
     query::PredicateQueryTerm::UP getPredicateQueryTerm()
     { return std::move(_predicate_query_term); }

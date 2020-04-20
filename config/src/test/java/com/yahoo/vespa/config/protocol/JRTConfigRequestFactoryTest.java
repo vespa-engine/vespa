@@ -20,41 +20,6 @@ public class JRTConfigRequestFactoryTest {
     private static VespaVersion defaultVespaVersion = JRTConfigRequestFactory.getCompiledVespaVersion();
 
     @Test
-    public void testGetProtocolVersion() {
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "", ""), is("3"));
-
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "", ""), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "1", ""), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "", "1"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "1", ""), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "", "1"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "1", "1"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "1", "1"), is("1"));
-
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "", ""), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "2", ""), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "", "2"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "2", ""), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "", "2"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "2", "2"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "2", "2"), is("2"));
-
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "2", ""), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "", "2"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "1", "2"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "1", ""), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "", "1"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("", "2", "1"), is("2"));
-
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "2", "2"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "1", "2"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("1", "2", "1"), is("1"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "1", "1"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "1", "2"), is("2"));
-        assertThat(JRTConfigRequestFactory.getProtocolVersion("2", "2", "1"), is("2"));
-    }
-
-    @Test
     public void testCompressionType() {
         assertThat(JRTConfigRequestFactory.getCompressionType("", "", ""), is(CompressionType.LZ4));
 
@@ -102,19 +67,8 @@ public class JRTConfigRequestFactoryTest {
         JRTConfigSubscription<FunctionTestConfig> sub = new JRTConfigSubscription<>(
                 new ConfigKey<>(clazz, configId), subscriber, new ConfigSet(), new TimingValues());
 
-        // Default vespa version
         JRTClientConfigRequest request = JRTConfigRequestFactory.createFromSub(sub);
-        assertThat(request.getProtocolVersion(), is(3L));
         assertThat(request.getVespaVersion().get(), is(defaultVespaVersion));
-
-        // Create with vespa version set
-        String version = "5.37.38";
-        System.setProperty(JRTConfigRequestFactory.VESPA_VERSION, version);
-        request = JRTConfigRequestFactory.createFromSub(sub);
-        assertThat(request.getProtocolVersion(), is(3L));
-        assertThat(request.getVespaVersion().get(), is(VespaVersion.fromString(version)));
-
-        System.clearProperty(JRTConfigRequestFactory.VESPA_VERSION);
     }
 
     @Test
@@ -123,19 +77,8 @@ public class JRTConfigRequestFactoryTest {
         final String configId = "foo";
         RawConfig config = new RawConfig(new ConfigKey<>(clazz, configId), "595f44fec1e92a71d3e9e77456ba80d1");
 
-        // Default vespa version
         JRTClientConfigRequest request = JRTConfigRequestFactory.createFromRaw(config, 1000);
-        assertThat(request.getProtocolVersion(), is(3L));
         assertThat(request.getVespaVersion().get(), is(defaultVespaVersion));
-
-        // Create with vespa version set
-        String version = "5.37.38";
-        System.setProperty(JRTConfigRequestFactory.VESPA_VERSION, version);
-        request = JRTConfigRequestFactory.createFromRaw(config, 1000);
-        assertThat(request.getProtocolVersion(), is(3L));
-        assertThat(request.getVespaVersion().get(), is(VespaVersion.fromString(version)));
-
-        System.clearProperty(JRTConfigRequestFactory.VESPA_VERSION);
     }
 
 }

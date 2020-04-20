@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
  * Subclass of {@link java.io.ByteArrayOutputStream} that gives effective {@link #toByteArray()} method.
  *
  * @author Ulf Lilleengen
- * @since 5.19
  */
 class NoCopyByteArrayOutputStream extends ByteArrayOutputStream {
     public NoCopyByteArrayOutputStream() {

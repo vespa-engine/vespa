@@ -5,24 +5,16 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
 
 import java.io.File;
@@ -32,7 +24,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -54,15 +45,9 @@ public class ContainerTester {
         this.container = container;
         this.responseFilePath = responseFilePath;
     }
-    
-    public JDisc container() { return container; }
 
     public Controller controller() {
         return (Controller) container.components().getComponent(Controller.class.getName());
-    }
-
-    public ConfigServerMock configServer() {
-        return serviceRegistry().configServerMock();
     }
 
     public AthenzClientFactoryMock athenzClientFactory() {

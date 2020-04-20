@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests different aspects of the ConfigInstance class and its underlying Nodes.
  *
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public class ConfigInstanceTest {
     private ConfigSourceSet sourceSet = new ConfigSourceSet("config-instance-test");

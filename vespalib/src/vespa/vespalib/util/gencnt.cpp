@@ -58,7 +58,7 @@ GenCnt::distance(const GenCnt &other) const
 GenCnt &
 GenCnt::operator=(const GenCnt &src)
 {
-    _val = src._val;
+    _val = src.getAsInt();
     return *this;
 }
 

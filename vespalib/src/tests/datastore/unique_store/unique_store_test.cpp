@@ -159,7 +159,7 @@ template <>
 std::vector<double> TestBase<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
 
 using UniqueStoreTestTypes = ::testing::Types<NumberUniqueStore, StringUniqueStore, CStringUniqueStore, DoubleUniqueStore>;
-TYPED_TEST_CASE(TestBase, UniqueStoreTestTypes);
+VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

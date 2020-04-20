@@ -34,6 +34,7 @@ public:
     virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
     virtual void getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual vespalib::eval::ValueType getTensorType() const override;
+    virtual void get_state(const vespalib::slime::Inserter& inserter) const override;
 };
 
 }

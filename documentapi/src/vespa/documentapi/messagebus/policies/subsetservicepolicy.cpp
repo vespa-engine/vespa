@@ -75,8 +75,7 @@ SubsetServicePolicy::getRecipient(mbus::RoutingContext &ctx)
     }
     if (!hop.hasDirectives()) {
         hop = ctx.getRoute().getHop(0);
-        hop.setDirective(ctx.getDirectiveIndex(),
-                         mbus::IHopDirective::SP(new mbus::VerbatimDirective("*")));
+        hop.setDirective(ctx.getDirectiveIndex(),std::make_shared<mbus::VerbatimDirective>("*"));
     }
     return hop;
 }

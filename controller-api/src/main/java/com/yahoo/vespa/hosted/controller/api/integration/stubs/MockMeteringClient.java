@@ -3,16 +3,19 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author olaa
@@ -20,7 +23,7 @@ import java.util.Optional;
 public class MockMeteringClient implements MeteringClient {
 
     private Collection<ResourceSnapshot> resources = new ArrayList<>();
-    private Optional<MeteringInfo> meteringInfo;
+    private Optional<MeteringData> meteringData;
 
     @Override
     public void consume(Collection<ResourceSnapshot> resources){
@@ -28,18 +31,25 @@ public class MockMeteringClient implements MeteringClient {
     }
 
     @Override
-    public MeteringInfo getResourceSnapshots(TenantName tenantName, ApplicationName applicationName) {
-        return meteringInfo.orElseGet(() -> {
+    public MeteringData getMeteringData(TenantName tenantName, ApplicationName applicationName) {
+        return meteringData.orElseGet(() -> {
             ResourceAllocation emptyAllocation = new ResourceAllocation(0, 0, 0);
-            return new MeteringInfo(emptyAllocation, emptyAllocation, emptyAllocation, Collections.emptyMap());
+            return new MeteringData(emptyAllocation, emptyAllocation, emptyAllocation, Collections.emptyMap());
         });
+    }
+
+    @Override
+    public List<ResourceSnapshot> getSnapshotHistoryForTenant(TenantName tenantName, YearMonth yearMonth) {
+        return new ArrayList<>(resources);
     }
 
     public Collection<ResourceSnapshot> consumedResources() {
         return this.resources;
     }
 
-    public void setMeteringInfo(MeteringInfo meteringInfo) {
-        this.meteringInfo = Optional.of(meteringInfo);
+    public void setMeteringData(MeteringData meteringData) {
+        this.meteringData = Optional.of(meteringData);
+        this.resources = meteringData.getSnapshotHistory().entrySet().stream().map(Map.Entry::getValue).flatMap(List::stream).collect(Collectors.toList());
+        boolean a = false;
     }
 }

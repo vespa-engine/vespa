@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,7 +41,7 @@ public class ClusterSpecTest {
                 List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
                 List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.content, "id1")), false,
                 List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
-                List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.content, "id1")), false,
+                List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.content, "id1")), true,
                 List.of(spec(ClusterSpec.Type.content, "id1"), spec(ClusterSpec.Type.content, "id1")), true
         );
         tests.forEach((specs, satisfies) -> {
@@ -52,7 +53,10 @@ public class ClusterSpecTest {
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(1), Version.emptyVersion, false);
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id))
+                .group(ClusterSpec.Group.from(1))
+                .vespaVersion(Version.emptyVersion)
+                .build();
     }
 
 }

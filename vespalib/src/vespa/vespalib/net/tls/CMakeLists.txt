@@ -5,7 +5,6 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     auto_reloading_tls_crypto_engine.cpp
     crypto_codec.cpp
     crypto_codec_adapter.cpp
-    crypto_exception.cpp
     maybe_tls_crypto_engine.cpp
     maybe_tls_crypto_socket.cpp
     peer_credentials.cpp

@@ -2,10 +2,9 @@
 #pragma once
 
 #include <iosfwd>
-#include <stdint.h>
+#include <cstdint>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 enum class ReadConsistency : uint8_t {
     /**
@@ -28,9 +27,7 @@ enum class ReadConsistency : uint8_t {
     WEAK
 };
 
-std::ostream&
-operator<<(std::ostream&, ReadConsistency);
+std::ostream& operator<<(std::ostream&, ReadConsistency);
 
-} // spi
-} // storage
+}
 

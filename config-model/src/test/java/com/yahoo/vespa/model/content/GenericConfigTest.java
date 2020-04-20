@@ -50,7 +50,7 @@ public class GenericConfigTest {
 
     @Before
     public void getVespaModel() {
-        model = (new VespaModelCreatorWithMockPkg(ContentBaseTest.getHosts(), servicesXml(), ApplicationPackageUtils.generateSearchDefinitions("type1"))).create();
+        model = (new VespaModelCreatorWithMockPkg(ContentBaseTest.getHosts(), servicesXml(), ApplicationPackageUtils.generateSchemas("type1"))).create();
     }
 
     @Test

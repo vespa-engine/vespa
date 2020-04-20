@@ -44,14 +44,13 @@ RoutingContext::getMatchedRecipients(std::vector<Route> &ret) const
     std::set<string> done;
     const std::vector<Route> &recipients = _node.getRecipients();
     const Hop &hop = getHop();
-    for (std::vector<Route>::const_iterator it = recipients.begin();
-         it != recipients.end(); ++it)
+    for (const Route & recipient : recipients)
     {
-        if (it->hasHops() && hop.matches(it->getHop(0))) {
-            IHopDirective::SP dir = it->getHop(0).getDirective(_directive);
+        if (recipient.hasHops() && hop.matches(recipient.getHop(0))) {
+            IHopDirective::SP dir = recipient.getHop(0).getDirectiveSP(_directive);
             string key = dir->toString();
             if (done.find(key) == done.end()) {
-                Route add = *it;
+                Route add = recipient;
                 add.setHop(0, hop);
                 add.getHop(0).setDirective(_directive, std::move(dir));
                 ret.push_back(std::move(add));
@@ -95,7 +94,7 @@ RoutingContext::getDirectiveIndex() const
 const PolicyDirective &
 RoutingContext::getDirective() const
 {
-    return static_cast<const PolicyDirective&>(*getHop().getDirective(_directive));
+    return static_cast<const PolicyDirective&>(getHop().getDirective(_directive));
 }
 
 string

@@ -2,16 +2,11 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -21,8 +16,6 @@ import java.util.stream.Stream;
  */
 public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> {
 
-    public static final EndpointList EMPTY = new EndpointList(List.of());
-
     private EndpointList(Collection<? extends Endpoint> endpoints, boolean negate) {
         super(endpoints, negate, EndpointList::new);
         if (endpoints.stream().distinct().count() != endpoints.size()) {
@@ -30,18 +23,34 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         }
     }
 
-    private EndpointList(Collection<? extends Endpoint> endpoints) {
-        this(endpoints, false);
+    /** Returns the primary (non-legacy) endpoint, if any */
+    public Optional<Endpoint> primary() {
+        return not().legacy().asList().stream().findFirst();
     }
 
-    /** Returns the main endpoint, if any */
-    public Optional<Endpoint> main() {
-        return asList().stream().filter(Predicate.not(Endpoint::legacy)).findFirst();
+    /** Returns the subset of endpoints named according to given ID */
+    public EndpointList named(EndpointId id) {
+        return matching(endpoint -> endpoint.name().equals(id.id()));
     }
 
-    /** Returns the subset of endpoints are either legacy or not */
-    public EndpointList legacy(boolean legacy) {
-        return matching(endpoint -> endpoint.legacy() == legacy);
+    /** Returns the subset of endpoints which target all of the given zones */
+    public EndpointList targets(List<ZoneId> zones) {
+        return matching(endpoint -> endpoint.zones().containsAll(zones));
+    }
+
+    /** Returns the subset of endpoints which target the given zones */
+    public EndpointList targets(ZoneId zone) {
+        return targets(List.of(zone));
+    }
+
+    /** Returns the subset of endpoints that are considered legacy */
+    public EndpointList legacy() {
+        return matching(Endpoint::legacy);
+    }
+
+    /** Returns the subset of endpoints that require a rotation */
+    public EndpointList requiresRotation() {
+        return matching(Endpoint::requiresRotation);
     }
 
     /** Returns the subset of endpoints with given scope */
@@ -49,22 +58,8 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.scope() == scope);
     }
 
-    public static EndpointList of(Stream<Endpoint> endpoints) {
-        return new EndpointList(endpoints.collect(Collectors.toUnmodifiableList()));
-    }
-
-    /** Returns the default global endpoints in given system. Default endpoints are served by a pre-provisioned routing layer */
-    public static EndpointList create(ApplicationId application, EndpointId endpointId, SystemName system) {
-        switch (system) {
-            case cd:
-            case main:
-                return new EndpointList(List.of(
-                        Endpoint.of(application).named(endpointId).on(Port.plain(4080)).legacy().in(system),
-                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).legacy().in(system),
-                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).in(system)
-                ));
-        }
-        return EMPTY;
+    public static EndpointList copyOf(Collection<Endpoint> endpoints) {
+        return new EndpointList(endpoints, false);
     }
 
 }

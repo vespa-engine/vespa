@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 /**
  * Exception used where the cause has already been reported to the user, so
@@ -16,6 +15,4 @@ namespace spi {
  */
 VESPA_DEFINE_EXCEPTION(HandledException, vespalib::Exception);
 
-} // spi
-} // storage
-
+}

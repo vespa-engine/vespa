@@ -67,6 +67,8 @@ private:
         }
     }
 
+    void detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const;
+
 public:
     EvalFixture(const TensorEngine &engine, const vespalib::string &expr, const ParamRepo &param_repo,
                 bool optimized = true, bool allow_mutable = false);

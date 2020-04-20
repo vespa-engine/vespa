@@ -17,7 +17,8 @@ Config::Config() :
     _growStrategy(),
     _compactionStrategy(),
     _predicateParams(),
-    _tensorType(vespalib::eval::ValueType::error_type())
+    _tensorType(vespalib::eval::ValueType::error_type()),
+    _hnsw_index_params()
 {
 }
 
@@ -34,7 +35,8 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
-      _tensorType(vespalib::eval::ValueType::error_type())
+      _tensorType(vespalib::eval::ValueType::error_type()),
+      _hnsw_index_params()
 {
 }
 
@@ -60,7 +62,8 @@ Config::operator==(const Config &b) const
            _compactionStrategy == b._compactionStrategy &&
            _predicateParams == b._predicateParams &&
            (_basicType.type() != BasicType::Type::TENSOR ||
-            _tensorType == b._tensorType);
+            _tensorType == b._tensorType) &&
+            _hnsw_index_params == b._hnsw_index_params;
 }
 
 }

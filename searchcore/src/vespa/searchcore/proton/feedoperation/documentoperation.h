@@ -26,6 +26,7 @@ protected:
                       const storage::spi::Timestamp &timestamp);
 
     void assertValidBucketId(const document::DocumentId &docId) const;
+    void assertValidBucketId(const document::GlobalId &docId) const;
     vespalib::string docArgsToString() const;
 
 public:

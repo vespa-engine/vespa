@@ -2,11 +2,10 @@
 
 #include "cfgvalue.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <sstream>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 CfgValueBlueprint::CfgValueBlueprint() :
     Blueprint("test_cfgvalue"),
@@ -14,9 +13,7 @@ CfgValueBlueprint::CfgValueBlueprint() :
 {
 }
 
-CfgValueBlueprint::~CfgValueBlueprint()
-{
-}
+CfgValueBlueprint::~CfgValueBlueprint() = default;
 
 void
 CfgValueBlueprint::visitDumpFeatures(const IIndexEnvironment &indexEnv, IDumpFeatureVisitor &visitor) const
@@ -59,6 +56,4 @@ CfgValueBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::
     return stash.create<search::features::ValueExecutor>(_values);
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

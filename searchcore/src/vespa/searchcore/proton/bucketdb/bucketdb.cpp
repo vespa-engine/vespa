@@ -119,6 +119,19 @@ BucketDB::cachedGet(const BucketId &bucketId) const
     return get(bucketId);
 }
 
+storage::spi::BucketInfo
+BucketDB::cachedGetBucketInfo(const BucketId &bucketId) const
+{
+    if (isCachedBucket(bucketId)) {
+        return _cachedBucketState;
+    }
+    auto itr = _map.find(bucketId);
+    if (itr != _map.end()) {
+        return itr->second;
+    }
+    return BucketState();
+}
+
 bool
 BucketDB::hasBucket(const BucketId &bucketId) const
 {

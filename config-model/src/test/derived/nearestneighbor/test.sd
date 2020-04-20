@@ -1,0 +1,27 @@
+search test {
+  document test {
+    field id type int {
+      indexing: attribute | summary
+    }
+    field vec type tensor<float>(x[5]) {
+      indexing: attribute | summary
+    }
+    field vec_hnsw type tensor<float>(x[5]) {
+      indexing: attribute | index | summary
+      index {
+        hnsw {
+          max-links-per-node: 16
+          neighbors-to-explore-at-insert: 200
+        }
+      }
+    }
+  }
+  rank-profile default {
+    first-phase {
+      expression: 10000 - itemRawScore(nns)
+    }
+  }
+  document-summary minimal {
+    summary id type int {}
+  }
+}

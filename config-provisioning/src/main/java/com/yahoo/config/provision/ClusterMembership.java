@@ -3,9 +3,11 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
+import java.util.Optional;
+
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired]"
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/combinedId]"
  *
  * @author bratseth
  */
@@ -18,25 +20,32 @@ public class ClusterMembership {
 
     protected ClusterMembership() {}
 
-    private ClusterMembership(String stringValue, Version vespaVersion) {
+    private ClusterMembership(String stringValue, Version vespaVersion, Optional<String> dockerImageRepo) {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/combinedId]'");
 
         boolean exclusive = false;
+        var combinedId = Optional.<String>empty();
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
                     case "exclusive": exclusive = true; break;
                     case "retired": retired = true; break;
+                    default: combinedId = Optional.of(component); break;
                 }
             }
         }
 
-        this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion, exclusive);
+        this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]))
+                .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
+                .vespaVersion(vespaVersion)
+                .exclusive(exclusive)
+                .combinedId(combinedId.map(ClusterSpec.Id::from))
+                .dockerImageRepo(dockerImageRepo)
+                .build();
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
@@ -54,7 +63,8 @@ public class ClusterMembership {
                (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
-               ( retired ? "/retired" : "");
+               ( retired ? "/retired" : "") +
+               ( cluster.combinedId().isPresent() ? "/" + cluster.combinedId().get().value() : "");
 
     }
 
@@ -101,7 +111,11 @@ public class ClusterMembership {
     public String toString() { return stringValue(); }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion) {
-        return new ClusterMembership(stringValue, vespaVersion);
+        return new ClusterMembership(stringValue, vespaVersion, Optional.empty());
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<String> dockerImageRepo) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

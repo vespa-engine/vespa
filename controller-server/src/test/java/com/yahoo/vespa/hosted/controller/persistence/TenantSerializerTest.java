@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
 
 import java.net.URI;
@@ -74,14 +73,6 @@ public class TenantSerializerTest {
                                                Optional.of(contact()));
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
-    }
-
-    @Test
-    public void user_tenant() {
-        UserTenant tenant = UserTenant.create("by-foo", Optional.of(contact()));
-        UserTenant serialized = (UserTenant) serializer.tenantFrom(serializer.toSlime(tenant));
-        assertEquals(tenant.name(), serialized.name());
-        assertEquals(contact(), serialized.contact().get());
     }
 
     @Test

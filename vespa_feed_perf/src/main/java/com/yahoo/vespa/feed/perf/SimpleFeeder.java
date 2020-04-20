@@ -20,6 +20,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBusParams;
@@ -45,9 +46,10 @@ import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -65,6 +67,7 @@ public class SimpleFeeder implements ReplyHandler {
     private final RPCMessageBus mbus;
     private final SourceSession session;
     private final int numThreads;
+    private final long numMessagesToSend;
     private final Destination destination;
     private final boolean benchmarkMode;
     private final static long REPORT_INTERVAL = TimeUnit.SECONDS.toMillis(10);
@@ -81,18 +84,20 @@ public class SimpleFeeder implements ReplyHandler {
         private final Destination destination;
         private final FeedReader reader;
         private final Executor executor;
-        AtomicReference<Throwable> failure;
+        private final long messagesToSend;
+        private final AtomicReference<Throwable> failure;
 
-        Metrics(Destination destination, FeedReader reader, Executor executor, AtomicReference<Throwable> failure) {
+        Metrics(Destination destination, FeedReader reader, Executor executor, AtomicReference<Throwable> failure, long messagesToSend) {
             this.destination = destination;
             this.reader = reader;
             this.executor = executor;
+            this.messagesToSend = messagesToSend;
             this.failure = failure;
         }
 
         long feed() throws Throwable {
             long numMessages = 0;
-            while (failure.get() == null) {
+            while ((failure.get() == null) && (numMessages < messagesToSend)) {
                 FeedOperation op = reader.read();
                 if (op.getType() == FeedOperation.Type.INVALID) {
                     break;
@@ -125,11 +130,13 @@ public class SimpleFeeder implements ReplyHandler {
         private final PrintStream err;
         private final Route route;
         private final SourceSession session;
+        private final long timeoutMS;
         private final AtomicReference<Throwable> failure;
-        MbusDestination(SourceSession session, Route route, AtomicReference<Throwable> failure, PrintStream err) {
+        MbusDestination(SourceSession session, Route route, double timeoutS, AtomicReference<Throwable> failure, PrintStream err) {
             this.route = route;
             this.err = err;
             this.session = session;
+            this.timeoutMS = (long)(timeoutS * 1000.0);
             this.failure = failure;
         }
         public void send(FeedOperation op) {
@@ -138,6 +145,7 @@ public class SimpleFeeder implements ReplyHandler {
                 err.println("ignoring operation; " + op.getType());
                 return;
             }
+            msg.setTimeRemaining(timeoutMS);
             msg.setContext(System.currentTimeMillis());
             msg.setRoute(route);
             try {
@@ -147,7 +155,7 @@ public class SimpleFeeder implements ReplyHandler {
                 }
             } catch (InterruptedException e) {}
         }
-        public void close() throws Exception {
+        public void close() {
             session.destroy();
         }
     }
@@ -270,7 +278,7 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
 
-        class LazyDocumentOperation extends ConditionalFeedOperation {
+        static class LazyDocumentOperation extends ConditionalFeedOperation {
             private final DocumentDeserializer deserializer;
             LazyDocumentOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
                 super(Type.DOCUMENT, condition);
@@ -282,7 +290,7 @@ public class SimpleFeeder implements ReplyHandler {
                 return new Document(deserializer);
             }
         }
-        class LazyUpdateOperation extends ConditionalFeedOperation {
+        static class LazyUpdateOperation extends ConditionalFeedOperation {
             private final DocumentDeserializer deserializer;
             LazyUpdateOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
                 super(Type.UPDATE, condition);
@@ -341,13 +349,14 @@ public class SimpleFeeder implements ReplyHandler {
         inputStreams = params.getInputStreams();
         out = params.getStdOut();
         numThreads = params.getNumDispatchThreads();
+        numMessagesToSend = params.getNumMessagesToSend();
         mbus = newMessageBus(docTypeMgr, params);
-        session = newSession(mbus, this, params.getMaxPending());
+        session = newSession(mbus, this, params);
         docTypeMgr.configure(params.getConfigId());
         benchmarkMode = params.isBenchmarkMode();
         destination = (params.getDumpStream() != null)
                 ? createDumper(params)
-                : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
+                : new MbusDestination(session, params.getRoute(), params.getTimeout(), failure, params.getStdErr());
     }
 
     SourceSession getSourceSession() { return session; }
@@ -369,18 +378,27 @@ public class SimpleFeeder implements ReplyHandler {
     }
 
 
+    static class RetryExecutionhandler implements RejectedExecutionHandler {
+
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            try {
+                executor.getQueue().put(r);
+            } catch (InterruptedException e) {}
+        }
+    }
 
     SimpleFeeder run() throws Throwable {
         ExecutorService executor = (numThreads > 1)
                 ? new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS,
-                                         new SynchronousQueue<>(false),
+                                         new ArrayBlockingQueue<>(numThreads*100),
                                          ThreadFactoryFactory.getDaemonThreadFactory("perf-feeder"),
-                                         new ThreadPoolExecutor.CallerRunsPolicy())
+                                         new RetryExecutionhandler())
                 : null;
         printHeader(out);
         long numMessagesSent = 0;
         for (InputStream in : inputStreams) {
-            Metrics m = new Metrics(destination, createFeedReader(in), executor, failure);
+            Metrics m = new Metrics(destination, createFeedReader(in), executor, failure, numMessagesToSend);
             numMessagesSent += m.feed();
         }
         while (failure.get() == null && numReplies.get() < numMessagesSent) {
@@ -469,11 +487,18 @@ public class SimpleFeeder implements ReplyHandler {
                                  params.getConfigId());
     }
 
-    private static SourceSession newSession(RPCMessageBus mbus, ReplyHandler replyHandler, int maxPending) {
+    private static SourceSession newSession(RPCMessageBus mbus, ReplyHandler replyHandler, FeederParams feederParams ) {
         SourceSessionParams params = new SourceSessionParams();
         params.setReplyHandler(replyHandler);
-        if (maxPending > 0) {
-            params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(maxPending));
+        if (feederParams.getMaxPending() > 0) {
+            params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(feederParams.getMaxPending()));
+        } else {
+            DynamicThrottlePolicy throttlePolicy = new DynamicThrottlePolicy()
+                    .setWindowSizeIncrement(feederParams.getWindowIncrementSize())
+                    .setResizeRate(feederParams.getWindowResizeRate())
+                    .setWindowSizeDecrementFactor(feederParams.getWindowDecrementFactor())
+                    .setWindowSizeBackOff(feederParams.getWindowSizeBackOff());
+            params.setThrottlePolicy(throttlePolicy);
         }
         return mbus.getMessageBus().createSourceSession(params);
     }

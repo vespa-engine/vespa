@@ -13,6 +13,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributefeature");
@@ -33,6 +34,7 @@ using search::fef::FeatureExecutor;
 using search::features::util::ConstCharPtr;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
+using namespace search::index;
 
 using namespace search::fef::indexproperties;
 
@@ -98,7 +100,7 @@ considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class SingleAttributeExecutor : public fef::FeatureExecutor {
+class SingleAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const T & _attribute;
 public:
@@ -108,50 +110,73 @@ public:
      * @param attribute The attribute vector to use.
      */
     SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = 1;  // count
+    }
     void execute(uint32_t docId) override;
+};
+
+class BoolAttributeExecutor final : public fef::FeatureExecutor {
+private:
+    const SingleBoolAttribute & _attribute;
+public:
+    BoolAttributeExecutor(const SingleBoolAttribute & attribute)
+        : _attribute(attribute)
+    {}
+    void execute(uint32_t docId) override {
+        outputs().set_number(0, _attribute.getFloat(docId));
+    }
 };
 
 /**
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class MultiAttributeExecutor : public fef::FeatureExecutor {
+class MultiAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const T & _attribute;
     uint32_t  _idx;
 public:
-    /**
-     * Constructs an executor.
-     *
-     * @param attribute The attribute vector to use.
-     */
     MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = 0;  // count
+    }
 };
 
-class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
+class CountOnlyAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector & _attribute;
 
 public:
-    /**
-     * Constructs an executor.
-     *
-     * @param attribute The attribute vector to use.
-     */
     CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[0].as_number = 0;  // value
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+    }
 };
 /**
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class AttributeExecutor : public fef::FeatureExecutor {
+class AttributeExecutor final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector * _attribute;
     attribute::BasicType::Type _attrType;
-    uint32_t _idx;
-    T _buffer; // used when fetching values from the attribute
+    uint32_t  _idx;
+    T         _buffer; // used when fetching values from the attribute
     feature_t _defaultCount;
 
 public:
@@ -163,6 +188,13 @@ public:
      */
     AttributeExecutor(const attribute::IAttributeVector * attribute, uint32_t idx);
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = _defaultCount; // count
+    }
 };
 
 
@@ -200,9 +232,6 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
     o[0].as_number = __builtin_expect(attribute::isUndefined(v), false)
                      ? attribute::getUndefined<feature_t>()
                      : util::getAsFeature(v);
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = 1;  // contains
 }
 
 template <typename T>
@@ -214,18 +243,12 @@ MultiAttributeExecutor<T>::execute(uint32_t docId)
 
     auto o = outputs().get_bound();
     o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = 0;  // count
 }
 
 void
 CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
     auto o = outputs().get_bound();
-    o[0].as_number = 0;  // value
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
     o[3].as_number = _attribute.getValueCount(docId); // count
 }
 
@@ -252,9 +275,6 @@ AttributeExecutor<T>::execute(uint32_t docId)
     }
     auto o = outputs().get_bound();
     o[0].as_number = value;  // value
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = _defaultCount; // count
 }
 
 
@@ -331,15 +351,17 @@ private:
 };
 
 fef::FeatureExecutor &
-createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
+createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
                 attrName.c_str());
-        std::vector<feature_t> values(4, 0.0f);
+        std::vector<feature_t> values(numOutputs, 0.0f);
         return stash.create<ValueExecutor>(values);
     }
-    if (attribute->getCollectionType() == CollectionType::WSET) {
+    CollectionType collectionType = attribute->getCollectionType();
+    if (collectionType == CollectionType::WSET) {
+        assert(numOutputs == 4);
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
@@ -353,30 +375,63 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             return stash.create<CountOnlyAttributeExecutor>(*attribute);
         }
     } else { // SINGLE or ARRAY
-        if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
-            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;  if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
+        BasicType basicType = attribute->getBasicType();
+        if (collectionType == CollectionType::SINGLE) {
+            if (attribute->isIntegerType()) {
+                if (basicType == BasicType::BOOL) {
+                    auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
+                    assert (boolAttribute && (numOutputs == 1));
+                    return stash.create<BoolAttributeExecutor>(*boolAttribute);
+                } else {
+                    assert(numOutputs == 4);
+                    if (basicType == BasicType::INT8) {
+                        SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;
+                        if (creator.handle(attribute)) return creator.create(stash);
+                    } else if (basicType == BasicType::INT32) {
+                        SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                        if (creator.handle(attribute)) return creator.create(stash);
+                    }
+                    SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
+                }
+            } else if (attribute->isFloatingPointType()) {
+                assert(numOutputs == 4);
+                if (basicType == BasicType::DOUBLE) {
+                    SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
+                } else {
+                    SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
+                }
+            }
         }
-        {
-            uint32_t idx = 0;
-            if (!extraParam.empty()) {
-                idx = util::strToNum<uint32_t>(extraParam);
-            } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
-                return stash.create<CountOnlyAttributeExecutor>(*attribute);
+        assert(numOutputs == 4);
+        uint32_t idx = 0;
+        if (!extraParam.empty()) {
+            idx = util::strToNum<uint32_t>(extraParam);
+        } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
+            return stash.create<CountOnlyAttributeExecutor>(*attribute);
+        }
+        if (attribute->isStringType()) {
+            return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
+        } else if (attribute->isIntegerType()) {
+            if (basicType == BasicType::INT32) {
+                MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            } else if (basicType == BasicType::INT64) {
+                MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
             }
-            if (attribute->isStringType()) {
-                return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
-            } else if (attribute->isIntegerType()) {
-                { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
-            } else { // FLOAT
-                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
+            return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
+        } else { // FLOAT
+            if (basicType == BasicType::DOUBLE) {
+                MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            } else {
+                MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
             }
+            return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }
     }
 }
@@ -417,6 +472,12 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
     return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }
 
+bool
+isSingleValueBoolField(const fef::FieldInfo & fInfo) {
+    return (fInfo.collection() == schema::CollectionType::SINGLE)
+           && (fInfo.get_data_type() == schema::DataType::BOOL);
+}
+
 }
 
 AttributeBlueprint::AttributeBlueprint() :
@@ -424,7 +485,8 @@ AttributeBlueprint::AttributeBlueprint() :
     _attrName(),
     _attrKey(),
     _extra(),
-    _tensorType(ValueType::double_type())
+    _tensorType(ValueType::double_type()),
+    _numOutputs(0)
 {
 }
 
@@ -461,10 +523,14 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
                    "the value at the given index of an array attribute, "
                    "the given key of a weighted set attribute, or"
                    "the tensor of a tensor attribute", output_type);
-    if (!_tensorType.is_tensor()) {
+    const fef::FieldInfo * fInfo = env.getFieldByName(_attrName);
+    if (_tensorType.is_tensor() || isSingleValueBoolField(*fInfo)) {
+        _numOutputs = 1;
+    } else {
         describeOutput("weight", "The weight associated with the given key in a weighted set attribute.");
         describeOutput("contains", "1 if the given key is present in a weighted set attribute, 0 otherwise.");
         describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
+        _numOutputs = 4;
     }
     env.hintAttributeAccess(_attrName);
     return !_tensorType.is_error();
@@ -489,7 +555,7 @@ AttributeBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::
     if (_tensorType.is_tensor()) {
         return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
-        return createAttributeExecutor(attribute, _attrName, _extra, stash);
+        return createAttributeExecutor(_numOutputs, attribute, _attrName, _extra, stash);
     }
 }
 

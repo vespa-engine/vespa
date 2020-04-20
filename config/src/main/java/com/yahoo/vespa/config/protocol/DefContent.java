@@ -12,7 +12,6 @@ import java.util.List;
 
 /**
 * @author Ulf Lilleengen
-* @since 5.3
 */
 public class DefContent {
     private final List<String> data;
@@ -35,12 +34,7 @@ public class DefContent {
 
     static DefContent fromSlime(Inspector data) {
         final List<String> lst = new ArrayList<>();
-        data.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int idx, Inspector inspector) {
-                lst.add(inspector.asString());
-            }
-        });
+        data.traverse((ArrayTraverser) (idx, inspector) -> lst.add(inspector.asString()));
         return new DefContent(lst);
     }
 

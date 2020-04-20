@@ -100,7 +100,10 @@ sub initialize { # ()
     my $tls_enabled = $ENV{'VESPA_TLS_ENABLED'};
     if (defined $tls_enabled and $tls_enabled eq '1') {
         $BROWSER->ssl_opts( SSL_version => 'TLSv12');
-        $BROWSER->ssl_opts( verify_hostname => 0);
+        my $hostname_verification_disabled = $ENV{'VESPA_TLS_HOSTNAME_VALIDATION_DISABLED'};
+        if (defined $hostname_verification_disabled and $hostname_verification_disabled eq '1') {
+            $BROWSER->ssl_opts( verify_hostname => 0);
+        }
         $BROWSER->ssl_opts( SSL_cipher_list => 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-CHACHA20-POLY1305:TLS13-AES-128-GCM-SHA256:TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256' );
     }
     if (defined $ENV{'VESPA_TLS_CA_CERT'}) {

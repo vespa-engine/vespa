@@ -33,8 +33,12 @@ search test {
             expression: xgboost("xgboost_2_2")
         }
 
+        function my_lightgbm() {
+            expression: lightgbm("lightgbm_regression")
+        }
+
         first-phase {
-            expression: mnist_tensorflow + mnist_softmax_tensorflow + mnist_softmax_onnx + my_xgboost
+            expression: mnist_tensorflow + mnist_softmax_tensorflow + mnist_softmax_onnx + my_xgboost + my_lightgbm
         }
 
     }

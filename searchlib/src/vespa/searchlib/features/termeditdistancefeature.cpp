@@ -6,6 +6,8 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.termeditdistance");
@@ -219,7 +221,7 @@ TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 TermEditDistanceBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new TermEditDistanceBlueprint());
+    return std::make_unique<TermEditDistanceBlueprint>();
 }
 
 search::fef::FeatureExecutor &

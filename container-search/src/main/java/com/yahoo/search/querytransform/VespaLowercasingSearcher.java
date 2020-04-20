@@ -44,4 +44,5 @@ public class VespaLowercasingSearcher extends LowercasingSearcher {
         Index index = indexFacts.getIndex(sb.toString());
         return index.isLowercase() || index.isAttribute();
     }
+
 }

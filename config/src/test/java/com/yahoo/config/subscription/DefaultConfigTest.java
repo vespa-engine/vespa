@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
  * @author hmusum
  */
 public class DefaultConfigTest {
+
     static final String CONFIG_ID = "raw:" +
             "nondefaultstring ####-------missing--------\n" +
             "defaultstring \"thedefault\"\n" +

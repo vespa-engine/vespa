@@ -535,6 +535,16 @@ TEST_F(MonitorReplyTest, require_that_distribution_key_is_converted) {
     EXPECT_EQ(proto.distribution_key(), 7);
 }
 
+TEST_F(MonitorReplyTest, require_that_is_blocking_writes_is_converted) {
+    reply.is_blocking_writes = false;
+    convert();
+    EXPECT_FALSE(proto.is_blocking_writes());
+
+    reply.is_blocking_writes = true;
+    convert();
+    EXPECT_TRUE(proto.is_blocking_writes());
+}
+
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()

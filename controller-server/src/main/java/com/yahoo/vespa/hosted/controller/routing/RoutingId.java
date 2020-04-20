@@ -48,4 +48,8 @@ public class RoutingId {
         return "routing id for " + endpointId + " of " + application;
     }
 
+    public static RoutingId of(ApplicationId application, EndpointId endpoint) {
+        return new RoutingId(application, endpoint);
+    }
+
 }

@@ -3,6 +3,7 @@
 #include "double.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stash.h>
 #include <cassert>
 
 namespace search::fef::test {

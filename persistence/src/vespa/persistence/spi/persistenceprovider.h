@@ -11,9 +11,7 @@
 #include "selection.h"
 #include "clusterstate.h"
 
-namespace document {
-    class FieldSet;
-}
+namespace document { class FieldSet; }
 
 namespace storage::spi {
 

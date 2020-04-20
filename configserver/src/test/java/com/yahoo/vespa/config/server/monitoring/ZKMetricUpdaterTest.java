@@ -57,12 +57,14 @@ public class ZKMetricUpdaterTest {
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_LATENCY_MAX), equalTo(1234L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_OUTSTANDING_REQUESTS), equalTo(12L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_ZNODES), equalTo(4L));
+
+        updater.shutdown();
     }
 
     private ZKMetricUpdater buildUpdater() {
         ZookeeperServerConfig zkServerConfig = new ZookeeperServerConfig(
                 new ZookeeperServerConfig.Builder().clientPort(serverPort).myid(12345));
-        return new ZKMetricUpdater(zkServerConfig, 0, -1);
+        return new ZKMetricUpdater(zkServerConfig, 0, 100000);
     }
 
     private void setupTcpServer(Supplier<String> reportProvider) throws IOException {

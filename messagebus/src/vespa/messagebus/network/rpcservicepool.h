@@ -13,12 +13,6 @@ class RPCNetwork;
  * the rpc network.
  */
 class RPCServicePool {
-private:
-    typedef vespalib::lrucache_map< vespalib::LruParam<string, RPCService::UP> > ServiceCache;
-
-    RPCNetwork    &_net;
-    ServiceCache   _lru;
-
 public:
     RPCServicePool(const RPCServicePool &) = delete;
     RPCServicePool & operator = (const RPCServicePool &) = delete;
@@ -28,7 +22,7 @@ public:
      * @param net     The underlying RPC network.
      * @param maxSize The max number of services to cache.
      */
-    RPCServicePool(RPCNetwork &net, uint32_t maxSize);
+    RPCServicePool(const slobrok::api::IMirrorAPI & mirror, uint32_t maxSize);
 
     /**
      * Destructor. Frees any allocated resources.
@@ -61,6 +55,17 @@ public:
      * @return True if a corresponding service is in the pool.
      */
     bool hasService(const string &pattern) const;
+private:
+    using ServiceCache = vespalib::lrucache_map< vespalib::LruParam<string, std::shared_ptr<RPCService> >>;
+    using LockGuard = std::lock_guard<std::mutex>;
+
+    void handleMirrorUpdates(const LockGuard & guard);
+
+    const slobrok::api::IMirrorAPI & _mirror;
+    mutable std::mutex               _lock;
+    std::unique_ptr<ServiceCache>    _lru;
+    uint32_t                         _updateGen;
+    uint32_t                         _maxSize;
 };
 
 } // namespace mbus

@@ -153,6 +153,15 @@ DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
     }
 }
 
+vespalib::tensor::TypedCells
+DenseTensorStore::get_typed_cells(EntryRef ref) const
+{
+    if (!ref.valid()) {
+        return vespalib::tensor::TypedCells(&_emptySpace[0], _type.cell_type(), getNumCells());
+    }
+    return vespalib::tensor::TypedCells(getRawBuffer(ref), _type.cell_type(), getNumCells());
+}
+
 template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)

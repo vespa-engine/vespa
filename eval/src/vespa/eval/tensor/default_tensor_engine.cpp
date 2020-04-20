@@ -10,9 +10,11 @@
 #include "dense/typed_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
+#include "dense/dense_matmul_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
 #include "dense/dense_add_dimension_optimizer.h"
 #include "dense/dense_remove_dimension_optimizer.h"
+#include "dense/dense_lambda_peek_optimizer.h"
 #include "dense/dense_inplace_join_function.h"
 #include "dense/dense_inplace_map_function.h"
 #include "dense/vector_from_doubles_function.h"
@@ -266,9 +268,11 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         const Child &child = nodes.back();
         child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
         child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
+        child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
         child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
         child.set(DenseDotProductFunction::optimize(child.get(), stash));
         child.set(DenseXWProductFunction::optimize(child.get(), stash));
+        child.set(DenseMatMulFunction::optimize(child.get(), stash));
         child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
         child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
         child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));

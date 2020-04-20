@@ -35,7 +35,6 @@ namespace framework {
 class FileStorHandlerImpl;
 struct FileStorMetrics;
 struct MessageSender;
-class MountPointList;
 struct ServiceLayerComponentRegister;
 class AbortBucketOperationsCommand;
 
@@ -259,7 +258,7 @@ public:
     std::string dumpQueue(uint16_t disk) const;
 
 private:
-    FileStorHandlerImpl* _impl;
+    std::unique_ptr<FileStorHandlerImpl> _impl;
 };
 
 } // storage

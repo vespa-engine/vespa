@@ -7,7 +7,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.log.LogLevel;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -21,14 +20,8 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.utils.FreezableMap;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -290,60 +283,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     }
 
     public AbstractConfigProducer getParent() { return parent; }
-
-    /**
-     * Writes files that need to be written. The files will usually only be
-     * written when the Vespa model is generated through the deploy-application
-     * script.
-     *
-     * TODO: Make sure all implemented ConfigProducers call createConfig()
-     * instead of getConfig() when implementing this method.
-     */
-    public void writeFiles(File directory) throws java.io.IOException {
-        if (!directory.isDirectory() && !directory.mkdirs()) {
-            throw new java.io.IOException("Cannot create directory: "+ directory);
-        }
-        for (Method m : getClass().getMethods()) {
-            try {
-                ConfigInstance.Builder builder = getBuilderIfIsGetConfig(m);
-                if (builder!=null) {
-                    writeBuilder(directory, m, builder);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private void writeBuilder(File directory, Method m,
-            ConfigInstance.Builder builder) throws IllegalAccessException,
-            InvocationTargetException, InstantiationException,
-            NoSuchMethodException, IOException {
-        m.invoke(this, builder);
-        Class<?> configInstClass = builder.getClass().getEnclosingClass();
-        ConfigInstance inst = (ConfigInstance) configInstClass.getConstructor(builder.getClass()).newInstance(builder);
-        List<String> payloadList = ConfigInstance.serialize(inst);
-        File outfn = new File(directory, ConfigInstance.getDefName(inst.getClass()) + ".MODEL.cfg");
-        FileOutputStream out = new FileOutputStream(outfn);
-        for (String s : payloadList) {
-            out.write(Utf8.toBytes(s));
-            out.write('\n');
-        }
-    }
-
-    /**
-     * New Builder instance if m is getConfig(SomeConfig.Builder), or null
-     */
-    private ConfigInstance.Builder getBuilderIfIsGetConfig(Method m) throws ReflectiveOperationException {
-        if (!"getConfig".equals(m.getName())) return null;
-        Type[] params = m.getParameterTypes();
-        if (params.length!=1) return null;
-        Type param = params[0];
-        if (!(param instanceof Class)) return null;
-        Class<?> paramClass = (Class<?>) param;
-        if  (!(ConfigInstance.Builder.class.isAssignableFrom(paramClass))) return null;
-        return (ConfigInstance.Builder) paramClass.getDeclaredConstructor().newInstance();
-    }
 
     public void dump(PrintStream out) {
         for (ConfigProducer c : getChildren().values()) {

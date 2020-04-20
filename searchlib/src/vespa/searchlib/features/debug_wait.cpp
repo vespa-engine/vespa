@@ -2,6 +2,7 @@
 
 #include "debug_wait.h"
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 

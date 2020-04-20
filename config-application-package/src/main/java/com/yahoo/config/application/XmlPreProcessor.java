@@ -38,18 +38,8 @@ public class XmlPreProcessor {
     private final RegionName region;
     private final List<PreProcessor> chain;
 
-    // TODO: Remove after September 2019
-    public XmlPreProcessor(File applicationDir, File xmlInput, Environment environment, RegionName region) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), InstanceName.from("default"), environment, region);
-    }
-
     public XmlPreProcessor(File applicationDir, File xmlInput, InstanceName instance, Environment environment, RegionName region) throws IOException {
         this(applicationDir, new FileReader(xmlInput), instance, environment, region);
-    }
-
-    // TODO: Remove after September 2019
-    public XmlPreProcessor(File applicationDir, Reader xmlInput, Environment environment, RegionName region) throws IOException {
-        this(applicationDir, xmlInput, InstanceName.from("default"), environment, region);
     }
 
     public XmlPreProcessor(File applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {

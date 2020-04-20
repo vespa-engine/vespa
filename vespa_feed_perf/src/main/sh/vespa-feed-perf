@@ -74,4 +74,4 @@ findhost
 
 # END environment bootstrap section
 
-exec java -jar $VESPA_HOME/lib/jars/vespa_feed_perf-jar-with-dependencies.jar "$@"
+exec java -XX:+UseParallelGC -XX:ParallelGCThreads=4 -jar $VESPA_HOME/lib/jars/vespa_feed_perf-jar-with-dependencies.jar "$@"

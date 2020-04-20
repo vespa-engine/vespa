@@ -8,7 +8,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ErrorTypeTest {
 
@@ -32,4 +31,5 @@ public class ErrorTypeTest {
         assertThat(ErrorType.getErrorType(ErrorCode.ILLEGAL_SUB_FLAG), is(ErrorType.FATAL));
         assertThat(ErrorType.getErrorType(0xdeadc0de), is(ErrorType.FATAL));
     }
+
 }

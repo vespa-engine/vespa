@@ -25,6 +25,7 @@ template <typename EntryT, typename RefT = EntryRefT<19> >
 class ArrayStore
 {
 public:
+    using ArrayRef = vespalib::ArrayRef<EntryT>;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     using DataStoreType  = DataStoreT<RefT>;
     using SmallArrayType = BufferType<EntryT>;
@@ -82,6 +83,17 @@ public:
             return getLargeArray(internalRef);
         }
     }
+
+    /**
+     * Returns a writeable reference to the given array.
+     *
+     * NOTE: Use with care if reader threads are accessing arrays at the same time.
+     *       If so, replacing an element in the array should be an atomic operation.
+     */
+    ArrayRef get_writable(EntryRef ref) {
+        return vespalib::unconstify(get(ref));
+    }
+
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }

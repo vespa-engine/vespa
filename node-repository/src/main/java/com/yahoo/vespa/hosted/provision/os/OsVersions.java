@@ -120,8 +120,8 @@ public class OsVersions {
     /** Trigger upgrade of nodes of given type*/
     private void upgrade(NodeType type, Version version) {
         var nodes = nodeRepository.list().nodeType(type);
-        var numberToUpgrade = Math.max(0, maxActiveUpgrades - nodes.changingOsVersion().size());
-        var nodesToUpgrade = nodes.not().changingOsVersion()
+        var numberToUpgrade = Math.max(0, maxActiveUpgrades - nodes.changingOsVersionTo(version).size());
+        var nodesToUpgrade = nodes.not().changingOsVersionTo(version)
                                   .not().onOsVersion(version)
                                   .byIncreasingOsVersion()
                                   .first(numberToUpgrade);

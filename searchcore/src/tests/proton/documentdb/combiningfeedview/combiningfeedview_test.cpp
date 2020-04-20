@@ -155,9 +155,9 @@ struct Fixture
         const test::Document &doc = userDocs().getDocs(userId)[0];
         return PutOperation(doc.getBucket(), doc.getTimestamp(), doc.getDoc());
     }
-    RemoveOperation remove(uint32_t userId) {
+    RemoveOperationWithDocId remove(uint32_t userId) {
         const test::Document &doc = userDocs().getDocs(userId)[0];
-        return RemoveOperation(doc.getBucket(), doc.getTimestamp(), doc.getDoc()->getId());
+        return RemoveOperationWithDocId(doc.getBucket(), doc.getTimestamp(), doc.getDoc()->getId());
     }
     UpdateOperation update(uint32_t userId) {
         const test::Document &doc = userDocs().getDocs(userId)[0];
@@ -234,7 +234,7 @@ TEST_F("require that handlePut() sends to 2 feed views", Fixture)
 
 TEST_F("require that prepareRemove() sends to removed view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     f._view.prepareRemove(op);
     EXPECT_EQUAL(0u, f._ready._view->_prepareRemove);
     EXPECT_EQUAL(1u, f._removed._view->_prepareRemove);
@@ -246,7 +246,7 @@ TEST_F("require that prepareRemove() sends to removed view", Fixture)
 TEST_F("require that prepareRemove() can fill previous dbdId", Fixture)
 {
     f._ready.insertDocs(f.userDocs(1));
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     f._view.prepareRemove(op);
     EXPECT_EQUAL(1u, op.getPrevLid());
     EXPECT_EQUAL(READY, op.getPrevSubDbId());
@@ -257,7 +257,7 @@ TEST_F("require that prepareRemove() can fill previous dbdId", Fixture)
 
 TEST_F("require that handleRemove() sends op with valid dbdId to 1 feed view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
     f._view.handleRemove(FeedToken(), op);
     EXPECT_EQUAL(0u, f._ready._view->_handleRemove);
@@ -268,7 +268,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 1 feed view", F
 
 TEST_F("require that handleRemove() sends op with valid dbdId to 2 feed views", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
     f._view.handleRemove(FeedToken(), op);
@@ -280,7 +280,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 2 feed views", 
 
 TEST_F("require that handleRemove() sends op with invalid dbdId to prev view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     // can be used in the case where removed feed view does not remember removes.
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
     f._view.handleRemove(FeedToken(), op);

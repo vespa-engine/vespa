@@ -108,7 +108,7 @@ public class BlendingSearcherTestCase {
                                 entry.getValue()));
             }
 
-            StrictContractsConfig contracts = new StrictContractsConfig(new StrictContractsConfig.Builder());
+            StrictContractsConfig contracts = new StrictContractsConfig.Builder().build();
 
             FederationSearcher fedSearcher =
                     new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
@@ -124,7 +124,6 @@ public class BlendingSearcherTestCase {
 
     @Test
     public void testitTwoPhase() {
-
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain3 = new DocumentSourceSearcher();

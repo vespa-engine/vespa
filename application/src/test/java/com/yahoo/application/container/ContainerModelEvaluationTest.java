@@ -45,13 +45,18 @@ public class ContainerModelEvaluationTest {
     }
     private void assertLoadedModels(JDisc jdisc) {
         {
-            String expected = "{\"xgboost_xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_xgboost_2_2\",\"onnx_mnist_softmax\":\"http://localhost/model-evaluation/v1/onnx_mnist_softmax\",\"tensorflow_mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_softmax_saved\",\"tensorflow_mnist_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_saved\",\"vespa_example\":\"http://localhost/model-evaluation/v1/vespa_example\"}";
+            String expected = "{\"xgboost_xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_xgboost_2_2\",\"onnx_mnist_softmax\":\"http://localhost/model-evaluation/v1/onnx_mnist_softmax\",\"tensorflow_mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_softmax_saved\",\"tensorflow_mnist_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_saved\",\"vespa_example\":\"http://localhost/model-evaluation/v1/vespa_example\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
             assertResponse("http://localhost/model-evaluation/v1", expected, jdisc);
         }
 
         {
             String expected = "{\"cells\":[{\"address\":{},\"value\":2.496898}]}";
             assertResponse("http://localhost/model-evaluation/v1/xgboost_xgboost_2_2/eval", expected, jdisc);
+        }
+
+        {
+            String expected = "{\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
+            assertResponse("http://localhost/model-evaluation/v1/lightgbm_regression/eval", expected, jdisc);
         }
 
         {

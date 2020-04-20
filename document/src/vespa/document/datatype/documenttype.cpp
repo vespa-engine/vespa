@@ -23,9 +23,10 @@ DocumentType::DocumentType() = default;
 DocumentType::DocumentType(stringref name, int32_t id)
     : StructuredDataType(name, id),
       _inheritedTypes(),
-      _ownedFields(new StructDataType(name + ".header")),
+      _ownedFields(std::make_shared<StructDataType>(name + ".header")),
       _fields(_ownedFields.get()),
-      _fieldSets()
+      _fieldSets(),
+      _imported_field_names()
 {
     if (name != "document") {
         _inheritedTypes.push_back(DataType::DOCUMENT);
@@ -36,7 +37,8 @@ DocumentType::DocumentType(stringref name, int32_t id, const StructDataType& fie
     : StructuredDataType(name, id),
       _inheritedTypes(),
       _fields(&fields),
-      _fieldSets()
+      _fieldSets(),
+      _imported_field_names()
 {
     if (name != "document") {
         _inheritedTypes.push_back(DataType::DOCUMENT);
@@ -46,12 +48,13 @@ DocumentType::DocumentType(stringref name, int32_t id, const StructDataType& fie
 DocumentType::DocumentType(stringref name)
     : StructuredDataType(name),
       _inheritedTypes(),
-      _ownedFields(new StructDataType(name + ".header")),
+      _ownedFields(std::make_shared<StructDataType>(name + ".header")),
       _fields(_ownedFields.get()),
-      _fieldSets()
+      _fieldSets(),
+      _imported_field_names()
 {
     if (name != "document") {
-        _inheritedTypes.push_back(DataType::DOCUMENT);
+        _inheritedTypes.emplace_back(DataType::DOCUMENT);
     }
 }
 
@@ -59,27 +62,28 @@ DocumentType::DocumentType(stringref name, const StructDataType& fields)
     : StructuredDataType(name),
       _inheritedTypes(),
       _fields(&fields),
-      _fieldSets()
+      _fieldSets(),
+      _imported_field_names()
 {
     if (name != "document") {
-        _inheritedTypes.push_back(DataType::DOCUMENT);
+        _inheritedTypes.emplace_back(DataType::DOCUMENT);
     }
 }
 
 DocumentType::~DocumentType() = default;
 
 DocumentType &
-DocumentType::addFieldSet(const vespalib::string & name, const FieldSet::Fields & fields)
+DocumentType::addFieldSet(const vespalib::string & name, FieldSet::Fields fields)
 {
-    _fieldSets[name] = FieldSet(name, fields);
+    _fieldSets[name] = FieldSet(name, std::move(fields));
     return *this;
 }
 
 const DocumentType::FieldSet *
 DocumentType::getFieldSet(const vespalib::string & name) const
 {
-    FieldSetMap::const_iterator it(_fieldSets.find(name));
-    return (it != _fieldSets.end()) ? & it->second : NULL;
+    auto it = _fieldSets.find(name);
+    return (it != _fieldSets.end()) ? & it->second : nullptr;
 }
 
 void
@@ -107,37 +111,34 @@ DocumentType::inherit(const DocumentType &docType) {
                 "Document type " + docType.toString() + " already inherits type "
                 + toString() + ". Cannot add cyclic dependencies.", VESPA_STRLOC);
     }
-        // If we already inherits this type, there is no point in adding it
-        // again.
+    // If we already inherits this type, there is no point in adding it again.
     if (isA(docType)) {
-            // If we already directly inherits it, complain
-        for (std::vector<const DocumentType *>::const_iterator
-                it = _inheritedTypes.begin(); it != _inheritedTypes.end(); ++it)
-        {
-            if (**it == docType) {
+        // If we already directly inherits it, complain
+        for (const auto* inherited : _inheritedTypes) {
+            if (*inherited == docType) {
                 throw IllegalArgumentException(
                         "DocumentType " + getName() + " already inherits "
                         "document type " + docType.getName(), VESPA_STRLOC);
             }
         }
-            // Indirectly already inheriting it is oki, as this can happen
-            // due to inherited documents inheriting the same type.
+        // Indirectly already inheriting it is oki, as this can happen
+        // due to inherited documents inheriting the same type.
         LOG(info, "Document type %s inherits document type %s from multiple "
                   "types.", getName().c_str(), docType.getName().c_str());
         return;
     }
-        // Add non-conflicting types.
+    // Add non-conflicting types.
     Field::Set fs = docType._fields->getFieldSet();
-    for (Field::Set::const_iterator it = fs.begin(); it != fs.end(); ++it) {
+    for (const auto* field : fs) {
         if (!_ownedFields.get()) {
             _ownedFields.reset(_fields->clone());
             _fields = _ownedFields.get();
         }
-        _ownedFields->addInheritedField(**it);
+        _ownedFields->addInheritedField(*field);
     }
     // If we inherit default document type Document.0, remove that if adding
     // another parent, as that has to also inherit Document
-    if (_inheritedTypes.size() == 1 && *_inheritedTypes[0] == *DataType::DOCUMENT) {
+    if ((_inheritedTypes.size() == 1) && (*_inheritedTypes[0] == *DataType::DOCUMENT)) {
         _inheritedTypes.clear();
     }
     _inheritedTypes.push_back(&docType);
@@ -168,8 +169,7 @@ DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) 
     out << ")";
     if (verbose) {
         if (!_inheritedTypes.empty()) {
-            std::vector<const DocumentType *>::const_iterator it(
-                    _inheritedTypes.begin());
+            auto it = _inheritedTypes.begin();
             out << "\n" << indent << "    : ";
             (*it)->print(out, false, "");
             while (++it != _inheritedTypes.end()) {
@@ -188,17 +188,18 @@ DocumentType::operator==(const DataType& other) const
 {
     if (&other == this) return true;
     if (!DataType::operator==(other)) return false;
-    const DocumentType* o(dynamic_cast<const DocumentType*>(&other));
-    if (o == 0) return false;
+    const auto* o(dynamic_cast<const DocumentType*>(&other));
+    if (o == nullptr) return false;
     if (*_fields != *o->_fields) return false;
     if (_inheritedTypes.size() != o->_inheritedTypes.size()) return false;
-    std::vector<const DocumentType *>::const_iterator it1(_inheritedTypes.begin());
-    std::vector<const DocumentType *>::const_iterator it2(o->_inheritedTypes.begin());
+    auto it1 = _inheritedTypes.begin();
+    auto it2 = o->_inheritedTypes.begin();
     while (it1 != _inheritedTypes.end()) {
         if (**it1 != **it2) return false;
         ++it1;
         ++it2;
     }
+    // TODO imported fields? like in the Java impl, field sets are not considered either... :I
     return true;
 }
 
@@ -226,6 +227,14 @@ Field::Set
 DocumentType::getFieldSet() const
 {
     return _fields->getFieldSet();
+}
+
+bool DocumentType::has_imported_field_name(const vespalib::string& name) const noexcept {
+    return (_imported_field_names.find(name) != _imported_field_names.end());
+}
+
+void DocumentType::add_imported_field_name(const vespalib::string& name) {
+    _imported_field_names.insert(name);
 }
 
 DocumentType *
