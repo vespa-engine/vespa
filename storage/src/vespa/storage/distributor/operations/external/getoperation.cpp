@@ -144,7 +144,9 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
-    _msg->getTrace().getRoot().addChild(getreply->getTrace().getRoot());
+    if ( ! getreply->getTrace().getRoot().isEmpty()) {
+        _msg->getTrace().getRoot().addChild(getreply->getTrace().getRoot());
+    }
     bool allDone = true;
     for (auto& response : _responses) {
         for (uint32_t i = 0; i < response.second.size(); i++) {
