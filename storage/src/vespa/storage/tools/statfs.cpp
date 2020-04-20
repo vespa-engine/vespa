@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <iostream>
+#ifdef __linux__
 #include <sys/vfs.h>
+#else
+#include <sys/mount.h>
+#endif
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 
@@ -51,7 +55,10 @@ int main(int argc, char** argv) {
                   << "f_bavail " << buf.f_bavail << "\n"
                   << "f_files " << buf.f_files << "\n"
                   << "f_ffree " << buf.f_ffree << "\n"
-                  << "f_namelen " << buf.f_namelen << "\n";
+#ifdef __linux__
+                  << "f_namelen " << buf.f_namelen << "\n"
+#endif
+            ;
 
         uint64_t available = buf.f_bavail;
         uint64_t total = buf.f_blocks;
