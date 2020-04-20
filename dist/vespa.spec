@@ -155,6 +155,7 @@ Requires: perf
 Requires: gdb
 Requires: net-tools
 %if 0%{?el7}
+Requires: libcgroup-tools
 Requires: llvm7.0
 Requires: vespa-openssl >= 1.1.1c-1
 Requires: vespa-icu >= 65.1.0-1
