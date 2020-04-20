@@ -242,6 +242,10 @@ public:
         return _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     }
 
+    uint32_t max_consecutively_inhibited_maintenance_ticks() const noexcept {
+        return _max_consecutively_inhibited_maintenance_ticks;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -258,6 +262,7 @@ private:
     uint32_t _maxIdealStateOperations;
     uint32_t _idealStateChunkSize;
     uint32_t _maxNodesPerMerge;
+    uint32_t _max_consecutively_inhibited_maintenance_ticks;
 
     std::string _garbageCollectionSelection;
 

@@ -700,6 +700,14 @@ TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_upd
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::ANY, currentReplicaCountingMode());
 }
 
+TEST_F(DistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config) {
+    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    ConfigBuilder builder;
+    builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
+    getConfig().configure(builder);
+    EXPECT_EQ(getConfig().max_consecutively_inhibited_maintenance_ticks(), 123);
+}
+
 TEST_F(DistributorTest, bucket_activation_is_enabled_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_FALSE(getConfig().isBucketActivationDisabled());

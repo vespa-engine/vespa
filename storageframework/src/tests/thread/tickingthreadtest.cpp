@@ -234,21 +234,6 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
     }
 }
 
-TEST(TickingThreadTest, test_fails_on_start_without_threads)
-{
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
-    int threadCount = 0;
-    MyApp app(threadCount, true);
-    try{
-        app.start(testReg.getThreadPoolImpl());
-        FAIL() << "Expected starting without threads to fail";
-    } catch (vespalib::Exception& e) {
-        EXPECT_EQ(vespalib::string("Makes no sense to start threadpool without threads"),
-                  e.getMessage());
-    }
-}
-
 namespace {
 
 RealClock clock;

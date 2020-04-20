@@ -22,6 +22,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxIdealStateOperations(100),
       _idealStateChunkSize(1000),
       _maxNodesPerMerge(16),
+      _max_consecutively_inhibited_maintenance_ticks(20),
       _lastGarbageCollectionChange(vespalib::duration::zero()),
       _garbageCollectionInterval(0),
       _minPendingMaintenanceOps(100),
@@ -44,7 +45,8 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
-{ }
+{
+}
 
 DistributorConfiguration::~DistributorConfiguration() = default;
 
@@ -123,6 +125,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _docCountJoinLimit = config.joincount;
     _minimalBucketSplit = config.minsplitcount;
     _maxNodesPerMerge = config.maximumNodesPerMerge;
+    _max_consecutively_inhibited_maintenance_ticks = config.maxConsecutivelyInhibitedMaintenanceTicks;
 
     _garbageCollectionInterval = std::chrono::seconds(config.garbagecollection.interval);
 

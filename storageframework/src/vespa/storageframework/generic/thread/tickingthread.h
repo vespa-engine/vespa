@@ -26,7 +26,7 @@
 namespace storage::framework {
 
 struct ThreadPool;
-typedef uint32_t ThreadIndex;
+using ThreadIndex = uint32_t;
 
 /**
  * \brief Information returned from tick functions to indicate whether thread
@@ -34,21 +34,21 @@ typedef uint32_t ThreadIndex;
  */
 class ThreadWaitInfo {
     bool _waitWanted;
-    ThreadWaitInfo(bool waitBeforeNextTick) : _waitWanted(waitBeforeNextTick) {}
+    explicit ThreadWaitInfo(bool waitBeforeNextTick) : _waitWanted(waitBeforeNextTick) {}
 
 public:
     static ThreadWaitInfo MORE_WORK_ENQUEUED;
     static ThreadWaitInfo NO_MORE_CRITICAL_WORK_KNOWN;
 
     void merge(const ThreadWaitInfo& other);
-    bool waitWanted() { return _waitWanted; }
+    bool waitWanted() const noexcept { return _waitWanted; }
 };
 
 /**
  * \brief Simple superclass to implement for ticking threads.
  */
 struct TickingThread {
-    virtual ~TickingThread() {}
+    virtual ~TickingThread() = default;
 
     virtual ThreadWaitInfo doCriticalTick(ThreadIndex) = 0;
     virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) = 0;
@@ -58,17 +58,17 @@ struct TickingThread {
 /** \brief Delete to allow threads to tick again. */
 struct TickingLockGuard {
     struct Impl {
-        virtual ~Impl() {}
+        virtual ~Impl() = default;
         virtual void broadcast() = 0;
     };
-    TickingLockGuard(std::unique_ptr<Impl> impl) : _impl(std::move(impl)) {}
+    explicit TickingLockGuard(std::unique_ptr<Impl> impl) : _impl(std::move(impl)) {}
     void broadcast() { _impl->broadcast(); }
 private:
     std::unique_ptr<Impl> _impl;
 };
 
 struct ThreadLock {
-    virtual ~ThreadLock() { }
+    virtual ~ThreadLock() = default;
     virtual TickingLockGuard freezeAllTicks() = 0;
     virtual TickingLockGuard freezeCriticalTicks() = 0;
 };
@@ -77,7 +77,7 @@ struct ThreadLock {
  * \brief Thread pool set up by the application to control the threads.
  */
 struct TickingThreadPool : public ThreadLock {
-    typedef std::unique_ptr<TickingThreadPool> UP;
+    using UP = std::unique_ptr<TickingThreadPool>;
 
     static TickingThreadPool::UP createDefault(
             vespalib::stringref name,
@@ -90,8 +90,7 @@ struct TickingThreadPool : public ThreadLock {
             MilliSecTime maxProcessTime,
             int ticksBeforeWait) = 0;
 
-
-    virtual ~TickingThreadPool() {}
+    ~TickingThreadPool() override = default;
 
     /** All threads must be added before starting the threads. */
     virtual void addThread(TickingThread& ticker) = 0;
