@@ -47,3 +47,11 @@ vespa_add_executable(vespalib_lookup_benchmark_app
     vespalib
 )
 vespa_add_test(NAME vespalib_lookup_benchmark_app COMMAND vespalib_lookup_benchmark_app BENCHMARK)
+vespa_add_executable(vespalib_replace_variable_test_app TEST
+    SOURCES
+    replace_variable_test.cpp
+    DEPENDS
+    vespalib
+    gtest
+)
+vespa_add_test(NAME vespalib_replace_variable_test_app COMMAND vespalib_replace_variable_test_app)
