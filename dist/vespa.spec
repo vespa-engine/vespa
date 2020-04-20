@@ -118,6 +118,7 @@ Requires: epel-release
 %endif
 Requires: which
 Requires: initscripts
+Requires: libcgroup
 Requires: perl
 Requires: perl-Carp
 Requires: perl-Data-Dumper
