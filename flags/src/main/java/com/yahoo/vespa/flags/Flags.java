@@ -232,12 +232,6 @@ public class Flags {
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag PROXY_PROTOCOL = defineStringFlag(
-            "proxy-protocol", "https-only",
-            "Enable proxy protocol support on application containers. Allowed values: ['https-only', 'https+proxy-protocol', 'proxy-protocol-only']",
-            "Takes effect on internal redeploy",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
             "publish-direct-routing-endpoint", false,
             "Whether an application should receive a directly routed endpoint in its endpoint list",

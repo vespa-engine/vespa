@@ -337,7 +337,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
-        String proxyProtocol = deployState.getProperties().proxyProtocol();
         // If the deployment contains certificate/private key reference, setup TLS port
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
@@ -346,11 +345,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
             HostedSslConnectorFactory connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(proxyProtocol, serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(proxyProtocol, serverName, endpointCertificateSecrets);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets);
             server.addConnector(connectorFactory);
         } else {
-            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(proxyProtocol, serverName));
+            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
         }
     }
 

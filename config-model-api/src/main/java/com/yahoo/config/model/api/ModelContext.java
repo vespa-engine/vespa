@@ -85,7 +85,7 @@ public interface ModelContext {
         // TODO: Remove after April 2020
         default boolean usePhraseSegmenting() { return false; }
 
-        default String proxyProtocol() { return "https-only"; }
+        default String proxyProtocol() { return "https+proxy-protocol"; } // TODO bjorncs: Remove after end of May
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
         // TODO(mpolden): Remove after May 2020

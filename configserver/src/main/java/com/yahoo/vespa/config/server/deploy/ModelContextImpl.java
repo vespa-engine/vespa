@@ -150,7 +150,6 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
-        private final String proxyProtocol;
         private final Optional<AthenzDomain> athenzDomain;
 
         public Properties(ApplicationId applicationId,
@@ -186,8 +185,6 @@ public class ModelContextImpl implements ModelContext {
             defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
         }
@@ -256,9 +253,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useNewAthenzFilter() { return true; }
-
-        @Override
-        public String proxyProtocol() { return proxyProtocol; }
 
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
