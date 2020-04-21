@@ -101,15 +101,8 @@ public class CppClassBuilder implements ClassBuilder {
             File headerFile = new File(rootDir, relativePathUnderRoot + "/" + getFileName(root, "h"));
             File bodyFile = new File(rootDir, relativePathUnderRoot + "/" + getFileName(root, "cpp"));
 
-            String oldHeader = readFile(headerFile);
-            String oldBody = readFile(bodyFile);
-
-            if (oldHeader == null || !oldHeader.equals(newHeader)) {
-                writeFile(headerFile, newHeader);
-            }
-            if (oldBody == null || !oldBody.equals(newBody)) {
-                writeFile(bodyFile, newBody);
-            }
+            writeFile(headerFile, newHeader);
+            writeFile(bodyFile, newBody);
         } catch (IOException e) {
             e.printStackTrace();
         }
