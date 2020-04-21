@@ -1,26 +1,33 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import java.util.Objects;
+
 /**
  * @author freva
  */
 public class NodeMembership {
-    private final String clusterType;
+    private final ClusterType clusterType;
     private final String clusterId;
     private final String group;
     private final int index;
     private final boolean retired;
 
     public NodeMembership(String clusterType, String clusterId, String group, int index, boolean retired) {
-        this.clusterType = clusterType;
+        this.clusterType = new ClusterType(clusterType);
         this.clusterId = clusterId;
         this.group = group;
         this.index = index;
         this.retired = retired;
     }
 
-    public String clusterType() {
+    public ClusterType type() {
         return clusterType;
+    }
+
+    /** DEPRECATED: Use {@link #type()} instead */
+    public String clusterType() {
+        return clusterType.value();
     }
 
     public String clusterId() {
@@ -73,5 +80,40 @@ public class NodeMembership {
                 " index = " + index +
                 " retired = " + retired +
                 " }";
+    }
+
+    public static class ClusterType {
+        private final String type;
+
+        private ClusterType(String type) {
+            this.type = Objects.requireNonNull(type);
+        }
+
+        public boolean isAdmin() { return "admin".equals(type); }
+        public boolean isContent() { return "content".equals(type) || "combined".equals(type); }
+        public boolean isContainer() { return "container".equals(type) || "combined".equals(type); }
+
+        public String value() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return type;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ClusterType that = (ClusterType) o;
+            return type.equals(that.type);
+        }
+
+        @Override
+        public int hashCode() {
+            return type.hashCode();
+        }
     }
 }
