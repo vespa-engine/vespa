@@ -15,9 +15,11 @@ import com.yahoo.text.ExpressionFormatter;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -108,6 +110,9 @@ public abstract class ModelImporter implements MlModelImporter {
     }
 
     private static Optional<TensorFunction> importExpression(IntermediateOperation operation, ImportedModel model) {
+        if (model.expressions().containsKey(operation.name())) {
+            return operation.function();
+        }
         if (operation.type().isEmpty()) {
             return Optional.empty();
         }
@@ -206,18 +211,22 @@ public abstract class ModelImporter implements MlModelImporter {
     private static void reportWarnings(IntermediateGraph graph, ImportedModel model) {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
-                reportWarnings(graph.get(outputName), model);
+                reportWarnings(graph.get(outputName), model, new HashSet<>());
             }
         }
     }
 
-    private static void reportWarnings(IntermediateOperation operation, ImportedModel model) {
+    private static void reportWarnings(IntermediateOperation operation, ImportedModel model, Set<String> processed) {
+        if (processed.contains(operation.name())) {
+            return;
+        }
         for (String warning : operation.warnings()) {
             // If we want to report warnings, that code goes here
         }
         for (IntermediateOperation input : operation.inputs()) {
-            reportWarnings(input, model);
+            reportWarnings(input, model, processed);
         }
+        processed.add(operation.name());
     }
 
     /**

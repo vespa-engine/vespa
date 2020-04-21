@@ -3,6 +3,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
+import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -13,6 +14,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -46,6 +48,8 @@ public abstract class IntermediateOperation {
     protected TensorFunction function;
     protected TensorFunction rankingExpressionFunction = null;
     protected boolean exportAsRankingFunction = false;
+
+    private boolean hasRenamedDimensions = false;
 
     private final List<String> importWarnings = new ArrayList<>();
     private Value constantValue = null;
@@ -121,7 +125,10 @@ public abstract class IntermediateOperation {
     }
 
     /** Performs dimension rename for this operation */
-    public void renameDimensions(DimensionRenamer renamer) { type = type.rename(renamer); }
+    public void renameDimensions(DimensionRenamer renamer) {
+        type = type.rename(renamer);
+        hasRenamedDimensions = true;
+    }
 
     /** Return true for operations that are inputs to the model itself (as opposed to inputs to the operation) */
     public boolean isInput() { return false; }
@@ -153,12 +160,23 @@ public abstract class IntermediateOperation {
     public List<IntermediateOperation> getControlInputs() { return Collections.unmodifiableList(this.controlInputs); }
 
     /** Retrieve the valid Vespa name of this node */
-    public String vespaName() { return vespaName(name); }
-    public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_').replace('.', '_') : null; }
+    public String vespaName() {
+        if (isConstant())
+            return modelName + "_" + vespaName(name);
+        return vespaName(name);
+    }
+
+    public String vespaName(String name) {
+        return name != null ? namePartOf(name).replace('/', '_').replace('.', '_') : null;
+    }
 
     /** Retrieve the valid Vespa name of this node if it is a ranking expression function */
     public String rankingExpressionFunctionName() {
-        return vespaName() != null ? FUNCTION_PREFIX + modelName + "_" + vespaName() : null;
+        String vespaName = vespaName();
+        if (vespaName == null) {
+            return null;
+        }
+        return isConstant() ? "constant(" + vespaName + ")" : FUNCTION_PREFIX + modelName + "_" + vespaName;
     }
 
     /** Retrieve the list of warnings produced during its lifetime */
@@ -188,12 +206,51 @@ public abstract class IntermediateOperation {
         if ( ! isConstant() ) {
             throw new IllegalArgumentException("Attempted to evaluate non-constant operation as a constant.");
         }
-        Value val = evaluateAsConstant(new MapContext(DoubleValue.NaN));
-        if (type != null && ! val.asTensor().type().equals(type.type()) ) {
-            throw new IllegalArgumentException("Constant evaluation in " + name + " resulted in wrong type. " +
-                    "Expected: " + type.type() + " Got: " + val.asTensor().type());
+        Value val = evaluableCopy().evaluateAsConstant(new MapContext(DoubleValue.NaN));
+        if (type == null) {
+            return val;
         }
-        return val;
+        Tensor tensor = val.asTensor();
+        checkIfRenameableTo(tensor, type);
+        setConstantValueFunction(t -> new TensorValue(tensor.withType(t.type())));  // so we don't have to re-evaluate
+        return new TensorValue(tensor.withType(type.type()));
+    }
+
+    private void checkIfRenameableTo(Tensor tensor, OrderedTensorType type) {
+        if ( ! tensor.type().isRenamableTo(type.type()) ) {
+            throw new IllegalArgumentException("Constant evaluation in " + name + " resulted in wrong type. " +
+                    "Expected: " + type.type() + " Got: " + tensor.type());
+        }
+    }
+
+    private IntermediateOperation evaluableCopy() {
+        if (hasRenamedDimensions) {
+            return this;
+        }
+        IntermediateOperation copy = copyTree();
+
+        // Must have performed dimension renaming to properly evaluate as constant
+        IntermediateGraph graph = new IntermediateGraph(modelName);
+        graph.put(name, copy);
+        graph.outputs(graph.defaultSignature()).put(name, name);
+        graph.optimize();
+
+        return copy;
+    }
+
+    private IntermediateOperation copyTree() {
+        List<IntermediateOperation> in = new ArrayList<>();
+        if (constantValue != null) {
+            IntermediateOperation constant = new Constant(modelName, name, type);
+            constant.setConstantValueFunction(t -> new TensorValue(constantValue.asTensor().withType(t.type())));
+            return constant;
+        }
+        inputs.forEach(i -> in.add(i.copyTree()));
+        IntermediateOperation copy = withInputs(in);
+        if (constantValueFunction != null) {
+            copy.constantValueFunction = constantValueFunction;
+        }
+        return copy;
     }
 
     private Value evaluateAsConstant(Context context) {

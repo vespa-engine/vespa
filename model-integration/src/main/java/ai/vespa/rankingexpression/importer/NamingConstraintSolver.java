@@ -37,7 +37,8 @@ class NamingConstraintSolver {
     private static ListMap<String, Integer> allPossibilities(Set<String> dimensions) {
         ListMap<String, Integer> all = new ListMap<>();
         for (String dimension : dimensions) {
-            for (int i = 0; i < dimensions.size(); ++i)
+            // 20 (different dimension names) should be enough for most problems.
+            for (int i = 0; i < Math.min(dimensions.size(), 20); ++i)
                 all.put(dimension, i);
         }
         return all;
@@ -89,6 +90,7 @@ class NamingConstraintSolver {
                         workList.add(constraint);
                 }
             }
+            if (iterations > maxIterations) return false;
         }
         return true;
     }

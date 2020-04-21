@@ -82,6 +82,13 @@ public class Join extends IntermediateOperation {
             bReducedFunction = new Reduce(b.function().get(), Reduce.Aggregator.sum, bDimensionsToReduce);
         }
 
+        // retain order of inputs
+        if (a == inputs.get(1)) {
+            TensorFunction temp = bReducedFunction;
+            bReducedFunction = aReducedFunction;
+            aReducedFunction = temp;
+        }
+
         return new com.yahoo.tensor.functions.Join(aReducedFunction, bReducedFunction, operator);
     }
 

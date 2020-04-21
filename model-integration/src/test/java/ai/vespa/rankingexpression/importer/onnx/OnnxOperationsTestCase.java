@@ -107,6 +107,18 @@ public class OnnxOperationsTestCase {
         assertEval("less", x, y, evaluate("join(x, rename(y, d0, d2), f(a,b)(a < b))", x, y));
         assertEval("equal", x, y, evaluate("join(x, rename(y, d0, d2), f(a,b)(a == b))", x, y));
         assertEval("pow", x, y, evaluate("join(x, rename(y, d0, d2), f(a,b)(pow(a,b)))", x, y));
+
+        // broadcasting - opposite order
+        x = evaluate("random(d0[4]) + 1");
+        y = evaluate("random(d0[2],d1[3],d2[4]) + 1");
+        assertEval("add", x, y, evaluate("rename(x, d0, d2) + y", x, y));
+        assertEval("sub", x, y, evaluate("rename(x, d0, d2) - y", x, y));
+        assertEval("mul", x, y, evaluate("rename(x, d0, d2) * y", x, y));
+        assertEval("div", x, y, evaluate("rename(x, d0, d2) / y", x, y));
+        assertEval("greater", x, y, evaluate("join(rename(x, d0, d2), y, f(a,b)(a > b))", x, y));
+        assertEval("less", x, y, evaluate("join(rename(x, d0, d2), y, f(a,b)(a < b))", x, y));
+        assertEval("equal", x, y, evaluate("join(rename(x, d0, d2), y, f(a,b)(a == b))", x, y));
+        assertEval("pow", x, y, evaluate("join(rename(x, d0, d2), y, f(a,b)(pow(a,b)))", x, y));
     }
 
     @Test
@@ -185,9 +197,49 @@ public class OnnxOperationsTestCase {
 
     @Test
     public void testMatMul1() throws ParseException {
-        Tensor a = evaluate("tensor(d0[2],d1[3]):[1, 2, 3, 4, 5, 6]");
-        Tensor b = evaluate("tensor(d0[3],d1[2]):[7, 8, 9, 10, 11, 12]");
-        assertEval("matmul", a, b, evaluate("tensor(d0[2],d1[2]):[58, 64, 139, 154]"));
+        Tensor a = evaluate("tensor(d0[6]):[1,2,3,4,5,6]");
+        Tensor b = evaluate("tensor(d0[6]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("91"));
+
+        a = evaluate("tensor(d0[3]):[1,2,3]");
+        b = evaluate("tensor(d0[3],d1[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2]):[22, 28]"));
+
+        a = evaluate("tensor(d0[2],d1[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[3]):[1,2,3]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2]):[14, 32]"));
+
+        a = evaluate("tensor(d0[2],d1[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[3],d1[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2],d1[2]):[22,28,49,64]"));
+
+        a = evaluate("tensor(d0[1],d1[2],d2[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[3],d1[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[1],d1[2],d2[2]):[22,28,49,64]"));
+
+        a = evaluate("tensor(d0[2],d1[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[1],d1[3],d2[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[1],d1[2],d2[2]):[22,28,49,64]"));
+
+        a = evaluate("tensor(d0[1],d1[2],d2[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[1],d1[3],d2[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[1],d1[2],d2[2]):[22,28,49,64]"));
+
+        a = evaluate("tensor(d0[1],d1[2],d2[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[2],d1[3],d2[2]):[1,2,3,4,5,6,7,8,9,10,11,12]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2],d1[2],d2[2]):[22,28,49,64,58,64,139,154]"));
+
+        a = evaluate("tensor(d0[2],d1[2],d2[3]):[1,2,3,4,5,6,7,8,9,10,11,12]");
+        b = evaluate("tensor(d0[1],d1[3],d2[2]):[1,2,3,4,5,6]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2],d1[2],d2[2]):[22,28,49,64,76,100,103,136]"));
+
+        a = evaluate("tensor(d0[1],d1[4],d2[2],d3[3]):[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]");
+        b = evaluate("tensor(d0[1],d1[4],d2[3],d3[2]):[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[1],d1[4],d2[2],d3[2]):[22,28,49,64,220,244,301,334,634,676,769,820,1264,1324,1453,1522]"));
+
+        a = evaluate("tensor(d0[1],d1[1],d2[2],d3[3]):[1,2,3,4,5,6]");
+        b = evaluate("tensor(d0[2],d1[2],d2[3],d3[2]):[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]");
+        assertEval("matmul", a, b, evaluate("tensor(d0[2],d1[2],d2[2],d3[2]):[22,28,49,64,58,64,139,154,94,100,229,244,130,136,319,334]"));
     }
 
     @Test
@@ -217,6 +269,10 @@ public class OnnxOperationsTestCase {
 
         y = evaluate("tensor(d0[4]):[3,2,-1,1]");
         assertEval("reshape", x, y, evaluate("tensor(d0[3],d1[2],d2[1],d3[1]):[1,2,3,4,5,6]"));
+
+        x = evaluate("tensor(d0[1],d1[2],d2[2],d3[3]):[1,2,3,4,5,6,7,8,9,10,11,12]");
+        y = evaluate("tensor(d0[2]):[2,6]");
+        assertEval("reshape", x, y, evaluate("tensor(d0[2],d1[6]):[1,2,3,4,5,6,7,8,9,10,11,12]"));
     }
 
     @Test
@@ -435,6 +491,48 @@ public class OnnxOperationsTestCase {
 
     }
 
+    @Test
+    public void testTranspose1() throws ParseException {
+        Tensor x = evaluate("tensor(d0[2],d1[3]):[[1,2,3],[4,5,6]]");
+        assertEval("transpose", x, evaluate("tensor(d0[3],d1[2]):[[1,4],[2,5],[3,6]]"));
+    }
+
+    @Test
+    public void testTile6() throws ParseException {
+        Tensor x = evaluate("tensor(d0[2],d1[2]):[1,2,3,4]");
+        Tensor y = evaluate("tensor(d0[2]):[1,2]");
+        assertEval("tile", x, y, evaluate("tensor(d0[2],d1[4]):[1,2,1,2,3,4,3,4]"));
+
+        x = evaluate("tensor(d0[2],d1[2]):[1,2,3,4]");
+        y = evaluate("tensor(d0[2]):[3,1]");
+        assertEval("tile", x, y, evaluate("tensor(d0[6],d1[2]):[1,2,3,4,1,2,3,4,1,2,3,4]"));
+
+        x = evaluate("tensor(d0[1],d1[1],d2[1]):[1]");
+        y = evaluate("tensor(d0[3]):[1,6,1]");
+        assertEval("tile", x, y, evaluate("tensor(d0[1],d1[6],d2[1]):[1,1,1,1,1,1]"));
+    }
+
+    @Test
+    public void testSplit2() throws ParseException {
+        Tensor x = evaluate("tensor(d0[6]):[1,2,3,4,5,6]");
+        assertEval("split", x, evaluate("tensor(d0[3]):[1,2,3]"), 0);
+        assertEval("split", x, evaluate("tensor(d0[3]):[4,5,6]"), 1);
+        assertEval("split", x, evaluate("tensor(d0[2]):[1,2]"), createAttribute("split", new int[] {2}), 0);
+        assertEval("split", x, evaluate("tensor(d0[4]):[3,4,5,6]"), createAttribute("split", new int[] {2}), 1);
+        assertEval("split", x, evaluate("tensor(d0[3]):[3,4,5]"), createAttribute("split", new int[] {2,3}), 1);
+        assertEval("split", x, evaluate("tensor(d0[1]):[6]"), createAttribute("split", new int[] {2,3}), 2);
+
+        x = evaluate("tensor(d0[2],d1[3]):[1,2,3,4,5,6]");
+        assertEval("split", x, evaluate("tensor(d0[1],d1[3]):[1,2,3]"));
+        assertEval("split", x, evaluate("tensor(d0[1],d1[3]):[1,2,3]"), 0);
+        assertEval("split", x, evaluate("tensor(d0[1],d1[3]):[4,5,6]"), 1);
+        assertEval("split", x, evaluate("tensor(d0[1],d1[3]):[1,2,3]"), createAttribute("split", new int[] {1}), 0);
+        assertEval("split", x, evaluate("tensor(d0[1],d1[3]):[4,5,6]"), createAttribute("split", new int[] {1}), 1);
+        assertEval("split", x, evaluate("tensor(d0[2],d1[1]):[1,4]"), createAttribute("axis", 1), 0);
+        assertEval("split", x, evaluate("tensor(d0[2],d1[1]):[2,5]"), createAttribute("axis", 1), 1);
+        assertEval("split", x, evaluate("tensor(d0[2],d1[1]):[3,6]"), createAttribute("axis", 1), 2);
+    }
+
     private Tensor evaluate(String expr) throws ParseException {
         return evaluate(expr, null, null, null);
     }
@@ -461,41 +559,49 @@ public class OnnxOperationsTestCase {
     }
 
     private void assertEval(String opName, Tensor x, Tensor expected) {
-        assertEval(opName, x, null, null, null, null, expected, null);
+        assertEval(opName, x, null, null, null, null, expected, null, 0);
+    }
+
+    private void assertEval(String opName, Tensor x, Tensor expected, int output) {
+        assertEval(opName, x, null, null, null, null, expected, null, output);
     }
 
     private void assertEval(String opName, Tensor x, Tensor expected, AttributeConverter attr) {
-        assertEval(opName, x, null, null, null, null, expected, attr);
+        assertEval(opName, x, null, null, null, null, expected, attr, 0);
+    }
+
+    private void assertEval(String opName, Tensor x, Tensor expected, AttributeConverter attr, int output) {
+        assertEval(opName, x, null, null, null, null, expected, attr, output);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor expected, AttributeConverter attr) {
-        assertEval(opName, x, y, null, null, null, expected, attr);
+        assertEval(opName, x, y, null, null, null, expected, attr, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor expected) {
-        assertEval(opName, x, y, null, null, null, expected, null);
+        assertEval(opName, x, y, null, null, null, expected, null, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor expected) {
-        assertEval(opName, x, y, z, null, null, expected, null);
+        assertEval(opName, x, y, z, null, null, expected, null, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor expected, AttributeConverter attr) {
-        assertEval(opName, x, y, z, null, null, expected, attr);
+        assertEval(opName, x, y, z, null, null, expected, attr, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor q, Tensor expected) {
-        assertEval(opName, x, y, z, q, null, expected, null);
+        assertEval(opName, x, y, z, q, null, expected, null, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor q, Tensor r, Tensor expected) {
-        assertEval(opName, x, y, z, q, r, expected, null);
+        assertEval(opName, x, y, z, q, r, expected, null, 0);
     }
 
-    private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor q, Tensor r, Tensor expected, AttributeConverter attr) {
+    private void assertEval(String opName, Tensor x, Tensor y, Tensor z, Tensor q, Tensor r, Tensor expected, AttributeConverter attr, int output) {
         Context context = new MapContext(DoubleValue.NaN);
         List<IntermediateOperation> inputs = createInputs(context, x, y, z, q, r);
-        IntermediateOperation op = mapOperation(opName, inputs, modelName, opName, attr != null ? attr : createAttributes().build());
+        IntermediateOperation op = mapOperation(opName, inputs, modelName, opName, attr != null ? attr : createAttributes().build(), output);
         optimizeAndRename(opName, op);
         Tensor result = evaluate(op);
         assertEquals(expected, result);

@@ -11,7 +11,6 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -46,6 +45,19 @@ public class SimpleImportTestCase {
 
         Tensor result = model.expressions().get("y").evaluate(context).asTensor();
         assertEquals(result, Tensor.from("tensor(d0[2],d1[2],d2[2]):[1, 2, 3, 4, 3, 4, 5, 6]"));
+    }
+
+    @Test
+    public void testConcat() {
+        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/concat.onnx");
+
+        MapContext context = new MapContext();
+        context.put("i", new TensorValue(Tensor.from("tensor(d0[1]):[1]")));
+        context.put("j", new TensorValue(Tensor.from("tensor(d0[1]):[2]")));
+        context.put("k", new TensorValue(Tensor.from("tensor(d0[1]):[3]")));
+
+        Tensor result = model.expressions().get("y").evaluate(context).asTensor();
+        assertEquals(result, Tensor.from("tensor(d0[3]):[1, 2, 3]"));
     }
 
     private void evaluateFunction(Context context, ImportedModel model, String functionName) {

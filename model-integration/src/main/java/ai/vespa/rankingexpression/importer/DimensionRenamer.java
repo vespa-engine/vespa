@@ -66,7 +66,7 @@ public class DimensionRenamer {
 
     void solve() {
         log.log(Level.FINE, () -> "Rename problem:\n" + constraintsToString(constraints));
-        renames = solve(100000);
+        renames = solve(1000000);
         log.log(Level.FINE, () -> "Rename solution:\n" + renamesToString(renames));
     }
 
@@ -86,7 +86,7 @@ public class DimensionRenamer {
 
     private Map<String, Integer> solveWithOrWithoutSoftConstraints(int maxIterations) {
         Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
-        if ( solution == null) {
+        if (solution == null) {
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
             boolean anyRemoved = copyHard(constraints, hardConstraints);
             if (anyRemoved) {
