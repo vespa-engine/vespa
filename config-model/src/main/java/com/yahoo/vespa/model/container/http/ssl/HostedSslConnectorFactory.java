@@ -21,36 +21,33 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private static final String DEFAULT_HOSTED_TRUSTSTORE = "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem";
 
     private final boolean enforceClientAuth;
-    private final String proxyProtocol;
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and default hosted Vespa truststore.
      */
     // TODO Enforce client authentication
-    public static HostedSslConnectorFactory withProvidedCertificate(String proxyProtocol, String serverName, EndpointCertificateSecrets endpointCertificateSecrets) {
-        return new HostedSslConnectorFactory(proxyProtocol,
-                createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null), false);
+    public static HostedSslConnectorFactory withProvidedCertificate(
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets) {
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null), false);
     }
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and a truststore configured by the application.
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
-            String proxyProtocol, String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
-        return new HostedSslConnectorFactory(proxyProtocol,
-                createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates), true);
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates), true);
     }
 
     /**
      * Create connector factory that uses the default certificate and truststore provided by Vespa (through Vespa-global TLS configuration).
      */
-    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String proxyProtocol, String serverName) {
-        return new HostedSslConnectorFactory(proxyProtocol, new DefaultSslProvider(serverName), true);
+    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName) {
+        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true);
     }
 
-    private HostedSslConnectorFactory(String proxyProtocol, SimpleComponent sslProviderComponent, boolean enforceClientAuth) {
+    private HostedSslConnectorFactory(SimpleComponent sslProviderComponent, boolean enforceClientAuth) {
         super("tls4443", 4443, sslProviderComponent);
-        this.proxyProtocol = proxyProtocol;
         this.enforceClientAuth = enforceClientAuth;
     }
 
@@ -70,25 +67,10 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         super.getConfig(connectorBuilder);
         connectorBuilder
                 .tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
-                                               .pathWhitelist(INSECURE_WHITELISTED_PATHS)
-                                               .enable(enforceClientAuth))
-                .proxyProtocol(configureProxyProtocol())
+                        .pathWhitelist(INSECURE_WHITELISTED_PATHS)
+                        .enable(enforceClientAuth))
+                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(true))
                 .idleTimeout(Duration.ofMinutes(3).toSeconds())
                 .maxConnectionLife(Duration.ofMinutes(10).toSeconds());
     }
-
-    private ConnectorConfig.ProxyProtocol.Builder configureProxyProtocol() {
-        ConnectorConfig.ProxyProtocol.Builder proxyProtocolBuilder = new ConnectorConfig.ProxyProtocol.Builder();
-        switch (proxyProtocol) {
-            case "https-only":
-                return proxyProtocolBuilder.enabled(false).mixedMode(false);
-            case "https+proxy-protocol":
-                return proxyProtocolBuilder.enabled(true).mixedMode(true);
-            case "proxy-protocol-only":
-                return proxyProtocolBuilder.enabled(true).mixedMode(false);
-            default:
-                throw new IllegalArgumentException("Unknown proxy-protocol settings: " + proxyProtocol);
-        }
-    }
-
 }
