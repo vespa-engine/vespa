@@ -8,21 +8,13 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
 #include <cassert>
+#include <atomic>
 
 namespace storage::api {
 
 namespace {
 
-/**
- * TODO
- * From @vekterli
- * I have no idea why the _lastMsgId update code masks away the 8 MSB, but if we assume it's probably for no
- * overwhelmingly good reason we could replace this mutex with just a std::atomic<uint64_t> and do a relaxed
- * fetch_add (shouldn't be any need for any barriers; ID increments have no other memory dependencies). U64 overflows
- * here come under the category "never gonna happen in the real world".
- * @balder agree - @vekterli fix in separate pull request :)
- */
-vespalib::Lock _G_msgIdLock;
+std::atomic<uint64_t> _G_lastMsgId(1000);
 
 }
 
@@ -122,8 +114,8 @@ MessageType::MessageType::get(Id id)
     return *it->second;
 }
 MessageType::MessageType(vespalib::stringref name, Id id,
-            const MessageType* replyOf)
-        : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
+                         const MessageType* replyOf)
+    : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
 {
     _codes[id] = this;
     if (_replyOf != 0) {
@@ -134,7 +126,7 @@ MessageType::MessageType(vespalib::stringref name, Id id,
     }
 }
 
-MessageType::~MessageType() {}
+MessageType::~MessageType() = default;
 
 void
 MessageType::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -255,15 +247,10 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
 
 TransportContext::~TransportContext() = default;
 
-StorageMessage::Id StorageMessage::_lastMsgId = 1000;
-
 StorageMessage::Id
 StorageMessage::generateMsgId()
 {
-    vespalib::LockGuard sync(_G_msgIdLock);
-    Id msgId = _lastMsgId++;
-    _lastMsgId &= ((Id(-1) << 8) >> 8);
-    return msgId;
+    return _G_lastMsgId.fetch_add(1, std::memory_order_relaxed);
 }
 
 StorageMessage::StorageMessage(const MessageType& type, Id id)
@@ -290,9 +277,7 @@ StorageMessage::~StorageMessage() = default;
 
 void StorageMessage::setNewMsgId()
 {
-    vespalib::LockGuard sync(_G_msgIdLock);
-    _msgId = _lastMsgId++;
-    _lastMsgId &= ((Id(-1) << 8) >> 8);
+    _msgId = generateMsgId();
 }
 
 vespalib::string

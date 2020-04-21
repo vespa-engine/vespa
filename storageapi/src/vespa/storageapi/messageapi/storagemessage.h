@@ -349,11 +349,6 @@ public:
     static const char* getPriorityString(Priority);
 
 private:
-    static Id _lastMsgId;
-
-    StorageMessage& operator=(const StorageMessage&);
-    StorageMessage(const StorageMessage&);
-
     mutable std::unique_ptr<TransportContext> _transportContext;
 
 protected:
@@ -372,6 +367,8 @@ protected:
 
     static document::Bucket getDummyBucket() { return document::Bucket(document::BucketSpace::invalid(), document::BucketId()); }
 public:
+    StorageMessage& operator=(const StorageMessage&) = delete;
+    StorageMessage(const StorageMessage&) = delete;
     virtual ~StorageMessage();
 
     Id getMsgId() const { return _msgId; }
