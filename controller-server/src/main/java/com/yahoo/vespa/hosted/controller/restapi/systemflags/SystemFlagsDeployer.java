@@ -96,7 +96,8 @@ class SystemFlagsDeployer  {
         createNewFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
-        warnOnFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, warnings);
+        failOnNewFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, errors);
+        warnOnExistingFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, warnings);
         return new SystemFlagsDeployResult(results, errors, warnings);
     }
 
@@ -175,11 +176,23 @@ class SystemFlagsDeployer  {
         });
     }
 
-    private static void warnOnFlagDataForUndefinedFlags(FlagsTarget target,
-                                                        Map<FlagId, FlagData> wantedFlagData,
-                                                        Map<FlagId, FlagData> currentFlagData,
-                                                        List<FlagId> definedFlags,
-                                                        List<Warning> warnings) {
+    private static void failOnNewFlagDataForUndefinedFlags(FlagsTarget target,
+                                                           Map<FlagId, FlagData> wantedFlagData,
+                                                           Map<FlagId, FlagData> currentFlagData,
+                                                           List<FlagId> definedFlags,
+                                                           List<OperationError> errors) {
+        for (FlagId flagId : wantedFlagData.keySet()) {
+            if (!currentFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
+                errors.add(OperationError.createFailed("Flag not defined in target zone", target, wantedFlagData.get(flagId)));
+            }
+        }
+    }
+
+    private static void warnOnExistingFlagDataForUndefinedFlags(FlagsTarget target,
+                                                                Map<FlagId, FlagData> wantedFlagData,
+                                                                Map<FlagId, FlagData> currentFlagData,
+                                                                List<FlagId> definedFlags,
+                                                                List<Warning> warnings) {
         for (FlagId flagId : currentFlagData.keySet()) {
             if (wantedFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
                 warnings.add(Warning.dataForUndefinedFlag(target, flagId));
