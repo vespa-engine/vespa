@@ -12,7 +12,7 @@ using namespace vespalib::eval;
 using vespalib::BenchmarkTimer;
 using vespalib::tensor::DefaultTensorEngine;
 
-double budget = 5.00;
+double budget = 0.25;
 
 //-----------------------------------------------------------------------------
 
