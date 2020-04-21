@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -15,15 +17,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Applications {
 
-    private final ConcurrentHashMap<ApplicationId, Application> applications = new ConcurrentHashMap<>();
+    private final CuratorDatabaseClient db;
 
-    /** Returns the application with the given id, or null if it does not exist and should not be created */
-    public Application get(ApplicationId applicationId, boolean create) {
-        return applications.computeIfAbsent(applicationId, id -> create ? new Application() : null);
+    public Applications(CuratorDatabaseClient db) {
+        this.db = db;
     }
 
-    public void set(ApplicationId id, Application application, Mutex applicationLock) {
-        applications.put(id, application);
+    /** Returns the application with the given id, or null if it does not exist and should not be created */
+    public Application get(ApplicationId id, boolean create) {
+        return db.readApplication(id).orElse(create ? new Application(id) : null);
+    }
+
+    public void set(Application application, Mutex applicationLock) {
+        db.writeApplication(application);
     }
 
 }

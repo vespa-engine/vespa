@@ -10,7 +10,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.Test;
@@ -54,8 +53,8 @@ public class AutoscalingIntegrationTest {
         ClusterResources max = new ClusterResources(2, 1, nodes);
 
         Application application = tester.nodeRepository().applications().get(application1, true).withClusterLimits(cluster1.id(), min, max);
-        tester.nodeRepository().applications().set(application1, application, tester.nodeRepository().lock(application1));
-        var scaledResources = autoscaler.autoscale(application.cluster(cluster1.id()),
+        tester.nodeRepository().applications().set(application, tester.nodeRepository().lock(application1));
+        var scaledResources = autoscaler.autoscale(application.clusters().get(cluster1.id()),
                                                    tester.nodeRepository().getNodes(application1));
         assertTrue(scaledResources.isPresent());
     }

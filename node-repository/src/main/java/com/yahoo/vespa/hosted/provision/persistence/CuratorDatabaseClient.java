@@ -20,6 +20,7 @@ import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -64,6 +65,7 @@ public class CuratorDatabaseClient {
     private static final Path lockRoot = root.append("locks");
     private static final Path configLockRoot = Path.fromString("/config/v2/locks/");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
+    private static final Path applicationsRoot = root.append("applications");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -90,6 +92,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(root);
         for (Node.State state : Node.State.values())
             curatorDatabase.create(toPath(state));
+        curatorDatabase.create(applicationsRoot);
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
         curatorDatabase.create(osVersionsPath());
@@ -256,14 +259,14 @@ public class CuratorDatabaseClient {
      * Returns all nodes which are in one of the given states.
      * If no states are given this returns all nodes.
      */
-    public List<Node> getNodes(Node.State ... states) {
+    public List<Node> readNodes(Node.State ... states) {
         List<Node> nodes = new ArrayList<>();
         if (states.length == 0)
             states = Node.State.values();
         CuratorDatabase.Session session = curatorDatabase.getSession();
         for (Node.State state : states) {
             for (String hostname : session.getChildren(toPath(state))) {
-                Optional<Node> node = getNode(session, hostname, state);
+                Optional<Node> node = readNode(session, hostname, state);
                 node.ifPresent(nodes::add); // node might disappear between getChildren and getNode
             }
         }
@@ -274,8 +277,8 @@ public class CuratorDatabaseClient {
      * Returns all nodes allocated to the given application which are in one of the given states 
      * If no states are given this returns all nodes.
      */
-    public List<Node> getNodes(ApplicationId applicationId, Node.State ... states) {
-        List<Node> nodes = getNodes(states);
+    public List<Node> readNodes(ApplicationId applicationId, Node.State ... states) {
+        List<Node> nodes = readNodes(states);
         nodes.removeIf(node -> ! node.allocation().isPresent() || ! node.allocation().get().owner().equals(applicationId));
         return nodes;
     }
@@ -284,7 +287,7 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this noe is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> getNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
+    public Optional<Node> readNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
         if (states.length == 0)
             states = Node.State.values();
         for (Node.State state : states) {
@@ -299,8 +302,8 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this noe is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> getNode(String hostname, Node.State ... states) {
-        return getNode(curatorDatabase.getSession(), hostname, states);
+    public Optional<Node> readNode(String hostname, Node.State ... states) {
+        return readNode(curatorDatabase.getSession(), hostname, states);
     }
 
     private Path toPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
@@ -389,15 +392,26 @@ public class CuratorDatabaseClient {
         }
     }
 
-    private Lock lock(Path path, Duration timeout) {
-        return curatorDatabase.lock(path, timeout);
+    // Applications -----------------------------------------------------------
+
+    public Optional<Application> readApplication(ApplicationId id) {
+        return read(applicationPath(id), ApplicationSerializer::fromJson);
     }
 
-    private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
-        return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
+    public void writeApplication(Application application) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(createOrSet(applicationPath(application.id()),
+                                           ApplicationSerializer.toJson(application)));
+        transaction.commit();
     }
 
-    // Maintenance jobs
+    private Path applicationPath(ApplicationId id) {
+        return applicationsRoot.append(id.serializedForm());
+    }
+
+    // Maintenance jobs -----------------------------------------------------------
+
     public Lock lockMaintenanceJob(String jobName) {
         return lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
     }
@@ -429,8 +443,8 @@ public class CuratorDatabaseClient {
         return root.append("inactiveJobs");
     }
 
+    // Infrastructure versions -----------------------------------------------------------
 
-    // Infrastructure versions
     public Map<NodeType, Version> readInfrastructureVersions() {
         return read(infrastructureVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
@@ -451,8 +465,8 @@ public class CuratorDatabaseClient {
         return root.append("infrastructureVersions");
     }
 
+    // OS versions -----------------------------------------------------------
 
-    // OS versions
     public Map<NodeType, Version> readOsVersions() {
         return read(osVersionsPath(), OsVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
@@ -473,8 +487,8 @@ public class CuratorDatabaseClient {
         return root.append("osVersions");
     }
 
+    // Docker images -----------------------------------------------------------
 
-    // Docker images
     public Map<NodeType, DockerImage> readDockerImages() {
         return read(dockerImagesPath(), NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
     }
@@ -495,8 +509,8 @@ public class CuratorDatabaseClient {
         return root.append("dockerImages");
     }
 
+    // Firmware checks -----------------------------------------------------------
 
-    // Firmware checks
     /** Stores the instant after which a firmware check is required, or clears any outstanding ones if empty is given. */
     public void writeFirmwareCheck(Optional<Instant> after) {
         byte[] data = after.map(instant -> Long.toString(instant.toEpochMilli()).getBytes())
@@ -516,8 +530,8 @@ public class CuratorDatabaseClient {
         return root.append("firmwareCheck");
     }
 
+    // Load balancers -----------------------------------------------------------
 
-    // Load balancers
     public List<LoadBalancerId> readLoadBalancerIds() {
         return readLoadBalancerIds((ignored) -> true);
     }
@@ -572,13 +586,6 @@ public class CuratorDatabaseClient {
                               .collect(Collectors.toUnmodifiableList());
     }
 
-    private Transaction.Operation createOrSet(Path path, byte[] data) {
-        if (curatorDatabase.exists(path)) {
-            return CuratorOperations.setData(path.getAbsolute(), data);
-        }
-        return CuratorOperations.create(path.getAbsolute(), data);
-    }
-
     /** Returns a given number of unique provision indexes */
     public List<Integer> getProvisionIndexes(int numIndexes) {
         if (numIndexes < 1)
@@ -588,6 +595,21 @@ public class CuratorDatabaseClient {
         return IntStream.range(0, numIndexes)
                 .mapToObj(i -> firstProvisionIndex + i)
                 .collect(Collectors.toList());
+    }
+
+    private Lock lock(Path path, Duration timeout) {
+        return curatorDatabase.lock(path, timeout);
+    }
+
+    private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
+        return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
+    }
+
+    private Transaction.Operation createOrSet(Path path, byte[] data) {
+        if (curatorDatabase.exists(path)) {
+            return CuratorOperations.setData(path.getAbsolute(), data);
+        }
+        return CuratorOperations.create(path.getAbsolute(), data);
     }
 
 }

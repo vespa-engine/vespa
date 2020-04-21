@@ -147,8 +147,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         try (Mutex lock = nodeRepository.lock(applicationId)) {
             Application application = nodeRepository.applications().get(applicationId, true);
             application = application.withClusterLimits(clusterId, requested.minResources(), requested.maxResources());
-            nodeRepository.applications().set(applicationId, application, lock);
-            return application.cluster(clusterId).targetResources()
+            nodeRepository.applications().set(application, lock);
+            return application.clusters().get(clusterId).targetResources()
                     .orElseGet(() -> currentResources(applicationId, clusterId, requested)
                     .orElse(requested.minResources()));
         }

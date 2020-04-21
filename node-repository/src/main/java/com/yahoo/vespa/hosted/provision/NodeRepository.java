@@ -124,14 +124,14 @@ public class NodeRepository extends AbstractComponent {
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
-        this.applications = new Applications();
+        this.applications = new Applications(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
             // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
             //                node state changes. Example: A redeployment on another config server which moves a node
             //                to another state while this is constructed.
-            db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
+            db.writeTo(state, db.readNodes(state), Agent.system, Optional.empty());
     }
 
     /** Returns the curator database client used by this */
@@ -171,7 +171,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public Optional<Node> getNode(String hostname, State ... inState) {
-        return db.getNode(hostname, inState);
+        return db.readNode(hostname, inState);
     }
 
     /**
@@ -181,7 +181,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(State ... inState) {
-        return new ArrayList<>(db.getNodes(inState));
+        return new ArrayList<>(db.readNodes(inState));
     }
     /**
      * Finds and returns the nodes of the given type in any of the given states.
@@ -191,7 +191,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(NodeType type, State ... inState) {
-        return db.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
+        return db.readNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
     /** Returns a filterable list of all nodes in this repository */
@@ -223,9 +223,9 @@ public class NodeRepository extends AbstractComponent {
         return LoadBalancerList.copyOf(db.readLoadBalancers(predicate).values());
     }
 
-    public List<Node> getNodes(ApplicationId id, State ... inState) { return db.getNodes(id, inState); }
-    public List<Node> getInactive() { return db.getNodes(State.inactive); }
-    public List<Node> getFailed() { return db.getNodes(State.failed); }
+    public List<Node> getNodes(ApplicationId id, State ... inState) { return db.readNodes(id, inState); }
+    public List<Node> getInactive() { return db.readNodes(State.inactive); }
+    public List<Node> getFailed() { return db.readNodes(State.failed); }
 
     /**
      * Returns the ACL for the node (trusted nodes, networks and ports)
@@ -450,7 +450,7 @@ public class NodeRepository extends AbstractComponent {
 
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            deactivate(db.getNodes(application, State.reserved, State.active), transaction);
+            deactivate(db.readNodes(application, State.reserved, State.active), transaction);
         }
     }
 
@@ -736,7 +736,7 @@ public class NodeRepository extends AbstractComponent {
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
         // Group matching nodes by the lock needed
-        for (Node node : db.getNodes()) {
+        for (Node node : db.readNodes()) {
             if ( ! filter.matches(node)) continue;
             if (node.allocation().isPresent())
                 allocatedNodes.put(node.allocation().get().owner(), node);
