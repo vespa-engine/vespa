@@ -52,3 +52,34 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
 }
 
 }
+
+namespace std::chrono {
+
+/*
+ * This is a hack to avoid the slow clock computations on RHEL7/CentOS 7 due to using systemcalls.
+ * This brings cost down from 550-560ns to 18-19ns on a Intel Haswell 2680 cpu.
+ * We are providing the symbols here so they will take precedence over the ones in the standard library.
+ * We rely on the linker do handle correct symbol resolution.
+ * TODO: Once we are off the ancient platforms like Centos 7/ Rhel 7 we can drop this workaround.
+*/
+
+inline namespace _V2 {
+
+system_clock::time_point
+system_clock::now() noexcept {
+    timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+    return time_point(duration(chrono::seconds(tp.tv_sec)
+                               + chrono::nanoseconds(tp.tv_nsec)));
+}
+
+steady_clock::time_point
+steady_clock::now() noexcept {
+    timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    return time_point(duration(chrono::seconds(tp.tv_sec)
+                               + chrono::nanoseconds(tp.tv_nsec)));
+}
+
+}
+}
