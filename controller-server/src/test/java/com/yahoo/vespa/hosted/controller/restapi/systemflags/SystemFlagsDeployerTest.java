@@ -77,6 +77,7 @@ public class SystemFlagsDeployerTest {
     public void dryrun_should_not_change_flags() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(controllerTarget)).thenReturn(List.of(new FlagId("my-flag")));
 
         FlagData defaultData = flagData("flags/my-flag/main.json");
         SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
@@ -101,6 +102,7 @@ public class SystemFlagsDeployerTest {
         UncheckedIOException exception = new UncheckedIOException(new IOException("I/O error message"));
         when(flagsClient.listFlagData(prodUsWest1Target)).thenThrow(exception);
         when(flagsClient.listFlagData(prodUsEast3Target)).thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(prodUsEast3Target)).thenReturn(List.of(new FlagId("my-flag")));
 
         FlagData defaultData = flagData("flags/my-flag/main.json");
         SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
@@ -130,6 +132,23 @@ public class SystemFlagsDeployerTest {
                 .isEmpty();
         assertThat(result.errors())
                 .containsOnly(OperationError.archiveValidationFailed("Unknown flag file: flags/my-flag/main.prod.unknown-region.json"));
+    }
+
+    @Test
+    public void creates_error_entry_for_flag_data_of_undefined_flag() throws IOException {
+        FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        when(flagsClient.listFlagData(prodUsEast3Target))
+                .thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(prodUsEast3Target))
+                .thenReturn(List.of());
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.us-east-3.json", prodUsEast3Data)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+        assertThat(result.errors())
+                .containsOnly(SystemFlagsDeployResult.OperationError.createFailed("Flag not defined in target zone", prodUsEast3Target, prodUsEast3Data));
     }
 
     @Test
