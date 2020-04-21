@@ -297,7 +297,11 @@ TEST("require that vespalib::unlink works")
         TEST_FATAL("Should work on directories.");
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
+#ifdef __APPLE__
+        EXPECT_EQUAL(IoException::NO_PERMISSION, e.getType());
+#else
         EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
+#endif
     }
         // Works for file
     {
