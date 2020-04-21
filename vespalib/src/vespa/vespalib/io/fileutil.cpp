@@ -180,10 +180,13 @@ File::open(int flags, bool autoCreateDirectories) {
     }
     int openflags = ((flags & File::READONLY) != 0 ? O_RDONLY : O_RDWR)
                   | ((flags & File::CREATE)  != 0 ? O_CREAT : 0)
+#ifdef __linux__
                   | ((flags & File::DIRECTIO) != 0 ? O_DIRECT : 0)
+#endif
                   | ((flags & File::TRUNC) != 0 ? O_TRUNC: 0);
     int fd = openAndCreateDirsIfMissing(_filename, openflags,
                                         autoCreateDirectories);
+#ifdef __linux__
     if (fd < 0 && ((flags & File::DIRECTIO) != 0)) {
         openflags = (openflags ^ O_DIRECT);
         flags = (flags ^ DIRECTIO);
@@ -193,6 +196,7 @@ File::open(int flags, bool autoCreateDirectories) {
         fd = openAndCreateDirsIfMissing(_filename, openflags,
                                         autoCreateDirectories);
     }
+#endif
     if (fd < 0) {
         asciistream ost;
         ost << "open(" << _filename << ", 0x"
