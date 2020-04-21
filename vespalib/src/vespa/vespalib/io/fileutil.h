@@ -209,65 +209,6 @@ public:
 };
 
 /**
- * @brief A File instance that automatically opens once needed.
- */
-class LazyFile : public File {
-    int _flags;
-    bool _autoCreateDirectories;
-
-public:
-    typedef std::unique_ptr<LazyFile> UP;
-
-    LazyFile(vespalib::stringref filename, int flags,
-             bool autoCreateDirs = false)
-        : File(filename),
-          _flags(flags),
-          _autoCreateDirectories(autoCreateDirs) {}
-
-    LazyFile(LazyFile& other)
-        : File(other),
-          _flags(other._flags),
-          _autoCreateDirectories(other._autoCreateDirectories) {}
-
-    LazyFile& operator=(LazyFile& other) {
-        File::operator=(other);
-        _flags = other._flags;
-        _autoCreateDirectories = other._autoCreateDirectories;
-        return *this;
-    }
-
-    int getFlags() const { return _flags; }
-    void setFlags(int flags) { _flags = flags; }
-    void setAutoCreateDirectories(bool autoCreate)
-        { _autoCreateDirectories = autoCreate; }
-    bool autoCreateDirectories() const { return _autoCreateDirectories; }
-
-    int getFileDescriptor() const override {
-        if (!isOpen()) {
-            const_cast<LazyFile&>(*this).open(_flags, _autoCreateDirectories);
-        }
-        return File::getFileDescriptor();
-    }
-
-    void resize(off_t size) override {
-        if (!isOpen()) { open(_flags, _autoCreateDirectories); }
-        File::resize(size);
-    }
-
-    off_t write(const void *buf, size_t bufsize, off_t offset) override {
-        if (!isOpen()) { open(_flags, _autoCreateDirectories); }
-        return File::write(buf, bufsize, offset);
-    }
-
-    size_t read(void *buf, size_t bufsize, off_t offset) const override {
-        if (!isOpen()) {
-            const_cast<LazyFile&>(*this).open(_flags, _autoCreateDirectories);
-        }
-        return File::read(buf, bufsize, offset);
-    }
-};
-
-/**
  * Get the current working directory.
  *
  * @throw IoException On failure.

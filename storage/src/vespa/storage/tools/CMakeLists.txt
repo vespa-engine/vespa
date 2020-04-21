@@ -15,25 +15,10 @@ vespa_add_executable(storage_generatedistributionbits_app
     AFTER
     storage_storageconfig
 )
-vespa_add_executable(storage_analyzedistribution_app
-    SOURCES
-    analyzedistribution.cpp
-    DEPENDS
-    storage
-    AFTER
-    storage_storageconfig
-)
 vespa_add_executable(storage_storage-cmd_app
     SOURCES
     storage-cmd.cpp
     OUTPUT_NAME vespa-storage-cmd
-    DEPENDS
-    AFTER
-    storage_storageconfig
-)
-vespa_add_executable(storage_statfs_app
-    SOURCES
-    statfs.cpp
     DEPENDS
     AFTER
     storage_storageconfig
