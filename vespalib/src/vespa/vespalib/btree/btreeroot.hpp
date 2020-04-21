@@ -63,7 +63,7 @@ isValid(BTreeNode::Ref node,
                 return false;
             }
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             AggrT aggregated = Aggregator::aggregate(*lnode, aggrCalc);
             if (aggregated != lnode->getAggregated()) {
                 return false;
@@ -113,7 +113,7 @@ isValid(BTreeNode::Ref node,
         if (lChildren < inode->validSlots() && iChildren < inode->validSlots()) {
             return false;
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             AggrT aggregated = Aggregator::aggregate(*inode, allocator, aggrCalc);
             if (aggregated != inode->getAggregated()) {
                 return false;

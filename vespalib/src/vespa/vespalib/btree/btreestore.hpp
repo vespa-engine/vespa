@@ -176,7 +176,7 @@ makeTree(EntryRef &ref,
     }
     typedef BTreeAggregator<KeyT, DataT, AggrT,
         TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
     lNode->freeze();
@@ -304,7 +304,7 @@ insert(EntryRef &ref,
     assert(idx == clusterSize + 1);
     typedef BTreeAggregator<KeyT, DataT, AggrT,
         TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
     lNode->freeze();

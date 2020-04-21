@@ -93,14 +93,14 @@ normalize()
             _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
 
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*leafNode, _aggrCalc);
         }
         assert(_numInserts == leafNode->validSlots());
         return;
     }
 
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*leafNode, _aggrCalc);
     }
     /* Adjust validLeaves for rightmost nodes */
@@ -115,7 +115,7 @@ normalize()
                       _allocator.mapLeafRef(lcRef)->getLastKey() :
                       _allocator.mapInternalRef(lcRef)->getLastKey(),
                       lcRef);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*inode, _allocator, _aggrCalc);
         }
     }
@@ -166,12 +166,12 @@ normalize()
             _allocator.holdNode(_leaf.ref, leafNode);
             _numLeafNodes--;
             _leaf = LeafNodeTypeRefPair(child, leftLeaf);
-            if (AggrCalcT::hasAggregated()) {
+            if constexpr (AggrCalcT::hasAggregated()) {
                 Aggregator::recalc(*leftLeaf, _aggrCalc);
             }
         } else {
             leafNode->stealSomeFromLeftNode(leftLeaf);
-            if (AggrCalcT::hasAggregated()) {
+            if constexpr (AggrCalcT::hasAggregated()) {
                 Aggregator::recalc(*leftLeaf, _aggrCalc);
                 Aggregator::recalc(*leafNode, _aggrCalc);
             }
@@ -182,7 +182,7 @@ normalize()
                                  pnode->validLeaves();
                 pnode->incValidLeaves(steal);
                 lpnode->decValidLeaves(steal);
-                if (AggrCalcT::hasAggregated()) {
+                if constexpr (AggrCalcT::hasAggregated()) {
                     Aggregator::recalc(*lpnode, _allocator, _aggrCalc);
                     Aggregator::recalc(*pnode, _allocator, _aggrCalc);
                 }
@@ -230,12 +230,12 @@ normalize()
                 _allocator.holdNode(_inodes[level].ref, inode);
                 _numInternalNodes--;
                 _inodes[level] = InternalNodeTypeRefPair(leftInodeRef, leftInode);
-                if (AggrCalcT::hasAggregated()) {
+                if constexpr (AggrCalcT::hasAggregated()) {
                     Aggregator::recalc(*leftInode, _allocator, _aggrCalc);
                 }
             } else {
                 inode->stealSomeFromLeftNode(leftInode, _allocator);
-                if (AggrCalcT::hasAggregated()) {
+                if constexpr (AggrCalcT::hasAggregated()) {
                     Aggregator::recalc(*leftInode, _allocator, _aggrCalc);
                     Aggregator::recalc(*inode, _allocator, _aggrCalc);
                 }
@@ -246,7 +246,7 @@ normalize()
                                      pnode->validLeaves();
                     pnode->incValidLeaves(steal);
                     lpnode->decValidLeaves(steal);
-                    if (AggrCalcT::hasAggregated()) {
+                    if constexpr (AggrCalcT::hasAggregated()) {
                         Aggregator::recalc(*lpnode, _allocator, _aggrCalc);
                         Aggregator::recalc(*pnode, _allocator, _aggrCalc);
                     }
@@ -303,7 +303,7 @@ allocNewLeafNode()
     InternalNodeType  *inode;
     NodeRef child;
 
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*_leaf.data, _aggrCalc);
     }
     LeafNodeTypeRefPair lPair(_allocator.allocLeafNode());

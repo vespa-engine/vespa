@@ -9,8 +9,8 @@ namespace search::btree {
 class MinMaxAggrCalc
 {
 public:
-    MinMaxAggrCalc() { }
-    static bool hasAggregated() { return true; }
+    constexpr MinMaxAggrCalc() = default;
+    constexpr static bool hasAggregated() { return true; }
     static int32_t getVal(int32_t val) { return val; }
     static void add(MinMaxAggregated &a, int32_t val) { a.add(val); }
     static void add(MinMaxAggregated &a, const MinMaxAggregated &ca) { a.add(ca); }
