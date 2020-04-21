@@ -16,7 +16,7 @@ ccache -p
 cd ${SOURCE_DIR}
 env VESPA_MAVEN_EXTRA_OPTS="--no-snapshot-updates --batch-mode --threads ${NUM_THREADS}" sh ./bootstrap.sh java
 mvn -V install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
-bash ${SOURCE_DIR}/bootstrap-cmake.sh ${SOURCE_DIR}
+cmake3 -DVESPA_UNPRIVILEGED=no .
 make -j ${NUM_THREADS}
 ctest3 --output-on-failure -j ${NUM_THREADS}
 ccache --show-stats
