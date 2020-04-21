@@ -83,6 +83,8 @@ else()
 endif()
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
+message("-- CMAKE_SHARED_LINKER_FLAGS is ${CMAKE_SHARED_LINKER_FLAGS}")
+
 # Use C++ 17
 # TODO renable when cmake 3.8 is out.
 # set(CMAKE_CXX_STANDARD 17)
