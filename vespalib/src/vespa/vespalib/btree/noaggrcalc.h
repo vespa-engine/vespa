@@ -9,11 +9,9 @@ namespace search::btree {
 class NoAggrCalc
 {
 public:
-    NoAggrCalc()
-    {
-    }
+    constexpr NoAggrCalc() = default;
 
-    static bool
+    constexpr static bool
     hasAggregated()
     {
         return false;

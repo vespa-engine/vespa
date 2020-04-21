@@ -29,6 +29,7 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
 void
 BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEntries(LeafNodeType *leafNode, Iterator &itr, AggrCalcT aggrCalc)
 {
+    (void)aggrCalc;
     NodeAllocatorType &allocator(itr.getAllocator());
     auto &pathElem = itr.getPath(0);
     InternalNodeType *parentNode = pathElem.getWNode();
@@ -58,7 +59,7 @@ BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEn
             uint32_t given = leftNode->validSlots() - oldLeftValid;
             parentNode->update(parentIdx, leafNode->getLastKey(), leafRef);
             parentNode->update(parentIdx - 1, leftNode->getLastKey(), leftRef);
-            if (AggrCalcT::hasAggregated()) {
+            if constexpr (AggrCalcT::hasAggregated()) {
                 Aggregator::recalc(*leftNode, allocator, aggrCalc);
                 Aggregator::recalc(*leafNode, allocator, aggrCalc);
             }
@@ -69,7 +70,7 @@ BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEn
         rightNode->stealSomeFromLeftNode(leafNode, allocator);
         parentNode->update(parentIdx, leafNode->getLastKey(), leafRef);
         parentNode->update(parentIdx + 1, rightNode->getLastKey(), rightRef);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*rightNode, allocator, aggrCalc);
             Aggregator::recalc(*leafNode, allocator, aggrCalc);
         }
@@ -110,7 +111,7 @@ insert(BTreeNode::Ref &root,
     if (lnode->isFull()) {
         LeafNodeTypeRefPair splitNode = allocator.allocLeafNode();
         lnode->splitInsert(splitNode.data, idx, key, data);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             ca = Aggregator::recalc(*lnode, *splitNode.data, aggrCalc);
         }
         splitNodeRef = splitNode.ref; // to signal that a split occured
@@ -119,7 +120,7 @@ insert(BTreeNode::Ref &root,
     } else {
         lnode->insert(idx, key, data);
         itr.setLeafNodeIdx(idx);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             aggrCalc.add(lnode->getAggregated(), aggrCalc.getVal(data));
             ca = lnode->getAggregated();
         }
@@ -144,7 +145,7 @@ insert(BTreeNode::Ref &root,
                 node->splitInsert(splitNode.data, idx,
                                   *splitLastKey, splitNodeRef, allocator);
                 inRightSplit = pe.adjustSplit(inRightSplit, splitNode.data);
-                if (AggrCalcT::hasAggregated()) {
+                if constexpr (AggrCalcT::hasAggregated()) {
                     ca = Aggregator::recalc(*node, *splitNode.data,
                                             allocator, aggrCalc);
                 }
@@ -154,7 +155,7 @@ insert(BTreeNode::Ref &root,
                 node->insert(idx, *splitLastKey, splitNodeRef);
                 pe.adjustSplit(inRightSplit);
                 inRightSplit = false;
-                if (AggrCalcT::hasAggregated()) {
+                if constexpr (AggrCalcT::hasAggregated()) {
                     aggrCalc.add(node->getAggregated(), oldca, ca);
                     ca = node->getAggregated();
                 }
@@ -162,12 +163,12 @@ insert(BTreeNode::Ref &root,
                 splitLastKey = nullptr;
             }
         } else {
-            if (AggrCalcT::hasAggregated()) {
+            if constexpr (AggrCalcT::hasAggregated()) {
                 aggrCalc.add(node->getAggregated(), oldca, ca);
                 ca = node->getAggregated();
             }
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             oldca = olda;
         }
         lastKey = &node->getLastKey();
