@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  * @author mpolden
  */
-public class SerializationTest {
+public class NodeSerializerTest {
 
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container");
     private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors);

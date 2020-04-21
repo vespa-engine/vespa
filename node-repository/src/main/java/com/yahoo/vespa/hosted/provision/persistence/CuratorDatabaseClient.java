@@ -62,10 +62,16 @@ public class CuratorDatabaseClient {
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
     private static final Path root = Path.fromString("/provision/v1");
-    private static final Path lockRoot = root.append("locks");
-    private static final Path configLockRoot = Path.fromString("/config/v2/locks/");
-    private static final Path loadBalancersRoot = root.append("loadBalancers");
-    private static final Path applicationsRoot = root.append("applications");
+    private static final Path lockPath = root.append("locks");
+    private static final Path configLockPath = Path.fromString("/config/v2/locks/");
+    private static final Path loadBalancersPath = root.append("loadBalancers");
+    private static final Path applicationsPath = root.append("applications");
+    private static final Path inactiveJobsPath = root.append("inactiveJobs");
+    private static final Path infrastructureVersionsPath = root.append("infrastructureVersions");
+    private static final Path osVersionsPath = root.append("osVersions");
+    private static final Path dockerImagesPath = root.append("dockerImages");
+    private static final Path firmwareCheckPath = root.append("firmwareCheck");
+
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -92,13 +98,13 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(root);
         for (Node.State state : Node.State.values())
             curatorDatabase.create(toPath(state));
-        curatorDatabase.create(applicationsRoot);
-        curatorDatabase.create(inactiveJobsPath());
-        curatorDatabase.create(infrastructureVersionsPath());
-        curatorDatabase.create(osVersionsPath());
-        curatorDatabase.create(dockerImagesPath());
-        curatorDatabase.create(firmwareCheckPath());
-        curatorDatabase.create(loadBalancersRoot);
+        curatorDatabase.create(applicationsPath);
+        curatorDatabase.create(inactiveJobsPath);
+        curatorDatabase.create(infrastructureVersionsPath);
+        curatorDatabase.create(osVersionsPath);
+        curatorDatabase.create(dockerImagesPath);
+        curatorDatabase.create(firmwareCheckPath);
+        curatorDatabase.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
     }
 
@@ -319,7 +325,7 @@ public class CuratorDatabaseClient {
     /** Creates and returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
         Path lockPath =
-                lockRoot
+                CuratorDatabaseClient.lockPath
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
@@ -330,7 +336,7 @@ public class CuratorDatabaseClient {
     /** Creates and returns the path to the config server lock for this application */
     private Path configLockPath(ApplicationId application) {
         // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
-        Path lockPath = configLockRoot.append(application.tenant().value()).append(application.serializedForm());
+        Path lockPath = configLockPath.append(application.tenant().value()).append(application.serializedForm());
         curatorDatabase.create(lockPath);
         return lockPath;
     }
@@ -352,7 +358,7 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public Lock lockInactive() {
-        return lock(lockRoot.append("unallocatedLock"), defaultLockTimeout);
+        return lock(lockPath.append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
@@ -407,18 +413,18 @@ public class CuratorDatabaseClient {
     }
 
     private Path applicationPath(ApplicationId id) {
-        return applicationsRoot.append(id.serializedForm());
+        return applicationsPath.append(id.serializedForm());
     }
 
     // Maintenance jobs -----------------------------------------------------------
 
     public Lock lockMaintenanceJob(String jobName) {
-        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
+        return lock(lockPath.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
     }
 
     public Set<String> readInactiveJobs() {
         try {
-            return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
+            return read(inactiveJobsPath, stringSetSerializer::fromJson).orElseGet(HashSet::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
@@ -430,83 +436,67 @@ public class CuratorDatabaseClient {
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath().getAbsolute(),
+        curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath.getAbsolute(),
                                                          stringSetSerializer.toJson(inactiveJobs)));
         transaction.commit();
     }
     
     public Lock lockInactiveJobs() {
-        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
-    }
-
-    private Path inactiveJobsPath() {
-        return root.append("inactiveJobs");
+        return lock(lockPath.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     // Infrastructure versions -----------------------------------------------------------
 
     public Map<NodeType, Version> readInfrastructureVersions() {
-        return read(infrastructureVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
+        return read(infrastructureVersionsPath, NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
+        curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath.getAbsolute(),
                                                          NodeTypeVersionsSerializer.toJson(infrastructureVersions)));
         transaction.commit();
     }
 
     public Lock lockInfrastructureVersions() {
-        return lock(lockRoot.append("infrastructureVersionsLock"), defaultLockTimeout);
-    }
-
-    private Path infrastructureVersionsPath() {
-        return root.append("infrastructureVersions");
+        return lock(lockPath.append("infrastructureVersionsLock"), defaultLockTimeout);
     }
 
     // OS versions -----------------------------------------------------------
 
     public Map<NodeType, Version> readOsVersions() {
-        return read(osVersionsPath(), OsVersionsSerializer::fromJson).orElseGet(TreeMap::new);
+        return read(osVersionsPath, OsVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
     public void writeOsVersions(Map<NodeType, Version> versions) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),
+        curatorTransaction.add(CuratorOperations.setData(osVersionsPath.getAbsolute(),
                                                          OsVersionsSerializer.toJson(versions)));
         transaction.commit();
     }
 
     public Lock lockOsVersions() {
-        return lock(lockRoot.append("osVersionsLock"), defaultLockTimeout);
-    }
-
-    private Path osVersionsPath() {
-        return root.append("osVersions");
+        return lock(lockPath.append("osVersionsLock"), defaultLockTimeout);
     }
 
     // Docker images -----------------------------------------------------------
 
     public Map<NodeType, DockerImage> readDockerImages() {
-        return read(dockerImagesPath(), NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
+        return read(dockerImagesPath, NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
     public void writeDockerImages(Map<NodeType, DockerImage> dockerImages) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(dockerImagesPath().getAbsolute(),
+        curatorTransaction.add(CuratorOperations.setData(dockerImagesPath.getAbsolute(),
                 NodeTypeDockerImagesSerializer.toJson(dockerImages)));
         transaction.commit();
     }
 
     public Lock lockDockerImages() {
-        return lock(lockRoot.append("dockerImagesLock"), defaultLockTimeout);
-    }
-
-    private Path dockerImagesPath() {
-        return root.append("dockerImages");
+        return lock(lockPath.append("dockerImagesLock"), defaultLockTimeout);
     }
 
     // Firmware checks -----------------------------------------------------------
@@ -517,17 +507,13 @@ public class CuratorDatabaseClient {
                            .orElse(new byte[0]);
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(firmwareCheckPath().getAbsolute(), data));
+        curatorTransaction.add(CuratorOperations.setData(firmwareCheckPath.getAbsolute(), data));
         transaction.commit();
     }
 
     /** Returns the instant after which a firmware check is required, if any. */
     public Optional<Instant> readFirmwareCheck() {
-        return read(firmwareCheckPath(), data -> Instant.ofEpochMilli(Long.parseLong(new String(data))));
-    }
-
-    private Path firmwareCheckPath() {
-        return root.append("firmwareCheck");
+        return read(firmwareCheckPath, data -> Instant.ofEpochMilli(Long.parseLong(new String(data))));
     }
 
     // Load balancers -----------------------------------------------------------
@@ -572,15 +558,15 @@ public class CuratorDatabaseClient {
 
     // TODO(mpolden): Remove this and usages after April 2020
     public Lock lockLoadBalancers(ApplicationId application) {
-        return lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
+        return lock(lockPath.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
     }
 
     private Path loadBalancerPath(LoadBalancerId id) {
-        return loadBalancersRoot.append(id.serializedForm());
+        return loadBalancersPath.append(id.serializedForm());
     }
 
     private List<LoadBalancerId> readLoadBalancerIds(Predicate<LoadBalancerId> predicate) {
-        return curatorDatabase.getChildren(loadBalancersRoot).stream()
+        return curatorDatabase.getChildren(loadBalancersPath).stream()
                               .map(LoadBalancerId::fromSerializedForm)
                               .filter(predicate)
                               .collect(Collectors.toUnmodifiableList());
