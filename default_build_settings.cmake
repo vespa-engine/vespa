@@ -126,12 +126,6 @@ function(vespa_use_default_vespa_user)
 endfunction()
 
 function(vespa_use_default_build_settings)
-  if (DEFINED CMAKE_PREFIX_PATH AND
-      DEFINED VESPA_LLVM_VERSION AND
-      DEFINED EXTRA_INCLUDE_DIRECTORY AND DEFINED EXTRA_LINK_DIRECTORY AND
-      DEFINED CMAKE_INSTALL_RPATH AND DEFINED CMAKE_BUILD_RPATH)
-    return()
-  endif()
   set(VESPA_DEPS "/opt/vespa-deps")
   unset(DEFAULT_VESPA_LLVM_VERSION)
   unset(DEFAULT_CMAKE_PREFIX_PATH)
