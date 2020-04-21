@@ -14,6 +14,7 @@ namespace vespalib {
 
 namespace {
 
+#ifdef __linux__
 /*
  * Check if line specifies an address range.
  *
@@ -86,6 +87,7 @@ std::string getLineHeader(const std::string &line)
     }
     LOG_ABORT("should not be reached");
 }
+#endif
 
 }
 
@@ -93,6 +95,7 @@ ProcessMemoryStats
 ProcessMemoryStats::createStatsFromSmaps()
 {
     ProcessMemoryStats ret;
+#ifdef __linux__
     std::ifstream smaps("/proc/self/smaps");
     std::string line;
     std::string lineHeader;
@@ -122,6 +125,7 @@ ProcessMemoryStats::createStatsFromSmaps()
             }
         }
     }
+#endif
     return ret;
 }
 
