@@ -90,7 +90,7 @@ public class AllocatableClusterResources {
     public double cost() { return nodes * costOf(advertisedResources); }
 
     /**
-     * Returns the fraction measuring how well the real resources fulfils the ideal: 1 means completely fulfiled,
+     * Returns the fraction measuring how well the real resources fulfils the ideal: 1 means completely fulfilled,
      * 0 means we have zero real resources.
      * The real may be short of the ideal due to resource limits imposed by the system or application.
      */

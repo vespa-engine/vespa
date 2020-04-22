@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -16,10 +18,15 @@ import java.util.Optional;
  */
 public class Cluster {
 
+    private final ClusterSpec.Id id;
     private final ClusterResources min, max;
     private final Optional<ClusterResources> target;
 
-    Cluster(ClusterResources minResources, ClusterResources maxResources, Optional<ClusterResources> targetResources) {
+    public Cluster(ClusterSpec.Id id,
+                   ClusterResources minResources,
+                   ClusterResources maxResources,
+                   Optional<ClusterResources> targetResources) {
+        this.id = Objects.requireNonNull(id);
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
         Objects.requireNonNull(targetResources);
@@ -29,6 +36,8 @@ public class Cluster {
         else
             this.target = targetResources;
     }
+
+    public ClusterSpec.Id id() { return id; }
 
     /** Returns the configured minimal resources in this cluster */
     public ClusterResources minResources() { return min; }
@@ -42,12 +51,16 @@ public class Cluster {
      */
     public Optional<ClusterResources> targetResources() { return target; }
 
+    public Cluster withLimits(ClusterResources min, ClusterResources max) {
+        return new Cluster(id, min, max, target);
+    }
+
     public Cluster withTarget(ClusterResources target) {
-        return new Cluster(min, max, Optional.of(target));
+        return new Cluster(id, min, max, Optional.of(target));
     }
 
     public Cluster withoutTarget() {
-        return new Cluster(min, max, Optional.empty());
+        return new Cluster(id, min, max, Optional.empty());
     }
 
     public NodeResources capAtLimits(NodeResources resources) {
@@ -61,6 +74,21 @@ public class Cluster {
         value = Math.max(min, value);
         value = Math.min(max, value);
         return value;
+    }
+
+    @Override
+    public int hashCode() { return id.hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Cluster)) return false;
+        return ((Cluster)other).id().equals(this.id);
+    }
+
+    @Override
+    public String toString() {
+        return "cluster '" + id + "'";
     }
 
 }

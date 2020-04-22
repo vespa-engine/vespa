@@ -1,13 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.transaction.Mutex;
-
+import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * The node repository's view of an application deployment.
@@ -18,23 +19,30 @@ import java.util.Optional;
  */
 public class Application {
 
+    private final ApplicationId id;
     private final Map<ClusterSpec.Id, Cluster> clusters;
 
-    public Application() {
-        this(Map.of());
+    public Application(ApplicationId id) {
+        this(id, Map.of());
     }
 
-    private Application(Map<ClusterSpec.Id, Cluster> clusters) {
-        this.clusters = Map.copyOf(clusters);
+    public Application(ApplicationId id, Collection<Cluster> clusters) {
+        this(id, clusters.stream().collect(Collectors.toMap(c -> c.id(), c -> c)));
     }
 
-    /** Returns the cluster with the given id or null if none */
-    public Cluster cluster(ClusterSpec.Id id) { return clusters.get(id); }
+    private Application(ApplicationId id, Map<ClusterSpec.Id, Cluster> clusters) {
+        this.id = id;
+        this.clusters = clusters;
+    }
 
-    public Application with(ClusterSpec.Id id, Cluster cluster) {
+    public ApplicationId id() { return id; }
+
+    public Map<ClusterSpec.Id, Cluster> clusters() { return clusters; }
+
+    public Application with(Cluster cluster) {
         Map<ClusterSpec.Id, Cluster> clusters = new HashMap<>(this.clusters);
-        clusters.put(id, cluster);
-        return new Application(clusters);
+        clusters.put(cluster.id(), cluster);
+        return new Application(id, clusters);
     }
 
     /**
@@ -43,7 +51,11 @@ public class Application {
      */
     public Application withClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max) {
         Cluster cluster = clusters.get(id);
-        return with(id, new Cluster(min, max, cluster == null ? Optional.empty() : cluster.targetResources()));
+        if (cluster == null)
+            cluster = new Cluster(id, min, max, Optional.empty());
+        else
+            cluster = cluster.withLimits(min, max);
+        return with(cluster);
     }
 
     /**
@@ -53,7 +65,24 @@ public class Application {
     public Application withClusterTarget(ClusterSpec.Id id, ClusterResources target) {
         Cluster cluster = clusters.get(id);
         if (cluster == null) return this;
-        return with(id, cluster.withTarget(target));
+        return with(cluster.withTarget(target));
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Application)) return false;
+        return ((Application)other).id().equals(this.id());
+    }
+
+    @Override
+    public String toString() {
+        return "application '" + id + "'";
     }
 
 }
