@@ -170,7 +170,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        // TODO: Better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
@@ -183,7 +182,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
-        addSimpleComponent("ai.vespa.cloud.SystemInfo");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
     }
