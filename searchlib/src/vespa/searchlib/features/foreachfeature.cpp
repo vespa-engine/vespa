@@ -7,7 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
-#include <boost/algorithm/string/replace.hpp>
+#include <vespa/vespalib/stllike/replace_variable.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.foreachfeature");
@@ -146,17 +146,17 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
     if (_dimension == TERMS) {
         uint32_t maxTerms = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "maxTerms").get("16"));
         for (uint32_t i = 0; i < maxTerms; ++i) {
-            defineInput(boost::algorithm::replace_all_copy(feature, variable, vespalib::make_string("%u", i)));
+            defineInput(vespalib::replace_variable(feature, variable, vespalib::make_string("%u", i)));
             ++_num_inputs;
         }
     } else {
         for (uint32_t i = 0; i < env.getNumFields(); ++i) {
             const FieldInfo * info = env.getField(i);
             if (info->type() == FieldType::INDEX && _dimension == FIELDS) {
-                defineInput(boost::algorithm::replace_all_copy(feature, variable, info->name()));
+                defineInput(vespalib::replace_variable(feature, variable, info->name()));
                 ++_num_inputs;
             } else if (info->type() == FieldType::ATTRIBUTE && _dimension == ATTRIBUTES) {
-                defineInput(boost::algorithm::replace_all_copy(feature, variable, info->name()));
+                defineInput(vespalib::replace_variable(feature, variable, info->name()));
                 ++_num_inputs;
             }
         }

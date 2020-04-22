@@ -7,6 +7,7 @@ vespa_add_library(vespalib_vespalib_stllike OBJECT
     hash_fun.cpp
     hash_set.cpp
     hash_map.cpp
+    replace_variable.cpp
     string.cpp
     DEPENDS
 )
