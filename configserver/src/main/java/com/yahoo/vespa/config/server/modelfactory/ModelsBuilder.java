@@ -5,12 +5,12 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.TransientException;
@@ -73,7 +73,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      *                       and assigns to this SettableOptional such that it can be used after this method returns
      */
     public List<MODELRESULT> buildModels(ApplicationId applicationId,
-                                         Optional<String> dockerImageRepository,
+                                         Optional<DockerImage> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
@@ -149,7 +149,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     // versions is the set of versions for one particular major version
     private List<MODELRESULT> buildModelVersions(Set<Version> versions,
                                                  ApplicationId applicationId,
-                                                 Optional<String> wantedDockerImageRepository,
+                                                 Optional<DockerImage> wantedDockerImageRepository,
                                                  Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
                                                  SettableOptional<AllocatedHosts> allocatedHosts,
@@ -244,7 +244,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                     ApplicationId applicationId, Optional<String> dockerImageRepository,
+                                                     ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
                                                      Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 

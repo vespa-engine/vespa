@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -336,7 +337,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         localRepo.addSession(session);
         String dockerImageRepository = "https://foo.bar.com:4443/baz";
         request(HttpRequest.Method.PUT, 1L, Map.of("dockerImageRepository", dockerImageRepository));
-        assertEquals(dockerImageRepository, localRepo.getSession(1).getDockerImageRepository().get());
+        assertEquals(DockerImage.fromString(dockerImageRepository), localRepo.getSession(1).getDockerImageRepository().get());
     }
 
     private Slime getData(HttpResponse response) throws IOException {

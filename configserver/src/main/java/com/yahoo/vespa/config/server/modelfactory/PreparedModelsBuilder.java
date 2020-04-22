@@ -18,6 +18,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -84,7 +85,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId,
-                                                    Optional<String> wantedDockerImageRepository,
+                                                    Optional<DockerImage> wantedDockerImageRepository,
                                                     Version wantedNodeVespaVersion,
                                                     Optional<AllocatedHosts> allocatedHosts,
                                                     Instant now) {
