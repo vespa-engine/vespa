@@ -241,7 +241,14 @@ public class Flags {
     public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
             "nginx-upstream-proxy-protocol", false,
             "Whether the nginx should enable proxy-protocol for all upstreams",
-            "Takes effect immediately");
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
+            "nlb-proxy-protocol", false,
+            "Configure NLB to use proxy protocol",
+            "Takes effect on next application redeploy",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
