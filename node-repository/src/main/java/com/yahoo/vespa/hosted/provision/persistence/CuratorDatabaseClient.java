@@ -400,16 +400,26 @@ public class CuratorDatabaseClient {
 
     // Applications -----------------------------------------------------------
 
+    public List<ApplicationId> readApplicationIds() {
+        return curatorDatabase.getChildren(applicationsPath).stream()
+                                                            .map(path -> ApplicationId.fromSerializedForm(path))
+                                                            .collect(Collectors.toList());
+    }
+
     public Optional<Application> readApplication(ApplicationId id) {
         return read(applicationPath(id), ApplicationSerializer::fromJson);
     }
 
-    public void writeApplication(Application application) {
-        NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(createOrSet(applicationPath(application.id()),
-                                           ApplicationSerializer.toJson(application)));
-        transaction.commit();
+    public void writeApplication(Application application, NestedTransaction transaction) {
+        curatorDatabase.newCuratorTransactionIn(transaction)
+                       .add(createOrSet(applicationPath(application.id()),
+                                        ApplicationSerializer.toJson(application)));
+    }
+
+    public void deleteApplication(ApplicationId application, NestedTransaction transaction) {
+        if (curatorDatabase.exists(applicationPath(application)))
+            curatorDatabase.newCuratorTransactionIn(transaction)
+                           .add(CuratorOperations.delete(applicationPath(application).getAbsolute()));
     }
 
     private Path applicationPath(ApplicationId id) {
@@ -556,11 +566,6 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
 
-    // TODO(mpolden): Remove this and usages after April 2020
-    public Lock lockLoadBalancers(ApplicationId application) {
-        return lock(lockPath.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
-    }
-
     private Path loadBalancerPath(LoadBalancerId id) {
         return loadBalancersPath.append(id.serializedForm());
     }
@@ -592,10 +597,8 @@ public class CuratorDatabaseClient {
     }
 
     private Transaction.Operation createOrSet(Path path, byte[] data) {
-        if (curatorDatabase.exists(path)) {
-            return CuratorOperations.setData(path.getAbsolute(), data);
-        }
-        return CuratorOperations.create(path.getAbsolute(), data);
+        return curatorDatabase.exists(path) ? CuratorOperations.setData(path.getAbsolute(), data)
+                                            : CuratorOperations.create(path.getAbsolute(), data);
     }
 
 }

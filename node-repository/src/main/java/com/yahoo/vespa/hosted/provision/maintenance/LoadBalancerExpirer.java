@@ -121,12 +121,10 @@ public class LoadBalancerExpirer extends Maintainer {
     private void withLoadBalancersIn(LoadBalancer.State state, Consumer<LoadBalancer> operation) {
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lockConfig(id.application())) {
-                try (var legacyLock = db.lockLoadBalancers(id.application())) {
-                    var loadBalancer = db.readLoadBalancer(id);
-                    if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
-                    if (loadBalancer.get().state() != state) continue; // Wrong state
-                    operation.accept(loadBalancer.get());
-                }
+                var loadBalancer = db.readLoadBalancer(id);
+                if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
+                if (loadBalancer.get().state() != state) continue; // Wrong state
+                operation.accept(loadBalancer.get());
             }
         }
     }

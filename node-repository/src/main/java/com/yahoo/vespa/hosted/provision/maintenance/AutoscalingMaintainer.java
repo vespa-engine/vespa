@@ -66,7 +66,7 @@ public class AutoscalingMaintainer extends Maintainer {
                            ClusterSpec.Id clusterId,
                            List<Node> clusterNodes,
                            MaintenanceDeployment deployment) {
-        Application application = nodeRepository().applications().get(applicationId, true);
+        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
         Cluster cluster = application.clusters().get(clusterId);
         if (cluster == null) return; // no information on limits for this cluster
         Optional<AllocatableClusterResources> target = autoscaler.autoscale(cluster, clusterNodes);
@@ -85,7 +85,7 @@ public class AutoscalingMaintainer extends Maintainer {
                              ClusterSpec.Id clusterId,
                              Application application,
                              MaintenanceDeployment deployment) {
-        nodeRepository().applications().set(application.withClusterTarget(clusterId, target.toAdvertisedClusterResources()),
+        nodeRepository().applications().put(application.withClusterTarget(clusterId, target.toAdvertisedClusterResources()),
                                             deployment.applicationLock().get());
         deployment.activate();
     }

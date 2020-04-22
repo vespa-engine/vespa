@@ -451,6 +451,7 @@ public class NodeRepository extends AbstractComponent {
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
             deactivate(db.readNodes(application, State.reserved, State.active), transaction);
+            applications.remove(application, transaction, lock);
         }
     }
 

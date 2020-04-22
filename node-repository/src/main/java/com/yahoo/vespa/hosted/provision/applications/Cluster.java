@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -49,6 +50,10 @@ public class Cluster {
      * have allocated at the moment, or empty if the system currently have no opinion on this.
      */
     public Optional<ClusterResources> targetResources() { return target; }
+
+    public Cluster withLimits(ClusterResources min, ClusterResources max) {
+        return new Cluster(id, min, max, target);
+    }
 
     public Cluster withTarget(ClusterResources target) {
         return new Cluster(id, min, max, Optional.of(target));

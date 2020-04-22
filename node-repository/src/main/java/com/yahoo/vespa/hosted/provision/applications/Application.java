@@ -51,7 +51,11 @@ public class Application {
      */
     public Application withClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max) {
         Cluster cluster = clusters.get(id);
-        return with(new Cluster(id, min, max, cluster == null ? Optional.empty() : cluster.targetResources()));
+        if (cluster == null)
+            cluster = new Cluster(id, min, max, Optional.empty());
+        else
+            cluster = cluster.withLimits(min, max);
+        return with(cluster);
     }
 
     /**

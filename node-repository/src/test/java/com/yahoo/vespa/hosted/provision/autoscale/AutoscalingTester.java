@@ -156,8 +156,9 @@ class AutoscalingTester {
 
     public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
-        Application application = nodeRepository().applications().get(applicationId, true).withClusterLimits(clusterId, min, max);
-        nodeRepository().applications().set(application, nodeRepository().lock(applicationId));
+        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+                                                  .withClusterLimits(clusterId, min, max);
+        nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
         return autoscaler.autoscale(application.clusters().get(clusterId),
                                     nodeRepository().getNodes(applicationId, Node.State.active));
     }
