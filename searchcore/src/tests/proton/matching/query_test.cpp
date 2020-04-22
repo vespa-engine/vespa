@@ -546,8 +546,9 @@ void Test::requireThatNearIteratorsCanBeBuilt() {
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
     Node::UP node = builder.build();
-    ResolveViewVisitor resolver(ViewResolver(), plain_index_env);
-    node->accept(resolver);
+    ViewResolver resolver;
+    ResolveViewVisitor visitor(resolver, plain_index_env);
+    node->accept(visitor);
     ASSERT_TRUE(node.get());
 
     FakeSearchContext context(8);
@@ -569,8 +570,9 @@ void Test::requireThatONearIteratorsCanBeBuilt() {
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
     Node::UP node = builder.build();
-    ResolveViewVisitor resolver(ViewResolver(), plain_index_env);
-    node->accept(resolver);
+    ViewResolver resolver;
+    ResolveViewVisitor visitor(resolver, plain_index_env);
+    node->accept(visitor);
     ASSERT_TRUE(node.get());
 
     FakeSearchContext context(8);
@@ -593,8 +595,9 @@ void Test::requireThatPhraseIteratorsCanBeBuilt() {
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
     builder.addStringTerm(suffix_term, field, 1, Weight(2));
     Node::UP node = builder.build();
-    ResolveViewVisitor resolver(ViewResolver(), plain_index_env);
-    node->accept(resolver);
+    ViewResolver resolver;
+    ResolveViewVisitor visitor(resolver, plain_index_env);
+    node->accept(visitor);
     ASSERT_TRUE(node.get());
 
     FakeSearchContext context(9);
