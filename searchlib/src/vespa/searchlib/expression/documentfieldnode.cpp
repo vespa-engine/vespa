@@ -261,7 +261,7 @@ DocumentFieldNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 class String2ResultNode : public ResultNode
 {
 public:
-    String2ResultNode(const vespalib::string & s) : _s(s) { }
+    String2ResultNode(vespalib::stringref s) : _s(s) { }
     int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), NULL, 0); }
     double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), NULL); }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
@@ -269,7 +269,7 @@ private:
     String2ResultNode * clone() const override { return new String2ResultNode(_s); }
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
-    const vespalib::string & _s;
+    vespalib::string _s;
 };
 
 void String2ResultNode::set(const ResultNode&)
