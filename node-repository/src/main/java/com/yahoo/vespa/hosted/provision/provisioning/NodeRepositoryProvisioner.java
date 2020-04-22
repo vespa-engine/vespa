@@ -73,18 +73,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
-
-    /**
-     * Returns a list of nodes in the prepared or active state, matching the given constraints.
-     * The nodes are ordered by increasing index number.
-     */
-    @Deprecated // TODO: Remove after April 2020
-    @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity,
-                                  int wantedGroups, ProvisionLogger logger) {
-        return prepare(application, cluster, requestedCapacity.withGroups(wantedGroups), logger);
-    }
-
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
      * The nodes are ordered by increasing index number.
