@@ -223,7 +223,7 @@ public final class ControllerTester {
                 if (!application.hasApplicationPackage()) {
                     configServer().nodeRepository().upgrade(zone.getId(), application.nodeType(), version);
                 }
-                configServer().setVersion(application.id(), zone.getId(), version);
+                configServer().setVersion(version, application.id(), zone.getId());
                 configServer().convergeServices(application.id(), zone.getId());
             }
         }

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -59,9 +58,7 @@ public class OsVersionStatus {
 
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
     public static OsVersionStatus compute(Controller controller) {
-        var osVersionStatus = controller.osVersionStatus();
         var osVersions = new HashMap<OsVersion, List<NodeVersion>>();
-        var now = controller.clock().instant();
         controller.osVersions().forEach(osVersion -> osVersions.put(osVersion, new ArrayList<>()));
 
         for (var application : SystemApplication.all()) {
@@ -71,19 +68,16 @@ public class OsVersionStatus {
                                                 .targetVersionsOf(zone.getId())
                                                 .osVersion(application.nodeType())
                                                 .orElse(Version.emptyVersion);
-                controller.serviceRegistry().configServer().nodeRepository()
-                          .list(zone.getId(), application.id()).stream()
-                          .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
-                          .map(node -> new NodeVersion(node.hostname(), zone.getId(), node.currentOsVersion(), targetOsVersion, now))
-                          .forEach(nodeVersion -> {
-                              var newNodeVersion = osVersionStatus.of(nodeVersion.hostname())
-                                                                  .map(nv -> nv.withCurrentVersion(nodeVersion.currentVersion(), now)
-                                                                               .withWantedVersion(nodeVersion.wantedVersion()))
-                                                                  .orElse(nodeVersion);
-                              var version = new OsVersion(newNodeVersion.currentVersion(), zone.getCloudName());
-                              osVersions.putIfAbsent(version, new ArrayList<>());
-                              osVersions.get(version).add(newNodeVersion);
-                          });
+
+                for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getId(), application.id())) {
+                    if (!OsUpgrader.eligibleForUpgrade(node, application)) continue;
+                    var suspendedAt = node.suspendedSince();
+                    var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), node.currentOsVersion(),
+                                                      targetOsVersion, suspendedAt);
+                    var osVersion = new OsVersion(nodeVersion.currentVersion(), zone.getCloudName());
+                    osVersions.putIfAbsent(osVersion, new ArrayList<>());
+                    osVersions.get(osVersion).add(nodeVersion);
+                }
             }
         }
 
@@ -96,15 +90,6 @@ public class OsVersionStatus {
             newOsVersions.put(osVersion.getKey(), new NodeVersions(nodeVersions.build()));
         }
         return new OsVersionStatus(newOsVersions.build());
-    }
-
-    /** Returns version of node identified by given host name */
-    private Optional<NodeVersion> of(HostName hostname) {
-        return versions.values().stream()
-                       .map(nodeVersions -> nodeVersions.asMap().get(hostname))
-                       .map(Optional::ofNullable)
-                       .flatMap(Optional::stream)
-                       .findFirst();
     }
 
     private static List<ZoneApi> zonesToUpgrade(Controller controller) {

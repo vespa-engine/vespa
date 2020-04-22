@@ -11,8 +11,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 
-import java.time.Instant;
-
 /**
  * Serializer for {@link com.yahoo.vespa.hosted.controller.versions.NodeVersion}.
  *
@@ -30,7 +28,7 @@ public class NodeVersionSerializer {
     private static final String hostnameField = "hostname";
     private static final String zoneField = "zone";
     private static final String wantedVersionField = "wantedVersion";
-    private static final String changedAtField = "changedAt";
+    private static final String suspendedAtField = "suspendedAt";
 
     public void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
         for (var nodeVersion : nodeVersions.asMap().values()) {
@@ -38,7 +36,8 @@ public class NodeVersionSerializer {
             nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
             nodeVersionObject.setString(zoneField, nodeVersion.zone().value());
             nodeVersionObject.setString(wantedVersionField, nodeVersion.wantedVersion().toFullString());
-            nodeVersionObject.setLong(changedAtField, nodeVersion.changedAt().toEpochMilli());
+            nodeVersion.suspendedAt().ifPresent(suspendedAt -> nodeVersionObject.setLong(suspendedAtField,
+                                                                                         suspendedAt.toEpochMilli()));
         }
     }
 
@@ -48,8 +47,8 @@ public class NodeVersionSerializer {
             var hostname = HostName.from(entry.field(hostnameField).asString());
             var zone = ZoneId.from(entry.field(zoneField).asString());
             var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
-            var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
-            nodeVersions.put(hostname, new NodeVersion(hostname, zone, version, wantedVersion, changedAt));
+            var suspendedAt = Serializers.optionalInstant(entry.field(suspendedAtField));
+            nodeVersions.put(hostname, new NodeVersion(hostname, zone, version, wantedVersion, suspendedAt));
         });
         return new NodeVersions(nodeVersions.build());
     }

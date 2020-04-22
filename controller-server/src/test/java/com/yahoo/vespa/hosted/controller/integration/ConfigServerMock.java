@@ -178,28 +178,27 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     /** Set version for an application in a given zone */
-    public void setVersion(ApplicationId application, ZoneId zone, Version version) {
-        setVersion(application, zone, version, -1, false);
+    public void setVersion(Version version, ApplicationId application, ZoneId zone) {
+        setVersion(zone, nodeRepository.list(zone, application), version, false);
     }
 
     /** Set version for nodeCount number of nodes in application in a given zone */
-    public void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
-        setVersion(application, zone, version, nodeCount, false);
+    public void setVersion(Version version, List<Node> nodes, ZoneId zone) {
+        setVersion(zone, nodes, version, false);
     }
 
     /** Set OS version for an application in a given zone */
-    public void setOsVersion(ApplicationId application, ZoneId zone, Version version) {
-        setOsVersion(application, zone, version, -1);
+    public void setOsVersion(Version version, ApplicationId application, ZoneId zone) {
+        setVersion(zone, nodeRepository.list(zone, application), version, true);
     }
 
     /** Set OS version for an application in a given zone */
-    public void setOsVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
-        setVersion(application, zone, version, nodeCount, true);
+    public void setOsVersion(Version version, List<Node> nodes, ZoneId zone) {
+        setVersion(zone, nodes, version, true);
     }
 
-    private void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount, boolean osVersion) {
-        int n = 0;
-        for (Node node : nodeRepository().list(zone, application)) {
+    private void setVersion(ZoneId zone, List<Node> nodes, Version version, boolean osVersion) {
+        for (var node : nodes) {
             Node newNode;
             if (osVersion) {
                 newNode = new Node.Builder(node).currentOsVersion(version).wantedOsVersion(version).build();
@@ -207,7 +206,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 newNode = new Node.Builder(node).currentVersion(version).wantedVersion(version).build();
             }
             nodeRepository().putNodes(zone, newNode);
-            if (++n == nodeCount) break;
         }
     }
 
@@ -397,8 +395,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public void deactivate(DeploymentId deployment) throws NotFoundException {
         ApplicationId applicationId = deployment.applicationId();
-        nodeRepository().removeByHostname(deployment.zoneId(),
-                                          nodeRepository().list(deployment.zoneId(), applicationId));
+        nodeRepository().removeNodes(deployment.zoneId(),
+                                     nodeRepository().list(deployment.zoneId(), applicationId));
         if ( ! applications.containsKey(deployment))
             throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
         applications.remove(deployment);
