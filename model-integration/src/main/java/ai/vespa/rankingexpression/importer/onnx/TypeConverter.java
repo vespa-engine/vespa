@@ -22,8 +22,11 @@ class TypeConverter {
             for (int onnxIndex = 0; onnxIndex < type.dimensions().size(); ++onnxIndex) {
                 int vespaIndex = type.dimensionMap(onnxIndex);
                 Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(onnxIndex);
-                TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
                 long onnxDimensionSize = onnxDimension.getDimValue() == 0 ? 1 : onnxDimension.getDimValue();
+                if (onnxDimensionSize == -1) {
+                    continue;  // disregard batch dimensions
+                }
+                TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
                 if (onnxDimensionSize != vespaDimension.size().orElse(-1L)) {
                     throw new IllegalArgumentException("Onnx dimensions of does not match Vespa dimensions");
                 }

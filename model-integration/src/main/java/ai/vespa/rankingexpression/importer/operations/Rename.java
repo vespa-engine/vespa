@@ -54,7 +54,7 @@ public class Rename extends IntermediateOperation {
     }
 
     public void renameDimensions(DimensionRenamer renamer) {
-        type = type.rename(renamer);
+        super.renameDimensions(renamer);
         from = renamer.dimensionNameOf(from).orElse(from);
         to = renamer.dimensionNameOf(to).orElse(to);
     }
