@@ -279,7 +279,8 @@ void String2ResultNode::set(const ResultNode&)
 
 void GetDocIdNamespaceSpecificFunctionNode::onDoc(const Document & doc)
 {
-    String2ResultNode converter(doc.getId().getScheme().getNamespaceSpecific());
+    vespalib::string nss(doc.getId().getScheme().getNamespaceSpecific());
+    String2ResultNode converter(nss);
     _value->set(converter);
 }
 
