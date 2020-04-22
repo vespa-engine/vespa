@@ -88,19 +88,6 @@ public class DiskCleanupTest {
                 "/opt/vespa/var/crash/core4", "/opt/vespa/var/crash/vespa-proton-bin.core-232", "/opt/vespa/logs/vespa-2.log", "/opt/vespa/var/crash/core3");
     }
 
-    @Test
-    public void bytes_to_display_count_test() {
-        assertEquals("-1 bytes", DiskCleanup.bytesToDisplayCount(-1));
-        assertEquals("123 bytes", DiskCleanup.bytesToDisplayCount(123));
-        assertEquals("1 kB", DiskCleanup.bytesToDisplayCount(1_000));
-        assertEquals("15 MB", DiskCleanup.bytesToDisplayCount(15_000_000));
-        assertEquals("123 GB", DiskCleanup.bytesToDisplayCount(123_456_789_012L));
-        assertEquals("987 TB", DiskCleanup.bytesToDisplayCount(987_654_321_098_765L));
-        assertEquals("2 PB", DiskCleanup.bytesToDisplayCount(2_000_000_000_000_000L));
-        assertEquals("9 EB", DiskCleanup.bytesToDisplayCount(Long.MAX_VALUE));
-
-    }
-
     private static class DiskCleanupRuleMock implements DiskCleanupRule {
         private final ArrayList<PrioritizedFileAttributes> pfa = new ArrayList<>();
 

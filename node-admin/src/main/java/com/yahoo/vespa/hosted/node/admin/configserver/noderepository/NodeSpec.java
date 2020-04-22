@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 
 import java.time.Instant;
 import java.util.EnumSet;
@@ -218,6 +219,10 @@ public class NodeSpec {
 
     public double memoryGb() {
         return resources.memoryGb();
+    }
+
+    public DiskSize diskSize() {
+        return DiskSize.of(resources.diskGb(), DiskSize.Unit.GB);
     }
 
     public double diskGb() {

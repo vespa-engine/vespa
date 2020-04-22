@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.disk;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,8 +44,8 @@ public class DiskCleanup {
                     });
 
         } finally {
-            String wantedDeleteSize = bytesToDisplayCount(bytesToRemove);
-            String deletedSize = bytesToDisplayCount(bytesToRemove - btr[0]);
+            String wantedDeleteSize = DiskSize.of(bytesToRemove).asString();
+            String deletedSize = DiskSize.of(bytesToRemove - btr[0]).asString();
             if (deletedPaths.size() > 20) {
                 context.log(logger, "Deleted %d files (%s) because disk was getting full", deletedPaths.size(), deletedSize);
             } else if (deletedPaths.size() > 0) {
@@ -55,13 +56,5 @@ public class DiskCleanup {
         }
 
         return !deletedPaths.isEmpty();
-    }
-
-    static String bytesToDisplayCount(long bytes) {
-        if (bytes < 1000) return bytes + " bytes";
-
-        int unit = -1;
-        for (; bytes >= 1000; unit++) bytes /= 1000;
-        return bytes + " " + UNITS[unit] + "B";
     }
 }

@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
@@ -52,17 +53,17 @@ public class StorageMaintainerTest {
             Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
             terminal.expectCommand("du -xsk /home/docker/host-1 2>&1", 0, "321\t/home/docker/host-1/");
-            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
+            assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
 
             // Value should still be cached, no new execution against the terminal
-            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
+            assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
         }
 
         @Test
         public void testNonExistingDiskUsed() {
             StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null);
-            long usedBytes = storageMaintainer.getDiskUsedInBytes(null, Paths.get("/fake/path"));
-            assertEquals(0L, usedBytes);
+            DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
+            assertEquals(DiskSize.ZERO, size);
         }
 
         @After

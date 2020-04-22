@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -55,7 +56,7 @@ public class StorageMaintainer {
     private final Clock clock;
 
     // We cache disk usage to avoid doing expensive disk operations so often
-    private final Cache<ContainerName, Long> diskUsage = CacheBuilder.newBuilder()
+    private final Cache<ContainerName, DiskSize> diskUsage = CacheBuilder.newBuilder()
             .maximumSize(100)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
@@ -72,12 +73,17 @@ public class StorageMaintainer {
         this.clock = clock;
     }
 
+    // TODO: Remove, use diskUsageFor() instead
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
+        return diskUsageFor(context).map(DiskSize::bytes);
+    }
+
+    public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
         try {
-            Long cachedDiskUsage = diskUsage.getIfPresent(context.containerName());
+            DiskSize cachedDiskUsage = diskUsage.getIfPresent(context.containerName());
             if (cachedDiskUsage != null) return Optional.of(cachedDiskUsage);
 
-            long diskUsageBytes = getDiskUsedInBytes(context, context.pathOnHostFromPathInNode("/"));
+            DiskSize diskUsageBytes = getDiskUsed(context, context.pathOnHostFromPathInNode("/"));
             diskUsage.put(context.containerName(), diskUsageBytes);
             return Optional.of(diskUsageBytes);
         } catch (Exception e) {
@@ -86,9 +92,8 @@ public class StorageMaintainer {
         }
     }
 
-    // Public for testing
-    long getDiskUsedInBytes(TaskContext context, Path path) {
-        if (!Files.exists(path)) return 0;
+    DiskSize getDiskUsed(TaskContext context, Path path) {
+        if (!Files.exists(path)) return DiskSize.ZERO;
 
         String output = terminal.newCommandLine(context)
                 .add("du", "-xsk", path.toString())
@@ -101,14 +106,14 @@ public class StorageMaintainer {
             throw new ConvergenceException("Result from disk usage command not as expected: " + output);
         }
 
-        return 1024 * Long.parseLong(results[0]);
+        return DiskSize.of(Long.parseLong(results[0]), DiskSize.Unit.kiB);
     }
 
     public boolean cleanDiskIfFull(NodeAgentContext context) {
-        double totalBytes = context.node().diskGb() * 1_000_000_000L;
+        double totalBytes = context.node().diskSize().bytes();
         // Delete enough bytes to get below 80% disk usage, but only if we are already using more than 90% disk
-        long bytesToRemove = getDiskUsageFor(context)
-                .map(diskUsage -> (long) (diskUsage - 0.8 * totalBytes))
+        long bytesToRemove = diskUsageFor(context)
+                .map(diskUsage -> (long) (diskUsage.bytes() - 0.8 * totalBytes))
                 .filter(bytes -> bytes > totalBytes * 0.1)
                 .orElse(0L);
 
