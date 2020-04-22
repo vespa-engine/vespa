@@ -62,7 +62,7 @@ TEST(JudyArrayTest, iterating) {
         JudyArray::ConstIterator cit = array.begin();
         EXPECT_THAT(cit.toString(), MatchesRegex("^ConstIterator\\(Key: 3, Valp: 0x[0-9a-f]{1,16}, Val: 2\\)$"));
         JudyArray::Iterator it = array.end();
-        EXPECT_THAT(it.toString(), MatchesRegex("^Iterator\\(Key: 0, Valp: 0\\)$"));
+        EXPECT_THAT(it.toString(), MatchesRegex("^Iterator\\(Key: 0, Valp: (0x)?0\\)$"));
     }
 }
 
