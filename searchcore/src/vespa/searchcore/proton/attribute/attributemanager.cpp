@@ -4,6 +4,7 @@
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
 #include "attributemanager.h"
+#include "attribute_type_matcher.h"
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
@@ -41,25 +42,8 @@ namespace {
 
 bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
     if (av) {
-        const auto &oldConfig = av->getConfig();
-        if ((oldConfig.basicType() != newConfig.basicType()) ||
-            (oldConfig.collectionType() != newConfig.collectionType())) {
-            return false;
-        }
-        if (newConfig.basicType().type() == BasicType::TENSOR) {
-            if (oldConfig.tensorType() != newConfig.tensorType()) {
-                return false;
-            }
-        }
-        if (newConfig.basicType().type() == BasicType::PREDICATE) {
-            using Params = search::attribute::PersistentPredicateParams;
-            const Params &oldParams = oldConfig.predicateParams();
-            const Params &newParams = newConfig.predicateParams();
-            if (!(oldParams == newParams)) {
-                return false;
-            }
-        }
-        return true;
+        AttributeTypeMatcher matching_types;
+        return matching_types(av->getConfig(), newConfig);
     } else {
         return false;
     }

@@ -98,11 +98,32 @@ assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
     return true;
 }
 
+bool
+assertTensorAttribute(const AttributesConfig::Attribute &attribute,
+                      const vespalib::string &name, const vespalib::string &spec, int max_links_per_node)
+{
+    if (!EXPECT_EQUAL(attribute.name, name)) {
+        return false;
+    }
+    if (!EXPECT_EQUAL((int)attribute.datatype, (int)AttributesConfig::Attribute::Datatype::TENSOR)) {
+        return false;
+    }
+    if (!EXPECT_EQUAL(attribute.tensortype, spec)) {
+        return false;
+    }
+    if (!EXPECT_TRUE(attribute.index.hnsw.enabled)) {
+        return false;
+    }
+    if (!EXPECT_EQUAL(attribute.index.hnsw.maxlinkspernode, max_links_per_node)) {
+        return false;
+    }
+    return true;
+}
 
 bool
 assertAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(4u, attributes.size())) {
+    if (!EXPECT_EQUAL(6u, attributes.size())) {
         return false;
     }
     if (!assertDefaultAttribute(attributes[0], "a1")) {
@@ -117,6 +138,12 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
     if (!assertDefaultAttribute(attributes[3], "a4")) {
         return false;
     }
+    if (!assertTensorAttribute(attributes[4], "tensor1", "tensor(x[100])", 16)) {
+        return false;
+    }                                                                         
+    if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
+        return false;
+    }                                                                         
     return true;
 }
 
@@ -124,7 +151,7 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(5u, attributes.size())) {
+    if (!EXPECT_EQUAL(7u, attributes.size())) {
         return false;
     }
     if (!assertFastSearchAttribute(attributes[0], "a0")) {
@@ -142,6 +169,12 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
     if (!assertFastSearchAttribute(attributes[4], "a4")) {
         return false;
     }
+    if (!assertTensorAttribute(attributes[5], "tensor1", "tensor(x[100])", 32)) {
+        return false;
+    }                                                                         
+    if (!assertTensorAttribute(attributes[6], "tensor2", "tensor(x[200])", 32)) {
+        return false;
+    }                                                                         
     return true;
 }
 
@@ -149,7 +182,7 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(4u, attributes.size())) {
+    if (!EXPECT_EQUAL(6u, attributes.size())) {
         return false;
     }
     if (!assertFastSearchAndMoreAttribute(attributes[0], "a1")) {
@@ -164,6 +197,12 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
     if (!assertDefaultAttribute(attributes[3], "a4")) {
         return false;
     }
+    if (!assertTensorAttribute(attributes[4], "tensor1", "tensor(x[100])", 32)) {
+        return false;
+    }                                                                         
+    if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
+        return false;
+    }                                                                         
     return true;
 }
 
@@ -199,6 +238,17 @@ setupFastSearchAndMoreAttribute(const vespalib::string name)
     return attribute;
 }
 
+AttributesConfig::Attribute
+setupTensorAttribute(const vespalib::string &name, const vespalib::string &spec, int max_links_per_node)
+{
+    AttributesConfig::Attribute attribute;
+    attribute.name = name;
+    attribute.datatype = AttributesConfig::Attribute::Datatype::TENSOR;
+    attribute.tensortype = spec;
+    attribute.index.hnsw.enabled = true;
+    attribute.index.hnsw.maxlinkspernode = max_links_per_node;
+    return attribute;
+}
 
 void
 setupDefaultAttributes(AttributesConfigBuilder::AttributeVector &attributes)
@@ -207,6 +257,8 @@ setupDefaultAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.push_back(setupDefaultAttribute("a2"));
     attributes.push_back(setupDefaultAttribute("a3"));
     attributes.push_back(setupDefaultAttribute("a4"));
+    attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 16));
+    attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[100])", 16));
 }
 
 
@@ -221,6 +273,8 @@ setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.back().collectiontype = AttributesConfig::Attribute::Collectiontype::ARRAY;
     attributes.push_back(setupFastSearchAttribute("a4"));
     attributes.back().createifnonexistent = true;
+    attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 32));
+    attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[200])", 32));
 }
 
 }
