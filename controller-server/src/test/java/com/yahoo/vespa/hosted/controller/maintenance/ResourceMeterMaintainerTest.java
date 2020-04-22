@@ -64,10 +64,10 @@ public class ResourceMeterMaintainerTest {
                 nonAwsZone,
                 awsZone1,
                 awsZone2);
-        tester.configServer().nodeRepository().addFixedNodes(nonAwsZone.getId());
-        tester.configServer().nodeRepository().addFixedNodes(awsZone1.getId());
-        tester.configServer().nodeRepository().addFixedNodes(awsZone2.getId());
-        tester.configServer().nodeRepository().putByHostname(
+        tester.configServer().nodeRepository().setFixedNodes(nonAwsZone.getId());
+        tester.configServer().nodeRepository().setFixedNodes(awsZone1.getId());
+        tester.configServer().nodeRepository().setFixedNodes(awsZone2.getId());
+        tester.configServer().nodeRepository().putNodes(
                 awsZone1.getId(),
                 createNodesInState(
                         Node.State.provisioned,

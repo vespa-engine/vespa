@@ -212,8 +212,8 @@ public class InternalStepRunnerTest {
         Node systemTestNode = tester.configServer().nodeRepository().list(JobType.systemTest.zone(system()),
                                                                           app.instanceId()).iterator().next();
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().minus(Duration.ofSeconds(1)));
-        tester.configServer().nodeRepository().putByHostname(JobType.systemTest.zone(system()),
-                                                             new Node.Builder(systemTestNode)
+        tester.configServer().nodeRepository().putNodes(JobType.systemTest.zone(system()),
+                                                        new Node.Builder(systemTestNode)
                                                                      .serviceState(Node.ServiceState.allowedDown)
                                                                      .suspendedSince(tester.clock().instant())
                                                                      .build());
