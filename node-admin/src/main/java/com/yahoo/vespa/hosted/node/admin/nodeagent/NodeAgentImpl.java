@@ -48,9 +48,6 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  */
 public class NodeAgentImpl implements NodeAgent {
 
-    // This is used as a definition of 1 GB when comparing flavor specs in node-repo
-    private static final long BYTES_IN_GB = 1_000_000_000L;
-
     // Container is started with uncapped CPU and is kept that way until the first successful health check + this duration
     // Subtract 1 second to avoid warmup coming in lockstep with tick time and always end up using an extra tick when there are just a few ms left
     private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofSeconds(90).minus(Duration.ofSeconds(1));
@@ -445,12 +442,8 @@ public class NodeAgentImpl implements NodeAgent {
                 stopServicesIfNeeded(context);
                 break;
             case active:
+                storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
-
-                storageMaintainer.getDiskUsageFor(context)
-                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.diskGb())
-                        .filter(diskUtil -> diskUtil >= 0.8)
-                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context));
 
                 if (downloadImageIfNeeded(node, container)) {
                     context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());
