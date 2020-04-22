@@ -74,9 +74,8 @@ for building Vespa, running unit tests and running system tests:
 ### Build Java modules
 
     export MAVEN_OPTS="-Xms128m -Xmx1024m"
-    source /opt/rh/rh-maven35/enable
-    bash bootstrap.sh java
-    mvn -T <num-threads> install
+    ./bootstrap.sh java
+    mvn install --threads 1C
 
 Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 

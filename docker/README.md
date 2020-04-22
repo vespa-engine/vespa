@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-# Building and running Vespa on Docker (OS X and Linux)
+# Building Vespa RPM on Docker (OS X and Linux)
 
 ## Installing docker
 [Docker installation](https://docs.docker.com/engine/installation/)
@@ -15,32 +15,10 @@ The produced rpms will be available in this folder after compilation.
 The version number will be compiled into binaries, but has no other meaning than that.
 
 
-## Building and testing Vespa
-Execute ```./vespa-ci.sh <git commit>``` to build and test a specific branch/tag/commit.
-
-
-## Building Vespa Docker image
-Execute ```./build-vespa-image.sh <Vespa version number>``` to build a Docker image (*vesparun*) which has the rpms
-from the build step (or downloaded rpms into this folder) installed.
-
-
-## Running Vespa inside Docker container
-Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
-
-This starts a Docker container using the Docker image (*vesparun*) from the previous step.
-Vespa will be started inside the container.
-
-
-## Building Vespa inside a Docker container
-Execute ```./enter-build-container.sh``` to enter the Vespa build environment inside a Docker container.
-
-The container is entered at the root of the Vespa source repository. Follow the build sections in [README.md](https://github.com/vespa-engine/vespa/blob/master/README.md) to build and test.
-
-
 ## Troubleshooting
 - Use ```docker logs CONTAINER``` for output - useful if the commands above fail.
 
-- If the build fails, start from scratch: ```docker rmi -f vesparun vespabuild``` - then build again. Clean local docker if docker image disk full:
+- If the build fails, start from scratch and build again. Clean local docker if docker image disk full:
     - ```docker rm -v $(docker ps -a -q -f status=exited)```
     - ```docker rmi $(docker images -f "dangling=true" -q)```
 
