@@ -34,7 +34,6 @@ public class AutoscalingMaintainer extends Maintainer {
     private final Autoscaler autoscaler;
     private final Deployer deployer;
     private final Metric metric;
-    private final Map<Pair<ApplicationId, ClusterSpec.Id>, Instant> lastLogged = new HashMap<>();
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
                                  HostResourcesCalculator hostResourcesCalculator,
@@ -68,17 +67,13 @@ public class AutoscalingMaintainer extends Maintainer {
                            MaintenanceDeployment deployment) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
         Cluster cluster = application.clusters().get(clusterId);
-        if (cluster == null) return; // no information on limits for this cluster
+        if (cluster == null) return;
+        if (cluster.minResources().equals(cluster.maxResources())) return;
         Optional<AllocatableClusterResources> target = autoscaler.autoscale(cluster, clusterNodes);
         if (target.isEmpty()) return; // current resources are fine
 
-        if (cluster.minResources().equals(cluster.maxResources())) { // autoscaling is deactivated
-            logAutoscaling("Scaling suggestion for ", target.get(), applicationId, clusterId, clusterNodes);
-        }
-        else {
-            logAutoscaling("Autoscaling ", target.get(), applicationId, clusterId, clusterNodes);
-            autoscaleTo(target.get(), clusterId, application, deployment);
-        }
+        logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
+        autoscaleTo(target.get(), clusterId, application, deployment);
     }
 
     private void autoscaleTo(AllocatableClusterResources target,
@@ -90,20 +85,15 @@ public class AutoscalingMaintainer extends Maintainer {
         deployment.activate();
     }
 
-    private void logAutoscaling(String prefix,
-                                AllocatableClusterResources target,
+    private void logAutoscaling(AllocatableClusterResources target,
                                 ApplicationId application,
                                 ClusterSpec.Id clusterId,
                                 List<Node> clusterNodes) {
-        Instant lastLogTime = lastLogged.get(new Pair<>(application, clusterId));
-        if (lastLogTime != null && lastLogTime.isAfter(nodeRepository().clock().instant().minus(Duration.ofHours(1)))) return;
-
         int currentGroups = (int)clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        log.info(prefix + application + " " + clusterType + " " + clusterId + ":" +
+        log.info("Autoscaling " + application + " " + clusterType + " " + clusterId + ":" +
                  "\nfrom " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
                  "\nto   " + toString(target.nodes(), target.groups(), target.advertisedResources()));
-        lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
     }
 
     private String toString(int nodes, int groups, NodeResources resources) {

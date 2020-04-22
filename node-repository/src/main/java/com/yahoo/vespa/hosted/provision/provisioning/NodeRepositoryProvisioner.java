@@ -170,7 +170,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         // the non-numeric settings of the current min limit with the current numeric settings
         NodeResources nodeResources = nodes.get(0).allocation().get().requestedResources()
                                            .with(requested.minResources().nodeResources().diskSpeed())
-                                           .with(requested.maxResources().nodeResources().storageType());
+                                           .with(requested.minResources().nodeResources().storageType());
         var currentResources = new ClusterResources(nodes.size(), (int)groups, nodeResources);
         if ( ! currentResources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
 
