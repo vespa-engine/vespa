@@ -36,19 +36,19 @@ struct Fixture {
     Setup setup;
     IntBufferType bufferType;
     size_t deadElems;
-    int buffer;
+    int buffer[ARRAYS_SIZE];
     Fixture(const Setup &setup_)
         : setup(setup_),
           bufferType(ARRAYS_SIZE, setup._minArrays, MAX_ARRAYS, NUM_ARRAYS_FOR_NEW_BUFFER, setup._allocGrowFactor),
           deadElems(0),
-          buffer(0)
+          buffer()
     {}
     ~Fixture() {
         bufferType.onHold(&setup._usedElems);
         bufferType.onFree(setup._usedElems);
     }
     void onActive() {
-        bufferType.onActive(setup._bufferId, &setup._usedElems, deadElems, &buffer);
+        bufferType.onActive(setup._bufferId, &setup._usedElems, deadElems, &buffer[0]);
     }
     size_t arraysToAlloc() {
         return bufferType.calcArraysToAlloc(setup._bufferId, setup._neededElems, setup._resizing);
