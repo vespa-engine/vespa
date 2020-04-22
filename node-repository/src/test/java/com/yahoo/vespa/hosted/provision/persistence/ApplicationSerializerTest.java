@@ -38,8 +38,6 @@ public class ApplicationSerializerTest {
 
         Application serialized = ApplicationSerializer.fromJson(ApplicationSerializer.toJson(original));
         assertNotSame(original, serialized);
-        System.out.println("original id: " + original.id());
-        System.out.println("serialized id: " + serialized.id());
         assertEquals(original, serialized);
         assertEquals(original.id(), serialized.id());
         assertEquals(original.clusters(), serialized.clusters());
