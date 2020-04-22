@@ -247,12 +247,6 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
-            "nginx-upstream-proxy-protocol", false,
-            "Whether the nginx should enable proxy-protocol for all upstreams",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,
             "Configure NLB to use proxy protocol",
