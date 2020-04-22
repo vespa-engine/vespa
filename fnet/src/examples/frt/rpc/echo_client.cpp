@@ -84,6 +84,7 @@ EchoClient::Main()
         printf("Return values != parameters.\n");
     }
     req->SubRef();
+    target->SubRef();
     return 0;
 }
 
