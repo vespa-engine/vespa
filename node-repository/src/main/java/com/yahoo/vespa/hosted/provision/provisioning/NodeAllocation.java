@@ -52,11 +52,11 @@ class NodeAllocation {
     /** The nodes this has accepted so far */
     private final Set<PrioritizableNode> nodes = new LinkedHashSet<>();
 
-    /** The number of nodes in the accepted nodes which are of the requested flavor */
-    private int acceptedOfRequestedFlavor = 0;
+    /** The number of already allocated nodes accepted and not retired */
+    private int accepted = 0;
 
-    /** The number of nodes in the accepted nodes which are of the requested flavor and not already retired */
-    private int acceptedNonretiredOfRequestedFlavor = 0;
+    /** The number of already allocated nodes accepted and not retired and not needing resize */
+    private int acceptedWithoutResize = 0;
 
     /** The number of nodes rejected because of clashing parentHostname */
     private int rejectedWithClashingParentHost = 0;
@@ -118,14 +118,14 @@ class NodeAllocation {
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
                         wantToRetireNode = true;
-                    if (( ! saturatedByNonretired() && hasCompatibleFlavor(node)) || acceptToRetire(node))
+                    if ((! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
                         accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
                 }
                 else {
                     accepted.add(acceptNode(node, false, false));
                 }
             }
-            else if ( ! saturated() && hasCompatibleFlavor(node)) {
+            else if (! saturated() && hasCompatibleFlavor(node)) {
                 if ( violatesParentHostPolicy(this.nodes, offered)) {
                     ++rejectedWithClashingParentHost;
                     continue;
@@ -226,22 +226,22 @@ class NodeAllocation {
         return requestedNodes.isCompatible(node.node.flavor(), flavors) || node.isResizable;
     }
 
-    private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire, boolean resize) {
+    private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire, boolean resizeable) {
         Node node = prioritizableNode.node;
 
         if (node.allocation().isPresent()) // Record the currently requested resources
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
-            if (resize && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+            accepted++;
+            if (node.allocation().isEmpty() || ! requestedNodes.needsResize(node))
+                acceptedWithoutResize++;
+
+            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
                 node = resize(node);
 
             if (node.state() != Node.State.active) // reactivated node - make sure its not retired
                 node = node.unretire();
-
-            acceptedOfRequestedFlavor++;
-            if ( ! (node.allocation().isPresent() && node.allocation().get().membership().retired()))
-                acceptedNonretiredOfRequestedFlavor++;
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
@@ -272,29 +272,24 @@ class NodeAllocation {
 
     /** Returns true if no more nodes are needed in this list */
     private boolean saturated() {
-        return requestedNodes.saturatedBy(acceptedOfRequestedFlavor);
-    }
-
-    /** Returns true if no more nodes are needed in this list to not make changes to the retired set */
-    private boolean saturatedByNonretired() {
-        return requestedNodes.saturatedBy(acceptedNonretiredOfRequestedFlavor);
+        return requestedNodes.saturatedBy(acceptedWithoutResize);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
     boolean fulfilled() {
-        return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor);
+        return requestedNodes.fulfilledBy(accepted);
     }
 
     boolean wouldBeFulfilledWithRetiredNodes() {
-        return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + wasRetiredJustNow);
+        return requestedNodes.fulfilledBy(accepted + wasRetiredJustNow);
     }
 
     boolean wouldBeFulfilledWithClashingParentHost() {
-        return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + rejectedWithClashingParentHost);
+        return requestedNodes.fulfilledBy(accepted + rejectedWithClashingParentHost);
     }
 
     boolean wouldBeFulfilledWithoutExclusivity() {
-        return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + rejectedDueToExclusivity);
+        return requestedNodes.fulfilledBy(accepted + rejectedDueToExclusivity);
     }
 
     /**
@@ -307,7 +302,7 @@ class NodeAllocation {
     Optional<FlavorCount> getFulfilledDockerDeficit() {
         return Optional.of(requestedNodes)
                 .filter(NodeSpec.CountNodeSpec.class::isInstance)
-                .map(spec -> new FlavorCount(spec.resources().get(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
+                .map(spec -> new FlavorCount(spec.resources().get(), spec.fulfilledDeficitCount(accepted)))
                 .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 
