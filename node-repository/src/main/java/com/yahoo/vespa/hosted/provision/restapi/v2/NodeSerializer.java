@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.hosted.provision.Node;
 
 /**
@@ -12,7 +13,7 @@ import com.yahoo.vespa.hosted.provision.Node;
  */
 public class NodeSerializer {
 
-    public Node.State stateFrom(String state) {
+    public static Node.State stateFrom(String state) {
         switch (state) {
             case "active": return Node.State.active;
             case "dirty": return Node.State.dirty;
@@ -27,7 +28,7 @@ public class NodeSerializer {
         }
     }
 
-    public String toString(Node.State state) {
+    public static String toString(Node.State state) {
         switch (state) {
             case active: return "active";
             case dirty: return "dirty";
@@ -42,7 +43,7 @@ public class NodeSerializer {
         }
     }
 
-    public NodeType typeFrom(String nodeType) {
+    public static NodeType typeFrom(String nodeType) {
         switch (nodeType) {
             case "tenant": return NodeType.tenant;
             case "host": return NodeType.host;
@@ -57,7 +58,7 @@ public class NodeSerializer {
         }
     }
 
-    public String toString(NodeType type) {
+    public static String toString(NodeType type) {
         switch (type) {
             case tenant: return "tenant";
             case host: return "host";
@@ -69,42 +70,6 @@ public class NodeSerializer {
             case controllerhost: return "controllerhost";
             case devhost: return "devhost";
             default: throw new IllegalArgumentException("Unknown node type '" + type.name() + "'");
-        }
-    }
-
-    public NodeResources.DiskSpeed diskSpeedFrom(String diskSpeed) {
-        switch (diskSpeed) {
-            case "fast": return NodeResources.DiskSpeed.fast;
-            case "slow": return NodeResources.DiskSpeed.slow;
-            case "any" : return NodeResources.DiskSpeed.any;
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
-        }
-    }
-
-    public String toString(NodeResources.DiskSpeed diskSpeed) {
-        switch (diskSpeed) {
-            case fast : return "fast";
-            case slow : return "slow";
-            case any  : return "any";
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
-        }
-    }
-
-    public NodeResources.StorageType storageTypeFrom(String storageType) {
-        switch (storageType) {
-            case "local" : return NodeResources.StorageType.local;
-            case "remote": return NodeResources.StorageType.remote;
-            case "any"   : return NodeResources.StorageType.any;
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
-        }
-    }
-
-    public String toString(NodeResources.StorageType storageType) {
-        switch (storageType) {
-            case remote : return "remote";
-            case local  : return "local";
-            case any    : return "any";
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
         }
     }
 

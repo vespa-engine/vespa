@@ -148,7 +148,7 @@ class NodesResponse extends HttpResponse {
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         if (node.flavor().isConfigured())
             object.setDouble("cpuCores", node.flavor().getMinCpuCores());
-        toSlime(node.flavor().resources(), object.setObject("resources"));
+        NodeResourcesSerializer.toSlime(node.flavor().resources(), object.setObject("resources"));
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setString("environment", node.flavor().getType().name());
@@ -160,7 +160,7 @@ class NodesResponse extends HttpResponse {
             object.setString("wantedDockerImage", allocation.membership().cluster().dockerImage()
                     .orElseGet(() -> nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString()));
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
-            toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
+            NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
                         .ifPresent(info -> {
@@ -208,15 +208,6 @@ class NodesResponse extends HttpResponse {
             object.setLong("at", event.at().toEpochMilli());
             object.setString("agent", event.agent().name());
         }
-    }
-
-    private void toSlime(NodeResources resources, Cursor object) {
-        object.setDouble("vcpu", resources.vcpu());
-        object.setDouble("memoryGb", resources.memoryGb());
-        object.setDouble("diskGb", resources.diskGb());
-        object.setDouble("bandwidthGbps", resources.bandwidthGbps());
-        object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
-        object.setString("storageType", serializer.toString(resources.storageType()));
     }
 
     // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version

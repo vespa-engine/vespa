@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
@@ -17,7 +18,9 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -25,6 +28,7 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -42,6 +46,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -100,17 +106,20 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        String path = request.getUri().getPath();
-        if (path.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
-        if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
-        if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
-        if (path.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
-        if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
-        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
-        if (path.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
+        Path path = new Path(request.getUri());
+        String pathS = request.getUri().toString();
+        if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
+        if (pathS.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
+        if (pathS.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
+        if (pathS.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
+        if (pathS.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
+        if (pathS.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
+        if (pathS.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
+        if (path.matches("/nodes/v2/application")) return applicationList(request.getUri());
+        if (path.matches("/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -392,6 +401,37 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private static String hostnamesAsString(List<Node> nodes) {
         return nodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+    }
+
+    private HttpResponse applicationList(URI uri) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor applications = root.setArray("applications");
+        for (ApplicationId id : nodeRepository.applications().ids()) {
+            Cursor application = applications.addObject();
+            application.setString("url", withPath("nodes/v2/applications/" + id.toFullString(), uri).toString());
+            application.setString("id", id.toFullString());
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse application(String id, URI uri) {
+        Optional<Application> application = nodeRepository.applications().get(ApplicationId.fromFullString(id));
+        if (application.isEmpty())
+            return ErrorResponse.notFoundError("No application '" + id + "'");
+        Slime slime = ApplicationSerializer.toSlime(application.get(),
+                                                    withPath("nodes/v2/applications/" + id, uri));
+        return new SlimeJsonResponse(slime);
+    }
+
+    /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
+    private URI withPath(String newPath, URI uri) {
+        try {
+            return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), newPath, null, null);
+        }
+        catch (URISyntaxException e) {
+            throw new RuntimeException("Will not happen", e);
+        }
     }
 
 }
