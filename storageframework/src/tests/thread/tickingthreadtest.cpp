@@ -273,7 +273,7 @@ struct BroadcastApp : public TickingThread {
     ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
             for (uint32_t i=0; i<_active.size(); ++i) {
-                printTaskInfo(_queue[i], "processing");
+                printTaskInfo(_active[i], "processing");
                 _processed.push_back(_active[i]);
             }
             _active.clear();
