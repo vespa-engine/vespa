@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search::bitcompression {
 
@@ -263,6 +264,17 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
     }
 }
 
+template <bool bigEndian>
+void
+FeatureEncodeContext<bigEndian>::writeBytes(vespalib::ConstArrayRef<char> buf)
+{
+    for (unsigned char c : buf) {
+        writeBits(c, 8);
+        if (__builtin_expect(_valI >= _valE, false)) {
+            _writeContext->writeComprBuffer(false);
+        }
+    }
+}
 
 template <bool bigEndian>
 void

@@ -5,6 +5,7 @@
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -379,14 +380,7 @@ PageDict4SPWriter::flushPage()
                        _prevL3Size - wordsSize * 8;
     e.padBits(padding);
     if (wordsSize > 0) {
-        // Pad with 7 NUL bytes to silence testing tools.
-        _words.reserve(_words.size() + 7);
-        memset(&*_words.end(), '\0', 7);
-        const char *wordsBufX = static_cast<const char *>(&_words[0]);
-        size_t wordsBufXOff = reinterpret_cast<unsigned long>(wordsBufX) & 7;
-        const uint64_t *wordsBuf = reinterpret_cast<const uint64_t *>
-                                   (wordsBufX - wordsBufXOff);
-        e.writeBits(wordsBuf, 8 * wordsBufXOff, wordsSize * 8);
+        e.writeBytes(vespalib::ConstArrayRef<char>(&_words[0], wordsSize));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l6Word = _l3Word;
@@ -701,14 +695,7 @@ PageDict4PWriter::flushPage()
                        _countsSize - _countsWordOffset * 8;
     e.padBits(padding);
     if (_countsWordOffset > 0) {
-        // Pad with 7 NUL bytes to silence testing tools.
-        _words.reserve(_words.size() + 7);
-        memset(&*_words.end(), '\0', 7);
-        const char *wordsBufX = static_cast<const char *>(&_words[0]);
-        size_t wordsBufXOff = reinterpret_cast<unsigned long>(wordsBufX) & 7;
-        const uint64_t *wordsBuf = reinterpret_cast<const uint64_t *>
-                                   (wordsBufX - wordsBufXOff);
-        e.writeBits(wordsBuf, 8 * wordsBufXOff, _countsWordOffset * 8);
+        e.writeBytes(vespalib::ConstArrayRef(&_words[0], _countsWordOffset));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;
