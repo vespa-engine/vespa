@@ -6,7 +6,6 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
@@ -23,6 +22,12 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 
 /**
  * This class fetches config payload using JRT, and acts as the callback target.
@@ -90,9 +95,9 @@ public class JRTConfigRequester implements RequestWaiter {
         if ( ! req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
         double jrtClientTimeout = getClientTimeout(req);
-        log.log(LogLevel.DEBUG, () -> "Requesting config for " + sub + " on connection " + connection
+        log.log(FINE, () -> "Requesting config for " + sub + " on connection " + connection
                                       + " with client timeout " + jrtClientTimeout +
-                                      (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
+                                      (log.isLoggable(FINEST) ? (",defcontent=" + req.getDefContent().asString()) : ""));
         connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
     }
 
@@ -110,7 +115,7 @@ public class JRTConfigRequester implements RequestWaiter {
                 sub.setException(e);
             } else {
                 // Very unlikely
-                log.log(Level.SEVERE, "Failed to get subscription object from JRT config callback: " +
+                log.log(SEVERE, "Failed to get subscription object from JRT config callback: " +
                         Exceptions.toMessageString(e));
             }
         }
@@ -118,11 +123,11 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
         boolean validResponse = jrtReq.validateResponse();
-        log.log(LogLevel.DEBUG, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
+        log.log(FINE, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
         if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
-        log.log(LogLevel.SPAM, () -> trace.toString());
+        log.log(FINEST, () -> trace.toString());
         if (validResponse) {
             handleOKRequest(jrtReq, sub, connection);
         } else {
@@ -134,20 +139,20 @@ public class JRTConfigRequester implements RequestWaiter {
     private void logWhenErrorResponse(JRTClientConfigRequest jrtReq, Connection connection) {
         switch (jrtReq.errorCode()) {
             case com.yahoo.jrt.ErrorCode.CONNECTION:
-                log.log(LogLevel.DEBUG, () -> "Request callback failed: " + jrtReq.errorMessage() +
+                log.log(FINE, () -> "Request callback failed: " + jrtReq.errorMessage() +
                         "\nConnection spec: " + connection);
                 break;
             case ErrorCode.APPLICATION_NOT_LOADED:
             case ErrorCode.UNKNOWN_VESPA_VERSION:
                 if (noApplicationWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-                    log.log(LogLevel.WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+                    log.log(WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
                             ". Connection spec: " + connection.getAddress() +
                             ", error message: " + jrtReq.errorMessage());
                     noApplicationWarningLogged = Instant.now();
                 }
                 break;
             default:
-                log.log(LogLevel.WARNING, "Request callback failed. Req: " + jrtReq + "\nSpec: " + connection.getAddress() +
+                log.log(WARNING, "Request callback failed. Req: " + jrtReq + "\nSpec: " + connection.getAddress() +
                         " . Req error message: " + jrtReq.errorMessage());
                 break;
         }
@@ -157,7 +162,7 @@ public class JRTConfigRequester implements RequestWaiter {
         final boolean configured = (sub.getConfigState().getConfig() != null);
         if (configured) {
             // The subscription object has an "old" config, which is all we have to offer back now
-            log.log(LogLevel.INFO, "Failure of config subscription, clients will keep existing config until resolved: " + sub);
+            log.log(INFO, "Failure of config subscription, clients will keep existing config until resolved: " + sub);
         }
         ErrorType errorType = ErrorType.getErrorType(jrtReq.errorCode());
         connectionPool.setError(connection, jrtReq.errorCode());
@@ -192,7 +197,7 @@ public class JRTConfigRequester implements RequestWaiter {
                                          Connection connection) {
         transientFailures++;
         if (suspendWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-            log.log(LogLevel.INFO, "Connection to " + connection.getAddress() +
+            log.log(INFO, "Connection to " + connection.getAddress() +
                     " failed or timed out, clients will keep existing config, will keep trying.");
             suspendWarningLogged = Instant.now();
         }
@@ -218,7 +223,7 @@ public class JRTConfigRequester implements RequestWaiter {
         if (sub.getState() != ConfigSubscription.State.OPEN) return;
         fatalFailures++;
         // The logging depends on whether we are configured or not.
-        Level logLevel = sub.getConfigState().getConfig() == null ? LogLevel.DEBUG : LogLevel.INFO;
+        Level logLevel = sub.getConfigState().getConfig() == null ? FINE : INFO;
         String logMessage = "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
                 jrtReq.errorCode() + " (" + jrtReq.errorMessage() + "), scheduling new connect " +
                 " in " + delay + " ms";
@@ -236,7 +241,7 @@ public class JRTConfigRequester implements RequestWaiter {
         noApplicationWarningLogged = Instant.MIN;
         connection.setSuccess();
         sub.setLastCallBackOKTS(Instant.now());
-        log.log(LogLevel.DEBUG, () -> "OK response received in handleOkRequest: " + jrtReq);
+        log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             // We only want this latest generation to be in the queue, we do not preserve history in this system
             sub.getReqQueue().clear();
@@ -260,8 +265,8 @@ public class JRTConfigRequester implements RequestWaiter {
     private void scheduleNextRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub, long delay, long timeout) {
         long delayBeforeSendingRequest = (delay < 0) ? 0 : delay;
         JRTClientConfigRequest jrtReqNew = jrtReq.nextRequest(timeout);
-        log.log(LogLevel.SPAM, () -> timingValues.toString());
-        log.log(LogLevel.DEBUG, () -> "Scheduling new request " + delayBeforeSendingRequest + " millis from now for " + jrtReqNew.getConfigKey());
+        log.log(FINEST, () -> timingValues.toString());
+        log.log(FINE, () -> "Scheduling new request " + delayBeforeSendingRequest + " millis from now for " + jrtReqNew.getConfigKey());
         scheduler.schedule(new GetConfigTask(jrtReqNew, sub), delayBeforeSendingRequest, TimeUnit.MILLISECONDS);
     }
 
