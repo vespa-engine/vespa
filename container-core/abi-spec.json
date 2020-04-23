@@ -385,6 +385,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.HandlerEntryPoint": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.net.URI path()",
+      "public static com.yahoo.container.jdisc.HandlerEntryPoint of(java.lang.String)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.HttpRequest$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -519,6 +534,19 @@
     ],
     "methods": [
       "public abstract com.yahoo.jdisc.application.MetricConsumer newInstance()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.NavigableRequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.util.List entryPoints()"
     ],
     "fields": []
   },
