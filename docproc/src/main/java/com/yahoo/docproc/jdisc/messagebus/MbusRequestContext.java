@@ -47,7 +47,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     private final MbusRequest request;
     private final DocumentMessage requestMsg;
     private final ResponseHandler responseHandler;
-    private volatile int cachedApproxSize;
     // When spawning off new documents inside document processor, we do not want
     // throttling since this can lead to live locks. This is because the
     // document being processed is a resource and is then grabbing more resources of
@@ -134,20 +133,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         MbusResponse response = new MbusResponse(errorCode.getDiscStatus(), requestMsg.createReply());
         response.getReply().addError(new com.yahoo.messagebus.Error(errorCode.getDocumentProtocolStatus(), errorMsg));
         ResponseDispatch.newInstance(response).dispatch(this);
-    }
-
-    @Override
-    public int getApproxSize() {
-        if (cachedApproxSize > 0) {
-            return cachedApproxSize;
-        }
-        cachedApproxSize = requestMsg.getApproxSize();
-        return cachedApproxSize;
-    }
-
-    @Override
-    public int getPriority() {
-        return requestMsg.getPriority().getValue();
     }
 
     @Override

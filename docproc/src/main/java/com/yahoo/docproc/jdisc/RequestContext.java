@@ -21,10 +21,6 @@ public interface RequestContext {
 
     boolean isProcessable();
 
-    int getApproxSize();
-
-    int getPriority();
-
     void processingDone(List<Processing> processing);
 
     void processingFailed(ErrorCode error, String msg);
