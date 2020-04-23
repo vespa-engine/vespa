@@ -30,12 +30,7 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.statistics.Statistics;
 
 import java.util.TimerTask;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -53,7 +48,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     private final ComponentRegistry<DocprocService> docprocServiceRegistry;
     private final ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry;
     private final ChainRegistry<DocumentProcessor> chainRegistry = new ChainRegistry<>();
-    private ThreadPoolExecutor threadPool;
     private final ScheduledThreadPoolExecutor laterExecutor =
             new ScheduledThreadPoolExecutor(2, new DaemonThreadFactory("docproc-later-"));
     private ContainerDocumentConfig containerDocConfig;
@@ -62,17 +56,16 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     public DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                      ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
-                                     ThreadPoolExecutor threadPool, DocumentTypeManager documentTypeManager,
+                                     int numThreads,
+                                     DocumentTypeManager documentTypeManager,
                                      ChainsModel chainsModel, SchemaMap schemaMap, Statistics statistics,
                                      Metric metric,
                                      ContainerDocumentConfig containerDocConfig) {
         this.docprocServiceRegistry = docprocServiceRegistry;
         this.docFactoryRegistry = docFactoryRegistry;
-        this.threadPool = threadPool;
         this.containerDocConfig = containerDocConfig;
         this.documentTypeManager = documentTypeManager;
         DocprocService.schemaMap = schemaMap;
-        threadPool.prestartCoreThread();
         laterExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
         laterExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
 
@@ -81,12 +74,12 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
             for (Chain<DocumentProcessor> chain : chainRegistry.allComponents()) {
                 log.config("Setting up call stack for chain " + chain.getId());
-                DocprocService service =
-                        new DocprocService(chain.getId(), convertToCallStack(chain, statistics, metric), documentTypeManager);
+                DocprocService service = new DocprocService(chain.getId(), convertToCallStack(chain, statistics, metric), documentTypeManager, computeNumThreads(numThreads));
                 service.setInService(true);
                 docprocServiceRegistry.register(service.getId(), service);
             }
         }
+
     }
 
     private static int computeNumThreads(int maxThreads) {
@@ -98,12 +91,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
                                      DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
-             new ThreadPoolExecutor(computeNumThreads(params.getMaxNumThreads()),
-                                    computeNumThreads(params.getMaxNumThreads()),
-                                   0,TimeUnit.SECONDS,
-                                    new LinkedBlockingQueue<>(),
-                                    new DaemonThreadFactory("docproc-")
-                                           ),
+             params.getMaxNumThreads(),
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
              params.getStatisticsManager(),
              params.getMetric(),
@@ -133,7 +121,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
     @Override
     protected void destroy() {
-        threadPool.shutdown();  //calling shutdownNow() seems like a bit of an overkill
+        //threadPoolMap.values().forEach( pool -> pool.shutdown());  //calling shutdownNow() seems like a bit of an overkill
     }
 
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {
@@ -175,13 +163,14 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
             return null;
         }
 
-        DocprocService service = docprocServiceRegistry.getComponent(requestContext.getServiceName());
+        String serviceName = requestContext.getServiceName();
+        DocprocService service = docprocServiceRegistry.getComponent(serviceName);
         //No need to enqueue a task if the docproc chain is empty, just forward requestContext
         if (service == null) {
-            log.log(LogLevel.ERROR, "DocprocService for session '" + requestContext.getServiceName() +
+            log.log(LogLevel.ERROR, "DocprocService for session '" + serviceName +
                                     "' not found, returning request '" + requestContext + "'.");
             requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
-                                            "DocprocService " + requestContext.getServiceName() + " not found.");
+                                            "DocprocService " + serviceName + " not found.");
             return null;
         } else if (service.getExecutor().getCallStack().size() == 0) {
             //call stack was empty, just forward message
@@ -189,17 +178,9 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
             return null;
         }
 
-        DocumentProcessingTask task = new DocumentProcessingTask(requestContext, this, service);
-        submit(task);
+        DocumentProcessingTask task = new DocumentProcessingTask(requestContext, this, service, service.getThreadPoolExecutor());
+        task.submit();
         return null;
-    }
-
-    private void submit(DocumentProcessingTask task) {
-        try {
-            threadPool.execute(task);
-        } catch (RejectedExecutionException ree) {
-            task.queueFull();
-        }
     }
 
     void submit(DocumentProcessingTask task, long delay) {
@@ -220,7 +201,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         @Override
         public void run() {
             log.log(LogLevel.DEBUG, "Submitting after having waited " + delay + " ms in LATER queue: " + processingTask);
-            submit(processingTask);
+            processingTask.submit();
         }
     }
 

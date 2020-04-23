@@ -17,6 +17,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,13 +38,23 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
     private final static AtomicLong seq = new AtomicLong();
     private final long seqNum;
     private final DocprocService service;
+    private final ThreadPoolExecutor executor;
 
     public DocumentProcessingTask(RequestContext requestContext, DocumentProcessingHandler docprocHandler,
-                                  DocprocService service) {
+                                  DocprocService service, ThreadPoolExecutor executor) {
         seqNum = seq.getAndIncrement();
         this.requestContext = requestContext;
         this.docprocHandler = docprocHandler;
         this.service = service;
+        this.executor = executor;
+    }
+
+    void submit() {
+        try {
+            executor.execute(this);
+        } catch (RejectedExecutionException ree) {
+            queueFull();
+        }
     }
 
     @Override
