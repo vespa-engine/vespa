@@ -5,12 +5,13 @@ import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.UrlReference;
+import com.yahoo.log.LogLevel;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
 import com.yahoo.text.Utf8;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -25,10 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Logger;
-
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.FINEST;
-import static java.util.logging.Level.INFO;
 
 /**
  * A utility class that can be used to apply a payload to a config builder.
@@ -227,7 +224,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Name: " + methodName + ", value '" + value + "'", e);
         } catch (NoSuchMethodException e) {
-            log.log(INFO, "Skipping unknown field " + methodName + " in " + rootBuilder);
+            log.log(LogLevel.INFO, "Skipping unknown field " + methodName + " in " + rootBuilder);
         }
     }
 
@@ -282,7 +279,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Name: " + methodName + ", value '" + value + "'", e);
         } catch (NoSuchMethodException e) {
-            log.log(INFO, "Skipping unknown field " + methodName + " in " + builder.getClass());
+            log.log(LogLevel.INFO, "Skipping unknown field " + methodName + " in " + builder.getClass());
         }
     }
 
@@ -482,11 +479,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void debug(String message) {
-        log.log(FINE, () -> message);
+        log.log(LogLevel.DEBUG, () -> message);
     }
 
     private void trace(String message) {
-        log.log(FINEST, () -> message);
+        log.log(LogLevel.SPAM, () -> message);
     }
 
     private void printStack() {
