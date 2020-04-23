@@ -959,7 +959,11 @@ getAggregated(const EntryRef ref) const
     const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
     AggregatedType a;
     for (uint32_t i = 0; i < clusterSize; ++i) {
-        _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getData()));
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getData()));
+        } else {
+            _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getKey()));
+        }
     }
     return a;
 }

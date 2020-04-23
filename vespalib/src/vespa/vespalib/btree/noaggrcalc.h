@@ -17,6 +17,8 @@ public:
         return false;
     }
 
+    constexpr static bool aggregate_over_values() { return true; }
+
     template <typename DataT>
     static inline int32_t
     getVal(const DataT &val)

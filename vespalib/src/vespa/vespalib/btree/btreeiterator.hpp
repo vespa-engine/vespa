@@ -1089,12 +1089,12 @@ BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc)
 {
     LeafNodeType * lnode = getLeafNode();
-    if constexpr (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated() && AggrCalcT::aggregate_over_values()) {
         AggrT oldca(lnode->getAggregated());
-        typedef BTreeAggregator<KeyT, DataT, AggrT,
-            TraitsT::INTERNAL_SLOTS,
-            TraitsT::LEAF_SLOTS,
-            AggrCalcT> Aggregator;
+        using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                           TraitsT::INTERNAL_SLOTS,
+                                           TraitsT::LEAF_SLOTS,
+                                           AggrCalcT>;
         if (aggrCalc.update(lnode->getAggregated(),
                             aggrCalc.getVal(lnode->getData(_leaf.getIdx())),
                             aggrCalc.getVal(data))) {
@@ -1193,7 +1193,11 @@ insertFirst(const KeyType &key, const DataType &data,
     lnode.data->insert(0, key, data);
     if constexpr (AggrCalcT::hasAggregated()) {
         AggrT a;
-        aggrCalc.add(a, aggrCalc.getVal(data));
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            aggrCalc.add(a, aggrCalc.getVal(data));
+        } else {
+            aggrCalc.add(a, aggrCalc.getVal(key));
+        }
         lnode.data->getAggregated() = a;
     }
     _leafRoot = lnode.data;
