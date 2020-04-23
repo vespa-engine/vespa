@@ -47,6 +47,14 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
     }
 
+    public static ApplicationId fromFullString(String idString) {
+        String[] parts = idString.split(".");
+        if (parts.length < 3)
+            throw new IllegalArgumentException("Application ids must be on the form tenant.application.instance, but was " + idString);
+
+        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
+    }
+
     @Override
     public int hashCode() { return stringValue.hashCode(); }
 
