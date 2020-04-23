@@ -4,7 +4,6 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -12,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
@@ -74,7 +75,7 @@ public class JRTConnectionPool implements ConnectionPool {
     public synchronized JRTConnection setNewCurrentConnection() {
         List<JRTConnection> sources = getSources();
         currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
-        log.log(LogLevel.DEBUG, () -> "Choosing new connection: " + currentConnection);
+        log.log(FINE, () -> "Choosing new connection: " + currentConnection);
         return currentConnection;
     }
 
