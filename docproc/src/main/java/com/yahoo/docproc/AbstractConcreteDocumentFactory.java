@@ -35,15 +35,15 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
 
     /**
      * If the FieldValue is a StructuredFieldValue it will upgrade to the concrete type
-     * @param field
-     * @param fv
+     * @param field to upgrade
+     * @param fv value to upgrade
      * @return fv or upgraded fv
      */
     public FieldValue optionallyUpgrade(Field field, FieldValue fv) {
         return optionallyUpgrade(field.getDataType(), fv);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     private FieldValue optionallyUpgrade(DataType dataType, FieldValue fv) {
         if (fv instanceof StructuredFieldValue) {
             try {

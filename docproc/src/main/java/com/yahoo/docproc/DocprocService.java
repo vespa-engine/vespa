@@ -3,6 +3,7 @@ package com.yahoo.docproc;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentTypeManager;
@@ -10,6 +11,8 @@ import com.yahoo.document.DocumentTypeManager;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +30,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
+//TODO Vespa 8 This class and a lot of other in this package should not be part of PublicAPI
 public class DocprocService extends AbstractComponent {
 
     private static Logger log = Logger.getLogger(DocprocService.class.getName());
@@ -34,6 +38,7 @@ public class DocprocService extends AbstractComponent {
 
     /** The processings currently in progress at this service */
     private final LinkedBlockingQueue<Processing> queue;
+    private final ThreadPoolExecutor threadPool;
     /** The current state of this service */
     private boolean inService = false;
     /** The current state of this service */
@@ -41,9 +46,18 @@ public class DocprocService extends AbstractComponent {
     public static SchemaMap schemaMap = new SchemaMap();
     private DocumentTypeManager documentTypeManager = null;
 
-    public DocprocService(ComponentId id) {
+    private DocprocService(ComponentId id, int numThreads) {
         super(id);
         queue = new LinkedBlockingQueue<>();
+        threadPool = new ThreadPoolExecutor(numThreads,
+                numThreads,
+                0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                new DaemonThreadFactory("docproc-" + id.stringValue() + "-"));
+    }
+
+    public DocprocService(ComponentId id) {
+        this(id, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -52,20 +66,32 @@ public class DocprocService extends AbstractComponent {
      * @param id the component id of the new service.
      * @param stack the call stack to use.
      * @param mgr the document type manager to use.
+     * @param numThreads to have in the thread pool
      */
-    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr) {
-        this(id);
+    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr, int numThreads) {
+        this(id, numThreads);
         setCallStack(stack);
         setDocumentTypeManager(mgr);
         setInService(true);
     }
 
+    @Deprecated
+    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr) {
+        this(id, stack, mgr, Runtime.getRuntime().availableProcessors());
+    }
+
     /**
      * Creates a service with a name with an unbounded input queue. If the given name is null or the empty string,
      * it will become the name "default".
+     * Testing only
      */
     public DocprocService(String name) {
-        this(new ComponentId(name, null));
+        this(new ComponentId(name, null), 1);
+    }
+
+    @Override
+    public void deconstruct() {
+        threadPool.shutdown();
     }
 
     public DocumentTypeManager getDocumentTypeManager() {
@@ -88,6 +114,10 @@ public class DocprocService extends AbstractComponent {
      */
     public DocprocExecutor getExecutor() {
         return executor;
+    }
+
+    public ThreadPoolExecutor getThreadPoolExecutor() {
+        return threadPool;
     }
 
     private void setExecutor(DocprocExecutor executor) {

@@ -71,7 +71,7 @@ public class DocumentProcessingTaskPrioritizationTestCase {
 
     private class TestDocumentProcessingTask extends DocumentProcessingTask {
         private TestDocumentProcessingTask(DocumentProtocol.Priority priority) {
-            super(new TestRequestContext(priority), null, null);
+            super(new TestRequestContext(priority), null, null, null);
         }
     }
 
