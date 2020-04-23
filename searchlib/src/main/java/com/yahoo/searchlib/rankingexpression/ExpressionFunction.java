@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.log.event.Collection;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
