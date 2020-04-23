@@ -15,12 +15,12 @@ import java.util.concurrent.TimeUnit;
  * Encapsulates all trace-related components and options used by the streaming search Searcher.
  *
  * Provides a DEFAULT static instance which has the following characteristics:
- *   - Approximately 1 query every 2 seconds is traced
+ *   - Approximately 1 query every second is traced
  *   - Trace level is set to 7 for traced queries
- *   - Only emits traces for queries that have timed out and where the elapsed time is at least 5x
+ *   - Only emits traces for queries that have timed out and where the elapsed time is at least 2x
  *     of the timeout specified in the query itself
  *   - Emits traces to the Vespa log
- *   - Only 1 trace every 10 seconds may be emitted to the log
+ *   - Only 2 traces every 10 seconds may be emitted to the log
  */
 public class TracingOptions {
 
@@ -50,11 +50,11 @@ public class TracingOptions {
     public static final TracingOptions DEFAULT;
     public static final int DEFAULT_TRACE_LEVEL_OVERRIDE = 7; // TODO determine appropriate trace level
     // Traces won't be exported unless the query has timed out with a duration that is > timeout * multiplier
-    public static final double TRACE_TIMEOUT_MULTIPLIER_THRESHOLD = 5.0;
+    public static final double TRACE_TIMEOUT_MULTIPLIER_THRESHOLD = 2.0;
 
     static {
-        SamplingStrategy queryTraceSampler = ProbabilisticSampleRate.withSystemDefaults(0.5);
-        SamplingStrategy logExportSampler  = MaxSamplesPerPeriod.withSteadyClock(TimeUnit.SECONDS.toNanos(10), 1);
+        SamplingStrategy queryTraceSampler = ProbabilisticSampleRate.withSystemDefaults(1);
+        SamplingStrategy logExportSampler  = MaxSamplesPerPeriod.withSteadyClock(TimeUnit.SECONDS.toNanos(10), 2);
         TraceExporter    traceExporter     = new SamplingTraceExporter(new LoggingTraceExporter(), logExportSampler);
         DEFAULT = new TracingOptions(queryTraceSampler, traceExporter, System::nanoTime,
                                      DEFAULT_TRACE_LEVEL_OVERRIDE, TRACE_TIMEOUT_MULTIPLIER_THRESHOLD);
