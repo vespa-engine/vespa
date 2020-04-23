@@ -762,7 +762,9 @@ TEST("testDivExpressions") {
         ToRawFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(strcmp(static_cast<const RawResultNode &>(e.getResult()).get().c_str(), "238686"), 0);
+        auto raw_result = static_cast<const RawResultNode &>(e.getResult()).get();
+        EXPECT_EQUAL(6u, raw_result.size());
+        EXPECT_EQUAL(strncmp(raw_result.c_str(), "238686", 6u), 0);
     }
 
     {
