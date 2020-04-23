@@ -4,12 +4,14 @@ package com.yahoo.config.subscription;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.StringNode;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
 
 /**
  * Deserializes config payload (cfg format) to a ConfigPayload.
@@ -37,7 +39,7 @@ public class CfgConfigPayloadBuilder {
             parseLine(line, lineNum, payloadBuilder);
             lineNum++;
         }
-        log.log(LogLevel.SPAM, () -> "payload=" + payloadBuilder.toString());
+        log.log(FINEST, () -> "payload=" + payloadBuilder.toString());
         return payloadBuilder;
     }
 
@@ -48,7 +50,7 @@ public class CfgConfigPayloadBuilder {
         String field = fieldAndValue.getFirst();
         String value = fieldAndValue.getSecond();
         if (field==null || value==null) {
-            log.log(LogLevel.DEBUG, () -> "Got field without value in line " + lineNum + ": " + line + ", skipping");
+            log.log(FINE, () -> "Got field without value in line " + lineNum + ": " + line + ", skipping");
             return;
         }
         field=field.trim();
