@@ -778,11 +778,10 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    // TODO(mpolden): Make this delegate to CuratorDatabaseClient#lockConfig instead
-    public Mutex lock(ApplicationId application) { return db.lock(application); }
+    public Mutex lock(ApplicationId application) { return db.legacyLock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
+    public Mutex lock(ApplicationId application, Duration timeout) { return db.legacyLock(application, timeout); }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
