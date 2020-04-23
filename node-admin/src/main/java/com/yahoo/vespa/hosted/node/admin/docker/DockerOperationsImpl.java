@@ -88,7 +88,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (context.nodeType() != NodeType.proxy && context.nodeType() != NodeType.controller)
             command.withSecurityOpt("no-new-privileges");
 
-        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false))
+        if (context.node().membership().map(m -> m.type().isContent()).orElse(false))
             command.withSecurityOpt("seccomp=unconfined");
 
         DockerNetworking networking = context.dockerNetworking();

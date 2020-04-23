@@ -3,12 +3,20 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.disk.CoredumpCleanupRule;
+import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
+import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule;
+import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -17,18 +25,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
+import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -42,34 +52,39 @@ public class StorageMaintainer {
     private final Terminal terminal;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
+    private final DiskCleanup diskCleanup;
     private final Clock clock;
 
     // We cache disk usage to avoid doing expensive disk operations so often
-    private final Cache<Path, Long> diskUsage = CacheBuilder.newBuilder()
+    private final Cache<ContainerName, DiskSize> diskUsage = CacheBuilder.newBuilder()
             .maximumSize(100)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
     public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
-        this(terminal, coredumpHandler, archiveContainerStoragePath, Clock.systemUTC());
+        this(terminal, coredumpHandler, archiveContainerStoragePath, new DiskCleanup(), Clock.systemUTC());
     }
 
-    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath, Clock clock) {
+    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath, DiskCleanup diskCleanup, Clock clock) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
+        this.diskCleanup = diskCleanup;
         this.clock = clock;
     }
 
+    // TODO: Remove, use diskUsageFor() instead
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
-        try {
-            Path path = context.pathOnHostFromPathInNode("/");
+        return diskUsageFor(context).map(DiskSize::bytes);
+    }
 
-            Long cachedDiskUsage = diskUsage.getIfPresent(path);
+    public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
+        try {
+            DiskSize cachedDiskUsage = diskUsage.getIfPresent(context.containerName());
             if (cachedDiskUsage != null) return Optional.of(cachedDiskUsage);
 
-            long diskUsageBytes = getDiskUsedInBytes(context, path);
-            diskUsage.put(path, diskUsageBytes);
+            DiskSize diskUsageBytes = getDiskUsed(context, context.pathOnHostFromPathInNode("/"));
+            diskUsage.put(context.containerName(), diskUsageBytes);
             return Optional.of(diskUsageBytes);
         } catch (Exception e) {
             context.log(logger, LogLevel.WARNING, "Failed to get disk usage", e);
@@ -77,9 +92,8 @@ public class StorageMaintainer {
         }
     }
 
-    // Public for testing
-    long getDiskUsedInBytes(TaskContext context, Path path) {
-        if (!Files.exists(path)) return 0;
+    DiskSize getDiskUsed(TaskContext context, Path path) {
+        if (!Files.exists(path)) return DiskSize.ZERO;
 
         String output = terminal.newCommandLine(context)
                 .add("du", "-xsk", path.toString())
@@ -89,43 +103,50 @@ public class StorageMaintainer {
 
         String[] results = output.split("\t");
         if (results.length != 2) {
-            throw new RuntimeException("Result from disk usage command not as expected: " + output);
+            throw new ConvergenceException("Result from disk usage command not as expected: " + output);
         }
 
-        return 1024 * Long.parseLong(results[0]);
+        return DiskSize.of(Long.parseLong(results[0]), DiskSize.Unit.kiB);
     }
 
+    public boolean cleanDiskIfFull(NodeAgentContext context) {
+        double totalBytes = context.node().diskSize().bytes();
+        // Delete enough bytes to get below 80% disk usage, but only if we are already using more than 90% disk
+        long bytesToRemove = diskUsageFor(context)
+                .map(diskUsage -> (long) (diskUsage.bytes() - 0.8 * totalBytes))
+                .filter(bytes -> bytes > totalBytes * 0.1)
+                .orElse(0L);
 
-    /** Deletes old log files for vespa and nginx */
-    public void removeOldFilesFromNode(NodeAgentContext context) {
-        Path[] logPaths = {
-                context.pathInNodeUnderVespaHome("logs/nginx"),
-                context.pathInNodeUnderVespaHome("logs/vespa")
-        };
-
-        for (Path pathToClean : logPaths) {
-            Path path = context.pathOnHostFromPathInNode(pathToClean);
-            FileFinder.files(path)
-                    .match(olderThan(Duration.ofDays(3)).and(nameMatches(Pattern.compile(".*\\.log.+"))))
-                    .maxDepth(1)
-                    .deleteRecursively(context);
+        if (bytesToRemove > 0 && diskCleanup.cleanup(context, createCleanupRules(context), bytesToRemove)) {
+            diskUsage.invalidate(context.containerName());
+            return true;
         }
+        return false;
+    }
 
-        FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/qrs")))
-                .match(olderThan(Duration.ofDays(3)))
-                .deleteRecursively(context);
+    private List<DiskCleanupRule> createCleanupRules(NodeAgentContext context) {
+        Instant start = clock.instant();
+        double oneMonthSeconds = Duration.ofDays(30).getSeconds();
+        Function<Instant, Double> monthNormalizer = instant -> Duration.between(instant, start).getSeconds() / oneMonthSeconds;
+        Function<String, Path> pathOnHostUnderContainerVespaHome = path ->
+                context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
+        List<DiskCleanupRule> rules = new ArrayList<>();
 
-        FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/logarchive")))
-                .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively(context);
+        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome.apply("var/crash")));
 
-        FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/filedistribution")))
-                .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively(context);
+        if (context.node().membership().map(m -> m.type().isContainer()).orElse(false))
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/qrs")).list(),
+                    fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
-        FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/download")))
-                .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively(context);
+        if (context.nodeType() == NodeType.tenant && context.node().membership().map(m -> m.type().isAdmin()).orElse(false))
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/logarchive")).list(),
+                    fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
+
+        if (context.nodeType() == NodeType.proxy)
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/nginx")).list(),
+                    fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.MEDIUM));
+
+        return rules;
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */
@@ -174,11 +195,11 @@ public class StorageMaintainer {
         String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
                 .filter(line -> line.startsWith("microcode"))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No microcode information found in /proc/cpuinfo")));
+                .orElseThrow(() -> new ConvergenceException("No microcode information found in /proc/cpuinfo")));
 
         String[] results = output.split(":");
         if (results.length != 2) {
-            throw new RuntimeException("Result from detect microcode command not as expected: " + output);
+            throw new ConvergenceException("Result from detect microcode command not as expected: " + output);
         }
 
         return results[1].trim();

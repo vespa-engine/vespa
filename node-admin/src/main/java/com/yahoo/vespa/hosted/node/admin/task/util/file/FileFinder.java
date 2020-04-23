@@ -63,7 +63,7 @@ public class FileFinder {
     /**
      * Predicate that will be used to match files and directories under the base path.
      *
-     * NOTE: Consequtive calls to this method are ANDed (this include the initial filter from
+     * NOTE: Consecutive calls to this method are ANDed (this include the initial filter from
      * {@link #files(Path)} or {@link #directories(Path)}.
      */
     public FileFinder match(Predicate<FileAttributes> matcher) {
@@ -193,7 +193,7 @@ public class FileFinder {
         private final Path path;
         private final BasicFileAttributes attributes;
 
-        FileAttributes(Path path, BasicFileAttributes attributes) {
+        public FileAttributes(Path path, BasicFileAttributes attributes) {
             this.path = path;
             this.attributes = attributes;
         }
