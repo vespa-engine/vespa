@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
@@ -8,8 +9,6 @@ import com.yahoo.vespa.config.ErrorCode;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.util.logging.Level.INFO;
 
 /**
  * Static utility methods for verifying common request properties.
@@ -24,31 +23,31 @@ public class RequestValidation {
     public static int validateRequest(JRTConfigRequest request) {
         ConfigKey<?> key = request.getConfigKey();
         if (!RequestValidation.verifyName(key.getName())) {
-            log.log(INFO, "Illegal name '" + key.getName() + "'");
+            log.log(LogLevel.INFO, "Illegal name '" + key.getName() + "'");
             return ErrorCode.ILLEGAL_NAME;
         }
         if (!RequestValidation.verifyNamespace(key.getNamespace())) {
-            log.log(INFO, "Illegal name space '" + key.getNamespace() + "'");
+            log.log(LogLevel.INFO, "Illegal name space '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_NAME_SPACE;
         }
         if (!RequestValidation.verifyMd5(key.getMd5())) {
-            log.log(INFO, "Illegal md5 sum '" + key.getNamespace() + "'");
+            log.log(LogLevel.INFO, "Illegal md5 sum '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_DEF_MD5;
         }
         if (!RequestValidation.verifyMd5(request.getRequestConfigMd5())) {
-            log.log(INFO, "Illegal config md5 '" + request.getRequestConfigMd5() + "'");
+            log.log(LogLevel.INFO, "Illegal config md5 '" + request.getRequestConfigMd5() + "'");
             return ErrorCode.ILLEGAL_CONFIG_MD5;
         }
         if (!RequestValidation.verifyGeneration(request.getRequestGeneration())) {
-            log.log(INFO, "Illegal generation '" + request.getRequestGeneration() + "'");
+            log.log(LogLevel.INFO, "Illegal generation '" + request.getRequestGeneration() + "'");
             return ErrorCode.ILLEGAL_GENERATION;
         }
         if (!RequestValidation.verifyTimeout(request.getTimeout())) {
-            log.log(INFO, "Illegal timeout '" + request.getTimeout() + "'");
+            log.log(LogLevel.INFO, "Illegal timeout '" + request.getTimeout() + "'");
             return ErrorCode.ILLEGAL_TIMEOUT;
         }
         if (!RequestValidation.verifyHostname(request.getClientHostName())) {
-            log.log(INFO, "Illegal client host name '" + request.getClientHostName() + "'");
+            log.log(LogLevel.INFO, "Illegal client host name '" + request.getClientHostName() + "'");
             return ErrorCode.ILLEGAL_CLIENT_HOSTNAME;
         }
         return 0;

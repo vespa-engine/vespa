@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
+import com.yahoo.log.LogLevel;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -8,7 +10,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.INFO;
 
 /**
  * An immutable set of connection endpoints, where each endpoint points to either a
@@ -97,7 +98,7 @@ public class ConfigSourceSet implements ConfigSource {
     public static ConfigSourceSet createDefault() {
         String configSources = System.getenv("VESPA_CONFIG_SOURCES");
         if (configSources != null) {
-            log.log(INFO, "Using config sources from VESPA_CONFIG_SOURCES: " + configSources);
+            log.log(LogLevel.INFO, "Using config sources from VESPA_CONFIG_SOURCES: " + configSources);
             return new ConfigSourceSet(checkSourcesSyntax(configSources));
         } else {
             String[] def = {"tcp/localhost:" + System.getProperty("vespa.config.port", "19090")};

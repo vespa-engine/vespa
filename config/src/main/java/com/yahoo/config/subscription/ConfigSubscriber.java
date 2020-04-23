@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
@@ -13,12 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -329,7 +326,7 @@ public class ConfigSubscriber implements AutoCloseable {
             h.subscription().close();
         }
         closeRequesters();
-        log.log(FINE, () -> "Config subscriber has been closed.");
+        log.log(LogLevel.DEBUG, () -> "Config subscriber has been closed.");
     }
 
     /**
@@ -437,7 +434,7 @@ public class ConfigSubscriber implements AutoCloseable {
                             if (handle.isChanged()) singleSubscriber.configure(handle.getConfig());
                         }
                     } catch (Exception e) {
-                        log.log(SEVERE, "Exception from config system, continuing config thread: " + Exceptions.toMessageString(e));
+                        log.log(LogLevel.ERROR, "Exception from config system, continuing config thread: " + Exceptions.toMessageString(e));
                     }
                 }
             }
@@ -480,7 +477,7 @@ public class ConfigSubscriber implements AutoCloseable {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(WARNING, stackTraceAtConstruction,
+                log.log(LogLevel.WARNING, stackTraceAtConstruction,
                         () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
                                             super.toString(),
                                             subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));

@@ -5,13 +5,12 @@ import java.util.List;
 
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
-
-import static java.util.logging.Level.FINE;
 
 /**
  * A JRT subscription which does not use the config class, but {@link com.yahoo.vespa.config.RawConfig} instead.
@@ -34,7 +33,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), RawConfig.createFromResponseParameters(jrtReq) );
-        log.log(FINE, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
+        log.log(LogLevel.DEBUG, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
     // This method is overridden because config needs to have its generation

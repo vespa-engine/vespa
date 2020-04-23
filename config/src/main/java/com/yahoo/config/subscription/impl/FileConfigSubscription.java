@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
@@ -9,12 +13,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-
-import static java.util.logging.Level.FINE;
+import com.yahoo.log.LogLevel;
 
 /**
  * Subscription used when config id is file:...
@@ -38,12 +37,12 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     public boolean nextConfig(long timeout) {
         if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: "+file);
         if (checkReloaded()) {
-            log.log(FINE, "User forced config reload at " + System.currentTimeMillis());
+            log.log(LogLevel.DEBUG, "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
             setConfigIfChanged(updateConfig());
             ConfigState<T> configState = getConfigState();
-            log.log(FINE, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
-            log.log(FINE, "Config: " + configState.getConfig().toString());
+            log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
+            log.log(LogLevel.DEBUG, "Config: " + configState.getConfig().toString());
             return true;
         }
         if (file.lastModified()!=ts) {

@@ -1,25 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSource;
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.TimingValues;
-import com.yahoo.vespa.config.protocol.CompressionType;
-import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
-import com.yahoo.vespa.config.protocol.Payload;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.ConfigSource;
+import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.JRTConnectionPool;
+import com.yahoo.vespa.config.TimingValues;
+import com.yahoo.vespa.config.protocol.CompressionType;
+import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
+import com.yahoo.vespa.config.protocol.Payload;
 
 /**
  * A JRT config subscription uses one {@link JRTConfigRequester} to fetch config using Vespa RPC from a config source, typically proxy or server
@@ -91,7 +90,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             // timed out, we know nothing new.
             return false;
         }
-        log.log(FINE, () -> "Polled queue and found config " + jrtReq);
+        log.log(LogLevel.DEBUG, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
             if (jrtReq.hasUpdatedConfig()) {
@@ -193,7 +192,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public void reload(long generation) {
-        log.log(FINE, "reload() is without effect on a JRTConfigSubscription.");
+        log.log(LogLevel.DEBUG, "reload() is without effect on a JRTConfigSubscription.");
     }
 
     void setLastCallBackOKTS(Instant lastCallBackOKTS) {
@@ -205,7 +204,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     static void printStatus(JRTClientConfigRequest request, String message) {
         final String name = request.getConfigKey().getName();
         if (name.equals("components") || name.equals("chains")) {
-            log.log(INFO, message + ":" + name + ":" + ", request=" + request);
+            log.log(LogLevel.INFO, message + ":" + name + ":" + ", request=" + request);
         }
     }
 }
