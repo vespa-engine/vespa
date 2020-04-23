@@ -1,5 +1,7 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -40,7 +42,7 @@ public class DiskSize {
         int unit = -1;
         double remaining = bytes;
         for (; remaining >= 1000; unit++) remaining /= 1000;
-        return String.format("%." + decimals + "f %sB", remaining, UNITS[unit]);
+        return String.format(Locale.ENGLISH, "%." + decimals + "f %sB", remaining, UNITS[unit]);
     }
 
     @Override

@@ -25,11 +25,6 @@ public class NodeMembership {
         return clusterType;
     }
 
-    /** DEPRECATED: Use {@link #type()} instead */
-    public String clusterType() {
-        return clusterType.value();
-    }
-
     public String clusterId() {
         return clusterId;
     }

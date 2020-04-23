@@ -66,7 +66,7 @@ public class DockerTester implements AutoCloseable {
 
 
     DockerTester() {
-        when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.empty());
+        when(storageMaintainer.diskUsageFor(any())).thenReturn(Optional.empty());
 
         IPAddressesMock ipAddresses = new IPAddressesMock();
         ipAddresses.addAddress(HOST_HOSTNAME.value(), "1.1.1.1");
