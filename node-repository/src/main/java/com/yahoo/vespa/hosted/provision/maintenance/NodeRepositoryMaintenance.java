@@ -52,6 +52,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Rebalancer rebalancer;
     private final NodeMetricsDbMaintainer nodeMetricsDbMaintainer;
     private final AutoscalingMaintainer autoscalingMaintainer;
+    private final ScalingSuggestionsMaintainer scalingSuggestionsMaintainer;
 
     @SuppressWarnings("unused")
     @Inject
@@ -92,6 +93,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
         autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
+        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, defaults.scalingSuggestionsInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
@@ -118,6 +120,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         rebalancer.deconstruct();
         nodeMetricsDbMaintainer.deconstruct();
         autoscalingMaintainer.deconstruct();
+        scalingSuggestionsMaintainer.deconstruct();
     }
 
     private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv() {
@@ -160,6 +163,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration rebalancerInterval;
         private final Duration nodeMetricsCollectionInterval;
         private final Duration autoscalingInterval;
+        private final Duration scalingSuggestionsInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -182,6 +186,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             rebalancerInterval = Duration.ofMinutes(40);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             autoscalingInterval = Duration.ofMinutes(5);
+            scalingSuggestionsInterval = Duration.ofMinutes(31);
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

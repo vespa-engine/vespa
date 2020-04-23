@@ -28,10 +28,12 @@ public class ApplicationSerializerTest {
         clusters.add(new Cluster(ClusterSpec.Id.from("c1"),
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
+                                 Optional.empty(),
                                  Optional.empty()));
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
                                  new ClusterResources( 8, 4, new NodeResources(1, 2, 3, 4)),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
+                                 Optional.of(new ClusterResources(20, 10, new NodeResources(0.5, 4, 14, 16))),
                                  Optional.of(new ClusterResources(10, 5, new NodeResources(2, 4, 14, 16)))));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
                                                clusters);
@@ -49,6 +51,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.id(), serializedCluster.id());
             assertEquals(originalCluster.minResources(), serializedCluster.minResources());
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
+            assertEquals(originalCluster.suggestedResources(), serializedCluster.suggestedResources());
             assertEquals(originalCluster.targetResources(), serializedCluster.targetResources());
         }
     }

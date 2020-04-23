@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author bratseth
+ */
 public class AutoscalingIntegrationTest {
 
     @Test
@@ -55,8 +58,8 @@ public class AutoscalingIntegrationTest {
         Application application = tester.nodeRepository().applications().get(application1).orElse(new Application(application1))
                                         .withClusterLimits(cluster1.id(), min, max);
         tester.nodeRepository().applications().put(application, tester.nodeRepository().lock(application1));
-        var scaledResources = autoscaler.autoscale(application.clusters().get(cluster1.id()),
-                                                   tester.nodeRepository().getNodes(application1));
+        var scaledResources = autoscaler.suggest(application.clusters().get(cluster1.id()),
+                                                 tester.nodeRepository().getNodes(application1));
         assertTrue(scaledResources.isPresent());
     }
 

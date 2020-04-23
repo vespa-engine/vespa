@@ -187,9 +187,24 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
-    /** This condition ensures we get recommendation suggestions when deactivated */
     @Test
-    public void testAutoscalingLimitsAreIgnoredIfMinEqualsMax() {
+    public void testAutoscalingLimitsWhenMinEqualsMax() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = min;
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        assertTrue(tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
+    public void testSuggestionsIgnoresLimits() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = min;
@@ -203,7 +218,7 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
                                7, 1, 2.6,  80.0, 80.0,
-                               tester.autoscale(application1, cluster1.id(), min, max));
+                               tester.suggest(application1, cluster1.id(), min, max));
     }
 
     @Test

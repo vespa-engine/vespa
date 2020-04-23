@@ -163,6 +163,15 @@ class AutoscalingTester {
                                     nodeRepository().getNodes(applicationId, Node.State.active));
     }
 
+    public Optional<AllocatableClusterResources> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
+                                                           ClusterResources min, ClusterResources max) {
+        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+                                                  .withClusterLimits(clusterId, min, max);
+        nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
+        return autoscaler.suggest(application.clusters().get(clusterId),
+                                  nodeRepository().getNodes(applicationId, Node.State.active));
+    }
+
     public AllocatableClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,

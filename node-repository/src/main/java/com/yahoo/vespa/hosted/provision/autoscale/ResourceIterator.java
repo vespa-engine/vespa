@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
  */
 public class ResourceIterator {
 
-    // Configured min and max nodes for suggestions for apps which have not activated autoscaling
-    private static final int minimumNodes = 3; // Since this is with redundancy it cannot be lower than 2
+    // The min and max nodes to consider when not using application supplied limits
+    private static final int minimumNodes = 3; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
 
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
@@ -22,6 +22,7 @@ public class ResourceIterator {
 
     // Prescribed state
     private final Cluster cluster;
+    private final boolean respectLimits;
 
     // Observed state
     private final AllocatableClusterResources allocation;
@@ -39,10 +40,12 @@ public class ResourceIterator {
 
     public ResourceIterator(double cpuLoad, double memoryLoad, double diskLoad,
                             AllocatableClusterResources currentAllocation,
-                            Cluster cluster) {
+                            Cluster cluster,
+                            boolean respectLimits) {
         this.cpuLoad = cpuLoad;
         this.memoryLoad = memoryLoad;
         this.diskLoad = diskLoad;
+        this.respectLimits = respectLimits;
 
         // ceil: If the division does not produce a whole number we assume some node is missing
         groupSize = (int)Math.ceil((double)currentAllocation.nodes() / currentAllocation.groups());
@@ -64,11 +67,6 @@ public class ResourceIterator {
             currentNodes -= nodeIncrement;
     }
 
-    /** If autoscaling is not enabled (meaning max and min resources are the same), we want to suggest */
-    private boolean suggestMode() {
-        return cluster.minResources().equals(cluster.maxResources());
-    }
-
     public ClusterResources next() {
         ClusterResources next = resourcesWith(currentNodes);
         currentNodes += nodeIncrement;
@@ -80,13 +78,13 @@ public class ResourceIterator {
     }
 
     private int minNodes() {
-        if (suggestMode()) return minimumNodes;
+        if ( ! respectLimits) return minimumNodes;
         if (singleGroupMode) return cluster.minResources().nodes();
         return Math.max(cluster.minResources().nodes(), cluster.minResources().groups() * groupSize );
     }
 
     private int maxNodes() {
-        if (suggestMode()) return maximumNodes;
+        if ( ! respectLimits) return maximumNodes;
         if (singleGroupMode) return cluster.maxResources().nodes();
         return Math.min(cluster.maxResources().nodes(), cluster.maxResources().groups() * groupSize );
     }
