@@ -111,14 +111,14 @@ remove(BTreeNode::Ref &root,
     AggrT oldca(AggrCalcT::hasAggregated() ? lnode->getAggregated() : AggrT());
     AggrT ca;
     if constexpr (AggrCalcT::hasAggregated()) {
-        bool removed;
+        bool need_aggregation_recalc;
         if constexpr (AggrCalcT::aggregate_over_values()) {
-            removed = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getData(idx)));
+            need_aggregation_recalc = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getData(idx)));
         } else {
-            removed = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getKey(idx)));
+            need_aggregation_recalc = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getKey(idx)));
         }
         lnode->remove(idx);
-        if (removed) {
+        if (need_aggregation_recalc) {
             Aggregator::recalc(*lnode, aggrCalc);
         }
     } else {
