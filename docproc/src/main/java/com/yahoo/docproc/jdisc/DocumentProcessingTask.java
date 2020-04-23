@@ -19,14 +19,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author Einar M R Rosenvinge
  */
-public class DocumentProcessingTask implements Comparable<DocumentProcessingTask>, Runnable {
+public class DocumentProcessingTask implements Runnable {
 
     private static Logger log = Logger.getLogger(DocumentProcessingTask.class.getName());
     private final List<Processing> processings = new ArrayList<>();
@@ -35,14 +34,11 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
     private final DocumentProcessingHandler docprocHandler;
     private RequestContext requestContext;
 
-    private final static AtomicLong seq = new AtomicLong();
-    private final long seqNum;
     private final DocprocService service;
     private final ThreadPoolExecutor executor;
 
     public DocumentProcessingTask(RequestContext requestContext, DocumentProcessingHandler docprocHandler,
                                   DocprocService service, ThreadPoolExecutor executor) {
-        seqNum = seq.getAndIncrement();
         this.requestContext = requestContext;
         this.docprocHandler = docprocHandler;
         this.service = service;
@@ -180,32 +176,13 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
                                         ". Will be automatically resent.");
     }
 
-    public int compareTo(DocumentProcessingTask other) {
-        int ourPriority = requestContext.getPriority();
-        int otherPriority = other.requestContext.getPriority();
-        int res = (ourPriority == otherPriority) ? 0 : ((ourPriority < otherPriority) ? -1 : 1);
-        if (res == 0) {
-            res = (seqNum == other.seqNum) ? 0 : ((seqNum < other.seqNum) ? -1 : 1);
-        }
-        return res;
-    }
-
     @Override
     public String toString() {
         return "ProcessingTask{" +
                "processings=" + processings +
                ", processingsDone=" + processingsDone +
                ", requestContext=" + requestContext +
-               ", seqNum=" + seqNum +
                '}';
-    }
-
-    public int getApproxSize() {
-        return requestContext.getApproxSize();
-    }
-
-    final long getSeqNum() {
-        return seqNum;
     }
 
     private static void logProcessingFailure(Processing processing, Exception exception) {
