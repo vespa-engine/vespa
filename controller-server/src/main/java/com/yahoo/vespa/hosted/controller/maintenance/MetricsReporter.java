@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -38,18 +40,21 @@ public class MetricsReporter extends Maintainer {
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
-    public static final String NODES_FAILING_SYSTEM_UPGRADE = "deployment.nodesFailingSystemUpgrade";
+    // TODO(mpolden): Remove these two metrics
+    public static final String NODES_FAILING_PLATFORM_UPGRADE = "deployment.nodesFailingSystemUpgrade";
     public static final String NODES_FAILING_OS_UPGRADE = "deployment.nodesFailingOsUpgrade";
+    public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
+    public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
-    // The time a node belonging to a system application can spend from being told to upgrade until the upgrade is
-    // completed. Nodes exceeding this time are counted as failures.
-    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofMinutes(90);
+    // The time a system application node can spend after suspending for Vespa upgrade until the upgrade is completed.
+    // Nodes exceeding this budget are counted as failures.
+    private static final Duration PLATFORM_UPGRADE_BUDGET = Duration.ofMinutes(30);
 
-    // The time a single node can spend performing an OS upgrade after being told to upgrade. Nodes exceeding this time
-    // multiplied by the number of nodes upgrading are counted as failures.
-    private static final Duration OS_UPGRADE_TIME_ALLOWANCE_PER_NODE = Duration.ofMinutes(30);
+    // The time a system application node can spend after suspending foor OS upgrade until the upgrade is completed.
+    // Nodes exceeding this budget are counted as failures.
+    private static final Duration OS_UPGRADE_BUDGET = Duration.ofMinutes(30);
 
     private final Metric metric;
     private final Clock clock;
@@ -65,7 +70,7 @@ public class MetricsReporter extends Maintainer {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
-        reportNodesFailingUpgrade();
+        reportChangeDurations();
     }
 
     private void reportRemainingRotations() {
@@ -107,43 +112,44 @@ public class MetricsReporter extends Maintainer {
                    metric.createContext(Map.of()));
     }
 
-    private void reportNodesFailingUpgrade() {
-        metric.set(NODES_FAILING_SYSTEM_UPGRADE, nodesFailingSystemUpgrade(), metric.createContext(Map.of()));
-        metric.set(NODES_FAILING_OS_UPGRADE, nodesFailingOsUpgrade(), metric.createContext(Map.of()));
+    private void reportChangeDurations() {
+        var platformChangeDurations = platformChangeDurations();
+        var osChangeDurations = osChangeDurations();
+        var nodesFailingSystemUpgrade = platformChangeDurations.values().stream()
+                                                               .filter(duration -> duration.compareTo(PLATFORM_UPGRADE_BUDGET) > 0)
+                                                               .count();
+        var nodesFailingOsUpgrade = osChangeDurations.values().stream()
+                                                     .filter(duration -> duration.compareTo(OS_UPGRADE_BUDGET) > 0)
+                                                     .count();
+        metric.set(NODES_FAILING_PLATFORM_UPGRADE, nodesFailingSystemUpgrade, metric.createContext(Map.of()));
+        metric.set(NODES_FAILING_OS_UPGRADE, nodesFailingOsUpgrade, metric.createContext(Map.of()));
+        platformChangeDurations.forEach((nodeVersion, duration) -> {
+            metric.set(PLATFORM_CHANGE_DURATION, duration.toSeconds(), metric.createContext(dimensions(nodeVersion)));
+        });
+        osChangeDurations.forEach((nodeVersion, duration) -> {
+            metric.set(OS_CHANGE_DURATION, duration.toSeconds(), metric.createContext(dimensions(nodeVersion)));
+        });
     }
 
-    private int nodesFailingSystemUpgrade() {
-        if (!controller().versionStatus().isUpgrading()) return 0;
-        return nodesFailingUpgrade(controller().versionStatus().versions(), (vespaVersion) -> {
-            if (vespaVersion.confidence() == VespaVersion.Confidence.broken) return NodeVersions.EMPTY;
-            return vespaVersion.nodeVersions();
-        }, NODE_UPGRADE_TIMEOUT);
+    private Map<NodeVersion, Duration> platformChangeDurations() {
+        return changeDurations(controller().versionStatus().versions(), VespaVersion::nodeVersions);
     }
 
-    private int nodesFailingOsUpgrade() {
-        var allNodeVersions = controller().osVersionStatus().versions().values();
-        var totalTimeout = 0L;
-        for (var nodeVersions : allNodeVersions) {
-            for (var nodeVersion : nodeVersions.asMap().values()) {
-                if (!nodeVersion.changing()) continue;
-                totalTimeout += OS_UPGRADE_TIME_ALLOWANCE_PER_NODE.toMillis();
+    private Map<NodeVersion, Duration> osChangeDurations() {
+        return changeDurations(controller().osVersionStatus().versions().values(), Function.identity());
+    }
+
+    private <V> Map<NodeVersion, Duration> changeDurations(Collection<V> versions, Function<V, NodeVersions> versionsGetter) {
+        var now = clock.instant();
+        var durations = new HashMap<NodeVersion, Duration>();
+        for (var version : versions) {
+            for (var nodeVersion : versionsGetter.apply(version).asMap().values()) {
+                durations.put(nodeVersion, nodeVersion.changeDuration(now));
             }
         }
-        return nodesFailingUpgrade(allNodeVersions, Function.identity(), Duration.ofMillis(totalTimeout));
+        return durations;
     }
 
-    private <V> int nodesFailingUpgrade(Collection<V> collection, Function<V, NodeVersions> nodeVersionsFunction, Duration timeout) {
-        var nodesFailingUpgrade = 0;
-        var acceptableInstant = clock.instant().minus(timeout);
-        for (var object : collection) {
-            for (var nodeVersion : nodeVersionsFunction.apply(object).asMap().values()) {
-                if (!nodeVersion.changing()) continue;
-                if (nodeVersion.changedAt().isBefore(acceptableInstant)) nodesFailingUpgrade++;
-            }
-        }
-        return nodesFailingUpgrade;
-    }
-    
     private static double deploymentFailRatio(DeploymentStatusList statuses) {
         return statuses.asList().stream()
                        .mapToInt(status -> status.hasFailures() ? 1 : 0)
@@ -196,6 +202,11 @@ public class MetricsReporter extends Maintainer {
     private static Map<String, String> dimensions(ApplicationId application) {
         return Map.of("tenant", application.tenant().value(),
                       "app",application.application().value() + "." + application.instance().value());
+    }
+
+    private static Map<String, String> dimensions(NodeVersion nodeVersion) {
+        return Map.of("host", nodeVersion.hostname().value(),
+                      "zone", nodeVersion.zone().value());
     }
 
 }

@@ -8,23 +8,15 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
-import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -149,10 +141,7 @@ public class VersionStatus {
     }
 
     private static NodeVersions findSystemApplicationVersions(Controller controller) {
-        var nodeVersions = controller.versionStatus().systemVersion()
-                                     .map(VespaVersion::nodeVersions)
-                                     .orElse(NodeVersions.EMPTY);
-        var newNodeVersions = new ArrayList<NodeVersion>();
+        var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (var application : SystemApplication.all()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
@@ -165,15 +154,16 @@ public class VersionStatus {
                     log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() +
                                               " has not converged");
                 }
-                var now = controller.clock().instant();
                 for (var node : nodes) {
                     // Only use current node version if config has converged
-                    Version version = configConverged ? node.currentVersion() : controller.systemVersion();
-                    newNodeVersions.add(new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(), now));
+                    var version = configConverged ? node.currentVersion() : controller.systemVersion();
+                    var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(),
+                                                      node.suspendedSince());
+                    nodeVersions.put(nodeVersion.hostname(), nodeVersion);
                 }
             }
         }
-        return nodeVersions.with(newNodeVersions);
+        return NodeVersions.copyOf(nodeVersions);
     }
 
     private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {

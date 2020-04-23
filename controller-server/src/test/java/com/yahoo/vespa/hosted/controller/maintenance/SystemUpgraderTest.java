@@ -302,7 +302,7 @@ public class SystemUpgraderTest {
         assertWantedVersion(application, version, first, rest);
         Stream.concat(Stream.of(first), Stream.of(rest)).forEach(zone -> {
             for (Node node : listNodes(zone, application)) {
-                nodeRepository().putByHostname(
+                nodeRepository().putNodes(
                         zone.getId(),
                         new Node.Builder(node).currentVersion(node.wantedVersion()).build());
             }
@@ -326,7 +326,7 @@ public class SystemUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putByHostname(
+        nodeRepository().putNodes(
                 zone.getId(),
                 new Node.Builder(node).state(Node.State.failed).build());
     }

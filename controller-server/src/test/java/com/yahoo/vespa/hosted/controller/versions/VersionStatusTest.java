@@ -72,7 +72,7 @@ public class VersionStatusTest {
         for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
             for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
                 Node upgradedNode = new Node.Builder(node).currentVersion(version1).build();
-                tester.configServer().nodeRepository().putByHostname(zone.getId(), upgradedNode);
+                tester.configServer().nodeRepository().putNodes(zone.getId(), upgradedNode);
                 break;
             }
         }
@@ -116,7 +116,7 @@ public class VersionStatusTest {
         for (ZoneApi zone : tester.controller().zoneRegistry().zones().all().zones()) {
             for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
                 Node downgradedNode = new Node.Builder(node).currentVersion(ancientVersion).build();
-                tester.configServer().nodeRepository().putByHostname(zone.getId(), downgradedNode);
+                tester.configServer().nodeRepository().putNodes(zone.getId(), downgradedNode);
                 break;
             }
         }

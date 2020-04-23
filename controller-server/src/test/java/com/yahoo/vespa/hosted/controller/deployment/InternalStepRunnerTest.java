@@ -201,9 +201,9 @@ public class InternalStepRunnerTest {
 
         // Node is down too long in system test, and no nodes go down in staging.
         tester.runner().run();
-        tester.configServer().setVersion(app.testerId().id(), JobType.systemTest.zone(system()), tester.controller().systemVersion());
+        tester.configServer().setVersion(tester.controller().systemVersion(), app.testerId().id(), JobType.systemTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
-        tester.configServer().setVersion(app.testerId().id(), JobType.stagingTest.zone(system()), tester.controller().systemVersion());
+        tester.configServer().setVersion(tester.controller().systemVersion(), app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
@@ -212,8 +212,8 @@ public class InternalStepRunnerTest {
         Node systemTestNode = tester.configServer().nodeRepository().list(JobType.systemTest.zone(system()),
                                                                           app.instanceId()).iterator().next();
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().minus(Duration.ofSeconds(1)));
-        tester.configServer().nodeRepository().putByHostname(JobType.systemTest.zone(system()),
-                                                             new Node.Builder(systemTestNode)
+        tester.configServer().nodeRepository().putNodes(JobType.systemTest.zone(system()),
+                                                        new Node.Builder(systemTestNode)
                                                                      .serviceState(Node.ServiceState.allowedDown)
                                                                      .suspendedSince(tester.clock().instant())
                                                                      .build());
@@ -377,7 +377,7 @@ public class InternalStepRunnerTest {
         assertEquals(applicationPackage.hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
         assertEquals(otherPackage.hash(), tester.configServer().application(app.instanceId(), JobType.perfUsEast3.zone(system())).get().applicationPackage().hash());
 
-        tester.configServer().setVersion(app.instanceId(), zone, version);
+        tester.configServer().setVersion(version, app.instanceId(), zone);
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
         assertEquals(version, tester.instance(app.instanceId()).deployments().get(zone).version());

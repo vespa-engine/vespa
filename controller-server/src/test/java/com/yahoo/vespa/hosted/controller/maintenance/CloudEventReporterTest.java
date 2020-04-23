@@ -97,7 +97,7 @@ public class CloudEventReporterTest {
                 awsZone1,
                 awsZone2);
 
-        tester.configServer().nodeRepository().putByHostname(
+        tester.configServer().nodeRepository().putNodes(
                 nonAwsZone.getId(),
                 createNodesWithHostnames(
                         "host1.com",
@@ -105,7 +105,7 @@ public class CloudEventReporterTest {
                         "host3.com"
                 )
         );
-        tester.configServer().nodeRepository().putByHostname(
+        tester.configServer().nodeRepository().putNodes(
                 awsZone1.getId(),
                 createNodesWithHostnames(
                         "host1.com",
@@ -113,14 +113,14 @@ public class CloudEventReporterTest {
                         "host3.com"
                 )
         );
-        tester.configServer().nodeRepository().putByHostname(
+        tester.configServer().nodeRepository().putNodes(
                 awsZone2.getId(),
                 createNodesWithHostnames(
                         "host4.com",
                         "host5.com"
                 )
         );
-        tester.configServer().nodeRepository().putByHostname(
+        tester.configServer().nodeRepository().putNodes(
                 awsZone2.getId(),
                 List.of(createNode("confighost.com", NodeType.confighost))
         );

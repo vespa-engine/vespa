@@ -36,22 +36,31 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
 
-    public void putByHostname(ZoneId zone, List<Node> nodes) {
+    /** Add or update given nodes in zone */
+    public void putNodes(ZoneId zone, List<Node> nodes) {
         nodeRepository.putIfAbsent(zone, new HashMap<>());
         nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(Node::hostname,
                                                                                 Function.identity())));
     }
 
-    public void putByHostname(ZoneId zone, Node node) {
-        putByHostname(zone, Collections.singletonList(node));
+    /** Add or update given node in zone */
+    public void putNodes(ZoneId zone, Node node) {
+        putNodes(zone, Collections.singletonList(node));
     }
 
-    public void removeByHostname(ZoneId zone, List<Node> nodes) {
+    /** Remove given nodes from zone */
+    public void removeNodes(ZoneId zone, List<Node> nodes) {
         nodes.forEach(node -> nodeRepository.get(zone).remove(node.hostname()));
     }
 
+    /** Remove all nodes in all zones */
     public void clear() {
         nodeRepository.clear();
+    }
+
+    /** Replace nodes in zone with given nodes */
+    public void setNodes(ZoneId zone, List<Node> nodes) {
+        nodeRepository.put(zone, nodes.stream().collect(Collectors.toMap(Node::hostname, Function.identity())));
     }
 
     public Node require(HostName hostName) {
@@ -62,11 +71,8 @@ public class NodeRepositoryMock implements NodeRepository {
                              .orElseThrow(() -> new NoSuchElementException("No node with the hostname " + hostName + " is known."));
     }
 
-    public void addNodes(ZoneId zone, List<Node> nodes) {
-        nodeRepository.put(zone, nodes.stream().collect(Collectors.toMap(Node::hostname, Function.identity())));
-    }
-
-    public void addFixedNodes(ZoneId zone) {
+    /** Replace nodes in zone with a fixed set of nodes */
+    public void setFixedNodes(ZoneId zone) {
         var nodeA = new Node.Builder()
                 .hostname(HostName.from("hostA"))
                 .parentHostname(HostName.from("parentHostA"))
@@ -98,7 +104,7 @@ public class NodeRepositoryMock implements NodeRepository {
                 .clusterId("clusterB")
                 .clusterType(Node.ClusterType.container)
                 .build();
-        addNodes(zone, List.of(nodeA, nodeB));
+        setNodes(zone, List.of(nodeA, nodeB));
     }
 
     @Override
@@ -168,7 +174,7 @@ public class NodeRepositoryMock implements NodeRepository {
                       .stream()
                       .filter(node -> node.type() == type)
                       .map(node -> new Node.Builder(node).wantedVersion(version).build())
-                      .forEach(node -> putByHostname(zone, node));
+                      .forEach(node -> putNodes(zone, node));
     }
 
     @Override
@@ -184,7 +190,7 @@ public class NodeRepositoryMock implements NodeRepository {
                       .stream()
                       .filter(node -> node.type() == type)
                       .map(node -> new Node.Builder(node).wantedOsVersion(version).build())
-                      .forEach(node -> putByHostname(zone, node));
+                      .forEach(node -> putNodes(zone, node));
     }
 
     @Override
@@ -219,8 +225,8 @@ public class NodeRepositoryMock implements NodeRepository {
         List<Node> nodes = hostname.map(this::require)
                                    .map(Collections::singletonList)
                                    .orElse(list(deployment.zoneId(), deployment.applicationId()));
-        putByHostname(deployment.zoneId(),
-                      nodes.stream().map(modification).collect(Collectors.toList()));
+        putNodes(deployment.zoneId(),
+                 nodes.stream().map(modification).collect(Collectors.toList()));
     }
 
     public void requestRestart(DeploymentId deployment, Optional<HostName> hostname) {
