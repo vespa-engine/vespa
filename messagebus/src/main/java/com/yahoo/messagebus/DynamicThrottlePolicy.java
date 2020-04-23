@@ -3,7 +3,8 @@ package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.concurrent.Timer;
-import com.yahoo.log.LogLevel;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -100,8 +101,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         } else if (throughput > localMaxThroughput * 1.01) {
             localMaxThroughput = throughput;
             windowSize += weight*windowSizeIncrement;
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput);
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput);
             }
         } else {
             // scale up/down throughput for comparing to window size
@@ -119,8 +120,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             } else {
                 windowSize += weight*windowSizeIncrement;
             }
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput + " efficiency " + efficiency);
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput + " efficiency " + efficiency);
             }
         }
         windowSize = Math.max(minWindowSize, windowSize);

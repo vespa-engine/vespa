@@ -4,8 +4,8 @@ package com.yahoo.messagebus;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.routing.Resender;
 import com.yahoo.messagebus.routing.RoutingNode;
-import com.yahoo.log.LogLevel;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,10 +39,10 @@ public class SendProxy implements MessageHandler, ReplyHandler {
     public void handleMessage(Message msg) {
         Trace trace = msg.getTrace();
         if (trace.getLevel() == 0) {
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINER)) {
                 trace.setLevel(9);
                 logTrace = true;
-            } else if (log.isLoggable(LogLevel.DEBUG)) {
+            } else if (log.isLoggable(Level.FINE)) {
                 trace.setLevel(6);
                 logTrace = true;
             }
@@ -59,9 +59,9 @@ public class SendProxy implements MessageHandler, ReplyHandler {
             Trace trace = msg.getTrace();
             if (logTrace) {
                 if (reply.hasErrors()) {
-                    log.log(LogLevel.DEBUG, "Trace for reply with error(s):\n" + reply.getTrace());
-                } else if (log.isLoggable(LogLevel.SPAM)) {
-                    log.log(LogLevel.SPAM, "Trace for reply:\n" + reply.getTrace());
+                    log.log(Level.FINE, "Trace for reply with error(s):\n" + reply.getTrace());
+                } else if (log.isLoggable(Level.FINER)) {
+                    log.log(Level.FINER, "Trace for reply:\n" + reply.getTrace());
                 }
                 Trace empty = new Trace();
                 trace.swap(empty);

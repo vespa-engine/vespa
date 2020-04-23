@@ -6,7 +6,6 @@ import com.yahoo.component.Vtag;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.MessageBusParams;
 import com.yahoo.messagebus.Protocol;
@@ -24,7 +23,7 @@ import java.util.logging.Logger;
 /**
  * A simple test server implementation.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class TestServer {
 
