@@ -23,11 +23,11 @@ public class CallbackTestCase {
     private DocumentPut put1;
     private DocumentPut put2;
     private List<DocumentOperation> operations = new ArrayList<>(2);
-    DocprocService service;
+    LegacyDocprocService service;
 
     @Before
     public void setUp() {
-        service = new DocprocService("callback");
+        service = new LegacyDocprocService("callback");
         service.setCallStack(new CallStack().addNext(new TestCallbackDp()));
         service.setInService(true);
 

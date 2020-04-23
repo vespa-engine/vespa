@@ -4,5 +4,5 @@ package com.yahoo.feedapi;
 import com.yahoo.messagebus.Message;
 
 public interface MessageProcessor {
-    public void process(Message m);
+    void process(Message m);
 }

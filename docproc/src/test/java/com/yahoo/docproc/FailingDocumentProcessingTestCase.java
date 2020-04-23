@@ -24,7 +24,7 @@ public class FailingDocumentProcessingTestCase {
     @Test
     public void testFailingProcessing() {
         // Set up service programmatically
-        DocprocService service = new DocprocService("failing");
+        var service = new LegacyDocprocService("failing");
         DocumentProcessor first = new SettingValueProcessor("done 1");
         DocumentProcessor second = new FailingProcessor("done 2");
         DocumentProcessor third = new SettingValueProcessor("done 3");
@@ -34,7 +34,7 @@ public class FailingDocumentProcessingTestCase {
         assertProcessingWorks(service);
     }
 
-    protected void assertProcessingWorks(DocprocService service) {
+    protected void assertProcessingWorks(LegacyDocprocService service) {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);

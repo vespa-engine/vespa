@@ -19,7 +19,7 @@ public class FailingWithErrorTestCase {
 
     @Test
     public void testErrors() {
-        DocprocService service = new DocprocService("failing");
+        var service = new LegacyDocprocService("failing");
         DocumentProcessor first = new ErrorThrowingProcessor();
         service.setCallStack(new CallStack().addLast(first));
         service.setInService(true);

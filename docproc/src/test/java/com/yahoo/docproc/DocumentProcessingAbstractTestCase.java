@@ -20,7 +20,7 @@ public abstract class DocumentProcessingAbstractTestCase {
     /**
      * Asserts that a document processing service works
      */
-    protected void assertProcessingWorks(DocprocService service) {
+    protected void assertProcessingWorks(LegacyDocprocService service) {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);

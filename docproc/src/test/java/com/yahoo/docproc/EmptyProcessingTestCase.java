@@ -10,7 +10,7 @@ public class EmptyProcessingTestCase {
 
     @Test
     public void emptyProcessing() {
-        DocprocService service = new DocprocService("juba");
+        LegacyDocprocService service = new LegacyDocprocService("juba");
         DocumentProcessor processor = new IncrementingDocumentProcessor();
         CallStack stack = new CallStack("juba");
         stack.addLast(processor);

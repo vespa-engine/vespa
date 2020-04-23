@@ -22,7 +22,7 @@ public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstract
     @Test
     public void testSimpleProcessing() {
         // Set up service programmatically
-        DocprocService service = new DocprocService("simple");
+        var service = new LegacyDocprocService("simple");
         DocumentProcessor first = new TestDocumentProcessor1();
         DocumentProcessor second = new TestDocumentProcessor2();
         DocumentProcessor third = new TestDocumentProcessor3();

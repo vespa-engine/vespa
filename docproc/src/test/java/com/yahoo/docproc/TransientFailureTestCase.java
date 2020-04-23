@@ -26,7 +26,7 @@ public class TransientFailureTestCase {
 
     @Test
     public void testTransientFailures() {
-        DocprocService service = new DocprocService("transfail");
+        var service = new LegacyDocprocService("transfail");
         CallStack stack = new CallStack();
         stack.addNext(new OkDocProc()).addNext(new TransientFailDocProc());
         service.setCallStack(stack);
