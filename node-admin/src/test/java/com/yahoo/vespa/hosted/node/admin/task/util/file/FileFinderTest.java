@@ -2,15 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -40,8 +40,8 @@ import static org.mockito.Mockito.when;
 public class FileFinderTest {
 
     public static class GeneralLogicTests {
-        @Rule
-        public TemporaryFolder folder = new TemporaryFolder();
+
+        private final FileSystem fileSystem = TestFileSystem.create();
 
         @Test
         public void all_files_non_recursive() {
@@ -111,6 +111,7 @@ public class FileFinderTest {
         @Before
         public void setup() throws IOException {
             Path root = testRoot();
+            Files.createDirectories(root);
 
             Files.createFile(root.resolve("file-1.json"));
             Files.createFile(root.resolve("test.json"));
@@ -127,7 +128,7 @@ public class FileFinderTest {
         }
 
         private Path testRoot() {
-            return folder.getRoot().toPath();
+            return fileSystem.getPath("/file-finder");
         }
 
         private void assertFileHelper(FileFinder fileFinder, Set<String> expectedList, Set<String> expectedContentsAfterDelete) {
