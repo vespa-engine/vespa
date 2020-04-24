@@ -75,9 +75,9 @@ public class SimpleTokenizer implements Tokenizer {
         if (stemMode != StemMode.NONE) {
             String oldToken = token;
             token = stemmer.stem(token);
-            log.log(Level.FINEST, "stem '"+oldToken+"' to '"+token+"'");
+            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+token+"'");
         }
-        log.log(Level.FINEST, "processed token is: "+token);
+        log.log(Level.FINEST, () -> "processed token is: "+token);
         return token;
     }
 

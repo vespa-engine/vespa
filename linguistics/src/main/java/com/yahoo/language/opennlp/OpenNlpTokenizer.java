@@ -60,7 +60,7 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     private Stemmer getStemmerForLanguage(Language language, StemMode stemMode) {
-        log.log(Level.FINEST, "getStemmerForLanguage '"+language+"' mode: "+stemMode);
+        log.log(Level.FINEST, () -> "getStemmerForLanguage '"+language+"' mode: "+stemMode);
         if (language == null || Language.ENGLISH.equals(language) || StemMode.NONE.equals(stemMode)) {
             return null;
         }
@@ -124,7 +124,7 @@ public class OpenNlpTokenizer implements Tokenizer {
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents,
                                 Stemmer stemmer) {
-        log.log(Level.FINEST, "processToken '"+token+"'");
+        log.log(Level.FINEST, () -> "processToken '"+token+"'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
@@ -132,9 +132,9 @@ public class OpenNlpTokenizer implements Tokenizer {
         if (stemMode != StemMode.NONE) {
             String oldToken = token;
             token = doStemming(token, stemmer);
-            log.log(Level.FINEST, "stem '"+oldToken+"' to '"+token+"'");
+            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+token+"'");
         }
-        log.log(Level.FINEST, "processed token is: "+token);
+        log.log(Level.FINEST, () -> "processed token is: "+token);
         return token;
     }
 

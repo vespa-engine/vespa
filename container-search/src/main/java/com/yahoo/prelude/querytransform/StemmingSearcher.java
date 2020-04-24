@@ -184,7 +184,7 @@ public class StemmingSearcher extends Searcher {
         Substring substring = getOffsets(current);
 
         if (segments.size() == 1) {
-            getLogger().log(LogLevel.DEBUG, "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
+            getLogger().log(LogLevel.DEBUG, () -> "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
                             +" and language '"+context.language+"' -> '"+segments.get(0)+"'");
             TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
@@ -206,7 +206,7 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
-            getLogger().log(LogLevel.DEBUG, "Stem to multiple segments '"+segment+"'");
+            getLogger().log(LogLevel.DEBUG, () -> "Stem to multiple segments '"+segment+"'");
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {

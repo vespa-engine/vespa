@@ -99,7 +99,7 @@ public class OptimaizeDetector implements Detector {
     private static Language guessLanguageUsingOptimaize(String input) {
         Optional<LdLocale> result = languageDetector.detect(textObjectFactory.forText(input));
         if ( ! result.isPresent()) return Language.UNKNOWN;
-        log.log(Level.FINE, "guessing language "+result.get()+" from input: "+input);
+        log.log(Level.FINE, () -> "guessing language "+result.get()+" from input: "+input);
 
         return Language.fromLocale(new Locale(result.get().getLanguage()));
     }
