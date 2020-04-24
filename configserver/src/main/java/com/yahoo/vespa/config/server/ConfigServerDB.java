@@ -35,7 +35,7 @@ public class ConfigServerDB {
         try {
             initialize(configserverConfig.configModelPluginDir());
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.ERROR, "Error initializing serverdb: " + e.getMessage());
+            log.log(Level.SEVERE, "Error initializing serverdb: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize server db", e);
         }

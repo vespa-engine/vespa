@@ -468,7 +468,7 @@ public class DummyVdsNode {
                 }
             }
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering " + req.methodName() + " request: " + e.getMessage());
+            log.log(Level.SEVERE, "Dummy node " + this + ": An error occurred when answering " + req.methodName() + " request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }
@@ -528,7 +528,7 @@ public class DummyVdsNode {
             req.returnValues().add(new StringValue("OK"));
             log.log(Level.FINE, "Dummy node " + this + ": Got new system state (through old setsystemstate call) " + newState);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
+            log.log(Level.SEVERE, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.returnValues().add(new Int32Value(ErrorCode.METHOD_FAILED));
             req.returnValues().add(new StringValue(e.getMessage()));
@@ -552,7 +552,7 @@ public class DummyVdsNode {
             }
             log.log(Level.FINE, "Dummy node " + this + ": Got new system state " + newState);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
+            log.log(Level.SEVERE, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }
@@ -575,7 +575,7 @@ public class DummyVdsNode {
             }
             log.log(Level.FINE, "Dummy node " + this + ": Got new cluster state " + stateBundle);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setdistributionstates request: " + e.getMessage());
+            log.log(Level.SEVERE, "Dummy node " + this + ": An error occurred when answering setdistributionstates request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }
@@ -602,7 +602,7 @@ public class DummyVdsNode {
             }
             log.log(Level.FINE, "Dummy node " + this + ": Activating cluster state version " + activateVersion);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering activate_cluster_state_version request: " + e.getMessage());
+            log.log(Level.SEVERE, "Dummy node " + this + ": An error occurred when answering activate_cluster_state_version request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }

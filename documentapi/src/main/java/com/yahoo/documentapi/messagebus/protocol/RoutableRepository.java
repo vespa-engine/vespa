@@ -51,11 +51,11 @@ final class RoutableRepository {
      */
     Routable decode(DocumentTypeManager docMan, Version version, byte[] data) {
         if (data == null || data.length == 0) {
-            log.log(LogLevel.ERROR, "Received empty byte array for deserialization.");
+            log.log(Level.SEVERE, "Received empty byte array for deserialization.");
             return null;
         }
         if (version.getMajor() < 5) {
-            log.log(LogLevel.ERROR,"Can not decode anything from (version " + version + "). Only major version 5 and up supported.");
+            log.log(Level.SEVERE,"Can not decode anything from (version " + version + "). Only major version 5 and up supported.");
             return null;
         }
         DocumentDeserializer in = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
@@ -64,12 +64,12 @@ final class RoutableRepository {
         int type = in.getInt(null);
         RoutableFactory factory = getFactory(version, type);
         if (factory == null) {
-            log.log(LogLevel.ERROR,"No routable factory found for routable type " + type + " (version " + version + ").");
+            log.log(Level.SEVERE,"No routable factory found for routable type " + type + " (version " + version + ").");
             return null;
         }
         Routable ret = factory.decode(in, loadTypes);
         if (ret == null) {
-            log.log(LogLevel.ERROR,"Routable factory " + factory.getClass().getName() + " failed to deserialize " +
+            log.log(Level.SEVERE,"Routable factory " + factory.getClass().getName() + " failed to deserialize " +
                                                "routable of type " + type + " (version " + version + ").\nData = " + Arrays.toString(data));
             return null;
         }
@@ -90,18 +90,18 @@ final class RoutableRepository {
         int type = obj.getType();
         RoutableFactory factory = getFactory(version, type);
         if (factory == null) {
-            log.log(LogLevel.ERROR,"No routable factory found for routable type " + type + " (version " + version + ").");
+            log.log(Level.SEVERE,"No routable factory found for routable type " + type + " (version " + version + ").");
             return new byte[0];
         }
         if (version.getMajor() < 5) {
-            log.log(LogLevel.ERROR,"Can not encode routable type " + type + " (version " + version + "). Only major version 5 and up supported.");
+            log.log(Level.SEVERE,"Can not encode routable type " + type + " (version " + version + "). Only major version 5 and up supported.");
             return new byte[0];
         }
         DocumentSerializer out= DocumentSerializerFactory.createHead(new GrowableByteBuffer(8192));
 
         out.putInt(null, type);
         if (!factory.encode(obj, out)) {
-            log.log(LogLevel.ERROR, "Routable factory " + factory.getClass().getName() + " failed to serialize " +
+            log.log(Level.SEVERE, "Routable factory " + factory.getClass().getName() + " failed to serialize " +
                                     "routable of type " + type + " (version " + version + ").");
             return new byte[0];
         }

@@ -83,7 +83,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         } catch (Exception e) {
             metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);
-            log.log(LogLevel.ERROR, "Uncaught exception handling request", e);
+            log.log(Level.SEVERE, "Uncaught exception handling request", e);
             if (channel != null) {
                 channel.setHttpResponse(null);
                 channel.close(null);

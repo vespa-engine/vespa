@@ -210,7 +210,7 @@ public final class ConfiguredApplication implements Application {
             Container.get().setupFileAcquirer(config.filedistributor());
             Container.get().setupUrlDownloader();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
+            log.log(Level.SEVERE, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
         }
     }

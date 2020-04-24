@@ -485,10 +485,10 @@ public class SearchHandler extends LoggingRequestHandler {
     private void log(String request, Query query, Throwable e) {
         // Attempted workaround for missing stack traces
         if (e.getStackTrace().length == 0) {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() +
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() +
                                     " [" + request + "], received exception with no context", e);
         } else {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
         }
     }
 

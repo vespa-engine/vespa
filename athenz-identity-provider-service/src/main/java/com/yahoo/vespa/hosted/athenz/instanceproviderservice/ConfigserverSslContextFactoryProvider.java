@@ -174,7 +174,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
                 keyManager.updateKeystore(keyStore, keystorePwd);
                 log.log(Level.INFO, "Certificate successfully updated");
             } catch (Throwable t) {
-                log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + t.getMessage(), t);
+                log.log(Level.SEVERE, "Failed to update certificate from ZTS: " + t.getMessage(), t);
             }
         }
     }

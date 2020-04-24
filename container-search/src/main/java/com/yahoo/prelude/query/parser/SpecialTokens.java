@@ -66,7 +66,7 @@ public class SpecialTokens {
         // TODO put along with the global toLowerCase
         String asHigh = token.toUpperCase(Locale.ENGLISH);
         if (asLow.length() != token.length() || asHigh.length() != token.length()) {
-            log.log(LogLevel.ERROR, "Special token '" + token + "' has case sensitive length. Ignoring the token."
+            log.log(Level.SEVERE, "Special token '" + token + "' has case sensitive length. Ignoring the token."
                     + " Please report this message in a bug to the Vespa team.");
             return false;
         } else {

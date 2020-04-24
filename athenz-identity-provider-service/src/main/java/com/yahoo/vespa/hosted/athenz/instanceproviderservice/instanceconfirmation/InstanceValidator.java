@@ -92,7 +92,7 @@ public class InstanceValidator {
             log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
-        log.log(LogLevel.ERROR, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
+        log.log(Level.SEVERE, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
         return false;
     }
 

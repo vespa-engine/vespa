@@ -139,7 +139,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                log.log(LogLevel.ERROR, "Got interrupted", e);
+                log.log(Level.SEVERE, "Got interrupted", e);
                 break;
             }
         } while (server.isRunning());
@@ -158,7 +158,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 versionState.saveNewVersion();
                 log.log(Level.INFO, "All applications redeployed successfully");
             } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Redeployment of applications failed", e);
+                log.log(Level.SEVERE, "Redeployment of applications failed", e);
                 redeployingApplicationsFailed();
                 return; // Status will not be set to 'up' since we return here
             }
@@ -193,7 +193,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                log.log(LogLevel.ERROR, "Got interrupted", e);
+                log.log(Level.SEVERE, "Got interrupted", e);
                 break;
             }
         }
@@ -218,7 +218,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
         if ( ! applicationsNotRedeployed.isEmpty()) {
-            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDurationOfRedeployment +
+            log.log(Level.SEVERE, "Redeploying applications not finished after " + maxDurationOfRedeployment +
                     ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
             return false;
         }

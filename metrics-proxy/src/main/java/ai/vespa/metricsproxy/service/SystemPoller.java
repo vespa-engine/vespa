@@ -180,7 +180,7 @@ public class SystemPoller {
         try {
             in = new BufferedReader(new FileReader("/proc/stat"));
         } catch (FileNotFoundException ex) {
-            log.log(LogLevel.ERROR, "Unable to open stat file", ex);
+            log.log(Level.SEVERE, "Unable to open stat file", ex);
             return 0;
         }
         try {
@@ -194,7 +194,7 @@ public class SystemPoller {
 
             in.close();
         } catch (IOException ex) {
-            log.log(LogLevel.ERROR, "Unable to read line from stat file", ex);
+            log.log(Level.SEVERE, "Unable to read line from stat file", ex);
             return 0;
         }
 

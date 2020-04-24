@@ -65,7 +65,7 @@ class SystemFlagsDeployer  {
             try {
                 results.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
-                log.log(LogLevel.ERROR, String.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
+                log.log(Level.SEVERE, String.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
                 throw new RuntimeException(e);
             }
         });

@@ -310,7 +310,7 @@ public class ConfigCurator {
             curator.framework().checkExists().forPath("/dummy");
         }
         catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
+            log.log(Level.SEVERE, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
                     ". Please verify for all configserver nodes that " +
                     "VESPA_CONFIGSERVERS points to the correct configserver(s), " +
                     "the same configserver(s) as in services.xml, and that they are started. " +

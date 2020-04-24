@@ -80,7 +80,7 @@ public class FileReceiver {
                 inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
                 String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDirectory.toPath() + "': ";
-                log.log(LogLevel.ERROR, msg + e.getMessage(), e);
+                log.log(Level.SEVERE, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }
         }
@@ -96,7 +96,7 @@ public class FileReceiver {
             try {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                log.log(Level.SEVERE, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
                 inprogressFile.delete();
                 throw new RuntimeException("Failed writing to file (" + inprogressFile.toPath() + "): ", e);
             }
@@ -120,14 +120,14 @@ public class FileReceiver {
                     try {
                         Files.createDirectories(fileReferenceDir.toPath());
                     } catch (IOException e) {
-                        log.log(LogLevel.ERROR, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                        log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
                         throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
                     }
                     log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
                     moveFileToDestination(inprogressFile, file);
                 }
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
+                log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
                 try {
@@ -135,7 +135,7 @@ public class FileReceiver {
                         Files.delete(inprogressFile.toPath());
                     }
                 } catch (IOException e) {
-                    log.log(LogLevel.ERROR, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
+                    log.log(Level.SEVERE, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
                 }
             }
             return file;
@@ -197,7 +197,7 @@ public class FileReceiver {
             deleteFileOrDirectory(tempFile);
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
-            log.log(LogLevel.ERROR, message, e);
+            log.log(Level.SEVERE, message, e);
             throw new RuntimeException(message, e);
         }
     }

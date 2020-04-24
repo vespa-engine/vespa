@@ -345,7 +345,7 @@ public class DockerImpl implements Docker {
         @Override
         public void onError(Throwable throwable) {
             removeScheduledPoll(dockerImage);
-            logger.log(LogLevel.ERROR, "Could not download image " + dockerImage.asString(), throwable);
+            logger.log(Level.SEVERE, "Could not download image " + dockerImage.asString(), throwable);
         }
 
 

@@ -652,7 +652,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         try {
             propagateOptions();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Failed to handle new fleet controller config", e);
+            log.log(Level.SEVERE, "Failed to handle new fleet controller config", e);
         }
     }
 
@@ -1070,7 +1070,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             log.log(Level.FINE, "Event thread stopped by interrupt exception: " + e);
         } catch (Throwable t) {
             t.printStackTrace();
-            log.log(LogLevel.ERROR, "Fatal error killed fleet controller", t);
+            log.log(Level.SEVERE, "Fatal error killed fleet controller", t);
             synchronized (monitor) { running.set(false); }
             System.exit(1);
         } finally {

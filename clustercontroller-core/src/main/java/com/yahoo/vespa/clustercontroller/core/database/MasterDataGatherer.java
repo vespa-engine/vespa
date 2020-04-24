@@ -121,7 +121,7 @@ public class MasterDataGatherer {
                     if (nextMasterData.containsKey(index)) {
                         nextMasterData.remove(index);
                     } else {
-                        log.log(LogLevel.ERROR, "Fleetcontroller " + nodeIndex + ": Strangely, we already had data from node " + index + " when trying to remove it");
+                        log.log(Level.SEVERE, "Fleetcontroller " + nodeIndex + ": Strangely, we already had data from node " + index + " when trying to remove it");
                     }
                 } else {
                     Integer value = Integer.valueOf(data);

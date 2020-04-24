@@ -49,13 +49,13 @@ class RoutingPolicyRepository {
     RoutingPolicy createPolicy(String name, String param) {
         RoutingPolicyFactory factory = getFactory(name);
         if (factory == null) {
-            log.log(LogLevel.ERROR, "No routing policy factory found for name '" + name + "'.");
+            log.log(Level.SEVERE, "No routing policy factory found for name '" + name + "'.");
             return null;
         }
         DocumentProtocolRoutingPolicy ret = factory.createPolicy(param);
 
         if (ret == null) {
-            log.log(LogLevel.ERROR, "Routing policy factory " + factory.getClass().getName() + " failed to create a " +
+            log.log(Level.SEVERE, "Routing policy factory " + factory.getClass().getName() + " failed to create a " +
                     "routing policy for parameter '" + name + "'.");
             return null;
         }

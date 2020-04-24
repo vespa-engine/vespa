@@ -66,7 +66,7 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
             return new JacksonJsonResponse<>(200, result.toWire());
         } catch (Exception e) {
             String errorMessage = "System flags deploy failed: " + e.getMessage();
-            log.log(LogLevel.ERROR, errorMessage, e);
+            log.log(Level.SEVERE, errorMessage, e);
             return ErrorResponse.internalServerError(errorMessage);
         }
     }

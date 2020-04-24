@@ -282,7 +282,7 @@ public class StoragePolicy extends SlobrokPolicy {
                 case DocumentProtocol.MESSAGE_CREATEVISITOR:       return ((CreateVisitorMessage)msg).getBuckets().get(0);
                 case DocumentProtocol.MESSAGE_REMOVELOCATION:      return ((RemoveLocationMessage)msg).getBucketId();
                 default:
-                    log.log(LogLevel.ERROR, "Message type '" + msg.getType() + "' not supported.");
+                    log.log(Level.SEVERE, "Message type '" + msg.getType() + "' not supported.");
                     return null;
             }
         }
@@ -471,7 +471,7 @@ public class StoragePolicy extends SlobrokPolicy {
             if (context.usedState == null) {
                 String msg = "Used state must be set as distributor is calculated. Bug.";
                 reply.getTrace().trace(1, msg);
-                log.log(LogLevel.ERROR, msg);
+                log.log(Level.SEVERE, msg);
             } else if (newState.getVersion() == context.usedState.getVersion()) {
                 String msg = "Message sent to distributor " + context.calculatedDistributor +
                              " retrieved cluster state version " + newState.getVersion() +

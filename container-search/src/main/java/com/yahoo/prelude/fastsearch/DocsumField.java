@@ -58,7 +58,7 @@ public abstract class DocsumField {
             fieldFactory.put("xmlstring", XMLField.class);
             fieldFactory.put("tensor", TensorField.class);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Could not initialize docsum decoding properly.", e);
+            log.log(Level.SEVERE, "Could not initialize docsum decoding properly.", e);
         }
     }
 

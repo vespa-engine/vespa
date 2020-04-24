@@ -87,12 +87,12 @@ class UrlDownloadRpcServer {
                 req.returnValues().add(new StringValue(new File(downloadDir, CONTENTS_FILE_NAME).getAbsolutePath()));
 
             } else {
-                log.log(LogLevel.ERROR, "Download of URL '" + url + "' got server response: " + connection.getResponseCode());
+                log.log(Level.SEVERE, "Download of URL '" + url + "' got server response: " + connection.getResponseCode());
                 req.setError(HTTP_ERROR, String.valueOf(connection.getResponseCode()));
             }
 
         } catch (Throwable e) {
-            log.log(LogLevel.ERROR, "Download of URL '" + url + "' got exception: " + e.getMessage());
+            log.log(Level.SEVERE, "Download of URL '" + url + "' got exception: " + e.getMessage());
             req.setError(INTERNAL_ERROR, "Download of URL '" + url + "' internal error: " + e.getMessage());
         }
         req.returnRequest();
@@ -115,7 +115,7 @@ class UrlDownloadRpcServer {
                     log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
                                                          url, (System.currentTimeMillis() -start) / 1000.0));
                 } else {
-                    log.log(LogLevel.ERROR, "Downloaded URL '" + url + "' not found, returning error");
+                    log.log(Level.SEVERE, "Downloaded URL '" + url + "' not found, returning error");
                     req.setError(DOES_NOT_EXIST, "Downloaded '" + url + "' not found");
                 }
             }

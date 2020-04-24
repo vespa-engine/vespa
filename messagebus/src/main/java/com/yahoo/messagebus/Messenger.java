@@ -168,7 +168,7 @@ public class Messenger implements Runnable {
                 try {
                     task.run();
                 } catch (final Exception e) {
-                    log.log(LogLevel.ERROR, "An exception was thrown while running " + task.getClass().getName(), e);
+                    log.log(Level.SEVERE, "An exception was thrown while running " + task.getClass().getName(), e);
                 }
                 try {
                     task.destroy();

@@ -215,7 +215,7 @@ public class ArchiverHandler extends AbstractLogHandler {
             log.log(Level.FINE, "Using " + absoluteRootDir + " as root");
         } else {
             if (! root.mkdirs()) {
-                log.log(LogLevel.ERROR, "Unable to create directory " + absoluteRootDir);
+                log.log(Level.SEVERE, "Unable to create directory " + absoluteRootDir);
             } else {
                 log.log(Level.FINE, "Created root at " + absoluteRootDir);
             }

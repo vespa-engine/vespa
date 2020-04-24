@@ -726,7 +726,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     } else {
                         String msg = "Received reply we do not know how to handle: " +
                                 reply.getClass().getName();
-                        log.log(LogLevel.ERROR, msg);
+                        log.log(Level.SEVERE, msg);
                         transitionTo(new StateDescription(State.FAILED, msg));
                     }
                 } catch (Exception e) {
@@ -772,7 +772,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     private void handleMessageProcessingException(Reply reply, Exception e, String what) {
         final String errorDesc = formatProcessingException(e, what);
         final String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
-        log.log(LogLevel.ERROR, fullMsg, e);
+        log.log(Level.SEVERE, fullMsg, e);
         int errorCode;
         synchronized (progress.getToken()) {
             if (!params.skipBucketsOnFatalErrors()) {
@@ -841,7 +841,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         msg.swapState(reply);
 
         if (params.getLocalDataHandler() == null) {
-            log.log(LogLevel.ERROR, sessionName + ": Got visitor data back to client with no local data destination.");
+            log.log(Level.SEVERE, sessionName + ": Got visitor data back to client with no local data destination.");
             reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "Visitor data with no local data destination"));
             receiver.reply(reply);
             return;
@@ -1066,7 +1066,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 progress.getIterator().setDistributionBitCount(stateBits);
             }
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Failed to parse new system state string: "
+            log.log(Level.SEVERE, "Failed to parse new system state string: "
                     + reply.getSystemState());
             transitionTo(new StateDescription(State.FAILED, "Failed to parse cluster state '"
                     + reply.getSystemState() + "'"));
@@ -1170,7 +1170,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 sender.destroy();
                 receiver.destroy();
             } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Caught exception destroying communication interfaces", e);
+                log.log(Level.SEVERE, "Caught exception destroying communication interfaces", e);
             }
             log.log(Level.FINE, sessionName + ": synchronous destroy() done");
         }

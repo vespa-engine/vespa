@@ -36,7 +36,7 @@ public class InstanceRefreshResource {
     public InstanceConfirmation confirmInstanceRefresh(InstanceConfirmation instanceConfirmation) {
         log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidRefresh(instanceConfirmation)) {
-            log.log(LogLevel.ERROR, "Invalid instance refresh: " + instanceConfirmation);
+            log.log(Level.SEVERE, "Invalid instance refresh: " + instanceConfirmation);
             throw new ForbiddenException("Instance is invalid");
         }
         return instanceConfirmation;

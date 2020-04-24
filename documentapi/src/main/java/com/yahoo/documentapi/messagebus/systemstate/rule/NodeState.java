@@ -91,7 +91,7 @@ public class NodeState {
         }
         if (arr[0].equals(NODE_PARENT)) {
             if (parent == null) {
-                log.log(LogLevel.ERROR, "Location string '" + key + "' requests a parent above the top-most node, " +
+                log.log(Level.SEVERE, "Location string '" + key + "' requests a parent above the top-most node, " +
                                         "returning self to avoid crash.");
             }
             return parent.getChild(arr[1], force);

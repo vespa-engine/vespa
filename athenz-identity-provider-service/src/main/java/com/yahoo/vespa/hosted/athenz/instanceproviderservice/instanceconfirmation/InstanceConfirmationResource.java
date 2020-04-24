@@ -34,7 +34,7 @@ public class InstanceConfirmationResource {
     public InstanceConfirmation confirmInstance(InstanceConfirmation instanceConfirmation) {
         log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidInstance(instanceConfirmation)) {
-            log.log(LogLevel.ERROR, "Invalid instance: " + instanceConfirmation);
+            log.log(Level.SEVERE, "Invalid instance: " + instanceConfirmation);
             throw new ForbiddenException("Instance is invalid");
         }
         return instanceConfirmation;

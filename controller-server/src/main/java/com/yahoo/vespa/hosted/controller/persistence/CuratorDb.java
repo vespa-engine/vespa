@@ -357,7 +357,7 @@ public class CuratorDb {
                 readApplication(id).ifPresent(applications::add);
             } catch (Exception e) {
                 if (canFail) {
-                    log.log(LogLevel.ERROR, "Failed to read application '" + id + "', this must be fixed through " +
+                    log.log(Level.SEVERE, "Failed to read application '" + id + "', this must be fixed through " +
                                             "manual intervention", e);
                 } else {
                     throw e;

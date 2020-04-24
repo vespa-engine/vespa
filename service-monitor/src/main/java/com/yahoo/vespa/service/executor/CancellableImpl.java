@@ -97,7 +97,7 @@ class CancellableImpl implements Cancellable, Runnable {
             runlet.close();
             periodicExecutionCancellation.get().run();
         } catch (Throwable e) {
-            logger.log(LogLevel.ERROR, "Failed run of periodic execution", e);
+            logger.log(Level.SEVERE, "Failed run of periodic execution", e);
         }
     }
 }

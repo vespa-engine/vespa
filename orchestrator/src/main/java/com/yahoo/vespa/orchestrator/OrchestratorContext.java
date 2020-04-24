@@ -153,7 +153,7 @@ public class OrchestratorContext implements AutoCloseable {
             try {
                 unlock.run();
             } catch (RuntimeException e) {
-                logger.log(LogLevel.ERROR, "Failed run on close : " + e.getMessage());
+                logger.log(Level.SEVERE, "Failed run on close : " + e.getMessage());
             }
         });
     }

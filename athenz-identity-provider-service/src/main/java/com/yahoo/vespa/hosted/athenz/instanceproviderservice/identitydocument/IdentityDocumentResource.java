@@ -43,7 +43,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
             return EntityBindingsMapper.toSignedIdentityDocumentEntity(identityDocumentGenerator.generateSignedIdentityDocument(hostname, identityType));
         } catch (Exception e) {
             String message = String.format("Unable to generate identity doument for '%s': %s", hostname, e.getMessage());
-            log.log(LogLevel.ERROR, message, e);
+            log.log(Level.SEVERE, message, e);
             throw new InternalServerErrorException(message, e);
         }
     }

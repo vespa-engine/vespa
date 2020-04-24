@@ -55,7 +55,7 @@ public class SessionActiveHandler extends SessionHandler {
     // Overridden to make sure we are logging when this low-level handling of timeout happens
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        log.log(LogLevel.ERROR, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
+        log.log(Level.SEVERE, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
         super.handleTimeout(request, responseHandler);
     }
 

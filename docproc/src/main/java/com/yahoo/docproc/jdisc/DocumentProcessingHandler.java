@@ -24,7 +24,6 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import java.util.logging.Level;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.statistics.Statistics;
@@ -33,6 +32,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
 import static com.yahoo.component.chain.model.ChainsModelBuilder.buildFromConfig;
@@ -167,7 +167,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         DocprocService service = docprocServiceRegistry.getComponent(serviceName);
         //No need to enqueue a task if the docproc chain is empty, just forward requestContext
         if (service == null) {
-            log.log(LogLevel.ERROR, "DocprocService for session '" + serviceName +
+            log.log(Level.SEVERE, "DocprocService for session '" + serviceName +
                                     "' not found, returning request '" + requestContext + "'.");
             requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
                                             "DocprocService " + serviceName + " not found.");

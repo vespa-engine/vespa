@@ -119,7 +119,7 @@ public class FileDirectory  {
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
-            log.log(LogLevel.ERROR, "Directory for file reference '" + fileReference.value() +
+            log.log(Level.SEVERE, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);

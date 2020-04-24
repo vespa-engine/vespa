@@ -199,7 +199,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
                     log.log(Level.INFO, applicationId + ": Skipping old version (due to validation override)");
                 else {
-                    log.log(LogLevel.ERROR, applicationId + ": Failed to build version " + version);
+                    log.log(Level.SEVERE, applicationId + ": Failed to build version " + version);
                     throw e;
                 }
             }

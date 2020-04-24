@@ -24,7 +24,7 @@ public abstract class AbstractPluginLoader implements PluginLoader {
         try {
             plugin = pluginClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            log.log(LogLevel.ERROR, pluginClass.getName() + ": load failed: " + e);
+            log.log(Level.SEVERE, pluginClass.getName() + ": load failed: " + e);
             throw new RuntimeException(e);
         }
 
@@ -42,7 +42,7 @@ public abstract class AbstractPluginLoader implements PluginLoader {
             plugin.initPlugin(config);
             log.log(Level.FINE, pname + ": plugin loaded");
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, pname + ": init failed", e);
+            log.log(Level.SEVERE, pname + ": init failed", e);
         }
     }
 }

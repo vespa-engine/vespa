@@ -277,7 +277,7 @@ public class ZkStatusService implements StatusService {
         try {
             lock = lockApplication(context, reference);
         } catch (RuntimeException e) {
-            log.log(LogLevel.ERROR, "Failed to get Orchestrator lock on when " + reference +
+            log.log(Level.SEVERE, "Failed to get Orchestrator lock on when " + reference +
                     eventDescription + ": " + e.getMessage());
             return;
         }
@@ -285,7 +285,7 @@ public class ZkStatusService implements StatusService {
         try (lock) {
             runnable.run();
         } catch (RuntimeException e) {
-            log.log(LogLevel.ERROR, "Failed to clean up after " + reference + eventDescription +
+            log.log(Level.SEVERE, "Failed to clean up after " + reference + eventDescription +
                     ": " + e.getMessage());
         }
     }

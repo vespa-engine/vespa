@@ -45,7 +45,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
@@ -62,7 +62,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
