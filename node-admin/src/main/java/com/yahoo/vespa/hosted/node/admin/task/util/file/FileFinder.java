@@ -14,6 +14,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -35,6 +37,7 @@ public class FileFinder {
     private static final Logger logger = Logger.getLogger(FileFinder.class.getName());
 
     private final Path basePath;
+    private final Set<Path> pruned = new HashSet<>();
     private Predicate<FileAttributes> matcher;
     private int maxDepth = Integer.MAX_VALUE;
 
@@ -68,6 +71,27 @@ public class FileFinder {
      */
     public FileFinder match(Predicate<FileAttributes> matcher) {
         this.matcher = this.matcher.and(matcher);
+        return this;
+    }
+
+    /**
+     * Path for which whole directory tree will be skipped, including the path itself.
+     * The path must be under {@code basePath} or be relative to {@code basePath}.
+     */
+    public FileFinder prune(Path path) {
+        if (!path.isAbsolute())
+            path = basePath.resolve(path);
+
+        if (!path.startsWith(basePath))
+            throw new IllegalArgumentException("Prune path " + path + " is not under base path " + basePath);
+
+        this.pruned.add(path);
+        return this;
+    }
+
+    /** Convenience method for pruning multiple paths, see {@link #prune(Path)}. */
+    public FileFinder prune(Collection<Path> paths) {
+        paths.forEach(this::prune);
         return this;
     }
 
@@ -145,6 +169,8 @@ public class FileFinder {
 
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    if (pruned.contains(dir)) return FileVisitResult.SKIP_SUBTREE;
+
                     currentLevel++;
 
                     FileAttributes attributes = new FileAttributes(dir, attrs);
