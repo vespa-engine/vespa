@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.CoredumpCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
@@ -15,8 +14,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -83,30 +82,14 @@ public class StorageMaintainer {
             DiskSize cachedDiskUsage = diskUsage.getIfPresent(context.containerName());
             if (cachedDiskUsage != null) return Optional.of(cachedDiskUsage);
 
-            DiskSize diskUsageBytes = getDiskUsed(context, context.pathOnHostFromPathInNode("/"));
-            diskUsage.put(context.containerName(), diskUsageBytes);
-            return Optional.of(diskUsageBytes);
+            DiskSize diskUsage = DiskSize.measure(context.pathOnHostFromPathInNode("/"),
+                                                  terminal.newCommandLine(context));
+            this.diskUsage.put(context.containerName(), diskUsage);
+            return Optional.of(diskUsage);
         } catch (Exception e) {
             context.log(logger, LogLevel.WARNING, "Failed to get disk usage", e);
             return Optional.empty();
         }
-    }
-
-    DiskSize getDiskUsed(TaskContext context, Path path) {
-        if (!Files.exists(path)) return DiskSize.ZERO;
-
-        String output = terminal.newCommandLine(context)
-                .add("du", "-xsk", path.toString())
-                .setTimeout(Duration.ofSeconds(60))
-                .executeSilently()
-                .getOutput();
-
-        String[] results = output.split("\t");
-        if (results.length != 2) {
-            throw new ConvergenceException("Result from disk usage command not as expected: " + output);
-        }
-
-        return DiskSize.of(Long.parseLong(results[0]), DiskSize.Unit.kiB);
     }
 
     public boolean cleanDiskIfFull(NodeAgentContext context) {

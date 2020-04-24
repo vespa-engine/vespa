@@ -7,8 +7,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -57,13 +56,6 @@ public class StorageMaintainerTest {
 
             // Value should still be cached, no new execution against the terminal
             assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
-        }
-
-        @Test
-        public void testNonExistingDiskUsed() {
-            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null);
-            DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
-            assertEquals(DiskSize.ZERO, size);
         }
 
         @After

@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -22,4 +23,11 @@ public class DiskSizeTest {
         assertEquals("2 PB", DiskSize.of(2_000_000_000_000_000L).asString());
         assertEquals("9 EB", DiskSize.of(Long.MAX_VALUE).asString());
     }
+
+    @Test
+    public void measure_non_existent_path() {
+        var fs = TestFileSystem.create();
+        assertEquals(DiskSize.ZERO, DiskSize.measure(fs.getPath("/fake/path"), null));
+    }
+
 }

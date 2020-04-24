@@ -1,5 +1,11 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -60,4 +66,19 @@ public class DiskSize {
     public String toString() {
         return asString();
     }
+
+    /** Measure the total size of given path */
+    public static DiskSize measure(Path path, CommandLine commandLine) {
+        if (!Files.exists(path)) return DiskSize.ZERO;
+        String output = commandLine.add("du", "-xsk", path.toString())
+                                   .setTimeout(Duration.ofSeconds(60))
+                                   .executeSilently()
+                                   .getOutput();
+        String[] parts = output.split("\t");
+        if (parts.length != 2) {
+            throw new ConvergenceException("Result from disk usage command not as expected: '" + output + "'");
+        }
+        return DiskSize.of(Long.parseLong(parts[0]), DiskSize.Unit.kiB);
+    }
+
 }
