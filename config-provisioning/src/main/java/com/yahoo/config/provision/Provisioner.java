@@ -24,9 +24,6 @@ public interface Provisioner {
      */
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
 
-    @Deprecated // TODO: Remove after April 2020
-    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
-
     /**
      * Activates the allocation of nodes to this application captured in the hosts argument.
      *
