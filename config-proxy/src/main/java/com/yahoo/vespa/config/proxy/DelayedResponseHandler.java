@@ -38,7 +38,7 @@ public class DelayedResponseHandler implements Runnable {
     void checkDelayedResponses() {
         try {
             long start = System.currentTimeMillis();
-            log.log(LogLevel.SPAM, () -> "Running DelayedResponseHandler. There are " + delayedResponses.size() +
+            log.log(Level.FINEST, () -> "Running DelayedResponseHandler. There are " + delayedResponses.size() +
                     " delayed responses. First one is " + delayedResponses.responses().peek());
             DelayedResponse response;
             AtomicInteger i = new AtomicInteger(0);
@@ -54,7 +54,7 @@ public class DelayedResponseHandler implements Runnable {
                             request.getConfigKey() + ", will retry");
                 }
             }
-            log.log(LogLevel.SPAM, () -> "Finished running DelayedResponseHandler. " + i.get() + " delayed responses sent in " +
+            log.log(Level.FINEST, () -> "Finished running DelayedResponseHandler. " + i.get() + " delayed responses sent in " +
                     (System.currentTimeMillis() - start) + " ms");
         } catch (Exception e) {  // To avoid thread throwing exception and executor never running this again
             log.log(LogLevel.WARNING, "Got exception in DelayedResponseHandler: " + Exceptions.toMessageString(e));

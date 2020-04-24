@@ -109,7 +109,7 @@ public class MasterElectionHandler implements MasterInterface {
         if (totalCount == 1) return false; // No point in doing master election with only one node configured to be cluster controller
         if (nextMasterData == null) {
             if (masterCandidate == null) {
-                log.log(LogLevel.SPAM, "Cluster controller " + index + ": No current master candidate. Waiting for data to do master election.");
+                log.log(Level.FINEST, "Cluster controller " + index + ": No current master candidate. Waiting for data to do master election.");
             }
             return false; // Nothing have happened since last time.
         }

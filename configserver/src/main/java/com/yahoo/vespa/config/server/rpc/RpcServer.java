@@ -157,7 +157,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     private void getConfigV3(Request req) {
         if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, getConfigMethodName);
+            log.log(Level.FINEST, getConfigMethodName);
         }
         req.detach();
         rpcAuthorizer.authorizeConfigRequest(req)

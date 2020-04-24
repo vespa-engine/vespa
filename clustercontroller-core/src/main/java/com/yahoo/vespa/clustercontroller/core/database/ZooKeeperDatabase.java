@@ -103,7 +103,7 @@ public class ZooKeeperDatabase extends Database {
         try{
             this.listener = zksl;
             setupRoot();
-            log.log(LogLevel.SPAM, "Fleetcontroller " + nodeIndex + ": Asking for initial data on master election");
+            log.log(Level.FINEST, "Fleetcontroller " + nodeIndex + ": Asking for initial data on master election");
             masterDataGatherer = new MasterDataGatherer(session, zooKeeperRoot, listener, nodeIndex);
             completedOk = true;
         } finally {

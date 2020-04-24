@@ -74,7 +74,7 @@ public class SlobrokClient implements NodeLookup {
             freshMirror = false;
         } else if (cluster.getSlobrokGenerationCount() == mirrorVersion) {
             if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Slobrok still at generation count " + cluster.getSlobrokGenerationCount() + ". Not updating.");
+                log.log(Level.FINEST, "Slobrok still at generation count " + cluster.getSlobrokGenerationCount() + ". Not updating.");
             }
             return false;
         }
@@ -151,7 +151,7 @@ public class SlobrokClient implements NodeLookup {
                 nodeInfo.markRpcAddressLive();
             }
         }
-        log.log(LogLevel.SPAM, "Slobrok information updated to generation " + cluster.getSlobrokGenerationCount());
+        log.log(Level.FINEST, "Slobrok information updated to generation " + cluster.getSlobrokGenerationCount());
         return true;
     }
 
@@ -196,7 +196,7 @@ public class SlobrokClient implements NodeLookup {
     private Map<Node, SlobrokData> getSlobrokData(String pattern) {
         Map<Node, SlobrokData> result = new TreeMap<>();
         List<Mirror.Entry> entries = mirror.lookup(pattern);
-        log.log(LogLevel.SPAM, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
+        log.log(Level.FINEST, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
         for (Mirror.Entry entry : entries) {
             StringTokenizer st = new StringTokenizer(entry.getName(), "/");
             String addressType = st.nextToken();

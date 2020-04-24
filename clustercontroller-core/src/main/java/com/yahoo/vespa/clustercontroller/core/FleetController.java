@@ -416,7 +416,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void handleFleetData(Map<Integer, Integer> data) {
         verifyInControllerThread();
-        log.log(LogLevel.SPAM, "Sending fleet data event on to master election handler");
+        log.log(Level.FINEST, "Sending fleet data event on to master election handler");
         metricUpdater.updateMasterElectionMetrics(data);
         masterElectionHandler.handleFleetData(data);
     }

@@ -247,10 +247,10 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void dispatchRpcRequest(Request request, Runnable handler) {
         request.detach();
-        log.log(LogLevel.SPAM, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
+        log.log(Level.FINEST, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
         rpcExecutor.execute(() -> {
             try {
-                log.log(LogLevel.SPAM, () -> String.format("Executing RPC request %s.", requestLogId(request)));
+                log.log(Level.FINEST, () -> String.format("Executing RPC request %s.", requestLogId(request)));
                 handler.run();
             } catch (Exception e) {
                 log.log(LogLevel.WARNING,
@@ -280,11 +280,11 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         try {
             RawConfig config = proxyServer.resolveConfig(request);
             if (config == null) {
-                log.log(LogLevel.SPAM, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
-                log.log(LogLevel.SPAM, "No new config for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -353,7 +353,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         request.addOkResponse(config.getPayload(), config.getGeneration(), config.isInternalRedeploy(), config.getConfigMd5());
         log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
                 ",generation=" + config.getGeneration());
-        log.log(LogLevel.SPAM, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
+        log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
 
 
         // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse

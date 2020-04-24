@@ -150,7 +150,7 @@ public class DocprocExecutor {
             }
         }
         message.append("]");
-        log.log(LogLevel.SPAM, message.toString());
+        log.log(Level.FINEST, message.toString());
     }
 
     /**

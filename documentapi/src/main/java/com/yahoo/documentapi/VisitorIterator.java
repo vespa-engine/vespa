@@ -246,7 +246,7 @@ public class VisitorIterator {
                                     lastMergedBucket.getId() | (1L << (lastMergedBucket.getUsedBits() - 1)));
                             if (pending.equals(rightCheck)) {
                                 if (log.isLoggable(LogLevel.SPAM)) {
-                                    log.log(LogLevel.SPAM, "Skipped " + pending +
+                                    log.log(Level.FINEST, "Skipped " + pending +
                                             ", as it was right sibling of " + lastMergedBucket);
                                 }
                                 continue;
@@ -286,7 +286,7 @@ public class VisitorIterator {
                 }
             }
             if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "New range bucket cursor is " +
+                log.log(Level.FINEST, "New range bucket cursor is " +
                         progressToken.getBucketCursor());
             }
         }

@@ -134,9 +134,9 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         if (cachedConfig != null) {
             log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
                     ",configmd5=" + cachedConfig.getConfigMd5());
-            log.log(LogLevel.SPAM, () -> "input config=" + input + ",cached config=" + cachedConfig);
+            log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + cachedConfig);
             if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
-                log.log(LogLevel.SPAM, () -> "Cached config is not equal to requested, will return it");
+                log.log(Level.FINEST, () -> "Cached config is not equal to requested, will return it");
                 if (delayedResponses.remove(delayedResponse)) {
                     // unless another thread already did it
                     ret = cachedConfig;
@@ -217,7 +217,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     public void updateSubscribers(RawConfig config) {
         log.log(Level.FINE, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
-        log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
+        log.log(Level.FINEST, () -> "Delayed response queue: " + responseDelayQueue);
         if (responseDelayQueue.size() == 0) {
             log.log(Level.FINE, () -> "There exists no matching element on delayed response queue for " + config.getKey());
             return;

@@ -138,7 +138,7 @@ public class MasterDataGatherer {
                 }
                 for(Integer vote : nextMasterData.values()) {
                     if (vote == null) {
-                        log.log(LogLevel.SPAM, "Fleetcontroller " + nodeIndex + ": Still not received votes from all fleet controllers. Awaiting more responses.");
+                        log.log(Level.FINEST, "Fleetcontroller " + nodeIndex + ": Still not received votes from all fleet controllers. Awaiting more responses.");
                         return;
                     }
                 }

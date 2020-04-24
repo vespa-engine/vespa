@@ -342,19 +342,19 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             } else {
                 nextAttemptTime = time + 5000;
             }
-            log.log(LogLevel.SPAM, "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
+            log.log(Level.FINEST, "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
         } else {
             connectionAttemptCount = 0;
             timeOfFirstFailingConnectionAttempt = 0;
             reportedState = state;
             if (version == 0 || state.getState().equals(State.STOPPING)) {
                 nextAttemptTime = time + cluster.getPollingFrequency();
-                log.log(LogLevel.SPAM, "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
+                log.log(Level.FINEST, "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
             } else {
                 nextAttemptTime = time;
             }
         }
-        log.log(LogLevel.SPAM, "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
+        log.log(Level.FINEST, "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
     }
 
     /** Sets the wanted state. The wanted state is taken as UP if a null argument is given */
@@ -374,7 +374,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             }
         }
         wantedState = newWanted;
-        log.log(LogLevel.SPAM, "Set wanted state of node " + this + " to " + wantedState + ".");
+        log.log(Level.FINEST, "Set wanted state of node " + this + " to " + wantedState + ".");
     }
 
     public long getTimeForNextStateRequestAttempt() {

@@ -61,7 +61,7 @@ public class SendProxy implements MessageHandler, ReplyHandler {
                 if (reply.hasErrors()) {
                     log.log(Level.FINE, "Trace for reply with error(s):\n" + reply.getTrace());
                 } else if (log.isLoggable(LogLevel.SPAM)) {
-                    log.log(LogLevel.SPAM, "Trace for reply:\n" + reply.getTrace());
+                    log.log(Level.FINEST, "Trace for reply:\n" + reply.getTrace());
                 }
                 Trace empty = new Trace();
                 trace.swap(empty);

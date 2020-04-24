@@ -368,7 +368,7 @@ public class ProgressToken {
             return;
         }
         if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Adding bucket pair " + superbucket
+            log.log(Level.FINEST, "Adding bucket pair " + superbucket
                     + ":" + progress + " with state " + state);
         }
 
@@ -790,7 +790,7 @@ public class ProgressToken {
             if (rightSibling != null) {
                 assert(rightSibling.getState() == BucketState.BUCKET_PENDING);
                 if (log.isLoggable(LogLevel.SPAM)) {
-                    log.log(LogLevel.SPAM, "Merging " + bucket + " with rhs " + rightCheck);
+                    log.log(Level.FINEST, "Merging " + bucket + " with rhs " + rightCheck);
                 }
                 // If right sibling has progress, it will unfortunately have to
                 // be discarded

@@ -402,7 +402,7 @@ public class DummyVdsNode {
 
     private void rpc_storageConnect(Request req) {
         synchronized(timer) {
-            log.log(LogLevel.SPAM, "Dummy node " + this + " got old type handle connect message.");
+            log.log(Level.FINEST, "Dummy node " + this + " got old type handle connect message.");
             req.returnValues().add(new Int32Value(0));
             negotiatedHandle = true;
         }

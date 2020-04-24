@@ -58,7 +58,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
         if (ssocket != null && ssocket.isBound() && (ssocket.getLocalPort() == port || port == 0)) {
             return true;
         } else {
-            log.log(LogLevel.SPAM, "Status page server socket is no longer connected: "+ (ssocket != null) + " " + ssocket.isBound() + " " + ssocket.getLocalPort() + " " + port);
+            log.log(Level.FINEST, "Status page server socket is no longer connected: "+ (ssocket != null) + " " + ssocket.isBound() + " " + ssocket.getLocalPort() + " " + port);
             return false;
         }
     }

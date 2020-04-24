@@ -255,7 +255,7 @@ public class FileReceiver {
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;
-        log.log(LogLevel.SPAM, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+        log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
         downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }

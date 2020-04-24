@@ -426,7 +426,7 @@ public class StateChangeHandler {
         if (initializationProgressHasIncreased(currentState, reportedState)) {
             node.setInitProgressTime(timeNow);
             if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
+                log.log(Level.FINEST, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
             }
         }
         if (handleImplicitCrashEdgeFromReverseInitProgress(node, currentState, reportedState, nodeListener, timeNow)) {
