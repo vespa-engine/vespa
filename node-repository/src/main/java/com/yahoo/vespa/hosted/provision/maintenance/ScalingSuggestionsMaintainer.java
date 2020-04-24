@@ -60,22 +60,19 @@ public class ScalingSuggestionsMaintainer extends Maintainer {
         Application application = applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        Optional<AllocatableClusterResources> suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
+        Optional<ClusterResources> suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
         try (Mutex lock = nodeRepository().lock(applicationId)) {
             applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion, clusterId, a, lock));
         }
     }
 
-    private void storeSuggestion(Optional<AllocatableClusterResources> suggestion,
+    private void storeSuggestion(Optional<ClusterResources> suggestion,
                                  ClusterSpec.Id clusterId,
                                  Application application,
                                  Mutex lock) {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        if (suggestion.isPresent())
-            applications().put(application.with(cluster.get().withSuggested(suggestion.get().toAdvertisedClusterResources())), lock);
-        else
-            applications().put(application.with(cluster.get().withoutSuggested()), lock);
+        applications().put(application.with(cluster.get().withSuggested(suggestion)), lock);
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {

@@ -62,8 +62,10 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
-    public Optional<AllocatableClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(cluster, clusterNodes, false);
+    public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
+        return autoscale(cluster, clusterNodes, false)
+                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
+
     }
 
     /**
@@ -72,9 +74,10 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
-    public Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
+    public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(cluster, clusterNodes, true);
+        return autoscale(cluster, clusterNodes, true)
+                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
     }
 
     private Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes, boolean respectLimits) {

@@ -129,7 +129,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     /**
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
-     * and updates the application store with the received min and max,
+     * and updates the application store with the received min and max.
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity requested) {
         try (Mutex lock = nodeRepository.lock(applicationId)) {
