@@ -107,7 +107,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
+        if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application");
         if (pathS.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (pathS.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
