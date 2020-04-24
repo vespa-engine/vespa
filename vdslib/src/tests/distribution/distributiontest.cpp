@@ -932,9 +932,9 @@ TEST(DistributionTest, test_hierarchical_no_redistribution)
 
     std::vector<uint16_t> nodes;
     std::vector< std::vector<uint16_t> > distr(4);
-    int numBuckets = 1000;
+    size_t numBuckets = 1000;
 
-    for (int i = 0; i < numBuckets; i++) {
+    for (size_t i = 0; i < numBuckets; i++) {
         nodes = distribution.getIdealStorageNodes(
                 state, document::BucketId(16, i), "u");
         for (uint16_t j=0; j<nodes.size(); ++j) {
@@ -943,23 +943,22 @@ TEST(DistributionTest, test_hierarchical_no_redistribution)
         nodes.clear();
     }
 
-    std::vector<uint16_t>::iterator it;
-    std::vector<uint16_t> v(1000);
+    std::vector<uint16_t> v;
 
-    it=set_intersection (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), v.begin());
-    EXPECT_EQ(0, int(it-v.begin()));
+    set_intersection (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
+    EXPECT_EQ(0, v.size());
     v.clear();
 
-    it=set_intersection (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), v.begin());
-    EXPECT_EQ(0, int(it-v.begin()));
+    set_intersection (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
+    EXPECT_EQ(0, v.size());
     v.clear();
 
-    it=set_union (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), v.begin());
-    EXPECT_EQ(numBuckets, int(it-v.begin()));
+    set_union (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
+    EXPECT_EQ(numBuckets, v.size());
     v.clear();
 
-    it=set_union (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), v.begin());
-    EXPECT_EQ(numBuckets, int(it-v.begin()));
+    set_union (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
+    EXPECT_EQ(numBuckets, v.size());
     v.clear();
 
     state.setNodeState(Node(NodeType::STORAGE, 0),
@@ -967,7 +966,7 @@ TEST(DistributionTest, test_hierarchical_no_redistribution)
 
     std::vector< std::vector<uint16_t> > distr2(4);
 
-    for (int i = 0; i < numBuckets; i++) {
+    for (size_t i = 0; i < numBuckets; i++) {
         nodes = distribution.getIdealStorageNodes(
                 state, document::BucketId(16, i), "u");
         for (uint16_t j=0; j<nodes.size(); ++j) {
@@ -980,16 +979,16 @@ TEST(DistributionTest, test_hierarchical_no_redistribution)
     ASSERT_EQ((size_t)0, distr2[0].size());
     v.clear();
 
-    it=set_difference (distr[1].begin(), distr[1].end(), distr2[1].begin(), distr2[1].end(), v.begin());
-    EXPECT_EQ(0, int(it-v.begin()));
+    set_difference (distr[1].begin(), distr[1].end(), distr2[1].begin(), distr2[1].end(), back_inserter(v));
+    EXPECT_EQ(0, v.size());
     v.clear();
 
-    it=set_difference (distr[2].begin(), distr[2].end(), distr2[2].begin(), distr2[2].end(), v.begin());
-    EXPECT_EQ(0, int(it-v.begin()));
+    set_difference (distr[2].begin(), distr[2].end(), distr2[2].begin(), distr2[2].end(), back_inserter(v));
+    EXPECT_EQ(0, v.size());
     v.clear();
 
-    it=set_difference (distr[3].begin(), distr[3].end(), distr2[3].begin(), distr2[3].end(), v.begin());
-    EXPECT_EQ(0, int(it-v.begin()));
+    set_difference (distr[3].begin(), distr[3].end(), distr2[3].begin(), distr2[3].end(), back_inserter(v));
+    EXPECT_EQ(0, v.size());
     v.clear();
 
     state = ClusterState(
