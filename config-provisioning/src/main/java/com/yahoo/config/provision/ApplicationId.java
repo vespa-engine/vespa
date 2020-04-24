@@ -48,7 +48,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     }
 
     public static ApplicationId fromFullString(String idString) {
-        String[] parts = idString.split(".");
+        String[] parts = idString.split("\\.");
         if (parts.length < 3)
             throw new IllegalArgumentException("Application ids must be on the form tenant.application.instance, but was " + idString);
 

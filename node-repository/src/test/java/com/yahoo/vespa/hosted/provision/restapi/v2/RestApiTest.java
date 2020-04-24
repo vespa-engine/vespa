@@ -233,8 +233,11 @@ public class RestApiTest {
 
     @Test
     public void test_application_requests() throws Exception {
-
         assertFile(new Request("http://localhost:8080/nodes/v2/application/"), "applications.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1"),
+                   "application1.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
+                   "application2.json");
     }
 
     @Test

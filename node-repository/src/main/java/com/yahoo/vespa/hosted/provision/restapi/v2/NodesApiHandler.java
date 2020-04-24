@@ -119,7 +119,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (pathS.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
         if (path.matches("/nodes/v2/application")) return applicationList(request.getUri());
         if (path.matches("/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
-        throw new NotFoundException("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at " + path);
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
