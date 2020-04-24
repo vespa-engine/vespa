@@ -98,7 +98,7 @@ public class RPCTarget implements RequestWaiter {
     void resolveVersion(double timeout, VersionHandler handler) {
         boolean hasVersion = false;
         boolean shouldInvoke = false;
-        boolean shouldLog = log.isLoggable(LogLevel.DEBUG);
+        boolean shouldLog = log.isLoggable(Level.FINE);
         synchronized (this) {
             if (version != null) {
                 if (shouldLog) {
@@ -130,7 +130,7 @@ public class RPCTarget implements RequestWaiter {
     @Override
     public void handleRequestDone(Request req) {
         List<VersionHandler> handlers;
-        boolean shouldLog = log.isLoggable(LogLevel.DEBUG);
+        boolean shouldLog = log.isLoggable(Level.FINE);
         synchronized (this) {
             targetInvoked = false;
             if (req.checkReturnTypes("s")) {

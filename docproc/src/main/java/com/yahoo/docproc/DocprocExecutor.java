@@ -119,7 +119,7 @@ public class DocprocExecutor {
             //might throw exception, which is OK:
             progress = call.call(processing);
 
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 logProgress(processing, progress, call);
             }
 

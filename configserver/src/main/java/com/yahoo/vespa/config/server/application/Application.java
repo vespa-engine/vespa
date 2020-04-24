@@ -149,7 +149,7 @@ public class Application implements ModelResult {
     }
 
     private boolean logDebug() {
-        return log.isLoggable(LogLevel.DEBUG);
+        return log.isLoggable(Level.FINE);
     }
 
     private void debug(String message) {

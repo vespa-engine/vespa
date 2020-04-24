@@ -117,7 +117,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
 
     static boolean doProcessOuterDocument(Object o, String documentTypeName) {
         if ( ! (o instanceof DocumentOperation)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, o + " is not a DocumentOperation.");
             }
             return false;
@@ -126,7 +126,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         DocumentOperation outerDocOp = (DocumentOperation)o;
         if ( ! (outerDocOp instanceof DocumentPut)) {
             //this is not a put, return
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Given DocumentOperation is not a DocumentPut, returning. (Was given "
                                         + outerDocOp + ").");
             }
@@ -137,7 +137,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         DocumentType type = outerDoc.getDataType();
         if (!type.getName().equalsIgnoreCase(documentTypeName)) {
             //this is not the right document type
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Given Document is of wrong type, returning. (Was given " + outerDoc + ").");
             }
             return false;

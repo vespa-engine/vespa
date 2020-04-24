@@ -156,7 +156,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
     private void getConfigV3(Request req) {
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, getConfigMethodName);
         }
         req.detach();
@@ -262,7 +262,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     void configReloaded(ApplicationId applicationId) {
         List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
         String logPre = TenantRepository.logPre(applicationId);
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
         }
         int responsesSent = 0;
@@ -273,7 +273,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             // Doing cancel here deals with the case where the timer is already running or has not run, so
             // there is no need for any extra check.
             if (delayedConfigResponse.cancel()) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
+                if (log.isLoggable(Level.FINE)) {
                     logRequestDebug(LogLevel.DEBUG, logPre + "Timer cancelled for ", delayedConfigResponse.request);
                 }
                 // Do not wait for this request if we were unable to execute
@@ -321,7 +321,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     public void respond(JRTServerConfigRequest request) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Trace at request return:\n" + request.getRequestTrace().toString());
         }
         request.getRequest().returnRequest();

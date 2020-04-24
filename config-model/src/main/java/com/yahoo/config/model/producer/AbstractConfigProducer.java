@@ -202,7 +202,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             found = parent.cascadeConfig(builder);
 
         boolean foundHere = builder.dispatchGetConfig(this);
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "cascadeconfig in " + this + ", getting config " +
                     builder.getClass().getDeclaringClass().getName() + " for config id '" + configId + "' found here=" + foundHere);
         }
@@ -217,13 +217,13 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             didApply = parent.addUserConfig(builder);
         }
 
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, "User configs is: " + userConfigs.toString());
         }
         // TODO: What do we do with md5. Currently ignored for user configs?
         ConfigDefinitionKey key = new ConfigDefinitionKey(builder.getDefName(), builder.getDefNamespace());
         if (userConfigs.get(key) != null) {
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 log.log(Level.FINEST, "Apply in " + configId);
             }
             applyUserConfig(builder, userConfigs.get(key));

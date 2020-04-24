@@ -305,7 +305,7 @@ public class ProgressToken {
                 && !progress.equals(FINISHED_BUCKET)
                 && !superbucket.contains(progress)
                 && !progress.contains(superbucket)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, "updateProgress called with non-contained bucket "
                        + "pair " + superbucket + ":" + progress + ", but allowing anyway");
                 }
@@ -322,7 +322,7 @@ public class ProgressToken {
         // If progress == Integer.MAX_VALUE, we're done. Otherwise, we're not
         if (!progress.equals(FINISHED_BUCKET)) {
             if (entry.getState() != BucketState.BUCKET_ACTIVE) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
+                if (log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, "updateProgress called with sub-bucket that was "
                        + "not marked as active " + superbucket + ":" + progress);
                 }
@@ -361,13 +361,13 @@ public class ProgressToken {
      */
     protected void addBucket(BucketId superbucket, BucketId progress, BucketState state) {
         if (progress.equals(FINISHED_BUCKET)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Trying to add already finished superbucket "
                         + superbucket + "; ignoring it");
             }
             return;
         }
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, "Adding bucket pair " + superbucket
                     + ":" + progress + " with state " + state);
         }
@@ -789,13 +789,13 @@ public class ProgressToken {
             // Must not merge if sibling isn't pending
             if (rightSibling != null) {
                 assert(rightSibling.getState() == BucketState.BUCKET_PENDING);
-                if (log.isLoggable(LogLevel.SPAM)) {
+                if (log.isLoggable(Level.FINEST)) {
                     log.log(Level.FINEST, "Merging " + bucket + " with rhs " + rightCheck);
                 }
                 // If right sibling has progress, it will unfortunately have to
                 // be discarded
                 if (rightSibling.getProgress().getUsedBits() != 0
-                        && log.isLoggable(LogLevel.DEBUG)) {
+                        && log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, "Bucket progress for " + rightCheck +
                             " will be lost due to merging; potential for duplicates in result-set");
                 }

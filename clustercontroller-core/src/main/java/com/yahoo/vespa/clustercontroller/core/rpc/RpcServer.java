@@ -306,7 +306,7 @@ public class RpcServer {
                     }
                 }
             } catch (Exception e) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
+                if (log.isLoggable(Level.FINE)) {
                     StringWriter sw = new StringWriter();
                     e.printStackTrace(new PrintWriter(sw));
                     log.log(Level.FINE, "Failed RPC Request: " + sw);

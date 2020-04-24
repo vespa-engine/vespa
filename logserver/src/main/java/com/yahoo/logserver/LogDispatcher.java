@@ -117,7 +117,7 @@ public class LogDispatcher implements LogHandler {
         }
 
         for (LogHandler h : handlers) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Flushing " + h.toString());
             }
             h.flush();

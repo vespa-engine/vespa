@@ -73,7 +73,7 @@ public class SlobrokClient implements NodeLookup {
         if (freshMirror) {
             freshMirror = false;
         } else if (cluster.getSlobrokGenerationCount() == mirrorVersion) {
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 log.log(Level.FINEST, "Slobrok still at generation count " + cluster.getSlobrokGenerationCount() + ". Not updating.");
             }
             return false;

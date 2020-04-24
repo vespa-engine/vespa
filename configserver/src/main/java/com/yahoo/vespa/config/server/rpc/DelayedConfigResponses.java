@@ -88,7 +88,7 @@ public class DelayedConfigResponses {
             removeFromQueue();
             removeWatcher();
             rpcServer.addToRequestQueue(request, true, null);
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
             }
         }
@@ -176,7 +176,7 @@ public class DelayedConfigResponses {
             DelayedConfigResponse response = new DelayedConfigResponse(request, delayedResponsesQueue, context.applicationId());
             request.setDelayedResponse(true);
             try {
-                if (log.isLoggable(LogLevel.DEBUG)) {
+                if (log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
                             response.getRequest().getShortDescription());
                 }

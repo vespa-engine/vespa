@@ -59,19 +59,19 @@ public class StateChangeHandler {
                 final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        if (log.isLoggable(LogLevel.DEBUG)) {
+                        if (log.isLoggable(Level.FINE)) {
                             log.log(Level.FINE, String.format("Storing away new start timestamp for node %s (%d)",
                                     node, nodeState.getStartTimestamp()));
                         }
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        if (log.isLoggable(LogLevel.DEBUG)) {
+                        if (log.isLoggable(Level.FINE)) {
                             log.log(Level.FINE, String.format("Resetting timestamp in cluster state for node %s", node));
                         }
                         ++startTimestampsReset;
                     }
-                } else if (log.isLoggable(LogLevel.DEBUG)) {
+                } else if (log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, node + ": " +
                                             (nodeInfo == null ? "null" : nodeInfo.getStartTimestamp()) + ", " +
                                             (nodeState == null ? "null" : nodeState.getStartTimestamp()));
@@ -152,7 +152,7 @@ public class StateChangeHandler {
                             oldCount, newCount));
             eventLog.add(NodeEvent.forBaseline(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
                          NodeEvent.Type.CURRENT, currentTime), isMaster);
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
@@ -208,7 +208,7 @@ public class StateChangeHandler {
         }
         stateMayHaveChanged = true;
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
         }
         // Should be checked earlier before state was set in cluster
@@ -415,7 +415,7 @@ public class StateChangeHandler {
                                                  final NodeState reportedState,
                                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, String.format("Finding new cluster state entry for %s switching state %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
@@ -425,7 +425,7 @@ public class StateChangeHandler {
         }
         if (initializationProgressHasIncreased(currentState, reportedState)) {
             node.setInitProgressTime(timeNow);
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 log.log(Level.FINEST, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
             }
         }

@@ -44,7 +44,7 @@ public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
         }
         if (result.isEmpty()) {
             log.warning("Found no cluster controller in model config");
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append("Found ").append(result.size()).append(" cluster controllers in model config:");
             for (Map.Entry<Integer, ClusterControllerStateRestAPI.Socket> e : result.entrySet()) {

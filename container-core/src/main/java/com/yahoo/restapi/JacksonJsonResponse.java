@@ -37,7 +37,7 @@ public class JacksonJsonResponse<T> extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             String json = jsonMapper.writeValueAsString(entity);
             log.log(Level.FINE, "Writing the following JSON to response output stream:\n" + json);
             outputStream.write(json.getBytes());

@@ -42,7 +42,7 @@ class MessageFactory {
         message.setTimeReceivedNow();
         message.setTimeRemaining(requestMsg.getTimeRemainingNow());
         message.getTrace().setLevel(requestMsg.getTrace().getLevel());
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Created '" + message.getClass().getName() +
                                     "', route = '" + message.getRoute() +
                                     "', priority = '" + message.getPriority().name() +

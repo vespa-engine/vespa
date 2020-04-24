@@ -39,10 +39,10 @@ public class SendProxy implements MessageHandler, ReplyHandler {
     public void handleMessage(Message msg) {
         Trace trace = msg.getTrace();
         if (trace.getLevel() == 0) {
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 trace.setLevel(9);
                 logTrace = true;
-            } else if (log.isLoggable(LogLevel.DEBUG)) {
+            } else if (log.isLoggable(Level.FINE)) {
                 trace.setLevel(6);
                 logTrace = true;
             }
@@ -60,7 +60,7 @@ public class SendProxy implements MessageHandler, ReplyHandler {
             if (logTrace) {
                 if (reply.hasErrors()) {
                     log.log(Level.FINE, "Trace for reply with error(s):\n" + reply.getTrace());
-                } else if (log.isLoggable(LogLevel.SPAM)) {
+                } else if (log.isLoggable(Level.FINEST)) {
                     log.log(Level.FINEST, "Trace for reply:\n" + reply.getTrace());
                 }
                 Trace empty = new Trace();

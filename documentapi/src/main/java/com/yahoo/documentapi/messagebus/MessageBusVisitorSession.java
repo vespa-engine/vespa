@@ -574,7 +574,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     1,
                     progressToken);
         } else {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "parameters specify explicit bucket set " +
                         "to visit; using it rather than document selection (" +
                         params.getBucketsToVisit().size() + " buckets given)");
@@ -754,7 +754,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
         @Override
         public void run() {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Visitor session " + sessionName + ": Received message " + message);
             }
             try {
@@ -809,7 +809,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         Reply reply = msg.createReply();
         msg.swapState(reply);
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Visitor session " + sessionName +
                     ": Received VisitorInfo with " +
                     msg.getFinishedBuckets().size() + " finished buckets");
@@ -1101,7 +1101,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     @Override
     public void ack(AckToken token) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Visitor session " + sessionName +
                     ": Sending ack " + token.ackObject);
         }

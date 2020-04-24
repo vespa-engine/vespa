@@ -169,7 +169,7 @@ class ClientFeederV3 {
             try {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
             } catch (IOException ioe) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
+                if (log.isLoggable(Level.FINE)) {
                     log.log(Level.FINE, Exceptions.toMessageString(ioe), ioe);
                 }
                 return Optional.empty();
@@ -182,7 +182,7 @@ class ClientFeederV3 {
             try {
                 message = getNextMessage(operationId.get(), requestInputStream, settings);
             } catch (Exception e) {
-                if (log.isLoggable(LogLevel.WARNING)) {
+                if (log.isLoggable(Level.WARNING)) {
                     log.log(Level.WARNING, Exceptions.toMessageString(e));
                 }
                 metric.add(MetricNames.PARSE_ERROR, 1, null);

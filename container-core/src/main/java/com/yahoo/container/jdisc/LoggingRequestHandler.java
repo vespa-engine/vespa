@@ -227,7 +227,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         public void failed(Throwable throwable) {
             long endTime = System.currentTimeMillis();
             writeToLogs(endTime);
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Got exception when writing to client: " + Exceptions.toMessageString(throwable));
             }
         }

@@ -173,7 +173,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     static boolean logDebug(Trace trace) {
-        return trace.shouldTrace(RpcServer.TRACELEVEL_DEBUG) || log.isLoggable(LogLevel.DEBUG);
+        return trace.shouldTrace(RpcServer.TRACELEVEL_DEBUG) || log.isLoggable(Level.FINE);
     }
 
     private void debugLog(Trace trace, String message) {

@@ -100,7 +100,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         } else if (throughput > localMaxThroughput * 1.01) {
             localMaxThroughput = throughput;
             windowSize += weight*windowSizeIncrement;
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput);
             }
         } else {
@@ -119,7 +119,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             } else {
                 windowSize += weight*windowSizeIncrement;
             }
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "windowSize " + windowSize + " throughput " + throughput + " local max " + localMaxThroughput + " efficiency " + efficiency);
             }
         }

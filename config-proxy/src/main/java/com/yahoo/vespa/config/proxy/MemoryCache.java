@@ -113,7 +113,7 @@ public class MemoryCache {
         Writer writer = null;
         try {
             filename = path + File.separator + createCacheFileName(config);
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Writing '" + config.getKey() + "' to '" + filename + "'");
             }
             final Payload payload = config.getPayload();

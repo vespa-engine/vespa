@@ -51,7 +51,7 @@ public class InputCheckingSearcher extends Searcher {
         try {
             checkQuery(query);
         } catch (IllegalArgumentException e) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Rejected query \"" + query.toString() + "\" on cause of: " + e.getMessage());
             }
             return new Result(query, ErrorMessage.createIllegalQuery(e.getMessage()));

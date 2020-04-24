@@ -225,7 +225,7 @@ public class GroupingExecutor extends Searcher {
             if (passList.isEmpty()) {
                 throw new RuntimeException("No grouping request for pass " + pass + ", bug!");
             }
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 for (Grouping grouping : passList) {
                     log.log(Level.FINE, "Pass(" + pass + "), Grouping(" + grouping.getId() + "): " + grouping);
                 }
@@ -263,7 +263,7 @@ public class GroupingExecutor extends Searcher {
                 ret = passResult;
             }
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             for (Grouping grouping : groupingMap.values()) {
                 log.log(Level.FINE, "Result Grouping(" + grouping.getId() + "): " + grouping);
             }

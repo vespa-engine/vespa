@@ -152,7 +152,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         defaultAbortOnDocumentError = feederOptions.abortOnDocumentError();
         defaultAbortOnSendError = feederOptions.abortOnSendError();
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Received new config (" +
                                     "route: " + (defaultRoute != null ? defaultRoute : "<none>") +
                                     ", timeout: " + defaultTimeoutMillis + " ms, retry enabled: " + retryEnabled +

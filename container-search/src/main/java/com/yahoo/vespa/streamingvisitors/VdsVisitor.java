@@ -142,9 +142,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private int inferSessionTraceLevel(Query query) {
         int implicitLevel = traceLevelOverride;
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             implicitLevel = 9;
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             implicitLevel = 7;
         }
         return Math.max(query.getTraceLevel(), implicitLevel);
@@ -342,7 +342,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
             }
         } else {
@@ -384,7 +384,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onSearchResult(SearchResult sr) {
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, "Got SearchResult for query with selection " + params.getDocumentSelection());
         }
         handleSearchResult(sr);
@@ -393,7 +393,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private void handleSearchResult(SearchResult sr) {
         final int hitCountTotal = sr.getTotalHitCount();
         final int hitCount = sr.getHitCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
         }
 
@@ -412,14 +412,14 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private void mergeGroupingMaps(Map<Integer, byte []> newGroupingMap) {
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
         }
         for(Integer key : newGroupingMap.keySet()) {
             byte [] value = newGroupingMap.get(key);
 
             Grouping newGrouping = new Grouping();
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 log.log(Level.FINEST, "Received group with key " + key + " and size " + value.length);
             }
             BufferSerializer buf = new BufferSerializer( new GrowableByteBuffer(ByteBuffer.wrap(value)) );
@@ -440,7 +440,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onDocumentSummary(DocumentSummary ds) {
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             log.log(Level.FINEST, "Got DocumentSummary for query with selection " + params.getDocumentSelection());
         }
         handleSummary(ds);
@@ -448,7 +448,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private void handleSummary(DocumentSummary ds) {
         int summaryCount = ds.getSummaryCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             log.log(Level.FINE, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
         }
         synchronized (summaryMap) {

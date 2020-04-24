@@ -16,7 +16,7 @@ public class ProcessStarterImpl implements ProcessStarter {
 
     @Override
     public ProcessApi2 start(ProcessBuilder processBuilder) {
-        if (logger.isLoggable(LogLevel.DEBUG)) {
+        if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Spawning process: " + processBuilder.command());
         }
 
