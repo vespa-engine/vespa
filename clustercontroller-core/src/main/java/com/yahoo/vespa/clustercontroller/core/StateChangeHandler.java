@@ -118,7 +118,7 @@ public class StateChangeHandler {
                                            final NodeStateOrHostInfoChangeHandler nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        final LogLevel level = (currentState.equals(reportedState) && node.getVersion() == 0) ? Level.FINEST : Level.FINE;
+        final Level level = (currentState.equals(reportedState) && node.getVersion() == 0) ? Level.FINEST : Level.FINE;
         if (log.isLoggable(level)) {
             log.log(level, String.format("Got nodestate reply from %s: %s (Current state is %s)",
                     node, node.getReportedState().getTextualDifference(reportedState), currentState.toString(true)));

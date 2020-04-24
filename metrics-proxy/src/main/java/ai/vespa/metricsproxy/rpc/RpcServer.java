@@ -197,9 +197,9 @@ public class RpcServer {
         }
 
         private void logSpentTime() {
-            Level logLevel = DEBUG;
+            Level logLevel = Level.FINE;
             if (spentTime() > LOG_SPENT_TIME_LIMIT) {
-                logLevel = INFO;
+                logLevel = Level.INFO;
             }
             if (log.isLoggable(logLevel)) {
                 log.log(logLevel, "RPC request '" + request.methodName() + "' with parameters '" +

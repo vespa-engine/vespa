@@ -325,7 +325,7 @@ class ClientFeederV3 {
         }
     }
 
-    protected final void log(LogLevel level, Object... msgParts) {
+    protected final void log(Level level, Object... msgParts) {
         StringBuilder s;
 
         if (!log.isLoggable(level)) {

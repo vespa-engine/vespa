@@ -300,7 +300,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         String expUserId = query.properties().getString(streamingUserid);
         String expGroupName = query.properties().getString(streamingGroupname);
 
-        LogLevel logLevel = Level.SEVERE;
+        Level logLevel = Level.SEVERE;
         if (skippedEarlierResult) {
             logLevel = Level.FINE;
         }

@@ -296,7 +296,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
     }
 
-    private void logRequestDebug(LogLevel level, String message, JRTServerConfigRequest request) {
+    private void logRequestDebug(Level level, String message, JRTServerConfigRequest request) {
         if (log.isLoggable(level)) {
             log.log(level, message + request.getShortDescription());
         }
