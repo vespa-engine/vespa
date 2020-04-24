@@ -2,15 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -40,8 +40,8 @@ import static org.mockito.Mockito.when;
 public class FileFinderTest {
 
     public static class GeneralLogicTests {
-        @Rule
-        public TemporaryFolder folder = new TemporaryFolder();
+
+        private final FileSystem fileSystem = TestFileSystem.create();
 
         @Test
         public void all_files_non_recursive() {
@@ -58,6 +58,27 @@ public class FileFinderTest {
 
                     of("file-1.json", "test.json", "test.txt", "test/file.txt", "test/data.json", "test/subdir-1/test"),
                     of("test", "test/subdir-1", "test/subdir-2"));
+        }
+
+        @Test
+        public void all_files_recursive_with_prune_relative() {
+            assertFileHelper(FileFinder.files(testRoot()).prune(fileSystem.getPath("test")),
+
+                    of("file-1.json", "test.json", "test.txt"),
+                    of("test", "test/file.txt", "test/data.json", "test/subdir-1", "test/subdir-1/test", "test/subdir-2"));
+        }
+
+        @Test
+        public void all_files_recursive_with_prune_absolute() {
+            assertFileHelper(FileFinder.files(testRoot()).prune(testRoot().resolve("test/subdir-1")),
+
+                    of("file-1.json", "test.json", "test.txt", "test/file.txt", "test/data.json"),
+                    of("test", "test/subdir-1", "test/subdir-1/test", "test/subdir-2"));
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void throws_if_prune_path_not_under_base_path() {
+            FileFinder.files(Paths.get("/some/path")).prune(Paths.get("/other/path"));
         }
 
         @Test
@@ -111,6 +132,7 @@ public class FileFinderTest {
         @Before
         public void setup() throws IOException {
             Path root = testRoot();
+            Files.createDirectories(root);
 
             Files.createFile(root.resolve("file-1.json"));
             Files.createFile(root.resolve("test.json"));
@@ -127,7 +149,7 @@ public class FileFinderTest {
         }
 
         private Path testRoot() {
-            return folder.getRoot().toPath();
+            return fileSystem.getPath("/file-finder");
         }
 
         private void assertFileHelper(FileFinder fileFinder, Set<String> expectedList, Set<String> expectedContentsAfterDelete) {
