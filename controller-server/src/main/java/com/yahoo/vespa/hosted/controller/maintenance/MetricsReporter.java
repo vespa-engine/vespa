@@ -40,21 +40,10 @@ public class MetricsReporter extends Maintainer {
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
-    // TODO(mpolden): Remove these two metrics
-    public static final String NODES_FAILING_PLATFORM_UPGRADE = "deployment.nodesFailingSystemUpgrade";
-    public static final String NODES_FAILING_OS_UPGRADE = "deployment.nodesFailingOsUpgrade";
     public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
-
-    // The time a system application node can spend after suspending for Vespa upgrade until the upgrade is completed.
-    // Nodes exceeding this budget are counted as failures.
-    private static final Duration PLATFORM_UPGRADE_BUDGET = Duration.ofMinutes(30);
-
-    // The time a system application node can spend after suspending foor OS upgrade until the upgrade is completed.
-    // Nodes exceeding this budget are counted as failures.
-    private static final Duration OS_UPGRADE_BUDGET = Duration.ofMinutes(30);
 
     private final Metric metric;
     private final Clock clock;
@@ -113,16 +102,8 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportChangeDurations() {
-        var platformChangeDurations = platformChangeDurations();
-        var osChangeDurations = osChangeDurations();
-        var nodesFailingSystemUpgrade = platformChangeDurations.values().stream()
-                                                               .filter(duration -> duration.compareTo(PLATFORM_UPGRADE_BUDGET) > 0)
-                                                               .count();
-        var nodesFailingOsUpgrade = osChangeDurations.values().stream()
-                                                     .filter(duration -> duration.compareTo(OS_UPGRADE_BUDGET) > 0)
-                                                     .count();
-        metric.set(NODES_FAILING_PLATFORM_UPGRADE, nodesFailingSystemUpgrade, metric.createContext(Map.of()));
-        metric.set(NODES_FAILING_OS_UPGRADE, nodesFailingOsUpgrade, metric.createContext(Map.of()));
+        Map<NodeVersion, Duration> platformChangeDurations = platformChangeDurations();
+        Map<NodeVersion, Duration> osChangeDurations = osChangeDurations();
         platformChangeDurations.forEach((nodeVersion, duration) -> {
             metric.set(PLATFORM_CHANGE_DURATION, duration.toSeconds(), metric.createContext(dimensions(nodeVersion)));
         });
