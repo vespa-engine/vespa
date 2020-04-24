@@ -154,7 +154,7 @@ public class RankSetupValidator extends Validator {
     private void validateWarn(Exception e, DeployLogger deployLogger) {
         String msg = "Unable to execute '"+ binaryName + "', validation of rank expressions will only take place when you start Vespa: " +
                 Exceptions.toMessageString(e);
-        deployLogger.log(LogLevel.WARNING, msg);
+        deployLogger.log(Level.WARNING, msg);
     }
 
     private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
@@ -171,7 +171,7 @@ public class RankSetupValidator extends Validator {
             }
         }
         if (ignoreValidationErrors) {
-            deployLogger.log(LogLevel.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
+            deployLogger.log(Level.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
         } else {
             throw new IllegalArgumentException(errMsg.toString());
         }

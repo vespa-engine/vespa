@@ -185,7 +185,7 @@ public class DelayedConfigResponses {
                 response.schedule(Math.max(0, request.getTimeout()));
                 metricDelayedResponses(context.applicationId(), delayedResponsesQueue.size());
             } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, context.logPre()+"Interrupted when putting on delayed requests queue.");
+                log.log(Level.WARNING, context.logPre()+"Interrupted when putting on delayed requests queue.");
             }
         }
     }

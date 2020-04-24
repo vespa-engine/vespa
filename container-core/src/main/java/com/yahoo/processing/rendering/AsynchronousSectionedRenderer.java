@@ -471,7 +471,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 stream.close();
             } catch (IOException e) {
                 closeException = e;
-                logger.log(LogLevel.WARNING, "Exception caught while closing stream to client.", e);
+                logger.log(Level.WARNING, "Exception caught while closing stream to client.", e);
             } finally {
                 if (failed != null) {
                     success.setException(failed);

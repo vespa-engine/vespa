@@ -195,7 +195,7 @@ public class ZkStatusService implements StatusService {
                 lock.close();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         "Failed to close application lock for " +
                                 ZkStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);

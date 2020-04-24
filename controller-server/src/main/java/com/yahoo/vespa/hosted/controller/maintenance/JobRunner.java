@@ -86,7 +86,7 @@ public class JobRunner extends Maintainer {
                         .ifPresent(run -> controller().applications().deploymentTrigger().notifyOfCompletion(id.application()));
         }
         catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception finishing " + id, e);
+            log.log(Level.WARNING, "Exception finishing " + id, e);
         }
     }
 
@@ -118,7 +118,7 @@ public class JobRunner extends Maintainer {
             // Something else is already advancing this step, or a prerequisite -- try again later!
         }
         catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Exception attempting to advance " + step + " of " + id, e);
+            log.log(Level.WARNING, "Exception attempting to advance " + step + " of " + id, e);
         }
     }
 

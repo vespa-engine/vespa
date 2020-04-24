@@ -392,7 +392,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 return true;
             }
         }
-        log.log(LogLevel.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
+        log.log(Level.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
         return false;
     }
 

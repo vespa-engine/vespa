@@ -58,7 +58,7 @@ public class HttpProxy {
         try {
             url = new URL(urlString);
         } catch (MalformedURLException e) {
-            logger.log(LogLevel.WARNING, "Badly formed url: " + urlString, e);
+            logger.log(Level.WARNING, "Badly formed url: " + urlString, e);
             return HttpErrorResponse.internalServerError("Failed to construct URL for backend");
         }
 

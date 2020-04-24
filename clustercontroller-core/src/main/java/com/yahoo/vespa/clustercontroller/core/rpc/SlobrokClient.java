@@ -142,7 +142,7 @@ public class SlobrokClient implements NodeLookup {
         cluster.setSlobrokGenerationCount(mirrorVersion);
         for (NodeInfo nodeInfo : cluster.getNodeInfo()) {
             if (slobrokNodes.containsKey(nodeInfo.getNode()) && nodeInfo.isRpcAddressOutdated()) {
-                log.log(LogLevel.WARNING, "Node " + nodeInfo
+                log.log(Level.WARNING, "Node " + nodeInfo
                         + " was tagged NOT in slobrok even though it is. It was in the following lists:"
                         + (newNodes.contains(nodeInfo.getNode()) ? " newNodes" : "")
                         + (missingNodeInfos.contains(nodeInfo) ? " missingNodes" : "")

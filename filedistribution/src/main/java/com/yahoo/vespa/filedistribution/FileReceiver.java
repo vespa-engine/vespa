@@ -210,7 +210,7 @@ public class FileReceiver {
             else
                 Files.delete(path.toPath());
         } catch (IOException ioe) {
-            log.log(LogLevel.WARNING, "Failed deleting file/dir " + path);
+            log.log(Level.WARNING, "Failed deleting file/dir " + path);
         }
     }
 

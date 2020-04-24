@@ -298,7 +298,7 @@ public class ZooKeeperClient {
                 configCurator.deleteRecurse(getZooKeeperAppPath(null).append(subPath).getAbsolute());
             }
         } catch (Exception e) {
-            logger.log(LogLevel.WARNING, "Could not clean up in zookeeper");
+            logger.log(Level.WARNING, "Could not clean up in zookeeper");
             //Might be called in an exception handler before re-throw, so do not throw here.
         }
     }

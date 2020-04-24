@@ -447,7 +447,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                    .map(FileReference::value)
                                                    .collect(Collectors.toSet()));
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Getting file references in use for '" + application + "' failed", e);
+                log.log(Level.WARNING, "Getting file references in use for '" + application + "' failed", e);
             }
         }
         log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
@@ -470,7 +470,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
                 if ( ! IOUtils.recursiveDeleteDir(file))
-                    log.log(LogLevel.WARNING, "Could not delete " + file.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
             });
         }
         return fileReferencesToDelete;
@@ -498,10 +498,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             if (session == null) throw new NotFoundException("Remote session " + sessionId + " not found");
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
-            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
         }
     }
@@ -785,7 +785,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private void cleanupTempDirectory(File tempDir) {
         logger.log(Level.FINE, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
-            logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
+            logger.log(Level.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }
     }
 

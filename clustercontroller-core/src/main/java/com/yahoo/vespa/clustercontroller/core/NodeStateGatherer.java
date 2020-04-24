@@ -135,7 +135,7 @@ public class NodeStateGatherer {
                         listener.handleNewNodeState(info, state.clone());
                     info.setReportedState(state, currentTime);
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to process get node state response", e);
+                    log.log(Level.WARNING, "Failed to process get node state response", e);
                     info.setReportedState(new NodeState(info.getNode().getType(), State.DOWN), currentTime);
                 }
 

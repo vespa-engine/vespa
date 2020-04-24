@@ -395,7 +395,7 @@ public final class SyncDefaultRenderer extends Renderer {
         if (e instanceof IOException) {
             throw (IOException) e;
         } else {
-            log.log(LogLevel.WARNING, "Exception thrown when rendering the result:", e);
+            log.log(Level.WARNING, "Exception thrown when rendering the result:", e);
         }
     }
 

@@ -72,7 +72,7 @@ public abstract class HttpMetricFetcher {
 
     void logMessageNoResponse(String message, int timesFetched) {
         if (timesFetched > 5) {
-            log.log(LogLevel.WARNING, message);
+            log.log(Level.WARNING, message);
         } else {
             log.log(Level.INFO, message);
         }

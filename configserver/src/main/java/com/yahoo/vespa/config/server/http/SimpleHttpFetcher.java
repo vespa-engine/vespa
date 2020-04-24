@@ -42,15 +42,15 @@ public class SimpleHttpFetcher implements HttpFetcher {
             }
         } catch (ConnectTimeoutException | SocketTimeoutException e) {
             String message = "Timed out after " + params.readTimeoutMs + " ms reading response from " + url;
-            logger.log(LogLevel.WARNING, message, e);
+            logger.log(Level.WARNING, message, e);
             throw new RequestTimeoutException(message);
         } catch (IOException e) {
             String message = "Failed to get response from " + url;
-            logger.log(LogLevel.WARNING, message, e);
+            logger.log(Level.WARNING, message, e);
             throw new InternalServerException(message);
         } catch (URISyntaxException e) {
             String message = "Invalid URL: " + e.getMessage();
-            logger.log(LogLevel.WARNING, message, e);
+            logger.log(Level.WARNING, message, e);
             throw new InternalServerException(message, e);
         }
     }

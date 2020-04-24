@@ -510,9 +510,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs, options.rpcPort);
             } catch (ListenFailedException e) {
-                log.log(LogLevel.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
             }
         }
 
@@ -520,7 +520,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 statusPageServer.setPort(options.httpPort);
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             }
         }
 
@@ -633,7 +633,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed to watch master election: " + e.toString());
+            log.log(Level.WARNING, "Failed to watch master election: " + e.toString());
         }
         return false;
     }
@@ -811,7 +811,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
                 var details = buildNodesNotYetConvergedMessage(taskCompletion.getMinimumVersion());
-                log.log(LogLevel.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
+                log.log(Level.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
                         taskCompletion.getTask().getClass().getName(), details));
                 taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
                         RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, details));

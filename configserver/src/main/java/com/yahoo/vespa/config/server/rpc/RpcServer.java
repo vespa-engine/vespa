@@ -398,7 +398,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return null;
         }
         RequestHandler handler = requestHandler.get();

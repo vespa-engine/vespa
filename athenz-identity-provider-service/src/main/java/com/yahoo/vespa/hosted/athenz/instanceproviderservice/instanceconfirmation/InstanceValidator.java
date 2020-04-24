@@ -77,7 +77,7 @@ public class InstanceValidator {
 
         VespaUniqueInstanceId csrProviderUniqueId = getVespaUniqueInstanceId(instanceConfirmation);
         if(! providerUniqueId.equals(csrProviderUniqueId)) {
-            log.log(LogLevel.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
+            log.log(Level.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
             return false;
         }
 
@@ -107,7 +107,7 @@ public class InstanceValidator {
         try {
             return validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
+            log.log(Level.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
             return false;
         }
     }
@@ -131,7 +131,7 @@ public class InstanceValidator {
 
     private boolean validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId) {
         if(vespaUniqueInstanceId == null) {
-            log.log(LogLevel.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
+            log.log(Level.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
             return false;
         }
 
@@ -142,7 +142,7 @@ public class InstanceValidator {
                 .findFirst() // Should be only one
                 .orElse(null);
         if(node == null) {
-            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
+            log.log(Level.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
             return false;
         }
 
@@ -162,7 +162,7 @@ public class InstanceValidator {
         // Validate that ipaddresses in request are valid for node
 
         if(! nodeIpAddresses.containsAll(ips)) {
-            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
+            log.log(Level.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
             return false;
         }
         return true;

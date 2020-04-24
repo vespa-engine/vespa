@@ -42,7 +42,7 @@ class PropertiesProcessor implements PreProcessor {
                 //System.out.println("Found " + node.getNodeName() + ", " + node.getTextContent());
                 final String propertyName = node.getNodeName();
                 if (properties.containsKey(propertyName)) {
-                    log.log(LogLevel.WARNING, "Duplicate definition for property '" + propertyName + "' detected");
+                    log.log(Level.WARNING, "Duplicate definition for property '" + propertyName + "' detected");
                 }
                 properties.put(propertyName, node.getTextContent());
             }

@@ -56,7 +56,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
             try {
                 updateWithNewConfig(handle);
             } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
-                log.log(LogLevel.WARNING, "Got exception: " + Exceptions.toMessageString(e));
+                log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
             } catch (Throwable e) {
                 com.yahoo.protect.Process.logAndDie("Got error, exiting: " + Exceptions.toMessageString(e));
             }

@@ -215,7 +215,7 @@ public class LogMetricsHandler extends AbstractLogHandler {
                 try {
                     Thread.sleep(EVENTINTERVAL * 1000);
                 } catch (InterruptedException e) {
-                    log.log(LogLevel.WARNING, e.getMessage());
+                    log.log(Level.WARNING, e.getMessage());
                 }
                 sendEvents();
             }

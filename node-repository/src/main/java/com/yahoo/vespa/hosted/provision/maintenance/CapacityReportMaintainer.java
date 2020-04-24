@@ -42,7 +42,7 @@ public class CapacityReportMaintainer extends Maintainer {
         CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
         if (overcommittedHosts.size() != 0) {
-            log.log(LogLevel.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
+            log.log(Level.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
                                                     overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
         }
         metric.set("overcommittedHosts", overcommittedHosts.size(), null);

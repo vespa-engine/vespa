@@ -251,10 +251,10 @@ public class EndpointCertificateManager {
                 // Normally because the cert is in the process of being provisioned - this will cause a retry in InternalStepRunner
                 throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store");
             } catch (EndpointCertificateException e) {
-                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
                 throw e;
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
                 throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate validation failure for app " + instance.id().serializedForm(), e);
             }
     }

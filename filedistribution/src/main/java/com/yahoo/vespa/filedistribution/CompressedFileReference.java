@@ -80,14 +80,14 @@ public class CompressedFileReference {
                 if (!(outFile.exists() && outFile.isDirectory())) {
                     log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
                     if (!outFile.mkdirs()) {
-                        log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
+                        log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
                 // Create parent dir if necessary
                 File parent = new File(outFile.getParent());
                 if (!parent.exists() && !parent.mkdirs()) {
-                    log.log(LogLevel.WARNING, "Could not create dir " + parent.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not create dir " + parent.getAbsolutePath());
                 }
                 FileOutputStream fos = new FileOutputStream(outFile);
                 ByteStreams.copy(archiveInputStream, fos);

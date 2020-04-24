@@ -253,7 +253,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                 log.log(Level.FINEST, () -> String.format("Executing RPC request %s.", requestLogId(request)));
                 handler.run();
             } catch (Exception e) {
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         String.format("Exception thrown during execution of RPC request %s: %s", requestLogId(request), e.getMessage()), e);
             }
         });
@@ -273,7 +273,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
-            log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
+            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
             return;
         }

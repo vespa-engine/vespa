@@ -71,7 +71,7 @@ class GetConfigProcessor implements Runnable {
         //Request has already been detached
         if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
-            log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
+            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             respond(request);
             return null;
         }

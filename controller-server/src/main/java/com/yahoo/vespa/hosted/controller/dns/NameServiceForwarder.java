@@ -74,7 +74,7 @@ public class NameServiceForwarder {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
             if (queued >= maxQueuedRequests) {
-                log.log(LogLevel.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
+                log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }

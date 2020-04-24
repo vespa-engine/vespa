@@ -32,7 +32,7 @@ public class UserConfigDefinitionRepo implements ConfigDefinitionRepo {
                 defs.put(dKey, new ConfigDefinition(dKey.getName(), Splitter.on("\n").splitToList(payload).toArray(new String[0])));
             }
         } else {
-            log.log(LogLevel.WARNING, "Path " + appPath + " does not exist, not able to load add user config definitions");
+            log.log(Level.WARNING, "Path " + appPath + " does not exist, not able to load add user config definitions");
         }
     }
 

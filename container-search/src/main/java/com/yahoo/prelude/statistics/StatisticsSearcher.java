@@ -243,7 +243,7 @@ public class StatisticsSearcher extends Searcher {
         if (latency >= 0) {
             addLatency(latency, metricContext);
         } else {
-            getLogger().log(LogLevel.WARNING,
+            getLogger().log(Level.WARNING,
                             "Apparently negative latency measure, start: " + start
                             + ", end: " + end + ", for query: " + query.toString());
         }

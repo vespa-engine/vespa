@@ -27,7 +27,7 @@ public class VersionStatusUpdater extends Maintainer {
             VersionStatus newStatus = VersionStatus.compute(controller());
             controller().updateVersionStatus(newStatus);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
+            log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
                                       ". Retrying in " + maintenanceInterval());
         }
     }

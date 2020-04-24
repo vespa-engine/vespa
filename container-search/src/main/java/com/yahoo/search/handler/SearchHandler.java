@@ -417,7 +417,7 @@ public class SearchHandler extends LoggingRequestHandler {
         if (searchConnections != null) {
             connectionStatistics();
         } else {
-            log.log(LogLevel.WARNING,
+            log.log(Level.WARNING,
                     "searchConnections is a null reference, probably a known race condition during startup.",
                     new IllegalStateException("searchConnections reference is null."));
         }

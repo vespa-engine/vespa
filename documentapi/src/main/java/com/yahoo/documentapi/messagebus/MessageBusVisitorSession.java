@@ -467,7 +467,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                  // we just immediately go into a failure destruction mode as soon as this
                  // happens, in which we do not wait for any active messages to be replied
                  // to.
-                log.log(LogLevel.WARNING, "Visitor session '" + sessionName +
+                log.log(Level.WARNING, "Visitor session '" + sessionName +
                         "': failed to submit reply task to executor service! " +
                         "Session cannot reliably continue; terminating it early.", e);
 
@@ -661,7 +661,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     String msg = "Got exception of type " + e.getClass().getName() +
                             " with message '" + e.getMessage() +
                             "' while attempting to send visitors";
-                    log.log(LogLevel.WARNING, msg);
+                    log.log(Level.WARNING, msg);
                     transitionTo(new StateDescription(State.FAILED, msg));
                     // It's likely that the exception caused a failure to send a
                     // visitor message, meaning we won't get a reply task in the

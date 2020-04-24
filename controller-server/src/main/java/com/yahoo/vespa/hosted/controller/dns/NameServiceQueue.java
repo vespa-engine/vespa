@@ -78,7 +78,7 @@ public class NameServiceQueue {
                 request.dispatchTo(nameService);
                 queue.requests.poll();
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to execute " + request + ": " + e.getMessage() +
+                log.log(Level.WARNING, "Failed to execute " + request + ": " + e.getMessage() +
                                           ", request will be retried");
             }
         }

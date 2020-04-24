@@ -568,7 +568,7 @@ public class NodeAgentImpl implements NodeAgent {
             try {
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
             } catch (RuntimeException suppressed) {
-                logger.log(LogLevel.WARNING, "Suppressing ACL update failure: " + suppressed);
+                logger.log(Level.WARNING, "Suppressing ACL update failure: " + suppressed);
                 e.addSuppressed(suppressed);
             }
 

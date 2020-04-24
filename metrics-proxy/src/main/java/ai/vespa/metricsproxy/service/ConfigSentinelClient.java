@@ -166,10 +166,10 @@ public class ConfigSentinelClient extends AbstractComponent {
                 {
                     servicelist = req.returnValues().get(0).asString();
                 } else {
-                    log.log(LogLevel.WARNING, "Bad answer to RPC request: " + req.errorMessage());
+                    log.log(Level.WARNING, "Bad answer to RPC request: " + req.errorMessage());
                 }
             } else {
-                log.log(LogLevel.WARNING, "Could not connect to sentinel at: "+spec);
+                log.log(Level.WARNING, "Could not connect to sentinel at: "+spec);
             }
             return servicelist;
         } finally {

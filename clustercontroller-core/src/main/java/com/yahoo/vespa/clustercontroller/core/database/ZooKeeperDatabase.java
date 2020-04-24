@@ -52,7 +52,7 @@ public class ZooKeeperDatabase extends Database {
         public void process(WatchedEvent watchedEvent) {
             // Shouldn't get events after we expire, but just be sure we stop them here.
             if (state != null && state.equals(Event.KeeperState.Expired)) {
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got event from ZooKeeper session after it expired");
+                log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got event from ZooKeeper session after it expired");
                 return;
             }
             Event.KeeperState newState = watchedEvent.getState();
@@ -75,20 +75,20 @@ public class ZooKeeperDatabase extends Database {
             }
             switch (watchedEvent.getType()) {
                 case NodeChildrenChanged: // Fleetcontrollers have either connected or disconnected to ZooKeeper
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeChildrenChanged");
+                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeChildrenChanged");
                     break;
                 case NodeDataChanged: // A fleetcontroller have changed what node it is voting for
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDataChanged");
+                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDataChanged");
                     break;
                 case NodeCreated: // How can this happen? Can one leave watches on non-existing nodes?
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
+                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
                     break;
                 case NodeDeleted: // We're not watching any nodes for whether they are deleted or not.
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDeleted");
+                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDeleted");
                     break;
                 case None:
                     if (state != null && state.equals(watchedEvent.getState())) {
-                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got None type event that didn't even alter session state. What does that indicate?");
+                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got None type event that didn't even alter session state. What does that indicate?");
                     }
             }
             state = watchedEvent.getState();
@@ -166,7 +166,7 @@ public class ZooKeeperDatabase extends Database {
                     + Long.toHexString(session.getSessionId()));
             session.close();
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got interrupt exception while closing session: " + e);
+            log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got interrupt exception while closing session: " + e);
         }
     }
 
@@ -178,7 +178,7 @@ public class ZooKeeperDatabase extends Database {
         if (sessionOpen && reportErrors) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
-            log.log(LogLevel.WARNING, String.format("Fleetcontroller %s: %s. Exception: %s\n%s",
+            log.log(Level.WARNING, String.format("Fleetcontroller %s: %s. Exception: %s\n%s",
                     nodeIndex, message, e.getMessage(), sw.toString()));
         }
     }
@@ -277,7 +277,7 @@ public class ZooKeeperDatabase extends Database {
                         NodeState nodeState = NodeState.deserialize(node.getType(), token.substring(colon + 1));
                         wanted.put(node, nodeState);
                     } catch (Exception e) {
-                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid wantedstate line in zookeeper '" + token + "'.");
+                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid wantedstate line in zookeeper '" + token + "'.");
                     }
                 }
             }
@@ -329,7 +329,7 @@ public class ZooKeeperDatabase extends Database {
                         Long timestamp =  Long.valueOf(token.substring(colon + 1));
                         wanted.put(n, timestamp);
                     } catch (Exception e) {
-                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid starttimestamp line in zookeeper '" + token + "'.");
+                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid starttimestamp line in zookeeper '" + token + "'.");
                     }
                 }
             }

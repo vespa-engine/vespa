@@ -55,7 +55,7 @@ public class ContactInformationMaintainer extends Maintainer {
                         throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to update contact information for " + tenant + ": " +
+                log.log(Level.WARNING, "Failed to update contact information for " + tenant + ": " +
                                           Exceptions.toMessageString(e) + ". Retrying in " +
                                           maintenanceInterval());
             }

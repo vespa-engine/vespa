@@ -79,7 +79,7 @@ public class LoadBalancerExpirer extends Maintainer {
             }
         });
         if (!failed.isEmpty()) {
-            log.log(LogLevel.WARNING, String.format("Failed to remove %d load balancers: %s, retrying in %s",
+            log.log(Level.WARNING, String.format("Failed to remove %d load balancers: %s, retrying in %s",
                                                     failed.size(),
                                                     failed.stream()
                                                           .map(LoadBalancerId::serializedForm)
@@ -107,7 +107,7 @@ public class LoadBalancerExpirer extends Maintainer {
             }
         });
         if (!failed.isEmpty()) {
-            log.log(LogLevel.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
+            log.log(Level.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
                                                     failed.size(),
                                                     failed.stream()
                                                           .map(LoadBalancerId::serializedForm)

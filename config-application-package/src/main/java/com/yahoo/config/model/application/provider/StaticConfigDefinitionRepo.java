@@ -47,7 +47,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
             addConfigDefinition(key, def);
         } catch (IOException e) {
-            log.log(LogLevel.WARNING, "Exception adding config definition " + def, e);
+            log.log(Level.WARNING, "Exception adding config definition " + def, e);
         }
     }
 

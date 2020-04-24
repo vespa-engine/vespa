@@ -17,7 +17,7 @@ public class LoggingTraceExporter implements TraceExporter {
     public void maybeExport(Supplier<TraceDescription> traceDescriptionSupplier) {
         var traceDescription = traceDescriptionSupplier.get();
         if (traceDescription.getTrace() != null) {
-            log.log(LogLevel.WARNING, String.format("%s: %s", traceDescription.getDescription(),
+            log.log(Level.WARNING, String.format("%s: %s", traceDescription.getDescription(),
                     traceDescription.getTrace().toString()));
         }
     }

@@ -197,13 +197,13 @@ public class RpcServer {
                 if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
                     lastConnectError = e.getMessage();
                     lastConnectErrorTime = time;
-                    log.log(LogLevel.WARNING, "Failed to bind RPC server to port " + port +": " + e.getMessage());
+                    log.log(Level.WARNING, "Failed to bind RPC server to port " + port +": " + e.getMessage());
                 }
             } catch (Exception e) {
                 if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
                     lastConnectError = e.getMessage();
                     lastConnectErrorTime = time;
-                    log.log(LogLevel.WARNING, "Failed to initailize RPC server socket: " + e.getMessage());
+                    log.log(Level.WARNING, "Failed to initailize RPC server socket: " + e.getMessage());
                 }
             }
         }

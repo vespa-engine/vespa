@@ -96,7 +96,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
                     log.log(Level.FINE, "Creating dir: " + outFile.getAbsolutePath());
                     boolean res = outFile.mkdirs();
                     if (!res) {
-                        log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
+                        log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
@@ -113,7 +113,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
             entries++;
         }
         if (entries == 0) {
-            log.log(LogLevel.WARNING, "Not able to read any entries from " + application.getName());
+            log.log(Level.WARNING, "Not able to read any entries from " + application.getName());
         }
     }
 

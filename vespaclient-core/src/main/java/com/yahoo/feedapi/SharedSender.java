@@ -139,7 +139,7 @@ public class SharedSender implements ReplyHandler {
                 owner.getPending().clear();
             }
         } else {
-            log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
+            log.log(Level.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
         }
     }
 

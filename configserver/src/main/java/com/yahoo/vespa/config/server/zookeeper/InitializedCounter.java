@@ -45,7 +45,7 @@ public class InitializedCounter {
         try {
             return configCurator.exists(appsPath);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, e.getMessage());
+            log.log(Level.WARNING, e.getMessage());
             return false;
         }
     }
@@ -64,7 +64,7 @@ public class InitializedCounter {
                 newestGeneration = Collections.max(getDeployedApplicationGenerations(configCurator, appsPath));
             }
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Could not get newest application generation from Zookeeper");
+            log.log(Level.WARNING, "Could not get newest application generation from Zookeeper");
         }
         return newestGeneration;
     }
@@ -79,7 +79,7 @@ public class InitializedCounter {
                 }
             }
         } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Could not get application generations from Zookeeper");
+            log.log(Level.WARNING, "Could not get application generations from Zookeeper");
         }
         return generations;
     }

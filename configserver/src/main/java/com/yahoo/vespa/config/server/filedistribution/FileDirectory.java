@@ -32,7 +32,7 @@ public class FileDirectory  {
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.toString());
+            log.log(Level.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.toString());
         }
     }
 
@@ -85,7 +85,7 @@ public class FileDirectory  {
                     log.log(Level.FINE, "Calculating hash for '" + path + "'");
                     return hash(path.toFile(), hasher);
                 } catch (IOException e) {
-                    log.log(LogLevel.WARNING, "Failed getting hash from '" + path + "'");
+                    log.log(Level.WARNING, "Failed getting hash from '" + path + "'");
                     return 0;
                 }
             }).mapToLong(Number::longValue).sum();
@@ -153,7 +153,7 @@ public class FileDirectory  {
                 if (!destinationDir.exists()) {
                     log.log(Level.FINE, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
-                        log.log(LogLevel.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
+                        log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
                     }
                 } else {
                     IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);

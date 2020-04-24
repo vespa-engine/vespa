@@ -96,7 +96,7 @@ public class UntypedMetric {
                 try {
                     histogram.add(other.histogram);
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    log.log(LogLevel.WARNING, "Had trouble merging histograms: " + e.getMessage());
+                    log.log(Level.WARNING, "Had trouble merging histograms: " + e.getMessage());
                 }
             }
         }

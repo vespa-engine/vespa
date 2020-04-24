@@ -86,7 +86,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
             handler.handleResponse(new MbusResponse(StatusCodes.fromMbusReply(reply), reply))
                    .close(IgnoredCompletionHandler.INSTANCE);
         } catch (final Exception e) {
-            log.log(LogLevel.WARNING, "Ignoring exception thrown by ResponseHandler.", e);
+            log.log(Level.WARNING, "Ignoring exception thrown by ResponseHandler.", e);
         }
     }
 
@@ -139,7 +139,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
                     }
                     sendBlocking(request);
                 } catch (final Exception e) {
-                    log.log(LogLevel.WARNING, "Ignoring exception thrown by MbusClient.", e);
+                    log.log(Level.WARNING, "Ignoring exception thrown by MbusClient.", e);
                 }
             }
         }

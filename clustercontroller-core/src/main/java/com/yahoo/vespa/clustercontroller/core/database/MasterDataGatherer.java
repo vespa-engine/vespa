@@ -63,7 +63,7 @@ public class MasterDataGatherer {
                     session.getData(zooKeeperRoot + "indexes/" + index, this, nodeListener, null);
                     break;
                 case NodeCreated: // How can this happen? Can one leave watches on non-existing nodes?
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
+                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
                     break;
                 case NodeDeleted:
                         // We get this event when fleetcontrollers shut down and node in dir disappears. But it should also trigger a NodeChildrenChanged event, so
@@ -115,7 +115,7 @@ public class MasterDataGatherer {
                         log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Node at " + path +
                                 " removed, got no other option than counting it as down.");
                     } else {
-                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failure code " + code +
+                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failure code " + code +
                                 " when listening to node at " + path + ", will assume it's down.");
                     }
                     if (nextMasterData.containsKey(index)) {
@@ -133,7 +133,7 @@ public class MasterDataGatherer {
                             nextMasterData.put(index, value);
                         }
                     } else {
-                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + " which is not alive according to current state. Ignoring it");
+                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + " which is not alive according to current state. Ignoring it");
                     }
                 }
                 for(Integer vote : nextMasterData.values()) {

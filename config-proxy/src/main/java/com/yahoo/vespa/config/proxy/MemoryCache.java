@@ -131,7 +131,7 @@ public class MemoryCache {
             writer.write("\n");
             writer.close();
         } catch (IOException e) {
-            log.log(LogLevel.WARNING, "Could not write to file '" + filename + "'");
+            log.log(Level.WARNING, "Could not write to file '" + filename + "'");
         } finally {
             if (writer != null) {
                 try {

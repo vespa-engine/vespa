@@ -144,7 +144,7 @@ class ClientFeederV3 {
             } catch (InterruptedException e) {
                 // NOP, just terminate
             } catch (Throwable e) {
-                log.log(LogLevel.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
+                log.log(Level.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
             } finally {
                 replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
             }
@@ -183,7 +183,7 @@ class ClientFeederV3 {
                 message = getNextMessage(operationId.get(), requestInputStream, settings);
             } catch (Exception e) {
                 if (log.isLoggable(LogLevel.WARNING)) {
-                    log.log(LogLevel.WARNING, Exceptions.toMessageString(e));
+                    log.log(Level.WARNING, Exceptions.toMessageString(e));
                 }
                 metric.add(MetricNames.PARSE_ERROR, 1, null);
 

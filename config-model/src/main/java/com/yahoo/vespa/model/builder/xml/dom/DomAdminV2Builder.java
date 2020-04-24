@@ -53,7 +53,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         addLogForwarders(adminElement.child("logforwarding"), admin);
 
         if (adminElement.child("filedistribution") != null) {
-            deployState.getDeployLogger().log(LogLevel.WARNING, "'filedistribution' element is deprecated and ignored");
+            deployState.getDeployLogger().log(Level.WARNING, "'filedistribution' element is deprecated and ignored");
         }
     }
 

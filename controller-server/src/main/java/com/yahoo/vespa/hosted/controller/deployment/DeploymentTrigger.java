@@ -69,7 +69,7 @@ public class DeploymentTrigger {
 
     public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
         if (applications().getApplication(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring submission from project '" + projectId +
+            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
                                       "': Unknown application '" + id + "'");
             return;
         }
@@ -117,7 +117,7 @@ public class DeploymentTrigger {
      */
     public void notifyOfCompletion(ApplicationId id) {
         if (applications().getInstance(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
+            log.log(Level.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
             return;
         }
 

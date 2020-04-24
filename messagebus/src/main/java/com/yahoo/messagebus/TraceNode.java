@@ -440,11 +440,11 @@ public class TraceNode implements Comparable<TraceNode> {
                     node.setStrict(c == '(');
                 } else if (c == ')' || c == '}') {
                     if (node == null) {
-                        log.log(LogLevel.WARNING, "Unexpected closing brace in trace '" + str + "' at position " + i + ".");
+                        log.log(Level.WARNING, "Unexpected closing brace in trace '" + str + "' at position " + i + ".");
                         return new TraceNode();
                     }
                     if (node.isStrict() != (c == ')')) {
-                        log.log(LogLevel.WARNING, "Mismatched closing brace in trace '" + str + "' at position " + i + ".");
+                        log.log(Level.WARNING, "Mismatched closing brace in trace '" + str + "' at position " + i + ".");
                         return new TraceNode();
                     }
                     node = node.parent;
@@ -452,15 +452,15 @@ public class TraceNode implements Comparable<TraceNode> {
             }
         }
         if (note != null) {
-            log.log(LogLevel.WARNING, "Unterminated note in trace '" + str + "'.");
+            log.log(Level.WARNING, "Unterminated note in trace '" + str + "'.");
             return new TraceNode();
         }
         if (node != proxy) {
-            log.log(LogLevel.WARNING, "Missing closing brace in trace '" + str + "'.");
+            log.log(Level.WARNING, "Missing closing brace in trace '" + str + "'.");
             return new TraceNode();
         }
         if (proxy.getNumChildren() == 0) {
-            log.log(LogLevel.WARNING, "No nodes found in trace '" + str + "'.");
+            log.log(Level.WARNING, "No nodes found in trace '" + str + "'.");
             return new TraceNode();
         }
         if (proxy.getNumChildren() != 1) {

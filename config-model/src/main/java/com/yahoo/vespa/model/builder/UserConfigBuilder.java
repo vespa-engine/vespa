@@ -40,13 +40,13 @@ public class UserConfigBuilder {
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         if ( ! def.isPresent()) { // TODO: Fail instead of warn
-            logger.log(LogLevel.WARNING, "Unable to find config definition '" + key.asFileName() +
+            logger.log(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
         ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);
         ConfigPayloadBuilder old = builderMap.get(key);
         if (old != null) {
-            logger.log(LogLevel.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");
+            logger.log(Level.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");
             old.override(payloadBuilder);
         } else {
             builderMap.put(key, payloadBuilder);

@@ -124,7 +124,7 @@ public final class XmlHelper {
             log.log(Level.FINE, "XML parser now operational!");
             return docBuilder;
         } catch (ParserConfigurationException e) {
-            log.log(LogLevel.WARNING, "No XML parser available - " + e);
+            log.log(Level.WARNING, "No XML parser available - " + e);
             return null;
         }
     }

@@ -239,7 +239,7 @@ public class RestApi extends LoggingRequestHandler {
                                                 RestUri.apiErrorCodes.PARSER_ERROR);
         }
         catch (RuntimeException systemException) {
-            log.log(LogLevel.WARNING, "Internal runtime exception during Document V1 request handling", systemException);
+            log.log(Level.WARNING, "Internal runtime exception during Document V1 request handling", systemException);
             return Response.createErrorResponse(500, Exceptions.toMessageString(systemException),
                                                 restUri,
                                                 RestUri.apiErrorCodes.UNSPECIFIED);

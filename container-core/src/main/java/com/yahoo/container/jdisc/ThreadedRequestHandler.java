@@ -147,7 +147,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             currentFailureIntervalStartedMillis = 0L;
             numRejectedRequests = 0;
         }
-        log.log(LogLevel.WARNING, "Rejected " + numRejectedRequestsSnapshot + " requests on cause of no available worker threads.");
+        log.log(Level.WARNING, "Rejected " + numRejectedRequestsSnapshot + " requests on cause of no available worker threads.");
     }
 
     private void incrementRejectedRequests() {

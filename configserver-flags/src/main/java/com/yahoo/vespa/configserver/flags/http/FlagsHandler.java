@@ -48,7 +48,7 @@ public class FlagsHandler extends LoggingRequestHandler {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
+            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }

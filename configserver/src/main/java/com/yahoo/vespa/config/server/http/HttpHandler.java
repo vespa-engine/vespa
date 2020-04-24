@@ -71,7 +71,7 @@ public class HttpHandler extends LoggingRequestHandler {
         } catch (LoadBalancerServiceException e) {
             return HttpErrorResponse.loadBalancerNotReady(getMessage(e, request));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
+            log.log(Level.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         }
     }

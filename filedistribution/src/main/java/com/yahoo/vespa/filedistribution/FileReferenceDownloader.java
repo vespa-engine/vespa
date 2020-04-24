@@ -155,7 +155,7 @@ public class FileReferenceDownloader {
         } else if (request.returnValues().size() == 0) {
             return false;
         } else if (!request.checkReturnTypes("is")) { // TODO: Do not hard-code return type
-            log.log(LogLevel.WARNING, "Invalid return types for response: " + request.errorMessage());
+            log.log(Level.WARNING, "Invalid return types for response: " + request.errorMessage());
             return false;
         }
         return true;

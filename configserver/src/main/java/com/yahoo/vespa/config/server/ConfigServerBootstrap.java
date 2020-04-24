@@ -127,7 +127,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, "Error joining server thread on shutdown: " + e.getMessage());
+                log.log(Level.WARNING, "Error joining server thread on shutdown: " + e.getMessage());
             }
         });
     }
@@ -246,7 +246,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                     log.log(Level.INFO, "Redeploying " + app +
                             " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
                 } else {
-                    log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
+                    log.log(Level.WARNING, "Redeploying " + app + " failed, will retry", e);
                     failedDeployments.add(app);
                 }
             }

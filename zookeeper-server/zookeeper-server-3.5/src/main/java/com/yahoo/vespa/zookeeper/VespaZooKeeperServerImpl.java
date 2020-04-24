@@ -165,7 +165,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         try {
             zkServerThread.join();
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "Error joining server thread on shutdown", e);
+            log.log(Level.WARNING, "Error joining server thread on shutdown", e);
         }
     }
 

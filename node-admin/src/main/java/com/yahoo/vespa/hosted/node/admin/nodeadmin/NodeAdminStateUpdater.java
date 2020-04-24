@@ -180,9 +180,9 @@ public class NodeAdminStateUpdater {
                     .collect(Collectors.toSet());
             nodeAdmin.refreshContainersToRun(nodeAgentContexts);
         } catch (ConvergenceException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
+            log.log(Level.WARNING, "Failed to update which containers should be running", e);
         }
     }
 

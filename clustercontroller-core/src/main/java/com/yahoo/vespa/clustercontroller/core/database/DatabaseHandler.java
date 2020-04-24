@@ -181,12 +181,12 @@ public class DatabaseHandler {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (KeeperException.ConnectionLossException e) {
-            log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
+            log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
                     + " with session timeout " + zooKeeperSessionTimeout + ": " + e.getMessage());
         } catch (Exception e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
-            log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
+            log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
                     + " with session timeout " + zooKeeperSessionTimeout + ": " + sw);
         }
         log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Done setting up new ZooKeeper session at " + zooKeeperAddress);
@@ -239,7 +239,7 @@ public class DatabaseHandler {
                 didWork |= performZooKeeperWrites();
             }
         } catch (CasWriteFailed e) {
-            log.log(LogLevel.WARNING, String.format("CaS write to ZooKeeper failed, another controller " +
+            log.log(Level.WARNING, String.format("CaS write to ZooKeeper failed, another controller " +
                     "has likely taken over ownership: %s", e.getMessage()));
             // Clear DB and master election state. This shall trigger a full re-fetch of all
             // version and election-related metadata.
@@ -265,7 +265,7 @@ public class DatabaseHandler {
                 currentlyStored.masterVote = pendingStore.masterVote;
                 pendingStore.masterVote = null;
             } else {
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store master vote");
+                log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store master vote");
                 return true;
             }
         }
@@ -355,7 +355,7 @@ public class DatabaseHandler {
         Integer version = currentlyStored.lastSystemStateVersion;
         if (version == null) {
             if (usingZooKeeper()) {
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve latest system state version from ZooKeeper. Returning version 0.");
+                log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve latest system state version from ZooKeeper. Returning version 0.");
             }
             return 0; // FIXME "fail-oblivious" is not a good error handling mode for such a critical component!
         }
@@ -467,7 +467,7 @@ public class DatabaseHandler {
         Map<Node, Long> startTimestamps = currentlyStored.startTimestamps;
         if (startTimestamps == null) {
             if (usingZooKeeper()) {
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve start timestamps from ZooKeeper. Cluster state will be bloated with timestamps until we get them set.");
+                log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve start timestamps from ZooKeeper. Cluster state will be bloated with timestamps until we get them set.");
             }
             startTimestamps = new TreeMap<>();
         }

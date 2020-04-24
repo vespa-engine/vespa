@@ -133,7 +133,7 @@ public class FileServer {
             target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
             log.log(Level.FINE, "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
         } finally {
             fileData.close();
         }

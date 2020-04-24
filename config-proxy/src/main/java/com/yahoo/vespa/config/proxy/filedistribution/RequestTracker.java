@@ -21,10 +21,10 @@ class RequestTracker {
     void trackRequest(File file) {
         String absolutePath = file.getAbsolutePath();
         if ( ! file.exists())
-            log.log(LogLevel.WARNING, "Could not find file '" + absolutePath + "'");
+            log.log(Level.WARNING, "Could not find file '" + absolutePath + "'");
 
         if ( ! file.setLastModified(Instant.now().toEpochMilli()))
-            log.log(LogLevel.WARNING, "Could not set last modified timestamp for '" + absolutePath + "'");
+            log.log(Level.WARNING, "Could not set last modified timestamp for '" + absolutePath + "'");
     }
 
 }

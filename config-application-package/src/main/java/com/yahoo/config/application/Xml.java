@@ -61,7 +61,7 @@ public class Xml {
         try {
             return factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            log.log(LogLevel.WARNING, "No XML parser available - " + e);
+            log.log(Level.WARNING, "No XML parser available - " + e);
             return null;
         }
     }

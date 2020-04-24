@@ -68,7 +68,7 @@ public class StateV1HealthClient implements AutoCloseable {
         try {
             httpClient.close();
         } catch (Exception e) {
-            logger.log(LogLevel.WARNING, "Failed to close CloseableHttpClient", e);
+            logger.log(Level.WARNING, "Failed to close CloseableHttpClient", e);
         }
     }
 

@@ -62,7 +62,7 @@ public class RunletExecutorImpl implements RunletExecutor {
         try {
             executor.awaitTermination(10, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            logger.log(LogLevel.WARNING, "Timed out waiting for termination of executor", e);
+            logger.log(Level.WARNING, "Timed out waiting for termination of executor", e);
         }
     }
 }

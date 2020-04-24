@@ -92,7 +92,7 @@ public class ChildProcess2Impl implements ChildProcess2 {
             if (commandLine.getOutputFile().isEmpty())
                 Files.delete(outputPath);
         } catch (Throwable t) {
-            logger.log(LogLevel.WARNING, "Failed to delete " + outputPath, t);
+            logger.log(Level.WARNING, "Failed to delete " + outputPath, t);
         }
     }
 

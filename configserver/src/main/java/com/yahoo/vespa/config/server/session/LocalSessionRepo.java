@@ -71,7 +71,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             try {
                 addSession(loader.loadSession(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Could not load session '" +
+                log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
@@ -88,7 +88,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             }
             // Make sure to catch here, to avoid executor just dying in case of issues ...
         } catch (Throwable e) {
-            log.log(LogLevel.WARNING, "Error when purging old sessions ", e);
+            log.log(Level.WARNING, "Error when purging old sessions ", e);
         }
         log.log(Level.FINE, "Done purging old sessions");
     }

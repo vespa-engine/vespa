@@ -238,7 +238,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                    log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
                            "Failed to process HTTP request : " + e.getMessage());
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Caught exception in HTTP server thread: "
+                    log.log(Level.WARNING, "Caught exception in HTTP server thread: "
                             + e.getClass().getName() + ": " + e.getMessage());
                 } finally {
                     if (output != null) try {
@@ -392,7 +392,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
                     lastConnectError = e.getMessage();
                     lastConnectErrorTime = time;
-                    log.log(LogLevel.WARNING, "Failed to initialize HTTP status server server socket: " + e.getMessage());
+                    log.log(Level.WARNING, "Failed to initialize HTTP status server server socket: " + e.getMessage());
                 }
             }
         }

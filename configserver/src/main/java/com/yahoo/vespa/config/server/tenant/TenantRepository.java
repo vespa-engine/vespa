@@ -175,10 +175,10 @@ public class TenantRepository {
             try {
                 f.getValue().get();
             } catch (ExecutionException e) {
-                log.log(LogLevel.WARNING, "Failed to create tenant " + tenantName, e);
+                log.log(Level.WARNING, "Failed to create tenant " + tenantName, e);
                 failed.add(tenantName);
             } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);
+                log.log(Level.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);
             }
         }
 

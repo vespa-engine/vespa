@@ -211,7 +211,7 @@ public abstract class FleetControllerTest implements Waiter {
         if (fleetController == null) {
             fleetController = createFleetController(usingFakeTimer, options, true, null);
         } else {
-            log.log(LogLevel.WARNING, "already started fleetcontroller, not starting another");
+            log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
     }
 

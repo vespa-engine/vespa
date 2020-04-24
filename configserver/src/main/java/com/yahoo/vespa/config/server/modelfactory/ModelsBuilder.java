@@ -121,10 +121,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
                 } else  {
                     if (e instanceof NullPointerException || e instanceof NoSuchElementException | e instanceof UncheckedTimeoutException) {
-                        log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
+                        log.log(Level.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
                     } else {
-                        log.log(LogLevel.WARNING, "Input error when building model ", e);
+                        log.log(Level.WARNING, "Input error when building model ", e);
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                     }
                 }

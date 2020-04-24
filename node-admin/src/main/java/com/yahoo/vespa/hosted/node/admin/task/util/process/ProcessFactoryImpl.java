@@ -88,7 +88,7 @@ public class ProcessFactoryImpl implements ProcessFactory {
                 if (commandLine.getOutputFile().isEmpty())
                     Files.delete(outputFile);
             } catch (IOException ioException) {
-                logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +
+                logger.log(Level.WARNING, "Failed to delete temporary file at " +
                                              outputFile, ioException);
             }
             throw throwable;

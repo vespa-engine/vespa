@@ -84,7 +84,7 @@ public class FileSender implements Serializable {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
-            logger.log(LogLevel.WARNING, "Not able to find config definition for " + key + ". Will not send files for this config");
+            logger.log(Level.WARNING, "Not able to find config definition for " + key + ". Will not send files for this config");
             return;
         }
         // Inspect fields at this level

@@ -178,7 +178,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
                 directoryCache.close();
             }
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception when closing path cache", e);
+            log.log(Level.WARNING, "Exception when closing path cache", e);
         } finally {
             checkForRemovedSessions(new ArrayList<>());
         }

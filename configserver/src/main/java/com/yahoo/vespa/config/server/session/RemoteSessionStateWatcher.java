@@ -66,7 +66,7 @@ public class RemoteSessionStateWatcher {
         try {
             fileCache.close();
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception when closing watcher", e);
+            log.log(Level.WARNING, "Exception when closing watcher", e);
         }
     }
 
@@ -78,7 +78,7 @@ public class RemoteSessionStateWatcher {
                     sessionChanged(Session.Status.parse(Utf8.toString(node.getData())));
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
+                log.log(Level.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });

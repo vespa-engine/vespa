@@ -151,7 +151,7 @@ public class VersionStatus {
                 if (nodes.isEmpty()) continue;
                 var configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
-                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() +
+                    log.log(Level.WARNING, "Config for " + application.id() + " in " + zone.getId() +
                                               " has not converged");
                 }
                 for (var node : nodes) {

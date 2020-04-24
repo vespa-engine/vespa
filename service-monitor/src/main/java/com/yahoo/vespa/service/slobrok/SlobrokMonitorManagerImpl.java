@@ -64,7 +64,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
         synchronized (monitor) {
             SlobrokMonitor slobrokMonitor = slobrokMonitors.remove(id);
             if (slobrokMonitor == null) {
-                logger.log(LogLevel.WARNING, "Removed application " + id +
+                logger.log(Level.WARNING, "Removed application " + id +
                         ", but it was never registered");
             } else {
                 slobrokMonitor.close();

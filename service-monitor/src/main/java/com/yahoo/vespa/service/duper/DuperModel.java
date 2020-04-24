@@ -132,7 +132,7 @@ public class DuperModel {
                             // If an activation contains a host that is currently assigned to a
                             // different application we will patch up our data structures to remain
                             // internally consistent. But listeners may be fooled.
-                            logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
+                            logger.log(Level.WARNING, hostname + " has been reassigned from " +
                                     previousId.toFullString() + " to " + id.toFullString());
 
                             Set<HostName> previousHostnames = hostnamesById.get(previousId);

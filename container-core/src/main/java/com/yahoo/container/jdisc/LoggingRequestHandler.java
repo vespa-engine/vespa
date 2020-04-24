@@ -166,7 +166,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         b.append("Timeout: ").append(timeoutInterval).append(" ms. ");
         b.append("Request string: ").append(req);
 
-        log.log(LogLevel.WARNING, "Slow execution. " + b);
+        log.log(Level.WARNING, "Slow execution. " + b);
     }
 
     private static class NullResponse extends ExtendedResponse {
@@ -308,7 +308,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
             logEntry.setHttpMethod(AccessLogUtil.getHttpMethod(httpRequest));
             logEntry.setHttpVersion(AccessLogUtil.getHttpVersion(httpRequest));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
+            log.log(Level.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
         }
     }
 

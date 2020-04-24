@@ -23,7 +23,7 @@ public class OsVersionStatusUpdater extends Maintainer {
             OsVersionStatus newStatus = OsVersionStatus.compute(controller());
             controller().updateOsVersionStatus(newStatus);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
+            log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
                                       ". Retrying in " + maintenanceInterval());
         }
     }

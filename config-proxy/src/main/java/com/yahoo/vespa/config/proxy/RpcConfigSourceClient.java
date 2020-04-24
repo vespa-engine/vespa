@@ -84,7 +84,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
      */
     private void checkConfigSources() {
         if (configSourceSet == null || configSourceSet.getSources() == null || configSourceSet.getSources().size() == 0) {
-            log.log(LogLevel.WARNING, "No config sources defined, could not check connection");
+            log.log(Level.WARNING, "No config sources defined, could not check connection");
         } else {
             Request req = new Request("ping");
             for (String configSource : configSourceSet.getSources()) {

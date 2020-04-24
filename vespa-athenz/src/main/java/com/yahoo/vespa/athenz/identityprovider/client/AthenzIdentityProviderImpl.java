@@ -305,7 +305,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                                       ? athenzCredentialsService.registerInstance()
                                       : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), identitySslContext));
         } catch (Throwable t) {
-            log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
+            log.log(Level.WARNING, "Failed to update credentials: " + t.getMessage(), t);
         }
     }
 
@@ -315,7 +315,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             Duration remainingLifetime = Duration.between(clock.instant(), expirationTime);
             metric.set(CERTIFICATE_EXPIRY_METRIC_NAME, remainingLifetime.getSeconds(), null);
         } catch (Throwable t) {
-            log.log(LogLevel.WARNING, "Failed to update metrics: " + t.getMessage(), t);
+            log.log(Level.WARNING, "Failed to update metrics: " + t.getMessage(), t);
         }
     }
 }

@@ -52,7 +52,7 @@ public class ControllerAuthorizationFilter extends JsonSecurityRequestFilterBase
                 return Optional.empty();
         }
         catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception evaluating access control: ", e);
+            log.log(Level.WARNING, "Exception evaluating access control: ", e);
         }
         return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
     }

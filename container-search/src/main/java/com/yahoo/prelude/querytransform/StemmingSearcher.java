@@ -168,7 +168,7 @@ public class StemmingSearcher extends Searcher {
             if (i instanceof TermItem) {
                 return ((TermItem) i).getOrigin(); // this should always be the case
             } else {
-                getLogger().log(LogLevel.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
+                getLogger().log(Level.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
                                                   i.getClass().getName() + ", expected TermItem.");
             }
         }

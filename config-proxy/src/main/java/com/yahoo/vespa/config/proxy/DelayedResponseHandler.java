@@ -50,14 +50,14 @@ public class DelayedResponseHandler implements Runnable {
                     rpcServer.returnOkResponse(request, config);
                     i.incrementAndGet();
                 } else {
-                    log.log(LogLevel.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +
+                    log.log(Level.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +
                             request.getConfigKey() + ", will retry");
                 }
             }
             log.log(Level.FINEST, () -> "Finished running DelayedResponseHandler. " + i.get() + " delayed responses sent in " +
                     (System.currentTimeMillis() - start) + " ms");
         } catch (Exception e) {  // To avoid thread throwing exception and executor never running this again
-            log.log(LogLevel.WARNING, "Got exception in DelayedResponseHandler: " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Got exception in DelayedResponseHandler: " + Exceptions.toMessageString(e));
         } catch (Throwable e) {
             com.yahoo.protect.Process.logAndDie("Got error in DelayedResponseHandler, exiting: " + Exceptions.toMessageString(e));
         }

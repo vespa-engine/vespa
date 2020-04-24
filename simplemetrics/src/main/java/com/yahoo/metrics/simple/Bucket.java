@@ -78,7 +78,7 @@ public class Bucket {
                     get(entry.getKey(), entry.getValue()).merge(entry.getValue(), otherIsNewer);
                 }
             } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Problems merging metric " + metricName + ", possibly ignoring data.");
+                log.log(Level.WARNING, "Problems merging metric " + metricName + ", possibly ignoring data.");
                 // avoid spamming the log if there are a lot of mismatching
                 // threads
                 malformedMetrics.add(metricName);

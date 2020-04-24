@@ -74,7 +74,7 @@ class CachedFilesMaintainer implements Runnable {
             filesToDelete.forEach(fileReference -> {
                 File file = new File(directory, fileReference);
                 if (!IOUtils.recursiveDeleteDir(file))
-                    log.log(LogLevel.WARNING, "Could not delete " + file.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
             });
         }
     }

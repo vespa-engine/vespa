@@ -51,7 +51,7 @@ public class Flusher extends Thread {
                 }
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "flusher was interrupted", e);
+            log.log(Level.WARNING, "flusher was interrupted", e);
         }
     }
 }

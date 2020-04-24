@@ -68,7 +68,7 @@ public class RotationStatusUpdater extends Maintainer {
         try {
             pool.awaitTermination(30, TimeUnit.SECONDS);
             if (lastException.get() != null) {
-                log.log(LogLevel.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: ",
+                log.log(Level.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: ",
                                                         failures.get(),
                                                         attempts.get(),
                                                         maintenanceInterval()),

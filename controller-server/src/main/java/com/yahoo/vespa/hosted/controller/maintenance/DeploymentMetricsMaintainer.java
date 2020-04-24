@@ -80,7 +80,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
             if (lastException.get() != null) {
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
