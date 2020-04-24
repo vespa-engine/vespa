@@ -330,20 +330,20 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         VisitorSession session = visitorSessionFactory.createVisitorSession(params);
         try {
             if ( !session.waitUntilDone(query.getTimeout())) {
-                log.log(LogLevel.DEBUG, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
+                log.log(Level.FINE, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
                 session.abort();
                 throw new TimeoutException("Query timed out in " + VdsStreamingSearcher.class.getName());
             }
         } finally {
             session.destroy();
             sessionTrace = session.getTrace();
-            log.log(LogLevel.DEBUG, () -> sessionTrace.toString());
+            log.log(Level.FINE, () -> sessionTrace.toString());
             query.trace(sessionTrace.toString(), false, 9);
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
+                log.log(Level.FINE, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
             }
         } else {
             throw new IllegalArgumentException("Query failed: " // TODO: Is it necessary to use a runtime exception?
@@ -394,7 +394,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         final int hitCountTotal = sr.getTotalHitCount();
         final int hitCount = sr.getHitCount();
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
+            log.log(Level.FINE, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
         }
 
         List<SearchResult.Hit> newHits = new ArrayList<>(hitCount);
@@ -449,7 +449,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private void handleSummary(DocumentSummary ds) {
         int summaryCount = ds.getSummaryCount();
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
+            log.log(Level.FINE, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
         }
         synchronized (summaryMap) {
             for (int i = 0; i < summaryCount; i++) {

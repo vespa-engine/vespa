@@ -69,7 +69,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     }
 
     public Map<Node, List<MetricsPacket.Builder>> getMetrics(ConsumerId consumer) {
-        log.log(LogLevel.DEBUG, () -> "Retrieving metrics from " + clients.size() + " nodes.");
+        log.log(Level.FINE, () -> "Retrieving metrics from " + clients.size() + " nodes.");
         var forkJoinTask = forkJoinPool.submit(() -> clients.parallelStream()
                 .map(client -> getNodeMetrics(client, consumer))
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue)));
@@ -77,7 +77,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         try {
             var metricsByNode = forkJoinTask.get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            log.log(LogLevel.DEBUG, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
+            log.log(Level.FINE, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
             return metricsByNode;
 
         } catch (Exception e) {

@@ -110,7 +110,7 @@ public class RPCCommunicator implements Communicator {
     public void getNodeState(NodeInfo node, Waiter<GetNodeStateRequest> externalWaiter) {
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
         }
         NodeState currentState = node.getReportedState();
         Request req = new Request("getnodestate3");
@@ -138,7 +138,7 @@ public class RPCCommunicator implements Communicator {
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
         int nodeVersion = node.getVersion();
@@ -156,7 +156,7 @@ public class RPCCommunicator implements Communicator {
             v.add(new DataValue(encodedBundle.getCompression().data()));
         }
 
-        log.log(LogLevel.DEBUG, () -> String.format("Sending '%s' RPC to %s for state version %d",
+        log.log(Level.FINE, () -> String.format("Sending '%s' RPC to %s for state version %d",
                 req.methodName(), node.getRpcAddress(), stateBundle.getVersion()));
         RPCSetClusterStateRequest stateRequest = new RPCSetClusterStateRequest(node, req, baselineState.getVersion());
         waiter.setRequest(stateRequest);
@@ -171,14 +171,14 @@ public class RPCCommunicator implements Communicator {
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
 
         var req = new Request(ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME);
         req.parameters().add(new Int32Value(clusterStateVersion));
 
-        log.log(LogLevel.DEBUG, () -> String.format("Sending '%s' RPC to %s for state version %d",
+        log.log(Level.FINE, () -> String.format("Sending '%s' RPC to %s for state version %d",
                 req.methodName(), node.getRpcAddress(), clusterStateVersion));
         var activationRequest = new RPCActivateClusterStateVersionRequest(node, req, clusterStateVersion);
         waiter.setRequest(activationRequest);

@@ -63,7 +63,7 @@ public class CompressedFileReference {
     }
 
     static void decompress(File inputFile, File outputDir) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
+        log.log(Level.FINE, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
         try (ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
@@ -78,7 +78,7 @@ public class CompressedFileReference {
             File outFile = new File(outputFile, entry.getName());
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(LogLevel.DEBUG, () -> "Creating dir: " + outFile.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
                     if (!outFile.mkdirs()) {
                         log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
                     }
@@ -113,7 +113,7 @@ public class CompressedFileReference {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
+        log.log(Level.FINE, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();

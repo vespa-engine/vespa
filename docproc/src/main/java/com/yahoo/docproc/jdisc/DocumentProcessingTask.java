@@ -203,7 +203,7 @@ public class DocumentProcessingTask implements Runnable {
         if (exception != null) {
             StringWriter backtrace = new StringWriter();
             exception.printStackTrace(new PrintWriter(backtrace));
-            log.log(LogLevel.DEBUG, "Failed to process " + processing + ": " + backtrace.toString());
+            log.log(Level.FINE, "Failed to process " + processing + ": " + backtrace.toString());
         }
     }
 

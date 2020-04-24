@@ -97,13 +97,13 @@ public class RpcServer {
 
     public void connect() throws ListenFailedException, UnknownHostException {
         disconnect();
-        log.log(LogLevel.DEBUG, "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
+        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
         if (supervisor != null) disconnect();
         supervisor = new Supervisor(new Transport());
         addMethods();
-        log.log(LogLevel.DEBUG, "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
+        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
         acceptor = supervisor.listen(new Spec(port));
-        log.log(LogLevel.DEBUG, "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
+        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
         StringBuffer slobroks = new StringBuffer("(");
         for (String s : slobrokConnectionSpecs) {
             slobroks.append(" ").append(s);
@@ -123,7 +123,7 @@ public class RpcServer {
 
     public void disconnect() {
         if (register != null) {
-            log.log(LogLevel.DEBUG, "Fleetcontroller " + fleetControllerIndex + ": Disconnecting RPC server.");
+            log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Disconnecting RPC server.");
             register.shutdown();
             register = null;
         }
@@ -218,7 +218,7 @@ public class RpcServer {
             }
             try{
                 if (req.methodName().equals("getMaster")) {
-                    log.log(LogLevel.DEBUG, "Resolving RPC getMaster request");
+                    log.log(Level.FINE, "Resolving RPC getMaster request");
                     Integer master = masterHandler.getMaster();
                     String masterReason = masterHandler.getMasterReason();
                     req.returnValues().add(new Int32Value(master == null ? -1 : master));
@@ -230,7 +230,7 @@ public class RpcServer {
                     throw new IllegalStateException("Refusing to answer RPC calls as we are not the master fleetcontroller.");
                 }
                 if (req.methodName().equals("getNodeList")) {
-                    log.log(LogLevel.DEBUG, "Resolving RPC getNodeList request");
+                    log.log(Level.FINE, "Resolving RPC getNodeList request");
                     List<String> slobrok = new ArrayList<String>();
                     List<String> rpc = new ArrayList<String>();
                     for(NodeInfo node : cluster.getNodeInfo()) {
@@ -244,12 +244,12 @@ public class RpcServer {
                     req.returnValues().add(new StringArray(rpc.toArray(new String[rpc.size()])));
                     req.returnRequest();
                 } else if (req.methodName().equals("getSystemState")) {
-                    log.log(LogLevel.DEBUG, "Resolving RPC getSystemState request");
+                    log.log(Level.FINE, "Resolving RPC getSystemState request");
                     req.returnValues().add(new StringValue(""));
                     req.returnValues().add(new StringValue(systemState.toString(true)));
                     req.returnRequest();
                 } else if (req.methodName().equals("getNodeState")) {
-                    log.log(LogLevel.DEBUG, "Resolving RPC getNodeState request");
+                    log.log(Level.FINE, "Resolving RPC getNodeState request");
 
                     NodeType nodeType = NodeType.get(req.parameters().get(0).asString());
                     int nodeIndex = req.parameters().get(1).asInt32();
@@ -296,7 +296,7 @@ public class RpcServer {
                         changeListener.handleNewWantedNodeState(node, nodeState);
                     } else {
                         message = "Node " + node + " already had wanted state " + nodeState.toString();
-                        log.log(LogLevel.DEBUG, message);
+                        log.log(Level.FINE, message);
                     }
                     req.returnValues().add(new StringValue(message));
                     req.returnRequest();
@@ -309,7 +309,7 @@ public class RpcServer {
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     StringWriter sw = new StringWriter();
                     e.printStackTrace(new PrintWriter(sw));
-                    log.log(LogLevel.DEBUG, "Failed RPC Request: " + sw);
+                    log.log(Level.FINE, "Failed RPC Request: " + sw);
                 }
                 String errorMsg = e.getMessage();
                 if (errorMsg == null) { errorMsg = e.toString(); }

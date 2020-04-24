@@ -548,7 +548,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
             hiddenMessage = ExceptionUtils.getStackTraceAsString(e);;
-            log.log(LogLevel.DEBUG, "Unknown exception thrown for request " + httpRequest.getRequest() +
+            log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }
 
@@ -671,7 +671,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // If there's a pending DB store we have not yet been able to store the
         // current state bundle to ZK and must therefore _not_ allow it to be published.
         if (database.hasPendingClusterStateMetaDataStore()) {
-            log.log(LogLevel.DEBUG, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
+            log.log(Level.FINE, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
             return false;
         }
         boolean sentAny = false;
@@ -682,7 +682,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             && currentTime >= nextStateSendTime)
         {
             if (currentTime < firstAllowedStateBroadcast) {
-                log.log(LogLevel.DEBUG, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
+                log.log(Level.FINE, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
@@ -1037,7 +1037,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                         + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
-                log.log(LogLevel.DEBUG, "At time " + currentTime + " we set first system state broadcast time to be "
+                log.log(Level.FINE, "At time " + currentTime + " we set first system state broadcast time to be "
                         + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
                 didWork = true;
             }
@@ -1067,7 +1067,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 tick();
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.DEBUG, "Event thread stopped by interrupt exception: " + e);
+            log.log(Level.FINE, "Event thread stopped by interrupt exception: " + e);
         } catch (Throwable t) {
             t.printStackTrace();
             log.log(LogLevel.ERROR, "Fatal error killed fleet controller", t);

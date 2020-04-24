@@ -183,7 +183,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
-            log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
+            log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
                                    List.of(),
@@ -194,7 +194,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources),
                                    node.status().dockerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
-                log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
+                log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");
             }
         }
         return hosts;

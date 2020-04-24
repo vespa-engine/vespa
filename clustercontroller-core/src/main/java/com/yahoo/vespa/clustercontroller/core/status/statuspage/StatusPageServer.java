@@ -85,7 +85,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
             if (!isConnected()) {
                 log.log(LogLevel.INFO, "Fleetcontroller: Server Socket not ready after connect()");
             }
-            log.log(LogLevel.DEBUG, "Fleet controller status page viewer listening to " + ssocket.getLocalSocketAddress());
+            log.log(Level.FINE, "Fleet controller status page viewer listening to " + ssocket.getLocalSocketAddress());
             monitor.notifyAll();
         }
     }
@@ -149,7 +149,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     log.log(shouldBeConnected ? LogLevel.WARNING : LogLevel.DEBUG, "Caught IO exception in ServerSocket.accept(): " + e.getMessage());
                 }
                 if (connection == null) continue;
-                log.log(LogLevel.DEBUG, "Got a status page request.");
+                log.log(Level.FINE, "Got a status page request.");
                 String requestString = "";
                 OutputStream output = null;
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -168,7 +168,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                         if (s == null || s.equals("")) break;
                         sb.append(s).append("\n");
                     }
-                    log.log(LogLevel.DEBUG, "Got HTTP request: " + sb.toString());
+                    log.log(Level.FINE, "Got HTTP request: " + sb.toString());
 
                     HttpRequest httpRequest = null;
                     StatusPageResponse response = null;
@@ -255,7 +255,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 }
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.DEBUG,  "Status processing thread shut down by interrupt exception: " + e);
+            log.log(Level.FINE,  "Status processing thread shut down by interrupt exception: " + e);
         }
     }
 

@@ -42,19 +42,19 @@ public final class MbusServer extends AbstractResource implements ServerProvider
 
     @Override
     public void start() {
-        log.log(LogLevel.DEBUG, "Starting message bus server.");
+        log.log(Level.FINE, "Starting message bus server.");
         running.set(true);
     }
 
     @Override
     public void close() {
-        log.log(LogLevel.DEBUG, "Closing message bus server.");
+        log.log(Level.FINE, "Closing message bus server.");
         running.set(false);
     }
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying message bus server.");
+        log.log(Level.FINE, "Destroying message bus server.");
         running.set(false);
         sessionReference.close();
     }

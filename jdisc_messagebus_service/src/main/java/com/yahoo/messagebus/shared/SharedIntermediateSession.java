@@ -97,7 +97,7 @@ public class SharedIntermediateSession extends AbstractResource
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared intermediate session.");
+        log.log(Level.FINE, "Destroying shared intermediate session.");
         session.destroy();
         mbusReference.close();
     }

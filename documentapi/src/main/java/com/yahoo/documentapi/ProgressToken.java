@@ -306,7 +306,7 @@ public class ProgressToken {
                 && !superbucket.contains(progress)
                 && !progress.contains(superbucket)) {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "updateProgress called with non-contained bucket "
+                    log.log(Level.FINE, "updateProgress called with non-contained bucket "
                        + "pair " + superbucket + ":" + progress + ", but allowing anyway");
                 }
         }
@@ -323,7 +323,7 @@ public class ProgressToken {
         if (!progress.equals(FINISHED_BUCKET)) {
             if (entry.getState() != BucketState.BUCKET_ACTIVE) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "updateProgress called with sub-bucket that was "
+                    log.log(Level.FINE, "updateProgress called with sub-bucket that was "
                        + "not marked as active " + superbucket + ":" + progress);
                 }
             } else {
@@ -362,7 +362,7 @@ public class ProgressToken {
     protected void addBucket(BucketId superbucket, BucketId progress, BucketState state) {
         if (progress.equals(FINISHED_BUCKET)) {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Trying to add already finished superbucket "
+                log.log(Level.FINE, "Trying to add already finished superbucket "
                         + superbucket + "; ignoring it");
             }
             return;
@@ -796,7 +796,7 @@ public class ProgressToken {
                 // be discarded
                 if (rightSibling.getProgress().getUsedBits() != 0
                         && log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Bucket progress for " + rightCheck +
+                    log.log(Level.FINE, "Bucket progress for " + rightCheck +
                             " will be lost due to merging; potential for duplicates in result-set");
                 }
                 buckets.remove(bucketToKeyWrapper(rightCheck));

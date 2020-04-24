@@ -39,7 +39,7 @@ public class JacksonJsonResponse<T> extends HttpResponse {
     public void render(OutputStream outputStream) throws IOException {
         if (log.isLoggable(LogLevel.DEBUG)) {
             String json = jsonMapper.writeValueAsString(entity);
-            log.log(LogLevel.DEBUG, "Writing the following JSON to response output stream:\n" + json);
+            log.log(Level.FINE, "Writing the following JSON to response output stream:\n" + json);
             outputStream.write(json.getBytes());
         } else {
             jsonMapper.writeValue(outputStream, entity);

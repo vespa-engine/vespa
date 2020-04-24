@@ -175,7 +175,7 @@ public class TenantApplications {
     }
 
     private void applicationAdded(ApplicationId applicationId) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
+        log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
     private Path applicationPath(ApplicationId id) {

@@ -89,7 +89,7 @@ public class DelayedConfigResponses {
             removeWatcher();
             rpcServer.addToRequestQueue(request, true, null);
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
+                log.log(Level.FINE, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
             }
         }
 
@@ -169,7 +169,7 @@ public class DelayedConfigResponses {
      */
     final void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
         if (request.isDelayedResponse()) {
-            log.log(LogLevel.DEBUG, context.logPre()+"Request already delayed");
+            log.log(Level.FINE, context.logPre()+"Request already delayed");
         } else {            
             createQueueIfNotExists(context);
             BlockingQueue<DelayedConfigResponse> delayedResponsesQueue = delayedResponses.get(context.applicationId());
@@ -177,7 +177,7 @@ public class DelayedConfigResponses {
             request.setDelayedResponse(true);
             try {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
+                    log.log(Level.FINE, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
                             response.getRequest().getShortDescription());
                 }
                 // Config will be resolved in the run() method of DelayedConfigResponse,

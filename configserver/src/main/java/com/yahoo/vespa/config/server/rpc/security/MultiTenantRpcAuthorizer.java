@@ -84,7 +84,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     try {
                         getPeerIdentity(request)
                                 .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
-                        log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                        log.log(Level.FINE, () -> String.format("Authorization succeeded for request '%s' from '%s'",
                                                                    request.methodName(), request.target().toString()));
                     } catch (Throwable t) {
                         handleAuthorizationFailure(request, t);
@@ -158,7 +158,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
             log.log(LogLevel.INFO, errorMessage);
         }
-        log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
+        log.log(Level.FINE, throwable, throwable::getMessage);
         JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
         request.setError(error.code, errorMessage);
         request.returnRequest();
@@ -180,7 +180,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         }
         try {
             NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
-            log.log(LogLevel.DEBUG, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            log.log(Level.FINE, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
             return Optional.of(identity);
         } catch (NodeIdentifierException e) {
             throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);

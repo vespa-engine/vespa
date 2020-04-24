@@ -109,7 +109,7 @@ public class HostInfosServiceImpl implements HostInfosService {
             curator.framework().delete().forPath(path);
             return true;
         } catch (NoNodeException e) {
-            log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
+            log.log(Level.FINE, debugLogMessageIfNotExists, e);
             return false;
         } catch (Exception e) {
             throw new RuntimeException(e);

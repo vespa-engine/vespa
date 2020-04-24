@@ -395,7 +395,7 @@ public class StoragePolicy extends SlobrokPolicy {
                             return targetSpec;
                         } else {
                             sendRandomReason = "Want to use distributor " + target + " but it is not in slobrok. Sending to random.";
-                            log.log(LogLevel.DEBUG, "Target distributor is not in slobrok");
+                            log.log(Level.FINE, "Target distributor is not in slobrok");
                         }
                     } else {
                         context.setContext(new MessageContext(cachedClusterState));
@@ -407,7 +407,7 @@ public class StoragePolicy extends SlobrokPolicy {
                     context.setReply(reply);
                     return null;
                 } catch (Distribution.NoDistributorsAvailableException e) {
-                    log.log(LogLevel.DEBUG, "No distributors available; clearing cluster state");
+                    log.log(Level.FINE, "No distributors available; clearing cluster state");
                     safeCachedClusterState.set(null);
                     sendRandomReason = "No distributors available. Sending to random distributor.";
                     context.setContext(createRandomDistributorTargetContext());
@@ -482,7 +482,7 @@ public class StoragePolicy extends SlobrokPolicy {
                 // reject an operation bound to a particular bucket if it does not own the bucket in _both_
                 // the current and the next (transition target) state. Since it can happen during normal operation
                 // and will happen per client operation, we keep this as debug level to prevent spamming the logs.
-                log.log(LogLevel.DEBUG, msg);
+                log.log(Level.FINE, msg);
             } else if (newState.getVersion() > context.usedState.getVersion()) {
                 if (reply.getTrace().shouldTrace(1)) {
                     reply.getTrace().trace(1, "Message sent to distributor " + context.calculatedDistributor +

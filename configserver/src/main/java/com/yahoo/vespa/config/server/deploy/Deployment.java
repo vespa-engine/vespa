@@ -196,12 +196,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
 
         long sessionId = session.getSessionId();
         long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "sessionId=" + sessionId + 
+        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId + 
                                 ", current active session=" + currentActiveSessionSessionId);
         if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
                 currentActiveSessionSessionId != sessionId) {

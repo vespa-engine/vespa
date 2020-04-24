@@ -102,12 +102,12 @@ public class RPCTarget implements RequestWaiter {
         synchronized (this) {
             if (version != null) {
                 if (shouldLog) {
-                    log.log(LogLevel.DEBUG, "Version already available for target '" + name + "' (version " + version + ").");
+                    log.log(Level.FINE, "Version already available for target '" + name + "' (version " + version + ").");
                 }
                 hasVersion = true;
             } else {
                 if (shouldLog) {
-                    log.log(LogLevel.DEBUG, "Registering version handler '" + handler + "' for target '" + name + "'.");
+                    log.log(Level.FINE, "Registering version handler '" + handler + "' for target '" + name + "'.");
                 }
                 versionHandlers.add(handler);
                 if (!targetInvoked) {
@@ -120,7 +120,7 @@ public class RPCTarget implements RequestWaiter {
             handler.handleVersion(version);
         } else if (shouldInvoke) {
             if (shouldLog) {
-                log.log(LogLevel.DEBUG, "Invoking mbus.getVersion() on target '" + name + "'");
+                log.log(Level.FINE, "Invoking mbus.getVersion() on target '" + name + "'");
             }
             Request req = new Request("mbus.getVersion");
             target.invokeAsync(req, timeout, this);
@@ -138,7 +138,7 @@ public class RPCTarget implements RequestWaiter {
                 try {
                     version = new Version(str);
                     if (shouldLog) {
-                        log.log(LogLevel.DEBUG, "Target '" + name + "' has version " + version + ".");
+                        log.log(Level.FINE, "Target '" + name + "' has version " + version + ".");
                     }
                 } catch (IllegalArgumentException e) {
                     log.log(LogLevel.WARNING, "Failed to parse '" + str + "' as version for target '" + name + "'.", e);

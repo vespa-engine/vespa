@@ -43,21 +43,21 @@ public class HostSuspensionResource implements HostSuspensionApi {
         try {
             orchestrator.suspendAll(parentHostname, hostnames);
         } catch (BatchHostStateChangeDeniedException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
+            log.log(Level.FINE, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.CONFLICT);
         } catch (UncheckedTimeoutException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
+            log.log(Level.FINE, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.CONFLICT);
         } catch (BatchHostNameNotFoundException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
+            log.log(Level.FINE, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             // Note that we're returning BAD_REQUEST instead of NOT_FOUND because the resource identified
             // by the URL path was found. It's one of the hostnames in the request it failed to find.
             throw createWebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (BatchInternalErrorException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
+            log.log(Level.FINE, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
-        log.log(LogLevel.DEBUG, "Suspended " + hostnames + " with parent " + parentHostname);
+        log.log(Level.FINE, "Suspended " + hostnames + " with parent " + parentHostname);
         return BatchOperationResult.successResult();
     }
 

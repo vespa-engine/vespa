@@ -101,7 +101,7 @@ public class FileServer {
         try {
             return root.getFile(reference).exists();
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.DEBUG, "Failed locating file reference '" + reference + "' with error " + e.toString());
+            log.log(Level.FINE, "Failed locating file reference '" + reference + "' with error " + e.toString());
         }
         return false;
     }
@@ -117,7 +117,7 @@ public class FileServer {
 
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
-        log.log(LogLevel.DEBUG, () -> "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+        log.log(Level.FINE, () -> "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
         FileReferenceData fileData = FileReferenceDataBlob.empty(reference, file.getName());
@@ -131,7 +131,7 @@ public class FileServer {
 
         try {
             target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-            log.log(LogLevel.DEBUG, "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+            log.log(Level.FINE, "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
         } finally {
@@ -156,7 +156,7 @@ public class FileServer {
     }
 
     private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
-        log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "' from " + request.target());
+        log.log(Level.FINE, () -> "Received request for reference '" + fileReference + "' from " + request.target());
 
         boolean fileExists;
         try {
@@ -178,10 +178,10 @@ public class FileServer {
     // This is to avoid config servers asking each other for a file that does not exist
     private boolean download(String fileReference, boolean downloadFromOtherSourceIfNotFound) {
         if (downloadFromOtherSourceIfNotFound) {
-            log.log(LogLevel.DEBUG, "File not found, downloading from another source");
+            log.log(Level.FINE, "File not found, downloading from another source");
             return download(fileReference).isPresent();
         } else {
-            log.log(LogLevel.DEBUG, "File not found, will not download from another source since request came from another config server");
+            log.log(Level.FINE, "File not found, will not download from another source since request came from another config server");
             return false;
         }
     }

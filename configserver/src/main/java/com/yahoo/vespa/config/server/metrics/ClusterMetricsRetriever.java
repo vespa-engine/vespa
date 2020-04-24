@@ -76,7 +76,7 @@ public class ClusterMetricsRetriever {
             throw new RuntimeException(e);
         }
 
-        log.log(LogLevel.DEBUG, () ->
+        log.log(Level.FINE, () ->
                 String.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );
 

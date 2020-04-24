@@ -82,7 +82,7 @@ public class FileDirectory  {
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {
                 try {
-                    log.log(LogLevel.DEBUG, "Calculating hash for '" + path + "'");
+                    log.log(Level.FINE, "Calculating hash for '" + path + "'");
                     return hash(path.toFile(), hasher);
                 } catch (IOException e) {
                     log.log(LogLevel.WARNING, "Failed getting hash from '" + path + "'");
@@ -143,15 +143,15 @@ public class FileDirectory  {
             File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
-                log.log(LogLevel.DEBUG, "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
+                log.log(Level.FINE, "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
                 if (source.isDirectory()) {
-                    log.log(LogLevel.DEBUG, "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
+                    log.log(Level.FINE, "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
                     IOUtils.copyDirectory(source, destination, -1);
                 } else {
                     copyFile(source, destination);
                 }
                 if (!destinationDir.exists()) {
-                    log.log(LogLevel.DEBUG, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+                    log.log(Level.FINE, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
                         log.log(LogLevel.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
                     }
@@ -168,7 +168,7 @@ public class FileDirectory  {
 
     private void logfileInfo(File file ) throws IOException {
         BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        log.log(LogLevel.DEBUG, "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+        log.log(Level.FINE, "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
                 ", modified " + basicFileAttributes.lastModifiedTime() +
                 ", size " + basicFileAttributes.size() + ")");
     }

@@ -50,7 +50,7 @@ public class MemoryCache {
             return;
         }
 
-        log.log(LogLevel.DEBUG, () -> "Putting '" + config + "' into memory cache");
+        log.log(Level.FINE, () -> "Putting '" + config + "' into memory cache");
         cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);
     }
 
@@ -114,11 +114,11 @@ public class MemoryCache {
         try {
             filename = path + File.separator + createCacheFileName(config);
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Writing '" + config.getKey() + "' to '" + filename + "'");
+                log.log(Level.FINE, "Writing '" + config.getKey() + "' to '" + filename + "'");
             }
             final Payload payload = config.getPayload();
             long protocolVersion = 3;
-            log.log(LogLevel.DEBUG, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
+            log.log(Level.FINE, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
             writer = IOUtils.createWriter(filename, "UTF-8", false);
 
             // First three lines are meta-data about config as comment lines, fourth line is empty

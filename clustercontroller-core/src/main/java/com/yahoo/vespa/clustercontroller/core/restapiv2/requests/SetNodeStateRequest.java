@@ -117,7 +117,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         NodeStateChangeChecker.Result result = cluster.calculateEffectOfNewState(
                 node, currentClusterState, condition, wantedState, newWantedState);
 
-        log.log(LogLevel.DEBUG, "node=" + node +
+        log.log(Level.FINE, "node=" + node +
                 " current-cluster-state=" + currentClusterState + // Includes version in output format
                 " condition=" + condition +
                 " wanted-state=" + wantedState +

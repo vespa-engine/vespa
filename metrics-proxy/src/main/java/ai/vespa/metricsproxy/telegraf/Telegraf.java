@@ -76,7 +76,7 @@ public class Telegraf extends AbstractComponent {
         ProcessResult processResult = uncheck(() -> processExecutor.execute(command))
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
 
-        logger.log(LogLevel.DEBUG, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
+        logger.log(Level.FINE, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
                                                         processResult.exitCode,
                                                         processResult.stdOut,
                                                         processResult.stdErr));

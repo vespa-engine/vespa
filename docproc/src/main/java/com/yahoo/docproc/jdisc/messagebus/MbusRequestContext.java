@@ -92,7 +92,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
             }
         }
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Forwarding " + messages.size() + " messages from " + processings.size() +
+            log.log(Level.FINE, "Forwarding " + messages.size() + " messages from " + processings.size() +
                                     " processings.");
         }
         if (messages.isEmpty()) {

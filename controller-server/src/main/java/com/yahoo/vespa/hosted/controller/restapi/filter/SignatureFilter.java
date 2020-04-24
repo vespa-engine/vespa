@@ -59,7 +59,7 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                 });
             }
             catch (Exception e) {
-                logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
+                logger.log(Level.FINE, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
             }
         return Optional.empty();
     }

@@ -89,7 +89,7 @@ public class RankSetupValidator extends Validator {
                 // Give up, don't say same error msg repeatedly
                 deleteTempDir(tempDir);
             }
-            log.log(LogLevel.DEBUG, String.format("Validating %s for %s, %s took %s ms",
+            log.log(Level.FINE, String.format("Validating %s for %s, %s took %s ms",
                                                   sdName,
                                                   searchCluster,
                                                   configId,

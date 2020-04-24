@@ -111,7 +111,7 @@ public class VisitorIterator {
 
             if (!progress.isFinished()) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Importing unfinished progress token with " +
+                    log.log(Level.FINE, "Importing unfinished progress token with " +
                             "bits: " + progressToken.getDistributionBitCount() +
                             ", active: " + progressToken.getActiveBucketCount() +
                             ", pending: " + progressToken.getPendingBucketCount() +
@@ -123,7 +123,7 @@ public class VisitorIterator {
                     // Lower all active to pending
                     if (progressToken.getActiveBucketCount() > 0) {
                         if (log.isLoggable(LogLevel.DEBUG)) {
-                            log.log(LogLevel.DEBUG, "Progress token had active buckets upon range " +
+                            log.log(Level.FINE, "Progress token had active buckets upon range " +
                                     "construction. Setting these as pending");
                         }
                         progressToken.setAllBucketsToState(ProgressToken.BucketState.BUCKET_PENDING);
@@ -137,7 +137,7 @@ public class VisitorIterator {
                     correctTruncatedBucketCursor();
 
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Partial bucket space progress; continuing "+
+                        log.log(Level.FINE, "Partial bucket space progress; continuing "+
                                 "from position " + progressToken.getBucketCursor());
                     }
                 }
@@ -196,7 +196,7 @@ public class VisitorIterator {
             // single-bit bucket once did
             if (isLosslessResetPossible()) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "At start of bucket space and all " +
+                    log.log(Level.FINE, "At start of bucket space and all " +
                             "buckets have no progress; doing a lossless reset " +
                             "instead of splitting/merging");
                 }
@@ -263,7 +263,7 @@ public class VisitorIterator {
                 }
             }
             if ((bucketsSplit > 0 || bucketsMerged > 0) && log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Existing progress' pending buckets had inconsistent " +
+                log.log(Level.FINE, "Existing progress' pending buckets had inconsistent " +
                         "distribution bits; performed " + bucketsSplit + " split ops and " +
                         bucketsMerged + " merge ops. Pending: " + pendingBefore + " -> " +
                         p.getPendingBucketCount());
@@ -335,7 +335,7 @@ public class VisitorIterator {
             if (progressToken.getActiveBucketCount() > 0) {
                 flushActive = true;
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Holding off new/pending buckets and consistency " +
+                    log.log(Level.FINE, "Holding off new/pending buckets and consistency " +
                             "correction until all " + progress.getActiveBucketCount() +
                             " active buckets have been updated");
                 }
@@ -350,7 +350,7 @@ public class VisitorIterator {
                 correctInconsistentPending(distributionBitCount);
                 if (delta > 0) {
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Increasing distribution bits for full bucket " +
+                        log.log(Level.FINE, "Increasing distribution bits for full bucket " +
                                 "space range source from " + progressToken.getDistributionBitCount() + " to " +
                                 distributionBitCount);
                     }
@@ -360,7 +360,7 @@ public class VisitorIterator {
                     progressToken.setBucketCursor(progressToken.getBucketCursor() << delta);
                 } else if (delta < 0) {
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Decreasing distribution bits for full bucket " +
+                        log.log(Level.FINE, "Decreasing distribution bits for full bucket " +
                                 "space range source from " + progressToken.getDistributionBitCount() +
                                 " to " + distributionBitCount + " bits");
                     }
@@ -387,14 +387,14 @@ public class VisitorIterator {
                     // consistency fix. This simplifies things greatly
                     assert(flushActive);
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Received non-finished bucket " +
+                        log.log(Level.FINE, "Received non-finished bucket " +
                                 superbucket + " with wrong distribution bit count (" +
                                 superbucket.getUsedBits() + "). Waiting to correct " +
                                 "until all active are done");
                     }
                 } else {
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Received finished bucket " +
+                        log.log(Level.FINE, "Received finished bucket " +
                                 superbucket + " with wrong distribution bit count (" +
                                 superbucket.getUsedBits() + "). Waiting to correct " +
                                 "until all active are done");
@@ -405,7 +405,7 @@ public class VisitorIterator {
             if (progressToken.getActiveBucketCount() == 0) {
                 if (flushActive) {
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "All active buckets flushed, " +
+                        log.log(Level.FINE, "All active buckets flushed, " +
                                 "correcting progress token and continuing normal operation");
                     }
                     // Trigger the actual bucket state change this time
@@ -509,7 +509,7 @@ public class VisitorIterator {
             progress.setDistributionBitCount(distributionBitCount);
             this.distributionBitCount = distributionBitCount;
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Set distribution bit count to "
+                log.log(Level.FINE, "Set distribution bit count to "
                         + distributionBitCount + " for explicit bucket source (no-op)");
             }
         }
@@ -722,7 +722,7 @@ public class VisitorIterator {
             bucketSource.setDistributionBitCount(distBits, progressToken);
             distributionBitCount = distBits;
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Set visitor iterator distribution bit count to "
+                log.log(Level.FINE, "Set visitor iterator distribution bit count to "
                         + distBits);
             }
         }

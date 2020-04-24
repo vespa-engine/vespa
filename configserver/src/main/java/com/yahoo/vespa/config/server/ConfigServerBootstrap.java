@@ -97,7 +97,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-        log.log(LogLevel.DEBUG, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
+        log.log(Level.FINE, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:
@@ -121,7 +121,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         log.log(LogLevel.INFO, "Stopping config server");
         down();
         server.stop();
-        log.log(LogLevel.DEBUG, "RPC server stopped");
+        log.log(Level.FINE, "RPC server stopped");
         rpcServerExecutor.shutdown();
         serverThread.ifPresent(thread -> {
             try {

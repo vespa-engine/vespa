@@ -42,7 +42,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
     public Progress process(Processing processing) {
         if (processing.getDocumentOperations().size() != 1) {
             //we were given more than one document, return
-            log.log(LogLevel.DEBUG, "More than one document given, returning. (Was given "
+            log.log(Level.FINE, "More than one document given, returning. (Was given "
                                     + processing.getDocumentOperations().size() + " documents).");
             return Progress.DONE;
         }
@@ -57,14 +57,14 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         Array<Document> innerDocuments = (Array<Document>) outerDoc.getFieldValue(arrayFieldName);
         if (innerDocuments == null) {
             //the document does not have the field, return
-            log.log(LogLevel.DEBUG, "The given Document does not have a field value for field "
+            log.log(Level.FINE, "The given Document does not have a field value for field "
                                     + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
             return Progress.DONE;
         }
 
         if (innerDocuments.size() == 0) {
             //the array is empty, return
-            log.log(LogLevel.DEBUG, "The given Document does not have any elements in array field "
+            log.log(Level.FINE, "The given Document does not have any elements in array field "
                                     + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
             return Progress.DONE;
         }
@@ -118,7 +118,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
     static boolean doProcessOuterDocument(Object o, String documentTypeName) {
         if ( ! (o instanceof DocumentOperation)) {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, o + " is not a DocumentOperation.");
+                log.log(Level.FINE, o + " is not a DocumentOperation.");
             }
             return false;
         }
@@ -127,7 +127,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         if ( ! (outerDocOp instanceof DocumentPut)) {
             //this is not a put, return
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Given DocumentOperation is not a DocumentPut, returning. (Was given "
+                log.log(Level.FINE, "Given DocumentOperation is not a DocumentPut, returning. (Was given "
                                         + outerDocOp + ").");
             }
             return false;
@@ -138,7 +138,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         if (!type.getName().equalsIgnoreCase(documentTypeName)) {
             //this is not the right document type
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Given Document is of wrong type, returning. (Was given " + outerDoc + ").");
+                log.log(Level.FINE, "Given Document is of wrong type, returning. (Was given " + outerDoc + ").");
             }
             return false;
         }

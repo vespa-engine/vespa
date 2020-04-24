@@ -149,7 +149,7 @@ public class NodePrioritizer {
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
-            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + host);
+            log.log(Level.FINE, "Trying to add new Docker node on " + host);
             Optional<IP.Allocation> allocation;
             try {
                 allocation = host.ipConfig().pool().findAllocation(allNodes, nameResolver);
@@ -167,7 +167,7 @@ public class NodePrioritizer {
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
-                log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
+                log.log(Level.FINE, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
             }
         }

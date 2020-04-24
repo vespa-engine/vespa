@@ -105,16 +105,16 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                       SessionZooKeeperClient sessionZKClient,
                                                       TimeoutBudget timeoutBudget,
                                                       Clock clock) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
+        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
         sessionZKClient.createNewSession(clock.instant().toEpochMilli(), TimeUnit.MILLISECONDS);
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
+        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
+        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
         SessionContext context = new SessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId), applicationRepo, hostRegistry, flagSource);
         LocalSession session = new LocalSession(tenant, sessionId, sessionPreparer, context);
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
+        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
+        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
         return session;
     }
 
@@ -127,7 +127,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
         long activeSessionId = getActiveSessionId(existingApplicationId);
-        logger.log(LogLevel.DEBUG, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
+        logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);

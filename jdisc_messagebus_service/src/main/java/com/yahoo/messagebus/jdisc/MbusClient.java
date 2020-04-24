@@ -72,7 +72,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying message bus client.");
+        log.log(Level.FINE, "Destroying message bus client.");
         sessionReference.close();
         done = true;
     }

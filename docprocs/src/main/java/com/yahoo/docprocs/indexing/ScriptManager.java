@@ -35,22 +35,22 @@ public class ScriptManager {
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
         Map<String, DocumentScript> scripts = documentFieldScripts.get(inputType.getName());
         if (scripts != null) {
-            log.log(LogLevel.DEBUG, "Using script for type '%s'.", inputType.getName());
+            log.log(Level.FINE, "Using script for type '%s'.", inputType.getName());
             return scripts;
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
             if (inputType.inherits(docTypeMgr.getDocumentType(entry.getKey()))) {
-                log.log(LogLevel.DEBUG, "Using script of super-type '%s'.", entry.getKey());
+                log.log(Level.FINE, "Using script of super-type '%s'.", entry.getKey());
                 return entry.getValue();
             }
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
             if (docTypeMgr.getDocumentType(entry.getKey()).inherits(inputType)) {
-                log.log(LogLevel.DEBUG, "Using script of sub-type '%s'.", entry.getKey());
+                log.log(Level.FINE, "Using script of sub-type '%s'.", entry.getKey());
                 return entry.getValue();
             }
         }
-        log.log(LogLevel.DEBUG, "No script for type '%s'.", inputType.getName());
+        log.log(Level.FINE, "No script for type '%s'.", inputType.getName());
         return null;
     }
 
@@ -63,7 +63,7 @@ public class ScriptManager {
         if (fieldScripts != null) {
             DocumentScript script = fieldScripts.get(inputFieldName);
             if (script != null) {
-                log.log(LogLevel.DEBUG, "Using script for type '%s' and field '%s'.", inputType.getName(), inputFieldName);
+                log.log(Level.FINE, "Using script for type '%s' and field '%s'.", inputType.getName(), inputFieldName);
                 return script;
             }
         }

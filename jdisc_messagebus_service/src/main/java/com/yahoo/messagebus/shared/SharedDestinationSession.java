@@ -78,7 +78,7 @@ public class SharedDestinationSession extends AbstractResource implements Messag
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared destination session.");
+        log.log(Level.FINE, "Destroying shared destination session.");
         session.destroy();
         mbusReference.close();
     }

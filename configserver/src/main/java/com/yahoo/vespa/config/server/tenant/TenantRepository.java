@@ -121,10 +121,10 @@ public class TenantRepository {
         } else {
             this.directoryCache = Optional.empty();
         }
-        log.log(LogLevel.DEBUG, "Creating all tenants");
+        log.log(Level.FINE, "Creating all tenants");
         bootstrapTenants();
         notifyTenantsLoaded();
-        log.log(LogLevel.DEBUG, "All tenants created");
+        log.log(Level.FINE, "All tenants created");
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
@@ -153,7 +153,7 @@ public class TenantRepository {
     /** Public for testing. */
     public synchronized void updateTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
-        log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
+        log.log(Level.FINE, "Create tenants, tenants found in zookeeper: " + allTenants);
         for (TenantName tenantName : Set.copyOf(tenants.keySet()))
             if ( ! allTenants.contains(tenantName))
                 zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));

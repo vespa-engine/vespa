@@ -50,7 +50,7 @@ public class SharedSourceSession extends AbstractResource implements ClientSessi
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared source session.");
+        log.log(Level.FINE, "Destroying shared source session.");
         session.close();
         mbusReference.close();
     }

@@ -68,10 +68,10 @@ public class MasterDataGatherer {
                 case NodeDeleted:
                         // We get this event when fleetcontrollers shut down and node in dir disappears. But it should also trigger a NodeChildrenChanged event, so
                         // ignoring this one.
-                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Node deleted event gotten. Ignoring it, expecting a NodeChildrenChanged event too.");
+                    log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Node deleted event gotten. Ignoring it, expecting a NodeChildrenChanged event too.");
                     break;
                 case None:
-                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Got ZooKeeper event None.");
+                    log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got ZooKeeper event None.");
             }
         }
     }
@@ -90,7 +90,7 @@ public class MasterDataGatherer {
                 for (String node : nodes) {
                     int index = Integer.parseInt(node);
                     nextMasterData.put(index, null);
-                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
+                    log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
                             + zooKeeperRoot + index + "' to see vote");
                     session.getData(zooKeeperRoot + "indexes/" + index, changeWatcher, nodeListener, null);
                     // Invocation of cycleCompleted() for fully accumulated election state will happen
@@ -127,7 +127,7 @@ public class MasterDataGatherer {
                     Integer value = Integer.valueOf(data);
                     if (nextMasterData.containsKey(index)) {
                         if (value.equals(nextMasterData.get(index))) {
-                            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ", which already was " + value + ".");
+                            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ", which already was " + value + ".");
                         } else {
                             log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ". Altering vote from " + nextMasterData.get(index) + " to " + value + ".");
                             nextMasterData.put(index, value);
@@ -143,7 +143,7 @@ public class MasterDataGatherer {
                     }
                 }
             }
-            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Got votes for all fleetcontrollers. Sending event with new fleet data for update");
+            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got votes for all fleetcontrollers. Sending event with new fleet data for update");
             cycleCompleted();
         }
     }
@@ -173,14 +173,14 @@ public class MasterDataGatherer {
         Map<Integer, Integer> copy;
         synchronized (nextMasterData) {
             if (nextMasterData.equals(masterData)) {
-                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": No change in master data detected, not sending it on");
+                log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": No change in master data detected, not sending it on");
                 // for(Integer i : nextMasterData.keySet()) { System.err.println(i + " -> " + nextMasterData.get(i)); }
                 return;
             }
             masterData = new TreeMap<Integer, Integer>(nextMasterData);
             copy = masterData;
         }
-        log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Got new master data, sending it on");
+        log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got new master data, sending it on");
         listener.handleMasterData(copy);
     }
 

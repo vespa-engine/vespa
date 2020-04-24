@@ -39,22 +39,22 @@ public class HostHandler extends HttpHandler {
     @Override
     public HttpResponse handleGET(HttpRequest request) {
         String hostname = getBindingMatch(request).group(2);
-        log.log(LogLevel.DEBUG, "hostname=" + hostname);
+        log.log(Level.FINE, "hostname=" + hostname);
 
         HostRegistry<TenantName> tenantHostRegistry = hostRegistries.getTenantHostRegistry();
-        log.log(LogLevel.DEBUG, "hosts in tenant host registry '" + tenantHostRegistry + "' " + tenantHostRegistry.getAllHosts());
+        log.log(Level.FINE, "hosts in tenant host registry '" + tenantHostRegistry + "' " + tenantHostRegistry.getAllHosts());
         TenantName tenant = tenantHostRegistry.getKeyForHost(hostname);
         if (tenant == null) return createError(hostname);
-        log.log(LogLevel.DEBUG, "tenant=" + tenant);
+        log.log(Level.FINE, "tenant=" + tenant);
         HostRegistry<ApplicationId> applicationIdHostRegistry = hostRegistries.getApplicationHostRegistry(tenant);
         ApplicationId applicationId;
         if (applicationIdHostRegistry == null) return createError(hostname);
         applicationId = applicationIdHostRegistry.getKeyForHost(hostname);
-        log.log(LogLevel.DEBUG, "applicationId=" + applicationId);
+        log.log(Level.FINE, "applicationId=" + applicationId);
         if (applicationId == null) {
             return createError(hostname);
         } else {
-            log.log(LogLevel.DEBUG, "hosts in application host registry '" + applicationIdHostRegistry + "' " + applicationIdHostRegistry.getAllHosts());
+            log.log(Level.FINE, "hosts in application host registry '" + applicationIdHostRegistry + "' " + applicationIdHostRegistry.getAllHosts());
             return new HostResponse(Response.Status.OK, applicationId, zone);
         }
     }

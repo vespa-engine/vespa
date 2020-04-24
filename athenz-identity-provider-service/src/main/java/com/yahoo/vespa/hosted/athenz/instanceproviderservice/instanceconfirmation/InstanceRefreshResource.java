@@ -34,7 +34,7 @@ public class InstanceRefreshResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public InstanceConfirmation confirmInstanceRefresh(InstanceConfirmation instanceConfirmation) {
-        log.log(LogLevel.DEBUG, instanceConfirmation.toString());
+        log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidRefresh(instanceConfirmation)) {
             log.log(LogLevel.ERROR, "Invalid instance refresh: " + instanceConfirmation);
             throw new ForbiddenException("Instance is invalid");

@@ -52,7 +52,7 @@ public class DnsNameResolver implements NameResolver {
             return InetAddresses.isInetAddress(hostname) ? Optional.empty() : Optional.of(hostname);
         } catch (UnknownHostException e) {
             // This is not an exceptional state hence the debug level
-            logger.log(LogLevel.DEBUG, "Unable to resolve ipaddress", e);
+            logger.log(Level.FINE, "Unable to resolve ipaddress", e);
         }
         return Optional.empty();
     }

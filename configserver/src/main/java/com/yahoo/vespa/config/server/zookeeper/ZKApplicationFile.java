@@ -150,7 +150,7 @@ class ZKApplicationFile extends ApplicationFile {
         StringWriter writer = new StringWriter();
         try {
             mapper.writeValue(writer, new MetaData(status, input == null ? "" : ConfigUtils.getMd5(input)));
-            log.log(LogLevel.DEBUG, "Writing meta file to " + metaPath);
+            log.log(Level.FINE, "Writing meta file to " + metaPath);
             zkApp.putData(metaPath, writer.toString());
         } catch (IOException e) {
             throw new RuntimeException("Error writing meta file to " + metaPath, e);
@@ -159,7 +159,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     public MetaData getMetaData() {
         String metaPath = getZKPath(getMetaPath());
-        log.log(LogLevel.DEBUG, "Getting metadata for " + metaPath);
+        log.log(Level.FINE, "Getting metadata for " + metaPath);
         if (!zkApp.exists(getZKPath(path))) {
             if (zkApp.exists(metaPath)) {
                 return getMetaDataFromZk(metaPath);

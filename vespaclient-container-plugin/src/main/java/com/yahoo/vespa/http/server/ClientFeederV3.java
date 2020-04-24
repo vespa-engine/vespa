@@ -170,7 +170,7 @@ class ClientFeederV3 {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
             } catch (IOException ioe) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, Exceptions.toMessageString(ioe), ioe);
+                    log.log(Level.FINE, Exceptions.toMessageString(ioe), ioe);
                 }
                 return Optional.empty();
             }

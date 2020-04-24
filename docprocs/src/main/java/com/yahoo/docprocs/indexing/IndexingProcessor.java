@@ -89,14 +89,14 @@ public class IndexingProcessor extends DocumentProcessor {
     private void processDocument(DocumentPut prev, List<DocumentOperation> out) {
         DocumentScript script = scriptMgr.getScript(prev.getDocument().getDataType());
         if (script == null) {
-            log.log(LogLevel.DEBUG, "No indexing script for document '%s'.", prev.getId());
+            log.log(Level.FINE, "No indexing script for document '%s'.", prev.getId());
             out.add(prev);
             return;
         }
-        log.log(LogLevel.DEBUG, "Processing document '%s'.", prev.getId());
+        log.log(Level.FINE, "Processing document '%s'.", prev.getId());
         Document next = script.execute(adapterFactory, prev.getDocument());
         if (next == null) {
-            log.log(LogLevel.DEBUG, "Document '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Document '" + prev.getId() + "' produced no output.");
             return;
         }
 
@@ -106,14 +106,14 @@ public class IndexingProcessor extends DocumentProcessor {
     private void processUpdate(DocumentUpdate prev, List<DocumentOperation> out) {
         DocumentScript script = scriptMgr.getScript(prev.getType());
         if (script == null) {
-            log.log(LogLevel.DEBUG, "No indexing script for update '%s'.", prev.getId());
+            log.log(Level.FINE, "No indexing script for update '%s'.", prev.getId());
             out.add(prev);
             return;
         }
-        log.log(LogLevel.DEBUG, "Processing update '%s'.", prev.getId());
+        log.log(Level.FINE, "Processing update '%s'.", prev.getId());
         DocumentUpdate next = script.execute(adapterFactory, prev);
         if (next == null) {
-            log.log(LogLevel.DEBUG, "Update '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Update '" + prev.getId() + "' produced no output.");
             return;
         }
         next.setCondition(prev.getCondition());
@@ -121,7 +121,7 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     private void processRemove(DocumentRemove prev, List<DocumentOperation> out) {
-        log.log(LogLevel.DEBUG, "Not processing remove '%s'.", prev.getId());
+        log.log(Level.FINE, "Not processing remove '%s'.", prev.getId());
         out.add(prev);
     }
 

@@ -35,7 +35,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      */
     public void process(DocumentPut put) {
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + put);
+            log.log(Level.FINE, "Ignored " + put);
         }
     }
 
@@ -48,7 +48,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      */
     public void process(DocumentUpdate update) {
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + update);
+            log.log(Level.FINE, "Ignored " + update);
         }
     }
 
@@ -61,7 +61,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      */
     public void process(DocumentRemove remove) {
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + remove);
+            log.log(Level.FINE, "Ignored " + remove);
         }
     }
 
@@ -97,7 +97,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
                 }
             } catch (RuntimeException e) {
                 if (log.isLoggable(LogLevel.DEBUG) && initialSize != 1) {
-                    log.log(LogLevel.DEBUG,
+                    log.log(Level.FINE,
                             "Processing of document failed, from processing.getDocumentOperations() containing " +
                             initialSize + " DocumentOperation(s).", e);
                 }

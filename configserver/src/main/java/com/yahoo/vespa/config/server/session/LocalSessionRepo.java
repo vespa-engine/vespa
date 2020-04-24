@@ -78,7 +78,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     public void purgeOldSessions() {
-        log.log(LogLevel.DEBUG, "Purging old sessions");
+        log.log(Level.FINE, "Purging old sessions");
         try {
             List<LocalSession> sessions = new ArrayList<>(listSessions());
             for (LocalSession candidate : sessions) {
@@ -90,7 +90,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         } catch (Throwable e) {
             log.log(LogLevel.WARNING, "Error when purging old sessions ", e);
         }
-        log.log(LogLevel.DEBUG, "Done purging old sessions");
+        log.log(Level.FINE, "Done purging old sessions");
     }
 
     private boolean hasExpired(LocalSession candidate) {
@@ -103,7 +103,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     void deleteSession(LocalSession session) {
         long sessionId = session.getSessionId();
-        log.log(LogLevel.DEBUG, "Deleting local session " + sessionId);
+        log.log(Level.FINE, "Deleting local session " + sessionId);
         LocalSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null)  watcher.close();
         removeSession(sessionId);

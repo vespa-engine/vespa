@@ -263,7 +263,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
         String logPre = TenantRepository.logPre(applicationId);
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
+            log.log(Level.FINE, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
         }
         int responsesSent = 0;
         CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -281,7 +281,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                     responsesSent++;
                 }
             } else {
-                log.log(LogLevel.DEBUG, logPre + "Timer already cancelled or finished or never scheduled");
+                log.log(Level.FINE, logPre + "Timer already cancelled or finished or never scheduled");
             }
         }
 
@@ -293,7 +293,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
         }
 
-        log.log(LogLevel.DEBUG, logPre + "Finished reloading " + responsesSent + " requests");
+        log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
     }
 
     private void logRequestDebug(LogLevel level, String message, JRTServerConfigRequest request) {
@@ -304,7 +304,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void hostsUpdated(TenantName tenant, Collection<String> newHosts) {
-        log.log(LogLevel.DEBUG, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
+        log.log(Level.FINE, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
         hostRegistry.update(tenant, newHosts);
     }
 
@@ -322,7 +322,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     public void respond(JRTServerConfigRequest request) {
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Trace at request return:\n" + request.getRequestTrace().toString());
+            log.log(Level.FINE, "Trace at request return:\n" + request.getRequestTrace().toString());
         }
         request.getRequest().returnRequest();
     }
@@ -338,8 +338,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         if (tenant == null) {
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName();
-                log.log(LogLevel.DEBUG, message);
-                log.log(LogLevel.DEBUG, "hosts in host registry: " + hostRegistry.getAllHosts());
+                log.log(Level.FINE, message);
+                log.log(Level.FINE, "hosts in host registry: " + hostRegistry.getAllHosts());
                 trace.trace(6, message);
             }
             return Optional.empty();
@@ -420,7 +420,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
+        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
         tenantProviders.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);
     }
@@ -433,7 +433,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantCreate(TenantName tenant, TenantHandlerProvider tenantHandlerProvider) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
+        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
         tenantProviders.put(tenant, tenantHandlerProvider);
     }
 

@@ -28,7 +28,7 @@ public class HostRegistry<T> implements HostValidator<T> {
     public synchronized void update(T key, Collection<String> newHosts) {
         verifyHosts(key, newHosts);
         Collection<String> currentHosts = getHostsForKey(key);
-        log.log(LogLevel.DEBUG, () -> "Setting hosts for key '" + key + "', " +
+        log.log(Level.FINE, () -> "Setting hosts for key '" + key + "', " +
                 "newHosts: " + newHosts + ", " +
                 "currentHosts: " + currentHosts);
         Collection<String> removedHosts = getRemovedHosts(newHosts, currentHosts);
@@ -71,14 +71,14 @@ public class HostRegistry<T> implements HostValidator<T> {
 
     private void removeHosts(Collection<String> removedHosts) {
         for (String host : removedHosts) {
-            log.log(LogLevel.DEBUG, () -> "Removing " + host);
+            log.log(Level.FINE, () -> "Removing " + host);
             host2KeyMap.remove(host);
         }
     }
 
     private void addHosts(T key, Collection<String> newHosts) {
         for (String host : newHosts) {
-            log.log(LogLevel.DEBUG, () -> "Adding " + host);
+            log.log(Level.FINE, () -> "Adding " + host);
             host2KeyMap.put(host, key);
         }
     }

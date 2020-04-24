@@ -128,14 +128,14 @@ public class SharedSender implements ReplyHandler {
                 log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + " count was " + owner.getPending().val());
             }
             if (owner.isAborted()) {
-                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which is aborted");
+                log.log(Level.FINE, "Received reply for file " + owner.toString() + " which is aborted");
                 owner.getPending().clear();
                 return;
             }
             if (owner.handleReply(r)) {
                 owner.getPending().dec();
             } else {
-                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which wants to abort");
+                log.log(Level.FINE, "Received reply for file " + owner.toString() + " which wants to abort");
                 owner.getPending().clear();
             }
         } else {

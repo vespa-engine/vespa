@@ -101,7 +101,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                 prepare();
 
                 if (hostSpecs.isEmpty()) {
-                    logger.log(LogLevel.DEBUG, "No nodes to provision for " + application.getCapacity().type() + ", removing application");
+                    logger.log(Level.FINE, "No nodes to provision for " + application.getCapacity().type() + ", removing application");
                     removeApplication(application.getApplicationId());
                 } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
@@ -112,7 +112,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                             application.getApplicationId(),
                             hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
 
-                    logger.log(LogLevel.DEBUG, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
+                    logger.log(Level.FINE, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }
             }
         }

@@ -167,7 +167,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         if (prematureCrashCount != count) {
             prematureCrashCount = count;
-            log.log(LogLevel.DEBUG, "Premature crash count on " + toString() + " set to " + count);
+            log.log(Level.FINE, "Premature crash count on " + toString() + " set to " + count);
         }
     }
     public int getPrematureCrashCount() { return prematureCrashCount; }
@@ -309,17 +309,17 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (state.getState().oneOf("dsm") && !reportedState.getState().oneOf("dsm")) {
             wentDownWithStartTime = reportedState.getStartTimestamp();
             wentDownAtClusterState = getNewestSystemStateSent();
-            log.log(LogLevel.DEBUG, "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
+            log.log(Level.FINE, "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
         }
         if (state.getState().equals(State.DOWN) && !reportedState.getState().oneOf("d")) {
             downStableStateTime = time;
-            log.log(LogLevel.DEBUG, "Down stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, "Down stable state on " + toString() + " altered to " + time);
             if (reportedState.getState() == State.INITIALIZING) {
                 recentlyObservedUnstableDuringInit = true;
             }
         } else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
             upStableStateTime = time;
-            log.log(LogLevel.DEBUG, "Up stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, "Up stable state on " + toString() + " altered to " + time);
         }
         if (!state.getState().validReportedNodeState(node.getType())) {
             throw new IllegalStateException("Trying to set illegal reported node state: " + state);
@@ -388,7 +388,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 downgradeToRpcVersion(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_VERSION, methodName, timer);
                 return true;
             } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
-                log.log(LogLevel.DEBUG, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
+                log.log(Level.FINE, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
                 return true;
             }
         }
@@ -397,7 +397,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     }
 
     private void downgradeToRpcVersion(int newVersion, String methodName, Timer timer) {
-        log.log(LogLevel.DEBUG, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
+        log.log(Level.FINE, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
                 toString(), methodName, newVersion));
         version = newVersion;
         nextAttemptTime = 0;
@@ -453,7 +453,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < stateBundle.getVersion())
                 && !stateBundle.getBaselineClusterState().getNodeState(node).getState().oneOf("dsm"))
             {
-                log.log(LogLevel.DEBUG, () -> String.format("Clearing going down timestamp of node %s after " +
+                log.log(Level.FINE, () -> String.format("Clearing going down timestamp of node %s after " +
                         "receiving ack of cluster state bundle %s", node, stateBundle));
                 wentDownWithStartTime = 0;
             }

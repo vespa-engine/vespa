@@ -102,7 +102,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 errorBuilder.append("Talking to server ").append(uri.getHost());
                 errorBuilder.append(", got ").append(status).append(" ")
                         .append(content).append("\n");
-                log.log(LogLevel.DEBUG, () -> String.format("Got response from %s with status code %d and content:\n %s",
+                log.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
                                                             uri.getHost(), status, content));
                 return Optional.empty();
             }
@@ -118,7 +118,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         } catch (Exception e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
-            log.log(LogLevel.DEBUG, e, () -> "Got exception while sending request to " + uri.getHost());
+            log.log(Level.FINE, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
     }

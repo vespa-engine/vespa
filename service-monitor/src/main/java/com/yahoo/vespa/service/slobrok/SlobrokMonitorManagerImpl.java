@@ -149,7 +149,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "storagenode":
                 return Optional.of("storage/cluster." + configId.s());
             default:
-                logger.log(LogLevel.DEBUG, "Unknown service type " + serviceType.s() +
+                logger.log(Level.FINE, "Unknown service type " + serviceType.s() +
                         " with config id " + configId.s());
                 return Optional.empty();
         }

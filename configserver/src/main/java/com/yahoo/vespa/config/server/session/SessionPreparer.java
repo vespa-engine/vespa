@@ -121,7 +121,7 @@ public class SessionPreparer {
                 preparation.writeContainerEndpointsZK();
                 preparation.distribute();
             }
-            log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
+            log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() +
                     " : " + params.getApplicationId());
             return preparation.result();
         }
@@ -243,7 +243,7 @@ public class SessionPreparer {
         }
 
         void writeStateZK() {
-            log.log(LogLevel.DEBUG, "Writing application package state to zookeeper");
+            log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
                                   applicationPackage,
                                   applicationId,

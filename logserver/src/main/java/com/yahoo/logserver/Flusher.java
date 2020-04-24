@@ -46,7 +46,7 @@ public class Flusher extends Thread {
                         h.flush();
                     }
                     if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Flushing " + h);
+                        log.log(Level.FINE, "Flushing " + h);
                     }
                 }
             }

@@ -79,7 +79,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         try {
             Optional<ResourceNameAndAction> resourceMapping =
                     requestResourceMapper.getResourceNameAndAction(request.getMethod(), request.getRequestURI(), request.getQueryString());
-            log.log(LogLevel.DEBUG, () -> String.format("Resource mapping for '%s': %s", request, resourceMapping));
+            log.log(Level.FINE, () -> String.format("Resource mapping for '%s': %s", request, resourceMapping));
             if (resourceMapping.isEmpty()) {
                 incrementAcceptedMetrics(request, false);
                 return Optional.empty();
@@ -92,11 +92,11 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                 incrementAcceptedMetrics(request, true);
                 return Optional.empty();
             }
-            log.log(LogLevel.DEBUG, () -> String.format("Forbidden (403) for '%s': %s", request, resultType.name()));
+            log.log(Level.FINE, () -> String.format("Forbidden (403) for '%s': %s", request, resultType.name()));
             incrementRejectedMetrics(request, FORBIDDEN, resultType.name());
             return Optional.of(new ErrorResponse(FORBIDDEN, "Access forbidden: " + resultType.getDescription()));
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.DEBUG, () -> String.format("Unauthorized (401) for '%s': %s", request, e.getMessage()));
+            log.log(Level.FINE, () -> String.format("Unauthorized (401) for '%s': %s", request, e.getMessage()));
             incrementRejectedMetrics(request, UNAUTHORIZED, "Unauthorized");
             return Optional.of(new ErrorResponse(UNAUTHORIZED, e.getMessage()));
         }
@@ -196,7 +196,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     }
 
     private static void setAttribute(DiscFilterRequest request, String name, String value) {
-        log.log(LogLevel.DEBUG, () -> String.format("Setting attribute on '%s': '%s' = '%s'", request, name, value));
+        log.log(Level.FINE, () -> String.format("Setting attribute on '%s': '%s' = '%s'", request, name, value));
         request.setAttribute(name, value);
     }
 

@@ -121,7 +121,7 @@ public final class XmlHelper {
     public static synchronized DocumentBuilder getDocumentBuilder() {
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
-            log.log(LogLevel.DEBUG, "XML parser now operational!");
+            log.log(Level.FINE, "XML parser now operational!");
             return docBuilder;
         } catch (ParserConfigurationException e) {
             log.log(LogLevel.WARNING, "No XML parser available - " + e);

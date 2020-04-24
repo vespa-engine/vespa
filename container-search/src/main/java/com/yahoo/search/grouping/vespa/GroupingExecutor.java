@@ -227,7 +227,7 @@ public class GroupingExecutor extends Searcher {
             }
             if (log.isLoggable(LogLevel.DEBUG)) {
                 for (Grouping grouping : passList) {
-                    log.log(LogLevel.DEBUG, "Pass(" + pass + "), Grouping(" + grouping.getId() + "): " + grouping);
+                    log.log(Level.FINE, "Pass(" + pass + "), Grouping(" + grouping.getId() + "): " + grouping);
                 }
             }
             Item passRoot;
@@ -265,7 +265,7 @@ public class GroupingExecutor extends Searcher {
         }
         if (log.isLoggable(LogLevel.DEBUG)) {
             for (Grouping grouping : groupingMap.values()) {
-                log.log(LogLevel.DEBUG, "Result Grouping(" + grouping.getId() + "): " + grouping);
+                log.log(Level.FINE, "Result Grouping(" + grouping.getId() + "): " + grouping);
             }
         }
         return ret;

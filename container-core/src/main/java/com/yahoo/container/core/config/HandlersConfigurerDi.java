@@ -57,7 +57,7 @@ public class HandlersConfigurerDi {
                               ComponentRegistry<RequestHandler> requestHandlerRegistry,
                               ComponentRegistry<ClientProvider> clientProviderRegistry,
                               ComponentRegistry<ServerProvider> serverProviderRegistry) {
-            log.log(LogLevel.DEBUG, "RegistriesHack.init " + System.identityHashCode(this));
+            log.log(Level.FINE, "RegistriesHack.init " + System.identityHashCode(this));
 
             vespaContainer.setComponentRegistry(allComponents);
             vespaContainer.setRequestHandlerRegistry(requestHandlerRegistry);

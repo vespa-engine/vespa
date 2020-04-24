@@ -88,11 +88,11 @@ public class RemoteSession extends Session {
 
     void makeActive(ReloadHandler reloadHandler) {
         Curator.CompletionWaiter waiter = zooKeeperClient.getActiveWaiter();
-        log.log(LogLevel.DEBUG, () -> logPre() + "Getting session from repo: " + getSessionId());
+        log.log(Level.FINE, () -> logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
-        log.log(LogLevel.DEBUG, () -> logPre() + "Reloading config for " + getSessionId());
+        log.log(Level.FINE, () -> logPre() + "Reloading config for " + getSessionId());
         reloadHandler.reloadConfig(app);
-        log.log(LogLevel.DEBUG, () -> logPre() + "Notifying " + waiter);
+        log.log(Level.FINE, () -> logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
         log.log(LogLevel.INFO, logPre() + "Session activated: " + getSessionId());
     }
@@ -108,9 +108,9 @@ public class RemoteSession extends Session {
 
     void confirmUpload() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
-        log.log(LogLevel.DEBUG, "Notifying upload waiter for session " + getSessionId());
+        log.log(Level.FINE, "Notifying upload waiter for session " + getSessionId());
         notifyCompletion(waiter);
-        log.log(LogLevel.DEBUG, "Done notifying upload for session " + getSessionId());
+        log.log(Level.FINE, "Done notifying upload for session " + getSessionId());
     }
 
     private void notifyCompletion(Curator.CompletionWaiter completionWaiter) {

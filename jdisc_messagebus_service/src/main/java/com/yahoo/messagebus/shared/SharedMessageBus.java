@@ -35,7 +35,7 @@ public class SharedMessageBus extends AbstractResource {
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared message bus.");
+        log.log(Level.FINE, "Destroying shared message bus.");
         mbus.destroy();
     }
 

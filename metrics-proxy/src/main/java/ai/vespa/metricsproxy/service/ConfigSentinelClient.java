@@ -58,7 +58,7 @@ public class ConfigSentinelClient extends AbstractComponent {
     synchronized void ping(VespaService s) {
         List<VespaService> services = new ArrayList<>();
         services.add(s);
-        log.log(LogLevel.DEBUG, "Ping for service " + s);
+        log.log(Level.FINE, "Ping for service " + s);
         try {
             setStatus(services);
         } catch (Exception e) {
@@ -92,7 +92,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         //from the sentinel
         for (VespaService s : services) {
             if ((!s.getServiceName().equals("configserver")) && !updatedServices.contains(s)) {
-                log.log(LogLevel.DEBUG,"Service " + s +  " is no longer found with sentinel - setting alive = false");
+                log.log(Level.FINE,"Service " + s +  " is no longer found with sentinel - setting alive = false");
                 s.setAlive(false);
             }
         }

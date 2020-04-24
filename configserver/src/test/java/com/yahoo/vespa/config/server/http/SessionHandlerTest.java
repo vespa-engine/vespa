@@ -131,7 +131,7 @@ public class SessionHandlerTest {
             status = Session.Status.PREPARE;
             this.dockerImageRepository = params.dockerImageRepository();
             if (doVerboseLogging) {
-                logger.log(LogLevel.DEBUG, "debuglog");
+                logger.log(Level.FINE, "debuglog");
             }
             return actions;
         }

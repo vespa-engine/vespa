@@ -153,7 +153,7 @@ public class Application implements ModelResult {
     }
 
     private void debug(String message) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(getId())+message);
+        log.log(Level.FINE, TenantRepository.logPre(getId())+message);
     }
 
     private ConfigDefinition getTargetDef(GetConfigRequest req) {

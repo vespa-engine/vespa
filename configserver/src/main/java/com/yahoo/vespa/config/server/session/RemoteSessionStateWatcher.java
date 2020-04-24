@@ -43,11 +43,11 @@ public class RemoteSessionStateWatcher {
     }
 
     private void sessionChanged(Session.Status status) {
-        log.log(LogLevel.DEBUG, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
+        log.log(Level.FINE, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
 
         // valid for NEW -> PREPARE transitions, not ACTIVATE -> PREPARE.
         if (status.equals(Session.Status.PREPARE)) {
-            log.log(LogLevel.DEBUG, session.logPre() + "Loading prepared session: " + session.getSessionId());
+            log.log(Level.FINE, session.logPre() + "Loading prepared session: " + session.getSessionId());
             session.loadPrepared();
         } else if (status.equals(Session.Status.ACTIVATE)) {
             session.makeActive(reloadHandler);

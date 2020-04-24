@@ -726,7 +726,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (includeQuery)
             message += ": [" + queryTreeText() + "]";
 
-        log.log(LogLevel.DEBUG,message);
+        log.log(Level.FINE,message);
 
         // Pass 0 as traceLevel as the trace level check is already done above,
         // and it is not propagated to trace until execution has started

@@ -32,11 +32,11 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
      */
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
-        log.log(LogLevel.DEBUG, () -> "Getting config from cache");
+        log.log(Level.FINE, () -> "Getting config from cache");
         ConfigKey<?> key = input.getKey();
         RawConfig cached = cache.get(new ConfigCacheKey(key, input.getDefMd5()));
         if (cached != null) {
-            log.log(LogLevel.DEBUG, () -> "Found config " + key + " in cache");
+            log.log(Level.FINE, () -> "Found config " + key + " in cache");
             return cached;
         } else {
             return null;

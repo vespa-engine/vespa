@@ -111,7 +111,7 @@ class UrlDownloadRpcServer {
                     writeLastModifiedTimestamp(downloadDir, connection.getLastModified());
                     new RequestTracker().trackRequest(downloadDir);
                     req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
-                    log.log(LogLevel.DEBUG, () -> "URL '" + url + "' available at " + contentsPath);
+                    log.log(Level.FINE, () -> "URL '" + url + "' available at " + contentsPath);
                     log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds",
                                                          url, (System.currentTimeMillis() -start) / 1000.0));
                 } else {

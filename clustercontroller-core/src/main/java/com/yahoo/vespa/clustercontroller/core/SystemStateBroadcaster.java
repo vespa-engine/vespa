@@ -92,11 +92,11 @@ public class SystemStateBroadcaster {
                 // NO_SUCH_METHOD implies node is on a version that does not understand explicit activations
                 // and it has already merrily started using the state version. Treat as if it had been ACKed.
                 if (reply.getReturnCode() != ErrorCode.NO_SUCH_METHOD) {
-                    log.log(LogLevel.DEBUG, () -> String.format("Activation NACK for node %s with version %d, message %s",
+                    log.log(Level.FINE, () -> String.format("Activation NACK for node %s with version %d, message %s",
                             info, version, reply.getReturnMessage()));
                     success = false;
                 } else {
-                    log.log(LogLevel.DEBUG, () -> String.format("Node %s did not understand state activation RPC; " +
+                    log.log(Level.FINE, () -> String.format("Node %s did not understand state activation RPC; " +
                             "implicitly treating state %d as activated on node", info, version));
                 }
             } else if (reply.getActualVersion() != version) {
@@ -109,7 +109,7 @@ public class SystemStateBroadcaster {
                                 version, info, reply.getActualVersion()));
                 success = false;
             } else {
-                log.log(LogLevel.DEBUG, () -> String.format("Node %s reports successful activation of state " +
+                log.log(Level.FINE, () -> String.format("Node %s reports successful activation of state " +
                         "version %d", info, version));
             }
             info.setSystemStateVersionActivationAcked(version, success);
@@ -140,7 +140,7 @@ public class SystemStateBroadcaster {
                 }
             } else {
                 info.setClusterStateBundleVersionAcknowledged(version, true);
-                log.log(LogLevel.DEBUG, () -> String.format("Node %s ACKed system state version %d.", info, version));
+                log.log(Level.FINE, () -> String.format("Node %s ACKed system state version %d.", info, version));
                 lastErrorReported.remove(info.getNode());
             }
         }
@@ -216,7 +216,7 @@ public class SystemStateBroadcaster {
         if (!anyDistributorsNeedStateBundle && (currentStateVersion > lastStateVersionBundleAcked)) {
             markCurrentClusterStateBundleAsReceivedByAllDistributors();
             if (clusterStateBundle.deferredActivation()) {
-                log.log(LogLevel.DEBUG, () -> String.format("All distributors have ACKed cluster state " +
+                log.log(Level.FINE, () -> String.format("All distributors have ACKed cluster state " +
                         "version %d, sending activation", currentStateVersion));
             } else {
                 markCurrentClusterStateAsConverged(database, dbContext, fleetController);
@@ -235,7 +235,7 @@ public class SystemStateBroadcaster {
         if (!anyDistributorsNeedActivation && (currentStateVersion > lastClusterStateVersionConverged)) {
             markCurrentClusterStateAsConverged(database, dbContext, fleetController);
         } else {
-            log.log(LogLevel.DEBUG, () -> String.format("distributors still need activation in state %d (last converged: %d)",
+            log.log(Level.FINE, () -> String.format("distributors still need activation in state %d (last converged: %d)",
                     currentStateVersion, lastClusterStateVersionConverged));
         }
     }
@@ -245,7 +245,7 @@ public class SystemStateBroadcaster {
     }
 
     private void markCurrentClusterStateAsConverged(DatabaseHandler database, DatabaseHandler.Context dbContext, FleetController fleetController) throws InterruptedException {
-        log.log(LogLevel.DEBUG, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
+        log.log(Level.FINE, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
         lastClusterStateVersionConverged = clusterStateBundle.getVersion();
         lastClusterStateBundleConverged = clusterStateBundle;
         fleetController.handleAllDistributorsInSync(database, dbContext);
@@ -272,11 +272,11 @@ public class SystemStateBroadcaster {
             if (nodeNeedsToObserveStartupTimestamps(node)) {
                 // TODO this is the same for all nodes, compute only once
                 ClusterStateBundle modifiedBundle = clusterStateBundle.cloneWithMapper(state -> buildModifiedClusterState(state, dbContext));
-                log.log(LogLevel.DEBUG, () -> String.format("Sending modified cluster state version %d" +
+                log.log(Level.FINE, () -> String.format("Sending modified cluster state version %d" +
                         " to node %s: %s", baselineState.getVersion(), node, modifiedBundle));
                 communicator.setSystemState(modifiedBundle, node, setClusterStateWaiter);
             } else {
-                log.log(LogLevel.DEBUG, () -> String.format("Sending system state version %d to node %s. " +
+                log.log(Level.FINE, () -> String.format("Sending system state version %d to node %s. " +
                         "(went down time %d, node start time %d)", baselineState.getVersion(), node,
                         node.getWentDownWithStartTime(), node.getStartTimestamp()));
                 communicator.setSystemState(clusterStateBundle, node, setClusterStateWaiter);
@@ -297,7 +297,7 @@ public class SystemStateBroadcaster {
 
         var recipients = resolveStateActivationSendSet(dbContext);
         for (NodeInfo node : recipients) {
-            log.log(LogLevel.DEBUG, () -> String.format("Sending cluster state activation to node %s for version %d",
+            log.log(Level.FINE, () -> String.format("Sending cluster state activation to node %s for version %d",
                     node, clusterStateBundle.getVersion()));
             communicator.activateClusterStateVersion(clusterStateBundle.getVersion(), node, activateClusterStateVersionWaiter);
         }

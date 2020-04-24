@@ -128,7 +128,7 @@ public class SessionZooKeeperClient {
 
     public void delete(NestedTransaction transaction ) {
         try {
-            log.log(LogLevel.DEBUG, "Deleting " + sessionPath.getAbsolute());
+            log.log(Level.FINE, "Deleting " + sessionPath.getAbsolute());
             CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
             CuratorOperations.deleteAll(sessionPath.getAbsolute(), curator).forEach(curatorTransaction::add);
             transaction.add(curatorTransaction);

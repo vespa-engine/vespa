@@ -26,7 +26,7 @@ public class UserConfigBuilder {
         if (producerSpec == null) {
             log.log(LogLevel.SPAM, "In getUserConfigs. producerSpec is null");
         }
-        log.log(LogLevel.DEBUG, "getUserConfigs for " + producerSpec);
+        log.log(Level.FINE, "getUserConfigs for " + producerSpec);
         for (Element configE : XML.getChildren(producerSpec, "config")) {
             buildElement(configE, builderMap, configDefinitionStore, deployLogger);
         }

@@ -84,7 +84,7 @@ public class DummyVdsNode {
 
     private Thread messageResponder = new Thread() {
         public void run() {
-            log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": starting message reponder thread");
+            log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": starting message reponder thread");
             while (true) {
                 synchronized (timer) {
                     if (isInterrupted()) break;
@@ -92,7 +92,7 @@ public class DummyVdsNode {
                     for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
                         Req r = it.next();
                         if (r.timeout <= currentTime) {
-                            log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state request at time " + currentTime);
+                            log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
                                 r.request.returnValues().add(new StringValue("No host info in dummy implementation"));
@@ -109,7 +109,7 @@ public class DummyVdsNode {
                     }
                 }
             }
-            log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": shut down message reponder thread");
+            log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": shut down message reponder thread");
         }
     };
 
@@ -171,7 +171,7 @@ public class DummyVdsNode {
     void disconnectBreakConnection() { disconnect(true, FleetControllerTest.timeoutMS, false); }
     void disconnectAsShutdown() { disconnect(true, FleetControllerTest.timeoutMS, true); }
     private void disconnect(boolean waitForPendingNodeStateRequest, long timeoutms, boolean setStoppingStateFirst) {
-        log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": Breaking connection." + (waitForPendingNodeStateRequest ? " Waiting for pending state first." : ""));
+        log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": Breaking connection." + (waitForPendingNodeStateRequest ? " Waiting for pending state first." : ""));
         if (waitForPendingNodeStateRequest) {
             this.waitForPendingGetNodeStateRequest(timeoutms);
         }
@@ -190,7 +190,7 @@ public class DummyVdsNode {
         acceptor.shutdown().join();
         supervisor.transport().shutdown().join();
         supervisor = null;
-        log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": Done breaking connection.");
+        log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": Done breaking connection.");
     }
 
     public String toString() {
@@ -244,25 +244,25 @@ public class DummyVdsNode {
     private void waitForPendingGetNodeStateRequest(long timeout) {
         long startTime = System.currentTimeMillis();
         long endTime = startTime + timeout;
-        log.log(LogLevel.DEBUG, "Dummy node " + this + " waiting for pending node state request.");
+        log.log(Level.FINE, "Dummy node " + this + " waiting for pending node state request.");
         while (true) {
             synchronized(timer) {
                 if (!waitingRequests.isEmpty()) {
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + " has pending request, returning.");
+                    log.log(Level.FINE, "Dummy node " + this + " has pending request, returning.");
                     return;
                 }
                 try{
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + " waiting " + (endTime - startTime) + " ms for pending request.");
+                    log.log(Level.FINE, "Dummy node " + this + " waiting " + (endTime - startTime) + " ms for pending request.");
                     timer.wait(endTime - startTime);
                 } catch (InterruptedException e) {
                 }
-                log.log(LogLevel.DEBUG, "Dummy node " + this + " woke up to recheck.");
+                log.log(Level.FINE, "Dummy node " + this + " woke up to recheck.");
             }
             startTime = System.currentTimeMillis();
             if (startTime >= endTime) {
-                log.log(LogLevel.DEBUG, "Dummy node " + this + " timeout passed. Don't have pending request.");
+                log.log(Level.FINE, "Dummy node " + this + " timeout passed. Don't have pending request.");
                 if (!waitingRequests.isEmpty()) {
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + ". Non-empty set of waiting requests");
+                    log.log(Level.FINE, "Dummy node " + this + ". Non-empty set of waiting requests");
                 }
                 throw new IllegalStateException("Timeout. No pending get node state request pending after waiting " + timeout + " milliseconds.");
             }
@@ -271,7 +271,7 @@ public class DummyVdsNode {
 
     void replyToPendingNodeStateRequests() {
         for(Req req : waitingRequests) {
-            log.log(LogLevel.DEBUG, "Dummy node " + this + " answering pending node state request.");
+            log.log(Level.FINE, "Dummy node " + this + " answering pending node state request.");
             req.request.returnValues().add(new StringValue(nodeState.serialize()));
             if (req.request.methodName().equals("getnodestate3")) {
                 req.request.returnValues().add(new StringValue(hostInfo));
@@ -283,7 +283,7 @@ public class DummyVdsNode {
     }
 
     public void setNodeState(NodeState state, String hostInfo) {
-        log.log(LogLevel.DEBUG, "Dummy node " + this + " got new state: " + state);
+        log.log(Level.FINE, "Dummy node " + this + " got new state: " + state);
         synchronized(timer) {
             this.nodeState = state;
             this.hostInfo = hostInfo;
@@ -415,7 +415,7 @@ public class DummyVdsNode {
                 return;
             }
             String stateString = nodeState.serialize(-1, true);
-            log.log(LogLevel.DEBUG, "Dummy node " + this + " got old type get node state request, answering: " + stateString);
+            log.log(Level.FINE, "Dummy node " + this + " got old type get node state request, answering: " + stateString);
             req.returnValues().add(new Int32Value(1));
             req.returnValues().add(new StringValue(""));
             req.returnValues().add(new StringValue(stateString));
@@ -427,7 +427,7 @@ public class DummyVdsNode {
         for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
              Req r = it.next();
              if (r.request.parameters().size() > 2 && r.request.parameters().get(2).asInt32() == index) {
-                 log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state reply from controller " + index + " as we received new one");
+                 log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state reply from controller " + index + " as we received new one");
                  r.request.returnValues().add(new StringValue(nodeState.serialize()));
                  r.request.returnValues().add(new StringValue("No host info from dummy implementation"));
                  r.request.returnRequest();
@@ -440,7 +440,7 @@ public class DummyVdsNode {
     }
 
     private void rpc_getNodeState2(Request req) {
-        log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got " + req.methodName() + " request");
+        log.log(Level.FINE, "Dummy node " + this + ": Got " + req.methodName() + " request");
         try{
             String oldState = req.parameters().get(0).asString();
             int timeout = req.parameters().get(1).asInt32();
@@ -452,14 +452,14 @@ public class DummyVdsNode {
                 boolean sentReply = sendGetNodeStateReply(index);
                 NodeState givenState = (oldState.equals("unknown") ? null : NodeState.deserialize(type, oldState));
                 if (givenState != null && (givenState.equals(nodeState) || sentReply)) {
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + ": Has same state as reported " + givenState + ". Queing request. Timeout is " + timeout + " ms. "
+                    log.log(Level.FINE, "Dummy node " + this + ": Has same state as reported " + givenState + ". Queing request. Timeout is " + timeout + " ms. "
                             + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800l / 1000));
                     req.detach();
                     waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800l / 1000));
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + " has now " + waitingRequests.size() + " entries and is " + (waitingRequests.isEmpty() ? "empty" : "not empty"));
+                    log.log(Level.FINE, "Dummy node " + this + " has now " + waitingRequests.size() + " entries and is " + (waitingRequests.isEmpty() ? "empty" : "not empty"));
                     timer.notifyAll();
                 } else {
-                    log.log(LogLevel.DEBUG, "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
+                    log.log(Level.FINE, "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
                     req.returnValues().add(new StringValue(nodeState.serialize()));
                     if (req.methodName().equals("getnodestate3")) {
                         req.returnValues().add(new StringValue("Dummy node host info"));
@@ -526,7 +526,7 @@ public class DummyVdsNode {
             }
             req.returnValues().add(new Int32Value(1));
             req.returnValues().add(new StringValue("OK"));
-            log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got new system state (through old setsystemstate call) " + newState);
+            log.log(Level.FINE, "Dummy node " + this + ": Got new system state (through old setsystemstate call) " + newState);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -550,7 +550,7 @@ public class DummyVdsNode {
                 }
                 timer.notifyAll();
             }
-            log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got new system state " + newState);
+            log.log(Level.FINE, "Dummy node " + this + ": Got new system state " + newState);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setsystemstate request: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -573,7 +573,7 @@ public class DummyVdsNode {
                 }
                 timer.notifyAll();
             }
-            log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got new cluster state " + stateBundle);
+            log.log(Level.FINE, "Dummy node " + this + ": Got new cluster state " + stateBundle);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering setdistributionstates request: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -596,11 +596,11 @@ public class DummyVdsNode {
                     activatedClusterStateVersion = activateVersion;
                     timer.notifyAll();
                 } else {
-                    log.log(LogLevel.DEBUG, () -> String.format("Dummy node %s: got a mismatching activation (request version %d, " +
+                    log.log(Level.FINE, () -> String.format("Dummy node %s: got a mismatching activation (request version %d, " +
                             "actual %d), not marking version as active", this, activateVersion, actualVersion));
                 }
             }
-            log.log(LogLevel.DEBUG, "Dummy node " + this + ": Activating cluster state version " + activateVersion);
+            log.log(Level.FINE, "Dummy node " + this + ": Activating cluster state version " + activateVersion);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occurred when answering activate_cluster_state_version request: " + e.getMessage());
             e.printStackTrace(System.err);

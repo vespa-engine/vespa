@@ -138,7 +138,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      * @param sessionId session id for the new session
      */
     private void sessionAdded(long sessionId) {
-        log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
+        log.log(Level.FINE, () -> "Adding session to RemoteSessionRepo: " + sessionId);
         try {
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
             Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
@@ -164,7 +164,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private void loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
-                log.log(LogLevel.DEBUG, () -> "Found active application for session " + session.getSessionId() + " , loading it");
+                log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 reloadHandler.reloadConfig(session.ensureApplicationLoaded());
                 log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
@@ -200,7 +200,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     @SuppressWarnings("unused")
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
-            log.log(LogLevel.DEBUG, () -> "Got child event: " + event);
+            log.log(Level.FINE, () -> "Got child event: " + event);
             switch (event.getType()) {
                 case CHILD_ADDED:
                     sessionsChanged();
@@ -220,7 +220,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         for (long sessionId : sessionList) {
             RemoteSession session = getSession(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
-            log.log(LogLevel.DEBUG, () -> session.logPre() + "Confirming upload for session " + sessionId);
+            log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
         }
     }

@@ -259,7 +259,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     public List<AthenzDomain> getDomainList(String prefix) {
-        log.log(LogLevel.DEBUG, String.format("getDomainList(prefix=%s)", prefix));
+        log.log(Level.FINE, String.format("getDomainList(prefix=%s)", prefix));
         return zmsClient.getDomainList(prefix);
     }
 
@@ -279,7 +279,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     private static void log(String format, Object... args) {
-        log.log(LogLevel.DEBUG, String.format(format, args));
+        log.log(Level.FINE, String.format(format, args));
     }
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {

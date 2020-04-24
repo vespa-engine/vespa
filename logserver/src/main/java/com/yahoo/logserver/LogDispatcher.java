@@ -118,7 +118,7 @@ public class LogDispatcher implements LogHandler {
 
         for (LogHandler h : handlers) {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Flushing " + h.toString());
+                log.log(Level.FINE, "Flushing " + h.toString());
             }
             h.flush();
         }
@@ -138,7 +138,7 @@ public class LogDispatcher implements LogHandler {
         }
         handlers.clear();
 
-        log.log(LogLevel.DEBUG, "Logdispatcher shut down.  Handled " + messageCount + " messages");
+        log.log(Level.FINE, "Logdispatcher shut down.  Handled " + messageCount + " messages");
     }
 
     /**

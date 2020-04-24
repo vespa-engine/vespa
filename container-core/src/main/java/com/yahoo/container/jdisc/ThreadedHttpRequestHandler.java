@@ -70,7 +70,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     @Override
     public final void handleRequest(Request request, BufferedContentChannel requestContent, ResponseHandler responseHandler) {
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "In " + this.getClass() + ".handleRequest()");
+            log.log(Level.FINE, "In " + this.getClass() + ".handleRequest()");
         }
         com.yahoo.jdisc.http.HttpRequest jdiscRequest = asHttpRequest(request);
         HttpRequest httpRequest = new HttpRequest(jdiscRequest, new UnsafeContentInputStream(requestContent.toReadable()));
@@ -192,7 +192,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
             } catch (Exception e) {
                 metric.add(RENDERING_ERRORS, 1, null);
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Error writing response to client - connection probably terminated " +
+                    log.log(Level.FINE, "Error writing response to client - connection probably terminated " +
                                             "from client side.", e);
                 }
                 return new DevNullChannel(); // Ignore further operations on this

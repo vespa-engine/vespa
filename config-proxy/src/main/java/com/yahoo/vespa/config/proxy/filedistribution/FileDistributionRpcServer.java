@@ -106,7 +106,7 @@ class FileDistributionRpcServer {
     }
 
     private void setFileReferencesToDownload(Request req) {
-        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)
                 .forEach(fileReference -> downloader.downloadIfNeeded(new FileReferenceDownload(fileReference)));
@@ -115,12 +115,12 @@ class FileDistributionRpcServer {
 
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        log.log(LogLevel.DEBUG, () -> "getFile() called for file reference '" + fileReference.value() + "'");
+        log.log(Level.FINE, () -> "getFile() called for file reference '" + fileReference.value() + "'");
         Optional<File> file = downloader.getFile(fileReference);
         if (file.isPresent()) {
             new RequestTracker().trackRequest(file.get().getParentFile());
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
-            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
+            log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
         } else {
             log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
             req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");

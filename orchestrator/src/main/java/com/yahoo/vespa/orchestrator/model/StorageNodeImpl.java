@@ -62,7 +62,7 @@ public class StorageNodeImpl implements StorageNode {
         ConfigId configId = storageService.configId();
         int nodeIndex = VespaModelUtil.getStorageNodeIndex(configId);
 
-        logger.log(LogLevel.DEBUG, () -> "Setting cluster controller state for " +
+        logger.log(Level.FINE, () -> "Setting cluster controller state for " +
                 "application " + applicationInstance.reference().asString() +
                 ", host " + hostName() +
                 ", cluster name " + clusterId +

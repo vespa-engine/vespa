@@ -93,7 +93,7 @@ public class ZkStatusService implements StatusService {
 
             return resultSet;
         } catch (Exception e) {
-            log.log(LogLevel.DEBUG, "Something went wrong while listing out applications in suspend.", e);
+            log.log(Level.FINE, "Something went wrong while listing out applications in suspend.", e);
             throw new RuntimeException(e);
         }
     }

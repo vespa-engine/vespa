@@ -135,13 +135,13 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        log.log(LogLevel.DEBUG, "Setting up system");
+        log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
         if (options.zooKeeperServerAddress != null) {
             zooKeeperServer = new ZooKeeperTestServer();
             this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-            log.log(LogLevel.DEBUG, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
+            log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
         }
         this.options.slobrokConnectionSpecs = new String[1];
         this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();

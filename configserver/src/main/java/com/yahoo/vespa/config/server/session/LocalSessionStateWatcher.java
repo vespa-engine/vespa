@@ -41,7 +41,7 @@ public class LocalSessionStateWatcher {
                 session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
         if (status.equals(Session.Status.DELETE) && localSessionRepo.getSession(sessionId) != null) {
-            log.log(LogLevel.DEBUG, session.logPre() + "Deleting session " + sessionId);
+            log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
             localSessionRepo.deleteSession(session);
         }
     }

@@ -72,7 +72,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         setupAnnotationTypesWithoutPayloads(config, manager);
         setupAnnotationRefTypes(config, manager);
 
-        log.log(LogLevel.DEBUG, "Configuring document manager with " + config.datatype().size() + " data types.");
+        log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
         ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>();
         failed.addAll(config.datatype());
         while (!failed.isEmpty()) {
@@ -226,7 +226,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         DocumentTypeManager manager = configureNewManager(config);
         int defaultTypeCount = new DocumentTypeManager().getDataTypes().size();
         if (this.managerToConfigure.getDataTypes().size() != defaultTypeCount) {
-            log.log(LogLevel.DEBUG, "Live document config overwritten with new config.");
+            log.log(Level.FINE, "Live document config overwritten with new config.");
         }
         managerToConfigure.assign(manager);
     }

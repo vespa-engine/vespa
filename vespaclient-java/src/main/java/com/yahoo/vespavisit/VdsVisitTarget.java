@@ -208,7 +208,7 @@ public class VdsVisitTarget {
     @SuppressWarnings("unchecked")
     public void run() throws Exception {
         initShutdownHook();
-        log.log(LogLevel.DEBUG, "Starting VdsVisitTarget");
+        log.log(Level.FINE, "Starting VdsVisitTarget");
         MessageBusParams mbusParams = new MessageBusParams(new LoadTypeSet());
         mbusParams.getRPCNetworkParams().setIdentity(new Identity(slobrokAddress));
 

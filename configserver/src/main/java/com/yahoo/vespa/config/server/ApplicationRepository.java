@@ -450,14 +450,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 log.log(LogLevel.WARNING, "Getting file references in use for '" + application + "' failed", e);
             }
         }
-        log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
+        log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
         Set<String> fileReferencesOnDisk = new HashSet<>();
         File[] filesOnDisk = fileReferencesPath.listFiles();
         if (filesOnDisk != null)
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
-        log.log(LogLevel.DEBUG, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
         Instant instant = Instant.now().minus(keepFileReferences);
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
@@ -783,7 +783,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private void cleanupTempDirectory(File tempDir) {
-        logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
+        logger.log(Level.FINE, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
             logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }

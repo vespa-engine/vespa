@@ -212,12 +212,12 @@ public class ArchiverHandler extends AbstractLogHandler {
 
         // ensure that root dir exists
         if (root.isDirectory()) {
-            log.log(LogLevel.DEBUG, "Using " + absoluteRootDir + " as root");
+            log.log(Level.FINE, "Using " + absoluteRootDir + " as root");
         } else {
             if (! root.mkdirs()) {
                 log.log(LogLevel.ERROR, "Unable to create directory " + absoluteRootDir);
             } else {
-                log.log(LogLevel.DEBUG, "Created root at " + absoluteRootDir);
+                log.log(Level.FINE, "Created root at " + absoluteRootDir);
             }
         }
         filesArchived = new FilesArchived(root);

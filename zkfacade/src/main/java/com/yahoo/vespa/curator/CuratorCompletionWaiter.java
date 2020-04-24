@@ -39,9 +39,9 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     public void awaitCompletion(Duration timeout) {
         List<String> respondents;
         try {
-            log.log(LogLevel.DEBUG, "Synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, "Synchronizing on barrier " + barrierPath);
             respondents = awaitInternal(timeout);
-            log.log(LogLevel.DEBUG, "Done synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, "Done synchronizing on barrier " + barrierPath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

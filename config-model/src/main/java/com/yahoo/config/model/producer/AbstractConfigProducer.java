@@ -203,7 +203,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
         boolean foundHere = builder.dispatchGetConfig(this);
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "cascadeconfig in " + this + ", getting config " +
+            log.log(Level.FINE, "cascadeconfig in " + this + ", getting config " +
                     builder.getClass().getDeclaringClass().getName() + " for config id '" + configId + "' found here=" + foundHere);
         }
         found = found || foundHere;

@@ -81,7 +81,7 @@ public class FileReferenceDownloader {
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        log.log(LogLevel.DEBUG, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+        log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
         synchronized (downloads) {
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
@@ -97,7 +97,7 @@ public class FileReferenceDownloader {
                 downloads.remove(fileReference);
                 download.future().complete(Optional.of(file));
             } else {
-                log.log(LogLevel.DEBUG, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
+                log.log(Level.FINE, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
             }
         }
     }

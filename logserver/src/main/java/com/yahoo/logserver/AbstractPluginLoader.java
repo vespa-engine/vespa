@@ -40,7 +40,7 @@ public abstract class AbstractPluginLoader implements PluginLoader {
 
         try {
             plugin.initPlugin(config);
-            log.log(LogLevel.DEBUG, pname + ": plugin loaded");
+            log.log(Level.FINE, pname + ": plugin loaded");
         } catch (Exception e) {
             log.log(LogLevel.ERROR, pname + ": init failed", e);
         }

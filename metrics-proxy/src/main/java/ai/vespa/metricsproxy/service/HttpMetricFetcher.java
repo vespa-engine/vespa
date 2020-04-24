@@ -40,11 +40,11 @@ public abstract class HttpMetricFetcher {
 
         String u = "http://localhost:" + port + path;
         this.url = URI.create(u);
-        log.log(LogLevel.DEBUG, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
+        log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
     String getJson() throws IOException {
-        log.log(LogLevel.DEBUG, "Connecting to url " + url + " for service '" + service + "'");
+        log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
         return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
     }
 
@@ -66,7 +66,7 @@ public abstract class HttpMetricFetcher {
         if (service.isAlive() && timesFetched > 5) {
             log.log(LogLevel.INFO, message);
         } else {
-            log.log(LogLevel.DEBUG, message);
+            log.log(Level.FINE, message);
         }
     }
 
