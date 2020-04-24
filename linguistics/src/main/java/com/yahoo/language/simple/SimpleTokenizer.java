@@ -67,18 +67,21 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {
-        log.log(Level.FINEST, "processToken '"+token+"'");
+        final String original = token;
+        log.log(Level.FINEST, () -> "processToken '"+original+"'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
         if (stemMode != StemMode.NONE) {
-            String oldToken = token;
+            final String oldToken = token;
             token = stemmer.stem(token);
-            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+token+"'");
+            final String newToken = token;
+            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+newToken+"'");
         }
-        log.log(Level.FINEST, () -> "processed token is: "+token);
-        return token;
+        final String result = token;
+        log.log(Level.FINEST, () -> "processed token is: "+result);
+        return result;
     }
 
 }
