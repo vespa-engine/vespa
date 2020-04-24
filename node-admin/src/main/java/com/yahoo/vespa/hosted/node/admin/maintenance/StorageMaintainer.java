@@ -73,11 +73,6 @@ public class StorageMaintainer {
         this.clock = clock;
     }
 
-    // TODO: Remove, use diskUsageFor() instead
-    public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
-        return diskUsageFor(context).map(DiskSize::bytes);
-    }
-
     public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
         try {
             DiskSize cachedDiskUsage = diskUsage.getIfPresent(context.containerName());

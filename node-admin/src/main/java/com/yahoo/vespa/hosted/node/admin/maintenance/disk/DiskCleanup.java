@@ -20,7 +20,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class DiskCleanup {
 
     private static final Logger logger = Logger.getLogger(DiskCleanup.class.getName());
-    private static final char[] UNITS = "kMGTPE".toCharArray();
     private static final Comparator<PrioritizedFileAttributes> PRIORITIZED_FILE_ATTRIBUTES_COMPARATOR = Comparator
             .comparing(PrioritizedFileAttributes::priority)
             .thenComparingLong(f -> f.fileAttributes().size())
