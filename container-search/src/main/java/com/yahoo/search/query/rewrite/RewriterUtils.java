@@ -2,7 +2,7 @@
 package com.yahoo.search.query.rewrite;
 
 import com.yahoo.fsa.FSA;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.search.Query;
 import com.yahoo.search.intent.model.IntentModel;
 import com.yahoo.search.intent.model.InterpretationNode;

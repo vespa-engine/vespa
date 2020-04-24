@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.health;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;

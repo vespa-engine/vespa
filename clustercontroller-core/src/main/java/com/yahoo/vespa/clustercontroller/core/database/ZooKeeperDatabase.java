@@ -9,7 +9,7 @@ import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.data.ACL;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vdslib.state.Node;

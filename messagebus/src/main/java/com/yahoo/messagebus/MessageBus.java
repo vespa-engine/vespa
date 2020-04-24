@@ -3,7 +3,7 @@ package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Resender;

@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;

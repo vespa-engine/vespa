@@ -18,7 +18,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSession;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.DynamicThrottlePolicy;

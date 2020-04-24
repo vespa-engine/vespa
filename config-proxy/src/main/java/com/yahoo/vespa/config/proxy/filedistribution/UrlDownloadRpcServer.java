@@ -6,7 +6,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 import net.jpountz.xxhash.XXHashFactory;

@@ -13,7 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 
 import java.util.logging.Logger;

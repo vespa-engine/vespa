@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator.model;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;

@@ -2,7 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.json.JSONException;
 import org.json.JSONObject;
 

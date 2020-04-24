@@ -13,7 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentListEntry;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
 import com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage;
 import com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 
 import java.io.IOException;

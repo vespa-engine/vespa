@@ -3,7 +3,7 @@ package com.yahoo.search.grouping;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;

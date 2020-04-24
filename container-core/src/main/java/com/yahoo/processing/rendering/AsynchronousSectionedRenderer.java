@@ -7,7 +7,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.logserver.handlers.LogHandler;
 
 /**

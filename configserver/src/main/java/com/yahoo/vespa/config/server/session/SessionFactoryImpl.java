@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;

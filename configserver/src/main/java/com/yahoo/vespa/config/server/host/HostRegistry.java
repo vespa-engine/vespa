@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * A host registry with a mapping between hosts (hostname as a String) and some type T

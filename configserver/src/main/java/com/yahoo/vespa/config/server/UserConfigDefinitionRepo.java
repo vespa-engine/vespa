@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.base.Splitter;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;

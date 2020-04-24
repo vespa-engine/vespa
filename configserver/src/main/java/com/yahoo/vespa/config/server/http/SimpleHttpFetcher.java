@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;

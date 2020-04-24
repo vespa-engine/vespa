@@ -15,7 +15,7 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.net.URI;
 import java.time.Duration;

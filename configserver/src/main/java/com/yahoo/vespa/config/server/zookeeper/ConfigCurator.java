@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 

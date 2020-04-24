@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.util.ConfigUtils;
 

@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.core.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.Map;
 import java.util.TreeSet;

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;

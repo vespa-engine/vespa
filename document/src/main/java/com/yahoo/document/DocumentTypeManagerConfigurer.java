@@ -6,7 +6,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;

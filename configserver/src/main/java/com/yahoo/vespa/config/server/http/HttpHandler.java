@@ -8,7 +8,7 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.yolean.Exceptions;

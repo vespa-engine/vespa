@@ -18,7 +18,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.QueryException;

@@ -2,7 +2,7 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.data.access.Inspector;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

@@ -6,7 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;

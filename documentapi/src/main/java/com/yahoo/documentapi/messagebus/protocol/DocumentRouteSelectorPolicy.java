@@ -5,7 +5,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.DocumentGet;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.Result;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;

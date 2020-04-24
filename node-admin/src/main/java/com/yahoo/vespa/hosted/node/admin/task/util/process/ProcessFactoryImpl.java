@@ -3,7 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.jdisc.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.File;
 import java.io.IOException;

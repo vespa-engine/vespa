@@ -11,7 +11,7 @@ import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.SecurityContext;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.ConfigKey;

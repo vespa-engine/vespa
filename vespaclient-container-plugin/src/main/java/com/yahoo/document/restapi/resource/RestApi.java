@@ -27,7 +27,7 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;

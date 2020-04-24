@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.Optional;
 import java.util.logging.Logger;

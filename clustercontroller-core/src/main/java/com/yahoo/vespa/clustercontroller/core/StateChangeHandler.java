@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Spec;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;

@@ -2,7 +2,7 @@
 package com.yahoo.feedapi;
 
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;

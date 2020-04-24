@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

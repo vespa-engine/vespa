@@ -2,7 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;

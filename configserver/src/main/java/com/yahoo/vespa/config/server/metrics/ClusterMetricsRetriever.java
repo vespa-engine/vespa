@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;

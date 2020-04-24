@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.statistics.Counter;
 import com.yahoo.text.Utf8;
 

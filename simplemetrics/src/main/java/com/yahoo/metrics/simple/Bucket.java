@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * An aggregation of data which is only written to from a single thread.

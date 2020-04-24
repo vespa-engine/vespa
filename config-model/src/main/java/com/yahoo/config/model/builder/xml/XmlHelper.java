@@ -3,7 +3,7 @@ package com.yahoo.config.model.builder.xml;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

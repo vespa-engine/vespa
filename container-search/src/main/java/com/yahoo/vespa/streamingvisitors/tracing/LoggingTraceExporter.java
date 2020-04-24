@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors.tracing;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.function.Supplier;
 import java.util.logging.Logger;

@@ -3,7 +3,7 @@ package ai.vespa.logserver.protocol;
 
 import ai.vespa.logserver.protocol.protobuf.LogProtocol;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 
 import java.time.Instant;

@@ -12,7 +12,7 @@ import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;

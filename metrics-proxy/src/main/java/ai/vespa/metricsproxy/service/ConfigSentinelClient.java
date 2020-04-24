@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.service;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;

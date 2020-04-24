@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;

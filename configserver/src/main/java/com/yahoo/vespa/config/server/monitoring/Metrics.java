@@ -10,7 +10,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Counter;
 

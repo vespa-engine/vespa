@@ -7,7 +7,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;

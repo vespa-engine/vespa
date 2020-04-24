@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;

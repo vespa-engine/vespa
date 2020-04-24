@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.jrt.Target;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.*;

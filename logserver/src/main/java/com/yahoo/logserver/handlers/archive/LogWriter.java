@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.logging.Logger;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * This class is not thread-safe.

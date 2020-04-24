@@ -5,7 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;

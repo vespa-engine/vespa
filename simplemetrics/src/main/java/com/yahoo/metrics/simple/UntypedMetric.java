@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import org.HdrHistogram.DoubleHistogram;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * A gauge or a counter or... who knows? The class for storing a metric when the

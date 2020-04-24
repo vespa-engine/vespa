@@ -11,7 +11,7 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder;
 import com.yahoo.config.model.deploy.ConfigDefinitionStore;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder;

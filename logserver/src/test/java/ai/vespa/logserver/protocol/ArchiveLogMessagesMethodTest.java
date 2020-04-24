@@ -10,7 +10,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Values;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.LogDispatcher;
 import org.junit.Test;

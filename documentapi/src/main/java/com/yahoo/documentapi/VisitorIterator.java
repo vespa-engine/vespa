@@ -5,7 +5,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSelector;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.Map;
 import java.util.Set;

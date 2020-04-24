@@ -14,7 +14,7 @@ import com.yahoo.jrt.Values;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.Communicator;

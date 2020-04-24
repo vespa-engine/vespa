@@ -2,7 +2,7 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.messagebus.routing.RoutingPolicy;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.Map;
 import java.util.logging.Logger;

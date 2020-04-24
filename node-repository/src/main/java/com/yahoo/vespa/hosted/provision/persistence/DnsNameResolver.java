@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;

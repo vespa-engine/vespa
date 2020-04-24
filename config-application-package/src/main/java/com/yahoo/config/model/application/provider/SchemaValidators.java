@@ -3,7 +3,7 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.xml.sax.SAXException;
 

@@ -2,7 +2,7 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 

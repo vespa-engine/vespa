@@ -24,7 +24,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.statistics.Statistics;

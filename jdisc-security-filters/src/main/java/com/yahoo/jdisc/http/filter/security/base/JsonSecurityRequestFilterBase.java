@@ -11,7 +11,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.UncheckedIOException;
 import java.util.Optional;

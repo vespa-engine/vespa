@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.routing.Resender;
 import com.yahoo.messagebus.routing.RoutingNode;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 

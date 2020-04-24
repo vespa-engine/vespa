@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * <p>Simple layer on top of {@link DocumentProcessor}, in order to make docproc

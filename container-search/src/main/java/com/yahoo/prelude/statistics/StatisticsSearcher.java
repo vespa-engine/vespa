@@ -5,7 +5,7 @@ import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.processing.request.CompoundName;

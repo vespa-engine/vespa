@@ -2,7 +2,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;

@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.*;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 import java.util.concurrent.locks.Lock;

@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;

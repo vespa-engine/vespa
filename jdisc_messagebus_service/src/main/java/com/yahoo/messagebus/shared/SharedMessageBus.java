@@ -3,7 +3,7 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.jdisc.AbstractResource;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBus;

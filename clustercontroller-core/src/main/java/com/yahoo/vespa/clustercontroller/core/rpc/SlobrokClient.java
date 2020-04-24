@@ -8,7 +8,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.Node;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeLookup;
 import com.yahoo.vespa.clustercontroller.core.Timer;

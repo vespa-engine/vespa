@@ -11,7 +11,7 @@ import com.yahoo.concurrent.ThreadLocalDirectory;
 import com.yahoo.concurrent.ThreadLocalDirectory.Updater;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.metrics.ManagerConfig;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * This is the coordinating class owning the executor and the top level objects

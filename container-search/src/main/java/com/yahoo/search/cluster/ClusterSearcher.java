@@ -3,7 +3,7 @@ package com.yahoo.search.cluster;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.protect.Error;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.yolean.Exceptions;

@@ -2,7 +2,7 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 

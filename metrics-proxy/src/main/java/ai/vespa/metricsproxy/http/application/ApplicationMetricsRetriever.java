@@ -6,7 +6,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;

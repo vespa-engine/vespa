@@ -5,7 +5,7 @@ import com.yahoo.io.BufferChain;
 import com.yahoo.io.WritableByteTransmitter;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;

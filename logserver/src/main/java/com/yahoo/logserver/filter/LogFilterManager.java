@@ -4,7 +4,7 @@ package com.yahoo.logserver.filter;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * The LogFilterManager keeps track of associations between

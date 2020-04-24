@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Target;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;

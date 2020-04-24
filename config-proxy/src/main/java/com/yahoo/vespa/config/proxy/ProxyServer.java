@@ -5,7 +5,7 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.vespa.config.RawConfig;

@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;

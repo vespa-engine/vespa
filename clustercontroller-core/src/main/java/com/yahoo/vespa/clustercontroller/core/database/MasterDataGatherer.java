@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 import java.util.*;
 import java.nio.charset.Charset;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 public class MasterDataGatherer {
 

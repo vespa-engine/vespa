@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;

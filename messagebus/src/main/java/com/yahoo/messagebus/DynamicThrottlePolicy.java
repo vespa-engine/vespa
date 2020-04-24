@@ -3,7 +3,7 @@ package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.concurrent.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
