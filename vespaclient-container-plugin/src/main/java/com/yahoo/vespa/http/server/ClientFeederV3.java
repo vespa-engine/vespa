@@ -246,7 +246,7 @@ class ClientFeederV3 {
             if (result.isAccepted()) {
                 outstandingOperations.incrementAndGet();
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.get().getOperationId());
+                log(Level.FINE, "Sent message successfully, document id: ", msg.get().getOperationId());
             } else if (!result.getError().isFatal()) {
                 repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
                                                                  result.getError().getMessage(),
@@ -297,7 +297,7 @@ class ClientFeederV3 {
             return null;
         }
         metric.add(MetricNames.NUM_OPERATIONS, 1, null /*metricContext*/);
-        log(LogLevel.DEBUG, "Successfully deserialized document id: ", message.getOperationId());
+        log(Level.FINE, "Successfully deserialized document id: ", message.getOperationId());
         return message;
     }
 

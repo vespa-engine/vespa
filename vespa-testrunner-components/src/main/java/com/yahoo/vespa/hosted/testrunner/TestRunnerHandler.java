@@ -121,7 +121,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         return    level.getName().equals("html") ? "html"
                 : level.intValue() < LogLevel.INFO.intValue() ? "debug"
                 : level.intValue() < LogLevel.WARNING.intValue() ? "info"
-                : level.intValue() < LogLevel.ERROR.intValue() ? "warning"
+                : level.intValue() < Level.SEVERE.intValue() ? "warning"
                 : "error";
     }
 

@@ -85,9 +85,9 @@ public class DeploymentTester {
         outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
 
         // Get deployment job logs to stderr.
-        Logger.getLogger("").setLevel(LogLevel.DEBUG);
-        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(LogLevel.DEBUG);
-        tester.configureDefaultLogHandler(handler -> handler.setLevel(LogLevel.DEBUG));
+        Logger.getLogger("").setLevel(Level.FINE);
+        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(Level.FINE);
+        tester.configureDefaultLogHandler(handler -> handler.setLevel(Level.FINE));
 
         // Mock Athenz domain to allow launch of service
         AthenzDbMock.Domain domain = tester.athenzDb().getOrCreateDomain(new com.yahoo.vespa.athenz.api.AthenzDomain(ATHENZ_DOMAIN));

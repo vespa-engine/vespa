@@ -529,7 +529,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                     } catch (Exception e) {
                         Level level = LogLevel.WARNING;
                         if ((e instanceof IOException)) {
-                            level = LogLevel.DEBUG;
+                            level = Level.FINE;
                             if ( ! clientClosed) {
                                 clientClosed = true;
                                 onClientClosed();

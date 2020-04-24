@@ -102,8 +102,8 @@ public class LoggingTestCase {
         stream.send(createData());
         stream.flush();
         assertNull(logChecker.errorCounter.get(LogLevel.INFO));
-        assertEquals(1, logChecker.errorCounter.get(LogLevel.DEBUG).intValue());
-        assertEquals(2, logChecker.errorCounter.get(LogLevel.SPAM).intValue());
+        assertEquals(1, logChecker.errorCounter.get(Level.FINE).intValue());
+        assertEquals(2, logChecker.errorCounter.get(Level.FINEST).intValue());
     }
 
 }

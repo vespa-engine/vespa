@@ -68,7 +68,7 @@ public class SendProxyTestCase {
         sendMessage(0, null);
         assertNull(logHandler.trace);
 
-        log.setLevel(LogLevel.DEBUG);
+        log.setLevel(Level.FINE);
         sendMessage(0, null);
         assertNull(logHandler.trace);
 
@@ -90,7 +90,7 @@ public class SendProxyTestCase {
                      "</trace>\n", logHandler.trace);
         logHandler.trace = null;
 
-        log.setLevel(LogLevel.SPAM);
+        log.setLevel(Level.FINEST);
         sendMessage(1, null);
         assertNull(logHandler.trace);
 

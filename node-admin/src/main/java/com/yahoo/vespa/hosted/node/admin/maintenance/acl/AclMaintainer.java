@@ -99,11 +99,11 @@ public class AclMaintainer {
                 dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
             } catch (Exception e) {
                 if (flush) {
-                    context.log(logger, LogLevel.ERROR, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
+                    context.log(logger, Level.SEVERE, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
                     try {
                         dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
                     } catch (Exception ne) {
-                        context.log(logger, LogLevel.ERROR, "Rollback of table " + table + " failed, giving up", ne);
+                        context.log(logger, Level.SEVERE, "Rollback of table " + table + " failed, giving up", ne);
                     }
                 } else {
                     context.log(logger, LogLevel.WARNING, "Unable to sync iptables for " + table, e);

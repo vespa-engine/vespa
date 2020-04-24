@@ -164,7 +164,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     void resumeNodeIfNeeded(NodeAgentContext context) {
         if (!hasResumedNode) {
-            context.log(logger, LogLevel.DEBUG, "Starting optional node program resume command");
+            context.log(logger, Level.FINE, "Starting optional node program resume command");
             dockerOperations.resumeNode(context);
             hasResumedNode = true;
         }
@@ -404,10 +404,10 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, LogLevel.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
         } catch (DockerException e) {
             numberOfUnhandledException++;
-            context.log(logger, LogLevel.ERROR, "Caught a DockerException", e);
+            context.log(logger, Level.SEVERE, "Caught a DockerException", e);
         } catch (Throwable e) {
             numberOfUnhandledException++;
-            context.log(logger, LogLevel.ERROR, "Unhandled exception, ignoring", e);
+            context.log(logger, Level.SEVERE, "Unhandled exception, ignoring", e);
         }
     }
 

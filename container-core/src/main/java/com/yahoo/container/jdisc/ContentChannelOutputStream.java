@@ -159,9 +159,9 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
             Level logLevel;
             synchronized (failLock) {
                 if (failed) {
-                    logLevel = LogLevel.SPAM;
+                    logLevel = Level.FINEST;
                 } else {
-                    logLevel = LogLevel.DEBUG;
+                    logLevel = Level.FINE;
                 }
                 failed = true;
             }

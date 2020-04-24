@@ -118,7 +118,7 @@ public class StateChangeHandler {
                                            final NodeStateOrHostInfoChangeHandler nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        final LogLevel level = (currentState.equals(reportedState) && node.getVersion() == 0) ? LogLevel.SPAM : LogLevel.DEBUG;
+        final LogLevel level = (currentState.equals(reportedState) && node.getVersion() == 0) ? Level.FINEST : Level.FINE;
         if (log.isLoggable(level)) {
             log.log(level, String.format("Got nodestate reply from %s: %s (Current state is %s)",
                     node, node.getReportedState().getTextualDifference(reportedState), currentState.toString(true)));
@@ -134,7 +134,7 @@ public class StateChangeHandler {
             if (reportedState.getState().equals(State.DOWN)) {
                 eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
             } else {
-                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.DEBUG);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), Level.FINE);
             }
         }
 

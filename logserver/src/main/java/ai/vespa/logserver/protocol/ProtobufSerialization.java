@@ -82,9 +82,9 @@ class ProtobufSerialization {
     private static Level fromLogMessageLevel(LogProtocol.LogMessage.Level level) {
         switch (level) {
             case FATAL:
-                return LogLevel.FATAL;
+                return Level.SEVERE;
             case ERROR:
-                return LogLevel.ERROR;
+                return Level.SEVERE;
             case WARNING:
                 return LogLevel.WARNING;
             case CONFIG:
@@ -94,9 +94,9 @@ class ProtobufSerialization {
             case EVENT:
                 return LogLevel.EVENT;
             case DEBUG:
-                return LogLevel.DEBUG;
+                return Level.FINE;
             case SPAM:
-                return LogLevel.SPAM;
+                return Level.FINEST;
             case UNKNOWN:
             case UNRECOGNIZED:
             default:
@@ -106,9 +106,9 @@ class ProtobufSerialization {
 
     private static LogProtocol.LogMessage.Level toLogMessageLevel(Level level) {
         Level vespaLevel = LogLevel.getVespaLogLevel(level);
-        if (vespaLevel.equals(LogLevel.FATAL)) {
+        if (vespaLevel.equals(Level.SEVERE)) {
             return LogProtocol.LogMessage.Level.FATAL;
-        } else if (vespaLevel.equals(LogLevel.ERROR)) {
+        } else if (vespaLevel.equals(Level.SEVERE)) {
             return LogProtocol.LogMessage.Level.ERROR;
         } else if (vespaLevel.equals(LogLevel.WARNING)) {
             return LogProtocol.LogMessage.Level.WARNING;
@@ -118,9 +118,9 @@ class ProtobufSerialization {
             return LogProtocol.LogMessage.Level.INFO;
         } else if (vespaLevel.equals(LogLevel.EVENT)) {
             return LogProtocol.LogMessage.Level.EVENT;
-        } else if (vespaLevel.equals(LogLevel.DEBUG)) {
+        } else if (vespaLevel.equals(Level.FINE)) {
             return LogProtocol.LogMessage.Level.DEBUG;
-        } else if (vespaLevel.equals(LogLevel.SPAM)) {
+        } else if (vespaLevel.equals(Level.FINEST)) {
             return LogProtocol.LogMessage.Level.SPAM;
         } else {
             return LogProtocol.LogMessage.Level.UNKNOWN;

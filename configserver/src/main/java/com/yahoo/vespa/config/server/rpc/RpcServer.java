@@ -274,7 +274,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             // there is no need for any extra check.
             if (delayedConfigResponse.cancel()) {
                 if (log.isLoggable(Level.FINE)) {
-                    logRequestDebug(LogLevel.DEBUG, logPre + "Timer cancelled for ", delayedConfigResponse.request);
+                    logRequestDebug(Level.FINE, logPre + "Timer cancelled for ", delayedConfigResponse.request);
                 }
                 // Do not wait for this request if we were unable to execute
                 if (addToRequestQueue(delayedConfigResponse.request, false, completionService)) {

@@ -109,7 +109,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     public boolean converge(NodeAgentContext context) {
         try {
-            context.log(logger, LogLevel.DEBUG, "Checking certificate");
+            context.log(logger, Level.FINE, "Checking certificate");
             Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
             Path privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
             Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
@@ -146,7 +146,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return true;
                 }
             }
-            context.log(logger, LogLevel.DEBUG, "Certificate is still valid");
+            context.log(logger, Level.FINE, "Certificate is still valid");
             return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -169,7 +169,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             Instant expiry = certificate.getNotAfter().toInstant();
             return Duration.between(now, expiry);
         } catch (IOException e) {
-            context.log(logger, LogLevel.ERROR, "Unable to read certificate at " + certificateFile, e);
+            context.log(logger, Level.SEVERE, "Unable to read certificate at " + certificateFile, e);
             return Duration.ZERO;
         }
     }
@@ -236,14 +236,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
-                    context.log(logger, LogLevel.ERROR, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                    context.log(logger, Level.SEVERE, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
                     registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
                 } else {
                     throw e;
                 }
             }
         } catch (Exception e) {
-            context.log(logger, LogLevel.ERROR, "Certificate refresh failed: " + e.getMessage(), e);
+            context.log(logger, Level.SEVERE, "Certificate refresh failed: " + e.getMessage(), e);
         }
     }
 

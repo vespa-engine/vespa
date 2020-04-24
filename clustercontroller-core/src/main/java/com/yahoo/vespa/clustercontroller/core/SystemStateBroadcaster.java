@@ -66,7 +66,7 @@ public class SystemStateBroadcaster {
         long time = timer.getCurrentTimeInMillis();
         Long lastReported = lastErrorReported.get(info.getNode());
         boolean alreadySeen = (lastReported != null && time - lastReported < minTimeBetweenNodeErrorLogging);
-        log.log((nodeOk && !alreadySeen) ? LogLevel.WARNING : LogLevel.DEBUG, message);
+        log.log((nodeOk && !alreadySeen) ? LogLevel.WARNING : Level.FINE, message);
         if (!alreadySeen) {
             lastErrorReported.put(info.getNode(), time);
         }

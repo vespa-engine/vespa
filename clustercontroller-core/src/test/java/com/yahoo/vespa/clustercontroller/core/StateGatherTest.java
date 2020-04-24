@@ -25,7 +25,7 @@ public class StateGatherTest extends FleetControllerTest {
 
     @Test
     public void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
-        Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(LogLevel.SPAM);
+        Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
         startingTest("StateGatherTest::testOverlappingGetNodeStateRequests");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.nodeStateRequestTimeoutMS = 10 * 60 * 1000;

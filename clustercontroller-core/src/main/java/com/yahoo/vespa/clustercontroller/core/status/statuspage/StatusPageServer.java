@@ -146,7 +146,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 } catch (SocketTimeoutException e) {
                     // Ignore, since timeout is set to 100 ms
                 } catch (java.io.IOException e) {
-                    log.log(shouldBeConnected ? LogLevel.WARNING : LogLevel.DEBUG, "Caught IO exception in ServerSocket.accept(): " + e.getMessage());
+                    log.log(shouldBeConnected ? LogLevel.WARNING : Level.FINE, "Caught IO exception in ServerSocket.accept(): " + e.getMessage());
                 }
                 if (connection == null) continue;
                 log.log(Level.FINE, "Got a status page request.");
@@ -235,7 +235,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     output.write(header.toString().getBytes());
                     output.write(response.getOutputStream().toByteArray());
                 } catch (java.io.IOException e) {
-                   log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
+                   log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? Level.FINE : LogLevel.INFO,
                            "Failed to process HTTP request : " + e.getMessage());
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Caught exception in HTTP server thread: "
@@ -244,7 +244,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     if (output != null) try {
                         output.close();
                     } catch (IOException e) {
-                        log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
+                        log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? Level.FINE : LogLevel.INFO,
                                 "Failed to close output stream on socket " + connection + ": " + e.getMessage());
                     }
                     if (connection != null) try{

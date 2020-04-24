@@ -37,7 +37,7 @@ public class LocalSessionStateWatcher {
     // Will delete session if it exists in local session repo
     private void sessionChanged(Session.Status status) {
         long sessionId = session.getSessionId();
-        log.log(status == Session.Status.DELETE ? LogLevel.INFO : LogLevel.DEBUG,
+        log.log(status == Session.Status.DELETE ? LogLevel.INFO : Level.FINE,
                 session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
         if (status.equals(Session.Status.DELETE) && localSessionRepo.getSession(sessionId) != null) {

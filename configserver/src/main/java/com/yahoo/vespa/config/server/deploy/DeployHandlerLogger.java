@@ -34,8 +34,8 @@ public class DeployHandlerLogger implements DeployLogger {
     @Override
     public void log(Level level, String message) {
         if ((level == LogLevel.FINE ||
-             level == LogLevel.DEBUG ||
-             level == LogLevel.SPAM) &&
+             level == Level.FINE ||
+             level == Level.FINEST) &&
             !verbose) {
             return;
         }
