@@ -136,7 +136,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             if (shouldRefreshCredentials(age)) {
                 context.log(logger, "Certificate is ready to be refreshed (age=%s)", age.toString());
                 if (shouldThrottleRefreshAttempts(context.containerName(), now)) {
-                    context.log(logger, LogLevel.WARNING, String.format(
+                    context.log(logger, Level.WARNING, String.format(
                             "Skipping refresh attempt as last refresh was on %s (less than %s ago)",
                             lastRefreshAttempt.get(context.containerName()).toString(), REFRESH_BACKOFF.toString()));
                     return false;

@@ -132,7 +132,7 @@ public class StateChangeHandler {
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
             if (reportedState.getState().equals(State.DOWN)) {
-                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), Level.INFO);
             } else {
                 eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), Level.FINE);
             }

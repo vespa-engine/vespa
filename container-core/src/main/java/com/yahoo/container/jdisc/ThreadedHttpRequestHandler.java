@@ -118,7 +118,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         catch (IOException e) {
             metric.add(RENDERING_ERRORS, 1, null);
             long time = System.currentTimeMillis() - startTime;
-            log.log(time < 900 ? LogLevel.INFO : LogLevel.WARNING,
+            log.log(time < 900 ? Level.INFO : LogLevel.WARNING,
                     "IO error while responding to " + " ["
                             + request.getUri() + "] " + "(total time "
                             + time + " ms) ", e);

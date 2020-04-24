@@ -106,7 +106,7 @@ public class AclMaintainer {
                         context.log(logger, Level.SEVERE, "Rollback of table " + table + " failed, giving up", ne);
                     }
                 } else {
-                    context.log(logger, LogLevel.WARNING, "Unable to sync iptables for " + table, e);
+                    context.log(logger, Level.WARNING, "Unable to sync iptables for " + table, e);
                 }
             }
         };

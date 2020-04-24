@@ -290,7 +290,7 @@ public class NodeAgentImpl implements NodeAgent {
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            context.log(logger, LogLevel.WARNING, "Failed trying to suspend container", e);
+            context.log(logger, Level.WARNING, "Failed trying to suspend container", e);
         }
     }
 
@@ -340,7 +340,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 stopServices(context);
             } catch (Exception e) {
-                context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
+                context.log(logger, Level.WARNING, "Failed stopping services, ignoring", e);
             }
         }
 
@@ -396,12 +396,12 @@ public class NodeAgentImpl implements NodeAgent {
     public void converge(NodeAgentContext context) {
         try {
             doConverge(context);
-            context.log(logger, LogLevel.INFO, "Converged");
+            context.log(logger, Level.INFO, "Converged");
         } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
-            context.log(logger, LogLevel.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
+            context.log(logger, Level.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
         } catch (DockerException e) {
             numberOfUnhandledException++;
             context.log(logger, Level.SEVERE, "Caught a DockerException", e);
@@ -510,7 +510,7 @@ public class NodeAgentImpl implements NodeAgent {
         StringBuilder builder = new StringBuilder();
         appendIfDifferent(builder, "state", lastNode, node, NodeSpec::state);
         if (builder.length() > 0) {
-            context.log(logger, LogLevel.INFO, "Changes to node: " + builder.toString());
+            context.log(logger, Level.INFO, "Changes to node: " + builder.toString());
         }
     }
 

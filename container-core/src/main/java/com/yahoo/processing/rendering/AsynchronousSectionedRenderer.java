@@ -527,7 +527,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                     try {
                         render();
                     } catch (Exception e) {
-                        Level level = LogLevel.WARNING;
+                        Level level = Level.WARNING;
                         if ((e instanceof IOException)) {
                             level = Level.FINE;
                             if ( ! clientClosed) {

@@ -63,7 +63,7 @@ public class LogEntry {
                          .filter(parts -> parts.length == 7)
                          .map(parts -> new LogEntry(0,
                                                     Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS),
-                                                    typeOf(LogLevel.parse(parts[5])),
+                                                    typeOf(Level.parse(parts[5])),
                                                     parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
                                                     parts[6].replaceAll("\\\\n", "\n")
                                                             .replaceAll("\\\\t", "\t")))
@@ -103,8 +103,8 @@ public class LogEntry {
     }
 
     public static Type typeOf(Level level) {
-        return    level.intValue() < LogLevel.INFO.intValue() ? Type.debug
-                : level.intValue() < LogLevel.WARNING.intValue() ? Type.info
+        return    level.intValue() < Level.INFO.intValue() ? Type.debug
+                : level.intValue() < Level.WARNING.intValue() ? Type.info
                 : level.intValue() < Level.SEVERE.intValue() ? Type.warning
                 : Type.error;
     }

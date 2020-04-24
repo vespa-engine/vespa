@@ -216,7 +216,7 @@ public class InternalStepRunner implements StepRunner {
                 logger.logAll(prepareResponse.log.stream()
                                                  .map(entry -> new LogEntry(0, // Sequenced by BufferedLogStore.
                                                                             Instant.ofEpochMilli(entry.time),
-                                                                            LogEntry.typeOf(LogLevel.parse(entry.level)),
+                                                                            LogEntry.typeOf(Level.parse(entry.level)),
                                                                             entry.message))
                                                  .collect(toList()));
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {

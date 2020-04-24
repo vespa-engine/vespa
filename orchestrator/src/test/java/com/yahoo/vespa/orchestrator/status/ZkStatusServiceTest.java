@@ -82,7 +82,7 @@ public class ZkStatusServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        Logger.getLogger("").setLevel(LogLevel.WARNING);
+        Logger.getLogger("").setLevel(Level.WARNING);
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);

@@ -33,7 +33,7 @@ public class DeployHandlerLogger implements DeployLogger {
 
     @Override
     public void log(Level level, String message) {
-        if ((level == LogLevel.FINE ||
+        if ((level == Level.FINE ||
              level == Level.FINE ||
              level == Level.FINEST) &&
             !verbose) {

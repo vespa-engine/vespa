@@ -82,7 +82,7 @@ public class StorageMaintainer {
             diskUsage.put(context.containerName(), diskUsageBytes);
             return Optional.of(diskUsageBytes);
         } catch (Exception e) {
-            context.log(logger, LogLevel.WARNING, "Failed to get disk usage", e);
+            context.log(logger, Level.WARNING, "Failed to get disk usage", e);
             return Optional.empty();
         }
     }

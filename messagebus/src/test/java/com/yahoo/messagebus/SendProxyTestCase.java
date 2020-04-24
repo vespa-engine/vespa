@@ -64,7 +64,7 @@ public class SendProxyTestCase {
         LogHandler logHandler = new LogHandler();
         log.addHandler(logHandler);
 
-        log.setLevel(LogLevel.INFO);
+        log.setLevel(Level.INFO);
         sendMessage(0, null);
         assertNull(logHandler.trace);
 

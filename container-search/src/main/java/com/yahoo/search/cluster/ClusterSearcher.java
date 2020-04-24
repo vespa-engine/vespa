@@ -71,7 +71,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     /** Pinging a node, called from ClusterMonitor */
     @Override
     public final void ping(ClusterMonitor<T> clusterMonitor, T p, Executor executor) {
-        log(LogLevel.FINE, "Sending ping to: ", p);
+        log(Level.FINE, "Sending ping to: ", p);
         Pinger pinger = new Pinger(p);
         FutureTask<Pong> future = new FutureTask<>(pinger);
 
@@ -97,10 +97,10 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
 
         if (pong.badResponse()) {
             clusterMonitor.failed(p, pong.error().get());
-            log(LogLevel.FINE, "Failed ping - ", pong);
+            log(Level.FINE, "Failed ping - ", pong);
         } else {
             clusterMonitor.responded(p);
-            log(LogLevel.FINE, "Answered ping - ", p);
+            log(Level.FINE, "Answered ping - ", p);
         }
 
         if (logThrowable != null) {
@@ -173,7 +173,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             if (result.hits().getError().getCode() == Error.TIMEOUT.code)
                 return result; // Retry is unlikely to help
 
-            log(LogLevel.FINER, "No result, checking for timeout.");
+            log(Level.FINER, "No result, checking for timeout.");
             tries++;
             connection = nodes.select(code, tries);
         } while (tries < nodes.getNodeCount());
@@ -211,7 +211,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         try {
             result = search(query, execution, connection);
         } catch (RuntimeException e) { //TODO: Exceptions should not be used to signal backend communication errors
-            log(LogLevel.WARNING, "An exception occurred while invoking backend searcher.", e);
+            log(Level.WARNING, "An exception occurred while invoking backend searcher.", e);
             result = new Result(query, ErrorMessage.createBackendCommunicationError("Failed calling " + connection +
                                                                                     " in " + this + " for " + query +
                                                                                     ": " + Exceptions.toMessageString(e)));

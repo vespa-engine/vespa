@@ -101,7 +101,7 @@ public class LoggingTestCase {
         stream.send(createData());
         stream.send(createData());
         stream.flush();
-        assertNull(logChecker.errorCounter.get(LogLevel.INFO));
+        assertNull(logChecker.errorCounter.get(Level.INFO));
         assertEquals(1, logChecker.errorCounter.get(Level.FINE).intValue());
         assertEquals(2, logChecker.errorCounter.get(Level.FINEST).intValue());
     }

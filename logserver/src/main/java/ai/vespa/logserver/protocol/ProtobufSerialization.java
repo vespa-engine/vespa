@@ -3,12 +3,12 @@ package ai.vespa.logserver.protocol;
 
 import ai.vespa.logserver.protocol.protobuf.LogProtocol;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogMessage;
 
 import java.time.Instant;
 import java.util.List;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import static java.util.stream.Collectors.toList;
 
@@ -82,9 +82,9 @@ class ProtobufSerialization {
     private static Level fromLogMessageLevel(LogProtocol.LogMessage.Level level) {
         switch (level) {
             case FATAL:
-                return Level.SEVERE;
+                return LogLevel.FATAL;
             case ERROR:
-                return Level.SEVERE;
+                return LogLevel.ERROR;
             case WARNING:
                 return LogLevel.WARNING;
             case CONFIG:
@@ -94,9 +94,9 @@ class ProtobufSerialization {
             case EVENT:
                 return LogLevel.EVENT;
             case DEBUG:
-                return Level.FINE;
+                return LogLevel.DEBUG;
             case SPAM:
-                return Level.FINEST;
+                return LogLevel.SPAM;
             case UNKNOWN:
             case UNRECOGNIZED:
             default:
@@ -106,9 +106,9 @@ class ProtobufSerialization {
 
     private static LogProtocol.LogMessage.Level toLogMessageLevel(Level level) {
         Level vespaLevel = LogLevel.getVespaLogLevel(level);
-        if (vespaLevel.equals(Level.SEVERE)) {
+        if (vespaLevel.equals(LogLevel.FATAL)) {
             return LogProtocol.LogMessage.Level.FATAL;
-        } else if (vespaLevel.equals(Level.SEVERE)) {
+        } else if (vespaLevel.equals(LogLevel.ERROR)) {
             return LogProtocol.LogMessage.Level.ERROR;
         } else if (vespaLevel.equals(LogLevel.WARNING)) {
             return LogProtocol.LogMessage.Level.WARNING;
@@ -118,9 +118,9 @@ class ProtobufSerialization {
             return LogProtocol.LogMessage.Level.INFO;
         } else if (vespaLevel.equals(LogLevel.EVENT)) {
             return LogProtocol.LogMessage.Level.EVENT;
-        } else if (vespaLevel.equals(Level.FINE)) {
+        } else if (vespaLevel.equals(LogLevel.DEBUG)) {
             return LogProtocol.LogMessage.Level.DEBUG;
-        } else if (vespaLevel.equals(Level.FINEST)) {
+        } else if (vespaLevel.equals(LogLevel.SPAM)) {
             return LogProtocol.LogMessage.Level.SPAM;
         } else {
             return LogProtocol.LogMessage.Level.UNKNOWN;

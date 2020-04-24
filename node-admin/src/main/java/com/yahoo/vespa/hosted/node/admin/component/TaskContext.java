@@ -28,7 +28,7 @@ public interface TaskContext {
     }
 
     /**
-     * Log message at LogLevel.INFO, scoped to denote the current task. The message may
+     * Log message at Level.INFO, scoped to denote the current task. The message may
      * also be directed to status pages or similar.
      *
      * Please do not call this too many times as that spams the log. Typically a task may call
@@ -37,7 +37,7 @@ public interface TaskContext {
      * Do not log a message that is also recorded with recordSystemModification.
      */
     default void log(Logger logger, String message) {
-        log(logger, LogLevel.INFO, message);
+        log(logger, Level.INFO, message);
     }
 
     default void log(Logger logger, String messageFormat, Object... args) {

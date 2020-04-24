@@ -49,7 +49,7 @@ class GetConfigProcessor implements Runnable {
     private void respond(JRTServerConfigRequest request) {
         Request req = request.getRequest();
         if (req.isError()) {
-            Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? Level.FINE : LogLevel.INFO;
+            Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? Level.FINE : Level.INFO;
             log.log(logLevel, logPre + req.errorMessage());
         }
         rpcServer.respond(request);
