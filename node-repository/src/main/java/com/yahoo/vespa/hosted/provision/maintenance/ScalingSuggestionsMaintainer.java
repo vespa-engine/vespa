@@ -50,21 +50,32 @@ public class ScalingSuggestionsMaintainer extends Maintainer {
                                                          suggest(application, clusterId, clusterNodes));
     }
 
+    private Applications applications() {
+        return nodeRepository().applications();
+    }
+
     private void suggest(ApplicationId applicationId,
                          ClusterSpec.Id clusterId,
                          List<Node> clusterNodes) {
-        Applications applications = nodeRepository().applications();
-        Application application = applications.get(applicationId).orElse(new Application(applicationId));
-        Cluster cluster = application.clusters().get(clusterId);
-        if (cluster == null) return;
-        Optional<AllocatableClusterResources> target = autoscaler.suggest(cluster, clusterNodes);
-        if (target.isEmpty()) return;
-        ClusterResources suggestion = target.get().toAdvertisedClusterResources();
-
+        Application application = applications().get(applicationId).orElse(new Application(applicationId));
+        Optional<Cluster> cluster = application.cluster(clusterId);
+        if (cluster.isEmpty()) return;
+        Optional<AllocatableClusterResources> suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
         try (Mutex lock = nodeRepository().lock(applicationId)) {
-            applications.get(applicationId).ifPresent(a -> a.cluster(clusterId).ifPresent(c ->
-                             applications.put(a.with(c.withSuggested(suggestion)), lock)));
+            applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion, clusterId, a, lock));
         }
+    }
+
+    private void storeSuggestion(Optional<AllocatableClusterResources> suggestion,
+                                 ClusterSpec.Id clusterId,
+                                 Application application,
+                                 Mutex lock) {
+        Optional<Cluster> cluster = application.cluster(clusterId);
+        if (cluster.isEmpty()) return;
+        if (suggestion.isPresent())
+            applications().put(application.with(cluster.get().withSuggested(suggestion.get().toAdvertisedClusterResources())), lock);
+        else
+            applications().put(application.with(cluster.get().withoutSuggested()), lock);
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {
