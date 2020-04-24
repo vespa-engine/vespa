@@ -130,14 +130,14 @@ public final class SessionCache extends AbstractComponent {
     private static void logSystemInfo(ContainerMbusConfig containerMbusConfig, long maxPendingSize) {
         log.log(Level.FINE,
                 "Running with maximum heap size of " + (Runtime.getRuntime().maxMemory() / 1024L / 1024L) + " MB");
-        log.log(LogLevel.CONFIG,
+        log.log(Level.CONFIG,
                 "Amount of memory reserved for container core: " + containerMbusConfig.containerCoreMemory() + " MB.");
-        log.log(LogLevel.CONFIG,
+        log.log(Level.CONFIG,
                 "Running with document expansion factor " + containerMbusConfig.documentExpansionFactor() + "");
 
         String msgLimit =
                 (containerMbusConfig.maxpendingcount() == 0) ? "unlimited" : "" + containerMbusConfig.maxpendingcount();
-        log.log(LogLevel.CONFIG, ("Starting message bus with max " + msgLimit + " pending messages and max " +
+        log.log(Level.CONFIG, ("Starting message bus with max " + msgLimit + " pending messages and max " +
                 (((double) (maxPendingSize / 1024L)) / 1024.0d) + " pending megabytes."));
     }
 

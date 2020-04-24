@@ -68,7 +68,7 @@ public class DocumentRouteSelectorPolicy
             DocumentSelector selector;
             try {
                 selector = new DocumentSelector(route.selector());
-                log.log(LogLevel.CONFIG, "Selector for route '" + route.name() + "' is '" + selector + "'.");
+                log.log(Level.CONFIG, "Selector for route '" + route.name() + "' is '" + selector + "'.");
             } catch (com.yahoo.document.select.parser.ParseException e) {
                 error = "Error parsing selector '" + route.selector() + "' for route '" + route.name() + "; " +
                         e.getMessage();

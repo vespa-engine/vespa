@@ -70,7 +70,7 @@ public class ConfigCurator {
     private ConfigCurator(Curator curator, int maxNodeSize) {
         this.curator = curator;
         this.maxNodeSize = maxNodeSize;
-        log.log(LogLevel.CONFIG, "Using jute max buffer size " + this.maxNodeSize);
+        log.log(Level.CONFIG, "Using jute max buffer size " + this.maxNodeSize);
         testZkConnection();
     }
 
