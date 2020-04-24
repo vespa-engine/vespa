@@ -707,4 +707,37 @@ TEST_P(BucketDatabaseTest, DISABLED_benchmark_const_iteration) {
             db().toString(false).c_str(), elapsed);
 }
 
+TEST_P(BucketDatabaseTest, DISABLED_benchmark_find_parents) {
+    constexpr uint32_t superbuckets = 1u << 16u;
+    constexpr uint32_t sub_buckets = 14;
+    constexpr uint32_t n_buckets = superbuckets * sub_buckets;
+
+    std::vector<uint64_t> bucket_keys;
+    bucket_keys.reserve(n_buckets);
+
+    for (uint32_t sb = 0; sb < superbuckets; ++sb) {
+        for (uint64_t i = 0; i < sub_buckets; ++i) {
+            document::BucketId bucket(48, (i << 32ULL) | sb); // TODO eval with different bit counts
+            bucket_keys.emplace_back(bucket.toKey());
+        }
+    }
+    fprintf(stderr, "Inserting %zu buckets into DB\n", bucket_keys.size());
+    std::sort(bucket_keys.begin(), bucket_keys.end());
+    for (uint64_t k : bucket_keys) {
+        db().update(BucketDatabase::Entry(BucketId(BucketId::keyToBucketId(k)), BI3(0, 1, 2)));
+    }
+
+    fprintf(stderr, "Invoking getParents() %zu times\n", bucket_keys.size());
+    auto elapsed = vespalib::BenchmarkTimer::benchmark([&] {
+        std::vector<BucketDatabase::Entry> entries;
+        for (uint64_t k : bucket_keys) {
+            db().getParents(BucketId(BucketId::keyToBucketId(k)), entries);
+            assert(entries.size() == 1);
+            entries.clear();
+        }
+    }, 30);
+    fprintf(stderr, "Looking up all buckets in %s takes %g seconds\n",
+            db().toString(false).c_str(), elapsed);
+}
+
 }
