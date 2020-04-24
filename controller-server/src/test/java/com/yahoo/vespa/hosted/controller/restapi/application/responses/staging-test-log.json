@@ -28,7 +28,7 @@
       {
         "at": 7303000,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform dockerImage:6.1"
       },
       {
         "at": 7303000,
@@ -43,7 +43,7 @@
       {
         "at": 7303000,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform dockerImage:6.1"
       },
       {
         "at": 7303000,
@@ -58,7 +58,7 @@
       {
         "at": 7303000,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform dockerImage:6.1"
       },
       {
         "at": 7303000,
@@ -102,7 +102,7 @@
       {
         "at": 7303000,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform dockerImage:6.1"
       },
       {
         "at": 7303000,
