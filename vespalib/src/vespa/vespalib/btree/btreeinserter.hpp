@@ -121,7 +121,11 @@ insert(BTreeNode::Ref &root,
         lnode->insert(idx, key, data);
         itr.setLeafNodeIdx(idx);
         if constexpr (AggrCalcT::hasAggregated()) {
-            aggrCalc.add(lnode->getAggregated(), aggrCalc.getVal(data));
+            if constexpr (AggrCalcT::aggregate_over_values()) {
+                aggrCalc.add(lnode->getAggregated(), aggrCalc.getVal(data));
+            } else {
+                aggrCalc.add(lnode->getAggregated(), aggrCalc.getVal(key));
+            }
             ca = lnode->getAggregated();
         }
     }
