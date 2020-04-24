@@ -56,7 +56,7 @@ public class RestApiTest {
         if (container != null) container.close();
     }
 
-    /** This test gives examples of all the requests that can be made to nodes/v2 */
+    /** This test gives examples of the node requests that can be made to nodes/v2 */
     @Test
     public void test_requests() throws Exception {
         // GET
@@ -229,6 +229,15 @@ public class RestApiTest {
                 .suspend(new HostName("host4.yahoo.com"));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+    }
+
+    @Test
+    public void test_application_requests() throws Exception {
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/"), "applications.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1"),
+                   "application1.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
+                   "application2.json");
     }
 
     @Test

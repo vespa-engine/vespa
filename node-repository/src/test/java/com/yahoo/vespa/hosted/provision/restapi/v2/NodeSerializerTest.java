@@ -13,19 +13,17 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeSerializerTest {
 
-    private final NodeSerializer serializer = new NodeSerializer();
-
     @Test
     public void serialize_node_types() {
         for (NodeType t : NodeType.values()) {
-            assertEquals(t, serializer.typeFrom(serializer.toString(t)));
+            assertEquals(t, NodeSerializer.typeFrom(NodeSerializer.toString(t)));
         }
     }
 
     @Test
     public void serialize_node_states() {
         for (Node.State s : Node.State.values()) {
-            assertEquals(s, serializer.stateFrom(serializer.toString(s)));
+            assertEquals(s, NodeSerializer.stateFrom(NodeSerializer.toString(s)));
         }
     }
 
