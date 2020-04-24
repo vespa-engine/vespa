@@ -554,7 +554,9 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private String currentPlatform(Node node) {
-        return node.wantedDockerImage().repository() + ":" + node.wantedVersion();
+        String currentRepo = node.currentDockerImage().repository();
+        String wantedRepo = node.wantedDockerImage().repository();
+        return (currentRepo.equals(wantedRepo) ? "" : currentRepo + ":") + node.currentVersion();
     }
 
     private String humanize(Node.ServiceState state) {
