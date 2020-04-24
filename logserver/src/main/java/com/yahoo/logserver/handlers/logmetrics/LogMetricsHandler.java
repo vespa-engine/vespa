@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 import com.yahoo.log.event.Event;
 import com.yahoo.logserver.filter.LevelFilter;
 import com.yahoo.log.LogMessage;

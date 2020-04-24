@@ -8,7 +8,7 @@ import com.yahoo.log.LogMessage;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 
 import static java.util.stream.Collectors.toList;
 

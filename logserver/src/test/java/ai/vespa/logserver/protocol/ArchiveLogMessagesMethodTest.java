@@ -31,9 +31,9 @@ import static org.mockito.Mockito.verify;
 public class ArchiveLogMessagesMethodTest {
 
     private static final LogMessage MESSAGE_1 =
-            LogMessage.of(Instant.EPOCH.plus(1000, ChronoUnit.DAYS), "localhost", 12, 3456, "my-service", "my-component", LogLevel.ERROR, "My error message");
+            LogMessage.of(Instant.EPOCH.plus(1000, ChronoUnit.DAYS), "localhost", 12, 3456, "my-service", "my-component", Level.SEVERE, "My error message");
     private static final LogMessage MESSAGE_2 =
-            LogMessage.of(Instant.EPOCH.plus(5005, ChronoUnit.DAYS), "localhost", 12, 6543, "my-service", "my-component", LogLevel.INFO, "My info message");
+            LogMessage.of(Instant.EPOCH.plus(5005, ChronoUnit.DAYS), "localhost", 12, 6543, "my-service", "my-component", Level.INFO, "My info message");
 
     @Test
     public void server_dispatches_log_messages_from_log_request() {
