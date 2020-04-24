@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
@@ -28,6 +30,20 @@ public class DiskSizeTest {
     public void measure_non_existent_path() {
         var fs = TestFileSystem.create();
         assertEquals(DiskSize.ZERO, DiskSize.measure(fs.getPath("/fake/path"), null));
+    }
+
+    @Test
+    public void partition_size() {
+        var terminal = new TestTerminal();
+        var fs = TestFileSystem.create();
+        var output = "Filesystem           1024-blocks     Used Available Capacity Mounted on\n" +
+                     "/dev/mapper/sys-root   423301760 15866680 390085824       4% /\n";
+        terminal.expectCommand("df --portability --local --block-size 1K / 2>&1", 0, output);
+
+        var partitionSize = DiskSize.partition(fs.getPath("/"), terminal.newCommandLine(new TestTaskContext()));
+        assertEquals(DiskSize.of(423301760, DiskSize.Unit.kiB), partitionSize.total());
+        assertEquals(DiskSize.of(390085824, DiskSize.Unit.kiB), partitionSize.available());
+        assertEquals(DiskSize.of(15866680, DiskSize.Unit.kiB), partitionSize.used());
     }
 
 }
