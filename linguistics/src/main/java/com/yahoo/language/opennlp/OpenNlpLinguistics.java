@@ -6,6 +6,8 @@ import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Returns a linguistics implementation based on OpenNlp,
@@ -13,6 +15,7 @@ import com.yahoo.language.simple.SimpleLinguistics;
  */
 public class OpenNlpLinguistics extends SimpleLinguistics {
 
+    private static final Logger log = Logger.getLogger(OpenNlpLinguistics.class.getName());
     private final Detector detector;
 
     public OpenNlpLinguistics() {
@@ -26,6 +29,7 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     public OpenNlpLinguistics(boolean enableOptimaize) {
         this(enableOptimaize ? new OptimaizeDetector() : new SimpleDetector());
+        log.log(Level.FINE, "using "+(enableOptimaize ? "Optimaize" : "Simple")+" detector");
     }
 
     private OpenNlpLinguistics(Detector detector) {

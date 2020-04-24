@@ -22,6 +22,8 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Detects the language of some sample text using SimpleDetector for CJK and Optimaize otherwise.
@@ -33,6 +35,7 @@ public class OptimaizeDetector implements Detector {
     static private Object initGuard = new Object();
     static private TextObjectFactory textObjectFactory = null;
     static private LanguageDetector languageDetector = null;
+    static private final Logger log = Logger.getLogger(OptimaizeDetector.class.getName());
 
     static private void initOptimaize() {
         synchronized (initGuard) {
@@ -96,6 +99,7 @@ public class OptimaizeDetector implements Detector {
     private static Language guessLanguageUsingOptimaize(String input) {
         Optional<LdLocale> result = languageDetector.detect(textObjectFactory.forText(input));
         if ( ! result.isPresent()) return Language.UNKNOWN;
+        log.log(Level.FINE, () -> "guessing language "+result.get()+" from input: "+input);
 
         return Language.fromLocale(new Locale(result.get().getLanguage()));
     }

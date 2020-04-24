@@ -9,6 +9,8 @@ import com.yahoo.language.simple.kstem.KStemmer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * <p>A tokenizer which splits on whitespace, normalizes and transforms using the given implementations
@@ -25,6 +27,7 @@ public class SimpleTokenizer implements Tokenizer {
     private final Normalizer normalizer;
     private final Transformer transformer;
     private final KStemmer stemmer = new KStemmer();
+    private static final Logger log = Logger.getLogger(SimpleTokenizer.class.getName());
 
     public SimpleTokenizer() {
         this(new SimpleNormalizer(), new SimpleTransformer());
@@ -64,13 +67,21 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {
+        final String original = token;
+        log.log(Level.FINEST, () -> "processToken '"+original+"'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
-        if (stemMode != StemMode.NONE)
+        if (stemMode != StemMode.NONE) {
+            final String oldToken = token;
             token = stemmer.stem(token);
-        return token;
+            final String newToken = token;
+            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+newToken+"'");
+        }
+        final String result = token;
+        log.log(Level.FINEST, () -> "processed token is: "+result);
+        return result;
     }
 
 }

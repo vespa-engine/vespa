@@ -11,9 +11,12 @@ import opennlp.tools.stemmer.snowball.SnowballStemmer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class OpenNlpTokenizer implements Tokenizer {
     private final static int SPACE_CODE = 32;
+    private static final Logger log = Logger.getLogger(OpenNlpTokenizer.class.getName());
     private final Normalizer normalizer;
     private final Transformer transformer;
     private final SimpleTokenizer simpleTokenizer;
@@ -57,6 +60,7 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     private Stemmer getStemmerForLanguage(Language language, StemMode stemMode) {
+        log.log(Level.FINEST, () -> "getStemmerForLanguage '"+language+"' mode: "+stemMode);
         if (language == null || Language.ENGLISH.equals(language) || StemMode.NONE.equals(stemMode)) {
             return null;
         }
@@ -120,14 +124,21 @@ public class OpenNlpTokenizer implements Tokenizer {
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents,
                                 Stemmer stemmer) {
+        final String original = token;
+        log.log(Level.FINEST, () -> "processToken '"+original+"'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
         if (stemMode != StemMode.NONE) {
+            final String oldToken = token;
             token = doStemming(token, stemmer);
+            final String newToken = token;
+            log.log(Level.FINEST, () -> "stem '"+oldToken+"' to '"+newToken+"'");
         }
-        return token;
+        final String result = token;
+        log.log(Level.FINEST, () -> "processed token is: "+result);
+        return result;
     }
 
     private String doStemming(String token, Stemmer stemmer) {
