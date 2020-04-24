@@ -88,7 +88,7 @@ public interface Waiter {
         }
 
         public final void wait(WaitCondition c, WaitTask wt, int timeoutMS) {
-            log.log(LogLevel.INFO, "Waiting for " + c + (wt == null ? "" : " with wait task " + wt));
+            log.log(Level.INFO, "Waiting for " + c + (wt == null ? "" : " with wait task " + wt));
             final long startTime = System.currentTimeMillis();
             final long endTime = startTime + timeoutMS;
             String lastReason = null;
@@ -96,11 +96,11 @@ public interface Waiter {
                 synchronized (data.getMonitor()) {
                     String reason = c.isConditionMet();
                     if (reason == null) {
-                        log.log(LogLevel.INFO, "Condition met. Returning");
+                        log.log(Level.INFO, "Condition met. Returning");
                         return;
                     }
                     if (lastReason == null || !lastReason.equals(reason)) {
-                        log.log(LogLevel.INFO, "Wait condition not met: " + reason);
+                        log.log(Level.INFO, "Wait condition not met: " + reason);
                         lastReason = reason;
                     }
                     try {

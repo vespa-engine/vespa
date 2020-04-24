@@ -118,7 +118,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
             catch (RuntimeException e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion)) {
-                    log.log(LogLevel.INFO, applicationId + ": Skipping major version " + majorVersion, e);
+                    log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
                 } else  {
                     if (e instanceof NullPointerException || e instanceof NoSuchElementException | e instanceof UncheckedTimeoutException) {
                         log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
@@ -197,7 +197,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 // allow failure to create old config models if there is a validation override that allow skipping old
                 // config models (which is always true for manually deployed zones)
                 if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
-                    log.log(LogLevel.INFO, applicationId + ": Skipping old version (due to validation override)");
+                    log.log(Level.INFO, applicationId + ": Skipping old version (due to validation override)");
                 else {
                     log.log(LogLevel.ERROR, applicationId + ": Failed to build version " + version);
                     throw e;

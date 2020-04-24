@@ -299,7 +299,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     protected void tearDownSystem() throws Exception {
         if (testName != null) {
-            //log.log(LogLevel.INFO, "STOPPING TEST " + testName);
+            //log.log(Level.INFO, "STOPPING TEST " + testName);
             System.err.println("STOPPING TEST " + testName);
             testName = null;
         }

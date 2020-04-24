@@ -51,11 +51,11 @@ public class MasterDataGatherer {
         public void process(WatchedEvent watchedEvent) {
             switch (watchedEvent.getType()) {
                 case NodeChildrenChanged: // Fleetcontrollers have either connected or disconnected to ZooKeeper
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": A change occurred in the list of registered fleetcontrollers. Requesting new information");
+                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": A change occurred in the list of registered fleetcontrollers. Requesting new information");
                     session.getChildren(zooKeeperRoot + "indexes", this, childListener, null);
                     break;
                 case NodeDataChanged: // A fleetcontroller has changed what node it is voting for
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Altered data in node " + watchedEvent.getPath() + ". Requesting new vote");
+                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Altered data in node " + watchedEvent.getPath() + ". Requesting new vote");
                     int index = getIndex(watchedEvent.getPath());
                     synchronized (nextMasterData) {
                         nextMasterData.put(index, null);
@@ -84,7 +84,7 @@ public class MasterDataGatherer {
     private class DirCallback implements AsyncCallback.ChildrenCallback {
         public void processResult(int version, String path, Object context, List<String> nodes) {
             if (nodes == null) nodes = new LinkedList<String>();
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
             synchronized (nextMasterData) {
                 nextMasterData.clear();
                 for (String node : nodes) {
@@ -105,14 +105,14 @@ public class MasterDataGatherer {
 
         public void processResult(int code, String path, Object context, byte[] rawdata, Stat stat) {
             String data = rawdata == null ? null : new String(rawdata, utf8);
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got vote data from path " + path +
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Got vote data from path " + path +
                     " with code " + code + " and data " + data);
 
             int index = getIndex(path);
             synchronized (nextMasterData) {
                 if (code != KeeperException.Code.OK.intValue()) {
                     if (code == KeeperException.Code.NONODE.intValue()) {
-                        log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Node at " + path +
+                        log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Node at " + path +
                                 " removed, got no other option than counting it as down.");
                     } else {
                         log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failure code " + code +
@@ -129,7 +129,7 @@ public class MasterDataGatherer {
                         if (value.equals(nextMasterData.get(index))) {
                             log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ", which already was " + value + ".");
                         } else {
-                            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ". Altering vote from " + nextMasterData.get(index) + " to " + value + ".");
+                            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Got vote from fleetcontroller " + index + ". Altering vote from " + nextMasterData.get(index) + " to " + value + ".");
                             nextMasterData.put(index, value);
                         }
                     } else {

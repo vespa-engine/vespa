@@ -82,7 +82,7 @@ public class SessionZooKeeperClient {
             String data = configCurator.getData(sessionStatusPath.getAbsolute());
             return Session.Status.parse(data);
         } catch (Exception e) {
-            log.log(LogLevel.INFO, "Unable to read session status, assuming it was deleted");
+            log.log(Level.INFO, "Unable to read session status, assuming it was deleted");
             return Session.Status.NONE;
         }
     }
@@ -134,7 +134,7 @@ public class SessionZooKeeperClient {
             transaction.add(curatorTransaction);
             transaction.commit();
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
+            log.log(Level.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
         }
     }
 

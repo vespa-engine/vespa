@@ -203,7 +203,7 @@ public class TenantRepository {
         TenantName tenantName = builder.getTenantName();
         if (tenants.containsKey(tenantName)) return;
 
-        log.log(LogLevel.INFO, "Creating tenant '" + tenantName + "'");
+        log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
         Tenant tenant = builder.build();
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
@@ -280,7 +280,7 @@ public class TenantRepository {
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
 
-        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
+        log.log(Level.INFO, "Deleting tenant '" + name + "'");
         tenants.get(name).delete();
     }
 
@@ -289,7 +289,7 @@ public class TenantRepository {
         if (tenant == null)
             throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-        log.log(LogLevel.INFO, "Closing tenant '" + name + "'");
+        log.log(Level.INFO, "Closing tenant '" + name + "'");
         notifyRemovedTenant(name);
         tenant.close();
     }

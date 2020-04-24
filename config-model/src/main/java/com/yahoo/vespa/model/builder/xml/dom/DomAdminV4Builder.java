@@ -84,7 +84,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
             createLogserver(deployState.getDeployLogger(), admin, hosts);
         } else {
-            context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
+            context.getDeployLogger().log(Level.INFO, "No container host available to use for running logserver");
         }
     }
 

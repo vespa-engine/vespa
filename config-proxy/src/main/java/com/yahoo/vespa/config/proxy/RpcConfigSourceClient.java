@@ -95,12 +95,12 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     log.log(Level.FINE, () -> "Created connection to config source at " + spec.toString());
                     return;
                 } else {
-                    log.log(LogLevel.INFO, "Could not connect to config source at " + spec.toString());
+                    log.log(Level.INFO, "Could not connect to config source at " + spec.toString());
                 }
                 target.close();
             }
             String extra = "";
-            log.log(LogLevel.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
+            log.log(Level.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
                     ", please make sure config server(s) are running. " + extra);
         }
     }
@@ -165,7 +165,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     activeSubscribers.put(configCacheKey, subscriber);
                     exec.execute(subscriber);
                 } catch (ConfigurationRuntimeException e) {
-                    log.log(LogLevel.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
+                    log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
                     subscriber.cancel();
                 }
             }
@@ -235,7 +235,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     log.log(Level.FINE, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
                     rpcServer.returnOkResponse(request, config);
                 } else {
-                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
+                    log.log(Level.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
                 }
             }
         }

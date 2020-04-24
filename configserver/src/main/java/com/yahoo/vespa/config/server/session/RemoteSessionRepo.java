@@ -88,7 +88,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             if (session == null) continue; // Internal sessions not in synch with zk, continue
             Instant created = Instant.ofEpochSecond(session.getCreateTime());
             if (sessionHasExpired(created, expiryTime)) {
-                log.log(LogLevel.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                log.log(Level.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 session.delete();
                 deleted++;
             }
@@ -166,7 +166,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 reloadHandler.reloadConfig(session.ensureApplicationLoaded());
-                log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
+                log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
         }

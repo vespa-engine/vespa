@@ -70,7 +70,7 @@ class CachedFilesMaintainer implements Runnable {
                 .filter(fileReference -> isFileLastModifiedBefore(new File(directory, fileReference), deleteNotUsedSinceInstant))
                 .collect(Collectors.toSet());
         if (filesToDelete.size() > 0) {
-            log.log(LogLevel.INFO, "Files that can be deleted in " + directory + " (not used since " + deleteNotUsedSinceInstant + "): " + filesToDelete);
+            log.log(Level.INFO, "Files that can be deleted in " + directory + " (not used since " + deleteNotUsedSinceInstant + "): " + filesToDelete);
             filesToDelete.forEach(fileReference -> {
                 File file = new File(directory, fileReference);
                 if (!IOUtils.recursiveDeleteDir(file))

@@ -78,7 +78,7 @@ public class MemoryCache {
     String dumpCacheToDisk(String path, MemoryCache cache) {
         if (path == null || path.isEmpty()) {
             path = DEFAULT_DUMP_DIR;
-            log.log(LogLevel.INFO, "dumpCache. No path or empty path. Using '" + path + "'");
+            log.log(Level.INFO, "dumpCache. No path or empty path. Using '" + path + "'");
         }
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
@@ -86,7 +86,7 @@ public class MemoryCache {
 
         File dir = new File(path);
         if ( ! dir.exists()) {
-            log.log(LogLevel.INFO, dir.getAbsolutePath() + " does not exist, creating it");
+            log.log(Level.INFO, dir.getAbsolutePath() + " does not exist, creating it");
             try {
                 Files.createDirectory(dir.toPath());
             } catch (IOException e) {
@@ -101,7 +101,7 @@ public class MemoryCache {
             return "Not able to write to '" + dir.getAbsolutePath() + "'";
         }
 
-        log.log(LogLevel.INFO, "Dumping cache to '" + dir.getAbsolutePath() + "'");
+        log.log(Level.INFO, "Dumping cache to '" + dir.getAbsolutePath() + "'");
         for (RawConfig config : cache.values()) {
             writeConfigToFile(config, path);
         }

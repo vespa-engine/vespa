@@ -58,17 +58,17 @@ public class ZooKeeperDatabase extends Database {
             Event.KeeperState newState = watchedEvent.getState();
             if (state == null || !state.equals(newState)) switch (newState) {
                 case Expired:
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Zookeeper session expired");
+                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Zookeeper session expired");
                     sessionOpen = false;
                     listener.handleZooKeeperSessionDown();
                     break;
                 case Disconnected:
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Lost connection to zookeeper server");
+                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Lost connection to zookeeper server");
                     sessionOpen = false;
                     listener.handleZooKeeperSessionDown();
                     break;
                 case SyncConnected:
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Connection to zookeeper server established. Refetching master data");
+                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Connection to zookeeper server established. Refetching master data");
                     if (masterDataGatherer != null) {
                         masterDataGatherer.restart();
                     }
@@ -139,14 +139,14 @@ public class ZooKeeperDatabase extends Database {
         createNode(zooKeeperRoot, "published_state_bundle", new byte[0]); // TODO dedupe string constants
         byte val[] = String.valueOf(nodeIndex).getBytes(utf8);
         deleteNodeIfExists(getMyIndexPath());
-        log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex +
+        log.log(Level.INFO, "Fleetcontroller " + nodeIndex +
                 ": Creating ephemeral master vote node with vote to self.");
         session.create(getMyIndexPath(), val, acl, CreateMode.EPHEMERAL);
     }
 
     private void deleteNodeIfExists(String path) throws KeeperException, InterruptedException {
         if (session.exists(path, false) != null) {
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Removing master vote node.");
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Removing master vote node.");
             session.delete(path, -1);
         }
     }
@@ -187,7 +187,7 @@ public class ZooKeeperDatabase extends Database {
         byte val[] = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
             session.setData(getMyIndexPath(), val, -1);
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
             return true;
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
@@ -199,7 +199,7 @@ public class ZooKeeperDatabase extends Database {
     public boolean storeLatestSystemStateVersion(int version) throws InterruptedException {
         byte data[] = Integer.toString(version).getBytes(utf8);
         try{
-            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
+            log.log(Level.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
             var stat = session.setData(zooKeeperRoot + "latestversion", data, lastKnownStateVersionZNodeVersion);
             lastKnownStateVersionZNodeVersion = stat.getVersion();
             return true;
@@ -222,7 +222,7 @@ public class ZooKeeperDatabase extends Database {
             byte[] data = session.getData(zooKeeperRoot + "latestversion", false, stat);
             lastKnownStateVersionZNodeVersion = stat.getVersion();
             final Integer versionNumber = Integer.valueOf(new String(data, utf8));
-            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper " +
+            log.log(Level.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper " +
                     "(znode version %d)", nodeIndex, versionNumber, stat.getVersion()));
             return versionNumber;
         } catch (InterruptedException e) {

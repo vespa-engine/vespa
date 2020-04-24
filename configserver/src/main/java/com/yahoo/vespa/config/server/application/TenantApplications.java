@@ -171,7 +171,7 @@ public class TenantApplications {
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
+        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {

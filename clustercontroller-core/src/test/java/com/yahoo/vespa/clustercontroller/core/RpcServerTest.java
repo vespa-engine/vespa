@@ -101,7 +101,7 @@ public class RpcServerTest extends FleetControllerTest {
         waitForStableSystem();
 
         assertEquals(true, nodes.get(0).isDistributor());
-        log.log(LogLevel.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
+        log.log(Level.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
         nodes.get(0).disconnect();
         nodes.get(19).disconnect();
         fleetController.waitForNodesInSlobrok(9, 9, timeoutMS);

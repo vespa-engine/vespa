@@ -118,7 +118,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     @Override
     public void deconstruct() {
-        log.log(LogLevel.INFO, "Stopping config server");
+        log.log(Level.INFO, "Stopping config server");
         down();
         server.stop();
         log.log(Level.FINE, "RPC server stopped");
@@ -148,7 +148,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     public void start() {
         if (versionState.isUpgraded()) {
-            log.log(LogLevel.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
+            log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
                 if ( ! redeployAllApplications()) {
@@ -156,7 +156,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                     return; // Status will not be set to 'up' since we return here
                 }
                 versionState.saveNewVersion();
-                log.log(LogLevel.INFO, "All applications redeployed successfully");
+                log.log(Level.INFO, "All applications redeployed successfully");
             } catch (Exception e) {
                 log.log(LogLevel.ERROR, "Redeployment of applications failed", e);
                 redeployingApplicationsFailed();
@@ -211,7 +211,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
             if ( ! applicationsNotRedeployed.isEmpty()) {
-                log.log(LogLevel.INFO, "Redeployment of " + applicationsNotRedeployed +
+                log.log(Level.INFO, "Redeployment of " + applicationsNotRedeployed +
                         " failed, will retry in " + sleepTimeWhenRedeployingFails);
                 Thread.sleep(sleepTimeWhenRedeployingFails.toMillis());
             }
@@ -243,7 +243,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             } catch (ExecutionException e) {
                 ApplicationId app = f.getKey();
                 if (e.getCause() instanceof TransientException) {
-                    log.log(LogLevel.INFO, "Redeploying " + app +
+                    log.log(Level.INFO, "Redeploying " + app +
                             " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
                 } else {
                     log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);

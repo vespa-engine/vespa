@@ -263,7 +263,7 @@ public class SystemStateBroadcaster {
         ClusterState baselineState = clusterStateBundle.getBaselineClusterState();
 
         if (!baselineState.isOfficial()) {
-            log.log(LogLevel.INFO, String.format("Publishing cluster state version %d", baselineState.getVersion()));
+            log.log(Level.INFO, String.format("Publishing cluster state version %d", baselineState.getVersion()));
             baselineState.setOfficial(true); // FIXME this violates state bundle immutability
         }
 

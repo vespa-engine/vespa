@@ -435,7 +435,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
             RoutingTableSpec table = spec.getTable(i);
             String name = table.getProtocol();
             if (!protocolRepository.hasProtocol(name)) {
-                log.log(LogLevel.INFO, "Protocol '" + name + "' is not supported, ignoring routing table.");
+                log.log(Level.INFO, "Protocol '" + name + "' is not supported, ignoring routing table.");
                 continue;
             }
             tables.put(name, new RoutingTable(table));

@@ -78,7 +78,7 @@ public class DockerImpl implements Docker {
 
                 scheduledPulls.add(image);
 
-                logger.log(LogLevel.INFO, "Starting download of " + image.asString());
+                logger.log(Level.INFO, "Starting download of " + image.asString());
 
                 dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
                 return true;
@@ -352,7 +352,7 @@ public class DockerImpl implements Docker {
         @Override
         public void onComplete() {
             if (imageIsDownloaded(dockerImage)) {
-                logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
+                logger.log(Level.INFO, "Download completed: " + dockerImage.asString());
                 removeScheduledPoll(dockerImage);
             } else {
                 numberOfDockerApiFails.increment();

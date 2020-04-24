@@ -94,7 +94,7 @@ public class RemoteSession extends Session {
         reloadHandler.reloadConfig(app);
         log.log(Level.FINE, () -> logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
-        log.log(LogLevel.INFO, logPre() + "Session activated: " + getSessionId());
+        log.log(Level.INFO, logPre() + "Session activated: " + getSessionId());
     }
     
     @Override
@@ -124,7 +124,7 @@ public class RemoteSession extends Session {
             if (e.getCause().getClass() != KeeperException.NoNodeException.class) {
                 throw e;
             } else {
-                log.log(LogLevel.INFO, "Not able to notify completion for session: " + getSessionId() + ", node has been deleted");
+                log.log(Level.INFO, "Not able to notify completion for session: " + getSessionId() + ", node has been deleted");
             }
         }
     }

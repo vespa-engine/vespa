@@ -244,7 +244,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                 buckets.append(" ");
                 buckets.append(bid.toString());
             }
-            log.log(LogLevel.INFO, "Got EmptyBuckets: " + buckets);
+            log.log(Level.INFO, "Got EmptyBuckets: " + buckets);
         }
 
         @Override

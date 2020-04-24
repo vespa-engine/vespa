@@ -64,7 +64,7 @@ public abstract class HttpMetricFetcher {
 
     private void logMessage(String message, int timesFetched) {
         if (service.isAlive() && timesFetched > 5) {
-            log.log(LogLevel.INFO, message);
+            log.log(Level.INFO, message);
         } else {
             log.log(Level.FINE, message);
         }
@@ -74,7 +74,7 @@ public abstract class HttpMetricFetcher {
         if (timesFetched > 5) {
             log.log(LogLevel.WARNING, message);
         } else {
-            log.log(LogLevel.INFO, message);
+            log.log(Level.INFO, message);
         }
     }
 

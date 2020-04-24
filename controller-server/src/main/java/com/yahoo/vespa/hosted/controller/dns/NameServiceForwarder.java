@@ -78,7 +78,7 @@ public class NameServiceForwarder {
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }
-            log.log(LogLevel.INFO, "Queueing name service request: " + request);
+            log.log(Level.INFO, "Queueing name service request: " + request);
             db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
         }
     }

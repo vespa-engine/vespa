@@ -144,7 +144,7 @@ public class RPCTarget implements RequestWaiter {
                     log.log(LogLevel.WARNING, "Failed to parse '" + str + "' as version for target '" + name + "'.", e);
                 }
             } else {
-                log.log(LogLevel.INFO, "Method mbus.getVersion() failed for target '" + name + "'; " +
+                log.log(Level.INFO, "Method mbus.getVersion() failed for target '" + name + "'; " +
                                        req.errorMessage());
             }
             handlers = versionHandlers;

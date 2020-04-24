@@ -109,7 +109,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(LogLevel.INFO, "Starting container");
+        log.log(Level.INFO, "Starting container");
     }
 
     /**
@@ -177,7 +177,7 @@ public final class ConfiguredApplication implements Application {
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
         slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
-        log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
+        log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
     }

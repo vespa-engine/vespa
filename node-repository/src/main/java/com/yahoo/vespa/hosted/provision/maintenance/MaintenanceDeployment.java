@@ -83,7 +83,7 @@ class MaintenanceDeployment implements Closeable {
             return true;
         } catch (TransientException e) {
             metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
-            log.log(LogLevel.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
+            log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
             return false;
         } catch (RuntimeException e) {

@@ -32,7 +32,7 @@ public class TenantDebugger implements TreeCacheListener {
             case NODE_ADDED:
             case NODE_REMOVED:
             case NODE_UPDATED:
-                log.log(LogLevel.INFO, event.toString());
+                log.log(Level.INFO, event.toString());
                 break;
         }
     }

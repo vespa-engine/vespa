@@ -34,7 +34,7 @@ public abstract class AbstractPluginLoader implements PluginLoader {
         String enable = config.get("enable", "true");
 
         if (! enable.equals("true")) {
-            log.log(LogLevel.INFO, pname + ": plugin disabled by config");
+            log.log(Level.INFO, pname + ": plugin disabled by config");
             return;
         }
 

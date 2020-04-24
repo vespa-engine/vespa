@@ -83,7 +83,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 Thread.sleep(10);
             }
             if (!isConnected()) {
-                log.log(LogLevel.INFO, "Fleetcontroller: Server Socket not ready after connect()");
+                log.log(Level.INFO, "Fleetcontroller: Server Socket not ready after connect()");
             }
             log.log(Level.FINE, "Fleet controller status page viewer listening to " + ssocket.getLocalSocketAddress());
             monitor.notifyAll();
@@ -102,7 +102,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
     public void setPort(int port) throws java.io.IOException, InterruptedException {
             // Only bother to reconnect if we were connected to begin with, we care about what port it runs on, and it's not already running there
         if (port != 0 && isConnected() && port != ((InetSocketAddress) ssocket.getLocalSocketAddress()).getPort()) {
-            log.log(LogLevel.INFO, "Exchanging port used by status server. Moving from port "
+            log.log(Level.INFO, "Exchanging port used by status server. Moving from port "
                     + ((InetSocketAddress) ssocket.getLocalSocketAddress()).getPort() + " to port " + port);
             disconnect();
             this.port = port;
@@ -250,7 +250,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     if (connection != null) try{
                         connection.close();
                     } catch (IOException e) {
-                        log.log(LogLevel.INFO, "Failed to close socket " + connection + ": " + e.getMessage());
+                        log.log(Level.INFO, "Failed to close socket " + connection + ": " + e.getMessage());
                     }
                 }
             }

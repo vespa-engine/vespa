@@ -299,12 +299,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public void shutdown() throws InterruptedException, java.io.IOException {
         if (runner != null && isRunning()) {
-            log.log(LogLevel.INFO,  "Joining event thread.");
+            log.log(Level.INFO,  "Joining event thread.");
             running.set(false);
             synchronized(monitor) { monitor.notifyAll(); }
             runner.join();
         }
-        log.log(LogLevel.INFO,  "Fleetcontroller done shutting down event thread.");
+        log.log(Level.INFO,  "Fleetcontroller done shutting down event thread.");
         controllerThreadId = Thread.currentThread().getId();
         database.shutdown(this);
 
@@ -321,7 +321,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public void updateOptions(FleetControllerOptions options, long configGeneration) {
         synchronized(monitor) {
             assert(this.options.fleetControllerIndex == options.fleetControllerIndex);
-            log.log(LogLevel.INFO, "Fleetcontroller " + options.fleetControllerIndex + " has new options");
+            log.log(Level.INFO, "Fleetcontroller " + options.fleetControllerIndex + " has new options");
             nextOptions = options.clone();
             nextConfigGeneration = configGeneration;
             monitor.notifyAll();
@@ -1125,7 +1125,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     }
                 }
                 if (ackedNodes >= nodeCount) {
-                    log.log(LogLevel.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
+                    log.log(Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
                     return;
                 }
                 long remainingTime = maxTime - System.currentTimeMillis();

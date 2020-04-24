@@ -63,7 +63,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
      */
     protected void deploy(ApplicationId application) {
         if (pendingDeployments.addIfAbsent(application)) { // Avoid queuing multiple deployments for same application
-            log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
+            log.log(Level.INFO, application + " will be deployed, last deploy time " +
                                    getLastDeployTime(application));
             deploymentExecutor.execute(() -> deployWithLock(application));
         }

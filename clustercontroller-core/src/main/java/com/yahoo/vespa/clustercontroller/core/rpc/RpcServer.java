@@ -112,7 +112,7 @@ public class RpcServer {
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
-        log.log(LogLevel.INFO, "Registering " + spec + " with slobrok at " + slobroks);
+        log.log(Level.INFO, "Registering " + spec + " with slobrok at " + slobroks);
         if (slobrokBackOffPolicy != null) {
             register = new Register(supervisor, slist, spec, slobrokBackOffPolicy);
         } else {
@@ -301,7 +301,7 @@ public class RpcServer {
                     req.returnValues().add(new StringValue(message));
                     req.returnRequest();
                     if (nodeState.getState() == State.UP && node.getPrematureCrashCount() > 0) {
-                        log.log(LogLevel.INFO, "Clearing premature crash count of " + node.getPrematureCrashCount() + " as wanted state was set to up");
+                        log.log(Level.INFO, "Clearing premature crash count of " + node.getPrematureCrashCount() + " as wanted state was set to up");
                         node.setPrematureCrashCount(0);
                     }
                 }

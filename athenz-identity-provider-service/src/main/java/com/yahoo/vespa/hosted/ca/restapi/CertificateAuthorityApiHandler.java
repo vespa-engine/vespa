@@ -101,7 +101,7 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         confirmation.set(InstanceValidator.SAN_IPS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.IP_ADDRESS));
         confirmation.set(InstanceValidator.SAN_DNS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.DNS_NAME));
         if (!instanceValidator.isValidInstance(confirmation)) {
-            log.log(LogLevel.INFO, "Invalid instance registration for " + instanceRegistration.toString());
+            log.log(Level.INFO, "Invalid instance registration for " + instanceRegistration.toString());
             return ErrorResponse.forbidden("Unable to launch service: " +instanceRegistration.service());
         }
         var certificate = certificates.create(instanceRegistration.csr(), caCertificate(), caPrivateKey());

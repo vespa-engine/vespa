@@ -124,7 +124,7 @@ public class CuratorDatabaseClient {
         transaction.commit();
 
         for (Node node : nodes)
-            log.log(LogLevel.INFO, "Added " + node);
+            log.log(Level.INFO, "Added " + node);
 
         return nodes;
     }
@@ -144,7 +144,7 @@ public class CuratorDatabaseClient {
         }
 
         transaction.commit();
-        nodes.forEach(node -> log.log(LogLevel.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
+        nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
 
     /**
@@ -225,7 +225,7 @@ public class CuratorDatabaseClient {
         transaction.onCommitted(() -> { // schedule logging on commit of nodes which changed state
             for (Node node : nodes) {
                 if (toState != node.state())
-                    log.log(LogLevel.INFO, agent + " moved " + node + " to " + toState + reason.map(s -> ": " + s).orElse(""));
+                    log.log(Level.INFO, agent + " moved " + node + " to " + toState + reason.map(s -> ": " + s).orElse(""));
             }
         });
         return writtenNodes;

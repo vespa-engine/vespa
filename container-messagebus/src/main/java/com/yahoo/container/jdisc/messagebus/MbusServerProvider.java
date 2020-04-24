@@ -48,7 +48,7 @@ public class MbusServerProvider implements Provider<MbusServer> {
 
     @Override
     public void deconstruct() {
-        log.log(LogLevel.INFO, "Deconstructing mbus server: " + server);
+        log.log(Level.INFO, "Deconstructing mbus server: " + server);
         server.close();
         server.release();
         sessionRef.getReference().close();

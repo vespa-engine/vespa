@@ -99,7 +99,7 @@ public class ProxyServer implements Runnable {
             default:
                 throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
-        log.log(LogLevel.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
+        log.log(Level.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
     }
 
     private ConfigProxyRpcServer createRpcServer(Spec spec) {

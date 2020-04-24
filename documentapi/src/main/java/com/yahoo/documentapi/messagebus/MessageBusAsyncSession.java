@@ -317,7 +317,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         @Override
         public void handleReply(Reply reply) {
             if (reply.getTrace().getLevel() > 0) {
-                log.log(LogLevel.INFO, reply.getTrace().toString());
+                log.log(Level.INFO, reply.getTrace().toString());
             }
             Response response = toResponse(reply);
             if (handler != null) {

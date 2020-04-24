@@ -436,7 +436,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             // to reconfigure themselves. This happens for instance whenever jdisc reconfigures itself until
             // ticket 6599572 is fixed. When that happens, consider propagating a full error rather than empty payload
             // back to the client.
-            log.log(LogLevel.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
+            log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
             return ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
         }
     }

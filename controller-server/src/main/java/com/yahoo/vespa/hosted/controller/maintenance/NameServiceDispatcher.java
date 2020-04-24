@@ -47,7 +47,7 @@ public class NameServiceDispatcher extends Maintainer {
 
             var dispatched = queue.last(requestCount);
             if (!dispatched.requests().isEmpty()) {
-                log.log(LogLevel.INFO, "Dispatched name service request(s) in " +
+                log.log(Level.INFO, "Dispatched name service request(s) in " +
                                        Duration.between(instant, clock.instant()) +
                                        ": " + dispatched.requests());
             }

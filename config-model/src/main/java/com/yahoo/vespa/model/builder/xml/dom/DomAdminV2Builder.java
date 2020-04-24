@@ -117,7 +117,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             if (configserverE == null) {
                 configserverE = XML.getChild(adminE, "adminserver");
             } else {
-                deployState.getDeployLogger().log(LogLevel.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
+                deployState.getDeployLogger().log(Level.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
             }
             Configserver cfgs0 = new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE);
             cfgs0.setProp("index", 0);

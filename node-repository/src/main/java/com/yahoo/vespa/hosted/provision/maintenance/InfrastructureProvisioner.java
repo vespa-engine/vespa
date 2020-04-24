@@ -29,7 +29,7 @@ public class InfrastructureProvisioner extends Maintainer {
         try {
             infraDeployer.activateAllSupportedInfraApplications(true);
         } catch (RuntimeException e) {
-            logger.log(LogLevel.INFO, "Failed to deploy supported infrastructure applications, " +
+            logger.log(Level.INFO, "Failed to deploy supported infrastructure applications, " +
                     "will sleep 30s before propagating failure, to allow inspection of zk",
                     e.getMessage());
             try { Thread.sleep(30_000); } catch (InterruptedException ignored) { }

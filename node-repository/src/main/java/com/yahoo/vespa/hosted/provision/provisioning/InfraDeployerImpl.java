@@ -57,7 +57,7 @@ public class InfraDeployerImpl implements InfraDeployer {
             try {
                 deployment.activate();
             } catch (RuntimeException e) {
-                logger.log(LogLevel.INFO, "Failed to activate " + application, e);
+                logger.log(Level.INFO, "Failed to activate " + application, e);
                 if (propagateException) {
                     throw e;
                 }

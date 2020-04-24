@@ -473,10 +473,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
             if (defs.containsKey(key)) {
                 if (nv[0].contains(".")) {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". The file '" + def + "' will take precedence");
                 } else {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". Skipping '" + def + "', as it does not contain namespace in filename");
                     continue; // skip
                 }

@@ -173,7 +173,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
-        log.log(LogLevel.INFO, "Starting ZooKeeper server with config file " + args[0] +
+        log.log(Level.INFO, "Starting ZooKeeper server with config file " + args[0] +
                 ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }

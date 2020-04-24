@@ -79,11 +79,11 @@ class UrlDownloadRpcServer {
             setIfModifiedSince(connection, downloadDir);  // don't download if we already have the file
 
             if (connection.getResponseCode() == 200) {
-                log.log(LogLevel.INFO, "Downloading URL '" + url + "'");
+                log.log(Level.INFO, "Downloading URL '" + url + "'");
                 downloadFile(req, connection, downloadDir);
 
             } else if (connection.getResponseCode() == 304) {
-                log.log(LogLevel.INFO, "URL '" + url + "' already downloaded (server response: 304)");
+                log.log(Level.INFO, "URL '" + url + "' already downloaded (server response: 304)");
                 req.returnValues().add(new StringValue(new File(downloadDir, CONTENTS_FILE_NAME).getAbsolutePath()));
 
             } else {
@@ -112,7 +112,7 @@ class UrlDownloadRpcServer {
                     new RequestTracker().trackRequest(downloadDir);
                     req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
                     log.log(Level.FINE, () -> "URL '" + url + "' available at " + contentsPath);
-                    log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds",
+                    log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
                                                          url, (System.currentTimeMillis() -start) / 1000.0));
                 } else {
                     log.log(LogLevel.ERROR, "Downloaded URL '" + url + "' not found, returning error");

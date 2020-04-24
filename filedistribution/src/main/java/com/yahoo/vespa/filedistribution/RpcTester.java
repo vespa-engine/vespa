@@ -49,19 +49,19 @@ public class RpcTester {
             e.printStackTrace();
         }
 
-        log.log(LogLevel.INFO, "Read blob from " + file.getAbsolutePath());
+        log.log(Level.INFO, "Read blob from " + file.getAbsolutePath());
 
 
         Supervisor supervisor = new Supervisor(new Transport());
 
         Spec spec = new Spec("tcp/localhost:19090");
-        log.log(LogLevel.INFO, "Connecting to " + spec);
+        log.log(Level.INFO, "Connecting to " + spec);
         Target target = supervisor.connect(spec);
         if (! target.isValid()) {
-            log.log(LogLevel.INFO, "Could not connect");
+            log.log(Level.INFO, "Could not connect");
             System.exit(1);
         } else {
-            log.log(LogLevel.INFO, "Connected to " + spec);
+            log.log(Level.INFO, "Connected to " + spec);
         }
 
         new RpcTester(target).call(fileReference, filename, blob);
@@ -77,12 +77,12 @@ public class RpcTester {
 
         void receive(FileReference reference, String filename, byte[] content) {
 
-            log.log(LogLevel.INFO, "Preparing receive call for " + reference.value() + " and file " + filename);
+            log.log(Level.INFO, "Preparing receive call for " + reference.value() + " and file " + filename);
 
             XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
             Request fileBlob = new Request("filedistribution.receiveFile");
 
-            log.log(LogLevel.INFO, "Calling " + fileBlob.methodName() + " with target " + target);
+            log.log(Level.INFO, "Calling " + fileBlob.methodName() + " with target " + target);
 
             fileBlob.parameters().add(new StringValue(reference.value()));
             fileBlob.parameters().add(new StringValue(filename));
@@ -90,9 +90,9 @@ public class RpcTester {
             fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(content), 0)));
             fileBlob.parameters().add(new Int32Value(0));
             fileBlob.parameters().add(new StringValue("OK"));
-            log.log(LogLevel.INFO, "Doing invokeSync");
+            log.log(Level.INFO, "Doing invokeSync");
             target.invokeSync(fileBlob, 5);
-            log.log(LogLevel.INFO, "Done with invokeSync");
+            log.log(Level.INFO, "Done with invokeSync");
         }
     }
 }

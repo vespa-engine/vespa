@@ -115,7 +115,7 @@ public class DatabaseHandler {
         synchronized (databaseMonitor) {
             wasRunning = database != null;
             if (wasRunning) {
-                log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Resetting database state");
+                log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Resetting database state");
                 database.close();
                 database = null;
             }
@@ -123,7 +123,7 @@ public class DatabaseHandler {
         clearSessionMetaData();
 
         if (wasRunning) {
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Done resetting database state");
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Done resetting database state");
         }
     }
 
@@ -141,7 +141,7 @@ public class DatabaseHandler {
         if (address == null && zooKeeperAddress == null) return;
         if (address != null && zooKeeperAddress != null && address.equals(zooKeeperAddress)) return;
         if (zooKeeperAddress != null) {
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": " + (address == null ? "Stopped using ZooKeeper." : "Got new ZooKeeper address to use: " + address));
+            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": " + (address == null ? "Stopped using ZooKeeper." : "Got new ZooKeeper address to use: " + address));
         }
         zooKeeperAddress = address;
         reset();
@@ -165,7 +165,7 @@ public class DatabaseHandler {
                 }
                 // We still hold the database lock while calling this, we want to block callers.
                 clearSessionMetaData();
-                log.log(LogLevel.INFO,
+                log.log(Level.INFO,
                         "Fleetcontroller " + nodeIndex + ": Setting up new ZooKeeper session at " + zooKeeperAddress);
                 DatabaseFactory.Params params = new DatabaseFactory.Params()
                         .cluster(cluster)
@@ -189,7 +189,7 @@ public class DatabaseHandler {
             log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
                     + " with session timeout " + zooKeeperSessionTimeout + ": " + sw);
         }
-        log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Done setting up new ZooKeeper session at " + zooKeeperAddress);
+        log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Done setting up new ZooKeeper session at " + zooKeeperAddress);
     }
 
     /**

@@ -78,7 +78,7 @@ public class StateMonitor extends AbstractComponent {
 
     public void status(Status status) {
         if (status != this.status) {
-            log.log(LogLevel.INFO, "Changing health status code from '" + this.status + "' to '" + status.name() + "'");
+            log.log(Level.INFO, "Changing health status code from '" + this.status + "' to '" + status.name() + "'");
             this.status = status;
         }
     }

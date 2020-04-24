@@ -209,7 +209,7 @@ public class StorageGroup {
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
-                    deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().log(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
             StorageGroup storageGroup = (owner.isHosted())

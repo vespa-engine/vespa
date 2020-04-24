@@ -83,13 +83,13 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
         try {
             orchestrator.suspend(applicationId);
         } catch (ApplicationIdNotFoundException e) {
-            log.log(LogLevel.INFO, "ApplicationId " + applicationIdString + " not found.", e);
+            log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
             throw new NotFoundException(e);
         } catch (ApplicationStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed.", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new WebApplicationException(Response.Status.CONFLICT);
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
             throw new InternalServerErrorException(e);
         }
     }
@@ -100,13 +100,13 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
         try {
             orchestrator.resume(applicationId);
         } catch (ApplicationIdNotFoundException e) {
-            log.log(LogLevel.INFO, "ApplicationId " + applicationIdString + " not found.", e);
+            log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
             throw new NotFoundException(e);
         } catch (ApplicationStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed.", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new WebApplicationException(Response.Status.CONFLICT);
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
             throw new InternalServerErrorException(e);
         }
     }

@@ -70,12 +70,12 @@ public class FlagDbFile {
 
             FlagData existingFlagData = currentFlagData.get(data.id());
             if (existingFlagData == null) {
-                logger.log(LogLevel.INFO, "New flag " + data.id() + ": " + data.serializeToJson());
+                logger.log(Level.INFO, "New flag " + data.id() + ": " + data.serializeToJson());
                 modified = true;
 
                 // Could also consider testing with FlagData::equals, but that would be too fragile?
             } else if (!Objects.equals(data.serializeToJson(), existingFlagData.serializeToJson())){
-                logger.log(LogLevel.INFO, "Updating flag " + data.id() + " from " +
+                logger.log(Level.INFO, "Updating flag " + data.id() + " from " +
                         existingFlagData.serializeToJson() + " to " + data.serializeToJson());
                 modified = true;
             }
@@ -83,7 +83,7 @@ public class FlagDbFile {
 
         if (!flagIdsToBeRemoved.isEmpty()) {
             String flagIdsString = flagIdsToBeRemoved.stream().map(FlagId::toString).collect(Collectors.joining(", "));
-            logger.log(LogLevel.INFO, "Removing flags " + flagIdsString);
+            logger.log(Level.INFO, "Removing flags " + flagIdsString);
             modified = true;
         }
 

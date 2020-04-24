@@ -148,7 +148,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
         SiaUtils.writePrivateKeyFile(VESPA_SIA_DIRECTORY, configserverIdentity, privateKey);
         Instant expirationTime = certificate.getNotAfter().toInstant();
         Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
-        log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
+        log.log(Level.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
         return KeyStoreBuilder.withType(KeyStoreType.JKS)
                 .withKeyEntry(CERTIFICATE_ALIAS, privateKey, keystorePwd, certificate)
                 .build();
@@ -168,11 +168,11 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
         @Override
         public void run() {
             try {
-                log.log(LogLevel.INFO, "Updating configserver provider certificate from ZTS");
+                log.log(Level.INFO, "Updating configserver provider certificate from ZTS");
                 char[] keystorePwd = generateKeystorePassword();
                 KeyStore keyStore = updateKeystore(configserverIdentity, keystorePwd, keyProvider, ztsClient, athenzProviderServiceConfig);
                 keyManager.updateKeystore(keyStore, keystorePwd);
-                log.log(LogLevel.INFO, "Certificate successfully updated");
+                log.log(Level.INFO, "Certificate successfully updated");
             } catch (Throwable t) {
                 log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + t.getMessage(), t);
             }

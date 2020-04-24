@@ -156,7 +156,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         boolean isAuthorizationException = throwable instanceof AuthorizationException;
         String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
-            log.log(LogLevel.INFO, errorMessage);
+            log.log(Level.INFO, errorMessage);
         }
         log.log(Level.FINE, throwable, throwable::getMessage);
         JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;

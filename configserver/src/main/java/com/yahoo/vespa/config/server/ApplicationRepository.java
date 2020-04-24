@@ -215,7 +215,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
             ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
             logConfigChangeActions(actions, logger);
-            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+            log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
             return new PrepareResult(sessionId, actions, deployLog);
         }
     }
@@ -380,17 +380,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 remoteSession = getRemoteSession(tenant, sessionId);
                 Transaction deleteTransaction = remoteSession.createDeleteTransaction();
                 deleteTransaction.commit();
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
 
                 if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+                    log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
                 } else {
                     deleteTransaction.rollbackOrLog();
                     throw new InternalServerException(applicationId + " was not deleted (waited " + waitTime + "), session " + sessionId);
                 }
             } catch (NotFoundException e) {
                 // For the case where waiting timed out in a previous attempt at deleting the application, continue and do the steps below
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
+                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
 
             NestedTransaction transaction = new NestedTransaction();
@@ -400,7 +400,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
-            transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
+            transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
             transaction.commit();
             return true;
         }
@@ -466,7 +466,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
         if (fileReferencesToDelete.size() > 0) {
-            log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
+            log.log(Level.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
                 if ( ! IOUtils.recursiveDeleteDir(file))

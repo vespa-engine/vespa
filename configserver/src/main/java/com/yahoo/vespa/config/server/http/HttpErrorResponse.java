@@ -33,7 +33,7 @@ public class HttpErrorResponse extends HttpResponse {
         root.setString("error-code", errorType);
         root.setString("message", msg);
         if (code != 200) {
-            log.log(LogLevel.INFO, "Returning response with response code " + code + ", error-code:" + errorType + ", message=" + msg);
+            log.log(Level.INFO, "Returning response with response code " + code + ", error-code:" + errorType + ", message=" + msg);
         }
     }
 

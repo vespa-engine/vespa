@@ -160,7 +160,7 @@ class FileAcquirerImpl implements FileAcquirer {
             } else if (!request.isError()) {
                 throw new RuntimeException("Invalid response: " + request.returnValues());
             } else if (temporaryError(request.errorCode())) {
-                log.log(LogLevel.INFO, "Retrying waitFor for " + fileReference + ": " + request.errorCode() + " -- " + request.errorMessage());
+                log.log(Level.INFO, "Retrying waitFor for " + fileReference + ": " + request.errorCode() + " -- " + request.errorMessage());
                 Thread.sleep(1000);
             } else {
                 if (request.errorCode() == FileDistributionErrorCode.fileReferenceDoesNotExists)

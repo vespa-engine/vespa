@@ -122,7 +122,7 @@ class FileDistributionRpcServer {
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
             log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
         } else {
-            log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+            log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
             req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
         }
 

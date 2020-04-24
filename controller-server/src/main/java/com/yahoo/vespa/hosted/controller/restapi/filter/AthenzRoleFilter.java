@@ -70,7 +70,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             }
         }
         catch (Exception e) {
-            logger.log(LogLevel.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
+            logger.log(Level.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
         }
         return Optional.empty();
     }
