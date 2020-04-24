@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toCollection;
 
 /**
@@ -53,7 +53,7 @@ public class ExternalMetrics {
     public void setExtraMetrics(List<MetricsPacket.Builder> externalPackets) {
         // TODO: Metrics filtering per consumer is not yet implemented.
         //       Split each packet per metric, and re-aggregate based on the metrics each consumer wants. Then filter out all packages with no consumers.
-        log.log(DEBUG, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
+        log.log(FINE, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
         externalPackets.forEach(packet -> {
             packet.addConsumers(consumers.getAllConsumers())
                     .retainMetrics(metricsToRetain())

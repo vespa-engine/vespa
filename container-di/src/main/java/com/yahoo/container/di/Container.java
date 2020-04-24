@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 
 /**
  * @author gjoranv
@@ -139,7 +139,7 @@ public class Container {
         while (true) {
             snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
 
-            log.log(DEBUG, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+            log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                     graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
@@ -148,7 +148,7 @@ public class Container {
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
-                log.log(DEBUG,
+                log.log(FINE,
                         String.format(
                                 "Got new bootstrap generation\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
                                         + "previous generation: %d\n",
@@ -165,7 +165,7 @@ public class Container {
                 break;
             }
         }
-        log.log(DEBUG,
+        log.log(FINE,
                 String.format(
                         "Got components configs,\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
                                 + "previous generation: %d",

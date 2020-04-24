@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 
 /**
  * The parent node for all Host instances, and thus accessible
@@ -120,7 +120,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
         }
-        retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
+        retAllocatedHosts.keySet().forEach(host -> log.log(FINE, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
         return retAllocatedHosts;
     }
 
@@ -131,7 +131,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (hosts.isEmpty()) {
             return Optional.empty();
         } else {
-            log.log(DEBUG, () -> "Found existing host resource for " + key.hostname() + " with flavor " + hosts.get(0).getFlavor());
+            log.log(FINE, () -> "Found existing host resource for " + key.hostname() + " with flavor " + hosts.get(0).getFlavor());
             return Optional.of(hosts.get(0));
         }
     }

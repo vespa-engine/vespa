@@ -20,7 +20,7 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toYamasArray;
 import static com.yahoo.collections.CollectionUtil.mkString;
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -46,7 +46,7 @@ public class RpcServer {
         this.vespaServices = vespaServices;
         this.metricsManager = metricsManager;
         addMethods(connector);
-        log.log(DEBUG, "RPC server created");
+        log.log(FINE, "RPC server created");
     }
 
     private void addMethods(RpcConnector connector) {
@@ -120,13 +120,13 @@ public class RpcServer {
         Instant startTime = Instant.now();
         req.detach();
         String service = req.parameters().get(0).asString();
-        log.log(DEBUG, () -> "getMetricsForYamas called at " + startTime + " with argument: " + service);
+        log.log(FINE, () -> "getMetricsForYamas called at " + startTime + " with argument: " + service);
         List<VespaService> services = vespaServices.getMonitoringServices(service);
-        log.log(DEBUG, () -> "Getting metrics for services: " + mkString(services, "[", ", ", "]"));
+        log.log(FINE, () -> "Getting metrics for services: " + mkString(services, "[", ", ", "]"));
         if (services.isEmpty()) setNoServiceError(req, service);
         else withExceptionHandling(req, () -> {
             List<MetricsPacket> packets = metricsManager.getMetrics(services, startTime);
-            log.log(DEBUG,() -> "Returning metrics packets:\n" + mkString(packets, "\n"));
+            log.log(FINE,() -> "Returning metrics packets:\n" + mkString(packets, "\n"));
             req.returnValues().add(new StringValue(toYamasArray(packets).serialize()));
         });
         req.returnRequest();
@@ -146,7 +146,7 @@ public class RpcServer {
 
     void setExtraMetrics(Request req) {
         String metricsJson = req.parameters().get(0).asString();
-        log.log(DEBUG, "setExtraMetrics called with argument: " + metricsJson);
+        log.log(FINE, "setExtraMetrics called with argument: " + metricsJson);
         withExceptionHandling(req, () -> metricsManager.setExtraMetrics(toMetricsPackets(metricsJson)));
     }
 

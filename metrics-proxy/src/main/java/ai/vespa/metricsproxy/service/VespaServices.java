@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.core.MetricsConsumers.toUnmodifiableLinkedMap;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 
 /**
  * Creates representations for the Vespa services running on the node,
@@ -47,12 +47,12 @@ public class VespaServices {
     private List<VespaService> createServices(VespaServicesConfig servicesConfig, String monitoringSystemName) {
         List<VespaService> services = new ArrayList<>();
         for (Service s : servicesConfig.service()) {
-            log.log(DEBUG, "Creating service " + s.name());
+            log.log(FINE, "Creating service " + s.name());
             VespaService vespaService = VespaService.create(s.name(), s.configId(), s.port(), monitoringSystemName,
                                                             createServiceDimensions(s));
             services.add(vespaService);
         }
-        log.log(DEBUG, "Created new services: " + services.size());
+        log.log(FINE, "Created new services: " + services.size());
         return services;
     }
 
@@ -62,7 +62,7 @@ public class VespaServices {
      */
     public final void updateServices(List<VespaService> services) {
         if (sentinel != null) {
-            log.log(DEBUG, "Updating services ");
+            log.log(FINE, "Updating services ");
             sentinel.updateServiceStatuses(services);
         }
     }
@@ -103,7 +103,7 @@ public class VespaServices {
 
         List<VespaService> myServices = new ArrayList<>();
         for (VespaService s : services) {
-            log.log(DEBUG, () -> "getMonitoringServices. service=" + service + ", checking against " + s + ", which has monitoring name " + s.getMonitoringName());
+            log.log(FINE, () -> "getMonitoringServices. service=" + service + ", checking against " + s + ", which has monitoring name " + s.getMonitoringName());
             if (s.getMonitoringName().equalsIgnoreCase(service)) {
                 myServices.add(s);
             }

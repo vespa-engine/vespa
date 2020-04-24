@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.BLACK;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.GRAY;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.WHITE;
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.Collections.singletonList;
 
 
@@ -58,7 +58,7 @@ public class CycleFinder<T> {
                 if (visitDepthFirst(vertex, new ArrayList<>(singletonList(vertex)))) {
                     if (cycle == null) throw new IllegalStateException("Null cycle - this should never happen");
                     if (cycle.isEmpty()) throw new IllegalStateException("Empty cycle - this should never happen");
-                    log.log(DEBUG, "Cycle detected: " + cycle);
+                    log.log(FINE, "Cycle detected: " + cycle);
                     return cycle;
                 }
             }
@@ -68,7 +68,7 @@ public class CycleFinder<T> {
 
     private boolean visitDepthFirst(T vertex, List<T> path) {
         colors.put(vertex, GRAY);
-        log.log(DEBUG, "Vertex start " + vertex + " - colors: " + colors + " - path: " + path);
+        log.log(FINE, "Vertex start " + vertex + " - colors: " + colors + " - path: " + path);
         for (T adjacent : graph.getAdjacent(vertex)) {
             path.add(adjacent);
             if (colors.get(adjacent) == GRAY) {
@@ -81,7 +81,7 @@ public class CycleFinder<T> {
             path.remove(adjacent);
         }
         colors.put(vertex, BLACK);
-        log.log(DEBUG, "Vertex end " + vertex + " - colors: " + colors + " - path: " + path);
+        log.log(FINE, "Vertex end " + vertex + " - colors: " + colors + " - path: " + path);
         return false;
     }
 

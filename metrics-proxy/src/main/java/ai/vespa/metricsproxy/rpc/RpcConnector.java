@@ -11,7 +11,7 @@ import com.yahoo.jrt.Transport;
 
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -30,7 +30,7 @@ public class RpcConnector extends AbstractComponent {
         Spec spec = new Spec(config.port());
         try {
             acceptor = supervisor.listen(spec);
-            log.log(DEBUG, "Listening on " + spec.host() + ":" + acceptor.port());
+            log.log(FINE, "Listening on " + spec.host() + ":" + acceptor.port());
         } catch (ListenFailedException e) {
             stop();
             log.log(INFO, "Failed listening at " + spec.host() + ":" + spec.port());
