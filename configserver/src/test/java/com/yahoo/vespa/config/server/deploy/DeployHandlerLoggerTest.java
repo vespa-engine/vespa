@@ -44,7 +44,7 @@ public class DeployHandlerLoggerTest {
     private void logMessages(DeployLogger logger) {
         logger.log(Level.FINE, "foobar");
         logger.log(Level.FINEST, "foobar");
-        logger.log(LogLevel.FINE, "baz");
+        logger.log(Level.FINE, "baz");
         logger.log(Level.WARNING, "baz");
     }
 }

@@ -45,7 +45,7 @@ public class DeployHandlerLogger implements DeployLogger {
         entry.setString("level", level.getName());
         entry.setString("message", fullMsg);
         // Also tee to a normal log, Vespa log for example, but use level fine 
-        log.log(LogLevel.FINE, fullMsg);
+        log.log(Level.FINE, fullMsg);
     }
 
 }

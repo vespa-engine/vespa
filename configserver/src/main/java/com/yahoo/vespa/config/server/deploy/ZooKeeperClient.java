@@ -67,7 +67,7 @@ public class ZooKeeperClient {
                     createZooKeeperNodes();
                     break;
                 } catch (RuntimeException e) {
-                    logger.log(LogLevel.FINE, "ZK init failed, retrying: " + e);
+                    logger.log(Level.FINE, "ZK init failed, retrying: " + e);
                     retries--;
                     if (retries == 0) {
                         throw e;
@@ -262,7 +262,7 @@ public class ZooKeeperClient {
             writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
             writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
         }
-        logger.log(LogLevel.FINE, configDefs.size() + " user config definitions");
+        logger.log(Level.FINE, configDefs.size() + " user config definitions");
     }
 
     private void writeConfigDefinition(String name, String namespace, String path, String data) {
@@ -320,7 +320,7 @@ public class ZooKeeperClient {
 
     private void logFine(String msg) {
         if (logFine) {
-            logger.log(LogLevel.FINE, msg);
+            logger.log(Level.FINE, msg);
         }
     }
 
