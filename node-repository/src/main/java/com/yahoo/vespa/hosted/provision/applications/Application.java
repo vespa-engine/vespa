@@ -62,16 +62,6 @@ public class Application {
         return with(cluster);
     }
 
-    /**
-     * Returns an application with the given target for the given cluster,
-     * if it exists and the target is within the bounds
-     */
-    public Application withClusterTarget(ClusterSpec.Id id, ClusterResources target) {
-        Cluster cluster = clusters.get(id);
-        if (cluster == null) return this;
-        return with(cluster.withTarget(target));
-    }
-
     @Override
     public int hashCode() {
         return id.hashCode();

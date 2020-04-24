@@ -64,20 +64,12 @@ public class Cluster {
         return new Cluster(id, min, max, suggested, target);
     }
 
-    public Cluster withSuggested(ClusterResources suggested) {
-        return new Cluster(id, min, max, Optional.of(suggested), target);
+    public Cluster withSuggested(Optional<ClusterResources> suggested) {
+        return new Cluster(id, min, max, suggested, target);
     }
 
-    public Cluster withoutSuggested() {
-        return new Cluster(id, min, max, Optional.empty(), target);
-    }
-
-    public Cluster withTarget(ClusterResources target) {
-        return new Cluster(id, min, max, suggested, Optional.of(target));
-    }
-
-    public Cluster withoutTarget() {
-        return new Cluster(id, min, max, suggested, Optional.empty());
+    public Cluster withTarget(Optional<ClusterResources> target) {
+        return new Cluster(id, min, max, suggested, target);
     }
 
     public NodeResources capAtLimits(NodeResources resources) {

@@ -154,10 +154,10 @@ public class MockNodeRepository extends NodeRepository {
                             null);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
-        cluster1 = cluster1.withSuggested(new ClusterResources(6, 2,
-                                                               new NodeResources(3, 20, 100, 1)));
-        cluster1 = cluster1.withTarget(new ClusterResources(4, 1,
-                                                            new NodeResources(3, 16, 100, 1)));
+        cluster1 = cluster1.withSuggested(Optional.of(new ClusterResources(6, 2,
+                                                                           new NodeResources(3, 20, 100, 1))));
+        cluster1 = cluster1.withTarget(Optional.of(new ClusterResources(4, 1,
+                                                                        new NodeResources(3, 16, 100, 1))));
         try (Mutex lock = lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }

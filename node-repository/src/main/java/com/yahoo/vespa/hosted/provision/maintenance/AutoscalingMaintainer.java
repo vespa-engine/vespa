@@ -3,13 +3,16 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
@@ -66,26 +69,22 @@ public class AutoscalingMaintainer extends Maintainer {
                            List<Node> clusterNodes,
                            MaintenanceDeployment deployment) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
-        Cluster cluster = application.clusters().get(clusterId);
-        if (cluster == null) return;
-        if (cluster.minResources().equals(cluster.maxResources())) return;
-        Optional<AllocatableClusterResources> target = autoscaler.autoscale(cluster, clusterNodes);
-        if (target.isEmpty()) return; // current resources are fine
-
-        logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
-        autoscaleTo(target.get(), clusterId, application, deployment);
+        Optional<Cluster> cluster = application.cluster(clusterId);
+        if (cluster.isEmpty()) return;
+        Optional<ClusterResources> target = autoscaler.autoscale(cluster.get(), clusterNodes);
+        if ( ! cluster.get().targetResources().equals(target))
+            applications().put(application.with(cluster.get().withTarget(target)), deployment.applicationLock().get());
+        if (target.isPresent()) {
+            logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
+            deployment.activate();
+        }
     }
 
-    private void autoscaleTo(AllocatableClusterResources target,
-                             ClusterSpec.Id clusterId,
-                             Application application,
-                             MaintenanceDeployment deployment) {
-        nodeRepository().applications().put(application.withClusterTarget(clusterId, target.toAdvertisedClusterResources()),
-                                            deployment.applicationLock().get());
-        deployment.activate();
+    private Applications applications() {
+        return nodeRepository().applications();
     }
 
-    private void logAutoscaling(AllocatableClusterResources target,
+    private void logAutoscaling(ClusterResources target,
                                 ApplicationId application,
                                 ClusterSpec.Id clusterId,
                                 List<Node> clusterNodes) {
@@ -93,7 +92,7 @@ public class AutoscalingMaintainer extends Maintainer {
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         log.info("Autoscaling " + application + " " + clusterType + " " + clusterId + ":" +
                  "\nfrom " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
-                 "\nto   " + toString(target.nodes(), target.groups(), target.advertisedResources()));
+                 "\nto   " + toString(target.nodes(), target.groups(), target.nodeResources()));
     }
 
     private String toString(int nodes, int groups, NodeResources resources) {
