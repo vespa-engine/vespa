@@ -16,7 +16,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
@@ -216,7 +216,7 @@ public class InternalStepRunner implements StepRunner {
                 logger.logAll(prepareResponse.log.stream()
                                                  .map(entry -> new LogEntry(0, // Sequenced by BufferedLogStore.
                                                                             Instant.ofEpochMilli(entry.time),
-                                                                            LogEntry.typeOf(Level.parse(entry.level)),
+                                                                            LogEntry.typeOf(LogLevel.parse(entry.level)),
                                                                             entry.message))
                                                  .collect(toList()));
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {

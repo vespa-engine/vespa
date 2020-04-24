@@ -3,7 +3,8 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
-import java.util.logging.Level;
+
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -34,8 +35,8 @@ public class DeployHandlerLogger implements DeployLogger {
     @Override
     public void log(Level level, String message) {
         if ((level == Level.FINE ||
-             level == Level.FINE ||
-             level == Level.FINEST) &&
+             level == LogLevel.DEBUG ||
+             level == LogLevel.SPAM) &&
             !verbose) {
             return;
         }

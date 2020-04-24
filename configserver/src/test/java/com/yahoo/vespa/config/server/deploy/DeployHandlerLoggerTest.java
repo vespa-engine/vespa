@@ -4,6 +4,8 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import java.util.logging.Level;
+
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -42,8 +44,8 @@ public class DeployHandlerLoggerTest {
     }
 
     private void logMessages(DeployLogger logger) {
-        logger.log(Level.FINE, "foobar");
-        logger.log(Level.FINEST, "foobar");
+        logger.log(LogLevel.DEBUG, "foobar");
+        logger.log(LogLevel.SPAM, "foobar");
         logger.log(Level.FINE, "baz");
         logger.log(Level.WARNING, "baz");
     }

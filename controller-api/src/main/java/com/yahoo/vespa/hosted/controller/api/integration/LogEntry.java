@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration;
 
+import com.yahoo.log.LogLevel;
+
 import java.util.logging.Level;
 
 import java.io.BufferedReader;
@@ -12,7 +14,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -63,7 +64,7 @@ public class LogEntry {
                          .filter(parts -> parts.length == 7)
                          .map(parts -> new LogEntry(0,
                                                     Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS),
-                                                    typeOf(Level.parse(parts[5])),
+                                                    typeOf(LogLevel.parse(parts[5])),
                                                     parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
                                                     parts[6].replaceAll("\\\\n", "\n")
                                                             .replaceAll("\\\\t", "\t")))
