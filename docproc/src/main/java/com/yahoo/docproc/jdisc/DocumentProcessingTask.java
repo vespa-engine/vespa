@@ -74,7 +74,7 @@ public class DocumentProcessingTask implements Runnable {
             }
         } catch (Error error) {
             try {
-                log.log(LogLevel.FATAL, Exceptions.toMessageString(error), error);
+                log.log(Level.SEVERE, Exceptions.toMessageString(error), error);
             } catch (Throwable t) {
                 // do nothing
             } finally {

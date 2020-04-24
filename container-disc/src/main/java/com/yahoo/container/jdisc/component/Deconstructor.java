@@ -98,7 +98,7 @@ public class Deconstructor implements ComponentDeconstructor {
                 } catch (Error e) {
                     try {
                         Duration shutdownDelay = getRandomizedShutdownDelay();
-                        log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
+                        log.log(Level.SEVERE, "Error when deconstructing component " + component + ". Will sleep for " +
                                 shutdownDelay.getSeconds() + " seconds then restart", e);
                         Thread.sleep(shutdownDelay.toMillis());
                     } catch (InterruptedException exception) {

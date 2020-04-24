@@ -31,7 +31,7 @@ public class StandAloneClusterController {
             try{
                 app.stop();
             } catch (Exception e) {
-                log.log(LogLevel.FATAL, "Failed to stop application '" + app.getName() + "': " + e.getMessage());
+                log.log(Level.SEVERE, "Failed to stop application '" + app.getName() + "': " + e.getMessage());
                 e.printStackTrace();
                 return;
             }
@@ -48,7 +48,7 @@ public class StandAloneClusterController {
         try{
             myApp.start();
         } catch (Exception e) {
-            log.log(LogLevel.FATAL, "Failed to start application '" + myApp.getName() + "': " + e.getMessage());
+            log.log(Level.SEVERE, "Failed to start application '" + myApp.getName() + "': " + e.getMessage());
             e.printStackTrace();
             return;
         }
@@ -56,7 +56,7 @@ public class StandAloneClusterController {
         try{
             myApp.run();
         } catch (Exception e) {
-            log.log(LogLevel.FATAL, "Application '" + myApp.getName() + "' runtime failure: " + e.getMessage());
+            log.log(Level.SEVERE, "Application '" + myApp.getName() + "' runtime failure: " + e.getMessage());
             e.printStackTrace();
         }
     }
