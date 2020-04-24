@@ -18,7 +18,7 @@ public class NodeResourcesSerializer {
         object.setString("storageType", toString(resources.storageType()));
     }
 
-    public NodeResources.DiskSpeed diskSpeedFrom(String diskSpeed) {
+    public static NodeResources.DiskSpeed diskSpeedFrom(String diskSpeed) {
         switch (diskSpeed) {
             case "fast": return NodeResources.DiskSpeed.fast;
             case "slow": return NodeResources.DiskSpeed.slow;
@@ -36,7 +36,7 @@ public class NodeResourcesSerializer {
         }
     }
 
-    public NodeResources.StorageType storageTypeFrom(String storageType) {
+    public static NodeResources.StorageType storageTypeFrom(String storageType) {
         switch (storageType) {
             case "local" : return NodeResources.StorageType.local;
             case "remote": return NodeResources.StorageType.remote;

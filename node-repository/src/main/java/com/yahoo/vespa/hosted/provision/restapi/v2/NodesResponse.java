@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -48,7 +47,6 @@ class NodesResponse extends HttpResponse {
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final Slime slime;
-    private final NodeSerializer serializer = new NodeSerializer();
 
     public NodesResponse(ResponseType responseType, HttpRequest request,  
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
@@ -65,7 +63,7 @@ class NodesResponse extends HttpResponse {
         switch (responseType) {
             case nodeList: nodesToSlime(root); break;
             case stateList : statesToSlime(root); break;
-            case nodesInStateList: nodesToSlime(serializer.stateFrom(lastElement(parentUrl)), root); break;
+            case nodesInStateList: nodesToSlime(NodeSerializer.stateFrom(lastElement(parentUrl)), root); break;
             case singleNode : nodeToSlime(lastElement(parentUrl), root); break;
             default: throw new IllegalArgumentException();
         }
@@ -97,11 +95,11 @@ class NodesResponse extends HttpResponse {
     private void statesToSlime(Cursor root) {
         Cursor states = root.setObject("states");
         for (Node.State state : Node.State.values())
-            toSlime(state, states.setObject(serializer.toString(state)));
+            toSlime(state, states.setObject(NodeSerializer.toString(state)));
     }
 
     private void toSlime(Node.State state, Cursor object) {
-        object.setString("url", parentUrl + serializer.toString(state));
+        object.setString("url", parentUrl + NodeSerializer.toString(state));
         if (recursive)
             nodesToSlime(state, object);
     }
@@ -136,10 +134,10 @@ class NodesResponse extends HttpResponse {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
         object.setString("id", node.hostname());
-        object.setString("state", serializer.toString(node.state()));
+        object.setString("state", NodeSerializer.toString(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
-        object.setString("type", serializer.toString(node.type()));
+        object.setString("type", NodeSerializer.toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }

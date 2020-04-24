@@ -70,7 +70,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
-    private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -107,7 +106,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
-        String pathS = request.getUri().toString();
+        String pathS = request.getUri().getPath();
         if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
         if (pathS.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
@@ -263,8 +262,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
                     requiredField(resourcesInspector, "memoryGb", Inspector::asDouble),
                     requiredField(resourcesInspector, "diskGb", Inspector::asDouble),
                     requiredField(resourcesInspector, "bandwidthGbps", Inspector::asDouble),
-                    optionalString(resourcesInspector.field("diskSpeed")).map(serializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
-                    optionalString(resourcesInspector.field("storageType")).map(serializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())));
+                    optionalString(resourcesInspector.field("diskSpeed")).map(NodeResourcesSerializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
+                    optionalString(resourcesInspector.field("storageType")).map(NodeResourcesSerializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
@@ -278,9 +277,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
             if (resourcesInspector.field("bandwidthGbps").valid())
                 flavor = flavor.with(flavor.resources().withBandwidthGbps(resourcesInspector.field("bandwidthGbps").asDouble()));
             if (resourcesInspector.field("diskSpeed").valid())
-                flavor = flavor.with(flavor.resources().with(serializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
             if (resourcesInspector.field("storageType").valid())
-                flavor = flavor.with(flavor.resources().with(serializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
         }
         return flavor;
     }
@@ -293,7 +292,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
-        return serializer.typeFrom(object.asString());
+        return NodeSerializer.typeFrom(object.asString());
     }
 
     private Optional<TenantName> reservedToFromSlime(Inspector object) {
