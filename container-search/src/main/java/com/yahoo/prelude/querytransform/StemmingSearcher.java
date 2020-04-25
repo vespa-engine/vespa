@@ -184,12 +184,12 @@ public class StemmingSearcher extends Searcher {
         Substring substring = getOffsets(current);
 
         if (segments.size() == 1) {
-            getLogger().log(LogLevel.DEBUG, () -> "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
+            getLogger().log(Level.FINE, () -> "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
                             +" and language '"+context.language+"' -> '"+segments.get(0)+"'");
             TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
             return (Item) w;
-        } else if (getLogger().isLoggable(LogLevel.DEBUG)) {
+        } else if (getLogger().isLoggable(Level.FINE)) {
             var buf = new StringBuilder();
             buf.append("Stem '").append(current.stringValue());
             buf.append("' mode ").append(index.getStemMode());
@@ -197,7 +197,7 @@ public class StemmingSearcher extends Searcher {
             for (StemList segment : segments) {
                 buf.append(" '").append(segment).append("'");
             }
-            getLogger().log(LogLevel.DEBUG, buf.toString());
+            getLogger().log(Level.FINE, buf.toString());
         }
 
         if (context.isCJK)
@@ -206,7 +206,7 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
-            getLogger().log(LogLevel.DEBUG, () -> "Stem to multiple segments '"+segment+"'");
+            getLogger().log(Level.FINE, () -> "Stem to multiple segments '"+segment+"'");
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {
