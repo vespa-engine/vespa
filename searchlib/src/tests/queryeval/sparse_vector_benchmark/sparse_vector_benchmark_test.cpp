@@ -9,7 +9,7 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>

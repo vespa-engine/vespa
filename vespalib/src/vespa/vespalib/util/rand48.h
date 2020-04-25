@@ -2,8 +2,10 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <cstdint>
 
-namespace search {
+namespace vespalib {
 
 /*
  * Simple random generator based on lrand48() spec.
@@ -19,19 +21,19 @@ public:
         _state = ((static_cast<uint64_t>(seed & 0xffffffffu)) << 16) + 0x330e;
     }
 
-    Rand48(void)
+    Rand48()
         : _state(0)
     {
         srand48(0x1234abcd);
     };
-    void iterate(void) {
+    void iterate() {
         _state = (UINT64_C(0x5DEECE66D) * _state + 0xb) &
                  UINT64_C(0xFFFFFFFFFFFF);
     }
     /*
      * Return value from 0 to 2^31 - 1
      */
-    long lrand48(void) {
+    long lrand48() {
         iterate();
         return static_cast<long>(_state >> 17);
     }

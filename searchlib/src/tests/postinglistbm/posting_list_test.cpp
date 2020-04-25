@@ -5,7 +5,7 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <cinttypes>
 
@@ -66,7 +66,7 @@ struct PostingListTest : public ::testing::Test {
     FakeWordUP word3;
     FakeWordUP word4;
     FakeWordUP word5;
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
 
     PostingListTest()
         : num_docs(36000),

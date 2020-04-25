@@ -47,7 +47,7 @@ private:
     NodeAllocator *_allocator;
     Tree *_tree;
 
-    Rand48 _randomGenerator;
+    vespalib::Rand48 _randomGenerator;
 
     void allocTree();
     void freeTree(bool verbose);

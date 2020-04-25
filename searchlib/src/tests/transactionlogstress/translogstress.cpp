@@ -3,7 +3,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
@@ -37,7 +37,7 @@ using Visitor = TransLogClient::Visitor;
 class BufferGenerator
 {
 private:
-    Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     uint32_t _minStrLen;
     uint32_t _maxStrLen;
 
@@ -71,7 +71,7 @@ BufferGenerator::getRandomBuffer()
 class EntryGenerator
 {
 private:
-    Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     long _baseSeed;
     BufferGenerator _bufferGenerator;
     const std::vector<nbostream> * _buffers;
@@ -93,7 +93,7 @@ public:
     };
     SerialNum getRandomSerialNum(SerialNum begin, SerialNum end);
     Packet::Entry getRandomEntry(SerialNum num);
-    Rand48 & getRnd() { return _rnd; }
+    vespalib::Rand48 & getRnd() { return _rnd; }
     void setBuffers(const std::vector<nbostream> & buffers) {
         _buffers = &buffers;
     }

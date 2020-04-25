@@ -4,12 +4,9 @@
 #include <string>
 #include <vector>
 
-namespace search {
-class Rand48;
+namespace vespalib { class Rand48; }
 
-namespace fakedata { class FakeWordSet; }
-
-}
+namespace search::fakedata { class FakeWordSet; }
 
 namespace postinglistbm {
 
@@ -21,7 +18,7 @@ public:
         Or
     };
 
-    static void run(search::Rand48 &rnd,
+    static void run(vespalib::Rand48 &rnd,
                     search::fakedata::FakeWordSet &wordSet,
                     const std::vector<std::string> &postingTypes,
                     OperatorType operatorType,

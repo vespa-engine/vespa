@@ -8,7 +8,7 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <algorithm>
 
 using namespace search;
@@ -81,7 +81,7 @@ myCountInterval(const BitVector &bv, uint32_t low, uint32_t high)
 }
 
 void
-scan(uint32_t count, uint32_t offset, uint32_t size, Rand48 &rnd)
+scan(uint32_t count, uint32_t offset, uint32_t size, vespalib::Rand48 &rnd)
 {
     std::vector<uint32_t> lids;
     lids.reserve(count);
@@ -110,7 +110,7 @@ scan(uint32_t count, uint32_t offset, uint32_t size, Rand48 &rnd)
 void
 scanWithOffset(uint32_t offset)
 {
-    Rand48 rnd;
+    vespalib::Rand48 rnd;
 
     rnd.srand48(32);
     scan(10,      offset, 1000000, rnd);

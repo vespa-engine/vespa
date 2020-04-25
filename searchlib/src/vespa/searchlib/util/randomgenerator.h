@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <cassert>
@@ -11,7 +11,7 @@ namespace search {
 class RandomGenerator
 {
 private:
-    Rand48 _rnd;
+    vespalib::Rand48 _rnd;
 
 public:
     RandomGenerator() : _rnd() {}

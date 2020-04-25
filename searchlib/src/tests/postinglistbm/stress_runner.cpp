@@ -33,7 +33,7 @@ private:
 
     StressMaster &operator=(const StressMaster &);
 
-    search::Rand48 &_rnd;
+    vespalib::Rand48 &_rnd;
     uint32_t _numDocs;
     std::vector<std::string> _postingTypes;
     StressRunner::OperatorType _operatorType;
@@ -62,7 +62,7 @@ private:
     std::vector<Task> _tasks;
 
 public:
-    StressMaster(search::Rand48 &rnd,
+    StressMaster(vespalib::Rand48 &rnd,
                  FakeWordSet &wordSet,
                  const std::vector<std::string> &postingType,
                  StressRunner::OperatorType operatorType,
@@ -129,7 +129,7 @@ public:
 };
 
 
-StressMaster::StressMaster(search::Rand48 &rnd,
+StressMaster::StressMaster(vespalib::Rand48 &rnd,
                            FakeWordSet &wordSet,
                            const std::vector<std::string> &postingTypes,
                            StressRunner::OperatorType operatorType,
@@ -420,7 +420,7 @@ OrStressWorker::run_task(const FakePosting& f1, const FakePosting& f2, uint32_t 
 }
 
 void
-StressRunner::run(search::Rand48 &rnd,
+StressRunner::run(vespalib::Rand48 &rnd,
                   FakeWordSet &wordSet,
                   const std::vector<std::string> &postingTypes,
                   OperatorType operatorType,
