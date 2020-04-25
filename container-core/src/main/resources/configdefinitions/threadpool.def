@@ -2,7 +2,15 @@
 
 namespace=container.handler
 
+## Num ber of thread in the thread pool
+## Setting it to 0 or negative number will cause it to be set to #cores * 4
 maxthreads int default=500
+
+## max queue size
+## There can be queueSize + maxthreads requests inflight concurrently
+## The container will start replying 503
+## Negative value will cause it to set to maxthreads*4
+queueSize int default=0
 
 # The max time the container tolerates having no threads available before it shuts down to
 # get out of a bad state. This should be set a bit higher than the expected max execution

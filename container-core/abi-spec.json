@@ -171,6 +171,7 @@
       "public void <init>()",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxthreads(int)",
+      "public com.yahoo.container.handler.ThreadpoolConfig$Builder queueSize(int)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxThreadExecutionTimeSeconds(int)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder softStartSeconds(double)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
@@ -210,6 +211,7 @@
       "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig$Builder)",
       "public int maxthreads()",
+      "public int queueSize()",
       "public int maxThreadExecutionTimeSeconds()",
       "public double softStartSeconds()"
     ],

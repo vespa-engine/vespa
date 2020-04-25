@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.search.config.QrStartConfig;
@@ -15,7 +16,10 @@ import com.yahoo.vespa.model.container.component.Component;
  *
  * @author gjoranv
  */
-public final class ApplicationContainer extends Container implements QrStartConfig.Producer {
+public final class ApplicationContainer extends Container implements
+        QrStartConfig.Producer,
+        ThreadpoolConfig.Producer
+{
 
     private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
@@ -73,4 +77,16 @@ public final class ApplicationContainer extends Container implements QrStartConf
         return (parent instanceof ContainerCluster) && (((ContainerCluster)parent).getDocproc() != null);
     }
 
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        if (! (parent instanceof ContainerCluster)) return;
+        if ((getHostResource() == null) || getHostResource().getFlavor().isEmpty()) return;
+        ContainerCluster containerCluster = (ContainerCluster) parent;
+        if (containerCluster.getThreadPoolSizeFactor() <= 0.0) return;
+
+        NodeFlavorTuning flavorTuning = new NodeFlavorTuning(getHostResource().getFlavor().get())
+                .setThreadPoolSizeFactor(containerCluster.getThreadPoolSizeFactor())
+                .setQueueSizeFactor(containerCluster.getQueueSizeFactor());
+        flavorTuning.getConfig(builder);
+    }
 }
