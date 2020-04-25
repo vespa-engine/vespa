@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -102,7 +102,7 @@ public class ClusterStateView {
             // The distributor may be old (null), or the distributor may not have updated
             // to the latest state version just yet. We log here with fine, because it may
             // also be a symptom of something wrong.
-            log.log(LogLevel.DEBUG, "Current state version is " + currentStateVersion +
+            log.log(Level.FINE, "Current state version is " + currentStateVersion +
                     ", while host info received from distributor " + node.getNodeIndex() +
                     " is " + hostVersion);
             return;

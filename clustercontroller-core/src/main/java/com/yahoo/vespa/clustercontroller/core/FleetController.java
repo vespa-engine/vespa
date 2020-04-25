@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jrt.ListenFailedException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -299,12 +299,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public void shutdown() throws InterruptedException, java.io.IOException {
         if (runner != null && isRunning()) {
-            log.log(LogLevel.INFO,  "Joining event thread.");
+            log.log(Level.INFO,  "Joining event thread.");
             running.set(false);
             synchronized(monitor) { monitor.notifyAll(); }
             runner.join();
         }
-        log.log(LogLevel.INFO,  "Fleetcontroller done shutting down event thread.");
+        log.log(Level.INFO,  "Fleetcontroller done shutting down event thread.");
         controllerThreadId = Thread.currentThread().getId();
         database.shutdown(this);
 
@@ -321,7 +321,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public void updateOptions(FleetControllerOptions options, long configGeneration) {
         synchronized(monitor) {
             assert(this.options.fleetControllerIndex == options.fleetControllerIndex);
-            log.log(LogLevel.INFO, "Fleetcontroller " + options.fleetControllerIndex + " has new options");
+            log.log(Level.INFO, "Fleetcontroller " + options.fleetControllerIndex + " has new options");
             nextOptions = options.clone();
             nextConfigGeneration = configGeneration;
             monitor.notifyAll();
@@ -416,7 +416,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void handleFleetData(Map<Integer, Integer> data) {
         verifyInControllerThread();
-        log.log(LogLevel.SPAM, "Sending fleet data event on to master election handler");
+        log.log(Level.FINEST, "Sending fleet data event on to master election handler");
         metricUpdater.updateMasterElectionMetrics(data);
         masterElectionHandler.handleFleetData(data);
     }
@@ -510,9 +510,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs, options.rpcPort);
             } catch (ListenFailedException e) {
-                log.log(LogLevel.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
             }
         }
 
@@ -520,7 +520,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 statusPageServer.setPort(options.httpPort);
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                log.log(Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             }
         }
 
@@ -548,7 +548,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
             hiddenMessage = ExceptionUtils.getStackTraceAsString(e);;
-            log.log(LogLevel.DEBUG, "Unknown exception thrown for request " + httpRequest.getRequest() +
+            log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }
 
@@ -633,7 +633,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed to watch master election: " + e.toString());
+            log.log(Level.WARNING, "Failed to watch master election: " + e.toString());
         }
         return false;
     }
@@ -652,7 +652,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         try {
             propagateOptions();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Failed to handle new fleet controller config", e);
+            log.log(Level.SEVERE, "Failed to handle new fleet controller config", e);
         }
     }
 
@@ -671,7 +671,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // If there's a pending DB store we have not yet been able to store the
         // current state bundle to ZK and must therefore _not_ allow it to be published.
         if (database.hasPendingClusterStateMetaDataStore()) {
-            log.log(LogLevel.DEBUG, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
+            log.log(Level.FINE, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
             return false;
         }
         boolean sentAny = false;
@@ -682,7 +682,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             && currentTime >= nextStateSendTime)
         {
             if (currentTime < firstAllowedStateBroadcast) {
-                log.log(LogLevel.DEBUG, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
+                log.log(Level.FINE, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
@@ -811,7 +811,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
                 var details = buildNodesNotYetConvergedMessage(taskCompletion.getMinimumVersion());
-                log.log(LogLevel.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
+                log.log(Level.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
                         taskCompletion.getTask().getClass().getName(), details));
                 taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
                         RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, details));
@@ -1037,7 +1037,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                         + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
-                log.log(LogLevel.DEBUG, "At time " + currentTime + " we set first system state broadcast time to be "
+                log.log(Level.FINE, "At time " + currentTime + " we set first system state broadcast time to be "
                         + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
                 didWork = true;
             }
@@ -1067,10 +1067,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 tick();
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.DEBUG, "Event thread stopped by interrupt exception: " + e);
+            log.log(Level.FINE, "Event thread stopped by interrupt exception: " + e);
         } catch (Throwable t) {
             t.printStackTrace();
-            log.log(LogLevel.ERROR, "Fatal error killed fleet controller", t);
+            log.log(Level.SEVERE, "Fatal error killed fleet controller", t);
             synchronized (monitor) { running.set(false); }
             System.exit(1);
         } finally {
@@ -1125,7 +1125,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     }
                 }
                 if (ackedNodes >= nodeCount) {
-                    log.log(LogLevel.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
+                    log.log(Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
                     return;
                 }
                 long remainingTime = maxTime - System.currentTimeMillis();

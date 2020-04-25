@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmati
 
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -34,9 +34,9 @@ public class InstanceRefreshResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public InstanceConfirmation confirmInstanceRefresh(InstanceConfirmation instanceConfirmation) {
-        log.log(LogLevel.DEBUG, instanceConfirmation.toString());
+        log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidRefresh(instanceConfirmation)) {
-            log.log(LogLevel.ERROR, "Invalid instance refresh: " + instanceConfirmation);
+            log.log(Level.SEVERE, "Invalid instance refresh: " + instanceConfirmation);
             throw new ForbiddenException("Instance is invalid");
         }
         return instanceConfirmation;

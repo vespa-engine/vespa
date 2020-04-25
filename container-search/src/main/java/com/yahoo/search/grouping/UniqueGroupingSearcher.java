@@ -3,7 +3,7 @@ package com.yahoo.search.grouping;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -110,7 +110,7 @@ public class UniqueGroupingSearcher extends Searcher {
         if (null == root) {
             String msg = "Result group not found for deduping grouping request, returning empty result.";
             query.trace(msg, 3);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             throw new IllegalStateException("Failed to produce deduped result set.");
         }
         result.hits().remove(root.getId().toString()); // hide our tracks

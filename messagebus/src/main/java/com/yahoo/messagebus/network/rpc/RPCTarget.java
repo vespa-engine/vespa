@@ -7,7 +7,7 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8Array;
 
 import java.util.LinkedList;
@@ -98,16 +98,16 @@ public class RPCTarget implements RequestWaiter {
     void resolveVersion(double timeout, VersionHandler handler) {
         boolean hasVersion = false;
         boolean shouldInvoke = false;
-        boolean shouldLog = log.isLoggable(LogLevel.DEBUG);
+        boolean shouldLog = log.isLoggable(Level.FINE);
         synchronized (this) {
             if (version != null) {
                 if (shouldLog) {
-                    log.log(LogLevel.DEBUG, "Version already available for target '" + name + "' (version " + version + ").");
+                    log.log(Level.FINE, "Version already available for target '" + name + "' (version " + version + ").");
                 }
                 hasVersion = true;
             } else {
                 if (shouldLog) {
-                    log.log(LogLevel.DEBUG, "Registering version handler '" + handler + "' for target '" + name + "'.");
+                    log.log(Level.FINE, "Registering version handler '" + handler + "' for target '" + name + "'.");
                 }
                 versionHandlers.add(handler);
                 if (!targetInvoked) {
@@ -120,7 +120,7 @@ public class RPCTarget implements RequestWaiter {
             handler.handleVersion(version);
         } else if (shouldInvoke) {
             if (shouldLog) {
-                log.log(LogLevel.DEBUG, "Invoking mbus.getVersion() on target '" + name + "'");
+                log.log(Level.FINE, "Invoking mbus.getVersion() on target '" + name + "'");
             }
             Request req = new Request("mbus.getVersion");
             target.invokeAsync(req, timeout, this);
@@ -130,7 +130,7 @@ public class RPCTarget implements RequestWaiter {
     @Override
     public void handleRequestDone(Request req) {
         List<VersionHandler> handlers;
-        boolean shouldLog = log.isLoggable(LogLevel.DEBUG);
+        boolean shouldLog = log.isLoggable(Level.FINE);
         synchronized (this) {
             targetInvoked = false;
             if (req.checkReturnTypes("s")) {
@@ -138,13 +138,13 @@ public class RPCTarget implements RequestWaiter {
                 try {
                     version = new Version(str);
                     if (shouldLog) {
-                        log.log(LogLevel.DEBUG, "Target '" + name + "' has version " + version + ".");
+                        log.log(Level.FINE, "Target '" + name + "' has version " + version + ".");
                     }
                 } catch (IllegalArgumentException e) {
-                    log.log(LogLevel.WARNING, "Failed to parse '" + str + "' as version for target '" + name + "'.", e);
+                    log.log(Level.WARNING, "Failed to parse '" + str + "' as version for target '" + name + "'.", e);
                 }
             } else {
-                log.log(LogLevel.INFO, "Method mbus.getVersion() failed for target '" + name + "'; " +
+                log.log(Level.INFO, "Method mbus.getVersion() failed for target '" + name + "'; " +
                                        req.errorMessage());
             }
             handlers = versionHandlers;

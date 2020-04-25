@@ -2,7 +2,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -63,7 +63,7 @@ public class CompressedFileReference {
     }
 
     static void decompress(File inputFile, File outputDir) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
+        log.log(Level.FINE, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
         try (ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
@@ -78,16 +78,16 @@ public class CompressedFileReference {
             File outFile = new File(outputFile, entry.getName());
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(LogLevel.DEBUG, () -> "Creating dir: " + outFile.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
                     if (!outFile.mkdirs()) {
-                        log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
+                        log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
                 // Create parent dir if necessary
                 File parent = new File(outFile.getParent());
                 if (!parent.exists() && !parent.mkdirs()) {
-                    log.log(LogLevel.WARNING, "Could not create dir " + parent.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not create dir " + parent.getAbsolutePath());
                 }
                 FileOutputStream fos = new FileOutputStream(outFile);
                 ByteStreams.copy(archiveInputStream, fos);
@@ -113,7 +113,7 @@ public class CompressedFileReference {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
+        log.log(Level.FINE, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();

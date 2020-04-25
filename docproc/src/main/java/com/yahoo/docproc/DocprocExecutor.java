@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.statistics.Counter;
 import com.yahoo.text.Utf8;
 
@@ -119,7 +119,7 @@ public class DocprocExecutor {
             //might throw exception, which is OK:
             progress = call.call(processing);
 
-            if (log.isLoggable(LogLevel.SPAM)) {
+            if (log.isLoggable(Level.FINEST)) {
                 logProgress(processing, progress, call);
             }
 
@@ -150,7 +150,7 @@ public class DocprocExecutor {
             }
         }
         message.append("]");
-        log.log(LogLevel.SPAM, message.toString());
+        log.log(Level.FINEST, message.toString());
     }
 
     /**

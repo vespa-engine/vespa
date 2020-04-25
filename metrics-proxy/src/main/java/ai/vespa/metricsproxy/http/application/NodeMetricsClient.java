@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.Collections.emptyList;
 
 /**
@@ -65,13 +65,13 @@ public class NodeMetricsClient {
 
     private Snapshot retrieveMetrics(ConsumerId consumer) {
         String metricsUri = node.metricsUri(consumer).toString();
-        log.log(DEBUG, () -> "Retrieving metrics from host " + metricsUri);
+        log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
         try {
             String metricsJson = httpClient.execute(new HttpGet(metricsUri), new BasicResponseHandler());
             var newMetrics = GenericJsonUtil.toMetricsPackets(metricsJson);
             snapshotsRetrieved ++;
-            log.log(DEBUG, () -> "Successfully retrieved " + newMetrics.size() + " metrics packets from " + metricsUri);
+            log.log(FINE, () -> "Successfully retrieved " + newMetrics.size() + " metrics packets from " + metricsUri);
             return new Snapshot(Instant.now(clock), newMetrics);
         } catch (IOException e) {
             log.warning("Unable to retrieve metrics from " + metricsUri + ": " + Exceptions.toMessageString(e));

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.query.Substring;
 
 import java.util.*;
@@ -66,7 +66,7 @@ public class SpecialTokens {
         // TODO put along with the global toLowerCase
         String asHigh = token.toUpperCase(Locale.ENGLISH);
         if (asLow.length() != token.length() || asHigh.length() != token.length()) {
-            log.log(LogLevel.ERROR, "Special token '" + token + "' has case sensitive length. Ignoring the token."
+            log.log(Level.SEVERE, "Special token '" + token + "' has case sensitive length. Ignoring the token."
                     + " Please report this message in a bug to the Vespa team.");
             return false;
         } else {

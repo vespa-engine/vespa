@@ -3,7 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.jdisc.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,7 +88,7 @@ public class ProcessFactoryImpl implements ProcessFactory {
                 if (commandLine.getOutputFile().isEmpty())
                     Files.delete(outputFile);
             } catch (IOException ioException) {
-                logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +
+                logger.log(Level.WARNING, "Failed to delete temporary file at " +
                                              outputFile, ioException);
             }
             throw throwable;

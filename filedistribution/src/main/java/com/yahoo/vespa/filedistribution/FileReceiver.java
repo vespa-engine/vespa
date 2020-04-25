@@ -8,7 +8,7 @@ import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -80,7 +80,7 @@ public class FileReceiver {
                 inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
                 String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDirectory.toPath() + "': ";
-                log.log(LogLevel.ERROR, msg + e.getMessage(), e);
+                log.log(Level.SEVERE, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }
         }
@@ -96,7 +96,7 @@ public class FileReceiver {
             try {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                log.log(Level.SEVERE, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
                 inprogressFile.delete();
                 throw new RuntimeException("Failed writing to file (" + inprogressFile.toPath() + "): ", e);
             }
@@ -120,14 +120,14 @@ public class FileReceiver {
                     try {
                         Files.createDirectories(fileReferenceDir.toPath());
                     } catch (IOException e) {
-                        log.log(LogLevel.ERROR, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                        log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
                         throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
                     }
-                    log.log(LogLevel.DEBUG, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
                     moveFileToDestination(inprogressFile, file);
                 }
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
+                log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
                 try {
@@ -135,7 +135,7 @@ public class FileReceiver {
                         Files.delete(inprogressFile.toPath());
                     }
                 } catch (IOException e) {
-                    log.log(LogLevel.ERROR, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
+                    log.log(Level.SEVERE, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
                 }
             }
             return file;
@@ -188,16 +188,16 @@ public class FileReceiver {
     private static void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());
-            log.log(LogLevel.DEBUG, () -> "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
+            log.log(Level.FINE, () -> "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already). Delete temp file/dir in that case, to avoid filling the disk.
-            log.log(LogLevel.INFO, "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
+            log.log(Level.INFO, "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
                     "', '" + destination.getAbsolutePath() + "' already exists");
             deleteFileOrDirectory(tempFile);
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
-            log.log(LogLevel.ERROR, message, e);
+            log.log(Level.SEVERE, message, e);
             throw new RuntimeException(message, e);
         }
     }
@@ -210,12 +210,12 @@ public class FileReceiver {
             else
                 Files.delete(path.toPath());
         } catch (IOException ioe) {
-            log.log(LogLevel.WARNING, "Failed deleting file/dir " + path);
+            log.log(Level.WARNING, "Failed deleting file/dir " + path);
         }
     }
 
     private void receiveFileMeta(Request req) {
-        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
         String type = req.parameters().get(2).asString();
@@ -240,7 +240,7 @@ public class FileReceiver {
     }
 
     private void receiveFilePart(Request req) {
-        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
 
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
@@ -255,13 +255,13 @@ public class FileReceiver {
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;
-        log.log(LogLevel.SPAM, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+        log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
         downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }
 
     private void receiveFileEof(Request req) {
-        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
         long xxhash = req.parameters().get(2).asInt64();

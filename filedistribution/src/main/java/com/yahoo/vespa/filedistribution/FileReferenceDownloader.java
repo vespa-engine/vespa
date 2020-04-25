@@ -6,7 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 
@@ -81,7 +81,7 @@ public class FileReferenceDownloader {
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        log.log(LogLevel.DEBUG, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+        log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
         synchronized (downloads) {
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
@@ -97,7 +97,7 @@ public class FileReferenceDownloader {
                 downloads.remove(fileReference);
                 download.future().complete(Optional.of(file));
             } else {
-                log.log(LogLevel.DEBUG, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
+                log.log(Level.FINE, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
             }
         }
     }
@@ -117,7 +117,7 @@ public class FileReferenceDownloader {
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
 
         connection.invokeSync(request, (double) rpcTimeout.getSeconds());
-        Level logLevel = (retryCount > 0 ? LogLevel.INFO : LogLevel.DEBUG);
+        Level logLevel = (retryCount > 0 ? Level.INFO : Level.FINE);
         if (validateResponse(request)) {
             log.log(logLevel, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
@@ -155,7 +155,7 @@ public class FileReferenceDownloader {
         } else if (request.returnValues().size() == 0) {
             return false;
         } else if (!request.checkReturnTypes("is")) { // TODO: Do not hard-code return type
-            log.log(LogLevel.WARNING, "Invalid return types for response: " + request.errorMessage());
+            log.log(Level.WARNING, "Invalid return types for response: " + request.errorMessage());
             return false;
         }
         return true;

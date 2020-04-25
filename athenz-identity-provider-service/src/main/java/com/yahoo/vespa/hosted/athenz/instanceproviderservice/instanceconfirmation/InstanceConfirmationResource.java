@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmati
 
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -32,9 +32,9 @@ public class InstanceConfirmationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public InstanceConfirmation confirmInstance(InstanceConfirmation instanceConfirmation) {
-        log.log(LogLevel.DEBUG, instanceConfirmation.toString());
+        log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidInstance(instanceConfirmation)) {
-            log.log(LogLevel.ERROR, "Invalid instance: " + instanceConfirmation);
+            log.log(Level.SEVERE, "Invalid instance: " + instanceConfirmation);
             throw new ForbiddenException("Instance is invalid");
         }
         return instanceConfirmation;

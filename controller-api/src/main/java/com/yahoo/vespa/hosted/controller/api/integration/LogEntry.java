@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.log.LogLevel;
 
+import java.util.logging.Level;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +14,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -103,9 +104,9 @@ public class LogEntry {
     }
 
     public static Type typeOf(Level level) {
-        return    level.intValue() < LogLevel.INFO.intValue() ? Type.debug
-                : level.intValue() < LogLevel.WARNING.intValue() ? Type.info
-                : level.intValue() < LogLevel.ERROR.intValue() ? Type.warning
+        return    level.intValue() < Level.INFO.intValue() ? Type.debug
+                : level.intValue() < Level.WARNING.intValue() ? Type.info
+                : level.intValue() < Level.SEVERE.intValue() ? Type.warning
                 : Type.error;
     }
 

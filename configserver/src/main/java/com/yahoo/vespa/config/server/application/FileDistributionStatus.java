@@ -10,7 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 
@@ -56,7 +56,7 @@ public class FileDistributionStatus extends AbstractComponent {
             try {
                 hostStatuses.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
-                log.log(LogLevel.WARNING, "Failed getting file distribution status", e);
+                log.log(Level.WARNING, "Failed getting file distribution status", e);
             }
         });
         return createStatusForAllHosts(hostStatuses);

@@ -4,7 +4,7 @@ package com.yahoo.config.application;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,7 +54,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     public Document process(Document input) throws TransformerException {
-        log.log(LogLevel.DEBUG, "Preprocessing overrides with " + environment + "." + region);
+        log.log(Level.FINE, "Preprocessing overrides with " + environment + "." + region);
         Document ret = Xml.copyDocument(input);
         Element root = ret.getDocumentElement();
         applyOverrides(root, Context.empty());

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder;
 import com.yahoo.config.model.deploy.ConfigDefinitionStore;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder;
@@ -24,9 +24,9 @@ public class UserConfigBuilder {
     public static UserConfigRepo build(Element producerSpec, ConfigDefinitionStore configDefinitionStore, DeployLogger deployLogger) {
         final Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new LinkedHashMap<>();
         if (producerSpec == null) {
-            log.log(LogLevel.SPAM, "In getUserConfigs. producerSpec is null");
+            log.log(Level.FINEST, "In getUserConfigs. producerSpec is null");
         }
-        log.log(LogLevel.DEBUG, "getUserConfigs for " + producerSpec);
+        log.log(Level.FINE, "getUserConfigs for " + producerSpec);
         for (Element configE : XML.getChildren(producerSpec, "config")) {
             buildElement(configE, builderMap, configDefinitionStore, deployLogger);
         }
@@ -40,13 +40,13 @@ public class UserConfigBuilder {
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         if ( ! def.isPresent()) { // TODO: Fail instead of warn
-            logger.log(LogLevel.WARNING, "Unable to find config definition '" + key.asFileName() +
+            logger.log(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
         ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);
         ConfigPayloadBuilder old = builderMap.get(key);
         if (old != null) {
-            logger.log(LogLevel.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");
+            logger.log(Level.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");
             old.override(payloadBuilder);
         } else {
             builderMap.put(key, payloadBuilder);

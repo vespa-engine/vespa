@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ActivationConflictException;
@@ -149,7 +149,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             session.waitUntilActivated(timeoutBudget);
 
-            log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
+            log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() +
                                    " activated successfully using " +
                                    (hostProvisioner.isPresent() ? hostProvisioner.get().getClass().getSimpleName() : "no host provisioner") +
                                    ". Config generation " + session.getMetaData().getGeneration() +
@@ -196,12 +196,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
 
         long sessionId = session.getSessionId();
         long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "sessionId=" + sessionId + 
+        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId + 
                                 ", current active session=" + currentActiveSessionSessionId);
         if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
                 currentActiveSessionSessionId != sessionId) {

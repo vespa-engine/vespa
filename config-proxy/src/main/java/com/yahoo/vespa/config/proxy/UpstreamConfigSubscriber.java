@@ -5,7 +5,7 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -56,7 +56,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
             try {
                 updateWithNewConfig(handle);
             } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
-                log.log(LogLevel.WARNING, "Got exception: " + Exceptions.toMessageString(e));
+                log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
             } catch (Throwable e) {
                 com.yahoo.protect.Process.logAndDie("Got error, exiting: " + Exceptions.toMessageString(e));
             }
@@ -65,7 +65,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
 
     private void updateWithNewConfig(GenericConfigHandle handle) {
         RawConfig newConfig = handle.getRawConfig();
-        log.log(LogLevel.DEBUG, () -> "config to be returned for '" + newConfig.getKey() +
+        log.log(Level.FINE, () -> "config to be returned for '" + newConfig.getKey() +
                 "', generation=" + newConfig.getGeneration() +
                 ", payload=" + newConfig.getPayload());
         memoryCache.update(newConfig);

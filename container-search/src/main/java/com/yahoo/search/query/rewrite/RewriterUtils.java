@@ -2,7 +2,7 @@
 package com.yahoo.search.query.rewrite;
 
 import com.yahoo.fsa.FSA;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.search.Query;
 import com.yahoo.search.intent.model.IntentModel;
 import com.yahoo.search.intent.model.InterpretationNode;
@@ -289,7 +289,7 @@ public class RewriterUtils {
      * @param msg Log message
      */
     public static void log(Logger logger, String msg) {
-        logger.log(LogLevel.DEBUG, logger.getName() + ": " + msg);
+        logger.log(Level.FINE, logger.getName() + ": " + msg);
     }
 
     /**
@@ -303,7 +303,7 @@ public class RewriterUtils {
         if(query!=null) {
             query.trace(logger.getName() + ": " + msg, true, TRACELEVEL);
         }
-        logger.log(LogLevel.DEBUG, logger.getName() + ": " + msg);
+        logger.log(Level.FINE, logger.getName() + ": " + msg);
     }
 
     /**

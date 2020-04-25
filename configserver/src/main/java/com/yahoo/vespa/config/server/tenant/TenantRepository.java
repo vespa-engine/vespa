@@ -7,7 +7,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -121,10 +121,10 @@ public class TenantRepository {
         } else {
             this.directoryCache = Optional.empty();
         }
-        log.log(LogLevel.DEBUG, "Creating all tenants");
+        log.log(Level.FINE, "Creating all tenants");
         bootstrapTenants();
         notifyTenantsLoaded();
-        log.log(LogLevel.DEBUG, "All tenants created");
+        log.log(Level.FINE, "All tenants created");
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
@@ -153,7 +153,7 @@ public class TenantRepository {
     /** Public for testing. */
     public synchronized void updateTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
-        log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
+        log.log(Level.FINE, "Create tenants, tenants found in zookeeper: " + allTenants);
         for (TenantName tenantName : Set.copyOf(tenants.keySet()))
             if ( ! allTenants.contains(tenantName))
                 zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));
@@ -175,10 +175,10 @@ public class TenantRepository {
             try {
                 f.getValue().get();
             } catch (ExecutionException e) {
-                log.log(LogLevel.WARNING, "Failed to create tenant " + tenantName, e);
+                log.log(Level.WARNING, "Failed to create tenant " + tenantName, e);
                 failed.add(tenantName);
             } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);
+                log.log(Level.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);
             }
         }
 
@@ -203,7 +203,7 @@ public class TenantRepository {
         TenantName tenantName = builder.getTenantName();
         if (tenants.containsKey(tenantName)) return;
 
-        log.log(LogLevel.INFO, "Creating tenant '" + tenantName + "'");
+        log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
         Tenant tenant = builder.build();
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
@@ -280,7 +280,7 @@ public class TenantRepository {
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
 
-        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
+        log.log(Level.INFO, "Deleting tenant '" + name + "'");
         tenants.get(name).delete();
     }
 
@@ -289,7 +289,7 @@ public class TenantRepository {
         if (tenant == null)
             throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-        log.log(LogLevel.INFO, "Closing tenant '" + name + "'");
+        log.log(Level.INFO, "Closing tenant '" + name + "'");
         notifyRemovedTenant(name);
         tenant.close();
     }

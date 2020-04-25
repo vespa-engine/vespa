@@ -9,7 +9,7 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -69,8 +69,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     @Override
     public final void handleRequest(Request request, BufferedContentChannel requestContent, ResponseHandler responseHandler) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "In " + this.getClass() + ".handleRequest()");
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "In " + this.getClass() + ".handleRequest()");
         }
         com.yahoo.jdisc.http.HttpRequest jdiscRequest = asHttpRequest(request);
         HttpRequest httpRequest = new HttpRequest(jdiscRequest, new UnsafeContentInputStream(requestContent.toReadable()));
@@ -83,7 +83,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         } catch (Exception e) {
             metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);
-            log.log(LogLevel.ERROR, "Uncaught exception handling request", e);
+            log.log(Level.SEVERE, "Uncaught exception handling request", e);
             if (channel != null) {
                 channel.setHttpResponse(null);
                 channel.close(null);
@@ -118,7 +118,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         catch (IOException e) {
             metric.add(RENDERING_ERRORS, 1, null);
             long time = System.currentTimeMillis() - startTime;
-            log.log(time < 900 ? LogLevel.INFO : LogLevel.WARNING,
+            log.log(time < 900 ? Level.INFO : Level.WARNING,
                     "IO error while responding to " + " ["
                             + request.getUri() + "] " + "(total time "
                             + time + " ms) ", e);
@@ -191,8 +191,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
                 return responseHandler.handleResponse(httpResponse.getJdiscResponse());
             } catch (Exception e) {
                 metric.add(RENDERING_ERRORS, 1, null);
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Error writing response to client - connection probably terminated " +
+                if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "Error writing response to client - connection probably terminated " +
                                             "from client side.", e);
                 }
                 return new DevNullChannel(); // Ignore further operations on this

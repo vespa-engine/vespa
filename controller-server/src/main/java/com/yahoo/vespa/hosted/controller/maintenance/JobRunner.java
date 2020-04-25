@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
@@ -86,7 +86,7 @@ public class JobRunner extends Maintainer {
                         .ifPresent(run -> controller().applications().deploymentTrigger().notifyOfCompletion(id.application()));
         }
         catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception finishing " + id, e);
+            log.log(Level.WARNING, "Exception finishing " + id, e);
         }
     }
 
@@ -118,7 +118,7 @@ public class JobRunner extends Maintainer {
             // Something else is already advancing this step, or a prerequisite -- try again later!
         }
         catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Exception attempting to advance " + step + " of " + id, e);
+            log.log(Level.WARNING, "Exception attempting to advance " + step + " of " + id, e);
         }
     }
 

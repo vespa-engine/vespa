@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -42,7 +42,7 @@ public class CapacityReportMaintainer extends Maintainer {
         CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
         if (overcommittedHosts.size() != 0) {
-            log.log(LogLevel.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
+            log.log(Level.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
                                                     overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
         }
         metric.set("overcommittedHosts", overcommittedHosts.size(), null);

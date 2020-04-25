@@ -3,7 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,9 +101,9 @@ public class LoggingTestCase {
         stream.send(createData());
         stream.send(createData());
         stream.flush();
-        assertNull(logChecker.errorCounter.get(LogLevel.INFO));
-        assertEquals(1, logChecker.errorCounter.get(LogLevel.DEBUG).intValue());
-        assertEquals(2, logChecker.errorCounter.get(LogLevel.SPAM).intValue());
+        assertNull(logChecker.errorCounter.get(Level.INFO));
+        assertEquals(1, logChecker.errorCounter.get(Level.FINE).intValue());
+        assertEquals(2, logChecker.errorCounter.get(Level.FINEST).intValue());
     }
 
 }

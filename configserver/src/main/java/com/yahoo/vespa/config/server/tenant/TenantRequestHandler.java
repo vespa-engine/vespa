@@ -6,7 +6,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -80,8 +80,8 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
         }
         return application.resolveConfig(req, responseFactory);
     }
@@ -138,7 +138,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
             if ( ! applications.contains(activeApplication)) {
-                log.log(LogLevel.INFO, "Will remove deleted application " + activeApplication.toShortString());
+                log.log(Level.INFO, "Will remove deleted application " + activeApplication.toShortString());
                 removeApplication(activeApplication);
             }
         }

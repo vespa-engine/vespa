@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import org.HdrHistogram.DoubleHistogram;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * A gauge or a counter or... who knows? The class for storing a metric when the
@@ -96,7 +96,7 @@ public class UntypedMetric {
                 try {
                     histogram.add(other.histogram);
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    log.log(LogLevel.WARNING, "Had trouble merging histograms: " + e.getMessage());
+                    log.log(Level.WARNING, "Had trouble merging histograms: " + e.getMessage());
                 }
             }
         }

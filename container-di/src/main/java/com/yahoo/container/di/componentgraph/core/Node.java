@@ -15,8 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
-import static com.yahoo.log.LogLevel.SPAM;
+import static java.util.logging.Level.FINE;
 
 /**
  * @author Tony Vaagenes

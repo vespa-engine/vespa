@@ -9,7 +9,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDeniedException;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ClientProvider;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -72,7 +72,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying message bus client.");
+        log.log(Level.FINE, "Destroying message bus client.");
         sessionReference.close();
         done = true;
     }
@@ -86,7 +86,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
             handler.handleResponse(new MbusResponse(StatusCodes.fromMbusReply(reply), reply))
                    .close(IgnoredCompletionHandler.INSTANCE);
         } catch (final Exception e) {
-            log.log(LogLevel.WARNING, "Ignoring exception thrown by ResponseHandler.", e);
+            log.log(Level.WARNING, "Ignoring exception thrown by ResponseHandler.", e);
         }
     }
 
@@ -139,7 +139,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
                     }
                     sendBlocking(request);
                 } catch (final Exception e) {
-                    log.log(LogLevel.WARNING, "Ignoring exception thrown by MbusClient.", e);
+                    log.log(Level.WARNING, "Ignoring exception thrown by MbusClient.", e);
                 }
             }
         }

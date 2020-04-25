@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.*;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 import java.util.concurrent.locks.Lock;
@@ -60,7 +60,7 @@ class FileAcquirerImpl implements FileAcquirer {
                     logWarning();
                     target.close();
                 } else {
-                    log.log(LogLevel.DEBUG, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
+                    log.log(Level.FINE, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     pauseTime = 0;
                     logCount = 0;
                     return;
@@ -152,7 +152,7 @@ class FileAcquirerImpl implements FileAcquirer {
             request.parameters().add(new StringValue(fileReference.value()));
 
             double rpcTimeout = Math.min(timer.timeLeft(TimeUnit.SECONDS), 60.0);
-            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + fileReference + " with " + rpcTimeout + " seconds timeout");
+            log.log(Level.FINE, "InvokeSync waitFor " + fileReference + " with " + rpcTimeout + " seconds timeout");
             target.invokeSync(request, rpcTimeout);
 
             if (request.checkReturnTypes("s")) {
@@ -160,7 +160,7 @@ class FileAcquirerImpl implements FileAcquirer {
             } else if (!request.isError()) {
                 throw new RuntimeException("Invalid response: " + request.returnValues());
             } else if (temporaryError(request.errorCode())) {
-                log.log(LogLevel.INFO, "Retrying waitFor for " + fileReference + ": " + request.errorCode() + " -- " + request.errorMessage());
+                log.log(Level.INFO, "Retrying waitFor for " + fileReference + ": " + request.errorCode() + " -- " + request.errorMessage());
                 Thread.sleep(1000);
             } else {
                 if (request.errorCode() == FileDistributionErrorCode.fileReferenceDoesNotExists)

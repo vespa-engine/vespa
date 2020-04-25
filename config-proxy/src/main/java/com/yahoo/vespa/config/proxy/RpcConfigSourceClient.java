@@ -10,7 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -84,7 +84,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
      */
     private void checkConfigSources() {
         if (configSourceSet == null || configSourceSet.getSources() == null || configSourceSet.getSources().size() == 0) {
-            log.log(LogLevel.WARNING, "No config sources defined, could not check connection");
+            log.log(Level.WARNING, "No config sources defined, could not check connection");
         } else {
             Request req = new Request("ping");
             for (String configSource : configSourceSet.getSources()) {
@@ -92,15 +92,15 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 Target target = supervisor.connect(spec);
                 target.invokeSync(req, 30.0);
                 if (target.isValid()) {
-                    log.log(LogLevel.DEBUG, () -> "Created connection to config source at " + spec.toString());
+                    log.log(Level.FINE, () -> "Created connection to config source at " + spec.toString());
                     return;
                 } else {
-                    log.log(LogLevel.INFO, "Could not connect to config source at " + spec.toString());
+                    log.log(Level.INFO, "Could not connect to config source at " + spec.toString());
                 }
                 target.close();
             }
             String extra = "";
-            log.log(LogLevel.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
+            log.log(Level.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
                     ", please make sure config server(s) are running. " + extra);
         }
     }
@@ -132,11 +132,11 @@ class RpcConfigSourceClient implements ConfigSourceClient {
 
         RawConfig ret = null;
         if (cachedConfig != null) {
-            log.log(LogLevel.DEBUG, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
+            log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
                     ",configmd5=" + cachedConfig.getConfigMd5());
-            log.log(LogLevel.SPAM, () -> "input config=" + input + ",cached config=" + cachedConfig);
+            log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + cachedConfig);
             if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
-                log.log(LogLevel.SPAM, () -> "Cached config is not equal to requested, will return it");
+                log.log(Level.FINEST, () -> "Cached config is not equal to requested, will return it");
                 if (delayedResponses.remove(delayedResponse)) {
                     // unless another thread already did it
                     ret = cachedConfig;
@@ -155,9 +155,9 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private void subscribeToConfig(RawConfig input, ConfigCacheKey configCacheKey) {
         synchronized (activeSubscribersLock) {
             if (activeSubscribers.containsKey(configCacheKey)) {
-                log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
+                log.log(Level.FINE, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
-                log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
+                log.log(Level.FINE, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
                 UpstreamConfigSubscriber subscriber =
                         new UpstreamConfigSubscriber(input, this, configSourceSet, timingValues, requester, memoryCache);
                 try {
@@ -165,7 +165,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     activeSubscribers.put(configCacheKey, subscriber);
                     exec.execute(subscriber);
                 } catch (ConfigurationRuntimeException e) {
-                    log.log(LogLevel.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
+                    log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
                     subscriber.cancel();
                 }
             }
@@ -215,14 +215,14 @@ class RpcConfigSourceClient implements ConfigSourceClient {
      * @param config new config
      */
     public void updateSubscribers(RawConfig config) {
-        log.log(LogLevel.DEBUG, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
+        log.log(Level.FINE, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
-        log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
+        log.log(Level.FINEST, () -> "Delayed response queue: " + responseDelayQueue);
         if (responseDelayQueue.size() == 0) {
-            log.log(LogLevel.DEBUG, () -> "There exists no matching element on delayed response queue for " + config.getKey());
+            log.log(Level.FINE, () -> "There exists no matching element on delayed response queue for " + config.getKey());
             return;
         } else {
-            log.log(LogLevel.DEBUG, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
+            log.log(Level.FINE, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
         }
         boolean found = false;
         for (DelayedResponse response : responseDelayQueue.toArray(new DelayedResponse[0])) {
@@ -232,17 +232,17 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     && (config.getGeneration() >= request.getRequestGeneration() || config.getGeneration() == 0)) {
                 if (delayedResponses.remove(response)) {
                     found = true;
-                    log.log(LogLevel.DEBUG, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
+                    log.log(Level.FINE, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
                     rpcServer.returnOkResponse(request, config);
                 } else {
-                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
+                    log.log(Level.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
                 }
             }
         }
         if (!found) {
-            log.log(LogLevel.DEBUG, () -> "Found no recipient for " + config.getKey() + " in delayed response queue");
+            log.log(Level.FINE, () -> "Found no recipient for " + config.getKey() + " in delayed response queue");
         }
-        log.log(LogLevel.DEBUG, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
+        log.log(Level.FINE, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
     }
 
     @Override

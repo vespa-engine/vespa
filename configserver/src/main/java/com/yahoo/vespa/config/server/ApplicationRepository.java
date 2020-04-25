@@ -24,7 +24,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
@@ -215,7 +215,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
             ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
             logConfigChangeActions(actions, logger);
-            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+            log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
             return new PrepareResult(sessionId, actions, deployLog);
         }
     }
@@ -380,17 +380,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 remoteSession = getRemoteSession(tenant, sessionId);
                 Transaction deleteTransaction = remoteSession.createDeleteTransaction();
                 deleteTransaction.commit();
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
 
                 if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+                    log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
                 } else {
                     deleteTransaction.rollbackOrLog();
                     throw new InternalServerException(applicationId + " was not deleted (waited " + waitTime + "), session " + sessionId);
                 }
             } catch (NotFoundException e) {
                 // For the case where waiting timed out in a previous attempt at deleting the application, continue and do the steps below
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
+                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
 
             NestedTransaction transaction = new NestedTransaction();
@@ -400,7 +400,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
-            transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
+            transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
             transaction.commit();
             return true;
         }
@@ -447,17 +447,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                    .map(FileReference::value)
                                                    .collect(Collectors.toSet()));
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Getting file references in use for '" + application + "' failed", e);
+                log.log(Level.WARNING, "Getting file references in use for '" + application + "' failed", e);
             }
         }
-        log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
+        log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
         Set<String> fileReferencesOnDisk = new HashSet<>();
         File[] filesOnDisk = fileReferencesPath.listFiles();
         if (filesOnDisk != null)
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
-        log.log(LogLevel.DEBUG, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
         Instant instant = Instant.now().minus(keepFileReferences);
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
@@ -466,11 +466,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
         if (fileReferencesToDelete.size() > 0) {
-            log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
+            log.log(Level.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
                 if ( ! IOUtils.recursiveDeleteDir(file))
-                    log.log(LogLevel.WARNING, "Could not delete " + file.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
             });
         }
         return fileReferencesToDelete;
@@ -498,10 +498,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             if (session == null) throw new NotFoundException("Remote session " + sessionId + " not found");
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
-            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
         }
     }
@@ -783,9 +783,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private void cleanupTempDirectory(File tempDir) {
-        logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
+        logger.log(Level.FINE, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
-            logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
+            logger.log(Level.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }
     }
 

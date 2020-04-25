@@ -20,7 +20,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -176,7 +176,7 @@ public class SessionPreparerTest {
         final StringBuilder logged = new StringBuilder();
         DeployLogger logger = (level, message) -> {
             System.out.println(level + ": "+message);
-            if (level.equals(LogLevel.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
+            if (level.equals(Level.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
         preparer.prepare(ctx, logger, new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
         assertEquals(logged.toString(), "");

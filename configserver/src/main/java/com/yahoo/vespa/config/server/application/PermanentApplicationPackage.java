@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -25,7 +25,7 @@ public class PermanentApplicationPackage {
         File app = new File(getDefaults().underVespaHome(config.applicationDirectory()));
         applicationPackage = Optional.ofNullable(app.exists() ? FilesApplicationPackage.fromFile(app) : null);
         if (applicationPackage.isPresent()) {
-            log.log(LogLevel.DEBUG, "Detected permanent application package in '" +
+            log.log(Level.FINE, "Detected permanent application package in '" +
                                     getDefaults().underVespaHome(config.applicationDirectory()) +
                                     "'. This might add extra services to config models");
         }

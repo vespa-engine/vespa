@@ -13,7 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 
 import java.util.logging.Logger;
@@ -42,8 +42,8 @@ class MessageFactory {
         message.setTimeReceivedNow();
         message.setTimeRemaining(requestMsg.getTimeRemainingNow());
         message.getTrace().setLevel(requestMsg.getTrace().getLevel());
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Created '" + message.getClass().getName() +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Created '" + message.getClass().getName() +
                                     "', route = '" + message.getRoute() +
                                     "', priority = '" + message.getPriority().name() +
                                     "', load type = '" + message.getLoadType() +

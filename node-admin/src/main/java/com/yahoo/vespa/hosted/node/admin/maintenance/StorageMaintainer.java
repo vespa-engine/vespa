@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -82,7 +82,7 @@ public class StorageMaintainer {
             diskUsage.put(context.containerName(), diskUsageBytes);
             return Optional.of(diskUsageBytes);
         } catch (Exception e) {
-            context.log(logger, LogLevel.WARNING, "Failed to get disk usage", e);
+            context.log(logger, Level.WARNING, "Failed to get disk usage", e);
             return Optional.empty();
         }
     }

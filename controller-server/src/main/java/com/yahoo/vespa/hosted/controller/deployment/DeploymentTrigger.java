@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -69,7 +69,7 @@ public class DeploymentTrigger {
 
     public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
         if (applications().getApplication(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring submission from project '" + projectId +
+            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
                                       "': Unknown application '" + id + "'");
             return;
         }
@@ -117,7 +117,7 @@ public class DeploymentTrigger {
      */
     public void notifyOfCompletion(ApplicationId id) {
         if (applications().getInstance(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
+            log.log(Level.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
             return;
         }
 
@@ -155,7 +155,7 @@ public class DeploymentTrigger {
 
     /** Attempts to trigger the given job. */
     public void trigger(Job job) {
-        log.log(LogLevel.DEBUG, "Triggering " + job);
+        log.log(Level.FINE, "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
             jobs.start(job.applicationId(), job.jobType, job.versions);
             applications().store(application.with(job.applicationId().instance(), instance ->

@@ -7,7 +7,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -77,7 +77,7 @@ public class InstanceValidator {
 
         VespaUniqueInstanceId csrProviderUniqueId = getVespaUniqueInstanceId(instanceConfirmation);
         if(! providerUniqueId.equals(csrProviderUniqueId)) {
-            log.log(LogLevel.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
+            log.log(Level.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
             return false;
         }
 
@@ -85,14 +85,14 @@ public class InstanceValidator {
             return false;
         }
 
-        log.log(LogLevel.DEBUG, () -> String.format("Validating instance %s.", providerUniqueId));
+        log.log(Level.FINE, () -> String.format("Validating instance %s.", providerUniqueId));
 
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
         if (signer.hasValidSignature(signedIdentityDocument, publicKey)) {
-            log.log(LogLevel.DEBUG, () -> String.format("Instance %s is valid.", providerUniqueId));
+            log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
-        log.log(LogLevel.ERROR, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
+        log.log(Level.SEVERE, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
         return false;
     }
 
@@ -100,14 +100,14 @@ public class InstanceValidator {
     //      We'll have to perform some validation on the instance id and other fields of the attribute map.
     //      Separate between tenant and node certificate as well.
     public boolean isValidRefresh(InstanceConfirmation confirmation) {
-        log.log(LogLevel.DEBUG, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
+        log.log(Level.FINE, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
                                                    new AthenzService(confirmation.domain, confirmation.service).getFullName(),
                                                    confirmation.provider,
                                                    confirmation.attributes.get(SAN_DNS_ATTRNAME)));
         try {
             return validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
+            log.log(Level.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
             return false;
         }
     }
@@ -131,7 +131,7 @@ public class InstanceValidator {
 
     private boolean validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId) {
         if(vespaUniqueInstanceId == null) {
-            log.log(LogLevel.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
+            log.log(Level.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
             return false;
         }
 
@@ -142,7 +142,7 @@ public class InstanceValidator {
                 .findFirst() // Should be only one
                 .orElse(null);
         if(node == null) {
-            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
+            log.log(Level.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
             return false;
         }
 
@@ -162,7 +162,7 @@ public class InstanceValidator {
         // Validate that ipaddresses in request are valid for node
 
         if(! nodeIpAddresses.containsAll(ips)) {
-            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
+            log.log(Level.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
             return false;
         }
         return true;

@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.service;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
@@ -45,7 +45,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
@@ -58,11 +58,11 @@ public class ConfigSentinelClient extends AbstractComponent {
     synchronized void ping(VespaService s) {
         List<VespaService> services = new ArrayList<>();
         services.add(s);
-        log.log(LogLevel.DEBUG, "Ping for service " + s);
+        log.log(Level.FINE, "Ping for service " + s);
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
@@ -92,7 +92,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         //from the sentinel
         for (VespaService s : services) {
             if ((!s.getServiceName().equals("configserver")) && !updatedServices.contains(s)) {
-                log.log(LogLevel.DEBUG,"Service " + s +  " is no longer found with sentinel - setting alive = false");
+                log.log(Level.FINE,"Service " + s +  " is no longer found with sentinel - setting alive = false");
                 s.setAlive(false);
             }
         }
@@ -166,10 +166,10 @@ public class ConfigSentinelClient extends AbstractComponent {
                 {
                     servicelist = req.returnValues().get(0).asString();
                 } else {
-                    log.log(LogLevel.WARNING, "Bad answer to RPC request: " + req.errorMessage());
+                    log.log(Level.WARNING, "Bad answer to RPC request: " + req.errorMessage());
                 }
             } else {
-                log.log(LogLevel.WARNING, "Could not connect to sentinel at: "+spec);
+                log.log(Level.WARNING, "Could not connect to sentinel at: "+spec);
             }
             return servicelist;
         } finally {

@@ -2,7 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
@@ -40,11 +40,11 @@ public abstract class HttpMetricFetcher {
 
         String u = "http://localhost:" + port + path;
         this.url = URI.create(u);
-        log.log(LogLevel.DEBUG, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
+        log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
     String getJson() throws IOException {
-        log.log(LogLevel.DEBUG, "Connecting to url " + url + " for service '" + service + "'");
+        log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
         return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
     }
 
@@ -64,17 +64,17 @@ public abstract class HttpMetricFetcher {
 
     private void logMessage(String message, int timesFetched) {
         if (service.isAlive() && timesFetched > 5) {
-            log.log(LogLevel.INFO, message);
+            log.log(Level.INFO, message);
         } else {
-            log.log(LogLevel.DEBUG, message);
+            log.log(Level.FINE, message);
         }
     }
 
     void logMessageNoResponse(String message, int timesFetched) {
         if (timesFetched > 5) {
-            log.log(LogLevel.WARNING, message);
+            log.log(Level.WARNING, message);
         } else {
-            log.log(LogLevel.INFO, message);
+            log.log(Level.INFO, message);
         }
     }
 

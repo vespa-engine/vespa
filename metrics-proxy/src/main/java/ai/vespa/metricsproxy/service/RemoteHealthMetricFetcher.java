@@ -2,7 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -64,7 +64,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
             return HealthMetric.get(code, message);
 
         } catch (JSONException e) {
-            log.log(LogLevel.DEBUG, "Failed to parse json response from metrics page:" + e + ":" + data);
+            log.log(Level.FINE, "Failed to parse json response from metrics page:" + e + ":" + data);
             return HealthMetric.getUnknown("Not able to parse json from status page");
         }
     }

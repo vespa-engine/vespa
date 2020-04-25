@@ -15,7 +15,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
@@ -88,7 +88,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             Version wantedNodeVespaVersion,
                                             Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
-        log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
+        log.log(Level.FINE, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.version(), appGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
         Provisioned provisioned = new Provisioned();

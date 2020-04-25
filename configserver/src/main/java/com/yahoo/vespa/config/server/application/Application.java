@@ -6,7 +6,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -149,11 +149,11 @@ public class Application implements ModelResult {
     }
 
     private boolean logDebug() {
-        return log.isLoggable(LogLevel.DEBUG);
+        return log.isLoggable(Level.FINE);
     }
 
     private void debug(String message) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(getId())+message);
+        log.log(Level.FINE, TenantRepository.logPre(getId())+message);
     }
 
     private ConfigDefinition getTargetDef(GetConfigRequest req) {

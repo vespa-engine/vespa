@@ -2,7 +2,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -51,7 +51,7 @@ public class FileDownloader {
         try {
             return getFutureFile(fileReferenceDownload).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.log(LogLevel.WARNING, "Failed downloading '" + fileReferenceDownload.fileReference().value() + "', removing from download queue: " + e.getMessage());
+            log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload.fileReference().value() + "', removing from download queue: " + e.getMessage());
             fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
             return Optional.empty();
         }
@@ -89,7 +89,7 @@ public class FileDownloader {
             } else if (!file.canRead()) {
                 throw new RuntimeException("File reference '" + fileReference.value() + "'exists, but unable to read it");
             } else {
-                log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
+                log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
                 fileReferenceDownloader.setDownloadStatus(fileReference, 1.0);
                 return Optional.of(file);
             }

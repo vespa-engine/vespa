@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts;
@@ -153,7 +153,7 @@ public class OrchestratorContext implements AutoCloseable {
             try {
                 unlock.run();
             } catch (RuntimeException e) {
-                logger.log(LogLevel.ERROR, "Failed run on close : " + e.getMessage());
+                logger.log(Level.SEVERE, "Failed run on close : " + e.getMessage());
             }
         });
     }

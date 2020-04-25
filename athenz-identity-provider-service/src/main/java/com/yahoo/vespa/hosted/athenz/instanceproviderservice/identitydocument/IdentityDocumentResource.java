@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentApi;
@@ -43,7 +43,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
             return EntityBindingsMapper.toSignedIdentityDocumentEntity(identityDocumentGenerator.generateSignedIdentityDocument(hostname, identityType));
         } catch (Exception e) {
             String message = String.format("Unable to generate identity doument for '%s': %s", hostname, e.getMessage());
-            log.log(LogLevel.ERROR, message, e);
+            log.log(Level.SEVERE, message, e);
             throw new InternalServerErrorException(message, e);
         }
     }

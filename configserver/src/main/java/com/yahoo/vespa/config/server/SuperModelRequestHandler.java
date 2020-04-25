@@ -7,7 +7,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.component.Version;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -74,10 +74,10 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
-        log.log(LogLevel.DEBUG, () -> "SuperModelRequestHandler resolving " + req + " for app id '" + appId + "'");
+        log.log(Level.FINE, () -> "SuperModelRequestHandler resolving " + req + " for app id '" + appId + "'");
         if (handler != null) {
             ConfigResponse configResponse = handler.resolveConfig(req);
-            log.log(LogLevel.DEBUG, () -> "SuperModelRequestHandler returning response for config " + req +
+            log.log(Level.FINE, () -> "SuperModelRequestHandler returning response for config " + req +
                     " with generation " + configResponse.getGeneration());
             return configResponse;
         }

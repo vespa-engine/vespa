@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
@@ -47,7 +47,7 @@ public class NameServiceDispatcher extends Maintainer {
 
             var dispatched = queue.last(requestCount);
             if (!dispatched.requests().isEmpty()) {
-                log.log(LogLevel.INFO, "Dispatched name service request(s) in " +
+                log.log(Level.INFO, "Dispatched name service request(s) in " +
                                        Duration.between(instant, clock.instant()) +
                                        ": " + dispatched.requests());
             }

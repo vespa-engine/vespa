@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -74,11 +74,11 @@ public class NameServiceForwarder {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
             if (queued >= maxQueuedRequests) {
-                log.log(LogLevel.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
+                log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }
-            log.log(LogLevel.INFO, "Queueing name service request: " + request);
+            log.log(Level.INFO, "Queueing name service request: " + request);
             db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
         }
     }

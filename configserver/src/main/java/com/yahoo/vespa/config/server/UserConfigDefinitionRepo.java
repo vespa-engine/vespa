@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.base.Splitter;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -32,7 +32,7 @@ public class UserConfigDefinitionRepo implements ConfigDefinitionRepo {
                 defs.put(dKey, new ConfigDefinition(dKey.getName(), Splitter.on("\n").splitToList(payload).toArray(new String[0])));
             }
         } else {
-            log.log(LogLevel.WARNING, "Path " + appPath + " does not exist, not able to load add user config definitions");
+            log.log(Level.WARNING, "Path " + appPath + " does not exist, not able to load add user config definitions");
         }
     }
 

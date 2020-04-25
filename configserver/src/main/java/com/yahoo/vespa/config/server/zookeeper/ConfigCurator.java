@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 
@@ -70,7 +70,7 @@ public class ConfigCurator {
     private ConfigCurator(Curator curator, int maxNodeSize) {
         this.curator = curator;
         this.maxNodeSize = maxNodeSize;
-        log.log(LogLevel.CONFIG, "Using jute max buffer size " + this.maxNodeSize);
+        log.log(Level.CONFIG, "Using jute max buffer size " + this.maxNodeSize);
         testZkConnection();
     }
 
@@ -310,7 +310,7 @@ public class ConfigCurator {
             curator.framework().checkExists().forPath("/dummy");
         }
         catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
+            log.log(Level.SEVERE, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
                     ". Please verify for all configserver nodes that " +
                     "VESPA_CONFIGSERVERS points to the correct configserver(s), " +
                     "the same configserver(s) as in services.xml, and that they are started. " +

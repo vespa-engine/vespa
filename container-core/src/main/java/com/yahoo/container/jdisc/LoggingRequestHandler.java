@@ -11,7 +11,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -166,7 +166,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         b.append("Timeout: ").append(timeoutInterval).append(" ms. ");
         b.append("Request string: ").append(req);
 
-        log.log(LogLevel.WARNING, "Slow execution. " + b);
+        log.log(Level.WARNING, "Slow execution. " + b);
     }
 
     private static class NullResponse extends ExtendedResponse {
@@ -227,8 +227,8 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         public void failed(Throwable throwable) {
             long endTime = System.currentTimeMillis();
             writeToLogs(endTime);
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Got exception when writing to client: " + Exceptions.toMessageString(throwable));
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Got exception when writing to client: " + Exceptions.toMessageString(throwable));
             }
         }
 
@@ -308,7 +308,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
             logEntry.setHttpMethod(AccessLogUtil.getHttpMethod(httpRequest));
             logEntry.setHttpVersion(AccessLogUtil.getHttpVersion(httpRequest));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
+            log.log(Level.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
         }
     }
 

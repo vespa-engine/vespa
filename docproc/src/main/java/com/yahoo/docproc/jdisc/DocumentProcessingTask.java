@@ -9,7 +9,7 @@ import com.yahoo.docproc.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.HandledProcessingException;
 import com.yahoo.docproc.Processing;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -60,7 +60,7 @@ public class DocumentProcessingTask implements Runnable {
                 processings.addAll(requestContext.getProcessings());
             } catch (Exception e) {
                 //deserialization failed:
-                log.log(LogLevel.WARNING, "Deserialization of message failed.", e);
+                log.log(Level.WARNING, "Deserialization of message failed.", e);
                 requestContext.processingFailed(e);
                 return;
             }
@@ -74,7 +74,7 @@ public class DocumentProcessingTask implements Runnable {
             }
         } catch (Error error) {
             try {
-                log.log(LogLevel.FATAL, Exceptions.toMessageString(error), error);
+                log.log(Level.SEVERE, Exceptions.toMessageString(error), error);
             } catch (Throwable t) {
                 // do nothing
             } finally {
@@ -203,7 +203,7 @@ public class DocumentProcessingTask implements Runnable {
         if (exception != null) {
             StringWriter backtrace = new StringWriter();
             exception.printStackTrace(new PrintWriter(backtrace));
-            log.log(LogLevel.DEBUG, "Failed to process " + processing + ": " + backtrace.toString());
+            log.log(Level.FINE, "Failed to process " + processing + ": " + backtrace.toString());
         }
     }
 

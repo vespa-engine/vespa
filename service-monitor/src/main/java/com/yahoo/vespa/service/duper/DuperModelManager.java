@@ -10,7 +10,7 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
@@ -102,7 +102,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
                 lockedRunnable(() -> {
                     if (!superModelIsComplete) {
                         superModelIsComplete = true;
-                        logger.log(LogLevel.INFO, "All bootstrap tenant applications have been activated");
+                        logger.log(Level.INFO, "All bootstrap tenant applications have been activated");
                         maybeSetDuperModelAsComplete();
                     }
                 });
@@ -171,7 +171,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         lockedRunnable(() -> {
             if (!infraApplicationsIsComplete) {
                 infraApplicationsIsComplete = true;
-                logger.log(LogLevel.INFO, "All infrastructure applications have been activated");
+                logger.log(Level.INFO, "All infrastructure applications have been activated");
                 maybeSetDuperModelAsComplete();
             }
         });

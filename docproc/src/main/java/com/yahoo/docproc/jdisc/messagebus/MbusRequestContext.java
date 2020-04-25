@@ -19,7 +19,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDispatch;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.MbusRequest;
@@ -91,8 +91,8 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
                 }
             }
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Forwarding " + messages.size() + " messages from " + processings.size() +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Forwarding " + messages.size() + " messages from " + processings.size() +
                                     " processings.");
         }
         if (messages.isEmpty()) {

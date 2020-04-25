@@ -21,7 +21,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -156,8 +156,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
     private void getConfigV3(Request req) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, getConfigMethodName);
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, getConfigMethodName);
         }
         req.detach();
         rpcAuthorizer.authorizeConfigRequest(req)
@@ -182,7 +182,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void run() {
-        log.log(LogLevel.INFO, "Rpc server will listen on port " + spec.port());
+        log.log(Level.INFO, "Rpc server will listen on port " + spec.port());
         try {
             Acceptor acceptor = supervisor.listen(spec);
             isRunning = true;
@@ -262,8 +262,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     void configReloaded(ApplicationId applicationId) {
         List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
         String logPre = TenantRepository.logPre(applicationId);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
         }
         int responsesSent = 0;
         CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -273,15 +273,15 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             // Doing cancel here deals with the case where the timer is already running or has not run, so
             // there is no need for any extra check.
             if (delayedConfigResponse.cancel()) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    logRequestDebug(LogLevel.DEBUG, logPre + "Timer cancelled for ", delayedConfigResponse.request);
+                if (log.isLoggable(Level.FINE)) {
+                    logRequestDebug(Level.FINE, logPre + "Timer cancelled for ", delayedConfigResponse.request);
                 }
                 // Do not wait for this request if we were unable to execute
                 if (addToRequestQueue(delayedConfigResponse.request, false, completionService)) {
                     responsesSent++;
                 }
             } else {
-                log.log(LogLevel.DEBUG, logPre + "Timer already cancelled or finished or never scheduled");
+                log.log(Level.FINE, logPre + "Timer already cancelled or finished or never scheduled");
             }
         }
 
@@ -293,10 +293,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
         }
 
-        log.log(LogLevel.DEBUG, logPre + "Finished reloading " + responsesSent + " requests");
+        log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
     }
 
-    private void logRequestDebug(LogLevel level, String message, JRTServerConfigRequest request) {
+    private void logRequestDebug(Level level, String message, JRTServerConfigRequest request) {
         if (log.isLoggable(level)) {
             log.log(level, message + request.getShortDescription());
         }
@@ -304,7 +304,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void hostsUpdated(TenantName tenant, Collection<String> newHosts) {
-        log.log(LogLevel.DEBUG, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
+        log.log(Level.FINE, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
         hostRegistry.update(tenant, newHosts);
     }
 
@@ -321,8 +321,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     public void respond(JRTServerConfigRequest request) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Trace at request return:\n" + request.getRequestTrace().toString());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Trace at request return:\n" + request.getRequestTrace().toString());
         }
         request.getRequest().returnRequest();
     }
@@ -338,8 +338,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         if (tenant == null) {
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName();
-                log.log(LogLevel.DEBUG, message);
-                log.log(LogLevel.DEBUG, "hosts in host registry: " + hostRegistry.getAllHosts());
+                log.log(Level.FINE, message);
+                log.log(Level.FINE, "hosts in host registry: " + hostRegistry.getAllHosts());
                 trace.trace(6, message);
             }
             return Optional.empty();
@@ -398,7 +398,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return null;
         }
         RequestHandler handler = requestHandler.get();
@@ -420,7 +420,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
+        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
         tenantProviders.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);
     }
@@ -433,7 +433,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantCreate(TenantName tenant, TenantHandlerProvider tenantHandlerProvider) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
+        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
         tenantProviders.put(tenant, tenantHandlerProvider);
     }
 

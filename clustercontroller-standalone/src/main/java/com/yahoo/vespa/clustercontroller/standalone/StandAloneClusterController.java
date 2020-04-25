@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.standalone;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
@@ -31,7 +31,7 @@ public class StandAloneClusterController {
             try{
                 app.stop();
             } catch (Exception e) {
-                log.log(LogLevel.FATAL, "Failed to stop application '" + app.getName() + "': " + e.getMessage());
+                log.log(Level.SEVERE, "Failed to stop application '" + app.getName() + "': " + e.getMessage());
                 e.printStackTrace();
                 return;
             }
@@ -48,7 +48,7 @@ public class StandAloneClusterController {
         try{
             myApp.start();
         } catch (Exception e) {
-            log.log(LogLevel.FATAL, "Failed to start application '" + myApp.getName() + "': " + e.getMessage());
+            log.log(Level.SEVERE, "Failed to start application '" + myApp.getName() + "': " + e.getMessage());
             e.printStackTrace();
             return;
         }
@@ -56,7 +56,7 @@ public class StandAloneClusterController {
         try{
             myApp.run();
         } catch (Exception e) {
-            log.log(LogLevel.FATAL, "Application '" + myApp.getName() + "' runtime failure: " + e.getMessage());
+            log.log(Level.SEVERE, "Application '" + myApp.getName() + "' runtime failure: " + e.getMessage());
             e.printStackTrace();
         }
     }

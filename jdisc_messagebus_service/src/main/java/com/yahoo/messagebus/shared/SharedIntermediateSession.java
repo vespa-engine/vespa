@@ -3,7 +3,7 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -97,7 +97,7 @@ public class SharedIntermediateSession extends AbstractResource
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared intermediate session.");
+        log.log(Level.FINE, "Destroying shared intermediate session.");
         session.destroy();
         mbusReference.close();
     }

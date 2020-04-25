@@ -7,7 +7,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
@@ -471,7 +471,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 stream.close();
             } catch (IOException e) {
                 closeException = e;
-                logger.log(LogLevel.WARNING, "Exception caught while closing stream to client.", e);
+                logger.log(Level.WARNING, "Exception caught while closing stream to client.", e);
             } finally {
                 if (failed != null) {
                     success.setException(failed);
@@ -527,9 +527,9 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                     try {
                         render();
                     } catch (Exception e) {
-                        Level level = LogLevel.WARNING;
+                        Level level = Level.WARNING;
                         if ((e instanceof IOException)) {
-                            level = LogLevel.DEBUG;
+                            level = Level.FINE;
                             if ( ! clientClosed) {
                                 clientClosed = true;
                                 onClientClosed();

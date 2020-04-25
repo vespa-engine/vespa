@@ -10,7 +10,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Counter;
 
@@ -57,7 +57,7 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
         procTimeCounter = createCounter("procTime", statistics);
 
         if (createZkMetricUpdater) {
-            log.log(LogLevel.DEBUG, "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
+            log.log(Level.FINE, "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
             long intervalMs = (long) (healthMonitorConfig.snapshot_interval() * 1000);
             executorService = Optional.of(new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("configserver-metrics")));
             executorService.get().scheduleAtFixedRate(this, 20000, intervalMs, TimeUnit.MILLISECONDS);
@@ -134,9 +134,9 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
     @Override
     public void run() {
         for (MetricUpdater metricUpdater : metricUpdaters.values()) {
-            log.log(LogLevel.DEBUG, "Running metric updater for static values for " + metricUpdater.getDimensions());
+            log.log(Level.FINE, "Running metric updater for static values for " + metricUpdater.getDimensions());
             for (Map.Entry<String, Number> fixedMetric : metricUpdater.getStaticMetrics().entrySet()) {
-                log.log(LogLevel.DEBUG, "Setting " + fixedMetric.getKey());
+                log.log(Level.FINE, "Setting " + fixedMetric.getKey());
                 metric.set(fixedMetric.getKey(), fixedMetric.getValue(), metricUpdater.getMetricContext());
             }
         }

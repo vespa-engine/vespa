@@ -9,7 +9,7 @@ import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Trace;
@@ -62,7 +62,7 @@ public class FeedReplyReader implements ReplyHandler {
 
             context.feedReplies.put(new OperationStatus(message, context.docId, status, isConditionNotMet, traceMessage));
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, 
+            log.log(Level.WARNING, 
                     "Interrupted while enqueueing result from putting document with id: " + context.docId);
             Thread.currentThread().interrupt();
         }

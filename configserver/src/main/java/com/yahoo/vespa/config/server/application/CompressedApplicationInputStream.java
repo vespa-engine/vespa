@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
@@ -84,23 +84,23 @@ public class CompressedApplicationInputStream implements AutoCloseable {
     }
 
     private void decompressInto(File application) throws IOException {
-        log.log(LogLevel.DEBUG, "Application is in " + application.getAbsolutePath());
+        log.log(Level.FINE, "Application is in " + application.getAbsolutePath());
         int entries = 0;
         ArchiveEntry entry;
         while ((entry = ais.getNextEntry()) != null) {
-            log.log(LogLevel.DEBUG, "Unpacking " + entry.getName());
+            log.log(Level.FINE, "Unpacking " + entry.getName());
             File outFile = new File(application, entry.getName());
             // FIXME/TODO: write more tests that break this logic. I have a feeling it is not very robust.
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(LogLevel.DEBUG, "Creating dir: " + outFile.getAbsolutePath());
+                    log.log(Level.FINE, "Creating dir: " + outFile.getAbsolutePath());
                     boolean res = outFile.mkdirs();
                     if (!res) {
-                        log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
+                        log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
-                log.log(LogLevel.DEBUG, "Creating output file: " + outFile.getAbsolutePath());
+                log.log(Level.FINE, "Creating output file: " + outFile.getAbsolutePath());
 
                 // Create parent dir if necessary
                 String parent = outFile.getParent();
@@ -113,7 +113,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
             entries++;
         }
         if (entries == 0) {
-            log.log(LogLevel.WARNING, "Not able to read any entries from " + application.getName());
+            log.log(Level.WARNING, "Not able to read any entries from " + application.getName());
         }
     }
 

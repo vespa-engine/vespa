@@ -4,7 +4,7 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -109,7 +109,7 @@ public class HostInfosServiceImpl implements HostInfosService {
             curator.framework().delete().forPath(path);
             return true;
         } catch (NoNodeException e) {
-            log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
+            log.log(Level.FINE, debugLogMessageIfNotExists, e);
             return false;
         } catch (Exception e) {
             throw new RuntimeException(e);

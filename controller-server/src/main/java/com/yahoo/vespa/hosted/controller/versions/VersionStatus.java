@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -151,7 +151,7 @@ public class VersionStatus {
                 if (nodes.isEmpty()) continue;
                 var configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
-                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() +
+                    log.log(Level.WARNING, "Config for " + application.id() + " in " + zone.getId() +
                                               " has not converged");
                 }
                 for (var node : nodes) {

@@ -9,7 +9,7 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
@@ -135,13 +135,13 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        log.log(LogLevel.DEBUG, "Setting up system");
+        log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
         if (options.zooKeeperServerAddress != null) {
             zooKeeperServer = new ZooKeeperTestServer();
             this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-            log.log(LogLevel.DEBUG, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
+            log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
         }
         this.options.slobrokConnectionSpecs = new String[1];
         this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
@@ -211,7 +211,7 @@ public abstract class FleetControllerTest implements Waiter {
         if (fleetController == null) {
             fleetController = createFleetController(usingFakeTimer, options, true, null);
         } else {
-            log.log(LogLevel.WARNING, "already started fleetcontroller, not starting another");
+            log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
     }
 
@@ -299,7 +299,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     protected void tearDownSystem() throws Exception {
         if (testName != null) {
-            //log.log(LogLevel.INFO, "STOPPING TEST " + testName);
+            //log.log(Level.INFO, "STOPPING TEST " + testName);
             System.err.println("STOPPING TEST " + testName);
             testName = null;
         }

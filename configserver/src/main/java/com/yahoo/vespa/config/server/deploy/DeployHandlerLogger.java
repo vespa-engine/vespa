@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -33,7 +34,7 @@ public class DeployHandlerLogger implements DeployLogger {
 
     @Override
     public void log(Level level, String message) {
-        if ((level == LogLevel.FINE ||
+        if ((level == Level.FINE ||
              level == LogLevel.DEBUG ||
              level == LogLevel.SPAM) &&
             !verbose) {
@@ -45,7 +46,7 @@ public class DeployHandlerLogger implements DeployLogger {
         entry.setString("level", level.getName());
         entry.setString("message", fullMsg);
         // Also tee to a normal log, Vespa log for example, but use level fine 
-        log.log(LogLevel.FINE, fullMsg);
+        log.log(Level.FINE, fullMsg);
     }
 
 }

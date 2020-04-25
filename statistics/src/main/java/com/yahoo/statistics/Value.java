@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.StatisticsConfig.Values.Operations;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.event.Event;
 import com.yahoo.statistics.SampleSet.Sampling;
 
@@ -360,7 +360,7 @@ public class Value extends Handle {
                 throw new IllegalStateException("The Limits instance must be frozen.");
             }
             if (parameters.histogramId != HistogramType.REGULAR) {
-                log.log(LogLevel.WARNING, HISTOGRAM_TYPE_WARNING + " '" + name + "'");
+                log.log(Level.WARNING, HISTOGRAM_TYPE_WARNING + " '" + name + "'");
             }
             this.histogramId = HistogramType.REGULAR;
             this.histogram = parameters.limits;

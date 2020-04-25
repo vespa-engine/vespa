@@ -10,7 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
@@ -49,7 +49,7 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.setContext(target);
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
-        log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target);
+        log.log(Level.FINE, "Executing " + request.methodName() + " against " + target);
         target.invokeAsync(request, rpcTimeout, this);
     }
 
@@ -58,7 +58,7 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     public void handleRequestDone(Request req) {
         Target target = (Target) req.getContext();
         if (req.isError()) {
-            log.log(LogLevel.DEBUG, req.methodName() + " failed for " + target + ": " + req.errorCode() + " (" + req.errorMessage() + ")");
+            log.log(Level.FINE, req.methodName() + " failed for " + target + ": " + req.errorCode() + " (" + req.errorMessage() + ")");
         }
         if (target != null) target.close();
     }

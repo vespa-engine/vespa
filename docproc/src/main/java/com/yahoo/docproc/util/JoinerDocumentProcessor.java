@@ -11,7 +11,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.datatypes.Array;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -59,7 +59,7 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
             if (op instanceof DocumentPut) {
                 innerDocuments.add(((DocumentPut)op).getDocument());
             } else {
-                log.log(LogLevel.DEBUG, "Skipping: " + op);
+                log.log(Level.FINE, "Skipping: " + op);
             }
         }
         processing.getDocumentOperations().clear();

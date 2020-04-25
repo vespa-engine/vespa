@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
@@ -66,7 +66,7 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
             return new JacksonJsonResponse<>(200, result.toWire());
         } catch (Exception e) {
             String errorMessage = "System flags deploy failed: " + e.getMessage();
-            log.log(LogLevel.ERROR, errorMessage, e);
+            log.log(Level.SEVERE, errorMessage, e);
             return ErrorResponse.internalServerError(errorMessage);
         }
     }

@@ -5,7 +5,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
@@ -63,7 +63,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
      */
     protected void deploy(ApplicationId application) {
         if (pendingDeployments.addIfAbsent(application)) { // Avoid queuing multiple deployments for same application
-            log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
+            log.log(Level.INFO, application + " will be deployed, last deploy time " +
                                    getLastDeployTime(application));
             deploymentExecutor.execute(() -> deployWithLock(application));
         }

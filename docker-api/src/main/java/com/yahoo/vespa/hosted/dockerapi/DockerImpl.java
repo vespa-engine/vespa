@@ -22,7 +22,7 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
@@ -78,7 +78,7 @@ public class DockerImpl implements Docker {
 
                 scheduledPulls.add(image);
 
-                logger.log(LogLevel.INFO, "Starting download of " + image.asString());
+                logger.log(Level.INFO, "Starting download of " + image.asString());
 
                 dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
                 return true;
@@ -345,14 +345,14 @@ public class DockerImpl implements Docker {
         @Override
         public void onError(Throwable throwable) {
             removeScheduledPoll(dockerImage);
-            logger.log(LogLevel.ERROR, "Could not download image " + dockerImage.asString(), throwable);
+            logger.log(Level.SEVERE, "Could not download image " + dockerImage.asString(), throwable);
         }
 
 
         @Override
         public void onComplete() {
             if (imageIsDownloaded(dockerImage)) {
-                logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
+                logger.log(Level.INFO, "Download completed: " + dockerImage.asString());
                 removeScheduledPoll(dockerImage);
             } else {
                 numberOfDockerApiFails.increment();

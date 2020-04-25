@@ -37,7 +37,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
@@ -109,7 +109,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(LogLevel.INFO, "Starting container");
+        log.log(Level.INFO, "Starting container");
     }
 
     /**
@@ -177,7 +177,7 @@ public final class ConfiguredApplication implements Application {
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
         slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
-        log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
+        log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
     }
@@ -210,7 +210,7 @@ public final class ConfiguredApplication implements Application {
             Container.get().setupFileAcquirer(config.filedistributor());
             Container.get().setupUrlDownloader();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
+            log.log(Level.SEVERE, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
         }
     }

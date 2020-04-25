@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.logserver.handlers.LogHandler;
 
 /**
@@ -45,13 +45,13 @@ public class Flusher extends Thread {
                     } else {
                         h.flush();
                     }
-                    if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Flushing " + h);
+                    if (log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "Flushing " + h);
                     }
                 }
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "flusher was interrupted", e);
+            log.log(Level.WARNING, "flusher was interrupted", e);
         }
     }
 }

@@ -8,7 +8,7 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.yolean.Exceptions;
@@ -32,7 +32,7 @@ public class HttpHandler extends LoggingRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        log.log(LogLevel.DEBUG, request.getMethod() + " " + request.getUri().toString());
+        log.log(Level.FINE, request.getMethod() + " " + request.getUri().toString());
         try {
             switch (request.getMethod()) {
                 case POST:
@@ -71,7 +71,7 @@ public class HttpHandler extends LoggingRequestHandler {
         } catch (LoadBalancerServiceException e) {
             return HttpErrorResponse.loadBalancerNotReady(getMessage(e, request));
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
+            log.log(Level.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         }
     }

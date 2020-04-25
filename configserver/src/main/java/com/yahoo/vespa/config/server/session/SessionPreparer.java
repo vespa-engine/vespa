@@ -22,7 +22,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -121,7 +121,7 @@ public class SessionPreparer {
                 preparation.writeContainerEndpointsZK();
                 preparation.distribute();
             }
-            log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
+            log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() +
                     " : " + params.getApplicationId());
             return preparation.result();
         }
@@ -243,7 +243,7 @@ public class SessionPreparer {
         }
 
         void writeStateZK() {
-            log.log(LogLevel.DEBUG, "Writing application package state to zookeeper");
+            log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
                                   applicationPackage,
                                   applicationId,

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.archive;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.filter.LogFilter;
 import com.yahoo.logserver.filter.LogFilterManager;
@@ -14,7 +14,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -212,12 +211,12 @@ public class ArchiverHandler extends AbstractLogHandler {
 
         // ensure that root dir exists
         if (root.isDirectory()) {
-            log.log(LogLevel.DEBUG, "Using " + absoluteRootDir + " as root");
+            log.log(Level.FINE, "Using " + absoluteRootDir + " as root");
         } else {
             if (! root.mkdirs()) {
-                log.log(LogLevel.ERROR, "Unable to create directory " + absoluteRootDir);
+                log.log(Level.SEVERE, "Unable to create directory " + absoluteRootDir);
             } else {
-                log.log(LogLevel.DEBUG, "Created root at " + absoluteRootDir);
+                log.log(Level.FINE, "Created root at " + absoluteRootDir);
             }
         }
         filesArchived = new FilesArchived(root);

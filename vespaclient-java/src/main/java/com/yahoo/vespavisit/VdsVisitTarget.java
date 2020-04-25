@@ -9,7 +9,7 @@ import com.yahoo.documentapi.VisitorDestinationSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.net.HostName;
@@ -208,7 +208,7 @@ public class VdsVisitTarget {
     @SuppressWarnings("unchecked")
     public void run() throws Exception {
         initShutdownHook();
-        log.log(LogLevel.DEBUG, "Starting VdsVisitTarget");
+        log.log(Level.FINE, "Starting VdsVisitTarget");
         MessageBusParams mbusParams = new MessageBusParams(new LoadTypeSet());
         mbusParams.getRPCNetworkParams().setIdentity(new Identity(slobrokAddress));
 

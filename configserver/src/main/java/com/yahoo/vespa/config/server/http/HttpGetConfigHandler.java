@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -41,7 +41,7 @@ public class HttpGetConfigHandler extends HttpHandler {
     }
 
     private ConfigResponse resolveConfig(HttpConfigRequest request) {
-        log.log(LogLevel.DEBUG, "nocache=" + request.noCache());
+        log.log(Level.FINE, "nocache=" + request.noCache());
         ConfigResponse config = requestHandler.resolveConfig(ApplicationId.defaultId(), request, Optional.empty());
         if (config == null) HttpConfigRequest.throwModelNotReady();
         return config;

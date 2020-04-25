@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.component;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +28,7 @@ public interface TaskContext {
     }
 
     /**
-     * Log message at LogLevel.INFO, scoped to denote the current task. The message may
+     * Log message at Level.INFO, scoped to denote the current task. The message may
      * also be directed to status pages or similar.
      *
      * Please do not call this too many times as that spams the log. Typically a task may call
@@ -37,7 +37,7 @@ public interface TaskContext {
      * Do not log a message that is also recorded with recordSystemModification.
      */
     default void log(Logger logger, String message) {
-        log(logger, LogLevel.INFO, message);
+        log(logger, Level.INFO, message);
     }
 
     default void log(Logger logger, String messageFormat, Object... args) {

@@ -11,7 +11,7 @@ import com.yahoo.concurrent.ThreadLocalDirectory;
 import com.yahoo.concurrent.ThreadLocalDirectory.Updater;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.metrics.ManagerConfig;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * This is the coordinating class owning the executor and the top level objects
@@ -32,7 +32,7 @@ public class MetricManager extends AbstractComponent implements Provider<MetricR
     }
 
     private MetricManager(ManagerConfig settings, Updater<Bucket, Sample> updater) {
-        log.log(LogLevel.CONFIG, "setting up simple metrics gathering." +
+        log.log(Level.CONFIG, "setting up simple metrics gathering." +
                     " reportPeriodSeconds=" + settings.reportPeriodSeconds() +
                     ", pointsToKeepPerMetric=" + settings.pointsToKeepPerMetric());
         metricsCollection = new ThreadLocalDirectory<>(updater);

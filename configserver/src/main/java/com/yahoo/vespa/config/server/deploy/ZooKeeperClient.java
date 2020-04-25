@@ -12,7 +12,7 @@ import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -67,7 +67,7 @@ public class ZooKeeperClient {
                     createZooKeeperNodes();
                     break;
                 } catch (RuntimeException e) {
-                    logger.log(LogLevel.FINE, "ZK init failed, retrying: " + e);
+                    logger.log(Level.FINE, "ZK init failed, retrying: " + e);
                     retries--;
                     if (retries == 0) {
                         throw e;
@@ -262,7 +262,7 @@ public class ZooKeeperClient {
             writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
             writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
         }
-        logger.log(LogLevel.FINE, configDefs.size() + " user config definitions");
+        logger.log(Level.FINE, configDefs.size() + " user config definitions");
     }
 
     private void writeConfigDefinition(String name, String namespace, String path, String data) {
@@ -298,7 +298,7 @@ public class ZooKeeperClient {
                 configCurator.deleteRecurse(getZooKeeperAppPath(null).append(subPath).getAbsolute());
             }
         } catch (Exception e) {
-            logger.log(LogLevel.WARNING, "Could not clean up in zookeeper");
+            logger.log(Level.WARNING, "Could not clean up in zookeeper");
             //Might be called in an exception handler before re-throw, so do not throw here.
         }
     }
@@ -320,7 +320,7 @@ public class ZooKeeperClient {
 
     private void logFine(String msg) {
         if (logFine) {
-            logger.log(LogLevel.FINE, msg);
+            logger.log(Level.FINE, msg);
         }
     }
 

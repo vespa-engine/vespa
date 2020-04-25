@@ -11,7 +11,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.UncheckedIOException;
 import java.util.Optional;
@@ -41,7 +41,7 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
         errorMessage.put("message", error.message);
         error.response.headers().put("Content-Type", "application/json"); // Note: Overwrites header if already exists
         error.response.headers().put("Cache-Control", "must-revalidate,no-cache,no-store");
-        log.log(LogLevel.DEBUG, () -> String.format("Error response for '%s': statusCode=%d, errorCode=%d, message='%s'",
+        log.log(Level.FINE, () -> String.format("Error response for '%s': statusCode=%d, errorCode=%d, message='%s'",
                                                     request, error.response.getStatus(), error.errorCode, error.message));
         try (FastContentWriter writer = ResponseDispatch.newInstance(error.response).connectFastWriter(responseHandler)) {
             writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(errorMessage));

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
 import com.yahoo.exception.ExceptionUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
         if (ssocket != null && ssocket.isBound() && (ssocket.getLocalPort() == port || port == 0)) {
             return true;
         } else {
-            log.log(LogLevel.SPAM, "Status page server socket is no longer connected: "+ (ssocket != null) + " " + ssocket.isBound() + " " + ssocket.getLocalPort() + " " + port);
+            log.log(Level.FINEST, "Status page server socket is no longer connected: "+ (ssocket != null) + " " + ssocket.isBound() + " " + ssocket.getLocalPort() + " " + port);
             return false;
         }
     }
@@ -83,9 +83,9 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 Thread.sleep(10);
             }
             if (!isConnected()) {
-                log.log(LogLevel.INFO, "Fleetcontroller: Server Socket not ready after connect()");
+                log.log(Level.INFO, "Fleetcontroller: Server Socket not ready after connect()");
             }
-            log.log(LogLevel.DEBUG, "Fleet controller status page viewer listening to " + ssocket.getLocalSocketAddress());
+            log.log(Level.FINE, "Fleet controller status page viewer listening to " + ssocket.getLocalSocketAddress());
             monitor.notifyAll();
         }
     }
@@ -102,7 +102,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
     public void setPort(int port) throws java.io.IOException, InterruptedException {
             // Only bother to reconnect if we were connected to begin with, we care about what port it runs on, and it's not already running there
         if (port != 0 && isConnected() && port != ((InetSocketAddress) ssocket.getLocalSocketAddress()).getPort()) {
-            log.log(LogLevel.INFO, "Exchanging port used by status server. Moving from port "
+            log.log(Level.INFO, "Exchanging port used by status server. Moving from port "
                     + ((InetSocketAddress) ssocket.getLocalSocketAddress()).getPort() + " to port " + port);
             disconnect();
             this.port = port;
@@ -146,10 +146,10 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 } catch (SocketTimeoutException e) {
                     // Ignore, since timeout is set to 100 ms
                 } catch (java.io.IOException e) {
-                    log.log(shouldBeConnected ? LogLevel.WARNING : LogLevel.DEBUG, "Caught IO exception in ServerSocket.accept(): " + e.getMessage());
+                    log.log(shouldBeConnected ? Level.WARNING : Level.FINE, "Caught IO exception in ServerSocket.accept(): " + e.getMessage());
                 }
                 if (connection == null) continue;
-                log.log(LogLevel.DEBUG, "Got a status page request.");
+                log.log(Level.FINE, "Got a status page request.");
                 String requestString = "";
                 OutputStream output = null;
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -168,7 +168,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                         if (s == null || s.equals("")) break;
                         sb.append(s).append("\n");
                     }
-                    log.log(LogLevel.DEBUG, "Got HTTP request: " + sb.toString());
+                    log.log(Level.FINE, "Got HTTP request: " + sb.toString());
 
                     HttpRequest httpRequest = null;
                     StatusPageResponse response = null;
@@ -235,27 +235,27 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     output.write(header.toString().getBytes());
                     output.write(response.getOutputStream().toByteArray());
                 } catch (java.io.IOException e) {
-                   log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
+                   log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? Level.FINE : Level.INFO,
                            "Failed to process HTTP request : " + e.getMessage());
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Caught exception in HTTP server thread: "
+                    log.log(Level.WARNING, "Caught exception in HTTP server thread: "
                             + e.getClass().getName() + ": " + e.getMessage());
                 } finally {
                     if (output != null) try {
                         output.close();
                     } catch (IOException e) {
-                        log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
+                        log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? Level.FINE : Level.INFO,
                                 "Failed to close output stream on socket " + connection + ": " + e.getMessage());
                     }
                     if (connection != null) try{
                         connection.close();
                     } catch (IOException e) {
-                        log.log(LogLevel.INFO, "Failed to close socket " + connection + ": " + e.getMessage());
+                        log.log(Level.INFO, "Failed to close socket " + connection + ": " + e.getMessage());
                     }
                 }
             }
         } catch (InterruptedException e) {
-            log.log(LogLevel.DEBUG,  "Status processing thread shut down by interrupt exception: " + e);
+            log.log(Level.FINE,  "Status processing thread shut down by interrupt exception: " + e);
         }
     }
 
@@ -392,7 +392,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
                     lastConnectError = e.getMessage();
                     lastConnectErrorTime = time;
-                    log.log(LogLevel.WARNING, "Failed to initialize HTTP status server server socket: " + e.getMessage());
+                    log.log(Level.WARNING, "Failed to initialize HTTP status server server socket: " + e.getMessage());
                 }
             }
         }

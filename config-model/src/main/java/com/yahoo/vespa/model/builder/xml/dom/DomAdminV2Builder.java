@@ -7,7 +7,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
@@ -53,7 +53,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         addLogForwarders(adminElement.child("logforwarding"), admin);
 
         if (adminElement.child("filedistribution") != null) {
-            deployState.getDeployLogger().log(LogLevel.WARNING, "'filedistribution' element is deprecated and ignored");
+            deployState.getDeployLogger().log(Level.WARNING, "'filedistribution' element is deprecated and ignored");
         }
     }
 
@@ -117,7 +117,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             if (configserverE == null) {
                 configserverE = XML.getChild(adminE, "adminserver");
             } else {
-                deployState.getDeployLogger().log(LogLevel.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
+                deployState.getDeployLogger().log(Level.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
             }
             Configserver cfgs0 = new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE);
             cfgs0.setProp("index", 0);

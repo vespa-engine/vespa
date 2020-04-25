@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -39,9 +39,9 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     public void awaitCompletion(Duration timeout) {
         List<String> respondents;
         try {
-            log.log(LogLevel.DEBUG, "Synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, "Synchronizing on barrier " + barrierPath);
             respondents = awaitInternal(timeout);
-            log.log(LogLevel.DEBUG, "Done synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, "Done synchronizing on barrier " + barrierPath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

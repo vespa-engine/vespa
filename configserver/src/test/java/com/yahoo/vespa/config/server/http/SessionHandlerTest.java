@@ -17,7 +17,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -131,7 +131,7 @@ public class SessionHandlerTest {
             status = Session.Status.PREPARE;
             this.dockerImageRepository = params.dockerImageRepository();
             if (doVerboseLogging) {
-                logger.log(LogLevel.DEBUG, "debuglog");
+                logger.log(Level.FINE, "debuglog");
             }
             return actions;
         }

@@ -3,7 +3,7 @@ package com.yahoo.vespa.orchestrator.resources;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
@@ -83,13 +83,13 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
         try {
             orchestrator.suspend(applicationId);
         } catch (ApplicationIdNotFoundException e) {
-            log.log(LogLevel.INFO, "ApplicationId " + applicationIdString + " not found.", e);
+            log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
             throw new NotFoundException(e);
         } catch (ApplicationStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed.", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new WebApplicationException(Response.Status.CONFLICT);
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
             throw new InternalServerErrorException(e);
         }
     }
@@ -100,13 +100,13 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
         try {
             orchestrator.resume(applicationId);
         } catch (ApplicationIdNotFoundException e) {
-            log.log(LogLevel.INFO, "ApplicationId " + applicationIdString + " not found.", e);
+            log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
             throw new NotFoundException(e);
         } catch (ApplicationStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed.", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new WebApplicationException(Response.Status.CONFLICT);
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
+            log.log(Level.INFO, "Suspend for " + applicationIdString + " failed from unknown reasons", e);
             throw new InternalServerErrorException(e);
         }
     }

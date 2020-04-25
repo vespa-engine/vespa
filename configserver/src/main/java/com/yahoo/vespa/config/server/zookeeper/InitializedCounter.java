@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class InitializedCounter {
     }
 
     private void initializeCounterValue(Long latestSessionId) {
-        log.log(LogLevel.DEBUG, "path=" + sessionsDirPath + ", current=" + latestSessionId);
+        log.log(Level.FINE, "path=" + sessionsDirPath + ", current=" + latestSessionId);
         if (latestSessionId != null) {
             counter.initialize(latestSessionId);
         } else {
@@ -45,7 +45,7 @@ public class InitializedCounter {
         try {
             return configCurator.exists(appsPath);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, e.getMessage());
+            log.log(Level.WARNING, e.getMessage());
             return false;
         }
     }
@@ -64,7 +64,7 @@ public class InitializedCounter {
                 newestGeneration = Collections.max(getDeployedApplicationGenerations(configCurator, appsPath));
             }
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Could not get newest application generation from Zookeeper");
+            log.log(Level.WARNING, "Could not get newest application generation from Zookeeper");
         }
         return newestGeneration;
     }
@@ -79,7 +79,7 @@ public class InitializedCounter {
                 }
             }
         } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Could not get application generations from Zookeeper");
+            log.log(Level.WARNING, "Could not get application generations from Zookeeper");
         }
         return generations;
     }

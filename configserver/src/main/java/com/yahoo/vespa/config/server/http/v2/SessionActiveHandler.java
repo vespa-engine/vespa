@@ -12,7 +12,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -55,7 +55,7 @@ public class SessionActiveHandler extends SessionHandler {
     // Overridden to make sure we are logging when this low-level handling of timeout happens
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        log.log(LogLevel.ERROR, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
+        log.log(Level.SEVERE, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
         super.handleTimeout(request, responseHandler);
     }
 

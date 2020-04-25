@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -59,7 +59,7 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                 });
             }
             catch (Exception e) {
-                logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
+                logger.log(Level.FINE, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
             }
         return Optional.empty();
     }

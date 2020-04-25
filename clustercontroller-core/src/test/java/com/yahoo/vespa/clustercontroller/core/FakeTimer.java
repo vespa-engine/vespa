@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 
 import java.util.logging.Logger;
@@ -23,7 +23,7 @@ public class FakeTimer implements Timer {
     public synchronized void advanceTime(long time) {
         long currentTime = getCurrentTimeInMillis();
         this.currentTime += time;
-        log.log(LogLevel.DEBUG, "Time advanced by " + time + " ms. Time increased from " + currentTime + " to " + (currentTime + time));
+        log.log(Level.FINE, "Time advanced by " + time + " ms. Time increased from " + currentTime + " to " + (currentTime + time));
         notifyAll();
     }
 

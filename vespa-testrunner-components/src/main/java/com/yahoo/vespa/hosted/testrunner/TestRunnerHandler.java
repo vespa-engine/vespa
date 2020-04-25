@@ -9,7 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -119,9 +119,9 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     public static String typeOf(Level level) {
         return    level.getName().equals("html") ? "html"
-                : level.intValue() < LogLevel.INFO.intValue() ? "debug"
-                : level.intValue() < LogLevel.WARNING.intValue() ? "info"
-                : level.intValue() < LogLevel.ERROR.intValue() ? "warning"
+                : level.intValue() < Level.INFO.intValue() ? "debug"
+                : level.intValue() < Level.WARNING.intValue() ? "info"
+                : level.intValue() < Level.SEVERE.intValue() ? "warning"
                 : "error";
     }
 
