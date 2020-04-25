@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/attributefilebufferwriter.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/util/fileutil.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -77,7 +77,7 @@ TEST_F("Test that buffer writer passes on written data", Fixture)
     const size_t writerBufferSize = AttributeFileBufferWriter::BUFFER_SIZE;
     EXPECT_GREATER(mysize * sizeof(int), writerBufferSize);
     a.reserve(mysize);
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     for (uint32_t i = 0; i < mysize; ++i) {
         a.emplace_back(rnd.lrand48());
     }

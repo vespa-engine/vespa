@@ -673,7 +673,7 @@ void
 generateData(std::vector<LeafPair> & data, size_t numEntries)
 {
     data.reserve(numEntries);
-    Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(10);
     for (size_t i = 0; i < numEntries; ++i) {
         int num = rnd.lrand48() % 10000000;

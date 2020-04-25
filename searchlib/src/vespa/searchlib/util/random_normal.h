@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <cmath>
 
 namespace search {
@@ -14,7 +14,7 @@ namespace search {
 class RandomNormal
 {
 private:
-    Rand48    _rnd;
+    vespalib::Rand48    _rnd;
     double    _mean;
     double    _stddev;
 

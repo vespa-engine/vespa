@@ -40,7 +40,7 @@
 #include <vespa/searchlib/fef/queryproperties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/string_hash.h>
@@ -1747,7 +1747,7 @@ Test::testRandom()
         FtFeatureTest ft(_factory, "random");
         ft.getIndexEnv().getProperties().add("random.seed", "100");
         ASSERT_TRUE(ft.setup());
-        search::Rand48 rnd;
+        vespalib::Rand48 rnd;
         rnd.srand48(100);
         for (uint32_t i = 0; i < 5; ++i) {
             feature_t exp = static_cast<feature_t>(rnd.lrand48()) / static_cast<feature_t>(0x80000000u);
@@ -1770,7 +1770,7 @@ Test::testRandom()
         FtFeatureTest ft(_factory, "random.match");
         ft.getQueryEnv().getProperties().add("random.match.seed", "100");
         ASSERT_TRUE(ft.setup());
-        search::Rand48 rnd;
+        vespalib::Rand48 rnd;
         for (uint32_t i = 1; i <= 5; ++i) {
             rnd.srand48(100 + i); // seed + lid
             feature_t exp = static_cast<feature_t>(rnd.lrand48()) / static_cast<feature_t>(0x80000000u);

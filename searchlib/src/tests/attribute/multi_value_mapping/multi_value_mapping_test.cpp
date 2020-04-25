@@ -3,7 +3,7 @@
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -151,7 +151,7 @@ using IntMappingTest = MappingTestBase<int>;
 
 class CompactionIntMappingTest : public MappingTestBase<int>
 {
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     std::map<uint32_t, std::vector<int>> _refMapping;
 public:
     CompactionIntMappingTest()
