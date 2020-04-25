@@ -332,6 +332,7 @@ private:
     void requireThatTreeIteratorAssignWorks();
     void requireThatUpdateOfKeyWorks();
     void requireThatUpdateOfDataWorks();
+    void requireThatFrozenViewProvidesAggregatedValues();
 
     template <typename TreeStore>
     void
@@ -1185,6 +1186,24 @@ Test::requireThatSmallNodesWorks()
     s.trimHoldLists(g.getFirstUsedGeneration());
 }
 
+void
+Test::requireThatFrozenViewProvidesAggregatedValues()
+{
+    MyTree t;
+    t.insert(20, 102);
+    t.insert(10, 101);
+    t.insert(30, 103);
+    t.insert(40, 104);
+    auto old_view = t.getFrozenView();
+    t.getAllocator().freeze();
+    auto new_view = t.getFrozenView();
+    auto new_aggregated = new_view.getAggregated();
+    EXPECT_EQUAL(new_aggregated.getMin(), 101);
+    EXPECT_EQUAL(new_aggregated.getMax(), 104);
+    auto old_aggregated = old_view.getAggregated();
+    EXPECT_EQUAL(old_aggregated.getMin(), std::numeric_limits<int32_t>::max());
+    EXPECT_EQUAL(old_aggregated.getMax(), std::numeric_limits<int32_t>::min());
+}
 
 int
 Test::Main()
@@ -1208,6 +1227,7 @@ Test::Main()
     requireThatUpdateOfDataWorks();
     TEST_DO(requireThatSmallNodesWorks<MyTreeStore>());
     TEST_DO(requireThatSmallNodesWorks<MyTreeForceApplyStore>());
+    TEST_DO(requireThatFrozenViewProvidesAggregatedValues());
 
     TEST_DONE();
 }
