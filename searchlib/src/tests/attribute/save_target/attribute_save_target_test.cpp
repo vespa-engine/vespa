@@ -7,7 +7,7 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>

@@ -19,7 +19,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>

@@ -2,7 +2,7 @@
 
 #include "generic_tensor_attribute_saver.h"
 #include "generic_tensor_store.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;

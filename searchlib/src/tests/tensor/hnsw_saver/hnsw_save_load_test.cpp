@@ -3,7 +3,7 @@
 #include <vespa/searchlib/tensor/hnsw_graph.h>
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
 #include <vespa/searchlib/tensor/hnsw_index_loader.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>

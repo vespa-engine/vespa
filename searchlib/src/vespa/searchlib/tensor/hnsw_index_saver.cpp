@@ -2,7 +2,7 @@
 
 #include "hnsw_index_saver.h"
 #include "hnsw_graph.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 
 namespace search::tensor {
 
