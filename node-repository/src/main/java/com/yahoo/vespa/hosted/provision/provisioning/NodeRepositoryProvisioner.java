@@ -137,32 +137,62 @@ public class NodeRepositoryProvisioner implements Provisioner {
             application = application.withClusterLimits(clusterId, requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
             return application.clusters().get(clusterId).targetResources()
-                    .orElseGet(() -> currentResources(applicationId, clusterId, requested)
-                    .orElse(requested.minResources()));
+                    .orElseGet(() -> currentResources(applicationId, clusterId, requested));
         }
     }
 
-    /** Returns the current resources of this cluster, if it's already deployed and inside the requested limits */
-    private Optional<ClusterResources> currentResources(ApplicationId applicationId,
-                                                        ClusterSpec.Id clusterId,
-                                                        Capacity requested) {
+    /** Returns the current resources of this cluster, or the closes  */
+    private ClusterResources currentResources(ApplicationId applicationId,
+                                              ClusterSpec.Id clusterId,
+                                              Capacity requested) {
         List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
                                    .cluster(clusterId)
                                    .not().retired()
                                    .not().removable()
                                    .asList();
-        if (nodes.isEmpty()) return Optional.empty();
-        long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        if (nodes.isEmpty()) return requested.minResources(); // New deployment: Start at min
 
-        // To allow non-numeric settings to be updated without resetting to the min target, we need to use
-        // the non-numeric settings of the current min limit with the current numeric settings
+        long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        // Settings which are not autoscaled should always be taken from the currently requested capacity
+        // and for those min and max are always the same
         NodeResources nodeResources = nodes.get(0).allocation().get().requestedResources()
+                                           .withBandwidthGbps(requested.minResources().nodeResources().bandwidthGbps())
                                            .with(requested.minResources().nodeResources().diskSpeed())
                                            .with(requested.minResources().nodeResources().storageType());
         var currentResources = new ClusterResources(nodes.size(), (int)groups, nodeResources);
-        if ( ! currentResources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
+        return ensureWithin(requested.minResources(), requested.maxResources(), currentResources);
+    }
 
-        return Optional.of(currentResources);
+    /** Make the minimal adjustments needed to the current resources to stay within the limits */
+    private ClusterResources ensureWithin(ClusterResources min, ClusterResources max, ClusterResources current) {
+        int nodes =  between(min.nodes(), max.nodes(), current.nodes());
+        int groups = between(min.groups(), max.groups(), current.groups());
+        if (nodes % groups != 0) {
+            // That didn't work - try to preserve current group size instead.
+            // Rounding here is needed because a node may be missing due to node failing.
+            int currentGroupsSize = Math.round((float)current.nodes() / current.groups());
+            nodes = currentGroupsSize * groups;
+            if (nodes != between(min.nodes(), max.nodes(), nodes)) {
+                // Give up: Use max
+                nodes = max.nodes();
+                groups = max.groups();
+            }
+        }
+        double vcpu = between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), current.nodeResources().vcpu());
+        double memoryGb = between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), current.nodeResources().memoryGb());
+        double diskGb = between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), current.nodeResources().diskGb());
+        NodeResources nodeResources = current.nodeResources().withVcpu(vcpu)
+                                                             .withMemoryGb(memoryGb)
+                                                             .withDiskGb(diskGb);
+        return new ClusterResources(nodes, groups, nodeResources);
+    }
+
+    private int between(int min, int max, int n) {
+        return Math.min(max, Math.max(min, n));
+    }
+
+    private double between(double min, double max, double n) {
+        return Math.min(max, Math.max(min, n));
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {

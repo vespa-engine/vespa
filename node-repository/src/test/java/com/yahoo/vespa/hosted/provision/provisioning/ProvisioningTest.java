@@ -405,6 +405,58 @@ public class ProvisioningTest {
         tester.activate(application, state.allHosts);
     }
 
+    @Test
+    public void test_changing_limits() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(30, new NodeResources(20, 40, 100, 4));
+        tester.deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Initial deployment
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
+                                                      resources(8, 4, 4, 20, 40)));
+        tester.assertNodes("Initial allocation at min",
+                           4, 2, 2, 10, 20,
+                           app1, cluster1);
+
+        // Move window above current allocation
+        tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 4, 20, 40),
+                                                      resources(10, 5, 5, 25, 50)));
+        tester.assertNodes("New allocation at new min",
+                           8, 4, 4, 20, 40,
+                           app1, cluster1);
+
+        // Move window below current allocation
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
+                                                      resources(6, 3, 3, 15, 25)));
+        tester.assertNodes("New allocation at new max",
+                           6, 3, 3, 15, 25,
+                           app1, cluster1);
+
+        // Widening window does not change allocation
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 1, 5, 15),
+                                                      resources(8, 4, 4, 20, 30)));
+        tester.assertNodes("Same allocation",
+                           6, 3, 3, 15, 25,
+                           app1, cluster1);
+
+        // Changing limits in opposite directions cause a mixture of min and max
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 10, 30,  5),
+                                                      resources(4, 2, 14, 40, 10)));
+        tester.assertNodes("A mix of min and max",
+                           4, 2, 10, 30, 10,
+                           app1, cluster1);
+
+        // Changing group size
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  5),
+                                                      resources(9, 3, 12, 35, 15)));
+        tester.assertNodes("Groups changed",
+                           6, 3, 10, 30, 10,
+                           app1, cluster1);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void prod_deployment_requires_redundancy() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -918,6 +970,10 @@ public class ProvisioningTest {
                 .filter(e -> e.type() == History.Event.Type.retired)
                 .filter(e -> e.agent() == agent)
                 .isPresent();
+    }
+
+    private ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk) {
+        return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1));
     }
 
 }
