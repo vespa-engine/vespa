@@ -261,9 +261,10 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
-    /** Call depliyZoneApp() after this before deploying applications */
-    public List<Node> makeReadyHosts(int n, NodeResources resources) {
-        return makeReadyNodes(n, resources, NodeType.host, 5);
+    /** Call deployZoneApp() after this before deploying applications */
+    public ProvisioningTester makeReadyHosts(int n, NodeResources resources) {
+        makeReadyNodes(n, resources, NodeType.host, 5);
+        return this;
     }
 
     public List<Node> makeReadyNodes(int n, NodeResources resources) {
