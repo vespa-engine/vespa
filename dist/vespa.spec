@@ -38,9 +38,10 @@ BuildRequires: rh-maven35
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 %endif
 %if 0%{?el8}
-BuildRequires: gcc-c++
-BuildRequires: libatomic
+BuildRequires: gcc-toolset-9-gcc-c++
+BuildRequires: gcc-toolset-9-binutils
 BuildRequires: maven
+%define _devtoolset_enable /opt/rh/gcc-toolset-9/enable
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
