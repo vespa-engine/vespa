@@ -17,7 +17,7 @@ endfunction()
 
 function(setup_vespa_default_build_settings_rhel_8_1)
   message("-- Setting up default build settings for rhel 8.1")
-  set(DEFAULT_VESPA_LLVM_VERSION "7" PARENT_SCOPE)
+  set(DEFAULT_VESPA_LLVM_VERSION "8" PARENT_SCOPE)
 endfunction()
 
 function(setup_vespa_default_build_settings_centos_7)
