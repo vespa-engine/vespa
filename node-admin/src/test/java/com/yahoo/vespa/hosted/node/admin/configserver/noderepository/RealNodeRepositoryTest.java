@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
+import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class RealNodeRepositoryTest {
      * Starts NodeRepository with
      *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors}
      *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository}
-     *   {@link com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler}
+     *   {@link NodesV2ApiHandler}
      * These classes define some test data that is used in these tests.
      */
     @Before
