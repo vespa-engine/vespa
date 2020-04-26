@@ -30,13 +30,13 @@ class TestAndSetHelper {
 
     void getDocumentType();
     void parseDocumentSelection();
-    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet);
+    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
     TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd,
                      bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
-    api::ReturnCode retrieveAndMatch();
+    api::ReturnCode retrieveAndMatch(spi::Context & context);
 };
 
 } // storage
