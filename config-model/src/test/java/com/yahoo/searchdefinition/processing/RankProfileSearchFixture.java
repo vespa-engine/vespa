@@ -41,6 +41,14 @@ class RankProfileSearchFixture {
     private Search search;
     private Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
 
+    public RankProfileRegistry getRankProfileRegistry() {
+        return rankProfileRegistry;
+    }
+
+    public QueryProfileRegistry getQueryProfileRegistry() {
+        return queryProfileRegistry;
+    }
+
     RankProfileSearchFixture(String rankProfiles) throws ParseException {
         this(MockApplicationPackage.createEmpty(), new QueryProfileRegistry(), rankProfiles);
     }
