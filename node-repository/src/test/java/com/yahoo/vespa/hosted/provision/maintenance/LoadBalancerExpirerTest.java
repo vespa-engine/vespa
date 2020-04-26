@@ -155,7 +155,7 @@ public class LoadBalancerExpirerTest {
     }
 
     private void deployApplication(ApplicationId application, boolean activate, ClusterSpec.Id... clusters) {
-        tester.makeReadyNodes(10, "d-1-4-10");
+        tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 0.3));
         List<HostSpec> hosts = new ArrayList<>();
         for (var cluster : clusters) {
             hosts.addAll(tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster).vespaVersion(Vtag.currentVersion).build(),
