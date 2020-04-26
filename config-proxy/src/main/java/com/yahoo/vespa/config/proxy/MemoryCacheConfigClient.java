@@ -60,9 +60,6 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     }
 
     @Override
-    public void updateSubscribers(RawConfig config) {}
-
-    @Override
     public DelayedResponses delayedResponses() {
         return delayedResponses;
     }
