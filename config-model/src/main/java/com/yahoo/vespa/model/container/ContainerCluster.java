@@ -160,12 +160,18 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
     private String environmentVars = null;
 
+    private final double threadPoolSizeFactor;
+    private final double queueSizeFactor;
+
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId);
         this.name = name;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
+        this.threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
+        this.queueSizeFactor = deployState.getProperties().queueSizeFactor();
+
         componentGroup = new ComponentGroup<>(this, "component");
 
         addComponent(new StatisticsComponent());
@@ -184,6 +190,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
+    }
+
+    public double getThreadPoolSizeFactor() {
+        return threadPoolSizeFactor;
+    }
+
+    public double getQueueSizeFactor() {
+        return queueSizeFactor;
     }
 
     public void setZone(Zone zone) {

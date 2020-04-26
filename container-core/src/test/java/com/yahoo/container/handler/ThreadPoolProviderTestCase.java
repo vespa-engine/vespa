@@ -5,6 +5,7 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import com.yahoo.container.protect.ProcessTerminator;
 import org.junit.Ignore;
@@ -56,6 +57,39 @@ public class ThreadPoolProviderTestCase {
             return;
         }
         fail("Pool did not reject tasks after shutdown.");
+    }
+
+    private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
+        ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(maxThreads).queueSize(queueSize));
+        ThreadPoolProvider provider = new ThreadPoolProvider(config, Mockito.mock(Metric.class));
+        ThreadPoolProvider.ExecutorServiceWrapper wrapper = (ThreadPoolProvider.ExecutorServiceWrapper) provider.get();
+        ThreadPoolProvider.WorkerCompletionTimingThreadPoolExecutor executor = (ThreadPoolProvider.WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
+        return executor;
+    }
+
+    @Test
+    public void testThatThreadPoolSizeFollowsConfig() {
+        ThreadPoolExecutor executor = createPool(3, 9);
+        assertEquals(3, executor.getMaximumPoolSize());
+        assertEquals(9, executor.getQueue().remainingCapacity());
+    }
+    @Test
+    public void testThatThreadPoolSizeAutoDetected() {
+        ThreadPoolExecutor executor = createPool(0, 0);
+        assertEquals(Runtime.getRuntime().availableProcessors()*4, executor.getMaximumPoolSize());
+        assertEquals(0, executor.getQueue().remainingCapacity());
+    }
+    @Test
+    public void testThatQueueSizeAutoDetected() {
+        ThreadPoolExecutor executor = createPool(3, -1);
+        assertEquals(3, executor.getMaximumPoolSize());
+        assertEquals(executor.getMaximumPoolSize()*4, executor.getQueue().remainingCapacity());
+    }
+    @Test
+    public void testThatThreadPoolSizeAndQueueSizeAutoDetected() {
+        ThreadPoolExecutor executor = createPool(0, -1);
+        assertEquals(Runtime.getRuntime().availableProcessors()*4, executor.getMaximumPoolSize());
+        assertEquals(executor.getMaximumPoolSize()*4, executor.getQueue().remainingCapacity());
     }
 
     private class FlipIt implements Runnable {

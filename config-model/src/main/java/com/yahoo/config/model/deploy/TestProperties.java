@@ -43,6 +43,8 @@ public class TestProperties implements ModelContext.Properties {
     private double topKProbability = 1.0;
     private double defaultTermwiseLimit = 1.0;
     private double softStartSeconds = 0.0;
+    private double threadPoolSizeFactor = 0.0;
+    private double queueSizeFactor = 0.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
 
@@ -63,6 +65,16 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+
+    @Override
+    public double threadPoolSizeFactor() {
+        return threadPoolSizeFactor;
+    }
+
+    @Override
+    public double queueSizeFactor() {
+        return queueSizeFactor;
+    }
 
     @Override
     public double defaultSoftStartSeconds() {
@@ -86,7 +98,15 @@ public class TestProperties implements ModelContext.Properties {
         this.softStartSeconds = softStartSeconds;
         return this;
     }
+    public TestProperties setThreadPoolSizeFactor(double threadPoolSizeFactor) {
+        this.threadPoolSizeFactor = threadPoolSizeFactor;
+        return this;
+    }
 
+    public TestProperties setQueueSizeFactor(double queueSizeFactor) {
+        this.queueSizeFactor = queueSizeFactor;
+        return this;
+    }
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
         return this;
