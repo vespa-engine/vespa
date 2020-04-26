@@ -17,7 +17,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import org.tensorflow.op.core.Rank;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
