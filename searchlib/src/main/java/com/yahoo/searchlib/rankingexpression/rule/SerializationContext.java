@@ -95,6 +95,12 @@ public class SerializationContext extends FunctionReferenceContext {
         return new SerializationContext(functions(), bindings, this.serializedFunctions);
     }
 
+    /** Returns a fresh context without bindings */
+    @Override
+    public SerializationContext withoutBindings() {
+        return new SerializationContext(functions(), null, this.serializedFunctions);
+    }
+
     public Map<String, String> serializedFunctions() { return serializedFunctions; }
 
 }
