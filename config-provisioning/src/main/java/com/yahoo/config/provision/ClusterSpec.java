@@ -29,7 +29,7 @@ public final class ClusterSpec {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
-        this.vespaVersion = vespaVersion;
+        this.vespaVersion = Objects.requireNonNull(vespaVersion);
         this.exclusive = exclusive;
         // TODO(mpolden): Require combinedId to always be present for type combined after April 2020
         if (type != Type.combined && combinedId.isPresent()) {

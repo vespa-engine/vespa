@@ -109,7 +109,7 @@ public class MultigroupProvisioningTest {
     }
 
     @Test
-    public void test_one_node_and_group_to_two_with_flavor_migration() {
+    public void test_one_node_and_group_to_two_with_resource_change() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();

@@ -72,7 +72,12 @@ public final class Capacity {
 
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources resources) {
-        return from(resources, false, true);
+        return from(resources, resources);
+    }
+
+    /** Create a non-required, failable capacity request */
+    public static Capacity from(ClusterResources min, ClusterResources max) {
+        return from(min, max, false, true);
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
