@@ -126,7 +126,7 @@ public class MatMul extends IntermediateOperation {
             // a1 < a2 < a3 < a4
             for (int j = i+1; j < typeA.rank(); ++j) {
                 String jDim = typeA.dimensionNames().get(j);
-                renamer.addConstraint(iDim, jDim, DimensionRenamer.Constraint.lessThan(true), this);
+                renamer.addConstraint(iDim, jDim, DimensionRenamer.Constraint.lessThan(false), this);
             }
             // not equal to last 2 dimensions in B
             for (int j = typeB.rank()-2; j < typeB.rank(); ++j) {
@@ -148,7 +148,7 @@ public class MatMul extends IntermediateOperation {
             // b1 < b2 < b3 < b4
             for (int j = i+1; j < typeB.rank(); ++j) {
                 String jDim = typeB.dimensionNames().get(j);
-                renamer.addConstraint(iDim, jDim, DimensionRenamer.Constraint.lessThan(true), this);
+                renamer.addConstraint(iDim, jDim, DimensionRenamer.Constraint.lessThan(false), this);
             }
             // not equal to last 2 dimensions in A
             for (int j = typeA.rank()-2; j < typeA.rank(); ++j) {
