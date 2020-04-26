@@ -68,4 +68,9 @@ public class FunctionReferenceContext {
         return new FunctionReferenceContext(this.functions, bindings);
     }
 
+    /** Returns a fresh context without bindings */
+    public FunctionReferenceContext withoutBindings() {
+        return new FunctionReferenceContext(this.functions);
+    }
+
 }

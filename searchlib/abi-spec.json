@@ -1416,7 +1416,8 @@
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
       "protected com.google.common.collect.ImmutableMap functions()",
       "public java.lang.String getBinding(java.lang.String)",
-      "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
+      "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)",
+      "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withoutBindings()"
     ],
     "fields": []
   },
@@ -1573,7 +1574,9 @@
       "public void addArgumentTypeSerialization(java.lang.String, java.lang.String, com.yahoo.tensor.TensorType)",
       "public void addFunctionTypeSerialization(java.lang.String, com.yahoo.tensor.TensorType)",
       "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withBindings(java.util.Map)",
+      "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withoutBindings()",
       "public java.util.Map serializedFunctions()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withoutBindings()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
     ],
     "fields": []

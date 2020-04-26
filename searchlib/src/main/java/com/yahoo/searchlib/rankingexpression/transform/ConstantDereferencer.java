@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.transform;
 
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -28,8 +28,15 @@ public class ConstantDereferencer extends ExpressionTransformer<TransformContext
             return node;
     }
 
+    /** Returns true if the given reference is an attribute, constant or query feature */
+    private static boolean isSimpleFeature(Reference reference) {
+        if ( ! reference.isSimple()) return false;
+        String name = reference.name();
+        return name.equals("attribute") || name.equals("constant") || name.equals("query");
+    }
+
     private ExpressionNode transformFeature(ReferenceNode node, TransformContext context) {
-        if (!node.getArguments().isEmpty())
+        if ( ! node.getArguments().isEmpty() && ! isSimpleFeature(node.reference()))
             return transformArguments(node, context);
         else
             return transformConstantReference(node, context);
@@ -44,7 +51,14 @@ public class ConstantDereferencer extends ExpressionTransformer<TransformContext
     }
 
     private ExpressionNode transformConstantReference(ReferenceNode node, TransformContext context) {
-        Value value = context.constants().get(node.getName());
+        String name = node.getName();
+        if (node.reference().name().equals("constant")) {
+            ExpressionNode arg = node.getArguments().expressions().get(0);
+            if (arg instanceof ReferenceNode) {
+                name = ((ReferenceNode)arg).getName();
+            }
+        }
+        Value value = context.constants().get(name);  // works if "constant(...)" is added
         if (value == null || value.type().rank() > 0) {
             return node; // not a number constant reference
         }

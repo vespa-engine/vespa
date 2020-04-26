@@ -134,7 +134,10 @@ public class ExpressionFunction {
         for (int i = 0; i < arguments.size() && i < argumentValues.size(); ++i) {
             argumentBindings.put(arguments.get(i), argumentValues.get(i).toString(new StringBuilder(), context, path, null).toString());
         }
-        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(new StringBuilder(), context.withBindings(argumentBindings), path, null).toString());
+        context = argumentBindings.isEmpty() ? context.withoutBindings() : context.withBindings(argumentBindings);
+        String symbol = toSymbol(argumentBindings);
+        String expressionString = body.getRoot().toString(new StringBuilder(), context, path, null).toString();
+        return new Instance(symbol, expressionString);
     }
 
     /**

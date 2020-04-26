@@ -333,10 +333,16 @@ public class TensorFunctionNode extends CompositeNode {
         /** Returns a new context with the bindings replaced by the given bindings */
         @Override
         public ExpressionToStringContext withBindings(Map<String, String> bindings) {
-            return new ExpressionToStringContext(new SerializationContext(wrappedSerializationContext.functions().values(), bindings),
-                                                 wrappedToStringContext, path, parent);
+            SerializationContext serializationContext = new SerializationContext(functions(), bindings, serializedFunctions());
+            return new ExpressionToStringContext(serializationContext, wrappedToStringContext, path, parent);
         }
 
+        /** Returns a fresh context without bindings */
+        @Override
+        public SerializationContext withoutBindings() {
+            SerializationContext serializationContext = new SerializationContext(functions(), null, serializedFunctions());
+            return new ExpressionToStringContext(serializationContext, null, path, parent);
+        }
     }
 
     /** Turns an EvaluationContext into a Context */
