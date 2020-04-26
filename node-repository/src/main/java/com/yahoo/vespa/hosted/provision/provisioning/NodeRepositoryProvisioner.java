@@ -153,13 +153,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (nodes.isEmpty()) return requested.minResources(); // New deployment: Start at min
 
         long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        // Settings which are not autoscaled should always be taken from the currently requested capacity
-        // and for those min and max are always the same
-        NodeResources nodeResources = nodes.get(0).allocation().get().requestedResources()
-                                           .withBandwidthGbps(requested.minResources().nodeResources().bandwidthGbps())
-                                           .with(requested.minResources().nodeResources().diskSpeed())
-                                           .with(requested.minResources().nodeResources().storageType());
-        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodeResources);
+        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodes.get(0).flavor().resources());
         return ensureWithin(requested.minResources(), requested.maxResources(), currentResources);
     }
 
@@ -178,13 +172,17 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 groups = max.groups();
             }
         }
-        double vcpu = between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), current.nodeResources().vcpu());
-        double memoryGb = between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), current.nodeResources().memoryGb());
-        double diskGb = between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), current.nodeResources().diskGb());
-        NodeResources nodeResources = current.nodeResources().withVcpu(vcpu)
-                                                             .withMemoryGb(memoryGb)
-                                                             .withDiskGb(diskGb);
-        return new ClusterResources(nodes, groups, nodeResources);
+        if (min.nodeResources() != NodeResources.unspecified && max.nodeResources() != NodeResources.unspecified) {
+            double vcpu = between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), current.nodeResources().vcpu());
+            double memoryGb = between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), current.nodeResources().memoryGb());
+            double diskGb = between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), current.nodeResources().diskGb());
+            // Combine computed scaled resources with requested non-scaled resources (for which min=max)
+            NodeResources nodeResources = min.nodeResources().withVcpu(vcpu).withMemoryGb(memoryGb).withDiskGb(diskGb);
+            return new ClusterResources(nodes, groups, nodeResources);
+        }
+        else {
+            return new ClusterResources(nodes, groups, current.nodeResources());
+        }
     }
 
     private int between(int min, int max, int n) {
