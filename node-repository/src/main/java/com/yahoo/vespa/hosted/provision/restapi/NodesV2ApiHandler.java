@@ -1,5 +1,5 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -38,7 +38,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
-import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
+import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
@@ -65,15 +65,15 @@ import static com.yahoo.slime.SlimeUtils.optionalString;
  *
  * @author bratseth
  */
-public class NodesApiHandler extends LoggingRequestHandler {
+public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
 
     @Inject
-    public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                           NodeRepository nodeRepository, NodeFlavors flavors) {
+    public NodesV2ApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
+                             NodeRepository nodeRepository, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;

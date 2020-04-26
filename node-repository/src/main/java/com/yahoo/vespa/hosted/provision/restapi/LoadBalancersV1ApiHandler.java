@@ -1,5 +1,5 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -15,12 +15,12 @@ import java.util.logging.Level;
 /**
  * @author mpolden
  */
-public class LoadBalancersApiHandler extends LoggingRequestHandler {
+public class LoadBalancersV1ApiHandler extends LoggingRequestHandler {
 
     private final NodeRepository nodeRepository;
 
     @Inject
-    public LoadBalancersApiHandler(LoggingRequestHandler.Context parentCtx, NodeRepository nodeRepository) {
+    public LoadBalancersV1ApiHandler(LoggingRequestHandler.Context parentCtx, NodeRepository nodeRepository) {
         super(parentCtx);
         this.nodeRepository = nodeRepository;
     }

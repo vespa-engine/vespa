@@ -32,10 +32,10 @@ public class ContainerConfig {
                "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.config.provision.Zone'/>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler'>\n" +
                "    <binding>http://*/nodes/v2/*</binding>\n" +
                "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.LoadBalancersApiHandler'>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.LoadBalancersV1ApiHandler'>\n" +
                "    <binding>http://*/loadbalancers/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <http>\n" +

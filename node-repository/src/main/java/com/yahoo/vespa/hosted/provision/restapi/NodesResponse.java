@@ -1,5 +1,5 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
@@ -53,7 +53,7 @@ class NodesResponse extends HttpResponse {
         super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
-        filter = NodesApiHandler.toNodeFilter(request);
+        filter = NodesV2ApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
