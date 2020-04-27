@@ -58,12 +58,25 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
                "/application/v4/tenant/{tenant}/cost/{date}",
-               "/routing/v1/status/tenant/{tenant}/{*}",
-               "/billing/v1/tenant/{tenant}/{*}"),
+               "/routing/v1/status/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
                PathPrefix.api,
                "/application/v4/tenant/{tenant}/key/"),
+
+
+    billingToken(Matcher.tenant,
+                 PathPrefix.api,
+                 "/billing/v1/tenant/{tenant}/token"),
+
+    billingInstrument(Matcher.tenant,
+                      PathPrefix.api,
+                      "/billing/v1/tenant/{tenant}/instrument",
+                      "/billing/v1/tenant/{tenant}/instrument/{*}"),
+
+    billingList(Matcher.tenant,
+                PathPrefix.api,
+                "/billing/v1/tenant/{tenant}/billing/{*}"),
 
     applicationKeys(Matcher.tenant,
                     Matcher.application,
