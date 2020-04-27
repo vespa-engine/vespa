@@ -23,30 +23,14 @@ using namespace vespalib::eval::tensor_function;
 
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 
-void add_matrix(EvalFixture::ParamRepo &repo, const char *d1, size_t s1, const char *d2, size_t s2) {
-    for (bool float_cells: {false, true}) {
-        auto name = make_string("%s%zu%s%zu%s", d1, s1, d2, s2, float_cells ? "f" : "");
-        auto type_str = make_string("tensor%s(%s[%zu],%s[%zu])", float_cells ? "<float>" : "", d1, s1, d2, s2);
-        TensorSpec matrix(type_str);
-        for (size_t i = 0; i < s1; ++i) {
-            for (size_t j = 0; j < s2; ++j) {
-                double value = (i + s1 + s2) * 3.0 + (j + s2) * 7.0;
-                matrix.add({{d1, i}, {d2, j}}, value);
-            }
-        }
-        repo.add(name, matrix);
-    }
-}
-
 EvalFixture::ParamRepo make_params() {
-    EvalFixture::ParamRepo repo;
-    add_matrix(repo, "a", 2, "d", 3); // inner/inner
-    add_matrix(repo, "a", 2, "b", 5); // inner/outer
-    add_matrix(repo, "b", 5, "c", 2); // outer/outer
-    add_matrix(repo, "a", 2, "c", 3); // not matching
-    //-----------------------------------------------
-    add_matrix(repo, "b", 5, "d", 3); // fixed param
-    return repo;
+    return EvalFixture::ParamRepo()
+        .add_matrix("a", 2, "d", 3)  // inner/inner
+        .add_matrix("a", 2, "b", 5)  // inner/outer
+        .add_matrix("b", 5, "c", 2)  // outer/outer
+        .add_matrix("a", 2, "c", 3)  // not matching
+        //------------------------------------------
+        .add_matrix("b", 5, "d", 3); // fixed param
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

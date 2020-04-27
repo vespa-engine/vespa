@@ -37,6 +37,10 @@ public:
         ParamRepo &add_mutable(const vespalib::string &name, const TensorSpec &value) {
             return add(name, value, true);
         }
+        ParamRepo &add_vector(const char *d1, size_t s1, size_t seed = 1);
+        ParamRepo &add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, size_t seed = 1);
+        ParamRepo &add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, size_t seed = 1);
+        ParamRepo &add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, size_t seed = 1);
         ~ParamRepo() {}
     };
 

@@ -11,6 +11,7 @@
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
 #include "dense/dense_matmul_function.h"
+#include "dense/dense_multi_matmul_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
 #include "dense/dense_add_dimension_optimizer.h"
 #include "dense/dense_remove_dimension_optimizer.h"
@@ -273,6 +274,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         child.set(DenseDotProductFunction::optimize(child.get(), stash));
         child.set(DenseXWProductFunction::optimize(child.get(), stash));
         child.set(DenseMatMulFunction::optimize(child.get(), stash));
+        child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
         child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
         child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
         child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
