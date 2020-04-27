@@ -739,7 +739,7 @@ TEST_F("onLoads() ignores saved nearest neighbor index if not enabled in config"
     EXPECT_EQUAL(f.as_dense_tensor().nearest_neighbor_index(), nullptr);
 }
 
-TEST_F("onLoad() ignores saved nearest neightbor index if major index parameters are changed", DenseTensorAttributeMockIndex)
+TEST_F("onLoad() ignores saved nearest neighbor index if major index parameters are changed", DenseTensorAttributeMockIndex)
 {
     f.save_example_tensors_with_mock_index();
     f.set_hnsw_index_params(HnswIndexParams(5, 20, DistanceMetric::Euclidean));
@@ -750,7 +750,7 @@ TEST_F("onLoad() ignores saved nearest neightbor index if major index parameters
     index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
 }
 
-TEST_F("onLoad() uses saved nearest neightbor index if only minor index parameters are changed", DenseTensorAttributeMockIndex)
+TEST_F("onLoad() uses saved nearest neighbor index if only minor index parameters are changed", DenseTensorAttributeMockIndex)
 {
     f.save_example_tensors_with_mock_index();
     f.set_hnsw_index_params(HnswIndexParams(4, 21, DistanceMetric::Euclidean));
