@@ -255,4 +255,7 @@ public class CoredumpHandler {
         return dimensionsBuilder.build();
     }
 
+    public Path getDoneCoredumpsPath() {
+        return this.doneCoredumpsPath;
+    }
 }
