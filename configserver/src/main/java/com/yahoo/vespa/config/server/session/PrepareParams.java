@@ -9,7 +9,6 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -134,9 +133,9 @@ public final class PrepareParams {
         }
 
         public Builder containerEndpoints(String serialized) {
-            if (serialized == null) return this;
-            Slime slime = SlimeUtils.jsonToSlime(serialized);
-            containerEndpoints = ContainerEndpointSerializer.endpointListFromSlime(slime);
+            this.containerEndpoints = (serialized == null)
+                    ? List.of()
+                    : ContainerEndpointSerializer.endpointListFromSlime(SlimeUtils.jsonToSlime(serialized));
             return this;
         }
 
@@ -147,21 +146,21 @@ public final class PrepareParams {
         }
 
         public Builder endpointCertificateMetadata(String serialized) {
-            if(serialized == null) return this;
-            Slime slime = SlimeUtils.jsonToSlime(serialized);
-            endpointCertificateMetadata = Optional.of(EndpointCertificateMetadataSerializer.fromSlime(slime.get()));
+            this.endpointCertificateMetadata = (serialized == null)
+                    ? Optional.empty()
+                    : Optional.of(EndpointCertificateMetadataSerializer.fromSlime(SlimeUtils.jsonToSlime(serialized).get()));
             return this;
         }
 
         public Builder dockerImageRepository(String dockerImageRepository) {
-            if (dockerImageRepository == null) return this;
-            this.dockerImageRepository = Optional.of(DockerImage.fromString(dockerImageRepository));
+            this.dockerImageRepository = (dockerImageRepository == null)
+                    ? Optional.empty()
+                    : Optional.of(DockerImage.fromString(dockerImageRepository));
             return this;
         }
 
         public Builder dockerImageRepository(DockerImage dockerImageRepository) {
-            if (dockerImageRepository == null) return this;
-            this.dockerImageRepository = Optional.of(dockerImageRepository);
+            this.dockerImageRepository = Optional.ofNullable(dockerImageRepository);
             return this;
         }
 
@@ -171,7 +170,7 @@ public final class PrepareParams {
         }
 
         public Builder athenzDomain(AthenzDomain athenzDomain) {
-            this.athenzDomain = Optional.of(athenzDomain);
+            this.athenzDomain = Optional.ofNullable(athenzDomain);
             return this;
         }
 
