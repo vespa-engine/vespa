@@ -157,6 +157,7 @@ public class StorageMaintainer {
         attributes.put("flavor", context.node().flavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
         attributes.put("cpu_microcode_version", getMicrocodeVersion());
+        attributes.put("container_name", context.containerName().asString());
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
