@@ -894,115 +894,24 @@ bool hasBucketInfo(const api::StorageMessage& msg)
 
 }
 
-void
-PersistenceThread::flushAllReplies(
-        const document::Bucket& bucket,
-        std::vector<std::unique_ptr<MessageTracker> >& replies)
-{
-    if (replies.empty()) {
-        return;
-    }
-
-    try {
-        if (replies.size() > 1) {
-            _env._metrics.batchingSize.addValue(replies.size());
-        }
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-        {
-            size_t nputs = 0, nremoves = 0, nother = 0;
-            for (size_t i = 0; i < replies.size(); ++i) {
-                if (dynamic_cast<api::PutReply*>(replies[i]->getReply().get()))
-                {
-                    ++nputs;
-                } else if (dynamic_cast<api::RemoveReply*>(
-                                replies[i]->getReply().get()))
-                {
-                    ++nremoves;
-                } else {
-                    ++nother;
-                }
-            }
-            LOG_BUCKET_OPERATION(
-                    bucket.getBucketId(),
-                    vespalib::make_string(
-                            "flushing %zu operations (%zu puts, %zu removes, "
-                            "%zu other)",
-                            replies.size(), nputs, nremoves, nother));
-        }
-#endif
-        spi::Bucket b(bucket, spi::PartitionId(_env._partition));
-        // Flush is not used for anything currentlu, and the context is not correct either when batching is done
-        // So just faking it here.
-        spi::Context dummyContext(documentapi::LoadType::DEFAULT, 0, 0);
-        spi::Result result = _spi.flush(b, dummyContext);
-        uint32_t errorCode = _env.convertErrorCode(result);
-        if (errorCode != 0) {
-            for (uint32_t i = 0; i < replies.size(); ++i) {
-                replies[i]->getReply()->setResult(api::ReturnCode((api::ReturnCode::Result)errorCode, result.getErrorMessage()));
-            }
-        }
-    } catch (std::exception& e) {
-        for (uint32_t i = 0; i < replies.size(); ++i) {
-            replies[i]->getReply()->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.what()));
-        }
-    }
-
-    for (uint32_t i = 0; i < replies.size(); ++i) {
-        LOG(spam, "Sending reply up (batched): %s %" PRIu64,
-            replies[i]->getReply()->toString().c_str(), replies[i]->getReply()->getMsgId());
-        _env._fileStorHandler.sendReply(replies[i]->getReply());
-    }
-
-    replies.clear();
-}
-
-void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
-{
+void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock) {
     std::vector<MessageTracker::UP> trackers;
     document::Bucket bucket = lock.first->getBucket();
 
-    while (lock.second) {
-        LOG(debug, "Inside while loop %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
-        std::shared_ptr<api::StorageMessage> msg(lock.second);
-        bool batchable = isBatchable(*msg);
+    LOG(debug, "Inside while loop %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
+    std::shared_ptr<api::StorageMessage> msg(lock.second);
 
-        // If the next operation wasn't batchable, we should flush
-        // everything that came before.
-        if (!batchable) {
-            flushAllReplies(bucket, trackers);
-        }
-
-        std::unique_ptr<MessageTracker> tracker = processMessage(*msg);
-        if (!tracker || !tracker->getReply()) {
-            // Was a reply
-            break;
-        }
-
+    std::unique_ptr<MessageTracker> tracker = processMessage(*msg);
+    if (tracker && tracker->getReply()) {
         if (hasBucketInfo(*msg)) {
             if (tracker->getReply()->getResult().success()) {
                 _env.setBucketInfo(*tracker, bucket);
             }
         }
-        if (batchable) {
-            LOG(spam, "Adding reply %s to batch for bucket %s",
-                tracker->getReply()->toString().c_str(), bucket.getBucketId().toString().c_str());
-
-            trackers.push_back(std::move(tracker));
-
-            if (trackers.back()->getReply()->getResult().success()) {
-                _env._fileStorHandler.getNextMessage(_env._partition, _stripeId, lock);
-            } else {
-                break;
-            }
-        } else {
-            LOG(spam, "Sending reply up: %s %" PRIu64,
-                tracker->getReply()->toString().c_str(), tracker->getReply()->getMsgId());
-            _env._fileStorHandler.sendReply(tracker->getReply());
-            break;
-        }
+        LOG(spam, "Sending reply up: %s %" PRIu64,
+            tracker->getReply()->toString().c_str(), tracker->getReply()->getMsgId());
+        _env._fileStorHandler.sendReply(tracker->getReply());
     }
-
-    flushAllReplies(bucket, trackers);
 }
 
 void

@@ -82,8 +82,6 @@ private:
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
     spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
 
-    void flushAllReplies(const document::Bucket& bucket, std::vector<MessageTracker::UP>& trackers);
-
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);
     bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,

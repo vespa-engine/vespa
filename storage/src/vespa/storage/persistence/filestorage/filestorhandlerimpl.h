@@ -129,7 +129,6 @@ public:
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
         FileStorHandler::LockedMessage getNextMessage(uint32_t timeout, Disk & disk);
-        FileStorHandler::LockedMessage & getNextMessage(FileStorHandler::LockedMessage& lock);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
@@ -184,9 +183,6 @@ public:
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
         FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, uint32_t timeout) {
             return _stripes[stripeId].getNextMessage(timeout, *this);
-        }
-        FileStorHandler::LockedMessage & getNextMessage(uint32_t stripeId, FileStorHandler::LockedMessage & lck) {
-            return _stripes[stripeId].getNextMessage(lck);
         }
         std::shared_ptr<FileStorHandler::BucketLockInterface>
         lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
@@ -252,8 +248,6 @@ public:
     bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
     FileStorHandler::LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
-
-    FileStorHandler::LockedMessage & getNextMessage(uint16_t disk, uint32_t stripeId, FileStorHandler::LockedMessage& lock);
 
     enum Operation { MOVE, SPLIT, JOIN };
     void remapQueue(const RemapInfo& source, RemapInfo& target, Operation op);
