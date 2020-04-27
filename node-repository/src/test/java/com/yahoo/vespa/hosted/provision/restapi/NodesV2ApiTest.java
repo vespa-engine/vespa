@@ -154,11 +154,6 @@ public class NodesV2ApiTest {
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
-        // ... and then forget it completely
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Permanently removed host8.yahoo.com\"}");
-
         // or, PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-102-2",
                                    new byte[0], Request.Method.PUT),
@@ -178,7 +173,7 @@ public class NodesV2ApiTest {
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",  new byte[0], Request.Method.GET),
                              404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-102-2'\"}");
 
-        // Put a host in failed and make sure it's children are also failed
+        // Put a host in failed and make sure its children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
                 "{\"message\":\"Moved dockerhost1.yahoo.com, host4.yahoo.com to failed\"}");
 
@@ -232,6 +227,17 @@ public class NodesV2ApiTest {
                 .suspend(new HostName("host4.yahoo.com"));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+
+        // move the docker host to deprovisioned
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
+        // ... and then forget it completely
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Permanently removed dockerhost1.yahoo.com\"}");
+
+
     }
 
     @Test

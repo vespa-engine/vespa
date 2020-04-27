@@ -213,7 +213,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
             if (node.get().state() == Node.State.deprovisioned) {
                 nodeRepository.forget(node.get());
-                return new MessageResponse("Permanently removed '" + hostname + "'");
+                return new MessageResponse("Permanently removed " + hostname);
             } else {
                 List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
                 return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
