@@ -894,16 +894,17 @@ bool hasBucketInfo(const api::StorageMessage& msg)
 
 }
 
-void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock) {
+void
+PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage & lock) {
     std::vector<MessageTracker::UP> trackers;
     document::Bucket bucket = lock.first->getBucket();
 
-    LOG(debug, "Inside while loop %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
-    std::shared_ptr<api::StorageMessage> msg(lock.second);
+    LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
+    api::StorageMessage & msg(*lock.second);
 
-    std::unique_ptr<MessageTracker> tracker = processMessage(*msg);
+    std::unique_ptr<MessageTracker> tracker = processMessage(msg);
     if (tracker && tracker->getReply()) {
-        if (hasBucketInfo(*msg)) {
+        if (hasBucketInfo(msg)) {
             if (tracker->getReply()->getResult().success()) {
                 _env.setBucketInfo(*tracker, bucket);
             }
@@ -925,7 +926,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _stripeId));
 
         if (lock.first) {
-            processMessages(lock);
+            processLockedMessage(lock);
         }
 
         vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);

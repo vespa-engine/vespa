@@ -22,7 +22,7 @@ public:
     PersistenceThread(ServiceLayerComponentRegister&, const config::ConfigUri & configUri,
                       spi::PersistenceProvider& provider, FileStorHandler& filestorHandler,
                       FileStorThreadMetrics& metrics, uint16_t deviceIndex);
-    ~PersistenceThread();
+    ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */
     void flush() override;
@@ -75,7 +75,7 @@ private:
     void handleReply(api::StorageReply&);
 
     MessageTracker::UP processMessage(api::StorageMessage& msg);
-    void processMessages(FileStorHandler::LockedMessage & lock);
+    void processLockedMessage(FileStorHandler::LockedMessage & lock);
 
     // Thread main loop
     void run(framework::ThreadHandle&) override;
