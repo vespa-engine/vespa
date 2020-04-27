@@ -82,7 +82,8 @@ import java.util.stream.Stream;
 // 1) (new) | deprovisioned - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
-// 3) * -> failed | parked -> dirty | active | deprovisioned
+// 4) * -> failed | parked -> dirty | active | deprovisioned
+// 5) deprovisioned -> (forgotten)
 // Nodes have an application assigned when in states reserved, active and inactive.
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
@@ -642,6 +643,13 @@ public class NodeRepository extends AbstractComponent {
                 return List.of(node);
             }
         }
+    }
+
+    /** Forgets a deprovisioned node. This removes all traces of the node in the node repository. */
+    public void forget(Node node) {
+        if (node.state() != State.deprovisioned)
+            throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
+        db.removeNodes(List.of(node));
     }
 
     /**

@@ -154,6 +154,11 @@ public class NodesV2ApiTest {
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
+        // ... and then forget it completely
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Permanently removed host8.yahoo.com\"}");
+
         // or, PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-102-2",
                                    new byte[0], Request.Method.PUT),
