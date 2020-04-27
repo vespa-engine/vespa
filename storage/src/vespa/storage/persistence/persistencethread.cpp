@@ -184,7 +184,6 @@ PersistenceThread::handleGet(api::GetCommand& cmd, spi::Context & context)
 
     document::FieldSetRepo repo;
     document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
-    // _context is reset per command, so it's safe to modify it like this.
     context.setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result =
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), context);
@@ -380,7 +379,6 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, spi::Context
     auto tracker = std::make_unique<MessageTracker>(_env._metrics.createIterator,_env._component.getClock());
     document::FieldSetRepo repo;
     document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFields());
-    // _context is reset per command, so it's safe to modify it like this.
     context.setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
         spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
@@ -934,7 +932,7 @@ PersistenceThread::flushAllReplies(
 #endif
         spi::Bucket b(bucket, spi::PartitionId(_env._partition));
         // Flush is not used for anything currentlu, and the context is not correct either when batching is done
-        //So just faking it here.
+        // So just faking it here.
         spi::Context dummyContext(documentapi::LoadType::DEFAULT, 0, 0);
         spi::Result result = _spi.flush(b, dummyContext);
         uint32_t errorCode = _env.convertErrorCode(result);
