@@ -12,7 +12,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
-    bufferwriter.cpp
     classname.cpp
     closuretask.cpp
     compress.cpp

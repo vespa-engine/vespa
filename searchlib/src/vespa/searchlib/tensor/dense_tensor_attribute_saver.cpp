@@ -3,7 +3,7 @@
 #include "dense_tensor_attribute_saver.h"
 #include "dense_tensor_store.h"
 #include "nearest_neighbor_index_saver.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;

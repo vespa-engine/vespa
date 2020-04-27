@@ -17,7 +17,7 @@
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchcommon/common/compaction_strategy.h>
 
 namespace search {
