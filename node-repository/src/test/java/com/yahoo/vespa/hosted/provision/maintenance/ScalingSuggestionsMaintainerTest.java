@@ -67,7 +67,6 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(Resource.disk,   0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
-                                                                                   tester.identityHostResourcesCalculator(),
                                                                                    nodeMetricsDb,
                                                                                    Duration.ofMinutes(1));
         maintainer.maintain();

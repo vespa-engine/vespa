@@ -134,8 +134,7 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
                                                              ClusterSpec.Type clusterType,
                                                              Optional<Cluster> limits,
-                                                             NodeRepository nodeRepository,
-                                                             HostResourcesCalculator resourcesCalculator) {
+                                                             NodeRepository nodeRepository) {
         NodeResources nodeResources = resources.nodeResources();
         if (limits.isPresent())
             nodeResources = limits.get().capAtLimits(nodeResources);
@@ -143,7 +142,7 @@ public class AllocatableClusterResources {
 
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+            for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
                                                                        nodeResources,
@@ -155,7 +154,7 @@ public class AllocatableClusterResources {
         else {
             // return the cheapest flavor satisfying the target resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+            for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if ( ! flavor.resources().satisfies(nodeResources)) continue;
 
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote)
@@ -164,7 +163,7 @@ public class AllocatableClusterResources {
                                                                 flavor,
                                                                 resources.nodeResources(),
                                                                 clusterType,
-                                                                resourcesCalculator);
+                                                                nodeRepository.resourcesCalculator());
 
                 if (best.isEmpty() || candidate.cost() <= best.get().cost())
                     best = Optional.of(candidate);

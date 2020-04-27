@@ -62,13 +62,14 @@ class AutoscalingTester {
     private AutoscalingTester(Zone zone, List<Flavor> flavors, FlagSource flagSource, FlavorsConfig flavorsConfig) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavorsConfig(flavorsConfig)
+                                                             .resourcesCalculator(new MockHostResourcesCalculator(zone))
                                                              .hostProvisioner(new MockHostProvisioner(flavors))
                                                              .flagSource(flagSource)
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
         db = new NodeMetricsDb();
-        autoscaler = new Autoscaler(hostResourcesCalculator, db, nodeRepository());
+        autoscaler = new Autoscaler(db, nodeRepository());
     }
 
     public ApplicationId applicationId(String applicationName) {

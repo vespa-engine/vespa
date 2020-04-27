@@ -44,15 +44,15 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
-    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabled;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
-    DynamicProvisioningMaintainer(NodeRepository nodeRepository, Duration interval, HostProvisioner hostProvisioner,
-                                  HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource) {
+    DynamicProvisioningMaintainer(NodeRepository nodeRepository,
+                                  Duration interval,
+                                  HostProvisioner hostProvisioner,
+                                  FlagSource flagSource) {
         super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
-        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
@@ -111,7 +111,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
             NodeResources resources = it.next();
             removableHosts.stream()
                     .filter(nodeRepository()::canAllocateTenantNodeTo)
-                    .filter(host -> hostResourcesCalculator.advertisedResourcesOf(host.flavor()).satisfies(resources))
+                    .filter(host -> nodeRepository().resourcesCalculator().advertisedResourcesOf(host.flavor()).satisfies(resources))
                     .min(Comparator.comparingInt(n -> n.flavor().cost()))
                     .ifPresent(host -> {
                         removableHosts.remove(host);

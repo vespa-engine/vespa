@@ -51,7 +51,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId application1 = tester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
-        mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
+        mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
         verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor, application1);
 
@@ -71,7 +71,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId application = tester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
-        mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
+        mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
         verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor, application);
     }
@@ -82,7 +82,7 @@ public class DynamicDockerProvisionTest {
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
-        mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));
+        mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("large"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
         verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor, application);
 
@@ -96,7 +96,7 @@ public class DynamicDockerProvisionTest {
         }
         tester.deployZoneApp();
 
-        mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
+        mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
         // Verify there was only 1 call to provision hosts (during the first prepare)
         verify(hostProvisioner).provisionHosts(any(), any(), any());

@@ -42,14 +42,10 @@ public class Autoscaler {
     /** What difference factor for a resource is worth a reallocation? */
     private static final double resourceDifferenceWorthReallocation = 0.1;
 
-    private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
 
-    public Autoscaler(HostResourcesCalculator resourcesCalculator,
-                      NodeMetricsDb metricsDb,
-                      NodeRepository nodeRepository) {
-        this.resourcesCalculator = resourcesCalculator;
+    public Autoscaler(NodeMetricsDb metricsDb, NodeRepository nodeRepository) {
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
     }
@@ -83,7 +79,8 @@ public class Autoscaler {
         if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
+        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes,
+                                                                                        nodeRepository.resourcesCalculator());
         Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, clusterType);
         Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);
@@ -109,8 +106,7 @@ public class Autoscaler {
             var allocatableResources = AllocatableClusterResources.from(i.next(),
                                                                         currentAllocation.clusterType(),
                                                                         respectLimits ? Optional.of(cluster) : Optional.empty(),
-                                                                        nodeRepository,
-                                                                        resourcesCalculator);
+                                                                        nodeRepository);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;

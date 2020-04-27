@@ -80,15 +80,26 @@ public class ProvisioningTester {
     private int nextHost = 0;
     private int nextIP = 0;
 
-    public ProvisioningTester(
-            Curator curator, NodeFlavors nodeFlavors, Zone zone, NameResolver nameResolver,
-            Orchestrator orchestrator, HostProvisioner hostProvisioner,
-            LoadBalancerServiceMock loadBalancerService, FlagSource flagSource) {
+    public ProvisioningTester(Curator curator,
+                              NodeFlavors nodeFlavors,
+                              HostResourcesCalculator resourcesCalculator,
+                              Zone zone,
+                              NameResolver nameResolver,
+                              Orchestrator orchestrator,
+                              HostProvisioner hostProvisioner,
+                              LoadBalancerServiceMock loadBalancerService,
+                              FlagSource flagSource) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
-        this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+        this.nodeRepository = new NodeRepository(nodeFlavors,
+                                                 resourcesCalculator,
+                                                 curator,
+                                                 clock,
+                                                 zone,
+                                                 nameResolver,
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
@@ -480,6 +491,7 @@ public class ProvisioningTester {
 
         private Curator curator;
         private FlavorsConfig flavorsConfig;
+        private HostResourcesCalculator resourcesCalculator = new EmptyProvisionServiceProvider().getHostResourcesCalculator();
         private Zone zone;
         private NameResolver nameResolver;
         private Orchestrator orchestrator;
@@ -494,6 +506,11 @@ public class ProvisioningTester {
 
         public Builder flavorsConfig(FlavorsConfig flavorsConfig) {
             this.flavorsConfig = flavorsConfig;
+            return this;
+        }
+
+        public Builder resourcesCalculator(HostResourcesCalculator resourcesCalculator) {
+            this.resourcesCalculator = resourcesCalculator;
             return this;
         }
 
@@ -539,38 +556,20 @@ public class ProvisioningTester {
                         return orch;
                     });
 
-            return new ProvisioningTester(
-                    Optional.ofNullable(curator).orElseGet(MockCurator::new),
-                    new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
-                    Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
-                    Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
-                    orchestrator,
-                    hostProvisioner,
-                    Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
-                    Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
+            return new ProvisioningTester(Optional.ofNullable(curator).orElseGet(MockCurator::new),
+                                          new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
+                                          resourcesCalculator,
+                                          Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
+                                          Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
+                                          orchestrator,
+                                          hostProvisioner,
+                                          Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
+                                          Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
-    }
-
-    public IdentityHostResourcesCalculator identityHostResourcesCalculator() {
-        return new IdentityHostResourcesCalculator();
-    }
-
-    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources realResourcesOf(Node node) {
-            return node.flavor().resources();
-        }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            return flavor.resources();
-        }
-
     }
 
 }

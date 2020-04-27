@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
 
-    private final HostResourcesCalculator hostResourcesCalculator = new NoopHostResourcesCalculator();
+    private final HostResourcesCalculator hostResourcesCalculator = new IdentityHostResourcesCalculator();
 
     @Override
     public Optional<LoadBalancerService> getLoadBalancerService() {
@@ -30,7 +30,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         return hostResourcesCalculator;
     }
 
-    public static class NoopHostResourcesCalculator implements HostResourcesCalculator {
+    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
         public NodeResources realResourcesOf(Node node) {
