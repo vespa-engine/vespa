@@ -157,9 +157,6 @@ public class StorageMaintainer {
         attributes.put("flavor", context.node().flavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
         attributes.put("cpu_microcode_version", getMicrocodeVersion());
-        attributes.put("coredump_path", coredumpHandler.getDoneCoredumpsPath()
-                                                        .resolve(context.containerName().asString())
-                                                        .toString());
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
