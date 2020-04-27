@@ -25,6 +25,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -197,15 +198,27 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/nodes/v2/node/{hostname}")) {
-            String hostname = path.get("hostname");
-            List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
-            return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
-        }
+        if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), true);
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse deleteNode(String hostname) {
+        Optional<Node> node = nodeRepository.getNode(hostname);
+        if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
+        try (Mutex lock = nodeRepository.lock(node.get())) {
+            node = nodeRepository.getNode(hostname);
+            if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
+            if (node.get().state() == Node.State.deprovisioned) {
+                nodeRepository.forget(node.get());
+                return new MessageResponse("Permanently removed " + hostname);
+            } else {
+                List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
+                return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
+            }
+        }
     }
 
     private Node nodeFromRequest(HttpRequest request) {
