@@ -300,8 +300,6 @@ feedDocs(PersistenceProvider& spi,
         EXPECT_TRUE(!result.hasError());
         docs.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
     }
-    spi.flush(bucket, context);
-    EXPECT_EQ(Result(), Result(spi.flush(bucket, context)));
     return docs;
 }
 
@@ -353,8 +351,6 @@ TEST_F(ConformanceTest, testBasics)
     EXPECT_EQ(
             Result(),
             Result(spi->remove(bucket, Timestamp(3), doc1->getId(), context)));
-
-    EXPECT_EQ(Result(), Result(spi->flush(bucket, context)));
 
     // Iterate first without removes, then with.
     for (int iterPass = 0; iterPass < 2; ++iterPass) {
@@ -441,11 +437,8 @@ TEST_F(ConformanceTest, testListBuckets)
     spi->createBucket(bucket3, context);
 
     spi->put(bucket1, Timestamp(1), doc1, context);
-    spi->flush(bucket1, context);
     spi->put(bucket2, Timestamp(2), doc2, context);
-    spi->flush(bucket2, context);
     spi->put(bucket3, Timestamp(3), doc3, context);
-    spi->flush(bucket3, context);
 
     {
         BucketIdListResult result = spi->listBuckets(makeBucketSpace(), PartitionId(1));
@@ -482,7 +475,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->put(bucket, Timestamp(2), doc2, context);
 
     const BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(1, (int)info1.getDocumentCount());
@@ -492,7 +484,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->put(bucket, Timestamp(3), doc1, context);
 
     const BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(2, (int)info2.getDocumentCount());
@@ -503,7 +494,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->put(bucket, Timestamp(4), doc1, context);
 
     const BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(2, (int)info3.getDocumentCount());
@@ -514,7 +504,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
 
     const BucketInfo info4 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(1, (int)info4.getDocumentCount());
@@ -544,7 +533,6 @@ TEST_F(ConformanceTest, testOrderIndependentBucketInfo)
     {
         spi->put(bucket, Timestamp(2), doc1, context);
         spi->put(bucket, Timestamp(3), doc2, context);
-        spi->flush(bucket, context);
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumOrdered = info.getChecksum();
@@ -563,7 +551,6 @@ TEST_F(ConformanceTest, testOrderIndependentBucketInfo)
         // Swap order of puts
         spi->put(bucket, Timestamp(3), doc2, context);
         spi->put(bucket, Timestamp(2), doc1, context);
-        spi->flush(bucket, context);
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumUnordered = info.getChecksum();
@@ -589,7 +576,6 @@ TEST_F(ConformanceTest, testPut)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -615,7 +601,6 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
     Result result = spi->put(bucket, Timestamp(3), doc1, context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -627,7 +612,6 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
     result = spi->put(bucket, Timestamp(4), doc2, context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -666,7 +650,6 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
 
     Result result = spi->put(bucket, Timestamp(5), doc1, context);
     const BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
     {
         EXPECT_EQ(1, (int)info1.getDocumentCount());
         EXPECT_TRUE(info1.getEntryCount() >= info1.getDocumentCount());
@@ -678,7 +661,6 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
     result = spi->put(bucket, Timestamp(4), doc2, context);
     {
         const BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info2.getDocumentCount());
         EXPECT_TRUE(info2.getEntryCount() >= info1.getDocumentCount());
@@ -712,7 +694,6 @@ TEST_F(ConformanceTest, testPutDuplicate)
     BucketChecksum checksum;
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
         EXPECT_EQ(1, (int)info.getDocumentCount());
         checksum = info.getChecksum();
     }
@@ -721,7 +702,6 @@ TEST_F(ConformanceTest, testPutDuplicate)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_EQ(checksum, info.getChecksum());
     }
@@ -746,7 +726,6 @@ TEST_F(ConformanceTest, testRemove)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getChecksum() != 0);
@@ -764,7 +743,6 @@ TEST_F(ConformanceTest, testRemove)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -791,7 +769,6 @@ TEST_F(ConformanceTest, testRemove)
                                        context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -799,7 +776,6 @@ TEST_F(ConformanceTest, testRemove)
     }
 
     Result result4 = spi->put(bucket, Timestamp(9), doc1, context);
-    spi->flush(bucket, context);
 
     EXPECT_TRUE(!result4.hasError());
 
@@ -809,7 +785,6 @@ TEST_F(ConformanceTest, testRemove)
                                        context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -847,7 +822,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(10),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -875,7 +849,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(11),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -903,7 +876,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(7),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -946,7 +918,6 @@ TEST_F(ConformanceTest, testUpdate)
     {
         UpdateResult result = spi->update(bucket, Timestamp(3), update,
                                           context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result(), Result(result));
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
@@ -955,7 +926,6 @@ TEST_F(ConformanceTest, testUpdate)
     {
         UpdateResult result = spi->update(bucket, Timestamp(4), update,
                                           context);
-        spi->flush(bucket, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(3), result.getExistingTimestamp());
@@ -975,7 +945,6 @@ TEST_F(ConformanceTest, testUpdate)
     }
 
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket,
@@ -991,7 +960,6 @@ TEST_F(ConformanceTest, testUpdate)
     {
         UpdateResult result = spi->update(bucket, Timestamp(6), update,
                                           context);
-        spi->flush(bucket, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
@@ -1009,7 +977,6 @@ TEST_F(ConformanceTest, testUpdate)
         // Document does not exist (and therefore its condition cannot match by definition),
         // but since CreateIfNonExistent is set it should be auto-created anyway.
         UpdateResult result = spi->update(bucket, Timestamp(7), update, context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getExistingTimestamp());
     }
@@ -1044,7 +1011,6 @@ TEST_F(ConformanceTest, testGet)
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket, document::AllFields(),
@@ -1054,7 +1020,6 @@ TEST_F(ConformanceTest, testGet)
     }
 
     spi->remove(bucket, Timestamp(4), doc1->getId(), context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket, document::AllFields(),
@@ -1168,7 +1133,6 @@ TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
         spi->put(b, newTimestamp, newDoc, context);
         newDocs.push_back(DocAndTimestamp(newDoc, newTimestamp));
     }
-    spi->flush(b, context);
 
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
 
@@ -1249,7 +1213,6 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
                     DocAndTimestamp(doc, Timestamp(1000 + i)));
         }
     }
-    spi->flush(b, context);
 
     Selection sel = Selection(DocumentSelection(""));
     sel.setFromTimestamp(fromTimestamp);
@@ -1295,7 +1258,6 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
                                Timestamp(2000),
                                docsToVisit.front().doc->getId(), context)
                    .wasFound());
-    spi->flush(b, context);
 
     timestampsToVisit.push_back(Timestamp(2000));
     removes.insert(docsToVisit.front().doc->getId().toString());
@@ -1339,7 +1301,6 @@ TEST_F(ConformanceTest, testIterateRemoves)
             nonRemovedDocs.push_back(docs[i]);
         }
     }
-    spi->flush(b, context);
 
     // First, test iteration without removes
     {
@@ -1387,7 +1348,6 @@ TEST_F(ConformanceTest, testIterateMatchSelection)
                     DocAndTimestamp(doc, Timestamp(1000 + i)));
         }
     }
-    spi->flush(b, context);
 
     CreateIteratorResult iter(
             createIterator(*spi,
@@ -1416,7 +1376,6 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
     // remove entry for it regardless.
     EXPECT_TRUE(
             !spi->remove(b, Timestamp(2000), removedId, context).wasFound());
-    spi->flush(b, context);
 
     Selection sel(createSelection("id == '" + removedId.toString() + "'"));
 
@@ -1530,7 +1489,6 @@ TEST_F(ConformanceTest, testDeleteBucket)
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
 
     spi->deleteBucket(bucket, context);
     testDeleteBucketPostCondition(spi, bucket, *doc1);
@@ -1585,8 +1543,6 @@ TEST_F(ConformanceTest, testSplitNormalCase)
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
-
-    spi->flush(bucketC, context);
 
     spi->split(bucketC, bucketA, bucketB, context);
     testSplitNormalCasePostCondition(spi, bucketA, bucketB, bucketC,
@@ -1657,27 +1613,22 @@ TEST_F(ConformanceTest, testSplitTargetExists)
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketC, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketB, context);
     EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketC, context);
 
     for (uint32_t i = 20; i < 25; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
-
-    spi->flush(bucketB, context);
 
     spi->split(bucketC, bucketA, bucketB, context);
     testSplitTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
@@ -1745,8 +1696,6 @@ TEST_F(ConformanceTest, testSplitSingleDocumentInSource)
     Document::SP doc = testDocMan.createRandomDocumentAtLocation(0x06, 0);
     spi->put(source, Timestamp(1), doc, context);
 
-    spi->flush(source, context);
-
     spi->split(source, target1, target2, context);
     testSplitSingleDocumentInSourcePostCondition(
             spi, source, target1, target2, testDocMan);
@@ -1804,7 +1753,6 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
                     source1.getBucketId().getId(), i));
         spi.put(source1, Timestamp(i + 1), doc, context);
     }
-    spi.flush(source1, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc(
@@ -1812,7 +1760,6 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
                     source2.getBucketId().getId(), i));
         spi.put(source2, Timestamp(i + 1), doc, context);
     }
-    spi.flush(source2, context);
 }
 
 void
@@ -1912,20 +1859,16 @@ TEST_F(ConformanceTest, testJoinTargetExists)
         spi->put(bucketA, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketA, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketB, context);
 
     for (uint32_t i = 20; i < 30; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
-
-    spi->flush(bucketC, context);
 
     spi->join(bucketA, bucketB, bucketC, context);
     testJoinTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
@@ -1991,7 +1934,6 @@ ConformanceTest::populateBucket(const Bucket& b,
                 location, i);
         spi.put(b, Timestamp(i + 1), doc1, context);
     }
-    spi.flush(b, context);
 }
 
 TEST_F(ConformanceTest, testJoinOneBucket)
@@ -2150,7 +2092,6 @@ TEST_F(ConformanceTest, testMaintain)
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
 
     EXPECT_EQ(Result::ErrorType::NONE,
                          spi->maintain(bucket, LOW).getErrorCode());
@@ -2229,7 +2170,6 @@ TEST_F(SingleDocTypeConformanceTest, testBucketActivationSplitAndJoin)
     spi->createBucket(bucketC, context);
     spi->put(bucketC, Timestamp(1), doc1, context);
     spi->put(bucketC, Timestamp(2), doc2, context);
-    spi->flush(bucketC, context);
 
     spi->setActiveState(bucketC, BucketInfo::ACTIVE);
     EXPECT_TRUE(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
@@ -2304,14 +2244,11 @@ TEST_F(ConformanceTest, testRemoveEntry)
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
     BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
 
     {
         spi->put(bucket, Timestamp(4), doc2, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(4), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info1, info2);
     }
@@ -2319,9 +2256,7 @@ TEST_F(ConformanceTest, testRemoveEntry)
     // Test case where there exists a previous version of the document.
     {
         spi->put(bucket, Timestamp(5), doc1, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(5), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info1, info2);
     }
@@ -2329,14 +2264,11 @@ TEST_F(ConformanceTest, testRemoveEntry)
     // Test case where the newest document version after removeEntrying is a remove.
     {
         spi->remove(bucket, Timestamp(6), doc1->getId(), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(uint32_t(0), info2.getDocumentCount());
 
         spi->put(bucket, Timestamp(7), doc1, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(7), context);
-        spi->flush(bucket, context);
         BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info2, info3);
     }
@@ -2395,9 +2327,6 @@ TEST_F(ConformanceTest, testBucketSpaces)
     spi->put(bucket01, Timestamp(4), doc2, context);
     spi->put(bucket11, Timestamp(5), doc3, context);
     spi->put(bucket12, Timestamp(6), doc4, context);
-    spi->flush(bucket01, context);
-    spi->flush(bucket11, context);
-    spi->flush(bucket12, context);
     // Check bucket lists
     assertBucketList(*spi, bucketSpace0, partId, { bucketId1 });
     assertBucketList(*spi, bucketSpace1, partId, { bucketId1, bucketId2 });

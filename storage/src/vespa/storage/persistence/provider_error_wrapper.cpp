@@ -118,12 +118,6 @@ ProviderErrorWrapper::get(const spi::Bucket& bucket,
     return checkResult(_impl.get(bucket, fieldSet, docId, context));
 }
 
-spi::Result
-ProviderErrorWrapper::flush(const spi::Bucket& bucket, spi::Context& context)
-{
-    return checkResult(_impl.flush(bucket, context));
-}
-
 spi::CreateIteratorResult
 ProviderErrorWrapper::createIterator(const spi::Bucket& bucket,
                                         const document::FieldSet& fieldSet,

@@ -202,30 +202,6 @@ struct PersistenceProvider
     virtual UpdateResult update(const Bucket&, Timestamp timestamp, const DocumentUpdateSP& update, Context&) = 0;
 
     /**
-     * The service layer may choose to batch certain commands. This means that
-     * the service layer will lock the bucket only once, then perform several
-     * commands, and finally get the bucket info from the bucket, and then
-     * flush it.  This can be used to improve performance by caching the
-     * modifications, and persisting them to disk only when flush is called.
-     * The service layer guarantees that after one of these operations, flush()
-     * is called, regardless of whether the operation succeeded or not, before
-     * another bucket is processed in the same worker thead. The following
-     * operations can be batched and have the guarantees
-     * above:
-     * - put
-     * - get
-     * - remove (all versions)
-     * - update
-     * - revert
-     * - join
-     * <p/>
-     * A provider may of course choose to not sync to disk at flush time either,
-     * but then data may be more prone to being lost on node issues, and the
-     * provider must figure out when to flush its cache itself.
-     */
-    virtual Result flush(const Bucket&, Context&) = 0;
-
-    /**
      * Retrieves the latest version of the document specified by the
      * document id. If no versions were found, or the document was removed,
      * the result should be successful, but contain no document (see GetResult).

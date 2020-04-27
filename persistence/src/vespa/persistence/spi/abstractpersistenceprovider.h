@@ -41,11 +41,6 @@ public:
     Result removeEntry(const Bucket&, Timestamp, Context&) override { return Result(); }
 
     /**
-     * Default impl is getBucketInfo();
-     */
-    Result flush(const Bucket&, Context&) override { return Result(); }
-
-    /**
      * Default impl is remove().
      */
     RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;

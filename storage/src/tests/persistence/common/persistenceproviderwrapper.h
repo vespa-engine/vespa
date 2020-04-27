@@ -36,7 +36,6 @@ public:
         FAIL_REPLACE_WITH_REMOVE = 1 << 6,
         FAIL_UPDATE           = 1 << 7,
         FAIL_REVERT           = 1 << 8,
-        FAIL_FLUSH            = 1 << 9,
         FAIL_CREATE_ITERATOR  = 1 << 10,
         FAIL_ITERATE          = 1 << 11,
         FAIL_DESTROY_ITERATOR = 1 << 12,
@@ -44,7 +43,7 @@ public:
         FAIL_SPLIT            = 1 << 14,
         FAIL_JOIN             = 1 << 15,
         FAIL_CREATE_BUCKET    = 1 << 16,
-        FAIL_BUCKET_PERSISTENCE = FAIL_PUT|FAIL_REMOVE|FAIL_UPDATE|FAIL_REVERT|FAIL_FLUSH,
+        FAIL_BUCKET_PERSISTENCE = FAIL_PUT|FAIL_REMOVE|FAIL_UPDATE|FAIL_REVERT,
         FAIL_ALL_OPERATIONS   = 0xffff,
         // TODO: add more as needed
     };
@@ -55,7 +54,7 @@ private:
     uint32_t _failureMask;
 public:
     PersistenceProviderWrapper(spi::PersistenceProvider& spi);
-    ~PersistenceProviderWrapper();
+    ~PersistenceProviderWrapper() override;
 
     /**
      * Explicitly set result to anything != NONE to have all operations
@@ -96,7 +95,6 @@ public:
     spi::GetResult get(const spi::Bucket&, const document::FieldSet&,
                        const spi::DocumentId&, spi::Context&) const override ;
 
-    spi::Result flush(const spi::Bucket&, spi::Context&) override;
     spi::CreateIteratorResult createIterator(const spi::Bucket&, const document::FieldSet&, const spi::Selection&,
                                              spi::IncludedVersions versions, spi::Context&) override;
 
