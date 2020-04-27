@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -44,7 +45,6 @@ public class Autoscaler {
     private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
-    private final NodeResourceLimits nodeResourceLimits;
 
     public Autoscaler(HostResourcesCalculator resourcesCalculator,
                       NodeMetricsDb metricsDb,
@@ -52,7 +52,6 @@ public class Autoscaler {
         this.resourcesCalculator = resourcesCalculator;
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
-        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository.zone());
     }
 
     /**
@@ -107,10 +106,11 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster, respectLimits);
              i.hasNext(); ) {
-            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(i.next(),
-                                                                                                currentAllocation.clusterType(),
-                                                                                                cluster,
-                                                                                                respectLimits);
+            var allocatableResources = AllocatableClusterResources.from(i.next(),
+                                                                        currentAllocation.clusterType(),
+                                                                        respectLimits ? Optional.of(cluster) : Optional.empty(),
+                                                                        nodeRepository,
+                                                                        resourcesCalculator);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;
@@ -135,51 +135,6 @@ public class Autoscaler {
     }
 
     /**
-     * Returns the smallest allocatable node resources larger than the given node resources,
-     * or empty if none available.
-     */
-    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
-                                                                         ClusterSpec.Type clusterType,
-                                                                         Cluster cluster,
-                                                                         boolean respectLimits) {
-        NodeResources nodeResources = resources.nodeResources();
-        if (respectLimits)
-            nodeResources = cluster.capAtLimits(nodeResources);
-        nodeResources = nodeResourceLimits.enlargeToLegal(nodeResources, clusterType); // enforce system limits
-
-        if (allowsHostSharing(nodeRepository.zone().cloud())) {
-            // return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
-                if (flavor.resources().satisfies(nodeResources))
-                    return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
-                                                                       nodeResources,
-                                                                       resources.nodeResources(),
-                                                                       clusterType));
-            }
-            return Optional.empty();
-        }
-        else {
-            // return the cheapest flavor satisfying the target resources, if any
-            Optional<AllocatableClusterResources> best = Optional.empty();
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
-                if ( ! flavor.resources().satisfies(nodeResources)) continue;
-
-                if (flavor.resources().storageType() == NodeResources.StorageType.remote)
-                    flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
-                var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
-                                                                flavor,
-                                                                resources.nodeResources(),
-                                                                clusterType,
-                                                                resourcesCalculator);
-
-                if (best.isEmpty() || candidate.cost() <= best.get().cost())
-                    best = Optional.of(candidate);
-            }
-            return best;
-        }
-    }
-
-    /**
      * Returns the average load of this resource in the measurement window,
      * or empty if we are not in a position to make decisions from these measurements at this time.
      */
@@ -198,12 +153,6 @@ public class Autoscaler {
     private Duration scalingWindow(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return Duration.ofHours(12); // Ideally we should use observed redistribution time
         return Duration.ofHours(12); // TODO: Measure much more often to get this down to minutes. And, ideally we should take node startup time into account
-    }
-
-    // TODO: Put this in zone config instead?
-    private boolean allowsHostSharing(CloudName cloudName) {
-        if (cloudName.value().equals("aws")) return false;
-        return true;
     }
 
     public static boolean unstable(List<Node> nodes) {

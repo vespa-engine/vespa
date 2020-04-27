@@ -1,14 +1,20 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author bratseth
@@ -119,6 +125,58 @@ public class AllocatableClusterResources {
         return nodes + " nodes with " + realResources() +
                " at cost $" + cost() +
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
+    }
+
+    /**
+     * Returns the smallest allocatable node resources larger than the given node resources,
+     * or empty if none available.
+     */
+    public static Optional<AllocatableClusterResources> from(ClusterResources resources,
+                                                             ClusterSpec.Type clusterType,
+                                                             Optional<Cluster> limits,
+                                                             NodeRepository nodeRepository,
+                                                             HostResourcesCalculator resourcesCalculator) {
+        NodeResources nodeResources = resources.nodeResources();
+        if (limits.isPresent())
+            nodeResources = limits.get().capAtLimits(nodeResources);
+        nodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(nodeResources, clusterType);
+
+        if (allowsHostSharing(nodeRepository.zone().cloud())) {
+            // return the requested resources, or empty if they cannot fit on existing hosts
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+                if (flavor.resources().satisfies(nodeResources))
+                    return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
+                                                                       nodeResources,
+                                                                       resources.nodeResources(),
+                                                                       clusterType));
+            }
+            return Optional.empty();
+        }
+        else {
+            // return the cheapest flavor satisfying the target resources, if any
+            Optional<AllocatableClusterResources> best = Optional.empty();
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+                if ( ! flavor.resources().satisfies(nodeResources)) continue;
+
+                if (flavor.resources().storageType() == NodeResources.StorageType.remote)
+                    flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
+                var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
+                                                                flavor,
+                                                                resources.nodeResources(),
+                                                                clusterType,
+                                                                resourcesCalculator);
+
+                if (best.isEmpty() || candidate.cost() <= best.get().cost())
+                    best = Optional.of(candidate);
+            }
+            return best;
+        }
+    }
+
+    // TODO: Put this in zone config instead?
+    private static boolean allowsHostSharing(CloudName cloudName) {
+        if (cloudName.value().equals("aws")) return false;
+        return true;
     }
 
 }
