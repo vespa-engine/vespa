@@ -83,6 +83,12 @@ public:
         size_t size() const;
         const NodeAllocatorType &getAllocator() const { return _allocator; }
 
+        const AggrT &getAggregated() const {
+            return _allocator.getAggregated(_frozenRoot);
+        }
+
+        bool empty() const { return !_frozenRoot.valid(); }
+
         template <typename FunctionType>
         void foreach_key(FunctionType func) const {
             _allocator.getNodeStore().foreach_key(_frozenRoot, func);
