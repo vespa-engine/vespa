@@ -2,16 +2,17 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.INFO;
 
 // Debug class that provides useful helper routines
 public class ConfigDebug {
     public static void logDebug(Logger logger, long timestamp, ConfigKey<?> key, String logmessage) {
         if (key.getConfigId().matches(".*container.?\\d+.*") || key.getConfigId().matches(".*doc.api.*")) {
-            logger.log(LogLevel.INFO,  timestamp + " " + key + " " + logmessage);
+            logger.log(INFO, timestamp + " " + key + " " + logmessage);
         }
     }
 

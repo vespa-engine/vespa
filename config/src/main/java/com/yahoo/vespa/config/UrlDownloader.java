@@ -8,11 +8,13 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author lesters
@@ -47,7 +49,7 @@ public class UrlDownloader {
                 Request request = new Request("frt.rpc.ping");
                 target.invokeSync(request, 5.0);
                 if (! request.isError()) {
-                    log.log(LogLevel.DEBUG, () -> "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
+                    log.log(FINE, () -> "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     return;
                 } else {
                     target.close();
@@ -78,7 +80,7 @@ public class UrlDownloader {
             request.parameters().add(new StringValue(urlReference.value()));
 
             double rpcTimeout = Math.min(timeLeft, 60 * 60.0);
-            log.log(LogLevel.DEBUG, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
+            log.log(FINE, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
             target.invokeSync(request, rpcTimeout);
 
             if (request.checkReturnTypes("s")) {
@@ -86,7 +88,7 @@ public class UrlDownloader {
             } else if (!request.isError()) {
                 throw new RuntimeException("Invalid response: " + request.returnValues());
             } else if (temporaryError(request)) {
-                log.log(LogLevel.INFO, "Retrying waitFor for " + urlReference + ": " + request.errorCode() + " -- " + request.errorMessage());
+                log.log(INFO, "Retrying waitFor for " + urlReference + ": " + request.errorCode() + " -- " + request.errorMessage());
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
