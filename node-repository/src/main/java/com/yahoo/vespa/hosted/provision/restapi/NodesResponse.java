@@ -1,11 +1,10 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -48,14 +47,13 @@ class NodesResponse extends HttpResponse {
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final Slime slime;
-    private final NodeSerializer serializer = new NodeSerializer();
 
     public NodesResponse(ResponseType responseType, HttpRequest request,  
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
         super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
-        filter = NodesApiHandler.toNodeFilter(request);
+        filter = NodesV2ApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
@@ -65,7 +63,7 @@ class NodesResponse extends HttpResponse {
         switch (responseType) {
             case nodeList: nodesToSlime(root); break;
             case stateList : statesToSlime(root); break;
-            case nodesInStateList: nodesToSlime(serializer.stateFrom(lastElement(parentUrl)), root); break;
+            case nodesInStateList: nodesToSlime(NodeSerializer.stateFrom(lastElement(parentUrl)), root); break;
             case singleNode : nodeToSlime(lastElement(parentUrl), root); break;
             default: throw new IllegalArgumentException();
         }
@@ -97,11 +95,11 @@ class NodesResponse extends HttpResponse {
     private void statesToSlime(Cursor root) {
         Cursor states = root.setObject("states");
         for (Node.State state : Node.State.values())
-            toSlime(state, states.setObject(serializer.toString(state)));
+            toSlime(state, states.setObject(NodeSerializer.toString(state)));
     }
 
     private void toSlime(Node.State state, Cursor object) {
-        object.setString("url", parentUrl + serializer.toString(state));
+        object.setString("url", parentUrl + NodeSerializer.toString(state));
         if (recursive)
             nodesToSlime(state, object);
     }
@@ -136,10 +134,10 @@ class NodesResponse extends HttpResponse {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
         object.setString("id", node.hostname());
-        object.setString("state", serializer.toString(node.state()));
+        object.setString("state", NodeSerializer.toString(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
-        object.setString("type", serializer.toString(node.type()));
+        object.setString("type", NodeSerializer.toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
@@ -148,7 +146,7 @@ class NodesResponse extends HttpResponse {
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         if (node.flavor().isConfigured())
             object.setDouble("cpuCores", node.flavor().getMinCpuCores());
-        toSlime(node.flavor().resources(), object.setObject("resources"));
+        NodeResourcesSerializer.toSlime(node.flavor().resources(), object.setObject("resources"));
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setString("environment", node.flavor().getType().name());
@@ -160,7 +158,7 @@ class NodesResponse extends HttpResponse {
             object.setString("wantedDockerImage", allocation.membership().cluster().dockerImage()
                     .orElseGet(() -> nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString()));
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
-            toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
+            NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
                         .ifPresent(info -> {
@@ -208,15 +206,6 @@ class NodesResponse extends HttpResponse {
             object.setLong("at", event.at().toEpochMilli());
             object.setString("agent", event.agent().name());
         }
-    }
-
-    private void toSlime(NodeResources resources, Cursor object) {
-        object.setDouble("vcpu", resources.vcpu());
-        object.setDouble("memoryGb", resources.memoryGb());
-        object.setDouble("diskGb", resources.diskGb());
-        object.setDouble("bandwidthGbps", resources.bandwidthGbps());
-        object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
-        object.setString("storageType", serializer.toString(resources.storageType()));
     }
 
     // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version

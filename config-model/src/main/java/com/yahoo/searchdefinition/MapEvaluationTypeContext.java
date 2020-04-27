@@ -41,6 +41,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
 
+    /** To avoid re-resolving diamond-shaped dependencies */
+    private final Map<Reference, TensorType> globallyResolvedTypes;
+
     /** For invocation loop detection */
     private final Deque<Reference> currentResolutionCallStack;
 
@@ -53,6 +56,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         this.currentResolutionCallStack =  new ArrayDeque<>();
         this.queryFeaturesNotDeclared = new TreeSet<>();
         tensorsAreUsed = false;
+        globallyResolvedTypes = new HashMap<>();
     }
 
     private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
@@ -60,12 +64,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                      Map<Reference, TensorType> featureTypes,
                                      Deque<Reference> currentResolutionCallStack,
                                      SortedSet<Reference> queryFeaturesNotDeclared,
-                                     boolean tensorsAreUsed) {
+                                     boolean tensorsAreUsed,
+                                     Map<Reference, TensorType> globallyResolvedTypes) {
         super(functions, bindings);
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack = currentResolutionCallStack;
         this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
         this.tensorsAreUsed = tensorsAreUsed;
+        this.globallyResolvedTypes = globallyResolvedTypes;
     }
 
     public void setType(Reference reference, TensorType type) {
@@ -82,11 +88,25 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         resolvedTypes.clear();
     }
 
-    @Override
+    private boolean referenceCanBeResolvedGlobally(Reference reference) {
+        Optional<ExpressionFunction> function = functionInvocation(reference);
+        return function.isPresent() && function.get().arguments().size() == 0;
+        // are there other cases we would like to resolve globally?
+    }
+
+        @Override
     public TensorType getType(Reference reference) {
         // computeIfAbsent without concurrent modification due to resolve adding more resolved entries:
+
+        boolean canBeResolvedGlobally = referenceCanBeResolvedGlobally(reference);
+
         TensorType resolvedType = resolvedTypes.get(reference);
-        if (resolvedType != null) return resolvedType;
+        if (resolvedType == null && canBeResolvedGlobally) {
+            resolvedType = globallyResolvedTypes.get(reference);
+        }
+        if (resolvedType != null) {
+            return resolvedType;
+        }
 
         resolvedType = resolveType(reference);
         if (resolvedType == null)
@@ -94,6 +114,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         resolvedTypes.put(reference, resolvedType);
         if (resolvedType.rank() > 0)
             tensorsAreUsed = true;
+
+        if (canBeResolvedGlobally) {
+            globallyResolvedTypes.put(reference, resolvedType);
+        }
+
         return resolvedType;
     }
 
@@ -254,7 +279,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                             featureTypes,
                                             currentResolutionCallStack,
                                             queryFeaturesNotDeclared,
-                                            tensorsAreUsed);
+                                            tensorsAreUsed,
+                                            globallyResolvedTypes);
     }
 
 }

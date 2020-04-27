@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public class Messenger implements Runnable {
                 try {
                     task.run();
                 } catch (final Exception e) {
-                    log.log(LogLevel.ERROR, "An exception was thrown while running " + task.getClass().getName(), e);
+                    log.log(Level.SEVERE, "An exception was thrown while running " + task.getClass().getName(), e);
                 }
                 try {
                     task.destroy();

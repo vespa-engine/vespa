@@ -8,7 +8,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
@@ -144,7 +144,7 @@ class ClientFeederV3 {
             } catch (InterruptedException e) {
                 // NOP, just terminate
             } catch (Throwable e) {
-                log.log(LogLevel.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
+                log.log(Level.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
             } finally {
                 replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
             }
@@ -169,8 +169,8 @@ class ClientFeederV3 {
             try {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
             } catch (IOException ioe) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, Exceptions.toMessageString(ioe), ioe);
+                if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, Exceptions.toMessageString(ioe), ioe);
                 }
                 return Optional.empty();
             }
@@ -182,8 +182,8 @@ class ClientFeederV3 {
             try {
                 message = getNextMessage(operationId.get(), requestInputStream, settings);
             } catch (Exception e) {
-                if (log.isLoggable(LogLevel.WARNING)) {
-                    log.log(LogLevel.WARNING, Exceptions.toMessageString(e));
+                if (log.isLoggable(Level.WARNING)) {
+                    log.log(Level.WARNING, Exceptions.toMessageString(e));
                 }
                 metric.add(MetricNames.PARSE_ERROR, 1, null);
 
@@ -246,7 +246,7 @@ class ClientFeederV3 {
             if (result.isAccepted()) {
                 outstandingOperations.incrementAndGet();
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.get().getOperationId());
+                log(Level.FINE, "Sent message successfully, document id: ", msg.get().getOperationId());
             } else if (!result.getError().isFatal()) {
                 repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
                                                                  result.getError().getMessage(),
@@ -297,7 +297,7 @@ class ClientFeederV3 {
             return null;
         }
         metric.add(MetricNames.NUM_OPERATIONS, 1, null /*metricContext*/);
-        log(LogLevel.DEBUG, "Successfully deserialized document id: ", message.getOperationId());
+        log(Level.FINE, "Successfully deserialized document id: ", message.getOperationId());
         return message;
     }
 
@@ -325,7 +325,7 @@ class ClientFeederV3 {
         }
     }
 
-    protected final void log(LogLevel level, Object... msgParts) {
+    protected final void log(Level level, Object... msgParts) {
         StringBuilder s;
 
         if (!log.isLoggable(level)) {

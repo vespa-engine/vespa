@@ -3,7 +3,7 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSession;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.EmptyReply;
@@ -78,7 +78,7 @@ public class SharedDestinationSession extends AbstractResource implements Messag
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared destination session.");
+        log.log(Level.FINE, "Destroying shared destination session.");
         session.destroy();
         mbusReference.close();
     }

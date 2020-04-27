@@ -7,6 +7,7 @@ import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,12 +21,10 @@ import java.util.function.Predicate;
  */
 public class NodeVersions {
 
-    public static final NodeVersions EMPTY = new NodeVersions(ImmutableMap.of());
-
     private final ImmutableMap<HostName, NodeVersion> nodeVersions;
 
-    public NodeVersions(ImmutableMap<HostName, NodeVersion> nodeVersions) {
-        this.nodeVersions = Objects.requireNonNull(nodeVersions);
+    public NodeVersions(Map<HostName, NodeVersion> nodeVersions) {
+        this.nodeVersions = ImmutableMap.copyOf(Objects.requireNonNull(nodeVersions));
     }
 
     public Map<HostName, NodeVersion> asMap() {
@@ -48,37 +47,12 @@ public class NodeVersions {
 
     /** Returns a copy of this containing only node versions of given version */
     public NodeVersions matching(Version version) {
-        return filter(nodeVersion -> nodeVersion.currentVersion().equals(version));
+        return copyOf(nodeVersions.values(), nodeVersion -> nodeVersion.currentVersion().equals(version));
     }
 
     /** Returns number of node versions in this */
     public int size() {
         return nodeVersions.size();
-    }
-
-    /** Returns a copy of this containing only the given node versions */
-    public NodeVersions with(List<NodeVersion> nodeVersions) {
-        var newNodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
-        for (var nodeVersion : nodeVersions) {
-            var existing = this.nodeVersions.get(nodeVersion.hostname());
-            if (existing != null) {
-                newNodeVersions.put(nodeVersion.hostname(), existing.withCurrentVersion(nodeVersion.currentVersion(),
-                                                                                        nodeVersion.changedAt())
-                                                                    .withWantedVersion(nodeVersion.wantedVersion()));
-            } else {
-                newNodeVersions.put(nodeVersion.hostname(), nodeVersion);
-            }
-        }
-        return new NodeVersions(newNodeVersions.build());
-    }
-
-    private NodeVersions filter(Predicate<NodeVersion> predicate) {
-        var newNodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
-        for (var kv : nodeVersions.entrySet()) {
-            if (!predicate.test(kv.getValue())) continue;
-            newNodeVersions.put(kv.getKey(), kv.getValue());
-        }
-        return new NodeVersions(newNodeVersions.build());
     }
 
     @Override
@@ -92,6 +66,23 @@ public class NodeVersions {
     @Override
     public int hashCode() {
         return Objects.hash(nodeVersions);
+    }
+
+    public static NodeVersions copyOf(List<NodeVersion> nodeVersions) {
+        return copyOf(nodeVersions, (ignored) -> true);
+    }
+
+    public static NodeVersions copyOf(Map<HostName, NodeVersion> nodeVersions) {
+        return new NodeVersions(nodeVersions);
+    }
+
+    private static NodeVersions copyOf(Collection<NodeVersion> nodeVersions, Predicate<NodeVersion> predicate) {
+        var newNodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
+        for (var nodeVersion : nodeVersions) {
+            if (!predicate.test(nodeVersion)) continue;
+            newNodeVersions.put(nodeVersion.hostname(), nodeVersion);
+        }
+        return new NodeVersions(newNodeVersions.build());
     }
 
 }

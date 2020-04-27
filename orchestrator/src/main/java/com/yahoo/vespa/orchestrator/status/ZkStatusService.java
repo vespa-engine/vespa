@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -93,7 +93,7 @@ public class ZkStatusService implements StatusService {
 
             return resultSet;
         } catch (Exception e) {
-            log.log(LogLevel.DEBUG, "Something went wrong while listing out applications in suspend.", e);
+            log.log(Level.FINE, "Something went wrong while listing out applications in suspend.", e);
             throw new RuntimeException(e);
         }
     }
@@ -195,7 +195,7 @@ public class ZkStatusService implements StatusService {
                 lock.close();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         "Failed to close application lock for " +
                                 ZkStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);
@@ -277,7 +277,7 @@ public class ZkStatusService implements StatusService {
         try {
             lock = lockApplication(context, reference);
         } catch (RuntimeException e) {
-            log.log(LogLevel.ERROR, "Failed to get Orchestrator lock on when " + reference +
+            log.log(Level.SEVERE, "Failed to get Orchestrator lock on when " + reference +
                     eventDescription + ": " + e.getMessage());
             return;
         }
@@ -285,7 +285,7 @@ public class ZkStatusService implements StatusService {
         try (lock) {
             runnable.run();
         } catch (RuntimeException e) {
-            log.log(LogLevel.ERROR, "Failed to clean up after " + reference + eventDescription +
+            log.log(Level.SEVERE, "Failed to clean up after " + reference + eventDescription +
                     ": " + e.getMessage());
         }
     }

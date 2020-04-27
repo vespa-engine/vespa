@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -159,7 +161,7 @@ public class InPlaceResizeProvisionTest {
     /** In this scenario there should be no resizing */
     @Test
     public void increase_size_decrease_resources() {
-        addParentHosts(12, largeResources.with(fast));
+        addParentHosts(14, largeResources.with(fast));
 
         NodeResources resources = new NodeResources(4, 8, 16, 1);
         NodeResources halvedResources = new NodeResources(2, 4, 8, 1);
@@ -175,6 +177,25 @@ public class InPlaceResizeProvisionTest {
         // Redeploying the same capacity should also not lead to any resizing
         new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
         assertSizeAndResources(listCluster(container1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+
+        // Failing one of the new nodes should cause another new node to be allocated rather than
+        // unretiring one of the existing nodes, to avoid resizing during unretiring
+        Node nodeToFail = listCluster(container1).not().retired().asList().get(0);
+        tester.nodeRepository().fail(nodeToFail.hostname(), Agent.system, "testing");
+        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
+        assertFalse(listCluster(container1).stream().anyMatch(n -> n.equals(nodeToFail)));
+        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+
+        // ... same with setting a node to want to retire
+        System.out.println("marking wantToRetire");
+        Node nodeToWantoToRetire = listCluster(container1).not().retired().asList().get(0);
+        tester.nodeRepository().write(nodeToWantoToRetire.with(nodeToWantoToRetire.status().withWantToRetire(true)),
+                                      tester.nodeRepository().lock(nodeToWantoToRetire));
+        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
+        assertTrue(listCluster(container1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));
+        assertEquals(5, listCluster(container1).retired().size());
         assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
     }
 

@@ -6,7 +6,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreestore.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -37,7 +37,7 @@ struct Fixture
     MyTreeIterator _writeItr;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
     vespalib::ThreadStackExecutor _readers; // multiple reader threads
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     uint32_t _keyLimit;
     std::atomic<long> _readSeed;
     std::atomic<long> _doneWriteWork;
@@ -135,7 +135,7 @@ Fixture::remove(uint32_t key)
 void
 Fixture::readWork(uint32_t cnt)
 {
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
     uint32_t i;
     for (i = 0; i < cnt && _stopRead.load() == 0; ++i) {
@@ -159,7 +159,7 @@ Fixture::readWork()
 void
 Fixture::writeWork(uint32_t cnt)
 {
-    search::Rand48 &rnd(_rnd);
+    vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
         uint32_t key = rnd.lrand48() % _keyLimit;
         if ((rnd.lrand48() & 1) == 0) {

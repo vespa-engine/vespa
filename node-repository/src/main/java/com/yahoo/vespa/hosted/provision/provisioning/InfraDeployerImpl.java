@@ -11,7 +11,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -57,7 +57,7 @@ public class InfraDeployerImpl implements InfraDeployer {
             try {
                 deployment.activate();
             } catch (RuntimeException e) {
-                logger.log(LogLevel.INFO, "Failed to activate " + application, e);
+                logger.log(Level.INFO, "Failed to activate " + application, e);
                 if (propagateException) {
                     throw e;
                 }
@@ -101,7 +101,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                 prepare();
 
                 if (hostSpecs.isEmpty()) {
-                    logger.log(LogLevel.DEBUG, "No nodes to provision for " + application.getCapacity().type() + ", removing application");
+                    logger.log(Level.FINE, "No nodes to provision for " + application.getCapacity().type() + ", removing application");
                     removeApplication(application.getApplicationId());
                 } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
@@ -112,7 +112,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                             application.getApplicationId(),
                             hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
 
-                    logger.log(LogLevel.DEBUG, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
+                    logger.log(Level.FINE, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }
             }
         }

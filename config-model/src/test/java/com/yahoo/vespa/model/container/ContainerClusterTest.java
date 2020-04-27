@@ -9,9 +9,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -164,6 +166,8 @@ public class ContainerClusterTest {
         cluster.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(10, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
+        assertEquals(0, threadpoolConfig.softStartSeconds(), 0);
     }
 
     @Test
@@ -213,7 +217,41 @@ public class ContainerClusterTest {
         cluster.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
         assertEquals(300.0, threadpoolConfig.softStartSeconds(), 0.0);
+    }
+
+    @Test
+    public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
+        DeployState state = new DeployState.Builder().properties(new TestProperties()
+                    .setThreadPoolSizeFactor(8.5)
+                    .setQueueSizeFactor(13.3))
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
+        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
+    }
+
+    @Test
+    public void requireThatPoolAndQueueCanBeControlledByPropertiesAndFlavor() {
+        FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder().name("my_flavor").minCpuCores(3);
+        NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)))
+                .setThreadPoolSizeFactor(13.3)
+                .setQueueSizeFactor(17.5);
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        nodeFlavorTuning.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(40, threadpoolConfig.maxthreads());
+        assertEquals(700, threadpoolConfig.queueSize());
+        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 
     @Test
@@ -226,6 +264,7 @@ public class ContainerClusterTest {
         cluster.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
         assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 

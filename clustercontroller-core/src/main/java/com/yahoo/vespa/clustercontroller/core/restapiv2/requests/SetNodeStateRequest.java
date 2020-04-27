@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -117,7 +117,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         NodeStateChangeChecker.Result result = cluster.calculateEffectOfNewState(
                 node, currentClusterState, condition, wantedState, newWantedState);
 
-        log.log(LogLevel.DEBUG, "node=" + node +
+        log.log(Level.FINE, "node=" + node +
                 " current-cluster-state=" + currentClusterState + // Includes version in output format
                 " condition=" + condition +
                 " wanted-state=" + wantedState +

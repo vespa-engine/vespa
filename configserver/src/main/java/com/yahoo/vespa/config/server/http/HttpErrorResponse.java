@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -33,7 +33,7 @@ public class HttpErrorResponse extends HttpResponse {
         root.setString("error-code", errorType);
         root.setString("message", msg);
         if (code != 200) {
-            log.log(LogLevel.INFO, "Returning response with response code " + code + ", error-code:" + errorType + ", message=" + msg);
+            log.log(Level.INFO, "Returning response with response code " + code + ", error-code:" + errorType + ", message=" + msg);
         }
     }
 

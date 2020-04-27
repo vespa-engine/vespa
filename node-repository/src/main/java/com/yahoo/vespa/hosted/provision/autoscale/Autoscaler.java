@@ -31,7 +31,6 @@ public class Autoscaler {
      - Scale group size
      - Consider taking spikes/variance into account
      - Measure observed regulation lag (startup+redistribution) and take it into account when deciding regulation observation window
-     - Test AutoscalingMaintainer
      - Scale by performance not just load+cost
      */
 
@@ -57,12 +56,31 @@ public class Autoscaler {
     }
 
     /**
-     * Autoscale a cluster
+     * Suggest a scaling of a cluster. This returns a better allocation (if found)
+     * without taking min and max limits into account.
      *
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
-    public Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
+    public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
+        return autoscale(cluster, clusterNodes, false)
+                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
+
+    }
+
+    /**
+     * Autoscale a cluster. This returns a better allocation (if found) inside the min and max limits.
+     *
+     * @param clusterNodes the list of all the active nodes in a cluster
+     * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
+     */
+    public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
+        if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
+        return autoscale(cluster, clusterNodes, true)
+                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
+    }
+
+    private Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes, boolean respectLimits) {
         if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
@@ -76,7 +94,8 @@ public class Autoscaler {
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
                                                                                   currentAllocation,
-                                                                                  cluster);
+                                                                                  cluster,
+                                                                                  respectLimits);
         if (bestAllocation.isEmpty()) return Optional.empty();
         if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
         return bestAllocation;
@@ -84,12 +103,14 @@ public class Autoscaler {
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
                                                                      AllocatableClusterResources currentAllocation,
-                                                                     Cluster cluster) {
+                                                                     Cluster cluster, boolean respectLimits) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster); i.hasNext(); ) {
+        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster, respectLimits);
+             i.hasNext(); ) {
             Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(i.next(),
                                                                                                 currentAllocation.clusterType(),
-                                                                                                cluster);
+                                                                                                cluster,
+                                                                                                respectLimits);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;
@@ -119,9 +140,10 @@ public class Autoscaler {
      */
     private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
                                                                          ClusterSpec.Type clusterType,
-                                                                         Cluster cluster) {
+                                                                         Cluster cluster,
+                                                                         boolean respectLimits) {
         NodeResources nodeResources = resources.nodeResources();
-        if ( ! cluster.minResources().equals(cluster.maxResources())) // enforce application limits unless suggest mode
+        if (respectLimits)
             nodeResources = cluster.capAtLimits(nodeResources);
         nodeResources = nodeResourceLimits.enlargeToLegal(nodeResources, clusterType); // enforce system limits
 

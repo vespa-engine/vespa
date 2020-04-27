@@ -6,7 +6,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -84,7 +84,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
             createLogserver(deployState.getDeployLogger(), admin, hosts);
         } else {
-            context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
+            context.getDeployLogger().log(Level.INFO, "No container host available to use for running logserver");
         }
     }
 

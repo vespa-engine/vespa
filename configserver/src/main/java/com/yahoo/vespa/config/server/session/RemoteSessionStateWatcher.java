@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -43,11 +43,11 @@ public class RemoteSessionStateWatcher {
     }
 
     private void sessionChanged(Session.Status status) {
-        log.log(LogLevel.DEBUG, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
+        log.log(Level.FINE, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
 
         // valid for NEW -> PREPARE transitions, not ACTIVATE -> PREPARE.
         if (status.equals(Session.Status.PREPARE)) {
-            log.log(LogLevel.DEBUG, session.logPre() + "Loading prepared session: " + session.getSessionId());
+            log.log(Level.FINE, session.logPre() + "Loading prepared session: " + session.getSessionId());
             session.loadPrepared();
         } else if (status.equals(Session.Status.ACTIVATE)) {
             session.makeActive(reloadHandler);
@@ -66,7 +66,7 @@ public class RemoteSessionStateWatcher {
         try {
             fileCache.close();
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception when closing watcher", e);
+            log.log(Level.WARNING, "Exception when closing watcher", e);
         }
     }
 
@@ -78,7 +78,7 @@ public class RemoteSessionStateWatcher {
                     sessionChanged(Session.Status.parse(Utf8.toString(node.getData())));
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
+                log.log(Level.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });

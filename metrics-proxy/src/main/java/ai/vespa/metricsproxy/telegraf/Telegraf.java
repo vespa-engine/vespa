@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.telegraf;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.system.execution.ProcessExecutor;
 import com.yahoo.system.execution.ProcessResult;
 import org.apache.velocity.VelocityContext;
@@ -76,7 +76,7 @@ public class Telegraf extends AbstractComponent {
         ProcessResult processResult = uncheck(() -> processExecutor.execute(command))
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
 
-        logger.log(LogLevel.DEBUG, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
+        logger.log(Level.FINE, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
                                                         processResult.exitCode,
                                                         processResult.stdOut,
                                                         processResult.stdErr));

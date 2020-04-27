@@ -49,7 +49,7 @@ public interface NodeRepository {
                               .collect(Collectors.toUnmodifiableList());
     }
 
-    /** List all nodes in zone owned by given application */
+    /** List all nodes in zone having given hostnames */
     default List<Node> list(ZoneId zone, List<HostName> hostnames) {
         return listNodes(zone, hostnames).nodes().stream()
                                          .map(NodeRepository::toNode)

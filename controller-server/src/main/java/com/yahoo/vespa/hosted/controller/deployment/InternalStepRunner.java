@@ -526,8 +526,8 @@ public class InternalStepRunner implements StepRunner {
 
     private Stream<String> nodeDetails(NodeWithServices node, boolean printAllServices) {
         return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()) + (node.node().suspendedSince().map(since -> " since " + since).orElse("")),
-                                       "--- platform " + node.node().wantedVersion() + (node.needsPlatformUpgrade()
-                                                                                        ? " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())
+                                       "--- platform " + wantedPlatform(node.node()) + (node.needsPlatformUpgrade()
+                                                                                        ? " <-- " + currentPlatform(node.node())
                                                                                         : "") +
                                        (node.needsOsUpgrade() && node.isAllowedDown()
                                         ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
@@ -546,6 +546,17 @@ public class InternalStepRunner implements StepRunner {
                                  .map(service -> "--- " + service.type() + " on port " + service.port() + (service.currentGeneration() == -1
                                                                                                            ? " has not started "
                                                                                                            : " has config generation " + service.currentGeneration() + ", wanted is " + node.wantedConfigGeneration())));
+    }
+
+
+    private String wantedPlatform(Node node) {
+        return node.wantedDockerImage().repository() + ":" + node.wantedVersion();
+    }
+
+    private String currentPlatform(Node node) {
+        String currentRepo = node.currentDockerImage().repository();
+        String wantedRepo = node.wantedDockerImage().repository();
+        return (currentRepo.equals(wantedRepo) ? "" : currentRepo + ":") + node.currentVersion();
     }
 
     private String humanize(Node.ServiceState state) {
@@ -941,8 +952,8 @@ public class InternalStepRunner implements StepRunner {
         Duration endpoint() { return Duration.ofMinutes(15); }
         Duration endpointCertificate() { return Duration.ofMinutes(20); }
         Duration tester() { return Duration.ofMinutes(30); }
-        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 20 : 60); }
-        Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 20 : 120); }
+        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 60); }
+        Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 120); }
         Duration testerCertificate() { return Duration.ofMinutes(300); }
 
     }

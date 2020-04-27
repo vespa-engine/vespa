@@ -11,7 +11,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.metrics.simple.Counter;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.prelude.query.CompositeItem;
@@ -51,8 +51,8 @@ public class InputCheckingSearcher extends Searcher {
         try {
             checkQuery(query);
         } catch (IllegalArgumentException e) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Rejected query \"" + query.toString() + "\" on cause of: " + e.getMessage());
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Rejected query \"" + query.toString() + "\" on cause of: " + e.getMessage());
             }
             return new Result(query, ErrorMessage.createIllegalQuery(e.getMessage()));
         }

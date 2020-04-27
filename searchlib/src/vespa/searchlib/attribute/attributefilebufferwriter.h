@@ -3,7 +3,7 @@
 #pragma once
 
 #include "iattributefilewriter.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 
 namespace search {
 

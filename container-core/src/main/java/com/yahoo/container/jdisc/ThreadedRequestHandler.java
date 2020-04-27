@@ -15,7 +15,7 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.net.URI;
 import java.time.Duration;
@@ -147,7 +147,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             currentFailureIntervalStartedMillis = 0L;
             numRejectedRequests = 0;
         }
-        log.log(LogLevel.WARNING, "Rejected " + numRejectedRequestsSnapshot + " requests on cause of no available worker threads.");
+        log.log(Level.WARNING, "Rejected " + numRejectedRequestsSnapshot + " requests on cause of no available worker threads.");
     }
 
     private void incrementRejectedRequests() {

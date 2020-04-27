@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -70,7 +70,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             }
         }
         catch (Exception e) {
-            logger.log(LogLevel.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
+            logger.log(Level.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
         }
         return Optional.empty();
     }

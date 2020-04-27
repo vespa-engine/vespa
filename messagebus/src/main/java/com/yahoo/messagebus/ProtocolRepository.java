@@ -2,7 +2,7 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 
@@ -78,20 +78,20 @@ public class ProtocolRepository {
             }
             Protocol protocol = getProtocol(protocolName);
             if (protocol == null) {
-                log.log(LogLevel.ERROR, "Protocol '" + protocolName + "' not supported.");
+                log.log(Level.SEVERE, "Protocol '" + protocolName + "' not supported.");
                 return null;
             }
             try {
                 ret = protocol.createPolicy(policyName, policyParam);
             } catch (RuntimeException e) {
-                log.log(LogLevel.ERROR, "Protcol '" + protocolName + "' threw an exception: " + e.getMessage(), e);
+                log.log(Level.SEVERE, "Protcol '" + protocolName + "' threw an exception: " + e.getMessage(), e);
                 if (ret != null) {
                     ret.destroy();
                 }
                 return null;
             }
             if (ret == null) {
-                log.log(LogLevel.ERROR, "Protocol '" + protocolName + "' failed to create routing policy '" + policyName +
+                log.log(Level.SEVERE, "Protocol '" + protocolName + "' failed to create routing policy '" + policyName +
                                         "' with parameter '" + policyParam + "'.");
                 return null;
             }

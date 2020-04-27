@@ -98,12 +98,6 @@ UpdateResult DownPersistence::update(const Bucket&, Timestamp,
                         errorResult.getErrorMessage());
 }
 
-Result
-DownPersistence::flush(const Bucket&, Context&)
-{
-    return errorResult;
-}
-
 GetResult
 DownPersistence::get(const Bucket&, const document::FieldSet&,
                      const DocumentId&, Context&) const

@@ -19,7 +19,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -227,7 +227,7 @@ void
 EnumeratedSaveTest::populate(IntegerAttribute &v, unsigned seed,
                              BasicType bt)
 {
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     IntegerAttribute::largeint_t mask(std::numeric_limits
                                       <IntegerAttribute::largeint_t>::max());
     switch (bt.type()) {
@@ -284,7 +284,7 @@ EnumeratedSaveTest::populate(FloatingPointAttribute &v, unsigned seed,
                              BasicType bt)
 {
     (void) bt;
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(seed);
     int weight = 1;
     for(size_t i(0), m(v.getNumDocs()); i < m; i++) {

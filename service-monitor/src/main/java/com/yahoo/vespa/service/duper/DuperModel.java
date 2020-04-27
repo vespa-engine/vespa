@@ -5,7 +5,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class DuperModel {
 
     void setComplete() {
         if (!isComplete) {
-            logger.log(LogLevel.DEBUG, "All applications have been activated: duper model is complete");
+            logger.log(Level.FINE, "All applications have been activated: duper model is complete");
             isComplete = true;
 
             listeners.forEach(DuperModelListener::bootstrapComplete);
@@ -95,7 +95,7 @@ public class DuperModel {
         } else {
             logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
         }
-        logger.log(LogLevel.DEBUG, logPrefix + id.toFullString());
+        logger.log(Level.FINE, logPrefix + id.toFullString());
 
         updateHostnameVsIdMaps(applicationInfo, id);
 
@@ -110,7 +110,7 @@ public class DuperModel {
 
         ApplicationInfo application = applicationsById.remove(applicationId);
         if (application != null) {
-            logger.log(LogLevel.DEBUG, "Removed application " + applicationId.toFullString());
+            logger.log(Level.FINE, "Removed application " + applicationId.toFullString());
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
     }
@@ -132,7 +132,7 @@ public class DuperModel {
                             // If an activation contains a host that is currently assigned to a
                             // different application we will patch up our data structures to remain
                             // internally consistent. But listeners may be fooled.
-                            logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
+                            logger.log(Level.WARNING, hostname + " has been reassigned from " +
                                     previousId.toFullString() + " to " + id.toFullString());
 
                             Set<HostName> previousHostnames = hostnamesById.get(previousId);

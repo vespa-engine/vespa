@@ -37,7 +37,6 @@ public:
     RemoveResult removeIfFound(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) override;
     Result removeEntry(const Bucket&, Timestamp, Context&) override;
     UpdateResult update(const Bucket&, Timestamp timestamp, const DocumentUpdateSP& update, Context&) override;
-    Result flush(const Bucket&, Context&) override;
     GetResult get(const Bucket&, const document::FieldSet& fieldSet, const DocumentId& id, Context&) const override;
 
     CreateIteratorResult createIterator(const Bucket&, const document::FieldSet& fieldSet,

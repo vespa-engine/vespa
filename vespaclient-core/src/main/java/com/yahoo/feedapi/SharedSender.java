@@ -2,7 +2,7 @@
 package com.yahoo.feedapi;
 
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
@@ -124,22 +124,22 @@ public class SharedSender implements ReplyHandler {
             synchronized (metrics) {
                 metrics.addReply(r);
             }
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + " count was " + owner.getPending().val());
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "Received reply for file " + owner.toString() + " count was " + owner.getPending().val());
             }
             if (owner.isAborted()) {
-                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which is aborted");
+                log.log(Level.FINE, "Received reply for file " + owner.toString() + " which is aborted");
                 owner.getPending().clear();
                 return;
             }
             if (owner.handleReply(r)) {
                 owner.getPending().dec();
             } else {
-                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which wants to abort");
+                log.log(Level.FINE, "Received reply for file " + owner.toString() + " which wants to abort");
                 owner.getPending().clear();
             }
         } else {
-            log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
+            log.log(Level.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
         }
     }
 

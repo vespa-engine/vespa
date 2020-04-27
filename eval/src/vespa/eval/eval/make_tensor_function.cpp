@@ -59,37 +59,37 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_reduce(const Node &, Aggr aggr, const std::vector<vespalib::string> &dimensions) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::reduce(a, aggr, dimensions, stash);
     }
 
     void make_map(const Node &, map_fun_t function) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::map(a, function, stash);
     }
 
     void make_join(const Node &, join_fun_t function) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::join(a, b, function, stash);
     }
 
     void make_merge(const Node &, join_fun_t function) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::merge(a, b, function, stash);
     }
 
     void make_concat(const Node &, const vespalib::string &dimension) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::concat(a, b, dimension, stash);
     }
 
@@ -156,17 +156,17 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_rename(const Node &, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::rename(a, from, to, stash);
     }
 
     void make_if(const Node &) {
         assert(stack.size() >= 3);
-        const auto &c = stack.back();
+        const auto &c = stack.back().get();
         stack.pop_back();
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::if_node(a, b, c, stash);
     }
 

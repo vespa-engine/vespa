@@ -12,7 +12,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -50,7 +50,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     public void run() {
         try {
             Acceptor acceptor = supervisor.listen(spec);
-            log.log(LogLevel.DEBUG, "Ready for requests on " + spec);
+            log.log(Level.FINE, "Ready for requests on " + spec);
             supervisor.transport().join();
             acceptor.shutdown().join();
         } catch (ListenFailedException e) {
@@ -247,13 +247,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void dispatchRpcRequest(Request request, Runnable handler) {
         request.detach();
-        log.log(LogLevel.SPAM, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
+        log.log(Level.FINEST, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
         rpcExecutor.execute(() -> {
             try {
-                log.log(LogLevel.SPAM, () -> String.format("Executing RPC request %s.", requestLogId(request)));
+                log.log(Level.FINEST, () -> String.format("Executing RPC request %s.", requestLogId(request)));
                 handler.run();
             } catch (Exception e) {
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         String.format("Exception thrown during execution of RPC request %s: %s", requestLogId(request), e.getMessage()), e);
             }
         });
@@ -270,21 +270,21 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     private void getConfigImpl(JRTServerConfigRequest request) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
-        log.log(LogLevel.DEBUG, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
+        log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
-            log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
+            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
             return;
         }
         try {
             RawConfig config = proxyServer.resolveConfig(request);
             if (config == null) {
-                log.log(LogLevel.SPAM, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
-                log.log(LogLevel.SPAM, "No new config for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -335,12 +335,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     @Override
     public void notifyTargetInvalid(Target target) {
-        log.log(LogLevel.DEBUG, () -> "Target invalid " + target);
+        log.log(Level.FINE, () -> "Target invalid " + target);
         for (Iterator<DelayedResponse> it = proxyServer.delayedResponses().responses().iterator(); it.hasNext(); ) {
             DelayedResponse delayed = it.next();
             JRTServerConfigRequest request = delayed.getRequest();
             if (request.getRequest().target().equals(target)) {
-                log.log(LogLevel.DEBUG, () -> "Removing " + request.getShortDescription());
+                log.log(Level.FINE, () -> "Removing " + request.getShortDescription());
                 it.remove();
             }
         }
@@ -351,9 +351,9 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     public void returnOkResponse(JRTServerConfigRequest request, RawConfig config) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnOkResponse()");
         request.addOkResponse(config.getPayload(), config.getGeneration(), config.isInternalRedeploy(), config.getConfigMd5());
-        log.log(LogLevel.DEBUG, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
+        log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
                 ",generation=" + config.getGeneration());
-        log.log(LogLevel.SPAM, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
+        log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
 
 
         // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse
@@ -361,7 +361,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         try {
             request.getRequest().returnRequest();
         } catch (IllegalStateException e) {
-            log.log(LogLevel.DEBUG, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
+            log.log(Level.FINE, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
         }
     }
 

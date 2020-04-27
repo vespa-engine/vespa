@@ -5,7 +5,7 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.vespa.config.RawConfig;
@@ -48,7 +48,7 @@ public class ProxyServer implements Runnable {
 
     ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.configSource = source;
-        log.log(LogLevel.DEBUG, "Using config source '" + source);
+        log.log(Level.FINE, "Using config source '" + source);
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
         this.configClient = (configClient == null) ? createRpcClient(rpcServer, source, memoryCache) : configClient;
@@ -99,7 +99,7 @@ public class ProxyServer implements Runnable {
             default:
                 throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
-        log.log(LogLevel.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
+        log.log(Level.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
     }
 
     private ConfigProxyRpcServer createRpcServer(Spec spec) {

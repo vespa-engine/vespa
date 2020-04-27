@@ -17,7 +17,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
 import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -142,9 +142,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private int inferSessionTraceLevel(Query query) {
         int implicitLevel = traceLevelOverride;
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             implicitLevel = 9;
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             implicitLevel = 7;
         }
         return Math.max(query.getTraceLevel(), implicitLevel);
@@ -330,20 +330,20 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         VisitorSession session = visitorSessionFactory.createVisitorSession(params);
         try {
             if ( !session.waitUntilDone(query.getTimeout())) {
-                log.log(LogLevel.DEBUG, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
+                log.log(Level.FINE, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
                 session.abort();
                 throw new TimeoutException("Query timed out in " + VdsStreamingSearcher.class.getName());
             }
         } finally {
             session.destroy();
             sessionTrace = session.getTrace();
-            log.log(LogLevel.DEBUG, () -> sessionTrace.toString());
+            log.log(Level.FINE, () -> sessionTrace.toString());
             query.trace(sessionTrace.toString(), false, 9);
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
             }
         } else {
             throw new IllegalArgumentException("Query failed: " // TODO: Is it necessary to use a runtime exception?
@@ -384,8 +384,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onSearchResult(SearchResult sr) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Got SearchResult for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Got SearchResult for query with selection " + params.getDocumentSelection());
         }
         handleSearchResult(sr);
     }
@@ -393,8 +393,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private void handleSearchResult(SearchResult sr) {
         final int hitCountTotal = sr.getTotalHitCount();
         final int hitCount = sr.getHitCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
         }
 
         List<SearchResult.Hit> newHits = new ArrayList<>(hitCount);
@@ -412,15 +412,15 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private void mergeGroupingMaps(Map<Integer, byte []> newGroupingMap) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
         }
         for(Integer key : newGroupingMap.keySet()) {
             byte [] value = newGroupingMap.get(key);
 
             Grouping newGrouping = new Grouping();
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Received group with key " + key + " and size " + value.length);
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "Received group with key " + key + " and size " + value.length);
             }
             BufferSerializer buf = new BufferSerializer( new GrowableByteBuffer(ByteBuffer.wrap(value)) );
             newGrouping.deserialize(buf);
@@ -440,16 +440,16 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onDocumentSummary(DocumentSummary ds) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Got DocumentSummary for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Got DocumentSummary for query with selection " + params.getDocumentSelection());
         }
         handleSummary(ds);
     }
 
     private void handleSummary(DocumentSummary ds) {
         int summaryCount = ds.getSummaryCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
         }
         synchronized (summaryMap) {
             for (int i = 0; i < summaryCount; i++) {

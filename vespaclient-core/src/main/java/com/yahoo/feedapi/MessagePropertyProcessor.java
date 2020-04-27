@@ -10,7 +10,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.vespaclient.config.FeederConfig;
@@ -152,8 +152,8 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         defaultAbortOnDocumentError = feederOptions.abortOnDocumentError();
         defaultAbortOnSendError = feederOptions.abortOnSendError();
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Received new config (" +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Received new config (" +
                                     "route: " + (defaultRoute != null ? defaultRoute : "<none>") +
                                     ", timeout: " + defaultTimeoutMillis + " ms, retry enabled: " + retryEnabled +
                                     ", docproc chain: " + (defaultDocprocChain != null ? defaultDocprocChain : "<none>") +

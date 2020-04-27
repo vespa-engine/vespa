@@ -31,7 +31,7 @@
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/vespalib/util/stringfmt.h>
 

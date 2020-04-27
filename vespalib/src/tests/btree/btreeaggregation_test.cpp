@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("btreeaggregation_test");
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -17,6 +15,7 @@ LOG_SETUP("btreeaggregation_test");
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
 #include <vespa/vespalib/test/btree/btree_printer.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rand48.h>
 
 #include <iostream>
@@ -24,11 +23,13 @@ LOG_SETUP("btreeaggregation_test");
 #include <set>
 #include <string>
 
+#include <vespa/log/log.h>
+LOG_SETUP("btreeaggregation_test");
+
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 namespace {
 
@@ -99,6 +100,11 @@ typedef std::less<int> MyComp;
 #define UNWRAP(key) (key)
 #endif
 
+struct KeyMinMaxAggrCalc : MinMaxAggrCalc {
+    constexpr static bool aggregate_over_values() { return false; }
+    constexpr static int32_t getVal(const MyKey& key) { return key._val; }
+};
+
 typedef BTree<MyKey, int32_t,
               btree::MinMaxAggregated,
               MyComp, MyTraits,
@@ -130,6 +136,7 @@ struct LeafPairLess {
     }
 };
 
+using MyKeyAggrTree = BTree<MyKey, int32_t, btree::MinMaxAggregated, MyComp, MyTraits, KeyMinMaxAggrCalc>;
 
 class MockTree
 {
@@ -311,10 +318,13 @@ private:
                  size_t numEntries);
 
     void requireThatNodeInsertWorks();
+    void keys_are_aggregated_correctly_on_node_insertions();
     void requireThatNodeSplitInsertWorks();
+    void keys_are_aggregated_correctly_when_node_split_on_insert();
     void requireThatTreeInsertWorks();
     void requireThatNodeStealWorks();
     void requireThatNodeRemoveWorks();
+    void keys_are_aggregated_correctly_on_node_removal();
     void requireThatWeCanInsertAndRemoveFromTree();
     void requireThatSortedTreeInsertWorks();
     void requireThatCornerCaseTreeFindWorks();
@@ -322,6 +332,7 @@ private:
     void requireThatTreeIteratorAssignWorks();
     void requireThatUpdateOfKeyWorks();
     void requireThatUpdateOfDataWorks();
+    void requireThatFrozenViewProvidesAggregatedValues();
 
     template <typename TreeStore>
     void
@@ -409,6 +420,17 @@ Test::requireThatNodeInsertWorks()
     EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104[min=101,max=104]}}", t));
 }
 
+void Test::keys_are_aggregated_correctly_on_node_insertions() {
+    MyKeyAggrTree t;
+    t.insert(20, 102);
+    EXPECT_TRUE(assertTree("{{20:102[min=20,max=20]}}", t));
+    t.insert(10, 101);
+    EXPECT_TRUE(assertTree("{{10:101,20:102[min=10,max=20]}}", t));
+    t.insert(30, 103);
+    t.insert(40, 104);
+    EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104[min=10,max=40]}}", t));
+}
+
 template <typename Tree>
 void
 populateTree(Tree &t, uint32_t count, uint32_t delta)
@@ -422,8 +444,9 @@ populateTree(Tree &t, uint32_t count, uint32_t delta)
     }
 }
 
+template <typename Tree>
 void
-populateLeafNode(MyTree &t)
+populateLeafNode(Tree &t)
 {
     populateTree(t, 4, 2);
 }
@@ -454,6 +477,33 @@ Test::requireThatNodeSplitInsertWorks()
         EXPECT_TRUE(assertTree("{{5,8[min=101,max=108]}} -> "
                                "{{1:101,3:103,5:105[min=101,max=105]},"
                                "{7:107,8:108[min=107,max=108]}}", t));
+    }
+}
+
+void Test::keys_are_aggregated_correctly_when_node_split_on_insert() {
+    { // new entry in current node
+        MyKeyAggrTree t;
+        populateLeafNode(t);
+        t.insert(4, 104);
+        EXPECT_TRUE(assertTree("{{4,7[min=1,max=7]}} -> "
+                               "{{1:101,3:103,4:104[min=1,max=4]},"
+                               "{5:105,7:107[min=5,max=7]}}", t));
+    }
+    { // new entry in split node
+        MyKeyAggrTree t;
+        populateLeafNode(t);
+        t.insert(6, 106);
+        EXPECT_TRUE(assertTree("{{5,7[min=1,max=7]}} -> "
+                               "{{1:101,3:103,5:105[min=1,max=5]},"
+                               "{6:106,7:107[min=6,max=7]}}", t));
+    }
+    { // new entry at end
+        MyKeyAggrTree t;
+        populateLeafNode(t);
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{5,8[min=1,max=8]}} -> "
+                               "{{1:101,3:103,5:105[min=1,max=5]},"
+                               "{7:107,8:108[min=7,max=8]}}", t));
     }
 }
 
@@ -645,11 +695,22 @@ Test::requireThatNodeRemoveWorks()
     EXPECT_TRUE(assertTree("{{5:105[min=105,max=105]}}", t));
 }
 
+void Test::keys_are_aggregated_correctly_on_node_removal() {
+    MyKeyAggrTree t;
+    populateLeafNode(t);
+    t.remove(3);
+    EXPECT_TRUE(assertTree("{{1:101,5:105,7:107[min=1,max=7]}}", t));
+    t.remove(1);
+    EXPECT_TRUE(assertTree("{{5:105,7:107[min=5,max=7]}}", t));
+    t.remove(7);
+    EXPECT_TRUE(assertTree("{{5:105[min=5,max=5]}}", t));
+}
+
 void
 generateData(std::vector<LeafPair> & data, size_t numEntries)
 {
     data.reserve(numEntries);
-    Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(10);
     for (size_t i = 0; i < numEntries; ++i) {
         int num = rnd.lrand48() % 10000000;
@@ -960,10 +1021,8 @@ struct UpdKeyComp {
 void
 Test::requireThatUpdateOfKeyWorks()
 {
-    typedef BTree<int, BTreeNoLeafData,
-        btree::NoAggregated,
-        UpdKeyComp &> UpdKeyTree;
-    typedef UpdKeyTree::Iterator                       UpdKeyTreeIterator;
+    using UpdKeyTree = BTree<int, BTreeNoLeafData, btree::NoAggregated, UpdKeyComp &>;
+    using UpdKeyTreeIterator = UpdKeyTree::Iterator;
     GenerationHandler g;
     UpdKeyTree t;
     UpdKeyComp cmp1(0);
@@ -1127,6 +1186,24 @@ Test::requireThatSmallNodesWorks()
     s.trimHoldLists(g.getFirstUsedGeneration());
 }
 
+void
+Test::requireThatFrozenViewProvidesAggregatedValues()
+{
+    MyTree t;
+    t.insert(20, 102);
+    t.insert(10, 101);
+    t.insert(30, 103);
+    t.insert(40, 104);
+    auto old_view = t.getFrozenView();
+    t.getAllocator().freeze();
+    auto new_view = t.getFrozenView();
+    auto new_aggregated = new_view.getAggregated();
+    EXPECT_EQUAL(new_aggregated.getMin(), 101);
+    EXPECT_EQUAL(new_aggregated.getMax(), 104);
+    auto old_aggregated = old_view.getAggregated();
+    EXPECT_EQUAL(old_aggregated.getMin(), std::numeric_limits<int32_t>::max());
+    EXPECT_EQUAL(old_aggregated.getMax(), std::numeric_limits<int32_t>::min());
+}
 
 int
 Test::Main()
@@ -1134,10 +1211,13 @@ Test::Main()
     TEST_INIT("btreeaggregation_test");
 
     requireThatNodeInsertWorks();
+    keys_are_aggregated_correctly_on_node_insertions();
     requireThatNodeSplitInsertWorks();
+    keys_are_aggregated_correctly_when_node_split_on_insert();
     requireThatTreeInsertWorks();
     requireThatNodeStealWorks();
     requireThatNodeRemoveWorks();
+    keys_are_aggregated_correctly_on_node_removal();
     requireThatWeCanInsertAndRemoveFromTree();
     requireThatSortedTreeInsertWorks();
     requireThatCornerCaseTreeFindWorks();
@@ -1147,11 +1227,11 @@ Test::Main()
     requireThatUpdateOfDataWorks();
     TEST_DO(requireThatSmallNodesWorks<MyTreeStore>());
     TEST_DO(requireThatSmallNodesWorks<MyTreeForceApplyStore>());
+    TEST_DO(requireThatFrozenViewProvidesAggregatedValues());
 
     TEST_DONE();
 }
 
-}
 }
 
 TEST_APPHOOK(search::btree::Test);

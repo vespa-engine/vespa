@@ -7,7 +7,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
@@ -726,7 +726,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (includeQuery)
             message += ": [" + queryTreeText() + "]";
 
-        log.log(LogLevel.DEBUG,message);
+        log.log(Level.FINE,message);
 
         // Pass 0 as traceLevel as the trace level check is already done above,
         // and it is not propagated to trace until execution has started

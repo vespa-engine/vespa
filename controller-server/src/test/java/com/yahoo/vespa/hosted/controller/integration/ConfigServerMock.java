@@ -100,23 +100,23 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void provision(ZoneId zone, ApplicationId application) {
         Node parent = nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream().findAny()
                                       .orElseThrow(() -> new IllegalStateException("No parent hosts in " + zone));
-        nodeRepository().putByHostname(zone, new Node.Builder().hostname(hostFor(application, zone))
-                                                               .state(Node.State.reserved)
-                                                               .type(NodeType.tenant)
-                                                               .owner(application)
-                                                               .parentHostname(parent.hostname())
-                                                               .currentVersion(initialVersion)
-                                                               .wantedVersion(initialVersion)
-                                                               .currentDockerImage(initialDockerImage)
-                                                               .wantedDockerImage(initialDockerImage)
-                                                               .currentOsVersion(Version.emptyVersion)
-                                                               .wantedOsVersion(Version.emptyVersion)
-                                                               .resources(new NodeResources(2, 8, 50, 1, slow, remote))
-                                                               .serviceState(Node.ServiceState.unorchestrated)
-                                                               .flavor("d-2-8-50")
-                                                               .clusterId("cluster")
-                                                               .clusterType(Node.ClusterType.container)
-                                                               .build());
+        nodeRepository().putNodes(zone, new Node.Builder().hostname(hostFor(application, zone))
+                                                          .state(Node.State.reserved)
+                                                          .type(NodeType.tenant)
+                                                          .owner(application)
+                                                          .parentHostname(parent.hostname())
+                                                          .currentVersion(initialVersion)
+                                                          .wantedVersion(initialVersion)
+                                                          .currentDockerImage(initialDockerImage)
+                                                          .wantedDockerImage(initialDockerImage)
+                                                          .currentOsVersion(Version.emptyVersion)
+                                                          .wantedOsVersion(Version.emptyVersion)
+                                                          .resources(new NodeResources(2, 8, 50, 1, slow, remote))
+                                                          .serviceState(Node.ServiceState.unorchestrated)
+                                                          .flavor("d-2-8-50")
+                                                          .clusterId("cluster")
+                                                          .clusterType(Node.ClusterType.container)
+                                                          .build());
     }
 
     public HostName hostFor(ApplicationId application, ZoneId zone) {
@@ -146,7 +146,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                     .currentOsVersion(Version.emptyVersion).wantedOsVersion(Version.emptyVersion)
                                                     .build())
                                             .collect(Collectors.toList());
-                nodeRepository().putByHostname(zone, nodes);
+                nodeRepository().putNodes(zone, nodes);
                 convergeServices(application.id(), zone);
             }
         }
@@ -178,36 +178,34 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     /** Set version for an application in a given zone */
-    public void setVersion(ApplicationId application, ZoneId zone, Version version) {
-        setVersion(application, zone, version, -1, false);
+    public void setVersion(Version version, ApplicationId application, ZoneId zone) {
+        setVersion(zone, nodeRepository.list(zone, application), version, false);
     }
 
     /** Set version for nodeCount number of nodes in application in a given zone */
-    public void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
-        setVersion(application, zone, version, nodeCount, false);
+    public void setVersion(Version version, List<Node> nodes, ZoneId zone) {
+        setVersion(zone, nodes, version, false);
     }
 
     /** Set OS version for an application in a given zone */
-    public void setOsVersion(ApplicationId application, ZoneId zone, Version version) {
-        setOsVersion(application, zone, version, -1);
+    public void setOsVersion(Version version, ApplicationId application, ZoneId zone) {
+        setVersion(zone, nodeRepository.list(zone, application), version, true);
     }
 
     /** Set OS version for an application in a given zone */
-    public void setOsVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
-        setVersion(application, zone, version, nodeCount, true);
+    public void setOsVersion(Version version, List<Node> nodes, ZoneId zone) {
+        setVersion(zone, nodes, version, true);
     }
 
-    private void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount, boolean osVersion) {
-        int n = 0;
-        for (Node node : nodeRepository().list(zone, application)) {
+    private void setVersion(ZoneId zone, List<Node> nodes, Version version, boolean osVersion) {
+        for (var node : nodes) {
             Node newNode;
             if (osVersion) {
                 newNode = new Node.Builder(node).currentOsVersion(version).wantedOsVersion(version).build();
             } else {
                 newNode = new Node.Builder(node).currentVersion(version).wantedVersion(version).build();
             }
-            nodeRepository().putByHostname(zone, newNode);
-            if (++n == nodeCount) break;
+            nodeRepository().putNodes(zone, newNode);
         }
     }
 
@@ -355,7 +353,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             application.activate();
             List<Node> nodes = nodeRepository.list(id.zoneId(), id.applicationId());
             for (Node node : nodes) {
-                nodeRepository.putByHostname(id.zoneId(), new Node.Builder(node)
+                nodeRepository.putNodes(id.zoneId(), new Node.Builder(node)
                         .state(Node.State.active)
                         .wantedVersion(application.version().get())
                         .build());
@@ -397,8 +395,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public void deactivate(DeploymentId deployment) throws NotFoundException {
         ApplicationId applicationId = deployment.applicationId();
-        nodeRepository().removeByHostname(deployment.zoneId(),
-                                          nodeRepository().list(deployment.zoneId(), applicationId));
+        nodeRepository().removeNodes(deployment.zoneId(),
+                                     nodeRepository().list(deployment.zoneId(), applicationId));
         if ( ! applications.containsKey(deployment))
             throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
         applications.remove(deployment);

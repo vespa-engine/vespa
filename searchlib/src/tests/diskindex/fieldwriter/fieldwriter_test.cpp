@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
@@ -99,7 +99,7 @@ private:
     FakeWordSet _wordSet;
     FakeWordSet _wordSet2;
 public:
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
 
 private:
     void Usage();

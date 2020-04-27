@@ -6,7 +6,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -202,8 +202,8 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             found = parent.cascadeConfig(builder);
 
         boolean foundHere = builder.dispatchGetConfig(this);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "cascadeconfig in " + this + ", getting config " +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "cascadeconfig in " + this + ", getting config " +
                     builder.getClass().getDeclaringClass().getName() + " for config id '" + configId + "' found here=" + foundHere);
         }
         found = found || foundHere;
@@ -217,14 +217,14 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             didApply = parent.addUserConfig(builder);
         }
 
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "User configs is: " + userConfigs.toString());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "User configs is: " + userConfigs.toString());
         }
         // TODO: What do we do with md5. Currently ignored for user configs?
         ConfigDefinitionKey key = new ConfigDefinitionKey(builder.getDefName(), builder.getDefNamespace());
         if (userConfigs.get(key) != null) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Apply in " + configId);
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "Apply in " + configId);
             }
             applyUserConfig(builder, userConfigs.get(key));
             didApply = true;

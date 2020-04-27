@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.handlers.LogHandler;
 
@@ -117,8 +117,8 @@ public class LogDispatcher implements LogHandler {
         }
 
         for (LogHandler h : handlers) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Flushing " + h.toString());
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Flushing " + h.toString());
             }
             h.flush();
         }
@@ -138,7 +138,7 @@ public class LogDispatcher implements LogHandler {
         }
         handlers.clear();
 
-        log.log(LogLevel.DEBUG, "Logdispatcher shut down.  Handled " + messageCount + " messages");
+        log.log(Level.FINE, "Logdispatcher shut down.  Handled " + messageCount + " messages");
     }
 
     /**

@@ -12,7 +12,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
@@ -116,11 +116,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             return clientFeederV3.handleRequest(request);
         } catch (UnknownClientException uce) {
             String msg = Exceptions.toMessageString(uce);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST, msg);
         } catch (Exception e) {
             String msg = "Could not initialize document parsing: " + Exceptions.toMessageString(e);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.INTERNAL_SERVER_ERROR, msg);
         }
     }

@@ -59,6 +59,21 @@ TensorReader::is_present() {
     return true;
 }
 
+bool
+can_use_index_save_file(const search::attribute::Config &config, const search::attribute::AttributeHeader &header)
+{
+    if (!config.hnsw_index_params().has_value() || !header.get_hnsw_index_params().has_value()) {
+        return false;
+    }
+    const auto &config_params = config.hnsw_index_params().value();
+    const auto &header_params = header.get_hnsw_index_params().value();
+    if ((config_params.max_links_per_node() != header_params.max_links_per_node()) ||
+        (config_params.distance_metric() != header_params.distance_metric())) {
+        return false;
+    }
+    return true;
+}
+
 }
 
 void
@@ -152,6 +167,7 @@ DenseTensorAttribute::onLoad()
         return false;
     }
     bool has_index_file = LoadUtils::file_exists(*this, DenseTensorAttributeSaver::index_file_suffix());
+    bool use_index_file = has_index_file && _index && can_use_index_save_file(getConfig(), search::attribute::AttributeHeader::extractTags(tensorReader.getDatHeader()));
 
     setCreateSerialNum(tensorReader.getCreateSerialNum());
     assert(tensorReader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
@@ -165,7 +181,7 @@ DenseTensorAttribute::onLoad()
             auto raw = _denseTensorStore.allocRawBuffer();
             tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
-            if (_index && !has_index_file) {
+            if (_index && !use_index_file) {
                 // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
                 setCommittedDocIdLimit(lid + 1);
                 _index->add_document(lid);
@@ -176,7 +192,7 @@ DenseTensorAttribute::onLoad()
     }
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
-    if (_index && has_index_file) {
+    if (_index && use_index_file) {
         auto buffer = LoadUtils::loadFile(*this, DenseTensorAttributeSaver::index_file_suffix());
         if (!_index->load(*buffer)) {
             return false;

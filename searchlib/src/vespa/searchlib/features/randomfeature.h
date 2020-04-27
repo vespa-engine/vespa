@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 
 namespace search::features {
 
@@ -12,8 +12,8 @@ namespace search::features {
  **/
 class RandomExecutor : public search::fef::FeatureExecutor {
 private:
-    Rand48   _rnd;       // seeded once per query
-    Rand48   _matchRnd;  // seeded once per match
+    vespalib::Rand48   _rnd;       // seeded once per query
+    vespalib::Rand48   _matchRnd;  // seeded once per match
     uint64_t _matchSeed;
 
 public:

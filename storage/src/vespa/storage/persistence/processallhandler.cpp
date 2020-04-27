@@ -83,9 +83,9 @@ MessageTracker::UP
 ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
                                         spi::Context& context)
 {
-    MessageTracker::UP tracker(new MessageTracker(
+    auto tracker = std::make_unique<MessageTracker>(
                                        _env._metrics.removeLocation[cmd.getLoadType()],
-                                       _env._component.getClock()));
+                                       _env._component.getClock());
 
     LOG(debug, "RemoveLocation(%s): using selection '%s'",
         cmd.getBucketId().toString().c_str(),
@@ -99,13 +99,8 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
                                 processor,
                                 spi::NEWEST_DOCUMENT_ONLY,
                                 context);
-    spi::Result result = _spi.flush(bucket, context);
-    uint32_t code = _env.convertErrorCode(result);
-    if (code == 0) {
-        tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, processor._n_removed));
-    } else {
-        tracker->fail(code, result.getErrorMessage());
-    }
+
+    tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, processor._n_removed));
 
     return tracker;
 }
@@ -114,9 +109,9 @@ MessageTracker::UP
 ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd,
                                     spi::Context& context)
 {
-    MessageTracker::UP tracker(new MessageTracker(
+    auto tracker = std::make_unique<MessageTracker>(
                                        _env._metrics.statBucket[cmd.getLoadType()],
-                                       _env._component.getClock()));
+                                       _env._component.getClock());
     std::ostringstream ost;
 
     ost << "Persistence bucket " << cmd.getBucketId()

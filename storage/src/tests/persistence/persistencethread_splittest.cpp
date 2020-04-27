@@ -213,7 +213,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     cmd.setMinByteSize(maxSize);
     cmd.setMinDocCount(maxCount);
     cmd.setSourceIndex(0);
-    MessageTracker::UP result(thread->handleSplitBucket(cmd));
+    MessageTracker::UP result(thread->handleSplitBucket(cmd, context));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {

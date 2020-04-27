@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
@@ -225,9 +225,9 @@ public class GroupingExecutor extends Searcher {
             if (passList.isEmpty()) {
                 throw new RuntimeException("No grouping request for pass " + pass + ", bug!");
             }
-            if (log.isLoggable(LogLevel.DEBUG)) {
+            if (log.isLoggable(Level.FINE)) {
                 for (Grouping grouping : passList) {
-                    log.log(LogLevel.DEBUG, "Pass(" + pass + "), Grouping(" + grouping.getId() + "): " + grouping);
+                    log.log(Level.FINE, "Pass(" + pass + "), Grouping(" + grouping.getId() + "): " + grouping);
                 }
             }
             Item passRoot;
@@ -263,9 +263,9 @@ public class GroupingExecutor extends Searcher {
                 ret = passResult;
             }
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             for (Grouping grouping : groupingMap.values()) {
-                log.log(LogLevel.DEBUG, "Result Grouping(" + grouping.getId() + "): " + grouping);
+                log.log(Level.FINE, "Result Grouping(" + grouping.getId() + "): " + grouping);
             }
         }
         return ret;

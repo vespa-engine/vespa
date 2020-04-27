@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -91,17 +91,17 @@ public class MetricsManager {
     public List<MetricsPacket.Builder> getMetricsAsBuilders(List<VespaService> services, Instant startTime) {
         if (services.isEmpty()) return Collections.emptyList();
 
-        log.log(DEBUG, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
+        log.log(FINE, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
         vespaServices.updateServices(services);
 
         List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services);
-        log.log(DEBUG, () -> "Got " + result.size() + " metrics packets for vespa services.");
+        log.log(FINE, () -> "Got " + result.size() + " metrics packets for vespa services.");
 
         purgeStaleMetrics();
         List<MetricsPacket.Builder> externalPackets = externalMetrics.getMetrics().stream()
                 .filter(MetricsPacket.Builder::hasMetrics)
                 .collect(toList());
-        log.log(DEBUG, () -> "Got " + externalPackets.size() + " external metrics packets with whitelisted metrics.");
+        log.log(FINE, () -> "Got " + externalPackets.size() + " external metrics packets with whitelisted metrics.");
 
         result.addAll(externalPackets);
 

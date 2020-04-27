@@ -9,7 +9,7 @@ import com.yahoo.docproc.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.HandledProcessingException;
 import com.yahoo.docproc.Processing;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -17,14 +17,15 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author Einar M R Rosenvinge
  */
-public class DocumentProcessingTask implements Comparable<DocumentProcessingTask>, Runnable {
+public class DocumentProcessingTask implements Runnable {
 
     private static Logger log = Logger.getLogger(DocumentProcessingTask.class.getName());
     private final List<Processing> processings = new ArrayList<>();
@@ -33,16 +34,23 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
     private final DocumentProcessingHandler docprocHandler;
     private RequestContext requestContext;
 
-    private final static AtomicLong seq = new AtomicLong();
-    private final long seqNum;
     private final DocprocService service;
+    private final ThreadPoolExecutor executor;
 
     public DocumentProcessingTask(RequestContext requestContext, DocumentProcessingHandler docprocHandler,
-                                  DocprocService service) {
-        seqNum = seq.getAndIncrement();
+                                  DocprocService service, ThreadPoolExecutor executor) {
         this.requestContext = requestContext;
         this.docprocHandler = docprocHandler;
         this.service = service;
+        this.executor = executor;
+    }
+
+    void submit() {
+        try {
+            executor.execute(this);
+        } catch (RejectedExecutionException ree) {
+            queueFull();
+        }
     }
 
     @Override
@@ -52,7 +60,7 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
                 processings.addAll(requestContext.getProcessings());
             } catch (Exception e) {
                 //deserialization failed:
-                log.log(LogLevel.WARNING, "Deserialization of message failed.", e);
+                log.log(Level.WARNING, "Deserialization of message failed.", e);
                 requestContext.processingFailed(e);
                 return;
             }
@@ -66,7 +74,7 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
             }
         } catch (Error error) {
             try {
-                log.log(LogLevel.FATAL, Exceptions.toMessageString(error), error);
+                log.log(Level.SEVERE, Exceptions.toMessageString(error), error);
             } catch (Throwable t) {
                 // do nothing
             } finally {
@@ -168,32 +176,13 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
                                         ". Will be automatically resent.");
     }
 
-    public int compareTo(DocumentProcessingTask other) {
-        int ourPriority = requestContext.getPriority();
-        int otherPriority = other.requestContext.getPriority();
-        int res = (ourPriority == otherPriority) ? 0 : ((ourPriority < otherPriority) ? -1 : 1);
-        if (res == 0) {
-            res = (seqNum == other.seqNum) ? 0 : ((seqNum < other.seqNum) ? -1 : 1);
-        }
-        return res;
-    }
-
     @Override
     public String toString() {
         return "ProcessingTask{" +
                "processings=" + processings +
                ", processingsDone=" + processingsDone +
                ", requestContext=" + requestContext +
-               ", seqNum=" + seqNum +
                '}';
-    }
-
-    public int getApproxSize() {
-        return requestContext.getApproxSize();
-    }
-
-    final long getSeqNum() {
-        return seqNum;
     }
 
     private static void logProcessingFailure(Processing processing, Exception exception) {
@@ -214,7 +203,7 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
         if (exception != null) {
             StringWriter backtrace = new StringWriter();
             exception.printStackTrace(new PrintWriter(backtrace));
-            log.log(LogLevel.DEBUG, "Failed to process " + processing + ": " + backtrace.toString());
+            log.log(Level.FINE, "Failed to process " + processing + ": " + backtrace.toString());
         }
     }
 

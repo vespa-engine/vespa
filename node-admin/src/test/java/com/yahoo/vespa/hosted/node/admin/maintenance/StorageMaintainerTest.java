@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
@@ -25,6 +29,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * @author dybis
@@ -44,17 +53,17 @@ public class StorageMaintainerTest {
             Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
             terminal.expectCommand("du -xsk /home/docker/host-1 2>&1", 0, "321\t/home/docker/host-1/");
-            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
+            assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
 
             // Value should still be cached, no new execution against the terminal
-            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
+            assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
         }
 
         @Test
         public void testNonExistingDiskUsed() {
             StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null);
-            long usedBytes = storageMaintainer.getDiskUsedInBytes(null, Paths.get("/fake/path"));
-            assertEquals(0L, usedBytes);
+            DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
+            assertEquals(DiskSize.ZERO, size);
         }
 
         @After
@@ -85,7 +94,7 @@ public class StorageMaintainerTest {
 
             // Archive container-1
             ManualClock clock = new ManualClock(Instant.ofEpochSecond(1234567890));
-            StorageMaintainer storageMaintainer = new StorageMaintainer(null, null, pathToArchiveDir, clock);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(null, null, pathToArchiveDir, null, clock);
             storageMaintainer.archiveNodeStorage(context1);
 
             clock.advance(Duration.ofSeconds(3));
@@ -138,6 +147,41 @@ public class StorageMaintainerTest {
                     "opt/vespa/var/db/some-file");
             assertEquals(expectedContents, actualContents);
             return context;
+        }
+    }
+
+    public static class CleanupTests {
+
+        private final TestTerminal terminal = new TestTerminal();
+        private final DiskCleanup diskCleanup = mock(DiskCleanup.class);
+        private final ManualClock clock = new ManualClock();
+        private final StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null, diskCleanup, clock);
+        private final FileSystem fileSystem = TestFileSystem.create();
+        private final NodeAgentContext context = new NodeAgentContextImpl
+                .Builder(NodeSpec.Builder.testSpec("h123a.domain.tld").resources(new NodeResources(1, 1, 1, 1)).build())
+                .pathToContainerStorageFromFileSystem(fileSystem).build();
+
+        @Test
+        public void not_run_if_not_enough_used() throws IOException {
+            Files.createDirectories(context.pathOnHostFromPathInNode("/"));
+            mockDiskUsage(500L);
+
+            storageMaintainer.cleanDiskIfFull(context);
+            verifyNoInteractions(diskCleanup);
+        }
+
+        @Test
+        public void deletes_correct_amount() throws IOException {
+            Files.createDirectories(context.pathOnHostFromPathInNode("/"));
+            mockDiskUsage(950_000L);
+
+            storageMaintainer.cleanDiskIfFull(context);
+            // Allocated size: 1 GB, usage: 950_000 kiB (972.8 MB). Wanted usage: 80% => 800 MB
+            verify(diskCleanup).cleanup(eq(context), any(), eq(172_800_000L));
+        }
+
+        private void mockDiskUsage(long kBytes) {
+            terminal.expectCommand("du -xsk /home/docker/h123a 2>&1", 0, kBytes + "\t/path");
         }
     }
 }

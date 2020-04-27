@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -171,11 +171,11 @@ public class TenantApplications {
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
+        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {
-        log.log(LogLevel.DEBUG, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
+        log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
     private Path applicationPath(ApplicationId id) {

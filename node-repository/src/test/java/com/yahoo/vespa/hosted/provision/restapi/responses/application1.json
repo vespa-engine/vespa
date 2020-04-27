@@ -1,0 +1,56 @@
+{
+  "url" : "http://localhost:8080/nodes/v2/applications/tenant1.application1.instance1",
+  "id" : "tenant1.application1.instance1",
+  "clusters" : {
+    "id1" : {
+      "min" : {
+        "nodes" : 2,
+        "groups" : 1,
+        "resources" : {
+          "vcpu" : 2.0,
+          "memoryGb" : 8.0,
+          "diskGb" : 50.0,
+          "bandwidthGbps" : 1.0,
+          "diskSpeed" : "fast",
+          "storageType" : "any"
+        }
+      },
+      "max" : {
+        "nodes" : 8,
+        "groups" : 2,
+        "resources" : {
+          "vcpu" : 4.0,
+          "memoryGb" : 16.0,
+          "diskGb" : 1000.0,
+          "bandwidthGbps" : 1.0,
+          "diskSpeed" : "fast",
+          "storageType" : "any"
+        }
+      },
+      "suggested" : {
+        "nodes" : 6,
+        "groups" : 2,
+        "resources" : {
+          "vcpu" : 3.0,
+          "memoryGb" : 20.0,
+          "diskGb" : 100.0,
+          "bandwidthGbps" : 1.0,
+          "diskSpeed" : "fast",
+          "storageType" : "any"
+        }
+      },
+      "target" : {
+        "nodes" : 4,
+        "groups" : 1,
+        "resources" : {
+          "vcpu" : 3.0,
+          "memoryGb" : 16.0,
+          "diskGb" : 100.0,
+          "bandwidthGbps" : 1.0,
+          "diskSpeed" : "fast",
+          "storageType" : "any"
+        }
+      }
+    }
+  }
+}

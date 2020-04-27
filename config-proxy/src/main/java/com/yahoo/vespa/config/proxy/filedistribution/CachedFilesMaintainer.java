@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;
@@ -63,18 +63,18 @@ class CachedFilesMaintainer implements Runnable {
         File[] files = directory.listFiles();
         if (files != null)
             filesOnDisk.addAll(Arrays.stream(files).map(File::getName).collect(Collectors.toSet()));
-        log.log(LogLevel.DEBUG, "Files on disk (in " + directory + "): " + filesOnDisk);
+        log.log(Level.FINE, "Files on disk (in " + directory + "): " + filesOnDisk);
 
         Set<String> filesToDelete = filesOnDisk
                 .stream()
                 .filter(fileReference -> isFileLastModifiedBefore(new File(directory, fileReference), deleteNotUsedSinceInstant))
                 .collect(Collectors.toSet());
         if (filesToDelete.size() > 0) {
-            log.log(LogLevel.INFO, "Files that can be deleted in " + directory + " (not used since " + deleteNotUsedSinceInstant + "): " + filesToDelete);
+            log.log(Level.INFO, "Files that can be deleted in " + directory + " (not used since " + deleteNotUsedSinceInstant + "): " + filesToDelete);
             filesToDelete.forEach(fileReference -> {
                 File file = new File(directory, fileReference);
                 if (!IOUtils.recursiveDeleteDir(file))
-                    log.log(LogLevel.WARNING, "Could not delete " + file.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
             });
         }
     }

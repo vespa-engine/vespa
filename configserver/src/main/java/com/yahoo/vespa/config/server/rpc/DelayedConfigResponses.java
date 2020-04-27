@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -88,8 +88,8 @@ public class DelayedConfigResponses {
             removeFromQueue();
             removeWatcher();
             rpcServer.addToRequestQueue(request, true, null);
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
             }
         }
 
@@ -169,15 +169,15 @@ public class DelayedConfigResponses {
      */
     final void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
         if (request.isDelayedResponse()) {
-            log.log(LogLevel.DEBUG, context.logPre()+"Request already delayed");
+            log.log(Level.FINE, context.logPre()+"Request already delayed");
         } else {            
             createQueueIfNotExists(context);
             BlockingQueue<DelayedConfigResponse> delayedResponsesQueue = delayedResponses.get(context.applicationId());
             DelayedConfigResponse response = new DelayedConfigResponse(request, delayedResponsesQueue, context.applicationId());
             request.setDelayedResponse(true);
             try {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
+                if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
                             response.getRequest().getShortDescription());
                 }
                 // Config will be resolved in the run() method of DelayedConfigResponse,
@@ -185,7 +185,7 @@ public class DelayedConfigResponses {
                 response.schedule(Math.max(0, request.getTimeout()));
                 metricDelayedResponses(context.applicationId(), delayedResponsesQueue.size());
             } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, context.logPre()+"Interrupted when putting on delayed requests queue.");
+                log.log(Level.WARNING, context.logPre()+"Interrupted when putting on delayed requests queue.");
             }
         }
     }

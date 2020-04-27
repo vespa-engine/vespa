@@ -19,7 +19,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDispatch;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.MbusRequest;
@@ -47,7 +47,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     private final MbusRequest request;
     private final DocumentMessage requestMsg;
     private final ResponseHandler responseHandler;
-    private volatile int cachedApproxSize;
     // When spawning off new documents inside document processor, we do not want
     // throttling since this can lead to live locks. This is because the
     // document being processed is a resource and is then grabbing more resources of
@@ -92,8 +91,8 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
                 }
             }
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Forwarding " + messages.size() + " messages from " + processings.size() +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Forwarding " + messages.size() + " messages from " + processings.size() +
                                     " processings.");
         }
         if (messages.isEmpty()) {
@@ -134,20 +133,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         MbusResponse response = new MbusResponse(errorCode.getDiscStatus(), requestMsg.createReply());
         response.getReply().addError(new com.yahoo.messagebus.Error(errorCode.getDocumentProtocolStatus(), errorMsg));
         ResponseDispatch.newInstance(response).dispatch(this);
-    }
-
-    @Override
-    public int getApproxSize() {
-        if (cachedApproxSize > 0) {
-            return cachedApproxSize;
-        }
-        cachedApproxSize = requestMsg.getApproxSize();
-        return cachedApproxSize;
-    }
-
-    @Override
-    public int getPriority() {
-        return requestMsg.getPriority().getValue();
     }
 
     @Override

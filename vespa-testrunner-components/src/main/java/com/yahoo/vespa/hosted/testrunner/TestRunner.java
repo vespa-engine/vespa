@@ -29,9 +29,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.log.LogLevel.ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
 
 /**
  * @author valerijf
@@ -167,7 +167,7 @@ public class TestRunner {
             success = mavenProcess.waitFor() == 0;
         }
         catch (Exception exception) {
-            LogRecord record = new LogRecord(ERROR, "Failed to execute maven command: " + String.join(" ", builder.command()));
+            LogRecord record = new LogRecord(SEVERE, "Failed to execute maven command: " + String.join(" ", builder.command()));
             record.setThrown(exception);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);

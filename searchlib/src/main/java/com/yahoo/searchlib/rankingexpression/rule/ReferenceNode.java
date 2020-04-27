@@ -5,7 +5,6 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
-import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -13,7 +12,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 /**
  * A node referring either to a value in the context or to a named ranking expression function.
@@ -84,12 +83,24 @@ public final class ReferenceNode extends CompositeNode {
             if (path.contains(myPath))
                 throw new IllegalStateException("Cycle in ranking expression function: " + path);
             path.addLast(myPath);
-            ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
-            path.removeLast();
-            context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
-            return string.append("rankingExpression(").append(instance.getName()).append(')');
-        }
 
+            String functionName = getName();
+            String functionPropertyName = RankingExpression.propertyName(functionName);
+            boolean alreadySerialized = context.serializedFunctions().containsKey(functionPropertyName);
+
+            if ( ! alreadySerialized || getArguments().size() > 0) {
+                ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
+                functionName = instance.getName();
+
+                context.addFunctionSerialization(RankingExpression.propertyName(functionName), instance.getExpressionString());
+                for (Map.Entry<String, TensorType> argumentType : function.argumentTypes().entrySet())
+                    context.addArgumentTypeSerialization(functionName, argumentType.getKey(), argumentType.getValue());
+                if (function.returnType().isPresent())
+                    context.addFunctionTypeSerialization(functionName, function.returnType().get());
+            }
+            path.removeLast();
+            return string.append("rankingExpression(").append(functionName).append(')');
+        }
 
         // Not resolved in this context: output as-is
         return reference.toString(string, context, path, parent);

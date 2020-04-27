@@ -10,7 +10,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -101,7 +101,7 @@ public class RpcServerTest extends FleetControllerTest {
         waitForStableSystem();
 
         assertEquals(true, nodes.get(0).isDistributor());
-        log.log(LogLevel.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
+        log.log(Level.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
         nodes.get(0).disconnect();
         nodes.get(19).disconnect();
         fleetController.waitForNodesInSlobrok(9, 9, timeoutMS);

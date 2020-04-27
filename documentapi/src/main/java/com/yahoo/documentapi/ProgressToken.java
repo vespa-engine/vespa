@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 /**
@@ -305,8 +305,8 @@ public class ProgressToken {
                 && !progress.equals(FINISHED_BUCKET)
                 && !superbucket.contains(progress)
                 && !progress.contains(superbucket)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "updateProgress called with non-contained bucket "
+            if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "updateProgress called with non-contained bucket "
                        + "pair " + superbucket + ":" + progress + ", but allowing anyway");
                 }
         }
@@ -322,8 +322,8 @@ public class ProgressToken {
         // If progress == Integer.MAX_VALUE, we're done. Otherwise, we're not
         if (!progress.equals(FINISHED_BUCKET)) {
             if (entry.getState() != BucketState.BUCKET_ACTIVE) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "updateProgress called with sub-bucket that was "
+                if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "updateProgress called with sub-bucket that was "
                        + "not marked as active " + superbucket + ":" + progress);
                 }
             } else {
@@ -361,14 +361,14 @@ public class ProgressToken {
      */
     protected void addBucket(BucketId superbucket, BucketId progress, BucketState state) {
         if (progress.equals(FINISHED_BUCKET)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Trying to add already finished superbucket "
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Trying to add already finished superbucket "
                         + superbucket + "; ignoring it");
             }
             return;
         }
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Adding bucket pair " + superbucket
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Adding bucket pair " + superbucket
                     + ":" + progress + " with state " + state);
         }
 
@@ -789,14 +789,14 @@ public class ProgressToken {
             // Must not merge if sibling isn't pending
             if (rightSibling != null) {
                 assert(rightSibling.getState() == BucketState.BUCKET_PENDING);
-                if (log.isLoggable(LogLevel.SPAM)) {
-                    log.log(LogLevel.SPAM, "Merging " + bucket + " with rhs " + rightCheck);
+                if (log.isLoggable(Level.FINEST)) {
+                    log.log(Level.FINEST, "Merging " + bucket + " with rhs " + rightCheck);
                 }
                 // If right sibling has progress, it will unfortunately have to
                 // be discarded
                 if (rightSibling.getProgress().getUsedBits() != 0
-                        && log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Bucket progress for " + rightCheck +
+                        && log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "Bucket progress for " + rightCheck +
                             " will be lost due to merging; potential for duplicates in result-set");
                 }
                 buckets.remove(bucketToKeyWrapper(rightCheck));

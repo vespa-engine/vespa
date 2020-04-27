@@ -38,7 +38,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform dockerImage:6.1"
       },
       {
         "at": 0,

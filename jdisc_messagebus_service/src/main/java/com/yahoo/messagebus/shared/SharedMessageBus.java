@@ -3,7 +3,7 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.jdisc.AbstractResource;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBus;
@@ -35,7 +35,7 @@ public class SharedMessageBus extends AbstractResource {
 
     @Override
     protected void destroy() {
-        log.log(LogLevel.DEBUG, "Destroying shared message bus.");
+        log.log(Level.FINE, "Destroying shared message bus.");
         mbus.destroy();
     }
 

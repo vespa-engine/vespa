@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * <p>Simple layer on top of {@link DocumentProcessor}, in order to make docproc
@@ -34,8 +34,8 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      * @param put the DocumentPut to process.
      */
     public void process(DocumentPut put) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + put);
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Ignored " + put);
         }
     }
 
@@ -47,8 +47,8 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      * @param update the DocumentUpdate to process.
      */
     public void process(DocumentUpdate update) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + update);
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Ignored " + update);
         }
     }
 
@@ -60,8 +60,8 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      * @param remove the DocumentRemove to process.
      */
     public void process(DocumentRemove remove) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + remove);
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Ignored " + remove);
         }
     }
 
@@ -96,8 +96,8 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
                     process((DocumentRemove) op);
                 }
             } catch (RuntimeException e) {
-                if (log.isLoggable(LogLevel.DEBUG) && initialSize != 1) {
-                    log.log(LogLevel.DEBUG,
+                if (log.isLoggable(Level.FINE) && initialSize != 1) {
+                    log.log(Level.FINE,
                             "Processing of document failed, from processing.getDocumentOperations() containing " +
                             initialSize + " DocumentOperation(s).", e);
                 }

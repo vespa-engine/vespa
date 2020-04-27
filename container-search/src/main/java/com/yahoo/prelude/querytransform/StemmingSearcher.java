@@ -9,7 +9,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.StemList;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.*;
@@ -98,6 +98,7 @@ public class StemmingSearcher extends Searcher {
         context.language = language;
         context.indexFacts = indexFacts;
         context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
+        q.trace("Stemming with language="+language, 3);
         return scan(q.getModel().getQueryTree().getRoot(), context);
     }
 
@@ -167,7 +168,7 @@ public class StemmingSearcher extends Searcher {
             if (i instanceof TermItem) {
                 return ((TermItem) i).getOrigin(); // this should always be the case
             } else {
-                getLogger().log(LogLevel.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
+                getLogger().log(Level.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
                                                   i.getClass().getName() + ", expected TermItem.");
             }
         }
@@ -183,9 +184,20 @@ public class StemmingSearcher extends Searcher {
         Substring substring = getOffsets(current);
 
         if (segments.size() == 1) {
+            getLogger().log(Level.FINE, () -> "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
+                            +" and language '"+context.language+"' -> '"+segments.get(0)+"'");
             TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
             return (Item) w;
+        } else if (getLogger().isLoggable(Level.FINE)) {
+            var buf = new StringBuilder();
+            buf.append("Stem '").append(current.stringValue());
+            buf.append("' mode ").append(index.getStemMode());
+            buf.append(" and language '").append(context.language).append("' ->");
+            for (StemList segment : segments) {
+                buf.append(" '").append(segment).append("'");
+            }
+            getLogger().log(Level.FINE, buf.toString());
         }
 
         if (context.isCJK)
@@ -194,6 +206,7 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
+            getLogger().log(Level.FINE, () -> "Stem to multiple segments '"+segment+"'");
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {

@@ -20,17 +20,19 @@ public class Cluster {
 
     private final ClusterSpec.Id id;
     private final ClusterResources min, max;
+    private final Optional<ClusterResources> suggested;
     private final Optional<ClusterResources> target;
 
     public Cluster(ClusterSpec.Id id,
                    ClusterResources minResources,
                    ClusterResources maxResources,
+                   Optional<ClusterResources> suggestedResources,
                    Optional<ClusterResources> targetResources) {
         this.id = Objects.requireNonNull(id);
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
+        this.suggested = Objects.requireNonNull(suggestedResources);
         Objects.requireNonNull(targetResources);
-
         if (targetResources.isPresent() && ! targetResources.get().isWithin(minResources, maxResources))
             this.target = Optional.empty();
         else
@@ -47,20 +49,27 @@ public class Cluster {
 
     /**
      * Returns the computed resources (between min and max, inclusive) this cluster should
-     * have allocated at the moment, or empty if the system currently have no opinion on this.
+     * have allocated at the moment (whether or not it actually has it),
+     * or empty if the system currently has no target.
      */
     public Optional<ClusterResources> targetResources() { return target; }
 
+    /**
+     * The suggested size of this cluster, which may or may not be within the min and max limits,
+     * or empty if there is currently no suggestion.
+     */
+    public Optional<ClusterResources> suggestedResources() { return suggested; }
+
     public Cluster withLimits(ClusterResources min, ClusterResources max) {
-        return new Cluster(id, min, max, target);
+        return new Cluster(id, min, max, suggested, target);
     }
 
-    public Cluster withTarget(ClusterResources target) {
-        return new Cluster(id, min, max, Optional.of(target));
+    public Cluster withSuggested(Optional<ClusterResources> suggested) {
+        return new Cluster(id, min, max, suggested, target);
     }
 
-    public Cluster withoutTarget() {
-        return new Cluster(id, min, max, Optional.empty());
+    public Cluster withTarget(Optional<ClusterResources> target) {
+        return new Cluster(id, min, max, suggested, target);
     }
 
     public NodeResources capAtLimits(NodeResources resources) {

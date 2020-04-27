@@ -142,7 +142,32 @@ enum Policy {
     /** Access to /payment/notification */
     paymentProcessor(Privilege.grant(Action.create)
                                 .on(PathGroup.paymentProcessor)
-                                .in(SystemName.PublicCd));
+                                .in(SystemName.PublicCd)),
+
+    /** Read your own instrument information */
+    paymentInstrumentRead(Privilege.grant(Action.read)
+                                   .on(PathGroup.billingInstrument)
+                                   .in(SystemName.PublicCd)),
+
+    /** Ability to update tenant payment instrument */
+    paymentInstrumentUpdate(Privilege.grant(Action.update)
+                                     .on(PathGroup.billingInstrument)
+                                     .in(SystemName.PublicCd)),
+
+    /** Ability to remove your own payment instrument */
+    paymentInstrumentDelete(Privilege.grant(Action.delete)
+                                     .on(PathGroup.billingInstrument)
+                                     .in(SystemName.PublicCd)),
+
+    /** Get the token to view instrument form */
+    paymentInstrumentCreate(Privilege.grant(Action.read)
+                                    .on(PathGroup.billingToken)
+                                    .in(SystemName.PublicCd)),
+
+    /** Read the generated bills */
+    billingInformationRead(Privilege.grant(Action.read)
+                                    .on(PathGroup.billingList)
+                                    .in(SystemName.PublicCd));
 
     private final Set<Privilege> privileges;
 

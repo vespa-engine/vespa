@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -300,9 +300,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         String expUserId = query.properties().getString(streamingUserid);
         String expGroupName = query.properties().getString(streamingGroupname);
 
-        LogLevel logLevel = LogLevel.ERROR;
+        Level logLevel = Level.SEVERE;
         if (skippedEarlierResult) {
-            logLevel = LogLevel.DEBUG;
+            logLevel = Level.FINE;
         }
 
         DocumentId docId;

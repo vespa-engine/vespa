@@ -1,7 +1,8 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
@@ -17,14 +18,18 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -34,7 +39,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
-import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
+import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
@@ -42,6 +47,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,16 +66,15 @@ import static com.yahoo.slime.SlimeUtils.optionalString;
  *
  * @author bratseth
  */
-public class NodesApiHandler extends LoggingRequestHandler {
+public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
-    private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
-    public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                           NodeRepository nodeRepository, NodeFlavors flavors) {
+    public NodesV2ApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
+                             NodeRepository nodeRepository, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
@@ -100,18 +106,21 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        String path = request.getUri().getPath();
-        if (path.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
-        if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
-        if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
-        if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
-        if (path.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
-        if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
-        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
-        if (path.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
-        throw new NotFoundException("Nothing at path '" + path + "'");
+        Path path = new Path(request.getUri());
+        String pathS = request.getUri().getPath();
+        if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application");
+        if (pathS.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
+        if (pathS.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
+        if (pathS.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
+        if (pathS.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
+        if (pathS.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
+        if (pathS.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
+        if (pathS.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
+        if (path.matches("/nodes/v2/application")) return applicationList(request.getUri());
+        if (path.matches("/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
+        throw new NotFoundException("Nothing at " + path);
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
@@ -189,15 +198,27 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/nodes/v2/node/{hostname}")) {
-            String hostname = path.get("hostname");
-            List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
-            return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
-        }
+        if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), true);
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse deleteNode(String hostname) {
+        Optional<Node> node = nodeRepository.getNode(hostname);
+        if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
+        try (Mutex lock = nodeRepository.lock(node.get())) {
+            node = nodeRepository.getNode(hostname);
+            if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
+            if (node.get().state() == Node.State.deprovisioned) {
+                nodeRepository.forget(node.get());
+                return new MessageResponse("Permanently removed " + hostname);
+            } else {
+                List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
+                return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
+            }
+        }
     }
 
     private Node nodeFromRequest(HttpRequest request) {
@@ -254,8 +275,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
                     requiredField(resourcesInspector, "memoryGb", Inspector::asDouble),
                     requiredField(resourcesInspector, "diskGb", Inspector::asDouble),
                     requiredField(resourcesInspector, "bandwidthGbps", Inspector::asDouble),
-                    optionalString(resourcesInspector.field("diskSpeed")).map(serializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
-                    optionalString(resourcesInspector.field("storageType")).map(serializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())));
+                    optionalString(resourcesInspector.field("diskSpeed")).map(NodeResourcesSerializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
+                    optionalString(resourcesInspector.field("storageType")).map(NodeResourcesSerializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
@@ -269,9 +290,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
             if (resourcesInspector.field("bandwidthGbps").valid())
                 flavor = flavor.with(flavor.resources().withBandwidthGbps(resourcesInspector.field("bandwidthGbps").asDouble()));
             if (resourcesInspector.field("diskSpeed").valid())
-                flavor = flavor.with(flavor.resources().with(serializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
             if (resourcesInspector.field("storageType").valid())
-                flavor = flavor.with(flavor.resources().with(serializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
         }
         return flavor;
     }
@@ -284,7 +305,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
-        return serializer.typeFrom(object.asString());
+        return NodeSerializer.typeFrom(object.asString());
     }
 
     private Optional<TenantName> reservedToFromSlime(Inspector object) {
@@ -392,6 +413,37 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private static String hostnamesAsString(List<Node> nodes) {
         return nodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+    }
+
+    private HttpResponse applicationList(URI uri) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor applications = root.setArray("applications");
+        for (ApplicationId id : nodeRepository.applications().ids()) {
+            Cursor application = applications.addObject();
+            application.setString("url", withPath("/nodes/v2/applications/" + id.toFullString(), uri).toString());
+            application.setString("id", id.toFullString());
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse application(String id, URI uri) {
+        Optional<Application> application = nodeRepository.applications().get(ApplicationId.fromFullString(id));
+        if (application.isEmpty())
+            return ErrorResponse.notFoundError("No application '" + id + "'");
+        Slime slime = ApplicationSerializer.toSlime(application.get(),
+                                                    withPath("/nodes/v2/applications/" + id, uri));
+        return new SlimeJsonResponse(slime);
+    }
+
+    /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
+    private URI withPath(String newPath, URI uri) {
+        try {
+            return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), newPath, null, null);
+        }
+        catch (URISyntaxException e) {
+            throw new RuntimeException("Will not happen", e);
+        }
     }
 
 }

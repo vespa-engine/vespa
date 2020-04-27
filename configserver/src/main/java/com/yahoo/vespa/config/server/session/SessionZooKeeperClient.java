@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.NestedTransaction;
@@ -83,7 +83,7 @@ public class SessionZooKeeperClient {
             String data = configCurator.getData(sessionStatusPath.getAbsolute());
             return Session.Status.parse(data);
         } catch (Exception e) {
-            log.log(LogLevel.INFO, "Unable to read session status, assuming it was deleted");
+            log.log(Level.INFO, "Unable to read session status, assuming it was deleted");
             return Session.Status.NONE;
         }
     }
@@ -129,13 +129,13 @@ public class SessionZooKeeperClient {
 
     public void delete(NestedTransaction transaction ) {
         try {
-            log.log(LogLevel.DEBUG, "Deleting " + sessionPath.getAbsolute());
+            log.log(Level.FINE, "Deleting " + sessionPath.getAbsolute());
             CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
             CuratorOperations.deleteAll(sessionPath.getAbsolute(), curator).forEach(curatorTransaction::add);
             transaction.add(curatorTransaction);
             transaction.commit();
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
+            log.log(Level.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
         }
     }
 

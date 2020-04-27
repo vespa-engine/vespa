@@ -53,6 +53,8 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
 
 }
 
+#ifndef __clang__
+
 namespace std::chrono {
 
 /*
@@ -83,3 +85,4 @@ steady_clock::now() noexcept {
 
 }
 }
+#endif

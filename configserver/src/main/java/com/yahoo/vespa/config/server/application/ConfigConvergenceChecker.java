@@ -8,7 +8,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.ClientProperties;
@@ -72,7 +72,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Check all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
-        log.log(LogLevel.DEBUG, () -> "Finding services to check config convergence for in '" + application);
+        log.log(Level.FINE, () -> "Finding services to check config convergence for in '" + application);
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()

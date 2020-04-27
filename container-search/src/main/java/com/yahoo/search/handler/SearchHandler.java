@@ -18,7 +18,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.QueryException;
@@ -154,7 +154,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, accessLog, metric, true);
-        log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
+        log.log(Level.FINE, "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
         this.executionFactory = executionFactory;
 
@@ -417,7 +417,7 @@ public class SearchHandler extends LoggingRequestHandler {
         if (searchConnections != null) {
             connectionStatistics();
         } else {
-            log.log(LogLevel.WARNING,
+            log.log(Level.WARNING,
                     "searchConnections is a null reference, probably a known race condition during startup.",
                     new IllegalStateException("searchConnections reference is null."));
         }
@@ -426,7 +426,7 @@ public class SearchHandler extends LoggingRequestHandler {
         } catch (ParseException e) {
             ErrorMessage error = ErrorMessage.createIllegalQuery("Could not parse query [" + request + "]: "
                                                                  + Exceptions.toMessageString(e));
-            log.log(LogLevel.DEBUG, error::getDetailedMessage);
+            log.log(Level.FINE, error::getDetailedMessage);
             return new Result(query, error);
         } catch (IllegalArgumentException e) {
             if ("Comparison method violates its general contract!".equals(e.getMessage())) {
@@ -438,7 +438,7 @@ public class SearchHandler extends LoggingRequestHandler {
             else {
                 ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
                                                                    + Exceptions.toMessageString(e));
-                log.log(LogLevel.DEBUG, error::getDetailedMessage);
+                log.log(Level.FINE, error::getDetailedMessage);
                 return new Result(query, error);
             }
         } catch (LinkageError | StackOverflowError e) {
@@ -485,10 +485,10 @@ public class SearchHandler extends LoggingRequestHandler {
     private void log(String request, Query query, Throwable e) {
         // Attempted workaround for missing stack traces
         if (e.getStackTrace().length == 0) {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() +
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() +
                                     " [" + request + "], received exception with no context", e);
         } else {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
         }
     }
 

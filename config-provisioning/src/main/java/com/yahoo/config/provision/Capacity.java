@@ -40,37 +40,6 @@ public final class Capacity {
                                                ") must be divisible by the number of groups (" + resources.groups() + ")");
     }
 
-    /** Returns the number of nodes requested */
-    @Deprecated // TODO: Remove after April 2020
-    public int nodeCount() { return min.nodes(); }
-
-    /** Returns the number of nodes requested (across all groups), or 0 if not specified */
-    @Deprecated // TODO: Remove after April 2020
-    public int nodes() { return min.nodes(); }
-
-    /** Returns the number of groups requested, or 0 if not specified */
-    @Deprecated // TODO: Remove after April 2020
-    public int groups() { return min.groups(); }
-
-    /**
-     * The node flavor requested, or empty if no legacy flavor name has been used.
-     * This may be satisfied by the requested flavor or a suitable replacement.
-     *
-     * @deprecated use nodeResources instead
-     */
-    @Deprecated // TODO: Remove after March 2020
-    public Optional<String> flavor() {
-        if (nodeResources().isEmpty()) return Optional.empty();
-        return Optional.of(min.nodeResources().toString());
-    }
-
-    /** Returns the resources requested for each node, or empty to leave this decision to provisioning */
-    @Deprecated // TODO: Remove after March 2020
-    public Optional<NodeResources> nodeResources() {
-        if (min.nodeResources() == NodeResources.unspecified) return Optional.empty();
-        return Optional.of(min.nodeResources());
-    }
-
     public ClusterResources minResources() { return min; }
     public ClusterResources maxResources() { return max; }
 
@@ -103,7 +72,12 @@ public final class Capacity {
 
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources resources) {
-        return from(resources, false, true);
+        return from(resources, resources);
+    }
+
+    /** Create a non-required, failable capacity request */
+    public static Capacity from(ClusterResources min, ClusterResources max) {
+        return from(min, max, false, true);
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
@@ -112,23 +86,6 @@ public final class Capacity {
 
     public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
         return new Capacity(min, max, required, canFail, NodeType.tenant);
-    }
-
-    /** Create a non-required, failable capacity request */
-    @Deprecated // TODO: Remove after April 2020
-    public static Capacity fromCount(int nodes, NodeResources resources) {
-        return fromCount(nodes, resources, false, true);
-    }
-
-    @Deprecated // TODO: Remove after April 2020
-    public static Capacity fromCount(int nodes, NodeResources resources, boolean required, boolean canFail) {
-        return fromCount(nodes, Optional.of(resources), required, canFail);
-    }
-
-    @Deprecated // TODO: Remove after April 2020
-    public static Capacity fromCount(int nodes, Optional<NodeResources> resources, boolean required, boolean canFail) {
-        return from(new ClusterResources(nodes, 0, resources.orElse(NodeResources.unspecified)),
-                    required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */

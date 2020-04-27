@@ -2,7 +2,7 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.data.access.Inspector;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -58,7 +58,7 @@ public abstract class DocsumField {
             fieldFactory.put("xmlstring", XMLField.class);
             fieldFactory.put("tensor", TensorField.class);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Could not initialize docsum decoding properly.", e);
+            log.log(Level.SEVERE, "Could not initialize docsum decoding properly.", e);
         }
     }
 

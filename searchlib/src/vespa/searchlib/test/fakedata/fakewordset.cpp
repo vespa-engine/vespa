@@ -77,7 +77,7 @@ FakeWordSet::setupParams(bool hasElements,
 }
 
 void
-FakeWordSet::setupWords(search::Rand48 &rnd,
+FakeWordSet::setupWords(vespalib::Rand48 &rnd,
                         uint32_t numDocs,
                         uint32_t commonDocFreq,
                         uint32_t numWordsPerWordClass)
@@ -86,7 +86,7 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
 }
 
 void
-FakeWordSet::setupWords(search::Rand48 &rnd,
+FakeWordSet::setupWords(vespalib::Rand48 &rnd,
                         uint32_t numDocs,
                         uint32_t commonDocFreq,
                         uint32_t mediumDocFreq,

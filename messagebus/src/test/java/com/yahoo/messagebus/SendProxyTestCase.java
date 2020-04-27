@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 import com.yahoo.component.Vtag;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
@@ -64,11 +64,11 @@ public class SendProxyTestCase {
         LogHandler logHandler = new LogHandler();
         log.addHandler(logHandler);
 
-        log.setLevel(LogLevel.INFO);
+        log.setLevel(Level.INFO);
         sendMessage(0, null);
         assertNull(logHandler.trace);
 
-        log.setLevel(LogLevel.DEBUG);
+        log.setLevel(Level.FINE);
         sendMessage(0, null);
         assertNull(logHandler.trace);
 
@@ -90,7 +90,7 @@ public class SendProxyTestCase {
                      "</trace>\n", logHandler.trace);
         logHandler.trace = null;
 
-        log.setLevel(LogLevel.SPAM);
+        log.setLevel(Level.FINEST);
         sendMessage(1, null);
         assertNull(logHandler.trace);
 

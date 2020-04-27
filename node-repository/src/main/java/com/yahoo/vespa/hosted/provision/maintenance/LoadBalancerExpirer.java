@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -79,7 +79,7 @@ public class LoadBalancerExpirer extends Maintainer {
             }
         });
         if (!failed.isEmpty()) {
-            log.log(LogLevel.WARNING, String.format("Failed to remove %d load balancers: %s, retrying in %s",
+            log.log(Level.WARNING, String.format("Failed to remove %d load balancers: %s, retrying in %s",
                                                     failed.size(),
                                                     failed.stream()
                                                           .map(LoadBalancerId::serializedForm)
@@ -107,7 +107,7 @@ public class LoadBalancerExpirer extends Maintainer {
             }
         });
         if (!failed.isEmpty()) {
-            log.log(LogLevel.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
+            log.log(Level.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
                                                     failed.size(),
                                                     failed.stream()
                                                           .map(LoadBalancerId::serializedForm)
@@ -120,7 +120,7 @@ public class LoadBalancerExpirer extends Maintainer {
     /** Apply operation to all load balancers that exist in given state, while holding lock */
     private void withLoadBalancersIn(LoadBalancer.State state, Consumer<LoadBalancer> operation) {
         for (var id : db.readLoadBalancerIds()) {
-            try (var lock = db.lockConfig(id.application())) {
+            try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
                 if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
                 if (loadBalancer.get().state() != state) continue; // Wrong state

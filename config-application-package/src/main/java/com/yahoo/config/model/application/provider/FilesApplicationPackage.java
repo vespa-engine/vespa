@@ -22,7 +22,7 @@ import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
@@ -282,7 +282,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(LogLevel.DEBUG, "Adding user include dir '" + dir + "'");
+        log.log(Level.FINE, "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 
@@ -458,7 +458,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
         if (! configDefsDir.isDirectory()) return;
 
-        log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
+        log.log(Level.FINE, "Getting all config definitions from '" + configDefsDir + "'");
         for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
             String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;
@@ -473,10 +473,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
             if (defs.containsKey(key)) {
                 if (nv[0].contains(".")) {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". The file '" + def + "' will take precedence");
                 } else {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". Skipping '" + def + "', as it does not contain namespace in filename");
                     continue; // skip
                 }

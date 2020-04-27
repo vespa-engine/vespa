@@ -2,7 +2,7 @@
 
 #include "reference_attribute_saver.h"
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include "iattributesavetarget.h"
 
 

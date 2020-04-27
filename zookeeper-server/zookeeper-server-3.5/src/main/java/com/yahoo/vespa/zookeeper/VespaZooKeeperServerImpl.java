@@ -4,7 +4,7 @@ package com.yahoo.vespa.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyStoreUtils;
@@ -165,7 +165,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         try {
             zkServerThread.join();
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "Error joining server thread on shutdown", e);
+            log.log(Level.WARNING, "Error joining server thread on shutdown", e);
         }
     }
 
@@ -173,7 +173,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
-        log.log(LogLevel.INFO, "Starting ZooKeeper server with config file " + args[0] +
+        log.log(Level.INFO, "Starting ZooKeeper server with config file " + args[0] +
                 ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }

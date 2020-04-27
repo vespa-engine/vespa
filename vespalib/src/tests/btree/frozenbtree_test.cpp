@@ -47,7 +47,7 @@ private:
     NodeAllocator *_allocator;
     Tree *_tree;
 
-    Rand48 _randomGenerator;
+    vespalib::Rand48 _randomGenerator;
 
     void allocTree();
     void freeTree(bool verbose);
@@ -421,7 +421,9 @@ FrozenBTreeTest::Main()
     allocTree();
     insertRandomValues(*_tree, *_allocator, _randomValues);
     lookupRandomValues(*_tree, *_allocator, _randomValues);
+    EXPECT_TRUE(_tree->getFrozenView(*_allocator).empty());
     _allocator->freeze();
+    EXPECT_FALSE(_tree->getFrozenView(*_allocator).empty());
     _allocator->transferHoldLists(_generationHandler->getCurrentGeneration());
     lookupFrozenRandomValues(*_tree, *_allocator, _randomValues);
     traverseTreeIterator(*_tree,

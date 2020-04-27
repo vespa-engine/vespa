@@ -149,6 +149,10 @@ public class ProvisioningTester {
         return hosts1;
     }
 
+    public Collection<HostSpec> activate(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        return activate(application, prepare(application, cluster, capacity, true));
+    }
+
     public Collection<HostSpec> activate(ApplicationId application, Collection<HostSpec> hosts) {
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(new CuratorTransaction(curator));
@@ -197,6 +201,22 @@ public class ProvisioningTester {
         }
     }
 
+    /** Assert on the current *non retired* nodes */
+    public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk,
+                            ApplicationId app, ClusterSpec cluster) {
+        List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).not().retired().asList();
+        assertEquals(explanation + ": Node count",
+                     nodes,
+                     nodeList.size());
+        assertEquals(explanation + ": Group count",
+                     groups,
+                     nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
+        for (Node node : nodeList)
+            assertEquals(explanation + ": Resources",
+                         new NodeResources(vcpu, memory, disk, 0.1),
+                         node.flavor().resources());
+    }
+
     public void fail(HostSpec host) {
         int beforeFailCount = nodeRepository.getNode(host.hostname(), Node.State.active).get().status().failCount();
         Node failedNode = nodeRepository.fail(host.hostname(), Agent.system, "Failing to unit test");
@@ -239,6 +259,12 @@ public class ProvisioningTester {
 
     public List<Node> makeReadyNodes(int n, String flavor) {
         return makeReadyNodes(n, flavor, NodeType.tenant);
+    }
+
+    /** Call deployZoneApp() after this before deploying applications */
+    public ProvisioningTester makeReadyHosts(int n, NodeResources resources) {
+        makeReadyNodes(n, resources, NodeType.host, 5);
+        return this;
     }
 
     public List<Node> makeReadyNodes(int n, NodeResources resources) {

@@ -6,7 +6,7 @@ import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.test.TestTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -82,7 +82,7 @@ public class ZkStatusServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        Logger.getLogger("").setLevel(LogLevel.WARNING);
+        Logger.getLogger("").setLevel(Level.WARNING);
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);

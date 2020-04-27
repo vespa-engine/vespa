@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -55,6 +56,9 @@ public interface NodeSpec {
 
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
+
+    /** Returns whether the given node must be resized to match this spec */
+    boolean needsResize(Node node);
 
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
@@ -134,6 +138,11 @@ public interface NodeSpec {
         }
 
         @Override
+        public boolean needsResize(Node node) {
+            return ! node.flavor().resources().compatibleWith(requestedNodeResources);
+        }
+
+        @Override
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
                                  boolean hasTopologyChange, int currentClusterSize) {
             // Never allow in-place resize when also changing topology or decreasing cluster size
@@ -197,6 +206,9 @@ public interface NodeSpec {
 
         @Override
         public Optional<NodeResources> resources() { return Optional.empty(); }
+
+        @Override
+        public boolean needsResize(Node node) { return false; }
 
         @Override
         public String toString() { return "request for all nodes of type '" + type + "'"; }

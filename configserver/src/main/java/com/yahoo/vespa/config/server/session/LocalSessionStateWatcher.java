@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -37,11 +37,11 @@ public class LocalSessionStateWatcher {
     // Will delete session if it exists in local session repo
     private void sessionChanged(Session.Status status) {
         long sessionId = session.getSessionId();
-        log.log(status == Session.Status.DELETE ? LogLevel.INFO : LogLevel.DEBUG,
+        log.log(status == Session.Status.DELETE ? Level.INFO : Level.FINE,
                 session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
         if (status.equals(Session.Status.DELETE) && localSessionRepo.getSession(sessionId) != null) {
-            log.log(LogLevel.DEBUG, session.logPre() + "Deleting session " + sessionId);
+            log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
             localSessionRepo.deleteSession(session);
         }
     }
@@ -54,7 +54,7 @@ public class LocalSessionStateWatcher {
         try {
             fileCache.close();
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception when closing watcher", e);
+            log.log(Level.WARNING, "Exception when closing watcher", e);
         }
     }
 
@@ -66,7 +66,7 @@ public class LocalSessionStateWatcher {
                     sessionChanged(Session.Status.parse(Utf8.toString(node.getData())));
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
+                log.log(Level.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
             }
         });
     }

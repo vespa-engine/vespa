@@ -50,9 +50,9 @@ public class AutoscalingTest {
         assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);
-        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                             15, 1, 1.3,  28.6, 28.6,
-                                                                             tester.autoscale(application1, cluster1.id(), min, max));
+        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
+                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  tester.autoscale(application1, cluster1.id(), min, max));
 
         tester.deploy(application1, cluster1, scaledResources);
         assertTrue("Cluster in flux -> No further change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
@@ -90,11 +90,11 @@ public class AutoscalingTest {
                                                      new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
         ClusterResources max = new ClusterResources(20, 1,
                                                     new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
-        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                             15, 1, 1.3,  28.6, 28.6,
-                                                                             tester.autoscale(application1, cluster1.id(), min, max));
+        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
+                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  tester.autoscale(application1, cluster1.id(), min, max));
         assertEquals("Disk speed from min/max is used",
-                     NodeResources.DiskSpeed.any, scaledResources.realResources().diskSpeed());
+                     NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
         tester.deploy(application1, cluster1, scaledResources);
         tester.nodeRepository().getNodes(application1).stream()
               .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any);
@@ -115,9 +115,9 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, resources);
 
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 120, application1);
-        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
-                                                                             7, 1, 2.6,  80.0, 80.0,
-                                                                             tester.autoscale(application1, cluster1.id(), min, max));
+        ClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
+                                                                  7, 1, 2.6,  80.0, 80.0,
+                                                                  tester.autoscale(application1, cluster1.id(), min, max));
 
         tester.deploy(application1, cluster1, scaledResources);
         tester.deactivateRetired(application1, cluster1, scaledResources);
@@ -187,9 +187,24 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
-    /** This condition ensures we get recommendation suggestions when deactivated */
     @Test
-    public void testAutoscalingLimitsAreIgnoredIfMinEqualsMax() {
+    public void testAutoscalingLimitsWhenMinEqualsMax() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = min;
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        assertTrue(tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
+    public void testSuggestionsIgnoresLimits() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = min;
@@ -203,7 +218,7 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
                                7, 1, 2.6,  80.0, 80.0,
-                               tester.autoscale(application1, cluster1.id(), min, max));
+                               tester.suggest(application1, cluster1.id(), min, max));
     }
 
     @Test
@@ -280,7 +295,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
 
         tester.addMeasurements(Resource.memory, 0.9f, 0.6f, 120, application1);
-        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
+        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
                                                                   8, 1, 3,  83, 34.3,
                                                                   tester.autoscale(application1, cluster1.id(), min, max));
 

@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -357,7 +357,7 @@ public class CuratorDb {
                 readApplication(id).ifPresent(applications::add);
             } catch (Exception e) {
                 if (canFail) {
-                    log.log(LogLevel.ERROR, "Failed to read application '" + id + "', this must be fixed through " +
+                    log.log(Level.SEVERE, "Failed to read application '" + id + "', this must be fixed through " +
                                             "manual intervention", e);
                 } else {
                     throw e;

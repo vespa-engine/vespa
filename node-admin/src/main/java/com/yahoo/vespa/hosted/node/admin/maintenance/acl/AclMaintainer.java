@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
@@ -99,14 +99,14 @@ public class AclMaintainer {
                 dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
             } catch (Exception e) {
                 if (flush) {
-                    context.log(logger, LogLevel.ERROR, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
+                    context.log(logger, Level.SEVERE, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
                     try {
                         dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
                     } catch (Exception ne) {
-                        context.log(logger, LogLevel.ERROR, "Rollback of table " + table + " failed, giving up", ne);
+                        context.log(logger, Level.SEVERE, "Rollback of table " + table + " failed, giving up", ne);
                     }
                 } else {
-                    context.log(logger, LogLevel.WARNING, "Unable to sync iptables for " + table, e);
+                    context.log(logger, Level.WARNING, "Unable to sync iptables for " + table, e);
                 }
             }
         };

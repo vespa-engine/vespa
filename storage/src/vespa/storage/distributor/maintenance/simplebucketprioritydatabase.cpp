@@ -83,7 +83,7 @@ SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::increment()
 {
     while (!atEnd()) {
         step();
-        if (!currentPriorityAtEnd()) {
+        if (atEnd() || !currentPriorityAtEnd()) {
             break;
         }
     }

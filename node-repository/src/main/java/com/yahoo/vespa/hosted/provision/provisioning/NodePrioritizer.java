@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -149,13 +149,13 @@ public class NodePrioritizer {
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
-            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + host);
+            log.log(Level.FINE, "Trying to add new Docker node on " + host);
             Optional<IP.Allocation> allocation;
             try {
                 allocation = host.ipConfig().pool().findAllocation(allNodes, nameResolver);
                 if (allocation.isEmpty()) continue; // No free addresses in this pool
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed allocating IP address on " + host.hostname(), e);
+                log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname(), e);
                 continue;
             }
 
@@ -167,7 +167,7 @@ public class NodePrioritizer {
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
-                log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
+                log.log(Level.FINE, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
             }
         }

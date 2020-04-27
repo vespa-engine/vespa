@@ -10,6 +10,7 @@ import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -33,17 +34,30 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
 
     private final ExecutorServiceWrapper threadpool;
 
+    private static BlockingQueue<Runnable> createQ(int queueSize, int maxThreads) {
+        return (queueSize == 0)
+                ? new SynchronousQueue<>(false)
+                : (queueSize < 0)
+                    ? new ArrayBlockingQueue<>(maxThreads*4)
+                    : new ArrayBlockingQueue<>(queueSize);
+    }
+
+    private static int computeThreadPoolSize(int maxNumThreads) {
+        return (maxNumThreads <= 0)
+                ? Runtime.getRuntime().availableProcessors() * 4
+                : maxNumThreads;
+    }
     @Inject
     public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric) {
         this(threadpoolConfig, metric, new ProcessTerminator());
     }
 
     public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
+        int maxNumThreads = computeThreadPoolSize(threadpoolConfig.maxthreads());
         WorkerCompletionTimingThreadPoolExecutor executor =
-                new WorkerCompletionTimingThreadPoolExecutor(threadpoolConfig.maxthreads(),
-                                                             threadpoolConfig.maxthreads(),
+                new WorkerCompletionTimingThreadPoolExecutor(maxNumThreads, maxNumThreads,
                                                              0L, TimeUnit.SECONDS,
-                                                             new SynchronousQueue<>(false),
+                                                             createQ(threadpoolConfig.queueSize(), maxNumThreads),
                                                              ThreadFactoryFactory.getThreadFactory("threadpool"),
                                                              metric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
@@ -87,8 +101,9 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /**
      * A service executor wrapper which emits metrics and
      * shuts down the vm when no workers are available for too long to avoid containers lingering in a blocked state.
+     * Package private for testing
      */
-    private final static class ExecutorServiceWrapper extends ForwardingExecutorService {
+    final static class ExecutorServiceWrapper extends ForwardingExecutorService {
 
         private final WorkerCompletionTimingThreadPoolExecutor wrapped;
         private final Metric metric;
@@ -160,8 +175,11 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
 
     }
 
-    /** A thread pool executor which maintains the last time a worker completed */
-    private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
+    /**
+     *  A thread pool executor which maintains the last time a worker completed
+     *  package private for testing
+     **/
+    final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
         private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.thread_pool.unhandled_exceptions";
 

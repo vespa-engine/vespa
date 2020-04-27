@@ -6,7 +6,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -148,7 +148,7 @@ public class StoragePolicy extends SlobrokPolicy {
                 if (arr.size() == 1) {
                     return convertSlobrokNameToSessionName(arr.get(0).getSpecString());
                 } else {
-                    log.log(LogLevel.WARNING, "Got " + arr.size() + " matches for a distributor.");
+                    log.log(Level.WARNING, "Got " + arr.size() + " matches for a distributor.");
                 }
             } else {
                 return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpecString());
@@ -282,7 +282,7 @@ public class StoragePolicy extends SlobrokPolicy {
                 case DocumentProtocol.MESSAGE_CREATEVISITOR:       return ((CreateVisitorMessage)msg).getBuckets().get(0);
                 case DocumentProtocol.MESSAGE_REMOVELOCATION:      return ((RemoveLocationMessage)msg).getBucketId();
                 default:
-                    log.log(LogLevel.ERROR, "Message type '" + msg.getType() + "' not supported.");
+                    log.log(Level.SEVERE, "Message type '" + msg.getType() + "' not supported.");
                     return null;
             }
         }
@@ -395,7 +395,7 @@ public class StoragePolicy extends SlobrokPolicy {
                             return targetSpec;
                         } else {
                             sendRandomReason = "Want to use distributor " + target + " but it is not in slobrok. Sending to random.";
-                            log.log(LogLevel.DEBUG, "Target distributor is not in slobrok");
+                            log.log(Level.FINE, "Target distributor is not in slobrok");
                         }
                     } else {
                         context.setContext(new MessageContext(cachedClusterState));
@@ -407,7 +407,7 @@ public class StoragePolicy extends SlobrokPolicy {
                     context.setReply(reply);
                     return null;
                 } catch (Distribution.NoDistributorsAvailableException e) {
-                    log.log(LogLevel.DEBUG, "No distributors available; clearing cluster state");
+                    log.log(Level.FINE, "No distributors available; clearing cluster state");
                     safeCachedClusterState.set(null);
                     sendRandomReason = "No distributors available. Sending to random distributor.";
                     context.setContext(createRandomDistributorTargetContext());
@@ -471,7 +471,7 @@ public class StoragePolicy extends SlobrokPolicy {
             if (context.usedState == null) {
                 String msg = "Used state must be set as distributor is calculated. Bug.";
                 reply.getTrace().trace(1, msg);
-                log.log(LogLevel.ERROR, msg);
+                log.log(Level.SEVERE, msg);
             } else if (newState.getVersion() == context.usedState.getVersion()) {
                 String msg = "Message sent to distributor " + context.calculatedDistributor +
                              " retrieved cluster state version " + newState.getVersion() +
@@ -482,7 +482,7 @@ public class StoragePolicy extends SlobrokPolicy {
                 // reject an operation bound to a particular bucket if it does not own the bucket in _both_
                 // the current and the next (transition target) state. Since it can happen during normal operation
                 // and will happen per client operation, we keep this as debug level to prevent spamming the logs.
-                log.log(LogLevel.DEBUG, msg);
+                log.log(Level.FINE, msg);
             } else if (newState.getVersion() > context.usedState.getVersion()) {
                 if (reply.getTrace().shouldTrace(1)) {
                     reply.getTrace().trace(1, "Message sent to distributor " + context.calculatedDistributor +

@@ -3,7 +3,6 @@ package com.yahoo.searchlib.rankingexpression;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.log.event.Collection;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
@@ -134,7 +133,10 @@ public class ExpressionFunction {
         for (int i = 0; i < arguments.size() && i < argumentValues.size(); ++i) {
             argumentBindings.put(arguments.get(i), argumentValues.get(i).toString(new StringBuilder(), context, path, null).toString());
         }
-        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(new StringBuilder(), context.withBindings(argumentBindings), path, null).toString());
+        context = argumentBindings.isEmpty() ? context.withoutBindings() : context.withBindings(argumentBindings);
+        String symbol = toSymbol(argumentBindings);
+        String expressionString = body.getRoot().toString(new StringBuilder(), context, path, null).toString();
+        return new Instance(symbol, expressionString);
     }
 
     /**

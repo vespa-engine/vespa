@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.core.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.util.Map;
 import java.util.TreeSet;
@@ -78,7 +78,7 @@ public class StateMonitor extends AbstractComponent {
 
     public void status(Status status) {
         if (status != this.status) {
-            log.log(LogLevel.INFO, "Changing health status code from '" + this.status + "' to '" + status.name() + "'");
+            log.log(Level.INFO, "Changing health status code from '" + this.status + "' to '" + status.name() + "'");
             this.status = status;
         }
     }

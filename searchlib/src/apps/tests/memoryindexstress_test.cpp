@@ -20,7 +20,7 @@
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
@@ -201,7 +201,7 @@ struct Fixture {
     uint32_t _readThreads;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
     vespalib::ThreadStackExecutor _readers; // multiple reader threads
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     uint32_t _keyLimit;
     std::atomic<long> _readSeed;
     std::atomic<long> _doneWriteWork;
@@ -285,7 +285,7 @@ Fixture::~Fixture()
 void
 Fixture::readWork(uint32_t cnt)
 {
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
     uint32_t i;
     uint32_t emptyCount = 0;
@@ -345,7 +345,7 @@ Fixture::readWork()
 void
 Fixture::writeWork(uint32_t cnt)
 {
-    search::Rand48 &rnd(_rnd);
+    vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
         uint32_t key = rnd.lrand48() % _keyLimit;
         if ((rnd.lrand48() & 1) == 0) {

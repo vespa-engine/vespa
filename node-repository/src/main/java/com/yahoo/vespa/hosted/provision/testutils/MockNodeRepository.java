@@ -16,11 +16,14 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -142,9 +145,22 @@ public class MockNodeRepository extends NodeRepository {
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
 
-        ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        provisioner.prepare(app1, cluster1, Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1))), null);
+        ApplicationId app1Id = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
+        ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
+        provisioner.prepare(app1Id,
+                            cluster1Id,
+                            Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
+                                          new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)), false, true),
+                            null);
+        Application app1 = applications().get(app1Id).get();
+        Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
+        cluster1 = cluster1.withSuggested(Optional.of(new ClusterResources(6, 2,
+                                                                           new NodeResources(3, 20, 100, 1))));
+        cluster1 = cluster1.withTarget(Optional.of(new ClusterResources(4, 1,
+                                                                        new NodeResources(3, 16, 100, 1))));
+        try (Mutex lock = lock(app1Id)) {
+            applications().put(app1.with(cluster1), lock);
+        }
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
         ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id2")).vespaVersion("6.42").build();

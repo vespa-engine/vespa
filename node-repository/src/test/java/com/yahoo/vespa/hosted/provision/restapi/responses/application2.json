@@ -1,0 +1,32 @@
+{
+  "url": "http://localhost:8080/nodes/v2/applications/tenant2.application2.instance2",
+  "id": "tenant2.application2.instance2",
+  "clusters": {
+    "id2": {
+      "min": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "max": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      }
+    }
+  }
+}

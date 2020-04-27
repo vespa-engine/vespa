@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
@@ -54,7 +54,7 @@ using RandReader = search::diskindex::test::PageDict4MemRandReader;
 class PageDict4TestApp : public FastOS_Application
 {
 public:
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     bool _stress;
     bool _emptyWord;
     bool _firstWordForcedCommon;
@@ -206,7 +206,7 @@ deDup(std::vector<uint32_t> &v)
 
 
 static WordIndexCounts
-makeIndex(search::Rand48 &rnd, bool forceCommon)
+makeIndex(vespalib::Rand48 &rnd, bool forceCommon)
 {
     uint64_t bitLength = 10;
     uint32_t numDocs = 1;
@@ -219,7 +219,7 @@ makeIndex(search::Rand48 &rnd, bool forceCommon)
 
 
 void
-makeIndexes(search::Rand48 &rnd,
+makeIndexes(vespalib::Rand48 &rnd,
             WordIndexCounts &counts,
             bool forceCommon)
 {
@@ -229,7 +229,7 @@ makeIndexes(search::Rand48 &rnd,
 
 static void
 makeWords(std::vector<WordCounts> &v,
-          search::Rand48 &rnd,
+          vespalib::Rand48 &rnd,
           uint32_t numWordIds,
           uint32_t tupleCount,
           bool emptyWord,
@@ -355,7 +355,7 @@ checkCounts(const std::string &word,
 
 void
 testWords(const std::string &logname,
-          search::Rand48 &rnd,
+          vespalib::Rand48 &rnd,
           uint64_t numWordIds,
           uint32_t tupleCount,
           uint32_t chunkSize,

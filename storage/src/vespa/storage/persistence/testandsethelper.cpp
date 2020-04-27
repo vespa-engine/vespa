@@ -31,12 +31,12 @@ void TestAndSetHelper::parseDocumentSelection() {
     }
 }
 
-spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet) { 
+spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context) {
     return _thread._spi.get(
         _thread.getBucket(_docId, _cmd.getBucket()),
         fieldSet,
         _cmd.getDocumentId(),
-        _thread._context);
+        context);
 }
 
 TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd,
@@ -51,16 +51,16 @@ TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAn
     parseDocumentSelection();
 }
 
-TestAndSetHelper::~TestAndSetHelper() {
-}
+TestAndSetHelper::~TestAndSetHelper() = default;
 
-api::ReturnCode TestAndSetHelper::retrieveAndMatch() {
+api::ReturnCode
+TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
     // Walk document selection tree to build a minimal field set 
     FieldVisitor fieldVisitor(*_docTypePtr);
     _docSelectionUp->visit(fieldVisitor);
 
     // Retrieve document
-    auto result = retrieveDocument(fieldVisitor.getFieldSet());
+    auto result = retrieveDocument(fieldVisitor.getFieldSet(), context);
 
     // If document exists, match it with selection
     if (result.hasDocument()) {

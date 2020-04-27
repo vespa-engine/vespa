@@ -79,8 +79,8 @@ class AutoscalingTester {
         return ClusterSpec.request(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
     }
 
-    public void deploy(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {
-        deploy(application, cluster, resources.nodes(), resources.groups(), resources.advertisedResources());
+    public void deploy(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
+        deploy(application, cluster, resources.nodes(), resources.groups(), resources.nodeResources());
     }
 
     public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
@@ -101,7 +101,7 @@ class AutoscalingTester {
             nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
     }
 
-    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {
+    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
         try (Mutex lock = nodeRepository().lock(application)){
             for (Node node : nodeRepository().getNodes(application, Node.State.active)) {
                 if (node.allocation().get().membership().retired())
@@ -154,7 +154,7 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
+    public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
                                                   .withClusterLimits(clusterId, min, max);
@@ -163,18 +163,27 @@ class AutoscalingTester {
                                     nodeRepository().getNodes(applicationId, Node.State.active));
     }
 
-    public AllocatableClusterResources assertResources(String message,
+    public Optional<ClusterResources> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
+                                                           ClusterResources min, ClusterResources max) {
+        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+                                                  .withClusterLimits(clusterId, min, max);
+        nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
+        return autoscaler.suggest(application.clusters().get(clusterId),
+                                  nodeRepository().getNodes(applicationId, Node.State.active));
+    }
+
+    public ClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
-                                            Optional<AllocatableClusterResources> actualResources) {
+                                            Optional<ClusterResources> resources) {
         double delta = 0.0000000001;
-        assertTrue(message, actualResources.isPresent());
-        assertEquals("Node count:  " + message, nodeCount, actualResources.get().nodes());
-        assertEquals("Group count: " + message, groupCount, actualResources.get().groups());
-        assertEquals("Cpu: "    + message, approxCpu, Math.round(actualResources.get().advertisedResources().vcpu() * 10) / 10.0, delta);
-        assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().advertisedResources().memoryGb() * 10) / 10.0, delta);
-        assertEquals("Disk: "   + message, approxDisk, Math.round(actualResources.get().advertisedResources().diskGb() * 10) / 10.0, delta);
-        return actualResources.get();
+        assertTrue(message, resources.isPresent());
+        assertEquals("Node count:  " + message, nodeCount, resources.get().nodes());
+        assertEquals("Group count: " + message, groupCount, resources.get().groups());
+        assertEquals("Cpu: "    + message, approxCpu, Math.round(resources.get().nodeResources().vcpu() * 10) / 10.0, delta);
+        assertEquals("Memory: " + message, approxMemory, Math.round(resources.get().nodeResources().memoryGb() * 10) / 10.0, delta);
+        assertEquals("Disk: "   + message, approxDisk, Math.round(resources.get().nodeResources().diskGb() * 10) / 10.0, delta);
+        return resources.get();
     }
 
     public ManualClock clock() {

@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
@@ -35,7 +35,7 @@ public class ConfigServerDB {
         try {
             initialize(configserverConfig.configModelPluginDir());
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.ERROR, "Error initializing serverdb: " + e.getMessage());
+            log.log(Level.SEVERE, "Error initializing serverdb: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize server db", e);
         }
@@ -68,10 +68,10 @@ public class ConfigServerDB {
         for (String pluginDirectory : pluginDirectories) {
             bundles.addAll(Bundle.getBundles(new File(pluginDirectory)));
         }
-        log.log(LogLevel.DEBUG, "Found " + bundles.size() + " bundles");
+        log.log(Level.FINE, "Found " + bundles.size() + " bundles");
         List<Bundle> addedBundles = new ArrayList<>();
         for (Bundle bundle : bundles) {
-            log.log(LogLevel.DEBUG, "Bundle in " + bundle.getFile().getAbsolutePath() + " appears to contain " + bundle.getDefEntries().size() + " entries");
+            log.log(Level.FINE, "Bundle in " + bundle.getFile().getAbsolutePath() + " appears to contain " + bundle.getDefEntries().size() + " entries");
             configDefinitionDir.addConfigDefinitionsFromBundle(bundle, addedBundles);
             addedBundles.add(bundle);
         }

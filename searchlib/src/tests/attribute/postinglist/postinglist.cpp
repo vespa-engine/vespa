@@ -7,7 +7,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <set>
 #include <map>
@@ -143,7 +143,7 @@ private:
     PostingList *_intPostings;
     STLValueTree *_stlTree;
 
-    Rand48 _randomGenerator;
+    vespalib::Rand48 _randomGenerator;
     uint32_t _generation;
 
     void

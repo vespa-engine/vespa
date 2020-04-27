@@ -2,7 +2,7 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -38,7 +38,7 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
                 subsetSize = Integer.parseInt(param);
             }
             catch (NumberFormatException e) {
-                log.log(LogLevel.WARNING, "Parameter '" + param + "' could not be parsed as an integer.", e);
+                log.log(Level.WARNING, "Parameter '" + param + "' could not be parsed as an integer.", e);
             }
             if (subsetSize <= 0) {
                 log.warning("Ignoring a request to set the subset size to " + subsetSize + " because it makes no " +

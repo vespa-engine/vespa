@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -64,7 +64,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
         synchronized (monitor) {
             SlobrokMonitor slobrokMonitor = slobrokMonitors.remove(id);
             if (slobrokMonitor == null) {
-                logger.log(LogLevel.WARNING, "Removed application " + id +
+                logger.log(Level.WARNING, "Removed application " + id +
                         ", but it was never registered");
             } else {
                 slobrokMonitor.close();
@@ -149,7 +149,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "storagenode":
                 return Optional.of("storage/cluster." + configId.s());
             default:
-                logger.log(LogLevel.DEBUG, "Unknown service type " + serviceType.s() +
+                logger.log(Level.FINE, "Unknown service type " + serviceType.s() +
                         " with config id " + configId.s());
                 return Optional.empty();
         }

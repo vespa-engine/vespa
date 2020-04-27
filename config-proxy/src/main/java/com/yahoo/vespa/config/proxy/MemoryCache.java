@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
@@ -50,7 +50,7 @@ public class MemoryCache {
             return;
         }
 
-        log.log(LogLevel.DEBUG, () -> "Putting '" + config + "' into memory cache");
+        log.log(Level.FINE, () -> "Putting '" + config + "' into memory cache");
         cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);
     }
 
@@ -78,7 +78,7 @@ public class MemoryCache {
     String dumpCacheToDisk(String path, MemoryCache cache) {
         if (path == null || path.isEmpty()) {
             path = DEFAULT_DUMP_DIR;
-            log.log(LogLevel.INFO, "dumpCache. No path or empty path. Using '" + path + "'");
+            log.log(Level.INFO, "dumpCache. No path or empty path. Using '" + path + "'");
         }
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
@@ -86,7 +86,7 @@ public class MemoryCache {
 
         File dir = new File(path);
         if ( ! dir.exists()) {
-            log.log(LogLevel.INFO, dir.getAbsolutePath() + " does not exist, creating it");
+            log.log(Level.INFO, dir.getAbsolutePath() + " does not exist, creating it");
             try {
                 Files.createDirectory(dir.toPath());
             } catch (IOException e) {
@@ -101,7 +101,7 @@ public class MemoryCache {
             return "Not able to write to '" + dir.getAbsolutePath() + "'";
         }
 
-        log.log(LogLevel.INFO, "Dumping cache to '" + dir.getAbsolutePath() + "'");
+        log.log(Level.INFO, "Dumping cache to '" + dir.getAbsolutePath() + "'");
         for (RawConfig config : cache.values()) {
             writeConfigToFile(config, path);
         }
@@ -113,12 +113,12 @@ public class MemoryCache {
         Writer writer = null;
         try {
             filename = path + File.separator + createCacheFileName(config);
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Writing '" + config.getKey() + "' to '" + filename + "'");
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Writing '" + config.getKey() + "' to '" + filename + "'");
             }
             final Payload payload = config.getPayload();
             long protocolVersion = 3;
-            log.log(LogLevel.DEBUG, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
+            log.log(Level.FINE, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
             writer = IOUtils.createWriter(filename, "UTF-8", false);
 
             // First three lines are meta-data about config as comment lines, fourth line is empty
@@ -131,7 +131,7 @@ public class MemoryCache {
             writer.write("\n");
             writer.close();
         } catch (IOException e) {
-            log.log(LogLevel.WARNING, "Could not write to file '" + filename + "'");
+            log.log(Level.WARNING, "Could not write to file '" + filename + "'");
         } finally {
             if (writer != null) {
                 try {

@@ -7,7 +7,12 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 
-namespace vespalib { class GenericHeader; }
+namespace vespalib {
+
+class GenericHeader;
+template <typename T> class ConstArrayRef;
+
+}
 
 namespace search::index { class DocIdAndFeatures; }
 
@@ -1650,6 +1655,9 @@ public:
 
     void
     writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
+
+    void
+    writeBytes(vespalib::ConstArrayRef<char> buf);
 
     void
     writeString(vespalib::stringref buf);

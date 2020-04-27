@@ -38,7 +38,7 @@ import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
-import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
+import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -82,7 +82,8 @@ import java.util.stream.Stream;
 // 1) (new) | deprovisioned - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
-// 3) * -> failed | parked -> dirty | active | deprovisioned
+// 4) * -> failed | parked -> dirty | active | deprovisioned
+// 5) deprovisioned -> (forgotten)
 // Nodes have an application assigned when in states reserved, active and inactive.
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
@@ -644,6 +645,13 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
+    /** Forgets a deprovisioned node. This removes all traces of the node in the node repository. */
+    public void forget(Node node) {
+        if (node.state() != State.deprovisioned)
+            throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
+        db.removeNodes(List.of(node));
+    }
+
     /**
      * Throws if the given node cannot be removed. Removal is allowed if:
      *  - Tenant node: node is unallocated
@@ -778,11 +786,10 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    // TODO(mpolden): Make this delegate to CuratorDatabaseClient#lockConfig instead
-    public Mutex lock(ApplicationId application) { return db.lock(application); }
+    public Mutex lock(ApplicationId application) { return db.legacyLock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
+    public Mutex lock(ApplicationId application, Duration timeout) { return db.legacyLock(application, timeout); }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }

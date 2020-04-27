@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
@@ -44,7 +42,7 @@ public class CoredumpHandler {
     private static final String LZ4_PATH = "/usr/bin/lz4";
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
-    private static final String COREDUMP_FILENAME_PREFIX = "dump_";
+    public static final String COREDUMP_FILENAME_PREFIX = "dump_";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -166,6 +164,7 @@ public class CoredumpHandler {
             Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
             Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
             metadata.putAll(nodeAttributesSupplier.get());
+            metadata.put("coredump_path", doneCoredumpsPath.resolve(context.containerName().asString()).resolve(coredumpDirectory.getFileName()).toString());
 
             String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
@@ -245,7 +244,7 @@ public class CoredumpHandler {
 
         node.membership().ifPresent(membership ->
             dimensionsBuilder
-                    .add("clustertype", membership.clusterType())
+                    .add("clustertype", membership.type().value())
                     .add("clusterid", membership.clusterId())
         );
 

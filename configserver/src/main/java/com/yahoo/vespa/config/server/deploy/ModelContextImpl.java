@@ -154,6 +154,8 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
+        private final double threadPoolSizeFactor;
+        private final double queueSizefactor;
         private final Optional<AthenzDomain> athenzDomain;
 
         public Properties(ApplicationId applicationId,
@@ -189,6 +191,10 @@ public class ModelContextImpl implements ModelContext {
             defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
         }
@@ -242,8 +248,18 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
+        @Override
+        public double threadPoolSizeFactor() {
+            return threadPoolSizeFactor;
+        }
+
+        @Override
+        public double queueSizeFactor() {
+            return queueSizefactor;
+        }
+
         public double defaultSoftStartSeconds() {
-            return 0;
+            return defaultSoftStartSeconds;
         }
 
         @Override

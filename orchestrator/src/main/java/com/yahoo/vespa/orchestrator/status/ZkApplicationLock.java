@@ -2,7 +2,7 @@
 
 package com.yahoo.vespa.orchestrator.status;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
@@ -82,7 +82,7 @@ class ZkApplicationLock implements ApplicationLock {
             onClose.run();
         } catch (RuntimeException e) {
             // We may want to avoid logging some exceptions that may be expected, like when session expires.
-            log.log(LogLevel.WARNING,
+            log.log(Level.WARNING,
                     "Failed close application lock in " +
                     ZkApplicationLock.class.getSimpleName() + ", will ignore and continue",
                     e);

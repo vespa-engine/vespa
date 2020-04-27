@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -83,12 +83,12 @@ class MaintenanceDeployment implements Closeable {
             return true;
         } catch (TransientException e) {
             metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
-            log.log(LogLevel.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
+            log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
             return false;
         } catch (RuntimeException e) {
             metric.add("maintenanceDeployment.failure", 1, metric.createContext(Map.of()));
-            log.log(LogLevel.WARNING, "Exception on maintenance deploy of " + application, e);
+            log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
             return false;
         }
     }

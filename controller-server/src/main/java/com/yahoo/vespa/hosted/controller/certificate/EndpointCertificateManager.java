@@ -11,7 +11,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -86,7 +86,7 @@ public class EndpointCertificateManager {
             try {
                 this.backfillCertificateMetadata();
             } catch (Throwable t) {
-                log.log(LogLevel.INFO, "Unexpected Throwable caught while backfilling certificate metadata", t);
+                log.log(Level.INFO, "Unexpected Throwable caught while backfilling certificate metadata", t);
             }
         }, 1, 10, TimeUnit.MINUTES);
     }
@@ -95,7 +95,7 @@ public class EndpointCertificateManager {
         var t0 = Instant.now();
         Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone);
         Duration duration = Duration.between(t0, Instant.now());
-        if (duration.toSeconds() > 30) log.log(LogLevel.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
+        if (duration.toSeconds() > 30) log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
     }
 
@@ -175,7 +175,7 @@ public class EndpointCertificateManager {
             EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
 
             if (providerMetadata == null) {
-                log.log(LogLevel.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
+                log.log(Level.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
                 return;
             }
 
@@ -189,7 +189,7 @@ public class EndpointCertificateManager {
                             providerMetadata.issuer());
 
             if (mode == BackfillMode.DRYRUN) {
-                log.log(LogLevel.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
+                log.log(Level.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
             } else if (mode == BackfillMode.ENABLE) {
                 curator.writeEndpointCertificateMetadata(applicationId, backfilledMetadata);
             }
@@ -251,10 +251,10 @@ public class EndpointCertificateManager {
                 // Normally because the cert is in the process of being provisioned - this will cause a retry in InternalStepRunner
                 throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store");
             } catch (EndpointCertificateException e) {
-                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
                 throw e;
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
                 throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate validation failure for app " + instance.id().serializedForm(), e);
             }
     }

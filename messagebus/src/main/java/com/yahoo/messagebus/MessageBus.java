@@ -3,7 +3,7 @@ package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Resender;
@@ -435,7 +435,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
             RoutingTableSpec table = spec.getTable(i);
             String name = table.getProtocol();
             if (!protocolRepository.hasProtocol(name)) {
-                log.log(LogLevel.INFO, "Protocol '" + name + "' is not supported, ignoring routing table.");
+                log.log(Level.INFO, "Protocol '" + name + "' is not supported, ignoring routing table.");
                 continue;
             }
             tables.put(name, new RoutingTable(table));

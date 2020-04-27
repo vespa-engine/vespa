@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,9 +37,9 @@ public class JacksonJsonResponse<T> extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        if (log.isLoggable(LogLevel.DEBUG)) {
+        if (log.isLoggable(Level.FINE)) {
             String json = jsonMapper.writeValueAsString(entity);
-            log.log(LogLevel.DEBUG, "Writing the following JSON to response output stream:\n" + json);
+            log.log(Level.FINE, "Writing the following JSON to response output stream:\n" + json);
             outputStream.write(json.getBytes());
         } else {
             jsonMapper.writeValue(outputStream, entity);

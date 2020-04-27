@@ -7,7 +7,7 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -366,7 +366,7 @@ public class NodeFailer extends Maintainer {
                 deployment.get().activate();
                 return true;
             } catch (TransientException e) {
-                log.log(LogLevel.INFO, "Failed to redeploy " + node.allocation().get().owner() +
+                log.log(Level.INFO, "Failed to redeploy " + node.allocation().get().owner() +
                         " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
                 return true;
             } catch (RuntimeException e) {

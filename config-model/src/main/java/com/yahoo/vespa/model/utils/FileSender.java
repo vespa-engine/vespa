@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.utils;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.*;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.ConfigDefinition.DefaultValued;
@@ -84,7 +84,7 @@ public class FileSender implements Serializable {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
-            logger.log(LogLevel.WARNING, "Not able to find config definition for " + key + ". Will not send files for this config");
+            logger.log(Level.WARNING, "Not able to find config definition for " + key + ". Will not send files for this config");
             return;
         }
         // Inspect fields at this level

@@ -30,7 +30,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -357,7 +357,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     protected void checkId(String configId) {
         if ( ! id2producer.containsKey(configId)) {
-            log.log(LogLevel.DEBUG, "Invalid config id: " + configId);
+            log.log(Level.FINE, "Invalid config id: " + configId);
         }
     }
 
@@ -382,7 +382,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static void populateConfigBuilder(Builder builder, ConfigProducer configProducer) {
         boolean found = configProducer.cascadeConfig(builder);
         boolean foundOverride = configProducer.addUserConfig(builder);
-        log.log(LogLevel.DEBUG, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
+        log.log(Level.FINE, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
                 " for config id " + quote(configProducer.getConfigId()) +
                 ", found=" + found + ", foundOverride=" + foundOverride);
 
@@ -400,7 +400,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         ConfigInstance.Builder builder = resolveToBuilder(configKey);
         // TODO: remove if-statement, the builder can never be null.
         if (builder != null) {
-            log.log(LogLevel.DEBUG, () -> "Found builder for " + configKey);
+            log.log(Level.FINE, () -> "Found builder for " + configKey);
             ConfigPayload payload;
             InnerCNode innerCNode = targetDef != null ?  targetDef.getCNode() : null;
             if (builder instanceof GenericConfig.GenericConfigBuilder) {
@@ -429,14 +429,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private ConfigPayload getConfigFromBuilder(ConfigInstance.Builder builder, InnerCNode targetDef) {
         try {
             ConfigInstance instance = InstanceResolver.resolveToInstance(builder, targetDef);
-            log.log(LogLevel.DEBUG, () -> "getConfigFromBuilder for builder " + builder.getClass().getName() + ", instance=" + instance);
+            log.log(Level.FINE, () -> "getConfigFromBuilder for builder " + builder.getClass().getName() + ", instance=" + instance);
             return ConfigPayload.fromInstance(instance);
         } catch (ConfigurationRuntimeException e) {
             // This can happen in cases where services ask for config that no longer exist before they have been able
             // to reconfigure themselves. This happens for instance whenever jdisc reconfigures itself until
             // ticket 6599572 is fixed. When that happens, consider propagating a full error rather than empty payload
             // back to the client.
-            log.log(LogLevel.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
+            log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
             return ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
         }
     }
@@ -465,12 +465,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         final String builderName = fullClassName + "$Builder";
         if (classLoader == null) {
             classLoader = getClass().getClassLoader();
-            log.log(LogLevel.DEBUG, () -> "No producer found to get classloader from for " + fullClassName + ". Using default");
+            log.log(Level.FINE, () -> "No producer found to get classloader from for " + fullClassName + ". Using default");
         }
         try {
             clazz = classLoader.loadClass(builderName);
         } catch (ClassNotFoundException e) {
-            log.log(LogLevel.DEBUG, () -> "Tried to load " + builderName + ", not found, trying with generic builder");
+            log.log(Level.FINE, () -> "Tried to load " + builderName + ", not found, trying with generic builder");
             // TODO: Enable config compiler when configserver is using new API.
             // ConfigCompiler compiler = new LazyConfigCompiler(Files.createTempDir());
             // return compiler.compile(targetDef.generateClass()).newInstance();

@@ -3,7 +3,7 @@
 #include "enumattributesaver.h"
 #include "i_enum_store_dictionary.h"
 #include "iattributesavetarget.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.hpp>
 
 namespace search {

@@ -10,7 +10,7 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 
 #include <vespa/log/log.h>
 
@@ -42,7 +42,7 @@ private:
     bool _unpack;
 
 public:
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
 
 public:
     PostingListBM();

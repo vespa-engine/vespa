@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -180,9 +180,9 @@ public class NodeAdminStateUpdater {
                     .collect(Collectors.toSet());
             nodeAdmin.refreshContainersToRun(nodeAgentContexts);
         } catch (ConvergenceException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
+            log.log(Level.WARNING, "Failed to update which containers should be running", e);
         }
     }
 

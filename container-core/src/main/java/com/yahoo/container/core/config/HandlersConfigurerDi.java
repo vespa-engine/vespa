@@ -20,7 +20,7 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
 import com.yahoo.statistics.Statistics;
@@ -57,7 +57,7 @@ public class HandlersConfigurerDi {
                               ComponentRegistry<RequestHandler> requestHandlerRegistry,
                               ComponentRegistry<ClientProvider> clientProviderRegistry,
                               ComponentRegistry<ServerProvider> serverProviderRegistry) {
-            log.log(LogLevel.DEBUG, "RegistriesHack.init " + System.identityHashCode(this));
+            log.log(Level.FINE, "RegistriesHack.init " + System.identityHashCode(this));
 
             vespaContainer.setComponentRegistry(allComponents);
             vespaContainer.setRequestHandlerRegistry(requestHandlerRegistry);

@@ -11,7 +11,7 @@ import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.SecurityContext;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.ConfigKey;
@@ -84,7 +84,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     try {
                         getPeerIdentity(request)
                                 .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
-                        log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                        log.log(Level.FINE, () -> String.format("Authorization succeeded for request '%s' from '%s'",
                                                                    request.methodName(), request.target().toString()));
                     } catch (Throwable t) {
                         handleAuthorizationFailure(request, t);
@@ -156,9 +156,9 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         boolean isAuthorizationException = throwable instanceof AuthorizationException;
         String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
-            log.log(LogLevel.INFO, errorMessage);
+            log.log(Level.INFO, errorMessage);
         }
-        log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
+        log.log(Level.FINE, throwable, throwable::getMessage);
         JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
         request.setError(error.code, errorMessage);
         request.returnRequest();
@@ -180,7 +180,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         }
         try {
             NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
-            log.log(LogLevel.DEBUG, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            log.log(Level.FINE, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
             return Optional.of(identity);
         } catch (NodeIdentifierException e) {
             throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);

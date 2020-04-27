@@ -130,7 +130,7 @@ case $1 in
 
         echo "Waiting for config proxy to start"
         fail=true
-        for ((sleepcount=0;$sleepcount<600;sleepcount=$sleepcount+1)) ; do
+        for ((sleepcount=0;$sleepcount<1800;sleepcount=$sleepcount+1)) ; do
             sleep 0.1
             if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s $hname 2>/dev/null
             then
@@ -153,11 +153,6 @@ case $1 in
             elif ! vespa-ping-configproxy -s $hname
             then
                 echo "failed to ping config proxy $hname" 1>&2
-                # TODO: Dump stack trace for debugging, remove after April 2020
-                kill -3 `pgrep -f -n configproxy`
-                sleep 2
-                kill -3 `pgrep -f -n configproxy`
-                sleep 2
                 kill -3 `pgrep -f -n configproxy`
             fi
 

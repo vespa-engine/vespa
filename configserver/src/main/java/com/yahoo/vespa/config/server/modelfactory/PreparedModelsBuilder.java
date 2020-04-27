@@ -19,7 +19,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostValidator;
@@ -90,7 +90,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     Optional<AllocatedHosts> allocatedHosts,
                                                     Instant now) {
         Version modelVersion = modelFactory.version();
-        log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
+        log.log(Level.FINE, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
@@ -110,12 +110,12 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 modelVersion,
                 wantedNodeVespaVersion);
 
-        log.log(LogLevel.DEBUG, "Create and validate model " + modelVersion + " for " + applicationId);
+        log.log(Level.FINE, "Create and validate model " + modelVersion + " for " + applicationId);
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
-        log.log(LogLevel.DEBUG, "Done building model " + modelVersion + " for " + applicationId);
+        log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 

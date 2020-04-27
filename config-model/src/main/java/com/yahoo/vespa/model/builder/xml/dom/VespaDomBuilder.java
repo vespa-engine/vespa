@@ -8,7 +8,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Affinity;
@@ -136,7 +136,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
-            log.log(LogLevel.DEBUG, "Adding user configs " + userConfigs + " for " + producerSpec);
+            log.log(Level.FINE, "Adding user configs " + userConfigs + " for " + producerSpec);
             child.mergeUserConfigs(userConfigs);
         }
 

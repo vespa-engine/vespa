@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
@@ -32,11 +32,11 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
      */
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
-        log.log(LogLevel.DEBUG, () -> "Getting config from cache");
+        log.log(Level.FINE, () -> "Getting config from cache");
         ConfigKey<?> key = input.getKey();
         RawConfig cached = cache.get(new ConfigCacheKey(key, input.getDefMd5()));
         if (cached != null) {
-            log.log(LogLevel.DEBUG, () -> "Found config " + key + " in cache");
+            log.log(Level.FINE, () -> "Found config " + key + " in cache");
             return cached;
         } else {
             return null;
@@ -58,9 +58,6 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     public List<String> getSourceConnections() {
         return Collections.singletonList("N/A");
     }
-
-    @Override
-    public void updateSubscribers(RawConfig config) {}
 
     @Override
     public DelayedResponses delayedResponses() {

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.yahoo.io.FatalErrorHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
 
 import java.util.concurrent.BlockingQueue;
@@ -79,7 +79,7 @@ public class HandlerThread extends Thread implements LogHandler {
     public HandlerThread(String name) {
         super(name);
         queue = new LinkedBlockingQueue<>(queueSize);
-        log.log(LogLevel.CONFIG, "logserver.queue.size=" + queueSize);
+        log.log(Level.CONFIG, "logserver.queue.size=" + queueSize);
     }
 
     /**

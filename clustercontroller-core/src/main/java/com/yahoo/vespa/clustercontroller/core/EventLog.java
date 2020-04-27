@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
@@ -57,9 +57,9 @@ public class EventLog implements EventLogInterface {
         }
 
         if (e instanceof NodeEvent) {
-            addNodeOnlyEvent((NodeEvent)e, logInfo ? LogLevel.INFO: LogLevel.DEBUG);
+            addNodeOnlyEvent((NodeEvent)e, logInfo ? Level.INFO: Level.FINE);
         } else {
-            log.log(logInfo ? LogLevel.INFO : LogLevel.DEBUG, e.toString());
+            log.log(logInfo ? Level.INFO : Level.FINE, e.toString());
         }
     }
 

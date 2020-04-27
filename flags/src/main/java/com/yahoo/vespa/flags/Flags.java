@@ -150,7 +150,16 @@ public class Flags {
             "Default number of seconds that a soft start shall use",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
+    public static final UnboundDoubleFlag DEFAULT_THREADPOOL_SIZE_FACTOR = defineDoubleFlag(
+            "default-threadpool-size-factor", 0.0,
+            "Default multiplication factor when computing maxthreads for main container threadpool based on available cores",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundDoubleFlag DEFAULT_QUEUE_SIZE_FACTOR = defineDoubleFlag(
+            "default-queue-size-factor", 0.0,
+            "Default multiplication factor when computing queuesize for burst handling",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
     public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
             "default-top-k-probability", 1.0,
             "Default probability that you will get the globally top K documents when merging many partitions.",
@@ -237,12 +246,6 @@ public class Flags {
             "Whether an application should receive a directly routed endpoint in its endpoint list",
             "Takes effect immediately",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
-            "nginx-upstream-proxy-protocol", false,
-            "Whether the nginx should enable proxy-protocol for all upstreams",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,

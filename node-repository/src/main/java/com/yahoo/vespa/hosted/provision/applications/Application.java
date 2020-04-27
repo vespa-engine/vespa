@@ -39,6 +39,10 @@ public class Application {
 
     public Map<ClusterSpec.Id, Cluster> clusters() { return clusters; }
 
+    public Optional<Cluster> cluster(ClusterSpec.Id id) {
+        return Optional.ofNullable(clusters.get(id));
+    }
+
     public Application with(Cluster cluster) {
         Map<ClusterSpec.Id, Cluster> clusters = new HashMap<>(this.clusters);
         clusters.put(cluster.id(), cluster);
@@ -52,20 +56,10 @@ public class Application {
     public Application withClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max) {
         Cluster cluster = clusters.get(id);
         if (cluster == null)
-            cluster = new Cluster(id, min, max, Optional.empty());
+            cluster = new Cluster(id, min, max, Optional.empty(), Optional.empty());
         else
             cluster = cluster.withLimits(min, max);
         return with(cluster);
-    }
-
-    /**
-     * Returns an application with the given target for the given cluster,
-     * if it exists and the target is within the bounds
-     */
-    public Application withClusterTarget(ClusterSpec.Id id, ClusterResources target) {
-        Cluster cluster = clusters.get(id);
-        if (cluster == null) return this;
-        return with(cluster.withTarget(target));
     }
 
     @Override

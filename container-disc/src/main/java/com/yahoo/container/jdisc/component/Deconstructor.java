@@ -6,7 +6,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -52,11 +52,11 @@ public class Deconstructor implements ComponentDeconstructor {
                 }
             } else if (component instanceof Provider) {
                 // TODO Providers should most likely be deconstructed similarly to AbstractComponent
-                log.log(DEBUG, () -> "Starting deconstruction of provider " + component);
+                log.log(FINE, () -> "Starting deconstruction of provider " + component);
                 ((Provider<?>) component).deconstruct();
-                log.log(DEBUG, () -> "Finished deconstruction of provider " + component);
+                log.log(FINE, () -> "Finished deconstruction of provider " + component);
             } else if (component instanceof SharedResource) {
-                log.log(DEBUG, () -> "Releasing container reference to resource " + component);
+                log.log(FINE, () -> "Releasing container reference to resource " + component);
                 // No need to delay release, as jdisc does ref-counting
                 ((SharedResource) component).release();
             }
@@ -89,16 +89,16 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             for (var component : components) {
-                log.log(DEBUG, () -> "Starting deconstruction of component " + component);
+                log.log(FINE, () -> "Starting deconstruction of component " + component);
                 try {
                     component.deconstruct();
-                    log.log(DEBUG, () -> "Finished deconstructing of component " + component);
+                    log.log(FINE, () -> "Finished deconstructing of component " + component);
                 } catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                     log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
                 } catch (Error e) {
                     try {
                         Duration shutdownDelay = getRandomizedShutdownDelay();
-                        log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
+                        log.log(Level.SEVERE, "Error when deconstructing component " + component + ". Will sleep for " +
                                 shutdownDelay.getSeconds() + " seconds then restart", e);
                         Thread.sleep(shutdownDelay.toMillis());
                     } catch (InterruptedException exception) {

@@ -6,7 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
@@ -49,7 +49,7 @@ class GetConfigProcessor implements Runnable {
     private void respond(JRTServerConfigRequest request) {
         Request req = request.getRequest();
         if (req.isError()) {
-            Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? LogLevel.DEBUG : LogLevel.INFO;
+            Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? Level.FINE : Level.INFO;
             log.log(logLevel, logPre + req.errorMessage());
         }
         rpcServer.respond(request);
@@ -71,7 +71,7 @@ class GetConfigProcessor implements Runnable {
         //Request has already been detached
         if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
-            log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
+            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             respond(request);
             return null;
         }
@@ -164,7 +164,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     private void returnEmpty(JRTServerConfigRequest request) {
-        log.log(LogLevel.DEBUG, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
+        log.log(Level.FINE, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
         ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, 0, false, configMd5);
@@ -173,12 +173,12 @@ class GetConfigProcessor implements Runnable {
     }
 
     static boolean logDebug(Trace trace) {
-        return trace.shouldTrace(RpcServer.TRACELEVEL_DEBUG) || log.isLoggable(LogLevel.DEBUG);
+        return trace.shouldTrace(RpcServer.TRACELEVEL_DEBUG) || log.isLoggable(Level.FINE);
     }
 
     private void debugLog(Trace trace, String message) {
         if (logDebug(trace)) {
-            log.log(LogLevel.DEBUG, logPre + message);
+            log.log(Level.FINE, logPre + message);
             trace.trace(RpcServer.TRACELEVEL_DEBUG, logPre + message);
         }
     }

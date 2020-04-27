@@ -14,7 +14,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.FlagSource;
@@ -73,18 +73,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
-
-    /**
-     * Returns a list of nodes in the prepared or active state, matching the given constraints.
-     * The nodes are ordered by increasing index number.
-     */
-    @Deprecated // TODO: Remove after April 2020
-    @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity,
-                                  int wantedGroups, ProvisionLogger logger) {
-        return prepare(application, cluster, requestedCapacity.withGroups(wantedGroups), logger);
-    }
-
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
      * The nodes are ordered by increasing index number.
@@ -92,7 +80,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
                                   ProvisionLogger logger) {
-        log.log(zone.system().isCd() ? Level.INFO : LogLevel.DEBUG,
+        log.log(zone.system().isCd() ? Level.INFO : Level.FINE,
                 () -> "Received deploy prepare request for " + requested +
                       " for application " + application + ", cluster " + cluster);
 
@@ -141,7 +129,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     /**
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
-     * and updates the application store with the received min and max,
+     * and updates the application store with the received min and max.
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity requested) {
         try (Mutex lock = nodeRepository.lock(applicationId)) {
@@ -149,32 +137,60 @@ public class NodeRepositoryProvisioner implements Provisioner {
             application = application.withClusterLimits(clusterId, requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
             return application.clusters().get(clusterId).targetResources()
-                    .orElseGet(() -> currentResources(applicationId, clusterId, requested)
-                    .orElse(requested.minResources()));
+                    .orElseGet(() -> currentResources(applicationId, clusterId, requested));
         }
     }
 
-    /** Returns the current resources of this cluster, if it's already deployed and inside the requested limits */
-    private Optional<ClusterResources> currentResources(ApplicationId applicationId,
-                                                        ClusterSpec.Id clusterId,
-                                                        Capacity requested) {
+    /** Returns the current resources of this cluster, or the closes  */
+    private ClusterResources currentResources(ApplicationId applicationId,
+                                              ClusterSpec.Id clusterId,
+                                              Capacity requested) {
         List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
                                    .cluster(clusterId)
                                    .not().retired()
                                    .not().removable()
                                    .asList();
-        if (nodes.isEmpty()) return Optional.empty();
+        if (nodes.isEmpty()) return requested.minResources(); // New deployment: Start at min
+
         long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodes.get(0).flavor().resources());
+        return ensureWithin(requested.minResources(), requested.maxResources(), currentResources);
+    }
 
-        // To allow non-numeric settings to be updated without resetting to the min target, we need to use
-        // the non-numeric settings of the current min limit with the current numeric settings
-        NodeResources nodeResources = nodes.get(0).allocation().get().requestedResources()
-                                           .with(requested.minResources().nodeResources().diskSpeed())
-                                           .with(requested.maxResources().nodeResources().storageType());
-        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodeResources);
-        if ( ! currentResources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
+    /** Make the minimal adjustments needed to the current resources to stay within the limits */
+    private ClusterResources ensureWithin(ClusterResources min, ClusterResources max, ClusterResources current) {
+        int nodes =  between(min.nodes(), max.nodes(), current.nodes());
+        int groups = between(min.groups(), max.groups(), current.groups());
+        if (nodes % groups != 0) {
+            // That didn't work - try to preserve current group size instead.
+            // Rounding here is needed because a node may be missing due to node failing.
+            int currentGroupsSize = Math.round((float)current.nodes() / current.groups());
+            nodes = currentGroupsSize * groups;
+            if (nodes != between(min.nodes(), max.nodes(), nodes)) {
+                // Give up: Use max
+                nodes = max.nodes();
+                groups = max.groups();
+            }
+        }
+        if (min.nodeResources() != NodeResources.unspecified && max.nodeResources() != NodeResources.unspecified) {
+            double vcpu = between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), current.nodeResources().vcpu());
+            double memoryGb = between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), current.nodeResources().memoryGb());
+            double diskGb = between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), current.nodeResources().diskGb());
+            // Combine computed scaled resources with requested non-scaled resources (for which min=max)
+            NodeResources nodeResources = min.nodeResources().withVcpu(vcpu).withMemoryGb(memoryGb).withDiskGb(diskGb);
+            return new ClusterResources(nodes, groups, nodeResources);
+        }
+        else {
+            return new ClusterResources(nodes, groups, current.nodeResources());
+        }
+    }
 
-        return Optional.of(currentResources);
+    private int between(int min, int max, int n) {
+        return Math.min(max, Math.max(min, n));
+    }
+
+    private double between(double min, double max, double n) {
+        return Math.min(max, Math.max(min, n));
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {
@@ -195,7 +211,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
-            log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
+            log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
                                    List.of(),
@@ -206,7 +222,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources),
                                    node.status().dockerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
-                log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
+                log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");
             }
         }
         return hosts;

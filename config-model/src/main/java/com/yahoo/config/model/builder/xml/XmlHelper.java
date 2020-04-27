@@ -3,7 +3,7 @@ package com.yahoo.config.model.builder.xml;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -121,10 +121,10 @@ public final class XmlHelper {
     public static synchronized DocumentBuilder getDocumentBuilder() {
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
-            log.log(LogLevel.DEBUG, "XML parser now operational!");
+            log.log(Level.FINE, "XML parser now operational!");
             return docBuilder;
         } catch (ParserConfigurationException e) {
-            log.log(LogLevel.WARNING, "No XML parser available - " + e);
+            log.log(Level.WARNING, "No XML parser available - " + e);
             return null;
         }
     }

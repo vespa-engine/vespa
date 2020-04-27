@@ -2,9 +2,9 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/drainingbufferwriter.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 
 namespace search {
 
@@ -130,7 +130,7 @@ TEST("Test that bufferwriter passes on written data")
     const size_t drainerBufferSize = DrainingBufferWriter::BUFFER_SIZE;
     EXPECT_GREATER(mysize * sizeof(int), drainerBufferSize);
     a.reserve(mysize);
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     for (uint32_t i = 0; i < mysize; ++i) {
         a.emplace_back(rnd.lrand48());
     }

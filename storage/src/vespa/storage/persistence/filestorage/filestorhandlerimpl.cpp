@@ -319,25 +319,6 @@ FileStorHandlerImpl::getNextStripeId(uint32_t disk) {
     return _diskInfo[disk].getNextStripeId();
 }
 
-
-FileStorHandler::LockedMessage &
-FileStorHandlerImpl::getNextMessage(uint16_t diskId, uint32_t stripeId, FileStorHandler::LockedMessage& lck)
-{
-    document::Bucket bucket(lck.first->getBucket());
-
-    LOG(spam, "Disk %d retrieving message for buffered bucket %s", diskId, bucket.getBucketId().toString().c_str());
-
-    assert(diskId < _diskInfo.size());
-    Disk&  disk(_diskInfo[diskId]);
-
-    if (disk.isClosed()) {
-        lck.second.reset();
-        return lck;
-    }
-
-    return disk.getNextMessage(stripeId, lck);
-}
-
 bool
 FileStorHandlerImpl::tryHandlePause(uint16_t disk) const
 {
@@ -975,49 +956,6 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
         }
     }
     return {}; // No message fetched.
-}
-
-FileStorHandler::LockedMessage &
-FileStorHandlerImpl::Stripe::getNextMessage(FileStorHandler::LockedMessage& lck)
-{
-    const document::Bucket & bucket = lck.second->getBucket();
-    vespalib::MonitorGuard guard(_lock);
-    BucketIdx& idx = bmi::get<2>(_queue);
-    std::pair<BucketIdx::iterator, BucketIdx::iterator> range = idx.equal_range(bucket);
-
-    // No more for this bucket.
-    if (range.first == range.second) {
-        lck.second.reset();
-        return lck;
-    }
-
-    api::StorageMessage & m(*range.first->_command);
-    // For now, don't allow batching of operations across lock requirement modes.
-    // We might relax this requirement later once we're 100% sure it can't trigger
-    // any unfortunate edge cases.
-    if (lck.first->lockingRequirements() != m.lockingRequirements()) {
-        lck.second.reset();
-        return lck;
-    }
-
-    std::chrono::milliseconds waitTime(uint64_t(range.first->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()])));
-
-    if (!messageTimedOutInQueue(m, waitTime)) {
-        std::shared_ptr<api::StorageMessage> msg = std::move(range.first->_command);
-        idx.erase(range.first);
-        lck.second.swap(msg);
-        guard.broadcast();
-    } else {
-        std::shared_ptr<api::StorageReply> msgReply = static_cast<api::StorageCommand&>(m).makeReply();
-        idx.erase(range.first);
-        guard.broadcast();
-        guard.unlock();
-        msgReply->setResult(api::ReturnCode(api::ReturnCode::TIMEOUT, "Message waited too long in storage queue"));
-        _messageSender.sendReply(msgReply);
-
-        lck.second.reset();
-    }
-    return lck;
 }
 
 FileStorHandler::LockedMessage

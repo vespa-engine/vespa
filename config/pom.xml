@@ -53,7 +53,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespalog</artifactId>
+      <artifactId>defaults</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
