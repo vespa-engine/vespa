@@ -607,10 +607,6 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context 
     if (!checkForError(result, *tracker)) {
         return tracker;
     }
-    result = _spi.flush(spi::Bucket(destBucket, spi::PartitionId(_env._partition)), context);
-    if (!checkForError(result, *tracker)) {
-        return tracker;
-    }
     uint64_t lastModified = 0;
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);

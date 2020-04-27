@@ -159,7 +159,6 @@ PersistenceTestUtils::doPutOnDisk(
 
     getPersistenceProvider().put(spi::Bucket(b), timestamp, doc, context);
 
-    getPersistenceProvider().flush(b, context);
     return doc;
 }
 

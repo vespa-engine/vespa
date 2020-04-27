@@ -145,15 +145,6 @@ PersistenceProviderWrapper::get(const spi::Bucket& bucket,
     return _spi.get(bucket, fieldSet, id, context);
 }
 
-spi::Result
-PersistenceProviderWrapper::flush(const spi::Bucket& bucket,
-                                  spi::Context& context)
-{
-    LOG_SPI("flush(" << bucket << ")");
-    CHECK_ERROR(spi::Result, FAIL_FLUSH);
-    return _spi.flush(bucket, context);
-}
-
 spi::CreateIteratorResult
 PersistenceProviderWrapper::createIterator(const spi::Bucket& bucket,
                                            const document::FieldSet& fields,

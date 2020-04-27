@@ -626,8 +626,7 @@ MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset,
 }
 
 TEST_F(MergeHandlerTest, spi_flush_guard) {
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
 
     providerWrapper.setResult(
@@ -635,8 +634,7 @@ TEST_F(MergeHandlerTest, spi_flush_guard) {
 
     setUpChain(MIDDLE);
     // Fail applying unrevertable remove
-    providerWrapper.setFailureMask(
-            PersistenceProviderWrapper::FAIL_REMOVE);
+    providerWrapper.setFailureMask(PersistenceProviderWrapper::FAIL_REMOVE);
     providerWrapper.clearOperationLog();
 
     try {
@@ -645,11 +643,6 @@ TEST_F(MergeHandlerTest, spi_flush_guard) {
     } catch (const std::runtime_error& e) {
         EXPECT_TRUE(std::string(e.what()).find("Failed remove") != std::string::npos);
     }
-    // Test that we always flush after applying diff locally, even when
-    // errors are encountered.
-    const std::vector<std::string>& opLog(providerWrapper.getOperationLog());
-    ASSERT_FALSE(opLog.empty());
-    EXPECT_EQ("flush(Bucket(0x40000000000004d2, partition 0))", opLog.back());
 }
 
 TEST_F(MergeHandlerTest, bucket_not_found_in_db) {
@@ -901,7 +894,6 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
         { PersistenceProviderWrapper::FAIL_PUT, "Failed put" },
         { PersistenceProviderWrapper::FAIL_REMOVE, "Failed remove" },
-        { PersistenceProviderWrapper::FAIL_FLUSH, "Failed flush" },
     };
 
     typedef ExpectedExceptionSpec* ExceptionIterator;
@@ -1058,7 +1050,6 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_reply_spi_failures) {
             { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
             { PersistenceProviderWrapper::FAIL_PUT, "Failed put" },
             { PersistenceProviderWrapper::FAIL_REMOVE, "Failed remove" },
-            { PersistenceProviderWrapper::FAIL_FLUSH, "Failed flush" },
         };
 
         typedef ExpectedExceptionSpec* ExceptionIterator;
