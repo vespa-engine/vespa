@@ -28,21 +28,21 @@ public:
     void flush() override;
     framework::Thread& getThread() override { return *_thread; }
 
-    MessageTracker::UP handlePut(api::PutCommand& cmd);
-    MessageTracker::UP handleRemove(api::RemoveCommand& cmd);
-    MessageTracker::UP handleUpdate(api::UpdateCommand& cmd);
-    MessageTracker::UP handleGet(api::GetCommand& cmd);
-    MessageTracker::UP handleRevert(api::RevertCommand& cmd);
-    MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd);
-    MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd);
-    MessageTracker::UP handleCreateIterator(CreateIteratorCommand& cmd);
-    MessageTracker::UP handleGetIter(GetIterCommand& cmd);
+    MessageTracker::UP handlePut(api::PutCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleRemove(api::RemoveCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleUpdate(api::UpdateCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleGet(api::GetCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleRevert(api::RevertCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleCreateIterator(CreateIteratorCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleGetIter(GetIterCommand& cmd, spi::Context & context);
     MessageTracker::UP handleReadBucketList(ReadBucketList& cmd);
     MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd);
-    MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd);
+    MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context & context);
     MessageTracker::UP handleSetBucketState(api::SetBucketStateCommand& cmd);
-    MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd);
-    MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd);
+    MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, spi::Context & context);
+    MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context & context);
     MessageTracker::UP handleRepairBucket(RepairBucketCommand& cmd);
     MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd);
 
@@ -56,7 +56,6 @@ private:
     DiskMoveOperationHandler  _diskMoveHandler;
     ServiceLayerComponent::UP _component;
     framework::Thread::UP     _thread;
-    spi::Context              _context;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
     vespalib::Monitor         _flushMonitor;
     bool                      _closed;
@@ -72,7 +71,7 @@ private:
 
     // Message handling functions
     MessageTracker::UP handleCommand(api::StorageCommand&);
-    MessageTracker::UP handleCommandSplitByType(api::StorageCommand&);
+    MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, spi::Context & context);
     void handleReply(api::StorageReply&);
 
     MessageTracker::UP processMessage(api::StorageMessage& msg);
@@ -88,7 +87,7 @@ private:
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);
     bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
-                             bool missingDocumentImpliesMatch = false);
+                             spi::Context & context, bool missingDocumentImpliesMatch = false);
 };
 
 } // storage

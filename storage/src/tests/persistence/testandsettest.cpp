@@ -33,14 +33,14 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
     unique_ptr<PersistenceThread> thread;
     shared_ptr<document::Document> testDoc;
     document::DocumentId testDocId;
+    spi::Context context;
+
+    TestAndSetTest()
+        : context(spi::LoadType(0, "default"), 0, 0)
+    {}
 
     void SetUp() override {
         SingleDiskPersistenceTestUtils::SetUp();
-
-        spi::Context context(
-            spi::LoadType(0, "default"),
-            spi::Priority(0),
-            spi::Trace::TraceLevel(0));
 
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(
@@ -85,7 +85,7 @@ TEST_F(TestAndSetTest, conditional_put_not_executed_on_condition_mismatch) {
     api::PutCommand putTwo(makeDocumentBucket(BUCKET_ID), testDoc, timestampTwo);
     setTestCondition(putTwo);
 
-    ASSERT_EQ(thread->handlePut(putTwo)->getResult().getResult(),
+    ASSERT_EQ(thread->handlePut(putTwo, context)->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId), dumpBucket(BUCKET_ID));
 }
@@ -105,7 +105,7 @@ TEST_F(TestAndSetTest, conditional_put_executed_on_condition_match) {
     api::PutCommand putTwo(makeDocumentBucket(BUCKET_ID), testDoc, timestampTwo);
     setTestCondition(putTwo);
 
-    ASSERT_EQ(thread->handlePut(putTwo)->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(thread->handlePut(putTwo, context)->getResult().getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
               expectedDocEntryString(timestampTwo, testDocId),
               dumpBucket(BUCKET_ID));
@@ -125,7 +125,7 @@ TEST_F(TestAndSetTest, conditional_remove_not_executed_on_condition_mismatch) {
     api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), testDocId, timestampTwo);
     setTestCondition(remove);
 
-    ASSERT_EQ(thread->handleRemove(remove)->getResult().getResult(),
+    ASSERT_EQ(thread->handleRemove(remove, context)->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId), dumpBucket(BUCKET_ID));
 
@@ -145,7 +145,7 @@ TEST_F(TestAndSetTest, conditional_remove_executed_on_condition_match) {
     api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), testDocId, timestampTwo);
     setTestCondition(remove);
 
-    ASSERT_EQ(thread->handleRemove(remove)->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(thread->handleRemove(remove, context)->getResult().getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
               expectedDocEntryString(timestampTwo, testDocId, spi::REMOVE_ENTRY),
               dumpBucket(BUCKET_ID));
@@ -172,7 +172,7 @@ TEST_F(TestAndSetTest, conditional_update_not_executed_on_condition_mismatch) {
     putTestDocument(false, timestampOne);
     auto updateUp = conditional_update_test(false, timestampTwo);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp)->getResult().getResult(),
+    ASSERT_EQ(thread->handleUpdate(*updateUp, context)->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId), dumpBucket(BUCKET_ID));
 
@@ -185,7 +185,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_on_condition_match) {
     putTestDocument(true, timestampOne);
     auto updateUp = conditional_update_test(false, timestampTwo);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp)->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(thread->handleUpdate(*updateUp, context)->getResult().getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
               expectedDocEntryString(timestampTwo, testDocId),
               dumpBucket(BUCKET_ID));
@@ -197,7 +197,7 @@ TEST_F(TestAndSetTest, conditional_update_not_executed_when_no_document_and_no_a
     api::Timestamp updateTimestamp = 200;
     auto updateUp = conditional_update_test(false, updateTimestamp);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp)->getResult().getResult(),
+    ASSERT_EQ(thread->handleUpdate(*updateUp, context)->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
@@ -206,7 +206,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_when_no_document_but_auto_cre
     api::Timestamp updateTimestamp = 200;
     auto updateUp = conditional_update_test(true, updateTimestamp);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp)->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(thread->handleUpdate(*updateUp, context)->getResult().getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(updateTimestamp, testDocId), dumpBucket(BUCKET_ID));
     assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
 }
@@ -218,7 +218,7 @@ TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {
     api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
     put.setCondition(documentapi::TestAndSetCondition("bjarne"));
 
-    ASSERT_EQ(thread->handlePut(put)->getResult().getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
+    ASSERT_EQ(thread->handlePut(put, context)->getResult().getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
@@ -228,9 +228,9 @@ TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     api::Timestamp timestamp = 0;
     api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
     setTestCondition(put);
-    thread->handlePut(put);
+    thread->handlePut(put, context);
 
-    ASSERT_EQ(thread->handlePut(put)->getResult().getResult(),
+    ASSERT_EQ(thread->handlePut(put, context)->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
@@ -254,7 +254,7 @@ TestAndSetTest::createTestDocument()
 document::Document::SP TestAndSetTest::retrieveTestDocument()
 {
     api::GetCommand get(makeDocumentBucket(BUCKET_ID), testDocId, "[all]");
-    auto tracker = thread->handleGet(get);
+    auto tracker = thread->handleGet(get, context);
     assert(tracker->getResult() == api::ReturnCode::Result::OK);
 
     auto & reply = static_cast<api::GetReply &>(*tracker->getReply());
@@ -274,7 +274,7 @@ void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timesta
     }
 
     api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
-    thread->handlePut(put);
+    thread->handlePut(put, context);
 }
 
 void TestAndSetTest::assertTestDocumentFoundAndMatchesContent(const document::FieldValue & value)
