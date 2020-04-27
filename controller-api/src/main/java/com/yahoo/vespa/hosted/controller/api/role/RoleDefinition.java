@@ -43,7 +43,10 @@ public enum RoleDefinition {
     reader(Policy.tenantRead,
            Policy.applicationRead,
            Policy.deploymentRead,
-           Policy.publicRead),
+           Policy.publicRead,
+           Policy.paymentInstrumentRead,
+           Policy.paymentInstrumentDelete,
+           Policy.billingInformationRead),
 
     /** User — the dev.ops. role for normal Vespa tenant users */
     developer(Policy.applicationCreate,
@@ -52,12 +55,20 @@ public enum RoleDefinition {
               Policy.applicationOperations,
               Policy.developmentDeployment,
               Policy.keyManagement,
-              Policy.submission),
+              Policy.submission,
+              Policy.paymentInstrumentRead,
+              Policy.paymentInstrumentDelete,
+              Policy.billingInformationRead),
 
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,
                   Policy.tenantManager,
-                  Policy.applicationManager),
+                  Policy.applicationManager,
+                  Policy.paymentInstrumentRead,
+                  Policy.paymentInstrumentUpdate,
+                  Policy.paymentInstrumentDelete,
+                  Policy.paymentInstrumentCreate,
+                  Policy.billingInformationRead),
 
     /** Headless — the application specific role identified by deployment keys for production */
     headless(Policy.submission),

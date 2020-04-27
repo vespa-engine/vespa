@@ -6,8 +6,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
+import java.awt.event.AdjustmentEvent;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,6 +21,7 @@ public class RoleTest {
 
     private static final Enforcer mainEnforcer = new Enforcer(SystemName.main);
     private static final Enforcer publicEnforcer = new Enforcer(SystemName.Public);
+    private static final Enforcer publicCdEnforcer = new Enforcer(SystemName.PublicCd);
 
     @Test
     public void operator_membership() {
@@ -141,6 +144,48 @@ public class RoleTest {
             assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));
             assertFalse(disallowedRole + " cannot clear status at " + url, mainEnforcer.allows(disallowedRole, Action.delete, url));
         }
+    }
+
+    @Test
+    public void payment_instrument() {
+        URI paymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument/foobar");
+        URI tenantPaymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument");
+        URI tokenUri = URI.create("/billing/v1/tenant/t1/token");
+
+        Role user = Role.reader(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(user, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(user, Action.delete, paymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(user, Action.update, tenantPaymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(user, Action.read, tokenUri));
+
+        Role developer = Role.developer(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(developer, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(developer, Action.delete, paymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(developer, Action.update, tenantPaymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(developer, Action.read, tokenUri));
+
+        Role admin = Role.administrator(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(admin, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.delete, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.update, tenantPaymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.read, tokenUri));
+    }
+
+    @Test
+    public void billing() {
+        URI billing = URI.create("/billing/v1/tenant/t1/billing");
+
+        Role user = Role.reader(TenantName.from("t1"));
+        Role developer = Role.developer(TenantName.from("t1"));
+        Role admin = Role.administrator(TenantName.from("t1"));
+
+        Stream.of(user, developer, admin).forEach(role -> {
+            assertTrue(publicCdEnforcer.allows(role, Action.read, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.update, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.delete, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.create, billing));
+        });
+
     }
 
 }
