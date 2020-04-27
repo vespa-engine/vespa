@@ -121,11 +121,6 @@ public:
     LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
 
     /**
-     * Returns the next message for the same bucket.
-     */
-    LockedMessage & getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lock);
-
-    /**
      * Lock a bucket. By default, each file stor thread has the locks of all
      * buckets in their area of responsibility. If they need to access buckets
      * outside of their area, they can call this to make sure the thread

@@ -22,7 +22,7 @@ public:
     PersistenceThread(ServiceLayerComponentRegister&, const config::ConfigUri & configUri,
                       spi::PersistenceProvider& provider, FileStorHandler& filestorHandler,
                       FileStorThreadMetrics& metrics, uint16_t deviceIndex);
-    ~PersistenceThread();
+    ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */
     void flush() override;
@@ -75,14 +75,12 @@ private:
     void handleReply(api::StorageReply&);
 
     MessageTracker::UP processMessage(api::StorageMessage& msg);
-    void processMessages(FileStorHandler::LockedMessage & lock);
+    void processLockedMessage(FileStorHandler::LockedMessage & lock);
 
     // Thread main loop
     void run(framework::ThreadHandle&) override;
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
     spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
-
-    void flushAllReplies(const document::Bucket& bucket, std::vector<MessageTracker::UP>& trackers);
 
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);

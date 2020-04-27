@@ -698,19 +698,6 @@ TEST_F(FileStorManagerTest, handler_pause) {
     ASSERT_EQ(30, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 }
 
-namespace {
-
-uint64_t getPutTime(api::StorageMessage::SP& msg)
-{
-    if (!msg.get()) {
-        return (uint64_t)-1;
-    }
-
-    return static_cast<api::PutCommand*>(msg.get())->getTimestamp();
-};
-
-}
-
 TEST_F(FileStorManagerTest, remap_split) {
     // Setup a filestorthread to test
     DummyStorageLink top;
@@ -766,63 +753,6 @@ TEST_F(FileStorManagerTest, remap_split) {
               "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 2, size 118) (priority: 127)\n"
               "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 3, size 118) (priority: 127)\n",
               filestorHandler.dumpQueue(0));
-}
-
-TEST_F(FileStorManagerTest, handler_multi) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
-
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
-    uint32_t stripeId = filestorHandler.getNextStripeId(0);
-
-    std::string content("Here is some content which is in all documents");
-
-    Document::SP doc1(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
-
-    Document::SP doc2(createDocument(content, "id:footype:testdoctype1:n=4567:bar").release());
-
-    document::BucketIdFactory factory;
-    document::BucketId bucket1(16, factory.getBucketId(doc1->getId()).getRawId());
-    document::BucketId bucket2(16, factory.getBucketId(doc2->getId()).getRawId());
-
-    // Populate bucket with the given data
-    for (uint32_t i = 1; i < 10; i++) {
-        filestorHandler.schedule(
-                api::StorageMessage::SP(new api::PutCommand(makeDocumentBucket(bucket1), doc1, i)), 0);
-        filestorHandler.schedule(
-                api::StorageMessage::SP(new api::PutCommand(makeDocumentBucket(bucket2), doc2, i + 10)), 0);
-    }
-
-    {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
-        ASSERT_EQ(1, getPutTime(lock.second));
-
-        lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        ASSERT_EQ(2, getPutTime(lock.second));
-
-        lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        ASSERT_EQ(3, getPutTime(lock.second));
-    }
-
-    {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
-        ASSERT_EQ(11, getPutTime(lock.second));
-
-        lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        ASSERT_EQ(12, getPutTime(lock.second));
-    }
 }
 
 TEST_F(FileStorManagerTest, handler_timeout) {

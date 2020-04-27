@@ -802,7 +802,7 @@ void FileStorManager::onFlush(bool downwards)
     LOG(debug, "Flushed _filestorHandler->flush(!downwards);");
     for (uint32_t i = 0; i < _disks.size(); ++i) {
         for (uint32_t j = 0; j < _disks[i].size(); ++j) {
-            if (_disks[i][j].get() != NULL) {
+            if (_disks[i][j]) {
                 _disks[i][j]->flush();
                 LOG(debug, "flushed disk[%d][%d]", i, j);
             }

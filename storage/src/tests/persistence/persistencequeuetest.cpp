@@ -168,19 +168,4 @@ TEST_F(PersistenceQueueTest, exclusive_locked_operation_not_started_if_exclusive
     ASSERT_FALSE(lock1.first.get());
 }
 
-TEST_F(PersistenceQueueTest, operation_batching_not_allowed_across_different_lock_modes) {
-    Fixture f(*this);
-
-    f.filestorHandler->schedule(createPut(1234, 0), _disk);
-    f.filestorHandler->schedule(createGet(1234), _disk);
-
-    auto lock0 = f.filestorHandler->getNextMessage(_disk, f.stripeId);
-    ASSERT_TRUE(lock0.first);
-    ASSERT_TRUE(lock0.second);
-    EXPECT_EQ(api::LockingRequirements::Exclusive, lock0.first->lockingRequirements());
-
-    f.filestorHandler->getNextMessage(_disk, f.stripeId, lock0);
-    ASSERT_FALSE(lock0.second);
-}
-
 } // namespace storage
