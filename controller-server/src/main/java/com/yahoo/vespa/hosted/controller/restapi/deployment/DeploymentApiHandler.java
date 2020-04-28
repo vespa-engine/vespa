@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -168,6 +169,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                             toList())))
                   .forEach((instance, runs) -> {
                       var status = statusByInstance.get(instance);
+                      var jobsToRun = status.jobsToRun();
                       Cursor instanceObject = instancesArray.addObject();
                       instanceObject.setString("tenant", instance.tenant().value());
                       instanceObject.setString("application", instance.application().value());
@@ -186,6 +188,13 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                           jobStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
                           jobStatus.coolingDownUntil(status.application().require(instance.instance()).change())
                                    .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                          if (jobsToRun.containsKey(job)) {
+                              jobObject.setString("pending", jobsToRun.get(job).stream()
+                                                                      .allMatch(versions -> versions.sourcePlatform()
+                                                                                                    .map(versions.targetPlatform()::equals)
+                                                                                                    .orElse(true))
+                                                             ? "revision" : "upgrade");
+                          }
                       });
                       Cursor allRunsObject = instanceObject.setObject("allRuns");
                       Cursor upgradeRunsObject = instanceObject.setObject("upgradeRuns");
