@@ -1055,7 +1055,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                response.setObject("applicationVersion"), deployment.applicationVersion());
                        if (!status.jobsToRun().containsKey(stepStatus.job().get()))
                            response.setString("status", "complete");
-                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))
+                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
                            response.setString("status", "pending");
                        else response.setString("status", "running");
                    });
