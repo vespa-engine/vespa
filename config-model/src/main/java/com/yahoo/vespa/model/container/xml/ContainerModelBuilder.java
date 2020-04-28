@@ -336,6 +336,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
+        // Temporarily disable jdisc proxy-protocol in public systems
+        boolean enableProxyProtocol = !deployState.zone().system().isPublic();
+
         // If the deployment contains certificate/private key reference, setup TLS port
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
@@ -344,11 +347,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
             HostedSslConnectorFactory connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get(), enableProxyProtocol)
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enableProxyProtocol);
             server.addConnector(connectorFactory);
         } else {
-            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
+            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, enableProxyProtocol));
         }
     }
 
