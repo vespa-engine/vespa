@@ -16,11 +16,6 @@ class LoadBasedResourceTarget extends ResourceTarget {
     }
 
     @Override
-    public double clusterCpu() {
-        return clusterUsage(Resource.cpu, cpuLoad) / Resource.cpu.idealAverageLoad();
-    }
-
-    @Override
     public double groupMemory() {
         return groupUsage(Resource.memory, memoryLoad) / Resource.memory.idealAverageLoad();
     }
@@ -31,6 +26,11 @@ class LoadBasedResourceTarget extends ResourceTarget {
     }
 
     @Override
+    public double nodeCpu() {
+        return nodeUsage(Resource.cpu, cpuLoad) / Resource.cpu.idealAverageLoad();
+    }
+
+    @Override
     public double nodeMemory() {
         return nodeUsage(Resource.memory, memoryLoad) / Resource.memory.idealAverageLoad();
     }
@@ -38,10 +38,6 @@ class LoadBasedResourceTarget extends ResourceTarget {
     @Override
     public double nodeDisk() {
         return nodeUsage(Resource.disk, diskLoad) / Resource.disk.idealAverageLoad();
-    }
-
-    private double clusterUsage(Resource resource, double load) {
-        return nodeUsage(resource, load) * current().nodes();
     }
 
     private double groupUsage(Resource resource, double load) {

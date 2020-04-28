@@ -11,13 +11,18 @@ public abstract class ResourceTarget {
     }
 
     /** Returns the target total cpu to allocate to the entire cluster */
-    public abstract double clusterCpu();
+    public double clusterCpu() {
+        return nodeCpu() * current().nodes();
+    }
 
     /** Returns the target total memory to allocate to each group */
     public abstract double groupMemory();
 
     /** Returns the target total disk to allocate to each group */
     public abstract double groupDisk();
+
+    /** Returns the target cpu to allocate to each node */
+    public abstract double nodeCpu();
 
     /** Returns the target memory to allocate to each node */
     public abstract double nodeMemory();

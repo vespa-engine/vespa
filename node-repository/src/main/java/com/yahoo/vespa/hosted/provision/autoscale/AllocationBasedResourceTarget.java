@@ -13,11 +13,6 @@ public class AllocationBasedResourceTarget extends ResourceTarget {
     }
 
     @Override
-    public double clusterCpu() {
-        return current().toAdvertisedClusterResources().nodeResources().vcpu() * current().nodes();
-    }
-
-    @Override
     public double groupMemory() {
         return current().toAdvertisedClusterResources().nodeResources().memoryGb() * current().groupSize();
     }
@@ -26,6 +21,9 @@ public class AllocationBasedResourceTarget extends ResourceTarget {
     public double groupDisk() {
         return current().toAdvertisedClusterResources().nodeResources().diskGb() * current().groupSize();
     }
+
+    @Override
+    public double nodeCpu() { return current().toAdvertisedClusterResources().nodeResources().vcpu(); }
 
     @Override
     public double nodeMemory() {
