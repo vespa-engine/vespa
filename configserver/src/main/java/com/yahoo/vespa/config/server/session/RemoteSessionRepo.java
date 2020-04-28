@@ -145,9 +145,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             loadSessionIfActive(session);
-            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
             addSession(session);
             metrics.incAddedSessions();
+            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
         } catch (Exception e) {
             if (componentRegistry.getConfigserverConfig().throwIfActiveSessionCannotBeLoaded()) throw e;
             log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
