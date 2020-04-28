@@ -194,13 +194,27 @@ void BTreeBucketDatabase::remove(const BucketId& bucket) {
  * This allows us to reuse a single iterator and to continue seeking forwards
  * from its current position.
  *
+ * To speed up the process of converging on the target bucket without needing
+ * to check many unrelated subtrees, we let the underlying B-tree automatically
+ * aggregate the min/max range of the used-bits of all contained bucket keys.
+ * If we e.g. know that the minimum number of used bits in the DB is 16, we can
+ * immediately seek to this level in the tree instead of working our way down
+ * one bit at a time. By definition, no parents can exist above this level.
+ * This is a very important optimization, as bucket trees are usually very well
+ * balanced due to randomized distribution of data (combined with a cluster-wide
+ * minimum tree level imposed by distribution bits). It is common that the minimum
+ * number of used bits == max number of used bits, i.e. a totally even split.
+ * This means that for a system without inconsistently split buckets (i.e. no
+ * parents) we're highly likely to converge on the target bucket in a single seek.
+ *
  * Algorithm:
  *
  *   Core invariant: every subsequent iterator seek performed in this algorithm
  *   is for a key that is strictly higher than the one the iterator is currently at.
  *
  *   1. Lbound seek to the lowest key that is known to exclude all already visited
- *      parents. On the first iteration this is zero, i.e. the first in-order node.
+ *      parents. On the first iteration we use a bit count equal to the minimum number
+ *      of key used-bits in the entire DB, allowing us to potentially skip most subtrees.
  *   2. If the current node's key is greater than that of the requested bucket's key,
  *      we've either descended to--or beyond--it in its own subtree or we've entered
  *      a disjoint subtree. Since we know that all parents must sort before any given
@@ -229,14 +243,13 @@ void BTreeBucketDatabase::remove(const BucketId& bucket) {
  *   6. Iff iterator is still valid, go to step 2
  *
  * This algorithm is able to skip through large parts of the tree in a sparsely populated
- * tree, but the number of seeks will trend towards O(b) as with the legacy implementation
- * when a tree is densely populated. This because all logical inner nodes in the tree will
- * have subtrees under them. Even in the worst case we should be more efficient than the
- * legacy implementation since we've cut any dense search space in half for each invocation
- * of seek() on the iterator
- *
- * TODO use min-aggregation to infer used bit range in the tree. This should allow us to
- * skip scanning through many disjoint subtrees.
+ * tree, but the number of seeks will trend towards O(b - min_bits) as with the legacy
+ * implementation when a tree is densely populated (where `b` is the used-bits count of the
+ * most specific node in the tree for the target bucket, and min_bits is the minimum number
+ * of used-bits for any key in the database). This because all logical inner nodes in the tree
+ * will have subtrees under them. Even in the worst case we should be more efficient than the
+ * legacy Judy-based implementation since we've cut any dense search space in half for each
+ * invocation of seek() on the iterator.
  */
 BTreeBucketDatabase::BTree::ConstIterator
 BTreeBucketDatabase::find_parents_internal(const BTree::FrozenView& frozen_view,
@@ -244,10 +257,21 @@ BTreeBucketDatabase::find_parents_internal(const BTree::FrozenView& frozen_view,
                                            std::vector<Entry>& entries) const
 {
     const uint64_t bucket_key = bucket.toKey();
-    auto iter = frozen_view.begin();
-    // Start at the root level, descending towards the bucket itself.
+    if (frozen_view.empty()) {
+        return frozen_view.begin(); // Will be invalid.
+    }
+    const auto min_db_bits = frozen_view.getAggregated().getMin();
+    assert(min_db_bits >= static_cast<int32_t>(BucketId::minNumBits));
+    assert(min_db_bits <= static_cast<int32_t>(BucketId::maxNumBits));
+    // Start at the lowest possible tree level no parents can exist above,
+    // descending towards the bucket itself.
+    // Note: important to use getId() rather than getRawId(), as min_db_bits may be
+    // greater than the used bits of the queried bucket. If we used the raw ID, we'd
+    // end up looking at undefined bits.
+    const auto first_key = BucketId(min_db_bits, bucket.getId()).toKey();
+    auto iter = frozen_view.lowerBound(first_key);
     // Try skipping as many levels of the tree as possible as we go.
-    uint32_t bits = 1;
+    uint32_t bits = min_db_bits;
     while (iter.valid() && (iter.getKey() < bucket_key)) {
         auto candidate = BucketId(BucketId::keyToBucketId(iter.getKey()));
         if (candidate.contains(bucket)) {

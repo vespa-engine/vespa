@@ -4,6 +4,8 @@
 
 #include "bucketdatabase.h"
 #include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/minmaxaggregated.h>
+#include <vespa/vespalib/btree/minmaxaggrcalc.h>
 #include <vespa/vespalib/datastore/array_store.h>
 
 namespace storage {
@@ -23,8 +25,21 @@ namespace storage {
  */
 // TODO create and use a new DB interface with better bulk loading, snapshot and iteration support
 class BTreeBucketDatabase : public BucketDatabase {
+
+    struct KeyUsedBitsMinMaxAggrCalc : search::btree::MinMaxAggrCalc {
+        constexpr static bool aggregate_over_values() { return false; }
+        constexpr static int32_t getVal(uint64_t key) noexcept {
+            static_assert(document::BucketId::CountBits == 6u);
+            return static_cast<int32_t>(key & 0b11'1111U); // 6 LSB of key contains used-bits
+        }
+    };
+
     // Mapping from u64: bucket key -> <MSB u32: gc timestamp, LSB u32: ArrayStore ref>
-    using BTree        = search::btree::BTree<uint64_t, uint64_t>;
+    using BTree = search::btree::BTree<uint64_t, uint64_t,
+                                       search::btree::MinMaxAggregated,
+                                       std::less<>,
+                                       search::btree::BTreeDefaultTraits,
+                                       KeyUsedBitsMinMaxAggrCalc>;
     using ReplicaStore = search::datastore::ArrayStore<BucketCopy>;
     using GenerationHandler = vespalib::GenerationHandler;
 
