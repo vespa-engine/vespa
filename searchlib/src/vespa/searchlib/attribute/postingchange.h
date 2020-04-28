@@ -6,9 +6,9 @@
 #include "postingdata.h"
 #include <vespa/vespalib/util/array.h>
 
-namespace search {
+namespace search::datastore { class EntryComparator; }
 
-namespace datastore { class EntryComparator; }
+namespace search {
 
 class GrowableBitVector;
 

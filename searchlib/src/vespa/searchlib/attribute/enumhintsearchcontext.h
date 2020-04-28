@@ -6,11 +6,9 @@
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search {
+namespace search::datastore { class EntryComparator; }
 
-namespace datastore { class EntryComparator; }
-
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Search context helper for enumerated attributes, used to eliminate
@@ -40,5 +38,4 @@ protected:
     unsigned int approximateHits() const override;
 };
 
-}
 }

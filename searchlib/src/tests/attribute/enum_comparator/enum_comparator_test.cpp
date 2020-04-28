@@ -9,9 +9,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP("enum_comparator_test");
 
-namespace search {
+using namespace search::btree;
 
-using namespace btree;
+namespace search {
 
 using NumericEnumStore = EnumStoreT<int32_t>;
 using FloatEnumStore = EnumStoreT<float>;
