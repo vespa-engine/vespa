@@ -29,8 +29,8 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
               "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReply());
-    ASSERT_TRUE(reply.get() != nullptr);
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReplySP());
+    ASSERT_TRUE(reply);
     EXPECT_EQ(2u, reply->documents_removed());
 }
 
@@ -62,8 +62,8 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
               "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReply());
-    ASSERT_TRUE(reply.get() != nullptr);
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReplySP());
+    ASSERT_TRUE(reply);
     EXPECT_EQ(5u, reply->documents_removed());
 }
 
@@ -112,8 +112,8 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
         spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    ASSERT_TRUE(tracker->getReply().get());
-    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    ASSERT_TRUE(tracker->hasReply());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
@@ -146,8 +146,8 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    ASSERT_TRUE(tracker->getReply().get());
-    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    ASSERT_TRUE(tracker->hasReply());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
@@ -192,8 +192,8 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    ASSERT_TRUE(tracker->getReply().get());
-    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    ASSERT_TRUE(tracker->hasReply());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =

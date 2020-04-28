@@ -1333,9 +1333,7 @@ MessageTracker::UP
 MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
                                     spi::Context& context)
 {
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.applyBucketDiff,
-                                       _env._component.getClock()));
+    auto tracker = std::make_unique<MessageTracker>(_env._metrics.applyBucketDiff, _env._component.getClock());
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "%s", cmd.toString().c_str());
@@ -1391,35 +1389,30 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
             }
         }
 
-        tracker->setReply(api::StorageReply::SP(new api::ApplyBucketDiffReply(cmd)));
-        static_cast<api::ApplyBucketDiffReply&>(*tracker->getReply()).getDiff().swap(
-                cmd.getDiff());
+        tracker->setReply(std::make_shared<api::ApplyBucketDiffReply>(cmd));
+        static_cast<api::ApplyBucketDiffReply&>(tracker->getReply()).getDiff().swap(cmd.getDiff());
         LOG(spam, "Replying to ApplyBucketDiff for %s to node %d.",
             bucket.toString().c_str(), cmd.getNodes()[index - 1].index);
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
         MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-        MergeStatus::SP s(new MergeStatus(_env._component.getClock(),
-                                          cmd.getLoadType(), cmd.getPriority(),
-                                          cmd.getTrace().getLevel()));
+        auto s = std::make_shared<MergeStatus>(_env._component.getClock(),
+                                               cmd.getLoadType(), cmd.getPriority(),
+                                               cmd.getTrace().getLevel());
         _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
-        s->pendingApplyDiff =
-            api::ApplyBucketDiffReply::SP(new api::ApplyBucketDiffReply(cmd));
+        s->pendingApplyDiff = std::make_shared<api::ApplyBucketDiffReply>(cmd);
 
         LOG(spam, "Sending ApplyBucketDiff for %s on to node %d",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
-        std::shared_ptr<api::ApplyBucketDiffCommand> cmd2(
-                new api::ApplyBucketDiffCommand(
-                    bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize()));
-        cmd2->setAddress(createAddress(_env._component.getClusterName(),
-                                       cmd.getNodes()[index + 1].index));
+        auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize());
+        cmd2->setAddress(createAddress(_env._component.getClusterName(), cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
         s->pendingId = cmd2->getMsgId();
         _env._fileStorHandler.sendCommand(cmd2);
-            // Everything went fine. Don't delete state but wait for reply
+        // Everything went fine. Don't delete state but wait for reply
         stateGuard.deactivate();
         tracker->dontReply();
     }
