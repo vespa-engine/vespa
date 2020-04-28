@@ -23,6 +23,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -77,7 +78,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final ImportedMlModels importedModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
-    private final Optional<String> wantedDockerImageRepo;
+    private final Optional<DockerImage> wantedDockerImageRepo;
     private final Instant now;
     private final HostProvisioner provisioner;
     private final Provisioned provisioned;
@@ -114,7 +115,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Instant now,
                         Version wantedNodeVespaVersion,
                         boolean accessLoggingEnabledByDefault,
-                        Optional<String> wantedDockerImageRepo) {
+                        Optional<DockerImage> wantedDockerImageRepo) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -266,7 +267,7 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
-    public Optional<String> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
+    public Optional<DockerImage> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
 
     public Instant now() { return now; }
 
@@ -306,7 +307,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
-        private Optional<String> wantedDockerImageRepo = Optional.empty();
+        private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -383,7 +384,7 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder wantedDockerImageRepo(Optional<String> dockerImageRepo) {
+        public Builder wantedDockerImageRepo(Optional<DockerImage> dockerImageRepo) {
             this.wantedDockerImageRepo = dockerImageRepo;
             return this;
         }

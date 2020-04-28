@@ -152,7 +152,7 @@ public class VespaModelFactory implements ModelFactory {
             .zone(zone)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
-            .wantedDockerImageRepo(modelContext.wantedDockerImageRepository());
+            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build(validationParameters);
     }

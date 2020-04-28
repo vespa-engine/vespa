@@ -25,7 +25,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -659,7 +658,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from(cluster.getName()))
                                                  .vespaVersion(deployState.getWantedNodeVespaVersion())
-                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo().map(DockerImage::fromString))
+                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo())
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified),
@@ -691,7 +690,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
-                .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo().map(DockerImage::fromString))
+                .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,

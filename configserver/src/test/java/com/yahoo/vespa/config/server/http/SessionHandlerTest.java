@@ -9,6 +9,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -101,7 +102,7 @@ public class SessionHandlerTest {
         private ConfigChangeActions actions = new ConfigChangeActions();
         private long createTime = System.currentTimeMillis() / 1000;
         private ApplicationId applicationId;
-        private Optional<String> dockerImageRepository;
+        private Optional<DockerImage> dockerImageRepository;
 
         public MockSession(long id, ApplicationPackage app) {
             this(id, app, new InMemoryFlagSource());
@@ -174,7 +175,7 @@ public class SessionHandlerTest {
         public void delete(NestedTransaction transaction) {  }
 
         @Override
-        public Optional<String> getDockerImageRepository() {
+        public Optional<DockerImage> getDockerImageRepository() {
             return dockerImageRepository;
         }
     }
