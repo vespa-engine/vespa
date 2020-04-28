@@ -72,13 +72,17 @@ public class RemoteSessionStateWatcher {
 
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
+            Session.Status currentStatus = session.getStatus();
+            Session.Status newStatus = Session.Status.NONE;
             try {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
-                    sessionChanged(Session.Status.parse(Utf8.toString(node.getData())));
+                    newStatus = Session.Status.parse(Utf8.toString(node.getData()));
+                    sessionChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
+                log.log(Level.WARNING, session.logPre() + "Error handling session change from " + currentStatus.name() +
+                                       " to " + newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });
