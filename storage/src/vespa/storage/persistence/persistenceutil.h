@@ -49,7 +49,7 @@ public:
     api::StorageReply & getReply() {
         return *_reply;
     }
-    api::StorageReply::SP stealReplySP() {
+    api::StorageReply::SP && stealReplySP() && {
         return std::move(_reply);
     }
 
