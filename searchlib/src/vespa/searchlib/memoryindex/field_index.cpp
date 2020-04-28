@@ -294,82 +294,84 @@ template class FieldIndex<true>;
 
 }
 
+using search::memoryindex::FieldIndexBase;
+
 namespace search::btree {
 
 template
-class BTreeNodeDataWrap<memoryindex::FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
+class BTreeNodeDataWrap<FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeNodeT<memoryindex::FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
+class BTreeNodeT<FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 #if 0
 template
-class BTreeNodeT<memoryindex::FieldIndexBase::WordKey,
+class BTreeNodeT<FieldIndexBase::WordKey,
                  BTreeDefaultTraits::LEAF_SLOTS>;
 #endif
 
 template
-class BTreeNodeTT<memoryindex::FieldIndexBase::WordKey,
+class BTreeNodeTT<FieldIndexBase::WordKey,
                   datastore::EntryRef,
-                  search::btree::NoAggregated,
+                  NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 template
-class BTreeNodeTT<memoryindex::FieldIndexBase::WordKey,
-                  memoryindex::FieldIndexBase::PostingListPtr,
-                  search::btree::NoAggregated,
+class BTreeNodeTT<FieldIndexBase::WordKey,
+                  FieldIndexBase::PostingListPtr,
+                  NoAggregated,
                   BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeInternalNode<memoryindex::FieldIndexBase::WordKey,
-                        search::btree::NoAggregated,
+class BTreeInternalNode<FieldIndexBase::WordKey,
+                        NoAggregated,
                         BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 template
-class BTreeLeafNode<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
+class BTreeLeafNode<FieldIndexBase::WordKey,
+                    FieldIndexBase::PostingListPtr,
+                    NoAggregated,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeNodeStore<memoryindex::FieldIndexBase::WordKey,
-                     memoryindex::FieldIndexBase::PostingListPtr,
-                     search::btree::NoAggregated,
+class BTreeNodeStore<FieldIndexBase::WordKey,
+                     FieldIndexBase::PostingListPtr,
+                     NoAggregated,
                      BTreeDefaultTraits::INTERNAL_SLOTS,
                      BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeIterator<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
-                    const memoryindex::FieldIndexBase::KeyComp,
+class BTreeIterator<FieldIndexBase::WordKey,
+                    FieldIndexBase::PostingListPtr,
+                    NoAggregated,
+                    const FieldIndexBase::KeyComp,
                     BTreeDefaultTraits>;
 
 template
-class BTree<memoryindex::FieldIndexBase::WordKey,
-            memoryindex::FieldIndexBase::PostingListPtr,
-            search::btree::NoAggregated,
-            const memoryindex::FieldIndexBase::KeyComp,
+class BTree<FieldIndexBase::WordKey,
+            FieldIndexBase::PostingListPtr,
+            NoAggregated,
+            const FieldIndexBase::KeyComp,
             BTreeDefaultTraits>;
 
 template
-class BTreeRoot<memoryindex::FieldIndexBase::WordKey,
-                memoryindex::FieldIndexBase::PostingListPtr,
-                search::btree::NoAggregated,
-                const memoryindex::FieldIndexBase::KeyComp,
+class BTreeRoot<FieldIndexBase::WordKey,
+                FieldIndexBase::PostingListPtr,
+                NoAggregated,
+                const FieldIndexBase::KeyComp,
                 BTreeDefaultTraits>;
 
 template
-class BTreeRootBase<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
+class BTreeRootBase<FieldIndexBase::WordKey,
+                    FieldIndexBase::PostingListPtr,
+                    NoAggregated,
                     BTreeDefaultTraits::INTERNAL_SLOTS,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeNodeAllocator<memoryindex::FieldIndexBase::WordKey,
-                         memoryindex::FieldIndexBase::PostingListPtr,
-                         search::btree::NoAggregated,
+class BTreeNodeAllocator<FieldIndexBase::WordKey,
+                         FieldIndexBase::PostingListPtr,
+                         NoAggregated,
                          BTreeDefaultTraits::INTERNAL_SLOTS,
                          BTreeDefaultTraits::LEAF_SLOTS>;
 
