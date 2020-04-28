@@ -17,8 +17,7 @@ class MessageTracker : protected Types {
 public:
     typedef std::unique_ptr<MessageTracker> UP;
 
-    MessageTracker(FileStorThreadMetrics::Op& metric,
-                   framework::Clock& clock);
+    MessageTracker(FileStorThreadMetrics::Op& metric, framework::Clock& clock);
 
     ~MessageTracker();
 
@@ -28,8 +27,8 @@ public:
      * a reply, to ensure it is stored in case of failure after reply creation.
      */
     void setReply(api::StorageReply::SP reply) {
-        assert(_reply.get() == 0);
-        _reply = reply;
+        assert( ! _reply );
+        _reply = std::move(reply);
     }
 
     /** Utility function to be able to write a bit less in client. */
@@ -43,8 +42,15 @@ public:
      * commands like merge. */
     void dontReply() { _sendReply = false; }
 
-    api::StorageReply::SP getReply() {
-        return _reply;
+    bool hasReply() const { return bool(_reply); }
+    const api::StorageReply & getReply() const {
+        return *_reply;
+    }
+    api::StorageReply & getReply() {
+        return *_reply;
+    }
+    api::StorageReply::SP && stealReplySP() && {
+        return std::move(_reply);
     }
 
     void generateReply(api::StorageCommand& cmd);
@@ -52,11 +58,11 @@ public:
     api::ReturnCode getResult() const { return _result; }
 
 private:
-    bool _sendReply;
+    bool                       _sendReply;
     FileStorThreadMetrics::Op& _metric;
-    api::StorageReply::SP _reply;
-    api::ReturnCode _result;
-    framework::MilliSecTimer _timer;
+    api::StorageReply::SP      _reply;
+    api::ReturnCode            _result;
+    framework::MilliSecTimer   _timer;
 };
 
 struct PersistenceUtil {

@@ -788,8 +788,8 @@ PersistenceThread::handleCommand(api::StorageCommand& msg)
     spi::Context context(msg.getLoadType(), msg.getPriority(), msg.getTrace().getLevel());
     MessageTracker::UP mtracker(handleCommandSplitByType(msg, context));
     if (mtracker && ! context.getTrace().getRoot().isEmpty()) {
-        if (mtracker->getReply()) {
-            mtracker->getReply()->getTrace().getRoot().addChild(context.getTrace().getRoot());
+        if (mtracker->hasReply()) {
+            mtracker->getReply().getTrace().getRoot().addChild(context.getTrace().getRoot());
         } else {
             msg.getTrace().getRoot().addChild(context.getTrace().getRoot());
         }
@@ -840,8 +840,8 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
                 LOG(debug, "Received unsupported command %s", msg.getType().getName().c_str());
             } else {
                 tracker->generateReply(initiatingCommand);
-                if ((tracker->getReply()
-                     && tracker->getReply()->getResult().failed())
+                if ((tracker->hasReply()
+                     && tracker->getReply().getResult().failed())
                     || tracker->getResult().failed())
                 {
                     _env._metrics.failedOperations.inc();
@@ -873,19 +873,19 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
 namespace {
 
 
-bool isBatchable(const api::StorageMessage& msg)
+bool isBatchable(api::MessageType::Id id)
 {
-    return (msg.getType().getId() == api::MessageType::PUT_ID ||
-            msg.getType().getId() == api::MessageType::REMOVE_ID ||
-            msg.getType().getId() == api::MessageType::UPDATE_ID ||
-            msg.getType().getId() == api::MessageType::REVERT_ID);
+    return (id == api::MessageType::PUT_ID ||
+            id == api::MessageType::REMOVE_ID ||
+            id == api::MessageType::UPDATE_ID ||
+            id == api::MessageType::REVERT_ID);
 }
 
-bool hasBucketInfo(const api::StorageMessage& msg)
+bool hasBucketInfo(api::MessageType::Id id)
 {
-    return (isBatchable(msg) ||
-            (msg.getType().getId() == api::MessageType::REMOVELOCATION_ID ||
-             msg.getType().getId() == api::MessageType::JOINBUCKETS_ID));
+    return (isBatchable(id) ||
+            (id == api::MessageType::REMOVELOCATION_ID ||
+             id == api::MessageType::JOINBUCKETS_ID));
 }
 
 }
@@ -899,15 +899,15 @@ PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage & lock) {
     api::StorageMessage & msg(*lock.second);
 
     std::unique_ptr<MessageTracker> tracker = processMessage(msg);
-    if (tracker && tracker->getReply()) {
-        if (hasBucketInfo(msg)) {
-            if (tracker->getReply()->getResult().success()) {
+    if (tracker && tracker->hasReply()) {
+        if (hasBucketInfo(msg.getType().getId())) {
+            if (tracker->getReply().getResult().success()) {
                 _env.setBucketInfo(*tracker, bucket);
             }
         }
         LOG(spam, "Sending reply up: %s %" PRIu64,
-            tracker->getReply()->toString().c_str(), tracker->getReply()->getMsgId());
-        _env._fileStorHandler.sendReply(tracker->getReply());
+            tracker->getReply().toString().c_str(), tracker->getReply().getMsgId());
+        _env._fileStorHandler.sendReply(std::move(*tracker).stealReplySP());
     }
 }
 

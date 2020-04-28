@@ -218,7 +218,7 @@ TEST_F(MergeHandlerTest, merge_bucket_command) {
     EXPECT_EQ(1234, cmd2.getSourceIndex());
 
     tracker->generateReply(cmd);
-    EXPECT_FALSE(tracker->getReply().get());
+    EXPECT_FALSE(tracker->hasReply());
 }
 
 void
@@ -230,7 +230,7 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
     LOG(debug, "Verifying that get bucket diff is sent on");
     api::GetBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleGetBucketDiff(cmd, *_context);
-    api::StorageMessage::SP replySent = tracker1->getReply();
+    api::StorageMessage::SP replySent = std::move(*tracker1).stealReplySP();
 
     if (midChain) {
         LOG(debug, "Check state");
@@ -279,7 +279,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
     LOG(debug, "Verifying that apply bucket diff is sent on");
     api::ApplyBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleApplyBucketDiff(cmd, *_context);
-    api::StorageMessage::SP replySent = tracker1->getReply();
+    api::StorageMessage::SP replySent = std::move(*tracker1).stealReplySP();
 
     if (midChain) {
         LOG(debug, "Check state");
@@ -724,7 +724,7 @@ TEST_F(MergeHandlerTest, entry_removed_after_get_bucket_diff) {
 
     auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
 
-    auto applyBucketDiffReply = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(tracker->getReply());
+    auto applyBucketDiffReply = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(std::move(*tracker).stealReplySP());
     ASSERT_TRUE(applyBucketDiffReply.get());
 
     auto& diff = applyBucketDiffReply->getDiff();
@@ -1129,8 +1129,7 @@ TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
     setUpChain(BACK);
 
     document::TestDocMan docMan;
-    document::Document::SP doc(
-            docMan.createRandomDocumentAtLocation(_location));
+    document::Document::SP doc(docMan.createRandomDocumentAtLocation(_location));
     spi::Timestamp ts(10111);
     doPut(doc, ts);
 
@@ -1150,9 +1149,7 @@ TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
 
     auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
 
-    auto applyBucketDiffReply =
-            std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(
-                    tracker->getReply());
+    auto applyBucketDiffReply = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(std::move(*tracker).stealReplySP());
     ASSERT_TRUE(applyBucketDiffReply.get());
 
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
@@ -1163,8 +1160,7 @@ TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
     // Timestamp should now be a regular remove
     bool foundTimestamp = false;
     for (size_t i = 0; i < getBucketDiffCmd->getDiff().size(); ++i) {
-        const api::GetBucketDiffCommand::Entry& e(
-                getBucketDiffCmd->getDiff()[i]);
+        const api::GetBucketDiffCommand::Entry& e(getBucketDiffCmd->getDiff()[i]);
         if (e._timestamp == ts) {
             EXPECT_EQ(
                     uint16_t(MergeHandler::IN_USE | MergeHandler::DELETED),
