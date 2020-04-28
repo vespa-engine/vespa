@@ -29,7 +29,7 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
               "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReplySP());
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->stealReplySP());
     ASSERT_TRUE(reply);
     EXPECT_EQ(2u, reply->documents_removed());
 }
@@ -62,7 +62,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
               "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReplySP());
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->stealReplySP());
     ASSERT_TRUE(reply);
     EXPECT_EQ(5u, reply->documents_removed());
 }

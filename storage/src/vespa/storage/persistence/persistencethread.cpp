@@ -907,7 +907,7 @@ PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage & lock) {
         }
         LOG(spam, "Sending reply up: %s %" PRIu64,
             tracker->getReply().toString().c_str(), tracker->getReply().getMsgId());
-        _env._fileStorHandler.sendReply(tracker->getReplySP());
+        _env._fileStorHandler.sendReply(tracker->stealReplySP());
     }
 }
 
