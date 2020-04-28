@@ -32,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -218,8 +217,7 @@ public class DeploymentContext {
 
     /** Flush count pending DNS updates */
     public DeploymentContext flushDnsUpdates(int count) {
-        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1),
-                                                   new JobControl(tester.controller().curator()), count);
+        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1), count);
         dispatcher.run();
         return this;
     }

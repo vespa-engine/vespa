@@ -12,10 +12,10 @@ import java.time.Duration;
  *
  * @author bratseth
  */
-public class OutstandingChangeDeployer extends Maintainer {
+public class OutstandingChangeDeployer extends ControllerMaintainer {
 
-    public OutstandingChangeDeployer(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl);
+    public OutstandingChangeDeployer(Controller controller, Duration interval) {
+        super(controller, interval);
     }
 
     @Override

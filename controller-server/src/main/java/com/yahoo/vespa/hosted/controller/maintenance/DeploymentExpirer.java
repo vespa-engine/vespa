@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.yolean.Exceptions;
 
@@ -16,10 +17,10 @@ import java.util.logging.Level;
  * @author mortent
  * @author bratseth
  */
-public class DeploymentExpirer extends Maintainer {
+public class DeploymentExpirer extends ControllerMaintainer {
 
-    public DeploymentExpirer(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl);
+    public DeploymentExpirer(Controller controller, Duration interval) {
+        super(controller, interval);
     }
 
     @Override
@@ -35,7 +36,7 @@ public class DeploymentExpirer extends Maintainer {
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Could not expire " + deployment + " of " + instance +
                                                ": " + Exceptions.toMessageString(e) + ". Retrying in " +
-                                               maintenanceInterval());
+                                               interval());
                     }
                 }
     }

@@ -27,7 +27,6 @@ public class ResourceTagMaintainerTest {
         MockResourceTagger mockResourceTagger = new MockResourceTagger();
         ResourceTagMaintainer resourceTagMaintainer = new ResourceTagMaintainer(tester.controller(),
                                                                                 Duration.ofMinutes(5),
-                                                                                new JobControl(tester.curator()),
                                                                                 mockResourceTagger);
         resourceTagMaintainer.maintain();
         assertEquals(2, mockResourceTagger.getValues().size());

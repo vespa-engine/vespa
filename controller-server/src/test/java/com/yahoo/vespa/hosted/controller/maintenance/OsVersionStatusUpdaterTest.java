@@ -6,7 +6,6 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.Test;
@@ -26,8 +25,8 @@ public class OsVersionStatusUpdaterTest {
     @Test
     public void test_update() {
         ControllerTester tester = new ControllerTester();
-        OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                                          new JobControl(new MockCuratorDb()));
+        OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
+        );
         // Add all zones to upgrade policy
         UpgradePolicy upgradePolicy = UpgradePolicy.create();
         for (ZoneApi zone : tester.zoneRegistry().zones().controllerUpgraded().zones()) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
@@ -33,14 +34,14 @@ import static java.util.Comparator.naturalOrder;
  * @author bratseth
  * @author mpolden
  */
-public class Upgrader extends Maintainer {
+public class Upgrader extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;
 
-    public Upgrader(Controller controller, Duration interval, JobControl jobControl, CuratorDb curator) {
-        super(controller, interval, jobControl);
+    public Upgrader(Controller controller, Duration interval, CuratorDb curator) {
+        super(controller, interval);
         this.curator = Objects.requireNonNull(curator, "curator cannot be null");
     }
 
@@ -129,7 +130,7 @@ public class Upgrader extends Maintainer {
 
     /** Returns the number of applications to upgrade in this run */
     private int numberOfApplicationsToUpgrade() {
-        return numberOfApplicationsToUpgrade(maintenanceInterval().dividedBy(Math.max(1, controller().curator().cluster().size())).toMillis(),
+        return numberOfApplicationsToUpgrade(interval().dividedBy(Math.max(1, controller().curator().cluster().size())).toMillis(),
                                              controller().clock().millis(),
                                              upgradesPerMinute());
     }

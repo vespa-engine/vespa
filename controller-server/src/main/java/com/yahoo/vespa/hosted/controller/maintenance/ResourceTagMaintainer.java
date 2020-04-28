@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
@@ -16,12 +17,12 @@ import java.util.stream.Collectors;
 /**
  * @author olaa
  */
-public class ResourceTagMaintainer extends Maintainer {
+public class ResourceTagMaintainer extends ControllerMaintainer {
 
     private final ResourceTagger resourceTagger;
 
-    public ResourceTagMaintainer(Controller controller, Duration interval, JobControl jobControl, ResourceTagger resourceTagger) {
-        super(controller, interval, jobControl);
+    public ResourceTagMaintainer(Controller controller, Duration interval, ResourceTagger resourceTagger) {
+        super(controller, interval);
         this.resourceTagger = resourceTagger;
     }
 

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -24,8 +25,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     private static final Set<Node.State> upgradableNodeStates = Set.of(Node.State.active, Node.State.reserved);
 
-    public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy(), null);
+    public SystemUpgrader(Controller controller, Duration interval) {
+        super(controller, interval, controller.zoneRegistry().upgradePolicy(), null);
     }
 
     @Override

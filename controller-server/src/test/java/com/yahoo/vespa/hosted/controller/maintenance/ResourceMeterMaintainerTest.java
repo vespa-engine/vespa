@@ -35,7 +35,7 @@ public class ResourceMeterMaintainerTest {
     public void testMaintainer() {
         setUpZones();
 
-        ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), metrics, snapshotConsumer);
+        ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
         Collection<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 

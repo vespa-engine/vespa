@@ -87,8 +87,7 @@ public class JobRunnerTest {
         JobController jobs = tester.controller().jobController();
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         phasedExecutor(phaser), stepRunner);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), phasedExecutor(phaser), stepRunner);
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
@@ -119,8 +118,7 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
@@ -227,8 +225,7 @@ public class JobRunnerTest {
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
         CyclicBarrier barrier = new CyclicBarrier(2);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         Executors.newFixedThreadPool(32), waitingRunner(barrier));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
@@ -264,8 +261,7 @@ public class JobRunnerTest {
     public void historyPruning() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), (id, step) -> Optional.of(running));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), (id, step) -> Optional.of(running));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId instanceId = appId.defaultInstance();
@@ -289,8 +285,7 @@ public class JobRunnerTest {
         assertFalse(jobs.details(new RunId(instanceId, systemTest, 1)).isPresent());
         assertTrue(jobs.details(new RunId(instanceId, systemTest, 65)).isPresent());
 
-        JobRunner failureRunner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                                inThreadExecutor(), (id, step) -> Optional.of(error));
+        JobRunner failureRunner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), (id, step) -> Optional.of(error));
 
         // Make all but the oldest of the 54 jobs a failure.
         for (int i = 0; i < jobs.historyLength() - 1; i++) {
@@ -362,8 +357,7 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
@@ -380,8 +374,7 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();

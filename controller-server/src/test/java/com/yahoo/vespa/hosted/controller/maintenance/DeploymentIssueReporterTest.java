@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +55,7 @@ public class DeploymentIssueReporterTest {
     public void setup() {
         tester = new DeploymentTester();
         issues = new MockDeploymentIssues();
-        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofDays(1), new JobControl(new MockCuratorDb()));
+        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofDays(1));
     }
 
     @Test

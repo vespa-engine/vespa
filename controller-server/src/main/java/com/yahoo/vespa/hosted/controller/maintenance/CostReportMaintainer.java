@@ -17,15 +17,14 @@ import java.util.EnumSet;
  * @author ldalves
  * @author andreer
  */
-public class CostReportMaintainer extends Maintainer {
+public class CostReportMaintainer extends ControllerMaintainer {
 
     private final CostReportConsumer consumer;
     private final NodeRepository nodeRepository;
     private final Clock clock;
 
-    public CostReportMaintainer(Controller controller, Duration interval,
-                                JobControl jobControl, CostReportConsumer costReportConsumer) {
-        super(controller, interval, jobControl, null, EnumSet.of(SystemName.main));
+    public CostReportMaintainer(Controller controller, Duration interval, CostReportConsumer costReportConsumer) {
+        super(controller, interval, null, EnumSet.of(SystemName.main));
         this.consumer = costReportConsumer;
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.clock = controller.clock();

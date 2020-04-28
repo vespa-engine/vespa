@@ -14,8 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
-import com.yahoo.vespa.hosted.controller.maintenance.Maintainer;
+import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -56,10 +55,8 @@ public class OsApiTest extends ControllerContainerTest {
                           .setOsUpgradePolicy(cloud2, UpgradePolicy.create().upgrade(zone3));
         osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                               new JobControl(tester.controller().curator()),
                                cloud1),
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                               new JobControl(tester.controller().curator()),
                                cloud2));
     }
 
@@ -130,7 +127,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private void upgradeAndUpdateStatus() {
-        osUpgraders.forEach(Maintainer::run);
+        osUpgraders.forEach(ControllerMaintainer::run);
         updateVersionStatus();
     }
 

@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,8 +31,8 @@ public class DeploymentExpirerTest {
                 ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
                 Duration.ofDays(14)
         );
-        DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
-                                                          new JobControl(new MockCuratorDb()));
+        DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10)
+        );
         var devApp = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodApp = tester.newDeploymentContext("tenant2", "app2", "default");
 

@@ -47,8 +47,8 @@ public class CostReportMaintainerTest {
         CostReportMaintainer maintainer = new CostReportMaintainer(
                 tester.controller(),
                 Duration.ofDays(1),
-                new JobControl(tester.curator()),
-                costReportConsumer);
+                costReportConsumer
+        );
         maintainer.maintain();
     }
 

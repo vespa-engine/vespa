@@ -1,11 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.SystemName;
-import java.util.logging.Level;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.yolean.Exceptions;
@@ -15,6 +15,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * @author smorgrav
  * @author mpolden
  */
-public class DeploymentMetricsMaintainer extends Maintainer {
+public class DeploymentMetricsMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(DeploymentMetricsMaintainer.class.getName());
 
@@ -32,8 +33,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     private final ApplicationController applications;
 
-    public DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
-        super(controller, duration, jobControl, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
+    public DeploymentMetricsMaintainer(Controller controller, Duration duration) {
+        super(controller, duration, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
     }
 
@@ -84,7 +85,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                         String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
-                                      maintenanceInterval(),
+                                      interval(),
                                       Exceptions.toMessageString(lastException.get())));
             }
         } catch (InterruptedException e) {
