@@ -193,7 +193,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                       .allMatch(versions -> versions.sourcePlatform()
                                                                                                     .map(versions.targetPlatform()::equals)
                                                                                                     .orElse(true))
-                                                             ? "revision" : "upgrade");
+                                                             ? "application" : "platform");
                           }
                       });
                       Cursor allRunsObject = instanceObject.setObject("allRuns");
