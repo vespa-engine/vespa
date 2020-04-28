@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class ScalingSuggestionsMaintainer extends Maintainer {
+public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
 
     private final Autoscaler autoscaler;
 

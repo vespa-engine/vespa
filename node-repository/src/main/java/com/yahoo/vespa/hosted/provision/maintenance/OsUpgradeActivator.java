@@ -15,7 +15,7 @@ import java.time.Duration;
  *
  * @author mpolden
  */
-public class OsUpgradeActivator extends Maintainer {
+public class OsUpgradeActivator extends NodeRepositoryMaintainer {
 
     public OsUpgradeActivator(NodeRepository nodeRepository, Duration interval) {
         super(nodeRepository, interval);

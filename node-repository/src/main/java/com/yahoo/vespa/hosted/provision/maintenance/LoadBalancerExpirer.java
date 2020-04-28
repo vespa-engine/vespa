@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * @author mpolden
  */
-public class LoadBalancerExpirer extends Maintainer {
+public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
 
     private static final Duration reservedExpiry = Duration.ofHours(1);
     private static final Duration inactiveExpiry = Duration.ofHours(1);

@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * 
  * @author bratseth
  */
-public class NodeRebooter extends Maintainer {
+public class NodeRebooter extends NodeRepositoryMaintainer {
 
     private final IntFlag rebootIntervalInDays;
     private final Clock clock;
