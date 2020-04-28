@@ -35,4 +35,4 @@ public:
 
 std::ostream &operator << (std::ostream &out, const AddressSpace &rhs);
 
-} // namespace search
+}
