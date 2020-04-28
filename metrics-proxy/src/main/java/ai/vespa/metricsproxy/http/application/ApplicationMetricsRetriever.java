@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -37,16 +36,16 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(ApplicationMetricsRetriever.class.getName());
 
-    private static final int PARALLELISM = 20;
+    static final int MAX_THREADS = 20;
     static final Duration MIN_TIMEOUT = Duration.ofSeconds(60);
-    private static final Duration MAX_TIMEOUT = Duration.ofSeconds(240);
+    static final Duration MAX_TIMEOUT = Duration.ofSeconds(240);
 
     private static final int HTTP_CONNECT_TIMEOUT = 5000;
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
 
     private final HttpClient httpClient = createHttpClient();
     private final List<NodeMetricsClient> clients;
-    private final ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM);
+    private final ForkJoinPool forkJoinPool;
 
     // Non-final for testing
     private Duration taskTimeout;
@@ -55,7 +54,9 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
-        taskTimeout = timeout(clients.size());
+        int numThreads = Math.min(clients.size(), MAX_THREADS);
+        taskTimeout = timeout(clients.size(), numThreads);
+        forkJoinPool = new ForkJoinPool(numThreads);
     }
 
     @Override
@@ -112,8 +113,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
                 .build();
     }
 
-    private static Duration timeout(int clients) {
-        Duration timeout = Duration.ofSeconds(Long.max(MIN_TIMEOUT.toSeconds(), 20 * clients / PARALLELISM));
+    static Duration timeout(int clients, int numThreads) {
+        Duration timeout = Duration.ofSeconds(Long.max(MIN_TIMEOUT.toSeconds(), 20 * clients / numThreads));
         return timeout.compareTo(MAX_TIMEOUT) > 0 ? MAX_TIMEOUT : timeout;
     }
 
