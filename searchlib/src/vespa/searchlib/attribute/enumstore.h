@@ -215,10 +215,6 @@ std::unique_ptr<datastore::IUniqueStoreDictionary>
 make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare);
 
 
-extern template
-class datastore::DataStoreT<IEnumStore::Index>;
-
-
 template <>
 void
 EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const;
@@ -229,13 +225,27 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
                                            size_t available,
                                            Index& idx);
 
+}
+
+namespace search::datastore {
 
 extern template
-class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class DataStoreT<search::IEnumStore::Index>;
+
+}
+
+namespace search::btree {
+
 extern template
-class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeBuilder<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
+extern template
+class BTreeBuilder<search::IEnumStore::Index, datastore::EntryRef, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
+
+}
+
+namespace search {
 
 extern template class EnumStoreT<const char*>;
 extern template class EnumStoreT<int8_t>;
