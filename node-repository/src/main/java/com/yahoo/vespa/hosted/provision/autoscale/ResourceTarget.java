@@ -3,24 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 public abstract class ResourceTarget {
 
-    private final int sourceNodes;
-    private final int sourceGroups;
-
-    public ResourceTarget(int sourceNodes, int sourceGroups) {
-        this.sourceNodes = sourceNodes;
-        this.sourceGroups = sourceGroups;
-    }
-
-    /** Returns the number of nodes of the *source* allocation causing this target */
-    public int sourceNodes() { return sourceNodes; }
-
-    /** Returns the number of groups of the *source* allocation causing this target */
-    public int sourceGroups() { return sourceGroups; }
-
-    /** Returns the group size of the source allocation producing this target */
-    public int sourceGroupSize() {
-        // ceil: If the division does not produce a whole number we assume some node is missing
-        return (int)Math.ceil((double)sourceNodes / sourceGroups);
+    public ResourceTarget() {
     }
 
     /** Returns the target total cpu to allocate to the entire cluster */

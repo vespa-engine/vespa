@@ -91,6 +91,12 @@ public class AllocatableClusterResources {
 
     public int nodes() { return nodes; }
     public int groups() { return groups; }
+
+    public int groupSize() {
+        // ceil: If the division does not produce a whole number we assume some node is missing
+        return (int)Math.ceil((double)nodes / groups);
+    }
+
     public ClusterSpec.Type clusterType() { return clusterType; }
 
     public double cost() { return nodes * costOf(advertisedResources); }

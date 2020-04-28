@@ -77,19 +77,19 @@ public class AllocationOptimizer {
             // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
             // and we decide the number of groups.
             // The exception is when we only have one group, where we can add and remove single nodes in it.
-            singleGroupMode = target.sourceGroups() == 1;
-            nodeIncrement = singleGroupMode ? 1 : target.sourceGroupSize();
+            singleGroupMode = current.groups() == 1;
+            nodeIncrement = singleGroupMode ? 1 : current.groupSize();
 
             // Step to the right starting point
-            currentNodes = target.sourceNodes();
+            currentNodes = current.nodes();
             if (currentNodes < minNodes()) { // step up
                 while (currentNodes < minNodes()
-                       && (singleGroupMode || currentNodes + nodeIncrement > target.sourceGroupSize())) // group level redundancy
+                       && (singleGroupMode || currentNodes + nodeIncrement > current.groupSize())) // group level redundancy
                     currentNodes += nodeIncrement;
             }
             else { // step down
                 while (currentNodes - nodeIncrement >= minNodes()
-                       && (singleGroupMode || currentNodes - nodeIncrement > target.sourceGroupSize())) // group level redundancy
+                       && (singleGroupMode || currentNodes - nodeIncrement > current.groupSize())) // group level redundancy
                     currentNodes -= nodeIncrement;
             }
         }
@@ -107,19 +107,19 @@ public class AllocationOptimizer {
         private int minNodes() {
             if (limits.isEmpty()) return minimumNodes;
             if (singleGroupMode) return limits.min().nodes();
-            return Math.max(limits.min().nodes(), limits.min().groups() * target.sourceGroupSize() );
+            return Math.max(limits.min().nodes(), limits.min().groups() * current.groupSize() );
         }
 
         private int maxNodes() {
             if (limits.isEmpty()) return maximumNodes;
             if (singleGroupMode) return limits.max().nodes();
-            return Math.min(limits.max().nodes(), limits.max().groups() * target.sourceGroupSize() );
+            return Math.min(limits.max().nodes(), limits.max().groups() * current.groupSize() );
         }
 
         private ClusterResources resourcesWith(int nodes) {
-            int nodesWithRedundancy = nodes - (singleGroupMode ? 1 : target.sourceGroupSize());
+            int nodesWithRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
             return new ClusterResources(nodes,
-                                        singleGroupMode ? 1 : nodes / target.sourceGroupSize(),
+                                        singleGroupMode ? 1 : nodes / current.groupSize(),
                                         nodeResourcesWith(nodesWithRedundancy));
         }
 
@@ -135,7 +135,7 @@ public class AllocationOptimizer {
             if (singleGroupMode) {
                 // The fixed cost portion of cpu does not scale with changes to the node count
                 // TODO: Only for the portion of cpu consumed by queries
-                cpu = fixedCpuCostFraction * target.clusterCpu() / target.sourceGroupSize() +
+                cpu = fixedCpuCostFraction * target.clusterCpu() / current.groupSize() +
                       (1 - fixedCpuCostFraction) * target.clusterCpu() / nodeCount;
 
                 if (current.clusterType().isContent()) { // load scales with node share of content
@@ -150,8 +150,8 @@ public class AllocationOptimizer {
             else {
                 cpu = target.clusterCpu() / nodeCount;
                 if (current.clusterType().isContent()) { // load scales with node share of content
-                    memory = target.groupMemory() / target.sourceGroupSize();
-                    disk = target.groupDisk() / target.sourceGroupSize();
+                    memory = target.groupMemory() / current.groupSize();
+                    disk = target.groupDisk() / current.groupSize();
                 }
                 else {
                     memory = target.nodeMemory();

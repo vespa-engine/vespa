@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ClusterResources;
-
 /**
  * This is used when the target of an allocation search is to come as close as possible to the current allocation
  *
@@ -10,36 +8,36 @@ import com.yahoo.config.provision.ClusterResources;
  */
 public class AllocationBasedResourceTarget extends ResourceTarget {
 
-    private final AllocatableClusterResources resources;
+    private final AllocatableClusterResources current;
 
-    public AllocationBasedResourceTarget(AllocatableClusterResources resources) {
-        super(resources.nodes(), resources.groups());
-        this.resources = resources;
+    public AllocationBasedResourceTarget(AllocatableClusterResources current) {
+        super();
+        this.current = current;
     }
 
     @Override
     public double clusterCpu() {
-        return resources.toAdvertisedClusterResources().nodeResources().vcpu() * resources.nodes();
+        return current.toAdvertisedClusterResources().nodeResources().vcpu() * current.nodes();
     }
 
     @Override
     public double groupMemory() {
-        return resources.toAdvertisedClusterResources().nodeResources().memoryGb() * sourceGroupSize();
+        return current.toAdvertisedClusterResources().nodeResources().memoryGb() * current.groupSize();
     }
 
     @Override
     public double groupDisk() {
-        return resources.toAdvertisedClusterResources().nodeResources().diskGb() * sourceGroupSize();
+        return current.toAdvertisedClusterResources().nodeResources().diskGb() * current.groupSize();
     }
 
     @Override
     public double nodeMemory() {
-        return resources.toAdvertisedClusterResources().nodeResources().memoryGb();
+        return current.toAdvertisedClusterResources().nodeResources().memoryGb();
     }
 
     @Override
     public double nodeDisk() {
-        return resources.toAdvertisedClusterResources().nodeResources().diskGb();
+        return current.toAdvertisedClusterResources().nodeResources().diskGb();
     }
 
 }
