@@ -544,7 +544,7 @@ TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 TEST_F("require that outdated put is ignored", FeedHandlerFixture)
 {
     DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
-    auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), doc_context.doc);
+    auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), std::move(doc_context.doc));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
@@ -673,7 +673,7 @@ TEST_F("require that put is rejected if resource limit is reached", FeedHandlerF
     f.writeFilter._message = "Attribute resource limit reached";
 
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
-    auto op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc);
+    auto op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), std::move(docCtx.doc));
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.put_count);
@@ -801,7 +801,7 @@ TEST_F("require that put with different document type repo is ok", FeedHandlerFi
     TwoFieldsSchemaContext schema;
     DocumentContext doc_context("id:ns:searchdocument::foo", *schema.builder);
     auto op = std::make_unique<PutOperation>(doc_context.bucketId,
-                                             Timestamp(10), doc_context.doc);
+                                             Timestamp(10), std::move(doc_context.doc));
     FeedTokenContext token_context;
     EXPECT_EQUAL(schema.getRepo().get(), op->getDocument()->getRepo());
     EXPECT_NOT_EQUAL(f.schema.getRepo().get(), op->getDocument()->getRepo());

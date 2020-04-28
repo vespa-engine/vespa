@@ -22,15 +22,14 @@ protected:
 
     DocumentOperation(Type type);
 
-    DocumentOperation(Type type, const document::BucketId &bucketId,
-                      const storage::spi::Timestamp &timestamp);
+    DocumentOperation(Type type, document::BucketId bucketId, storage::spi::Timestamp timestamp);
 
     void assertValidBucketId(const document::DocumentId &docId) const;
     void assertValidBucketId(const document::GlobalId &docId) const;
     vespalib::string docArgsToString() const;
 
 public:
-    ~DocumentOperation() override {}
+    ~DocumentOperation() override;
     const document::BucketId &getBucketId() const { return _bucketId; }
     storage::spi::Timestamp getTimestamp() const { return _timestamp; }
 

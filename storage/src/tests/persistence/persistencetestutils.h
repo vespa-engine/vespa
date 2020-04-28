@@ -37,6 +37,23 @@ struct PersistenceTestEnvironment {
 
 class PersistenceTestUtils : public testing::Test {
 public:
+    class NoBucketLock : public FileStorHandler::BucketLockInterface
+    {
+    public:
+        NoBucketLock(document::Bucket bucket) : _bucket(bucket) { }
+        const document::Bucket &getBucket() const override {
+            return _bucket;
+        }
+        api::LockingRequirements lockingRequirements() const noexcept override {
+            return api::LockingRequirements::Shared;
+        }
+        static std::shared_ptr<NoBucketLock> make(document::Bucket bucket) {
+            return std::make_shared<NoBucketLock>(bucket);
+        }
+    private:
+        document::Bucket _bucket;
+    };
+
     std::unique_ptr<PersistenceTestEnvironment> _env;
 
     PersistenceTestUtils();

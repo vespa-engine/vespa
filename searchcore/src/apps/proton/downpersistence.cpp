@@ -19,9 +19,7 @@ DownPersistence::DownPersistence(const vespalib::string &downReason)
 {
 }
 
-DownPersistence::~DownPersistence()
-{
-}
+DownPersistence::~DownPersistence() = default;
 
 Result
 DownPersistence::initialize()
@@ -40,8 +38,7 @@ DownPersistence::getPartitionStates() const
 BucketIdListResult
 DownPersistence::listBuckets(BucketSpace, PartitionId) const
 {
-    return BucketIdListResult(errorResult.getErrorCode(),
-                              errorResult.getErrorMessage());
+    return BucketIdListResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 Result
@@ -59,30 +56,25 @@ DownPersistence:: setActiveState(const Bucket&, BucketInfo::ActiveState)
 BucketInfoResult
 DownPersistence:: getBucketInfo(const Bucket&) const
 {
-    return BucketInfoResult(errorResult.getErrorCode(),
-                            errorResult.getErrorMessage());
+    return BucketInfoResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 Result
-DownPersistence::put(const Bucket&, Timestamp, const Document::SP&, Context&)
+DownPersistence::put(const Bucket&, Timestamp, Document::SP, Context&)
 {
     return errorResult;
 }
 
 RemoveResult
-DownPersistence:: remove(const Bucket&, Timestamp,
-                         const DocumentId&, Context&)
+DownPersistence:: remove(const Bucket&, Timestamp, const DocumentId&, Context&)
 {
-    return RemoveResult(errorResult.getErrorCode(),
-                        errorResult.getErrorMessage());
+    return RemoveResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 RemoveResult
-DownPersistence::removeIfFound(const Bucket&, Timestamp,
-                               const DocumentId&, Context&)
+DownPersistence::removeIfFound(const Bucket&, Timestamp,const DocumentId&, Context&)
 {
-    return RemoveResult(errorResult.getErrorCode(),
-                        errorResult.getErrorMessage());
+    return RemoveResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 Result
@@ -91,35 +83,28 @@ DownPersistence::removeEntry(const Bucket&, Timestamp, Context&)
     return errorResult;
 }
 
-UpdateResult DownPersistence::update(const Bucket&, Timestamp,
-                                     const DocumentUpdate::SP&, Context&)
+UpdateResult DownPersistence::update(const Bucket&, Timestamp, const DocumentUpdate::SP&, Context&)
 {
-    return UpdateResult(errorResult.getErrorCode(),
-                        errorResult.getErrorMessage());
+    return UpdateResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 GetResult
-DownPersistence::get(const Bucket&, const document::FieldSet&,
-                     const DocumentId&, Context&) const
+DownPersistence::get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const
 {
-    return GetResult(errorResult.getErrorCode(),
-                     errorResult.getErrorMessage());
+    return GetResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 CreateIteratorResult
 DownPersistence::createIterator(const Bucket&, const document::FieldSet&,
-                                const Selection&, IncludedVersions,
-                                Context&)
+                                const Selection&, IncludedVersions, Context&)
 {
-    return CreateIteratorResult(errorResult.getErrorCode(),
-                                errorResult.getErrorMessage());
+    return CreateIteratorResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 IterateResult
 DownPersistence::iterate(IteratorId, uint64_t, Context&) const
 {
-    return IterateResult(errorResult.getErrorCode(),
-                         errorResult.getErrorMessage());
+    return IterateResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 Result
@@ -144,8 +129,7 @@ DownPersistence::deleteBucket(const Bucket&, Context&)
 BucketIdListResult
 DownPersistence::getModifiedBuckets(BucketSpace) const
 {
-    return BucketIdListResult(errorResult.getErrorCode(),
-                              errorResult.getErrorMessage());
+    return BucketIdListResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
 
 

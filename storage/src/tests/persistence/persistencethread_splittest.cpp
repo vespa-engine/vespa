@@ -201,19 +201,20 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         }
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
                 docloc, seed, docSize, docSize));
-        spi.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc), context);
     }
 
     std::unique_ptr<PersistenceThread> thread(createPersistenceThread(0));
     getNode().getStateUpdater().setClusterState(
             std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
-    api::SplitBucketCommand cmd(makeDocumentBucket(document::BucketId(currentSplitLevel, 1)));
-    cmd.setMaxSplitBits(maxBits);
-    cmd.setMinSplitBits(minBits);
-    cmd.setMinByteSize(maxSize);
-    cmd.setMinDocCount(maxCount);
-    cmd.setSourceIndex(0);
-    MessageTracker::UP result(thread->handleSplitBucket(cmd, context));
+    document::Bucket docBucket = makeDocumentBucket(document::BucketId(currentSplitLevel, 1));
+    auto cmd = std::make_shared<api::SplitBucketCommand>(docBucket);
+    cmd->setMaxSplitBits(maxBits);
+    cmd->setMinSplitBits(minBits);
+    cmd->setMinByteSize(maxSize);
+    cmd->setMinDocCount(maxCount);
+    cmd->setSourceIndex(0);
+    MessageTracker::UP result = thread->handleSplitBucket(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(docBucket), cmd));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {
@@ -222,8 +223,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     auto& reply = dynamic_cast<api::SplitBucketReply&>(result->getReply());
     std::set<std::string> expected;
     for (uint32_t i=0; i<resultBuckets; ++i) {
-        document::BucketId b(resultSplitLevel,
-                             location | (i == 0 ? 0 : splitMask));
+        document::BucketId b(resultSplitLevel, location | (i == 0 ? 0 : splitMask));
         std::ostringstream ost;
         ost << b << " - " << b.getUsedBits();
         expected.insert(ost.str());

@@ -14,22 +14,69 @@ namespace {
         ost << "PersistenceUtil(" << p << ")";
         return ost.str();
     }
+
+    bool isBatchable(api::MessageType::Id id)
+    {
+        return (id == api::MessageType::PUT_ID ||
+                id == api::MessageType::REMOVE_ID ||
+                id == api::MessageType::UPDATE_ID ||
+                id == api::MessageType::REVERT_ID);
+    }
+
+    bool hasBucketInfo(api::MessageType::Id id)
+    {
+        return (isBatchable(id) ||
+                (id == api::MessageType::REMOVELOCATION_ID ||
+                 id == api::MessageType::JOINBUCKETS_ID));
+    }
+
 }
 
-MessageTracker::MessageTracker(FileStorThreadMetrics::Op& metric,
-                               framework::Clock& clock)
+MessageTracker::MessageTracker(PersistenceUtil & env,
+                               FileStorHandler::BucketLockInterface::SP bucketLock,
+                               api::StorageMessage::SP msg)
     : _sendReply(true),
-      _metric(metric),
+      _updateBucketInfo(hasBucketInfo(msg->getType().getId())),
+      _bucketLock(std::move(bucketLock)),
+      _msg(std::move(msg)),
+      _context(_msg->getLoadType(), _msg->getPriority(), _msg->getTrace().getLevel()),
+      _env(env),
+      _metric(nullptr),
       _result(api::ReturnCode::OK),
-      _timer(clock)
-{
-    _metric.count.inc();
+      _timer(_env._component.getClock())
+{ }
+
+void
+MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
+    metric.count.inc();
+    _metric = &metric;
 }
 
 MessageTracker::~MessageTracker()
 {
     if (_reply.get() && _reply->getResult().success()) {
-        _metric.latency.addValue(_timer.getElapsedTimeAsDouble());
+        _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
+    }
+}
+
+void
+MessageTracker::sendReply() {
+    if (hasReply()) {
+        if ( ! _context.getTrace().getRoot().isEmpty()) {
+            getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
+        }
+        if (_updateBucketInfo) {
+            if (getReply().getResult().success()) {
+                _env.setBucketInfo(*this, _bucketLock->getBucket());
+            }
+        }
+        LOG(spam, "Sending reply up: %s %" PRIu64,
+            getReply().toString().c_str(), getReply().getMsgId());
+        _env._fileStorHandler.sendReply(std::move(_reply));
+    } else {
+        if ( ! _context.getTrace().getRoot().isEmpty()) {
+            _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
+        }
     }
 }
 
@@ -53,7 +100,7 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
     }
 
     if (!_reply->getResult().success()) {
-        _metric.failed.inc();
+        _metric->failed.inc();
         LOGBP(debug, "Failed to handle command %s: %s",
               cmd.toString().c_str(),
               _result.toString().c_str());

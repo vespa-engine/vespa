@@ -31,7 +31,7 @@ AbstractPersistenceProvider::update(const Bucket& bucket, Timestamp ts,
 
     upd->applyTo(*docToUpdate);
 
-    Result putResult = put(bucket, ts, docToUpdate, context);
+    Result putResult = put(bucket, ts, std::move(docToUpdate), context);
 
     if (putResult.hasError()) {
         return UpdateResult(putResult.getErrorCode(),

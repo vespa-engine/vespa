@@ -15,36 +15,53 @@ typedef std::unique_ptr<storage::spi::Result> ResultUP;
  * instance of this class is passed to every invokation of the IFeedHandler.
  */
 namespace feedtoken {
-    class ITransport {
-    public:
-        virtual ~ITransport() { }
-        virtual void send(ResultUP result, bool documentWasFound) = 0;
-    };
 
-    class State : public search::IDestructorCallback {
-    public:
-        State(const State &) = delete;
-        State & operator = (const State &) = delete;
-        State(ITransport & transport);
-        ~State() override;
-        void fail();
-        void setResult(ResultUP result, bool documentWasFound) {
-            _documentWasFound = documentWasFound;
-            _result = std::move(result);
-        }
-        const storage::spi::Result &getResult() { return *_result; }
-    private:
-        void ack();
-        ITransport           &_transport;
-        ResultUP              _result;
-        bool                  _documentWasFound;
-        std::atomic<bool>     _alreadySent;
-    };
+class ITransport {
+public:
+    virtual ~ITransport() { }
+    virtual void send(ResultUP result, bool documentWasFound) = 0;
+};
 
-    inline std::shared_ptr<State>
-    make(ITransport & latch) {
-        return std::make_shared<State>(latch);
+class State : public search::IDestructorCallback {
+public:
+    State(const State &) = delete;
+    State & operator = (const State &) = delete;
+    State(ITransport & transport);
+    ~State() override;
+    void fail();
+    void setResult(ResultUP result, bool documentWasFound) {
+        _documentWasFound = documentWasFound;
+        _result = std::move(result);
     }
+    const storage::spi::Result &getResult() { return *_result; }
+protected:
+    void ack();
+private:
+    ITransport           &_transport;
+    ResultUP              _result;
+    bool                  _documentWasFound;
+    std::atomic<bool>     _alreadySent;
+};
+class OwningState : public State {
+public:
+    OwningState(std::unique_ptr<ITransport> transport)
+        : State(*transport),
+          _owned(std::move(transport))
+    {}
+    ~OwningState() override;
+private:
+    std::unique_ptr<ITransport> _owned;
+};
+
+inline std::shared_ptr<State>
+make(ITransport & latch) {
+    return std::make_shared<State>(latch);
+}
+inline std::shared_ptr<State>
+make(std::unique_ptr<ITransport> transport) {
+    return std::make_shared<OwningState>(std::move(transport));
+}
+
 }
 
 using FeedToken = std::shared_ptr<feedtoken::State>;

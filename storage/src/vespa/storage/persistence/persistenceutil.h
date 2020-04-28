@@ -13,13 +13,17 @@
 
 namespace storage {
 
+class PersistenceUtil;
+
 class MessageTracker : protected Types {
 public:
     typedef std::unique_ptr<MessageTracker> UP;
 
-    MessageTracker(FileStorThreadMetrics::Op& metric, framework::Clock& clock);
+    MessageTracker(PersistenceUtil & env, FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     ~MessageTracker();
+
+    void setMetric(FileStorThreadMetrics::Op& metric);
 
     /**
      * Called by operation handlers to set reply if they need to send a
@@ -57,23 +61,32 @@ public:
 
     api::ReturnCode getResult() const { return _result; }
 
+    spi::Context & context() { return _context; }
+
+    void sendReply();
+
 private:
-    bool                       _sendReply;
-    FileStorThreadMetrics::Op& _metric;
-    api::StorageReply::SP      _reply;
-    api::ReturnCode            _result;
-    framework::MilliSecTimer   _timer;
+    bool                                     _sendReply;
+    bool                                     _updateBucketInfo;
+    FileStorHandler::BucketLockInterface::SP _bucketLock;
+    api::StorageMessage::SP                  _msg;
+    spi::Context                             _context;
+    PersistenceUtil                         &_env;
+    FileStorThreadMetrics::Op               *_metric;
+    api::StorageReply::SP                    _reply;
+    api::ReturnCode                          _result;
+    framework::MilliSecTimer                 _timer;
 };
 
 struct PersistenceUtil {
     vespa::config::content::StorFilestorConfig _config;
-    ServiceLayerComponentRegister& _compReg;
-    ServiceLayerComponent _component;
-    FileStorHandler& _fileStorHandler;
-    uint16_t _partition;
-    uint16_t _nodeIndex;
-    FileStorThreadMetrics& _metrics;
-    const document::BucketIdFactory& _bucketFactory;
+    ServiceLayerComponentRegister             &_compReg;
+    ServiceLayerComponent                      _component;
+    FileStorHandler                           &_fileStorHandler;
+    uint16_t                                   _partition;
+    uint16_t                                   _nodeIndex;
+    FileStorThreadMetrics                     &_metrics;
+    const document::BucketIdFactory           &_bucketFactory;
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
     spi::PersistenceProvider& _spi;
 

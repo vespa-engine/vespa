@@ -26,7 +26,7 @@ DocumentOperation::DocumentOperation(Type type)
 }
 
 
-DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const Timestamp &timestamp)
+DocumentOperation::DocumentOperation(Type type, BucketId bucketId, Timestamp timestamp)
     : FeedOperation(type),
       _bucketId(bucketId),
       _timestamp(timestamp),
@@ -37,6 +37,8 @@ DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const 
       _serializedDocSize(0)
 {
 }
+
+DocumentOperation::~DocumentOperation() = default;
 
 void
 DocumentOperation::assertValidBucketId(const document::DocumentId &docId) const

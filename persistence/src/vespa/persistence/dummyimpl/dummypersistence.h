@@ -153,16 +153,9 @@ public:
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& newState) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
-    GetResult get(const Bucket&,
-                  const document::FieldSet& fieldSet,
-                  const DocumentId&,
-                  Context&) const override;
-
-    RemoveResult remove(const Bucket& b,
-                        Timestamp t,
-                        const DocumentId& did,
-                        Context&) override;
+    Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
+    GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
+    RemoveResult remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&) override;
 
     CreateIteratorResult createIterator(const Bucket&,
                                         const document::FieldSet& fs,
@@ -176,15 +169,9 @@ public:
     Result createBucket(const Bucket&, Context&) override;
     Result deleteBucket(const Bucket&, Context&) override;
 
-    Result split(const Bucket& source,
-                 const Bucket& target1,
-                 const Bucket& target2,
-                 Context&) override;
+    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
 
-    Result join(const Bucket& source1,
-                const Bucket& source2,
-                const Bucket& target,
-                Context&) override;
+    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
     Result revert(const Bucket&, Timestamp, Context&);
     Result maintain(const Bucket& bucket, MaintenanceLevel level) override;

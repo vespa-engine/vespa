@@ -10,6 +10,7 @@
 #include "result.h"
 #include "selection.h"
 #include "clusterstate.h"
+#include "operationcomplete.h"
 
 namespace document { class FieldSet; }
 
@@ -109,7 +110,8 @@ struct PersistenceProvider
     /**
      * Store the given document at the given microsecond time.
      */
-    virtual Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) = 0;
+    virtual Result put(const Bucket&, Timestamp, DocumentSP, Context&);
+    virtual void putAsync(const Bucket &, Timestamp , DocumentSP , Context &, OperationComplete::UP );
 
     /**
      * This remove function assumes that there exist something to be removed.

@@ -39,9 +39,9 @@ PersistenceHandlerProxy::initialize()
 }
 
 void
-PersistenceHandlerProxy::handlePut(FeedToken token, const Bucket &bucket, Timestamp timestamp, const DocumentSP &doc)
+PersistenceHandlerProxy::handlePut(FeedToken token, const Bucket &bucket, Timestamp timestamp, DocumentSP doc)
 {
-    auto op = std::make_unique<PutOperation>(bucket.getBucketId().stripUnused(), timestamp, doc);
+    auto op = std::make_unique<PutOperation>(bucket.getBucketId().stripUnused(), timestamp, std::move(doc));
     _feedHandler.handleOperation(token, std::move(op));
 }
 

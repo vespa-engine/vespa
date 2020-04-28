@@ -15,7 +15,7 @@ using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
 struct DummyPersistenceHandler : public IPersistenceHandler {
     using SP = std::shared_ptr<DummyPersistenceHandler>;
     void initialize() override {}
-    void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::Document::SP &) override {}
+    void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, DocumentSP) override {}
     void handleUpdate(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentUpdate::SP &) override {}
     void handleRemove(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentId &) override {}
     void handleListBuckets(IBucketIdListResultHandler &) override {}

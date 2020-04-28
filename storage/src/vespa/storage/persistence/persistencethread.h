@@ -28,23 +28,23 @@ public:
     void flush() override;
     framework::Thread& getThread() override { return *_thread; }
 
-    MessageTracker::UP handlePut(api::PutCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleRemove(api::RemoveCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleUpdate(api::UpdateCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleGet(api::GetCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleRevert(api::RevertCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleCreateIterator(CreateIteratorCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleGetIter(GetIterCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleReadBucketList(ReadBucketList& cmd);
-    MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd);
-    MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleSetBucketState(api::SetBucketStateCommand& cmd);
-    MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context & context);
-    MessageTracker::UP handleRepairBucket(RepairBucketCommand& cmd);
-    MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd);
+    MessageTracker::UP handlePut(api::PutCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleRemove(api::RemoveCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleGet(api::GetCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleRepairBucket(RepairBucketCommand& cmd, MessageTracker::UP tracker);
+    MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTracker::UP tracker);
 
 private:
     uint32_t                  _stripeId;
@@ -67,23 +67,22 @@ private:
      * an appropriate error and returns false iff the command does not validate
      * OK. Returns true and does not touch the tracker otherwise.
      */
-    bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker) const;
+    static bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker);
 
     // Message handling functions
-    MessageTracker::UP handleCommand(api::StorageCommand&);
-    MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, spi::Context & context);
+    MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker);
     void handleReply(api::StorageReply&);
 
-    MessageTracker::UP processMessage(api::StorageMessage& msg);
-    void processLockedMessage(FileStorHandler::LockedMessage & lock);
+    MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker);
+    void processLockedMessage(FileStorHandler::LockedMessage lock);
 
     // Thread main loop
     void run(framework::ThreadHandle&) override;
-    bool checkForError(const spi::Result& response, MessageTracker& tracker);
+    static bool checkForError(const spi::Result& response, MessageTracker& tracker);
     spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
 
     friend class TestAndSetHelper;
-    bool tasConditionExists(const api::TestAndSetCommand & cmd);
+    static bool tasConditionExists(const api::TestAndSetCommand & cmd);
     bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
                              spi::Context & context, bool missingDocumentImpliesMatch = false);
 };

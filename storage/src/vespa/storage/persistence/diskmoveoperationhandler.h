@@ -12,8 +12,7 @@ public:
     DiskMoveOperationHandler(PersistenceUtil&,
                              spi::PersistenceProvider& provider);
 
-    MessageTracker::UP handleBucketDiskMove(BucketDiskMoveCommand&,
-                                            spi::Context&);
+    MessageTracker::UP handleBucketDiskMove(BucketDiskMoveCommand&, MessageTracker::UP tracker);
 
 private:
     PersistenceUtil& _env;

@@ -74,12 +74,9 @@ ProviderErrorWrapper::getBucketInfo(const spi::Bucket& bucket) const
 }
 
 spi::Result
-ProviderErrorWrapper::put(const spi::Bucket& bucket,
-                             spi::Timestamp ts,
-                             const spi::DocumentSP& doc,
-                             spi::Context& context)
+ProviderErrorWrapper::put(const spi::Bucket& bucket, spi::Timestamp ts, spi::DocumentSP doc, spi::Context& context)
 {
-    return checkResult(_impl.put(bucket, ts, doc, context));
+    return checkResult(_impl.put(bucket, ts, std::move(doc), context));
 }
 
 spi::RemoveResult

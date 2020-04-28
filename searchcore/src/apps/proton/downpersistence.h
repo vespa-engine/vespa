@@ -32,7 +32,7 @@ public:
     Result setClusterState(BucketSpace, const ClusterState&) override;
     Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
+    Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
     RemoveResult remove(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) override;
     RemoveResult removeIfFound(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) override;
     Result removeEntry(const Bucket&, Timestamp, Context&) override;

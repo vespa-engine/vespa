@@ -154,7 +154,7 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
     auto doc = make_shared<Document>(op.getUpdate()->getType(), op.getUpdate()->getId());
     doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
     op.getUpdate()->applyTo(*doc);
-    PutOperation putOp(op.getBucketId(), op.getTimestamp(), doc);
+    PutOperation putOp(op.getBucketId(), op.getTimestamp(), std::move(doc));
     _activeFeedView->preparePut(putOp);
     storeOperation(putOp, token);
     if (token) {
