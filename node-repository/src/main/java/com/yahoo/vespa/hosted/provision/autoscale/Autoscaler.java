@@ -80,7 +80,7 @@ public class Autoscaler {
         Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
-        var target = new LoadBasedResourceTarget(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
+        var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);

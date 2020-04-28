@@ -23,9 +23,9 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocationBasedResourceTarget;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
+import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -169,7 +169,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (current.toAdvertisedClusterResources().isWithin(limits.min(), limits.max()))
             return combine(current.toAdvertisedClusterResources(), limits.min()); // for unscaled values min==max
 
-        return allocationOptimizer.findBestAllocation(new AllocationBasedResourceTarget(current), current, limits)
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
                                   .toAdvertisedClusterResources();
     }

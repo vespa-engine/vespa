@@ -269,9 +269,9 @@ public class AutoscalingTest {
 
         // deploy
         tester.deploy(application1, cluster1, 6, 1, resources);
-        tester.addMeasurements(Resource.memory,  0.02f, 1f, 120, application1);
+        tester.addMeasurements(Resource.memory,  0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
-                               6, 1, 3.0, 4.0, 100.0,
+                               6, 1, 2.8, 4.0, 95.0,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
