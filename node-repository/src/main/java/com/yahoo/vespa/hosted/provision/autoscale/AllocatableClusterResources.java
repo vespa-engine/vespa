@@ -133,11 +133,9 @@ public class AllocatableClusterResources {
      */
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
                                                              ClusterSpec.Type clusterType,
-                                                             Optional<Cluster> limits,
+                                                             Limits limits,
                                                              NodeRepository nodeRepository) {
-        NodeResources nodeResources = resources.nodeResources();
-        if (limits.isPresent())
-            nodeResources = limits.get().capAtLimits(nodeResources);
+        NodeResources nodeResources = limits.cap(resources.nodeResources());
         nodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(nodeResources, clusterType);
 
         if (allowsHostSharing(nodeRepository.zone().cloud())) {

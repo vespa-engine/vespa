@@ -1,18 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.time.Duration;
 import java.util.List;
@@ -44,10 +37,12 @@ public class Autoscaler {
 
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
+    private final AllocationOptimizer allocationOptimizer;
 
     public Autoscaler(NodeMetricsDb metricsDb, NodeRepository nodeRepository) {
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
+        this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
     }
 
     /**
@@ -58,24 +53,24 @@ public class Autoscaler {
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(cluster, clusterNodes, false)
+        return autoscale(clusterNodes, Limits.empty())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
 
     }
 
     /**
-     * Autoscale a cluster. This returns a better allocation (if found) inside the min and max limits.
+     * Autoscale a cluster by load. This returns a better allocation (if found) inside the min and max limits.
      *
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(cluster, clusterNodes, true)
+        return autoscale(clusterNodes, Limits.of(cluster))
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
     }
 
-    private Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes, boolean respectLimits) {
+    private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits) {
         if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
@@ -85,32 +80,12 @@ public class Autoscaler {
         Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
+        var target = new LoadBasedResourceTarget(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
-        Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
-                                                                                  memoryLoad.get(),
-                                                                                  diskLoad.get(),
-                                                                                  currentAllocation,
-                                                                                  cluster,
-                                                                                  respectLimits);
+        Optional<AllocatableClusterResources> bestAllocation =
+                allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
         if (bestAllocation.isEmpty()) return Optional.empty();
         if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
-        return bestAllocation;
-    }
-
-    private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                     AllocatableClusterResources currentAllocation,
-                                                                     Cluster cluster, boolean respectLimits) {
-        Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster, respectLimits);
-             i.hasNext(); ) {
-            var allocatableResources = AllocatableClusterResources.from(i.next(),
-                                                                        currentAllocation.clusterType(),
-                                                                        respectLimits ? Optional.of(cluster) : Optional.empty(),
-                                                                        nodeRepository);
-            if (allocatableResources.isEmpty()) continue;
-            if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
-                bestAllocation = allocatableResources;
-        }
         return bestAllocation;
     }
 

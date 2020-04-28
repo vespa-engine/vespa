@@ -509,6 +509,11 @@ public class ProvisioningTester {
             return this;
         }
 
+        public Builder flavors(List<Flavor> flavors) {
+            this.flavorsConfig = asConfig(flavors);
+            return this;
+        }
+
         public Builder resourcesCalculator(HostResourcesCalculator resourcesCalculator) {
             this.resourcesCalculator = resourcesCalculator;
             return this;
@@ -566,6 +571,26 @@ public class ProvisioningTester {
                                           Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
                                           Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }
+
+        private static FlavorsConfig asConfig(List<Flavor> flavors) {
+            FlavorsConfig.Builder b = new FlavorsConfig.Builder();
+            for (Flavor flavor : flavors)
+                b.flavor(asFlavorConfig(flavor.name(), flavor.resources()));
+            return b.build();
+        }
+
+        private static FlavorsConfig.Flavor.Builder asFlavorConfig(String flavorName, NodeResources resources) {
+            FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
+            flavor.name(flavorName);
+            flavor.minCpuCores(resources.vcpu());
+            flavor.minMainMemoryAvailableGb(resources.memoryGb());
+            flavor.minDiskAvailableGb(resources.diskGb());
+            flavor.bandwidth(resources.bandwidthGbps() * 1000);
+            flavor.fastDisk(resources.diskSpeed().compatibleWith(NodeResources.DiskSpeed.fast));
+            flavor.remoteStorage(resources.storageType().compatibleWith(NodeResources.StorageType.remote));
+            return flavor;
+        }
+
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {
