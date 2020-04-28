@@ -8,36 +8,33 @@ package com.yahoo.vespa.hosted.provision.autoscale;
  */
 public class AllocationBasedResourceTarget extends ResourceTarget {
 
-    private final AllocatableClusterResources current;
-
     public AllocationBasedResourceTarget(AllocatableClusterResources current) {
-        super();
-        this.current = current;
+        super(current);
     }
 
     @Override
     public double clusterCpu() {
-        return current.toAdvertisedClusterResources().nodeResources().vcpu() * current.nodes();
+        return current().toAdvertisedClusterResources().nodeResources().vcpu() * current().nodes();
     }
 
     @Override
     public double groupMemory() {
-        return current.toAdvertisedClusterResources().nodeResources().memoryGb() * current.groupSize();
+        return current().toAdvertisedClusterResources().nodeResources().memoryGb() * current().groupSize();
     }
 
     @Override
     public double groupDisk() {
-        return current.toAdvertisedClusterResources().nodeResources().diskGb() * current.groupSize();
+        return current().toAdvertisedClusterResources().nodeResources().diskGb() * current().groupSize();
     }
 
     @Override
     public double nodeMemory() {
-        return current.toAdvertisedClusterResources().nodeResources().memoryGb();
+        return current().toAdvertisedClusterResources().nodeResources().memoryGb();
     }
 
     @Override
     public double nodeDisk() {
-        return current.toAdvertisedClusterResources().nodeResources().diskGb();
+        return current().toAdvertisedClusterResources().nodeResources().diskGb();
     }
 
 }

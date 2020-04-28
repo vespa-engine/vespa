@@ -6,14 +6,13 @@ class LoadBasedResourceTarget extends ResourceTarget {
     private final double cpuLoad;
     private final double memoryLoad;
     private final double diskLoad;
-    private final AllocatableClusterResources current;
 
     public LoadBasedResourceTarget(double cpuLoad, double memoryLoad, double diskLoad,
                                    AllocatableClusterResources current) {
+        super(current);
         this.cpuLoad = cpuLoad;
         this.memoryLoad = memoryLoad;
         this.diskLoad = diskLoad;
-        this.current = current;
     }
 
     @Override
@@ -42,15 +41,15 @@ class LoadBasedResourceTarget extends ResourceTarget {
     }
 
     private double clusterUsage(Resource resource, double load) {
-        return nodeUsage(resource, load) * current.nodes();
+        return nodeUsage(resource, load) * current().nodes();
     }
 
     private double groupUsage(Resource resource, double load) {
-        return nodeUsage(resource, load) * current.groupSize();
+        return nodeUsage(resource, load) * current().groupSize();
     }
 
     private double nodeUsage(Resource resource, double load) {
-        return load * resource.valueFrom(current.realResources());
+        return load * resource.valueFrom(current().realResources());
     }
 
 }

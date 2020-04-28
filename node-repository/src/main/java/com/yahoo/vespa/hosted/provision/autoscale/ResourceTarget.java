@@ -3,7 +3,11 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 public abstract class ResourceTarget {
 
-    public ResourceTarget() {
+    /** The current allocation, leading to this target */
+    private final AllocatableClusterResources current;
+
+    public ResourceTarget(AllocatableClusterResources current) {
+        this.current = current;
     }
 
     /** Returns the target total cpu to allocate to the entire cluster */
@@ -20,5 +24,7 @@ public abstract class ResourceTarget {
 
     /** Returns the target disk to allocate to each node */
     public abstract double nodeDisk();
+
+    protected AllocatableClusterResources current() { return current; }
 
 }
