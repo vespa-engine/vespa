@@ -304,12 +304,6 @@ class BTreeNodeDataWrap<FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>
 template
 class BTreeNodeT<FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-#if 0
-template
-class BTreeNodeT<FieldIndexBase::WordKey,
-                 BTreeDefaultTraits::LEAF_SLOTS>;
-#endif
-
 template
 class BTreeNodeTT<FieldIndexBase::WordKey,
                   datastore::EntryRef,

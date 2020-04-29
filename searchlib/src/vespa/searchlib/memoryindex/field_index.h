@@ -119,12 +119,6 @@ extern template
 class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey,
                  BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-#if 0
-extern template
-class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey,
-                 BTreeDefaultTraits::LEAF_SLOTS>;
-#endif
-
 extern template
 class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
                   datastore::EntryRef,
