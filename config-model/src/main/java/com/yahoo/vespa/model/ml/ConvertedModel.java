@@ -209,8 +209,8 @@ public class ConvertedModel {
                                                                    ModelStore store) {
         // Add constants
         Set<String> constantsReplacedByFunctions = new HashSet<>();
-        model.smallConstantValues().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
-        model.largeConstantValues().forEach((k, v) -> transformLargeConstant(store, profile, queryProfiles,
+        model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
+        model.largeConstants().forEach((k, v) -> transformLargeConstant(store, profile, queryProfiles,
                                                                         constantsReplacedByFunctions, k, v));
 
         // Add functions
@@ -283,7 +283,8 @@ public class ConvertedModel {
     }
 
     private static void transformSmallConstant(ModelStore store, RankProfile profile, String constantName,
-                                               Tensor constantValue) {
+                                               String constantValueString) {
+        Tensor constantValue = Tensor.from(constantValueString);
         store.writeSmallConstant(constantName, constantValue);
         profile.addConstant(constantName, asValue(constantValue));
     }
@@ -293,7 +294,8 @@ public class ConvertedModel {
                                                QueryProfileRegistry queryProfiles,
                                                Set<String> constantsReplacedByFunctions,
                                                String constantName,
-                                               Tensor constantValue) {
+                                               String constantValueString) {
+        Tensor constantValue = Tensor.from(constantValueString);
         RankProfile.RankingExpressionFunction rankingExpressionFunctionOverridingConstant = profile.getFunctions().get(constantName);
         if (rankingExpressionFunctionOverridingConstant != null) {
             TensorType functionType = rankingExpressionFunctionOverridingConstant.function().getBody().type(profile.typeContext(queryProfiles));
