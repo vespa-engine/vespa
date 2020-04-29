@@ -383,6 +383,7 @@ struct Fixture {
         return denseSpec;
     }
 
+    vespalib::FileHeader get_file_header();
     void set_example_tensors();
     void assert_example_tensors();
     void save_example_tensors_with_mock_index();
@@ -524,18 +525,25 @@ Fixture::testCompaction()
     TEST_DO(assertGetTensor(empty_xy_tensor, 4));
 }
 
-void
-Fixture::testTensorTypeFileHeaderTag()
+vespalib::FileHeader
+Fixture::get_file_header()
 {
-    ensureSpace(4);
-    TEST_DO(save());
-
     vespalib::FileHeader header;
     FastOS_File file;
     vespalib::string file_name = attr_name + ".dat";
     EXPECT_TRUE(file.OpenReadOnly(file_name.c_str()));
     (void) header.readFile(file);
     file.Close();
+    return header;
+}
+
+void
+Fixture::testTensorTypeFileHeaderTag()
+{
+    ensureSpace(4);
+    TEST_DO(save());
+
+    auto header = get_file_header();
     EXPECT_TRUE(header.hasTag("tensortype"));
     EXPECT_EQUAL(_typeSpec, header.getTag("tensortype").asString());
     if (_useDenseTensorAttribute) {
@@ -759,6 +767,14 @@ TEST_F("onLoad() uses saved nearest neighbor index if only minor index parameter
     auto& index = f.mock_index();
     EXPECT_EQUAL(123, index.get_index_value());
     index.expect_adds({});
+}
+
+TEST_F("Nearest neighbor index type is added to attribute file header", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    auto header = f.get_file_header();
+    EXPECT_TRUE(header.hasTag("nearest_neighbor_index"));
+    EXPECT_EQUAL("hnsw", header.getTag("nearest_neighbor_index").asString());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

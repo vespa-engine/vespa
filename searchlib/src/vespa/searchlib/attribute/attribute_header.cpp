@@ -19,6 +19,8 @@ const vespalib::string tensorTypeTag = "tensortype";
 const vespalib::string predicateArityTag = "predicate.arity";
 const vespalib::string predicateLowerBoundTag = "predicate.lower_bound";
 const vespalib::string predicateUpperBoundTag = "predicate.upper_bound";
+const vespalib::string nearest_neighbor_index_tag = "nearest_neighbor_index";
+const vespalib::string hnsw_index_value = "hnsw";
 const vespalib::string hnsw_max_links_tag = "hnsw.max_links_per_node";
 const vespalib::string hnsw_neighbors_to_explore_tag = "hnsw.neighbors_to_explore_at_insert";
 const vespalib::string hnsw_distance_metric = "hnsw.distance_metric";
@@ -201,6 +203,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
     if (_basicType.type() == attribute::BasicType::Type::TENSOR) {
         header.putTag(Tag(tensorTypeTag, _tensorType.to_spec()));;
         if (_hnsw_index_params.has_value()) {
+            header.putTag(Tag(nearest_neighbor_index_tag, hnsw_index_value));
             const auto& params = *_hnsw_index_params;
             header.putTag(Tag(hnsw_max_links_tag, params.max_links_per_node()));
             header.putTag(Tag(hnsw_neighbors_to_explore_tag, params.neighbors_to_explore_at_insert()));
