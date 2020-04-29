@@ -49,7 +49,7 @@ public class SessionZooKeeperClient {
     private final ConfigCurator configCurator;
     private final Path sessionPath;
     private final Path sessionStatusPath;
-    private final String serverId;
+    private final String serverId;  // hostname
     private final Optional<NodeFlavors> nodeFlavors;
 
     // Only for testing when cache loader does not need cache entries.
