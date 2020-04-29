@@ -18,7 +18,7 @@ public class ErrorResponse extends JsonResponse {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public ErrorResponse(int code, String message) {
-        super(code, asErrorJson(message));
+        super(code, asErrorJson(message != null ? message : "<null>"));
     }
 
     static String asErrorJson(String message) {
