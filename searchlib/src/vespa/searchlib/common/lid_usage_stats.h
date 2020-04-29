@@ -18,34 +18,29 @@ private:
     uint32_t _usedLids;
     uint32_t _lowestFreeLid;
     uint32_t _highestUsedLid;
-    TimePoint _last_remove_batch;
 
 public:
     LidUsageStats()
         : _lidLimit(0),
           _usedLids(0),
           _lowestFreeLid(0),
-          _highestUsedLid(0),
-          _last_remove_batch()
+          _highestUsedLid(0)
     {
     }
     LidUsageStats(uint32_t lidLimit,
                   uint32_t usedLids,
                   uint32_t lowestFreeLid,
-                  uint32_t highestUsedLid,
-                  TimePoint last_remove_batch)
+                  uint32_t highestUsedLid)
         : _lidLimit(lidLimit),
           _usedLids(usedLids),
           _lowestFreeLid(lowestFreeLid),
-          _highestUsedLid(highestUsedLid),
-          _last_remove_batch(last_remove_batch)
+          _highestUsedLid(highestUsedLid)
     {
     }
     uint32_t getLidLimit() const { return _lidLimit; }
     uint32_t getUsedLids() const { return _usedLids; }
     uint32_t getLowestFreeLid() const { return _lowestFreeLid; }
     uint32_t getHighestUsedLid() const { return _highestUsedLid; }
-    const TimePoint& get_last_remove_batch() const { return _last_remove_batch; }
     uint32_t getLidBloat() const {
         // Account for reserved lid 0
         int32_t lidBloat = getLidLimit() - getUsedLids() - 1;

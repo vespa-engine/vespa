@@ -10,6 +10,8 @@
 
 namespace search { class IDestructorCallback; }
 
+namespace proton::documentmetastore { class OperationListener; }
+
 namespace proton {
 
 /**
@@ -28,6 +30,13 @@ struct ILidSpaceCompactionHandler
      * Returns the name of this handler.
      */
     virtual vespalib::string getName() const = 0;
+
+    /**
+     * Sets the listener used to get notifications on the operations handled by the document meta store.
+     *
+     * A call to this function should replace the previous listener if set.
+     */
+    virtual void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) = 0;
 
     /**
      * Returns the id of the sub database this handler is operating over.

@@ -10,6 +10,8 @@
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 
+namespace proton::documentmetastore { class OperationListener; }
+
 namespace proton {
 
 /**
@@ -81,6 +83,8 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
      * be shrunk.
      */
     virtual void compactLidSpace(DocId wantedLidLimit) = 0;
+
+    virtual void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) = 0;
 
 };
 

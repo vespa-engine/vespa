@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 struct DocumentMetaStoreObserver : public IDocumentMetaStore
 {
@@ -185,8 +185,10 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
         _store.foreach(visitor);
     }
+    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
+        _store.set_operation_listener(std::move(op_listener));
+    }
 };
 
-}
 }
 

@@ -70,6 +70,7 @@ vespa_define_module(
     src/tests/proton/common/attribute_updater
     src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
+    src/tests/proton/common/operation_rate_tracker
     src/tests/proton/common/state_reporter_utils
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
