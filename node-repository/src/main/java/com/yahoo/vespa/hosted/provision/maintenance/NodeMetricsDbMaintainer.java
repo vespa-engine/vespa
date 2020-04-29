@@ -16,7 +16,7 @@ import java.util.logging.Level;
  *
  * @author bratseth
  */
-public class NodeMetricsDbMaintainer extends Maintainer {
+public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
     private static final int maxWarningsPerInvocation = 2;
 

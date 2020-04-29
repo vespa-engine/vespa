@@ -58,7 +58,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -1589,7 +1588,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         tester.serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
-        new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
+        new RotationStatusUpdater(tester.controller(), Duration.ofDays(1)).run();
     }
 
     private void updateContactInformation() {

@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
  */
 public class ControllerMaintenance extends AbstractComponent {
 
-    private final JobControl jobControl;
-
     private final DeploymentExpirer deploymentExpirer;
     private final DeploymentIssueReporter deploymentIssueReporter;
     private final MetricsReporter metricsReporter;
@@ -52,70 +50,65 @@ public class ControllerMaintenance extends AbstractComponent {
     public ControllerMaintenance(MaintainerConfig maintainerConfig,
                                  Controller controller,
                                  CuratorDb curator,
-                                 JobControl jobControl,
                                  Metric metric) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
-        this.jobControl = jobControl;
-        deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
-        deploymentIssueReporter = new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), maintenanceInterval, jobControl);
-        metricsReporter = new MetricsReporter(controller, metric, jobControl);
-        outstandingChangeDeployer = new OutstandingChangeDeployer(controller, Duration.ofMinutes(3), jobControl);
-        versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3), jobControl);
-        upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
-        readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
-        deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
-        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, controller.serviceRegistry().ownershipIssues());
-        systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
-        jobRunner = new JobRunner(controller, Duration.ofSeconds(90), jobControl);
-        osUpgraders = osUpgraders(controller, jobControl);
-        osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
-        nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
-        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), jobControl, controller.serviceRegistry().costReportConsumer());
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(1), jobControl, metric, controller.serviceRegistry().meteringService());
-        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl);
-        cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1), jobControl);
-        rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);
-        resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), jobControl, controller.serviceRegistry().resourceTagger());
+        deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval);
+        deploymentIssueReporter = new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), maintenanceInterval);
+        metricsReporter = new MetricsReporter(controller, metric);
+        outstandingChangeDeployer = new OutstandingChangeDeployer(controller, Duration.ofMinutes(3));
+        versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3));
+        upgrader = new Upgrader(controller, maintenanceInterval, curator);
+        readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1));
+        deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5));
+        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), controller.serviceRegistry().ownershipIssues());
+        systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1));
+        jobRunner = new JobRunner(controller, Duration.ofSeconds(90));
+        osUpgraders = osUpgraders(controller);
+        osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12));
+        nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10));
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), controller.serviceRegistry().costReportConsumer());
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(1), metric, controller.serviceRegistry().meteringService());
+        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3));
+        cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1));
+        rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval);
+        resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), controller.serviceRegistry().resourceTagger());
     }
 
     public Upgrader upgrader() { return upgrader; }
-    
-    /** Returns control of the maintenance jobs of this */
-    public JobControl jobControl() { return jobControl; }
 
     @Override
     public void deconstruct() {
-        deploymentExpirer.deconstruct();
-        deploymentIssueReporter.deconstruct();
-        metricsReporter.deconstruct();
-        outstandingChangeDeployer.deconstruct();
-        versionStatusUpdater.deconstruct();
-        upgrader.deconstruct();
-        readyJobsTrigger.deconstruct();
-        deploymentMetricsMaintainer.deconstruct();
-        applicationOwnershipConfirmer.deconstruct();
-        systemUpgrader.deconstruct();
-        osUpgraders.forEach(Maintainer::deconstruct);
-        osVersionStatusUpdater.deconstruct();
-        jobRunner.deconstruct();
-        contactInformationMaintainer.deconstruct();
-        costReportMaintainer.deconstruct();
-        resourceMeterMaintainer.deconstruct();
-        nameServiceDispatcher.deconstruct();
-        billingMaintainer.deconstruct();
-        cloudEventReporter.deconstruct();
-        rotationStatusUpdater.deconstruct();
-        resourceTagMaintainer.deconstruct();
+        deploymentExpirer.close();
+        deploymentIssueReporter.close();
+        metricsReporter.close();
+        outstandingChangeDeployer.close();
+        versionStatusUpdater.close();
+        upgrader.close();
+        readyJobsTrigger.close();
+        deploymentMetricsMaintainer.close();
+        applicationOwnershipConfirmer.close();
+        systemUpgrader.close();
+        osUpgraders.forEach(ControllerMaintainer::close);
+        osVersionStatusUpdater.close();
+        jobRunner.close();
+        contactInformationMaintainer.close();
+        costReportMaintainer.close();
+        resourceMeterMaintainer.close();
+        nameServiceDispatcher.close();
+        billingMaintainer.close();
+        cloudEventReporter.close();
+        rotationStatusUpdater.close();
+        resourceTagMaintainer.close();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
-    private static List<OsUpgrader> osUpgraders(Controller controller, JobControl jobControl) {
+    private static List<OsUpgrader> osUpgraders(Controller controller) {
         return controller.zoneRegistry().zones().controllerUpgraded().zones().stream()
                          .map(ZoneApi::getCloudName)
                          .distinct()
                          .sorted()
-                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), jobControl, cloud))
+                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), cloud))
                          .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 

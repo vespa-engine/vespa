@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
  * @author mortent
  * @author mpolden
  */
-public class MetricsReporter extends Maintainer {
+public class MetricsReporter extends ControllerMaintainer {
 
     public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
     public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
@@ -48,8 +49,8 @@ public class MetricsReporter extends Maintainer {
     private final Metric metric;
     private final Clock clock;
 
-    public MetricsReporter(Controller controller, Metric metric, JobControl jobControl) {
-        super(controller, Duration.ofMinutes(1), jobControl); // use fixed rate for metrics
+    public MetricsReporter(Controller controller, Metric metric) {
+        super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
         this.metric = metric;
         this.clock = controller.clock();
     }

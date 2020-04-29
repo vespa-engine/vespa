@@ -23,7 +23,7 @@ public class RotationStatusUpdaterTest {
     public void updates_rotation_status() {
         var tester = new DeploymentTester();
         var globalRotationService = tester.controllerTester().serviceRegistry().globalRoutingServiceMock();
-        var updater = new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()));
+        var updater = new RotationStatusUpdater(tester.controller(), Duration.ofDays(1));
 
         var context = tester.newDeploymentContext(ApplicationId.from("tenant1", "app1", "default"));
         var zone1 = ZoneId.from("prod", "us-west-1");

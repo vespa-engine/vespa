@@ -16,7 +16,7 @@ import java.time.Duration;
  *
  * @author hmusum
  */
-public class FileDistributionMaintainer extends Maintainer {
+public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;

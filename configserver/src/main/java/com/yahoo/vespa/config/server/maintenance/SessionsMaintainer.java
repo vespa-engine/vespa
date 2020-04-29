@@ -13,7 +13,7 @@ import java.time.Duration;
  *
  * @author hmusum
  */
-public class SessionsMaintainer extends Maintainer {
+public class SessionsMaintainer extends ConfigServerMaintainer {
     private final boolean hostedVespa;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {

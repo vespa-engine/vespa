@@ -1,11 +1,14 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.maintenance;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.concurrent.maintenance;
 
-import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
+import com.yahoo.transaction.Mutex;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,28 +18,27 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class JobControlTest {
-    
+
     @Test
     public void testJobControl() {
-        NodeRepositoryTester tester = new NodeRepositoryTester();
-        JobControl jobControl = new JobControl(tester.nodeRepository().database());
+        JobControl jobControl = new JobControl(new MockDb());
 
-        MockMaintainer maintainer1 = new MockMaintainer(tester.nodeRepository());
-        MockMaintainer maintainer2 = new MockMaintainer(tester.nodeRepository());
+        MockMaintainer maintainer1 = new MockMaintainer();
+        MockMaintainer maintainer2 = new MockMaintainer();
         assertTrue(jobControl.jobs().isEmpty());
 
         String job1 = "Job1";
         String job2 = "Job2";
-        
+
         jobControl.started(job1, maintainer1);
         jobControl.started(job2, maintainer2);
         assertEquals(2, jobControl.jobs().size());
         assertTrue(jobControl.jobs().contains(job1));
         assertTrue(jobControl.jobs().contains(job2));
-        
+
         assertTrue(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
-        
+
         jobControl.setActive(job1, false);
         assertFalse(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
@@ -65,13 +67,12 @@ public class JobControlTest {
         jobControl.run(job1);
         assertEquals(3, maintainer1.maintenanceInvocations);
     }
-    
+
     @Test
     public void testJobControlMayDeactivateJobs() {
-        NodeRepositoryTester tester = new NodeRepositoryTester();
-        JobControl jobControl = tester.nodeRepository().jobControl();
-        MockMaintainer mockMaintainer = new MockMaintainer(tester.nodeRepository());
-        
+        JobControl jobControl = new JobControl(new MockDb());
+        MockMaintainer mockMaintainer = new MockMaintainer(jobControl);
+
         assertTrue(jobControl.jobs().contains("MockMaintainer"));
 
         assertEquals(0, mockMaintainer.maintenanceInvocations);
@@ -87,13 +88,44 @@ public class JobControlTest {
         mockMaintainer.run();
         assertEquals(2, mockMaintainer.maintenanceInvocations);
     }
-    
+
+    private static class MockDb implements JobControl.Db {
+
+        private final Set<String> inactiveJobs = new HashSet<>();
+
+        @Override
+        public Set<String> readInactiveJobs() {
+            return new HashSet<>(inactiveJobs);
+        }
+
+        @Override
+        public void writeInactiveJobs(Set<String> inactiveJobs) {
+            this.inactiveJobs.clear();
+            this.inactiveJobs.addAll(inactiveJobs);
+        }
+
+        @Override
+        public Mutex lockInactiveJobs() {
+            return () -> {};
+        }
+
+        @Override
+        public Mutex lockMaintenanceJob(String job) {
+            return () -> {};
+        }
+
+    }
+
     private static class MockMaintainer extends Maintainer {
-        
+
         int maintenanceInvocations = 0;
-        
-        private MockMaintainer(NodeRepository nodeRepository) {
-            super(nodeRepository, Duration.ofHours(1));
+
+        private MockMaintainer(JobControl jobControl) {
+            super(null, Duration.ofHours(1), Instant.now(), jobControl, List.of());
+        }
+
+        private MockMaintainer() {
+            this(new JobControl(new MockDb()));
         }
 
         @Override
@@ -102,5 +134,5 @@ public class JobControlTest {
         }
 
     }
-    
+
 }

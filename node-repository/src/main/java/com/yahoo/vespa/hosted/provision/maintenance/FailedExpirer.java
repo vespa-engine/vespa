@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  * @author mpolden
  */
-public class FailedExpirer extends Maintainer {
+public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
     private static final int maxAllowedFailures = 5; // Stop recycling nodes after this number of failures

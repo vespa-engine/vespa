@@ -44,7 +44,7 @@ public class CloudEventReporterTest {
     @Test
     public void maintain() {
         setUpZones();
-        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15), new JobControl(tester.curator()));
+        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15));
 
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(awsZone1.getId()));

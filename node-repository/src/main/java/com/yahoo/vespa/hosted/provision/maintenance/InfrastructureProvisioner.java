@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  *
  * @author freva
  */
-public class InfrastructureProvisioner extends Maintainer {
+public class InfrastructureProvisioner extends NodeRepositoryMaintainer {
 
     private static final Logger logger = Logger.getLogger(InfrastructureProvisioner.class.getName());
 

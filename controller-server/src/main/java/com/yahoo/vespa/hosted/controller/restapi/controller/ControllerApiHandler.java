@@ -68,7 +68,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/")) return root(request);
         if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
-        if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
+        if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(controller.jobControl());
         if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
         if (path.matches("/controller/v1/metering/tenant/{tenant}/month/{month}")) return new MeteringResponse(controller.serviceRegistry().meteringService(), path.get("tenant"), path.get("month"));
         return notFound(path);
@@ -101,10 +101,10 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse setActive(String jobName, boolean active) {
-        boolean activatingInactiveJob = active && !maintenance.jobControl().isActive(jobName);
-        if (!activatingInactiveJob && !maintenance.jobControl().jobs().contains(jobName))
+        boolean activatingInactiveJob = active && !controller.jobControl().isActive(jobName);
+        if (!activatingInactiveJob && !controller.jobControl().jobs().contains(jobName))
             return ErrorResponse.notFoundError("No job named '" + jobName + "'");
-        maintenance.jobControl().setActive(jobName, active);
+        controller.jobControl().setActive(jobName, active);
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 

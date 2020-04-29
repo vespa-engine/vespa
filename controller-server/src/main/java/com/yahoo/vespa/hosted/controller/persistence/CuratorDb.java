@@ -5,11 +5,12 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.concurrent.maintenance.StringSetSerializer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -71,7 +72,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author mpolden
  * @author jonmv
  */
-public class CuratorDb {
+public class CuratorDb implements JobControl.Db {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
     private static final Duration deployLockTimeout = Duration.ofMinutes(30);
@@ -119,13 +120,12 @@ public class CuratorDb {
         this.tryLockTimeout = tryLockTimeout;
     }
 
-    /** Returns all hosts configured to be part of this ZooKeeper cluster */
-    public List<HostName> cluster() {
+    /** Returns all hostnames configured to be part of this ZooKeeper cluster */
+    public List<String> cluster() {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                      .filter(hostAndPort -> !hostAndPort.isEmpty())
                      .map(hostAndPort -> hostAndPort.split(":")[0])
-                     .map(HostName::from)
-                     .collect(Collectors.toList());
+                     .collect(Collectors.toUnmodifiableList());
     }
 
     // -------------- Locks ---------------------------------------------------
@@ -158,12 +158,18 @@ public class CuratorDb {
         return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
+    @Override
     public Lock lockInactiveJobs() {
         return curator.lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
-    public Lock lockMaintenanceJob(String jobName) throws TimeoutException {
-        return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
+    @Override
+    public Lock lockMaintenanceJob(String jobName) {
+        try {
+            return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
+        } catch (TimeoutException e) {
+            throw new UncheckedTimeoutException(e);
+        }
     }
 
     @SuppressWarnings("unused") // Called by internal code
@@ -222,11 +228,12 @@ public class CuratorDb {
         }
     }
 
-    // -------------- Deployment orchestration --------------------------------
+    // -------------- Maintenance jobs ----------------------------------------
 
+    @Override
     public Set<String> readInactiveJobs() {
         try {
-            return readSlime(inactiveJobsPath()).map(stringSetSerializer::fromSlime).orElseGet(HashSet::new);
+            return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
@@ -235,9 +242,12 @@ public class CuratorDb {
         }
     }
 
+    @Override
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
     }
+
+    // -------------- Deployment orchestration --------------------------------
 
     public double readUpgradesPerMinute() {
         return read(upgradesPerMinutePath(), ByteBuffer::wrap).map(ByteBuffer::getDouble).orElse(0.125);

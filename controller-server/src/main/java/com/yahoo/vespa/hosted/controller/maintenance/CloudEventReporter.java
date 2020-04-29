@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * 2. Submits an issue detailing the event if some hosts are not processed by 1.
  * @author mgimle
  */
-public class CloudEventReporter extends Maintainer {
+public class CloudEventReporter extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(CloudEventReporter.class.getName());
 
@@ -35,8 +35,8 @@ public class CloudEventReporter extends Maintainer {
     private final Map<String, List<ZoneApi>> zonesByCloudNativeRegion;
     private final NodeRepository nodeRepository;
 
-    CloudEventReporter(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl);
+    CloudEventReporter(Controller controller, Duration interval) {
+        super(controller, interval);
         this.issueHandler = controller.serviceRegistry().issueHandler();
         this.eventFetcher = controller.serviceRegistry().eventFetcherService();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();

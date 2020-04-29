@@ -34,7 +34,7 @@ import static com.yahoo.vespa.hosted.provision.Node.State.active;
 /**
  * @author oyving
  */
-public class MetricsReporter extends Maintainer {
+public class MetricsReporter extends NodeRepositoryMaintainer {
 
     private final Metric metric;
     private final Orchestrator orchestrator;

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.Test;
 
@@ -25,8 +24,8 @@ public class VersionStatusUpdaterTest {
         tester.controller().updateVersionStatus(new VersionStatus(Collections.emptyList()));
         assertFalse(tester.controller().versionStatus().systemVersion().isPresent());
 
-        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                                new JobControl(new MockCuratorDb()));
+        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1)
+        );
         updater.maintain();
         assertTrue(tester.controller().versionStatus().systemVersion().isPresent());
     }

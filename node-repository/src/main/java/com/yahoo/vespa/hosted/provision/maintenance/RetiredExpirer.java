@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  *
  * @author hakon
  */
-public class RetiredExpirer extends Maintainer {
+public class RetiredExpirer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Metric metric;

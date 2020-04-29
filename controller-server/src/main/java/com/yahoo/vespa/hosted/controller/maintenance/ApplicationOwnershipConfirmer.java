@@ -26,13 +26,13 @@ import java.util.logging.Level;
  *
  * @author jonmv
  */
-public class ApplicationOwnershipConfirmer extends Maintainer {
+public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
 
     private final OwnershipIssues ownershipIssues;
     private final ApplicationController applications;
 
-    public ApplicationOwnershipConfirmer(Controller controller, Duration interval, JobControl jobControl, OwnershipIssues ownershipIssues) {
-        super(controller, interval, jobControl);
+    public ApplicationOwnershipConfirmer(Controller controller, Duration interval, OwnershipIssues ownershipIssues) {
+        super(controller, interval);
         this.ownershipIssues = ownershipIssues;
         this.applications = controller.applications();
     }

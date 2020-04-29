@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -171,7 +170,8 @@ public class VersionStatus {
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
             versions.put(ControllerVersion.CURRENT, controller.hostname());
         } else {
-            for (HostName hostname : controller.curator().cluster()) {
+            for (String host : controller.curator().cluster()) {
+                HostName hostname = HostName.from(host);
                 versions.put(controller.curator().readControllerVersion(hostname), hostname);
             }
         }

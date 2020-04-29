@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -232,8 +231,8 @@ public class MetricsReporterTest {
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
         tester.zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
-        var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                                new JobControl(tester.curator()));
+        var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1)
+        );
         tester.configServer().bootstrap(List.of(zone), SystemApplication.configServer);
 
         // System on initial version
@@ -287,9 +286,9 @@ public class MetricsReporterTest {
         var cloud = CloudName.defaultName();
         tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
         var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        new JobControl(tester.curator()), CloudName.defaultName());
-        var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                       new JobControl(tester.controller().curator()));
+                                        CloudName.defaultName());
+        var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
+        );
         tester.configServer().bootstrap(List.of(zone), SystemApplication.configServerHost, SystemApplication.tenantHost);
 
         // All nodes upgrade to initial OS version
@@ -439,7 +438,7 @@ public class MetricsReporterTest {
     }
 
     private MetricsReporter createReporter(Controller controller) {
-        return new MetricsReporter(controller, metrics, new JobControl(new MockCuratorDb()));
+        return new MetricsReporter(controller, metrics);
     }
 
     private static String appDimension(ApplicationId id) {

@@ -18,7 +18,6 @@ import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -31,8 +30,7 @@ public class ContactInformationMaintainerTest {
     @Before
     public void before() {
         tester = new ControllerTester();
-        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
-                                                      new JobControl(tester.controller().curator()));
+        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1));
     }
 
     @Test

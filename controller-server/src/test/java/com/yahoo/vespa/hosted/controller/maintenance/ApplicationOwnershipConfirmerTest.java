@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +34,7 @@ public class ApplicationOwnershipConfirmerTest {
     public void setup() {
         tester = new DeploymentTester();
         issues = new MockOwnershipIssues();
-        confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), new JobControl(new MockCuratorDb()), issues);
+        confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), issues);
     }
 
     @Test

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -29,7 +30,7 @@ import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence
  *
  * @author jonmv
  */
-public class DeploymentIssueReporter extends Maintainer {
+public class DeploymentIssueReporter extends ControllerMaintainer {
 
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivity = Duration.ofDays(4);
@@ -37,8 +38,8 @@ public class DeploymentIssueReporter extends Maintainer {
 
     private final DeploymentIssues deploymentIssues;
 
-    DeploymentIssueReporter(Controller controller, DeploymentIssues deploymentIssues, Duration maintenanceInterval, JobControl jobControl) {
-        super(controller, maintenanceInterval, jobControl);
+    DeploymentIssueReporter(Controller controller, DeploymentIssues deploymentIssues, Duration maintenanceInterval) {
+        super(controller, maintenanceInterval);
         this.deploymentIssues = deploymentIssues;
     }
 

@@ -38,7 +38,7 @@ import java.util.stream.IntStream;
 /**
  * @author freva
  */
-public class DynamicProvisioningMaintainer extends Maintainer {
+public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(DynamicProvisioningMaintainer.class.getName());
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
