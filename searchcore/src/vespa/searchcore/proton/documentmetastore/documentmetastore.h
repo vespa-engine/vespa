@@ -74,7 +74,7 @@ private:
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
-    documentmetastore::OperationListener::SP _op_listener;
+    std::shared_ptr<documentmetastore::OperationListener> _op_listener;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -228,7 +228,7 @@ public:
     void compactLidSpace(DocId wantedLidLimit) override;
     void holdUnblockShrinkLidSpace() override;
     bool canShrinkLidSpace() const override;
-    void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override;
+    void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) override;
 
     SerialNum getLastSerialNum() const override {
         return getStatus().getLastSyncToken();

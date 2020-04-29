@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 struct DocumentMetaStoreObserver : public IDocumentMetaStore
 {
@@ -190,6 +190,5 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     }
 };
 
-}
 }
 

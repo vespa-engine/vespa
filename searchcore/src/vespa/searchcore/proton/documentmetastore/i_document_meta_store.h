@@ -4,12 +4,13 @@
 
 #include "lid_gid_key_comparator.h"
 #include "i_simple_document_meta_store.h"
-#include "operation_listener.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
+
+namespace proton::documentmetastore { class OperationListener; }
 
 namespace proton {
 
@@ -83,7 +84,7 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
      */
     virtual void compactLidSpace(DocId wantedLidLimit) = 0;
 
-    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) = 0;
+    virtual void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) = 0;
 
 };
 

@@ -3,10 +3,11 @@
 #include "document_scan_iterator.h"
 #include "ifeedview.h"
 #include "lid_space_compaction_handler.h"
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/document/fieldvalue/document.h>
 
 using document::BucketId;
 using document::Document;
