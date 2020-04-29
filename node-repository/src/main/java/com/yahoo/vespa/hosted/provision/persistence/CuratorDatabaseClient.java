@@ -12,8 +12,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
@@ -366,36 +366,19 @@ public class CuratorDatabaseClient implements JobControl.Db {
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
     // TODO(mpolden): Remove when all config servers take the new lock
-    public Mutex legacyLock(ApplicationId application) {
+    public Lock legacyLock(ApplicationId application) {
         return legacyLock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
     // TODO(mpolden): Remove when all config servers take the new lock
-    public Mutex legacyLock(ApplicationId application, Duration timeout) {
-        Mutex legacyLock;
-        Mutex lock;
-        // Take the legacy node-repository lock
+    public Lock legacyLock(ApplicationId application, Duration timeout) {
         try {
-            legacyLock = db.lock(legacyLockPath(application), timeout);
-        } catch (UncheckedTimeoutException e) {
+            return db.lock(legacyLockPath(application), timeout);
+        }
+        catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
-        // Take the application lock (same as config server). This is likey already held at this point, but is
-        // re-entrant.
-        try {
-            lock = db.lock(lockPath(application), timeout);
-        } catch (UncheckedTimeoutException e) {
-            legacyLock.close();
-            throw new ApplicationLockException(e);
-        }
-        return () -> {
-            try {
-                lock.close();
-            } finally {
-                legacyLock.close();
-            }
-        };
     }
 
     /**
