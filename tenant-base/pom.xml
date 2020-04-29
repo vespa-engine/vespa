@@ -266,7 +266,7 @@
             </properties>
         </profile>
 
-        <profile> <!-- Alias vespaVersion with a more descriptive vespa.runtime.version -->
+        <profile> <!-- Alias vespaversion with a more descriptive vespa.runtime.version -->
             <id>set-vespa-runtime-version</id>
             <activation>
                 <property>
@@ -274,7 +274,7 @@
                 </property>
             </activation>
             <properties>
-                <vespaVersion>${vespa.runtime.version}</vespaVersion>
+                <vespaversion>${vespa.runtime.version}</vespaversion>
             </properties>
         </profile>
     </profiles>
