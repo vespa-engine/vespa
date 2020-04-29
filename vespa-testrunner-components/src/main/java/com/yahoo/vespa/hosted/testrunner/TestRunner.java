@@ -104,7 +104,7 @@ public class TestRunner {
         else if (config.useTesterCertificate())
             command.add("-Dvespa.test.credentials.root=" + config.artifactsPath());
         command.add(String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb()));
-        command.add("-Dmaven.repo.local=/tmp/.m2/repository");
+        command.add("-Dmaven.repo.local=" + vespaHome.resolve("tmp/.m2/repository"));
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
