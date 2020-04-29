@@ -29,13 +29,13 @@ public class OnnxMnistSoftmaxImportTestCase {
         // Check constants
         assertEquals(2, model.largeConstants().size());
 
-        Tensor constant0 = Tensor.from(model.largeConstants().get("test_Variable"));
+        Tensor constant0 = model.largeConstantValues().get("test_Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder(TensorType.Value.FLOAT).indexed("d2", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = Tensor.from(model.largeConstants().get("test_Variable_1"));
+        Tensor constant1 = model.largeConstantValues().get("test_Variable_1");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder(TensorType.Value.FLOAT).indexed("d1", 10).build(), constant1.type());
         assertEquals(10, constant1.size());
@@ -84,8 +84,8 @@ public class OnnxMnistSoftmaxImportTestCase {
 
     private Context contextFrom(ImportedModel result) {
         MapContext context = new MapContext();
-        result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
-        result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
+        result.largeConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
+        result.smallConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         return context;
     }
 

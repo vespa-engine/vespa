@@ -103,8 +103,8 @@ public class TestableModel {
 
     static Context contextFrom(ImportedModel result) {
         TestableModelContext context = new TestableModelContext();
-        result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
-        result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
+        result.largeConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
+        result.smallConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         return context;
     }
 

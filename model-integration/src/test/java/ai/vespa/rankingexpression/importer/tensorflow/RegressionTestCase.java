@@ -25,13 +25,13 @@ public class RegressionTestCase {
         // Check constants
         Assert.assertEquals(2, model.get().largeConstants().size());
 
-        Tensor constant0 = Tensor.from(model.get().largeConstants().get("test_Variable_read"));
+        Tensor constant0 = model.get().largeConstantValues().get("test_Variable_read");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d2", 1536).indexed("d1", 14).build(),
                      constant0.type());
         assertEquals(21504, constant0.size());
 
-        Tensor constant1 = Tensor.from(model.get().largeConstants().get("test_Variable_1_read"));
+        Tensor constant1 = model.get().largeConstantValues().get("test_Variable_1_read");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d1", 14).build(), constant1.type());
         assertEquals(14, constant1.size());
