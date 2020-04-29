@@ -217,7 +217,10 @@ enum PathGroup {
     systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun"),
 
     /** Paths used for receiving payment callbacks */
-    paymentProcessor(PathPrefix.none, "/payment/notification");
+    paymentProcessor(PathPrefix.none, "/payment/notification"),
+
+    /** Invoice management */
+    invoiceManagement(PathPrefix.none, "/billing/v1/invoice");
 
 
     final List<String> pathSpecs;
