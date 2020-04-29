@@ -151,4 +151,46 @@ public class AttributeChangeValidatorTest {
                         "Field 'f1' changed: remove attribute 'rank: filter'"));
     }
 
+    @Test
+    public void adding_hnsw_index_requires_restart() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute }",
+                "field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: add attribute 'indexing: index'"));
+    }
+
+    @Test
+    public void removing_hnsw_index_requres_restart() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
+                "field f1 type tensor(x[2]) { indexing: attribute }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: remove attribute 'indexing: index'"));
+    }
+
+    @Test
+    public void changing_distance_metric_with_hnsw_index_enabled_requires_restart() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
+                "field f1 type tensor(x[2]) { indexing: attribute | index \n index { " +
+                        "distance-metric: geodegrees \n hnsw } }").
+                assertValidation(newRestartAction("Field 'f1' changed: change property " +
+                        "'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'"));
+    }
+
+    @Test
+    public void changing_hnsw_index_property_max_links_per_node_requires_restart() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
+                "field f1 type tensor(x[2]) { indexing: attribute | index \n index { " +
+                        "hnsw { max-links-per-node: 4 } } }").
+                assertValidation(newRestartAction("Field 'f1' changed: change hnsw index property " +
+                        "'max-links-per-node' from '16' to '4'"));
+    }
+
+    @Test
+    public void changing_hnsw_index_property_neighbors_to_explore_at_insert_requires_restart() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
+                "field f1 type tensor(x[2]) { indexing: attribute | index \n index { " +
+                        "hnsw { neighbors-to-explore-at-insert: 100 } } }").
+                assertValidation(newRestartAction("Field 'f1' changed: change hnsw index property " +
+                        "'neighbors-to-explore-at-insert' from '200' to '100'"));
+    }
 }

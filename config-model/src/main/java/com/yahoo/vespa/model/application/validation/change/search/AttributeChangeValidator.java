@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
@@ -80,6 +81,10 @@ public class AttributeChangeValidator {
         return currentIndexSchema.containsField(fieldName) && nextIndexSchema.containsField(fieldName);
     }
 
+    private static boolean hasHnswIndex(Attribute attribute) {
+        return attribute.hnswIndexParams().isPresent();
+    }
+
     private List<VespaConfigChangeAction> validateAttributeSettings() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         for (Attribute nextAttr : nextFields.attributes()) {
@@ -90,6 +95,12 @@ public class AttributeChangeValidator {
                 validateAttributeSetting(currAttr, nextAttr, Attribute::isHuge, "huge", result);
                 validateAttributeSetting(currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
+                validateAttributeSetting(currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
+                if (hasHnswIndex(currAttr) && hasHnswIndex(nextAttr)) {
+                    validateAttributeSetting(currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
+                    validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
+                    validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
+                }
             }
         }
         return result;
@@ -113,6 +124,17 @@ public class AttributeChangeValidator {
         T nextValue = settingValueProvider.apply(nextAttr);
         if ( ! Objects.equals(currentValue, nextValue)) {
             String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
+        }
+    }
+
+    private static <T> void validateAttributeHnswIndexSetting(Attribute currentAttr, Attribute nextAttr,
+                                                              Function<HnswIndexParams, T> settingValueProvider, String setting,
+                                                              List<VespaConfigChangeAction> result) {
+        T currentValue = settingValueProvider.apply(currentAttr.hnswIndexParams().get());
+        T nextValue = settingValueProvider.apply(nextAttr.hnswIndexParams().get());
+        if (!Objects.equals(currentValue, nextValue)) {
+            String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
