@@ -972,5 +972,20 @@ public class ContentClusterTest extends ContentBaseTest {
         verifyTopKProbabilityPropertiesControl(0.77);
     }
 
+    private boolean resolveDistributorBtreeDbConfigWithFeatureFlag(boolean flagEnabledBtreeDb) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseDistributorBtreeDB(flagEnabledBtreeDb));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+
+        return (new StorDistributormanagerConfig(builder)).use_btree_database();
+    }
+
+    @Test
+    public void default_distributor_btree_usage_controlled_by_properties() {
+        assertFalse(resolveDistributorBtreeDbConfigWithFeatureFlag(false));
+        assertTrue(resolveDistributorBtreeDbConfigWithFeatureFlag(true));
+    }
 
 }
