@@ -85,7 +85,7 @@ public class NodeMetricsClientTest {
 
     @Test
     public void metrics_are_retrieved_upon_first_request() {
-        List<MetricsPacket.Builder> metrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        List<MetricsPacket> metrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, metrics.size());
    }
@@ -112,15 +112,15 @@ public class NodeMetricsClientTest {
 
     @Test
     public void metrics_for_different_consumers_are_cached_separately() {
-        List<MetricsPacket.Builder> defaultMetrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        List<MetricsPacket> defaultMetrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, defaultMetrics.size());
 
-        List<MetricsPacket.Builder> customMetrics = nodeMetricsClient.getMetrics(toConsumerId(CUSTOM_CONSUMER));
+        List<MetricsPacket> customMetrics = nodeMetricsClient.getMetrics(toConsumerId(CUSTOM_CONSUMER));
         assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, customMetrics.size());
 
-        MetricsPacket replacedCpuMetric = customMetrics.get(0).build();
+        MetricsPacket replacedCpuMetric = customMetrics.get(0);
         assertTrue(replacedCpuMetric.metrics().containsKey(toMetricId(REPLACED_CPU_METRIC)));
     }
 }
