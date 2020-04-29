@@ -64,12 +64,12 @@ class TypeConverter {
             case BOOL: return TensorType.Value.FLOAT;
             case INT8: return TensorType.Value.FLOAT;
             case INT16: return TensorType.Value.FLOAT;
-            case INT32: return TensorType.Value.DOUBLE;
-            case INT64: return TensorType.Value.DOUBLE;
+            case INT32: return TensorType.Value.FLOAT;
+            case INT64: return TensorType.Value.FLOAT;
             case UINT8: return TensorType.Value.FLOAT;
             case UINT16: return TensorType.Value.FLOAT;
-            case UINT32: return TensorType.Value.DOUBLE;
-            case UINT64: return TensorType.Value.DOUBLE;
+            case UINT32: return TensorType.Value.FLOAT;
+            case UINT64: return TensorType.Value.FLOAT;
             default: throw new IllegalArgumentException("A ONNX tensor with data type " + dataType +
                                                         " cannot be converted to a Vespa tensor type");
         }
