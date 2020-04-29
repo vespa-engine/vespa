@@ -166,6 +166,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
+            "use-distributor-btree-db", false,
+            "Whether to use the new B-tree bucket database in the distributors.",
+            "Takes effect at restart of distributor process",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",

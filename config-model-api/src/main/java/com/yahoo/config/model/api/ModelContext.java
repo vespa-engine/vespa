@@ -88,6 +88,8 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double defaultTopKProbability();
 
+        boolean useDistributorBtreeDb();
+
         // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();
 

@@ -151,6 +151,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isFirstTimeDeployment;
         private final boolean useAdaptiveDispatch;
         private final double defaultTopKprobability;
+        private final boolean useDistributorBtreeDb;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
@@ -191,6 +192,8 @@ public class ModelContextImpl implements ModelContext {
             defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            useDistributorBtreeDb = Flags.USE_DISTRIBUTOR_BTREE_DB.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -265,6 +268,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double defaultTopKProbability() {
             return defaultTopKprobability;
+        }
+
+        @Override
+        public boolean useDistributorBtreeDb() {
+            return useDistributorBtreeDb;
         }
 
         // TODO: Remove

@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useAdaptiveDispatch = false;
     private double topKProbability = 1.0;
+    private boolean useDistributorBtreeDb = false;
     private double defaultTermwiseLimit = 1.0;
     private double softStartSeconds = 0.0;
     private double threadPoolSizeFactor = 0.0;
@@ -82,6 +83,7 @@ public class TestProperties implements ModelContext.Properties {
     }
 
     @Override public double defaultTopKProbability() { return topKProbability; }
+    @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
@@ -94,6 +96,12 @@ public class TestProperties implements ModelContext.Properties {
         topKProbability = probability;
         return this;
     }
+
+    public TestProperties setUseDistributorBtreeDB(boolean useBtreeDb) {
+        useDistributorBtreeDb = useBtreeDb;
+        return this;
+    }
+
     public TestProperties setSoftStartSeconds(double softStartSeconds) {
         this.softStartSeconds = softStartSeconds;
         return this;
