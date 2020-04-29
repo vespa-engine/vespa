@@ -42,6 +42,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final boolean useBtreeDatabase;
+    private final boolean useThreePhaseUpdates;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -103,16 +104,17 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             boolean useBtreeDb = deployState.getProperties().useDistributorBtreeDb();
+            boolean useThreePhaseUpdates = deployState.getProperties().useThreePhaseUpdates();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
-                    hasIndexedDocumentType, useBtreeDb);
+                    hasIndexedDocumentType, useBtreeDb, useThreePhaseUpdates);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
-                               boolean useBtreeDatabase)
+                               boolean useBtreeDatabase, boolean useThreePhaseUpdates)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -120,6 +122,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.useBtreeDatabase = useBtreeDatabase;
+        this.useThreePhaseUpdates = useThreePhaseUpdates;
     }
 
     @Override
@@ -132,6 +135,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(hasIndexedDocumentType == false);
         builder.use_btree_database(useBtreeDatabase);
+        builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
 
         bucketSplitting.getConfig(builder);
     }

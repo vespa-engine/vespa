@@ -172,6 +172,12 @@ public class Flags {
             "Takes effect at restart of distributor process",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
+            "use-three-phase-updates", false,
+            "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",
