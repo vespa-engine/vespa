@@ -152,6 +152,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAdaptiveDispatch;
         private final double defaultTopKprobability;
         private final boolean useDistributorBtreeDb;
+        private final boolean useThreePhaseUpdates;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
@@ -194,6 +195,8 @@ public class ModelContextImpl implements ModelContext {
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useDistributorBtreeDb = Flags.USE_DISTRIBUTOR_BTREE_DB.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            useThreePhaseUpdates = Flags.USE_THREE_PHASE_UPDATES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -273,6 +276,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useDistributorBtreeDb() {
             return useDistributorBtreeDb;
+        }
+
+        @Override
+        public boolean useThreePhaseUpdates() {
+            return useThreePhaseUpdates;
         }
 
         // TODO: Remove

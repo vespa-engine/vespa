@@ -90,6 +90,8 @@ public interface ModelContext {
 
         boolean useDistributorBtreeDb();
 
+        boolean useThreePhaseUpdates();
+
         // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();
 
