@@ -162,12 +162,23 @@ public class DynamicDockerProvisionTest {
                                                                     .hostProvisioner(hostProvisioner)
                                                                     .flagSource(flagSource)
                                                                     .nameResolver(nameResolver)
+                                                                    .resourcesCalculator(new MockResourcesCalculator())
                                                                     .build();
 
         tester.deployZoneApp();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Limits where each number are within flavor limits but but which don't contain any flavor leads to an error
+        try {
+            tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 3.8, 20, 40),
+                                                          resources(10, 5, 5, 25, 50)));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            // success
+        }
 
         // Initial deployment
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 0.5, 5, 20),
@@ -176,14 +187,6 @@ public class DynamicDockerProvisionTest {
                            4, 2, 1, 10, 20,
                            app1, cluster1);
 
-        try { // Limits where each number are within flavor limits but but which don't contain any flavor leads to an error
-            tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 3.8, 20, 40),
-                                                          resources(10, 5, 5, 25, 50)));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            // success
-        }
 
         // Move window above current allocation
         tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 3.8, 20, 40),
@@ -239,6 +242,22 @@ public class DynamicDockerProvisionTest {
                     .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources))
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any(), any());
+    }
+
+    private static class MockResourcesCalculator implements HostResourcesCalculator {
+
+        @Override
+        public NodeResources realResourcesOf(Node node) {
+            if (node.type() == NodeType.host) return node.flavor().resources();
+            return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            if (flavor.isConfigured()) return flavor.resources();
+            return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
+        }
+
     }
 
 }
