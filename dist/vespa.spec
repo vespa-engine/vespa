@@ -3,6 +3,9 @@
 # Hack to speed up jar packing for now
 %define __jar_repack %{nil}
 
+# Only strip debug info
+%global _find_debuginfo_opts -g
+
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
 %define _vespa_deps_prefix /opt/vespa-deps
