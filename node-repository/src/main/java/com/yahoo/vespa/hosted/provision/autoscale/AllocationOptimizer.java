@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -117,10 +116,12 @@ public class AllocationOptimizer {
         }
 
         private ClusterResources resourcesWith(int nodes) {
-            int nodesWithRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
+            int nodesAdjustedForRedundancy = nodes;
+            if (target.adjustForRedundancy())
+                nodesAdjustedForRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
             return new ClusterResources(nodes,
                                         singleGroupMode ? 1 : nodes / current.groupSize(),
-                                        nodeResourcesWith(nodesWithRedundancy));
+                                        nodeResourcesWith(nodesAdjustedForRedundancy));
         }
 
         /**
@@ -161,8 +162,9 @@ public class AllocationOptimizer {
 
             // Combine the scaled resource values computed here
             // with the currently configured non-scaled values, given in the limits, if any
-            NodeResources nonScaled = limits.isEmpty() ? current.toAdvertisedClusterResources().nodeResources()
-                                                       : limits.min().nodeResources(); // min=max for non-scaled
+            NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
+                                      ? current.toAdvertisedClusterResources().nodeResources()
+                                      : limits.min().nodeResources(); // min=max for non-scaled
             return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
         }
 

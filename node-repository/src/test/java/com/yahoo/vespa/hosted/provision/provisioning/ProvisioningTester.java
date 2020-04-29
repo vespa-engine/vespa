@@ -161,7 +161,26 @@ public class ProvisioningTester {
     }
 
     public Collection<HostSpec> activate(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        return activate(application, prepare(application, cluster, capacity, true));
+        List<HostSpec> preparedNodes = prepare(application, cluster, capacity, true);
+
+        // Add ip addresses and activate parent host if necessary
+        for (HostSpec prepared : preparedNodes) {
+            Node node = nodeRepository.getNode(prepared.hostname()).get();
+            if (node.ipConfig().primary().isEmpty()) {
+                node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
+                nodeRepository.write(node, nodeRepository.lock(node));
+            }
+            if (node.parentHostname().isEmpty()) continue;
+            Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+            if (parent.state() == Node.State.active) continue;
+            NestedTransaction t = new NestedTransaction();
+            if (parent.ipConfig().primary().isEmpty())
+                parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+            nodeRepository.activate(List.of(parent), t);
+            t.commit();
+        }
+
+        return activate(application, preparedNodes);
     }
 
     public Collection<HostSpec> activate(ApplicationId application, Collection<HostSpec> hosts) {
@@ -222,10 +241,11 @@ public class ProvisioningTester {
         assertEquals(explanation + ": Group count",
                      groups,
                      nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
-        for (Node node : nodeList)
-            assertEquals(explanation + ": Resources",
-                         new NodeResources(vcpu, memory, disk, 0.1),
-                         node.flavor().resources());
+        for (Node node : nodeList) {
+            var expected = new NodeResources(vcpu, memory, disk, 0.1);
+            assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.flavor().resources(),
+                       expected.compatibleWith(node.flavor().resources()));
+        }
     }
 
     public void fail(HostSpec host) {

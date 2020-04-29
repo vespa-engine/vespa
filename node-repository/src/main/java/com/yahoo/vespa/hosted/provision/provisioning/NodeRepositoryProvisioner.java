@@ -155,9 +155,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    .not().retired()
                                    .not().removable()
                                    .asList();
-        if (nodes.isEmpty()) return requested.minResources(); // New deployment: Start at min
-
-        AllocatableClusterResources currentResources = new AllocatableClusterResources(nodes, nodeRepository.resourcesCalculator());
+        AllocatableClusterResources currentResources =
+                nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type()) // new deployment: Use min
+                                : new AllocatableClusterResources(nodes, nodeRepository.resourcesCalculator());
         return ensureWithin(Limits.of(requested), currentResources);
     }
 
@@ -166,20 +166,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (limits.isEmpty()) return current.toAdvertisedClusterResources();
         if (limits.min().equals(limits.max())) return limits.min();
 
-        if (current.toAdvertisedClusterResources().isWithin(limits.min(), limits.max()))
-            return combine(current.toAdvertisedClusterResources(), limits.min()); // for unscaled values min==max
-
         return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
                                   .toAdvertisedClusterResources();
-    }
-
-    /** Combine autoscaled values with unscaled values, such that the latter can be changed by a deployment. */
-    private ClusterResources combine(ClusterResources scaledValues, ClusterResources unscaledValues) {
-        if (unscaledValues.nodeResources() == NodeResources.unspecified) return scaledValues;
-        return scaledValues.with(unscaledValues.nodeResources().withVcpu(scaledValues.nodeResources().vcpu())
-                                                               .withMemoryGb(scaledValues.nodeResources().memoryGb())
-                                                               .withDiskGb(scaledValues.nodeResources().diskGb()));
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {

@@ -39,6 +39,16 @@ public class AllocatableClusterResources {
 
     private final double fulfilment;
 
+    /** Fake allocatable resources from requested capacity */
+    public AllocatableClusterResources(ClusterResources requested, ClusterSpec.Type clusterType) {
+        this.advertisedResources = requested.nodeResources();
+        this.realResources = requested.nodeResources(); // we don't know
+        this.nodes = requested.nodes();
+        this.groups = requested.groups();
+        this.clusterType = clusterType;
+        this.fulfilment = 1;
+    }
+
     public AllocatableClusterResources(List<Node> nodes, HostResourcesCalculator calculator) {
         this.advertisedResources = nodes.get(0).flavor().resources();
         this.realResources = calculator.realResourcesOf(nodes.get(0));
@@ -134,22 +144,22 @@ public class AllocatableClusterResources {
     }
 
     /**
-     * Returns the smallest allocatable node resources larger than the given node resources,
-     * or empty if none available.
+     * Returns the best matching allocatable node resources given ideal node resources,
+     * or empty if none available within the limits.
      */
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
                                                              ClusterSpec.Type clusterType,
                                                              Limits limits,
                                                              NodeRepository nodeRepository) {
-        NodeResources nodeResources = limits.cap(resources.nodeResources());
-        nodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(nodeResources, clusterType);
+        NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
+        cappedNodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(cappedNodeResources, clusterType);
 
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                if (flavor.resources().satisfies(nodeResources))
-                    return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
-                                                                       nodeResources,
+                if (flavor.resources().satisfies(cappedNodeResources))
+                    return Optional.of(new AllocatableClusterResources(resources.with(cappedNodeResources),
+                                                                       cappedNodeResources,
                                                                        resources.nodeResources(),
                                                                        clusterType));
             }
@@ -159,21 +169,29 @@ public class AllocatableClusterResources {
             // return the cheapest flavor satisfying the target resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                if ( ! flavor.resources().satisfies(nodeResources)) continue;
+                NodeResources flavorResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
+                if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
+                    flavor = flavor.with(FlavorOverrides.ofDisk(cappedNodeResources.diskGb()));
+                    flavorResources = flavorResources.withDiskGb(cappedNodeResources.diskGb()); // TODO: Do this in resourcesCalculator
+                }
+                if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), flavorResources)) continue;
 
-                if (flavor.resources().storageType() == NodeResources.StorageType.remote)
-                    flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
                                                                 flavor,
                                                                 resources.nodeResources(),
                                                                 clusterType,
                                                                 nodeRepository.resourcesCalculator());
-
-                if (best.isEmpty() || candidate.cost() <= best.get().cost())
+                if (best.isEmpty() || candidate.preferableTo(best.get()))
                     best = Optional.of(candidate);
             }
             return best;
         }
+    }
+
+    private static boolean between(NodeResources min, NodeResources max, NodeResources r) {
+        if ( ! min.isUnspecified() && ! r.justNumbers().satisfies(min.justNumbers())) return false;
+        if ( ! max.isUnspecified() && ! max.justNumbers().satisfies(r.justNumbers())) return false;
+        return true;
     }
 
     // TODO: Put this in zone config instead?
