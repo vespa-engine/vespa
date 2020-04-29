@@ -54,16 +54,27 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr
     }
 }
 
+}
 
-template class datastore::DataStoreT<IEnumStore::InternalIndex>;
+namespace search::datastore {
+
+template class DataStoreT<search::IEnumStore::InternalIndex>;
+
+}
+
+namespace search::btree {
 
 template
-class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeBuilder<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeBuilder<search::IEnumStore::Index, datastore::EntryRef, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
+
+}
+
+namespace search {
 
 template class EnumStoreT<const char*>;
 template class EnumStoreT<int8_t>;

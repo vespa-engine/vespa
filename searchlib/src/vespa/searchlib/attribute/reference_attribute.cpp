@@ -474,7 +474,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 namespace search::datastore {
 
-using Reference = attribute::Reference;
+using Reference = search::attribute::Reference;
 
 template class UniqueStoreAllocator<Reference, EntryRefT<22>>;
 template class UniqueStore<Reference, EntryRefT<22>>;

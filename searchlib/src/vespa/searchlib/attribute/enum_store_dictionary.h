@@ -72,97 +72,100 @@ public:
     void remove(const datastore::EntryComparator& comp, datastore::EntryRef ref) override;
 };
 
-extern template
-class btree::BTreeNodeT<IEnumStore::Index, EnumTreeTraits::INTERNAL_SLOTS>;
+}
+
+namespace search::btree {
 
 extern template
-class btree::BTreeNodeTT<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
+class BTreeNodeT<search::IEnumStore::Index, search::EnumTreeTraits::INTERNAL_SLOTS>;
 
 extern template
-class btree::BTreeNodeTT<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeTT<search::IEnumStore::Index, uint32_t, NoAggregated, search::EnumTreeTraits::INTERNAL_SLOTS>;
 
 extern template
-class btree::BTreeInternalNode<IEnumStore::Index, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
+class BTreeNodeTT<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeLeafNode<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeInternalNode<search::IEnumStore::Index, NoAggregated, search::EnumTreeTraits::INTERNAL_SLOTS>;
 
 extern template
-class btree::BTreeLeafNode<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNode<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeLeafNodeTemp<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNode<search::IEnumStore::Index, uint32_t, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeLeafNodeTemp<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNodeTemp<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeNodeStore<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNodeTemp<search::IEnumStore::Index, uint32_t, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeNodeStore<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeStore<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                     search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeRoot<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeNodeStore<search::IEnumStore::Index, uint32_t, NoAggregated,
+                     search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeRoot<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRoot<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class btree::BTreeRootT<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRoot<search::IEnumStore::Index, uint32_t, NoAggregated,
+                const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class btree::BTreeRootT<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRootT<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class btree::BTreeRootBase<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootT<search::IEnumStore::Index, uint32_t, NoAggregated,
+                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class btree::BTreeRootBase<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootBase<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeNodeAllocator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootBase<search::IEnumStore::Index, uint32_t, NoAggregated,
+                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class btree::BTreeNodeAllocator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeAllocator<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                         search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
+
+extern template
+class BTreeNodeAllocator<search::IEnumStore::Index, uint32_t, NoAggregated,
+                         search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 
 extern template
-class btree::BTreeIteratorBase<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
+class BTreeIteratorBase<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                        search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS, search::EnumTreeTraits::PATH_SIZE>;
 extern template
-class btree::BTreeIteratorBase<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
+class BTreeIteratorBase<search::IEnumStore::Index, uint32_t, NoAggregated,
+                        search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS, search::EnumTreeTraits::PATH_SIZE>;
 
-extern template class btree::BTreeConstIterator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                                const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+extern template class BTreeConstIterator<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                                         const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
-extern template class btree::BTreeConstIterator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                                                const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeIterator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-extern template
-class btree::BTreeIterator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+extern template class BTreeConstIterator<search::IEnumStore::Index, uint32_t, NoAggregated,
+                                         const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class btree::BTree<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIterator<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                    const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 extern template
-class btree::BTree<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIterator<search::IEnumStore::Index, uint32_t, NoAggregated,
+                    const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
+extern template
+class BTree<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+            const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+extern template
+class BTree<search::IEnumStore::Index, uint32_t, NoAggregated,
+            const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 }

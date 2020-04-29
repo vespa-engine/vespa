@@ -23,8 +23,7 @@ LOG_SETUP("btree_test");
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 namespace {
 
@@ -1520,7 +1519,6 @@ Test::Main()
     TEST_DONE();
 }
 
-}
 }
 
 TEST_APPHOOK(search::btree::Test);
