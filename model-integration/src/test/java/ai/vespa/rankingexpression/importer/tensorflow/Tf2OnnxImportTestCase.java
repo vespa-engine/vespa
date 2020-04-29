@@ -44,8 +44,8 @@ public class Tf2OnnxImportTestCase {
 
     private Context contextFrom(ImportedModel result) {
         MapContext context = new MapContext();
-        result.largeConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
-        result.smallConstantValues().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
+        result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
+        result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
         return context;
     }
 
