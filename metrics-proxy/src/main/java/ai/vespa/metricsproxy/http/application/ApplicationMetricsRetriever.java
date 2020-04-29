@@ -65,11 +65,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         super.deconstruct();
     }
 
-    public Map<Node, List<MetricsPacket.Builder>> getMetrics() {
+    public Map<Node, List<MetricsPacket>> getMetrics() {
         return getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
     }
 
-    public Map<Node, List<MetricsPacket.Builder>> getMetrics(ConsumerId consumer) {
+    public Map<Node, List<MetricsPacket>> getMetrics(ConsumerId consumer) {
         log.log(Level.FINE, () -> "Retrieving metrics from " + clients.size() + " nodes.");
         var forkJoinTask = forkJoinPool.submit(() -> clients.parallelStream()
                 .map(client -> getNodeMetrics(client, consumer))
@@ -87,7 +87,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         }
     }
 
-    private Map.Entry<Node, List<MetricsPacket.Builder>> getNodeMetrics(NodeMetricsClient client, ConsumerId consumer) {
+    private Map.Entry<Node, List<MetricsPacket>> getNodeMetrics(NodeMetricsClient client, ConsumerId consumer) {
         try {
             return new AbstractMap.SimpleEntry<>(client.node, client.getMetrics(consumer));
         } catch (Exception e) {
