@@ -48,6 +48,7 @@ private:
     uint32_t             _allowedLidBloat;
     double               _allowedLidBloatFactor;
     double               _remove_batch_block_rate;
+    double               _remove_block_rate;
     bool                 _disabled;
     uint32_t             _maxDocsToScan;
 
@@ -57,6 +58,7 @@ public:
                                        uint32_t allowedLidBloat,
                                        double allowwedLidBloatFactor,
                                        double remove_batch_block_rate,
+                                       double remove_block_rate,
                                        bool disabled,
                                        uint32_t maxDocsToScan = 10000);
 
@@ -67,6 +69,7 @@ public:
     uint32_t getAllowedLidBloat() const { return _allowedLidBloat; }
     double getAllowedLidBloatFactor() const { return _allowedLidBloatFactor; }
     double get_remove_batch_block_rate() const { return _remove_batch_block_rate; }
+    double get_remove_block_rate() const { return _remove_block_rate; }
     bool isDisabled() const { return _disabled; }
     uint32_t getMaxDocsToScan() const { return _maxDocsToScan; }
 };

@@ -622,6 +622,9 @@ DocumentMetaStore::remove(DocId lid)
     BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
     bool result = remove(lid, bucketGuard);
     incGeneration();
+    if (result && _op_listener) {
+        _op_listener->notify_remove();
+    }
     return result;
 }
 

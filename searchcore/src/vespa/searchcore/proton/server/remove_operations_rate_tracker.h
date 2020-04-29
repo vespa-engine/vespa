@@ -15,16 +15,21 @@ namespace proton {
 class RemoveOperationsRateTracker : public documentmetastore::OperationListener {
 private:
     OperationRateTracker _remove_batch_tracker;
+    OperationRateTracker _remove_tracker;
 
 public:
-    RemoveOperationsRateTracker(double remove_batch_rate_threshold);
+    RemoveOperationsRateTracker(double remove_batch_rate_threshold,
+                                double remove_rate_threshold);
 
     void notify_remove_batch() override;
+    void notify_remove() override;
 
     bool remove_batch_above_threshold() const;
+    bool remove_above_threshold() const;
 
     // Should only be used for testing
-    void reset_remove_batch_tracker();
+    OperationRateTracker& get_remove_batch_tracker() { return _remove_batch_tracker; }
+    OperationRateTracker& get_remove_tracker() { return _remove_tracker; }
 };
 
 }

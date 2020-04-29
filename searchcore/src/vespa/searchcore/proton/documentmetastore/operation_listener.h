@@ -14,6 +14,7 @@ public:
     using SP = std::shared_ptr<OperationListener>;
     virtual ~OperationListener() {}
     virtual void notify_remove_batch() = 0;
+    virtual void notify_remove() = 0;
 };
 
 }

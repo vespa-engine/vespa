@@ -135,6 +135,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.lidspacecompaction.allowedlidbloat,
                     proton.lidspacecompaction.allowedlidbloatfactor,
                     proton.lidspacecompaction.removebatchblockrate,
+                    proton.lidspacecompaction.removeblockrate,
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
                     proton.writefilter.attribute.enumstorelimit,

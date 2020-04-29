@@ -95,6 +95,12 @@ LidSpaceCompactionJob::remove_batch_is_ongoing() const
     return _ops_rate_tracker->remove_batch_above_threshold();
 }
 
+bool
+LidSpaceCompactionJob::remove_is_ongoing() const
+{
+    return _ops_rate_tracker->remove_above_threshold();
+}
+
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                                              ILidSpaceCompactionHandler &handler,
                                              IOperationStorer &opStorer,
@@ -114,7 +120,8 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _shouldCompactLidSpace(false),
       _diskMemUsageNotifier(diskMemUsageNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
-      _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate()))
+      _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate(),
+                                                                      config.get_remove_block_rate()))
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
@@ -140,6 +147,11 @@ LidSpaceCompactionJob::run()
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         LOG(info, "run(): Lid space compaction is disabled while remove batch (delete buckets) is ongoing");
+        return true;
+    }
+    if (remove_is_ongoing()) {
+        // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
+        LOG(info, "run(): Lid space compaction is disabled while remove operations are ongoing");
         return true;
     }
     if (_scanItr) {

@@ -2088,12 +2088,15 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
 class MockOperationListener : public documentmetastore::OperationListener {
 public:
     size_t remove_batch_cnt;
+    size_t remove_cnt;
 
     MockOperationListener()
-        : remove_batch_cnt(0)
+        : remove_batch_cnt(0),
+          remove_cnt(0)
     {
     }
     void notify_remove_batch() override { ++remove_batch_cnt; }
+    void notify_remove() override { ++remove_cnt; }
 };
 
 TEST(DocumentMetaStoreTest, call_to_remove_batch_is_notified)
@@ -2106,6 +2109,18 @@ TEST(DocumentMetaStoreTest, call_to_remove_batch_is_notified)
 
     dms.removeBatch({1}, 5);
     EXPECT_EQ(1, listener->remove_batch_cnt);
+}
+
+TEST(DocumentMetaStoreTest, call_to_remove_is_notified)
+{
+    DocumentMetaStore dms(createBucketDB());
+    auto listener = std::make_shared<MockOperationListener>();
+    dms.set_operation_listener(listener);
+    dms.constructFreeList();
+    addLid(dms, 1);
+
+    dms.remove(1);
+    EXPECT_EQ(1, listener->remove_cnt);
 }
 
 }

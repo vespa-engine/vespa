@@ -54,6 +54,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
       _remove_batch_block_rate(0.5),
+      _remove_block_rate(100000),
       _disabled(false),
       _maxDocsToScan(10000)
 {
@@ -63,6 +64,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
                                                                        uint32_t allowedLidBloat,
                                                                        double allowedLidBloatFactor,
                                                                        double remove_batch_block_rate,
+                                                                       double remove_block_rate,
                                                                        bool disabled,
                                                                        uint32_t maxDocsToScan)
     : _delay(std::min(MAX_DELAY_SEC, interval)),
@@ -70,6 +72,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
       _remove_batch_block_rate(remove_batch_block_rate),
+      _remove_block_rate(remove_block_rate),
       _disabled(disabled),
       _maxDocsToScan(maxDocsToScan)
 {

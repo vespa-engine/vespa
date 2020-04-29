@@ -48,6 +48,7 @@ private:
     void refreshRunnable();
     void refreshAndConsiderRunnable();
     bool remove_batch_is_ongoing() const;
+    bool remove_is_ongoing() const;
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
