@@ -82,6 +82,9 @@ public class ImportedModel implements ImportedMlModel {
     @Override
     public Map<String, String> smallConstants() { return asStrings(smallConstants); }
 
+    @Override
+    public Map<String, Tensor> smallConstantValues() { return ImmutableMap.copyOf(smallConstants); }
+
     boolean hasSmallConstant(String name) { return smallConstants.containsKey(name); }
 
     /**
@@ -91,6 +94,9 @@ public class ImportedModel implements ImportedMlModel {
      */
     @Override
     public Map<String, String> largeConstants() { return asStrings(largeConstants); }
+
+    @Override
+    public Map<String, Tensor> largeConstantValues() { return ImmutableMap.copyOf(largeConstants); }
 
     boolean hasLargeConstant(String name) { return largeConstants.containsKey(name); }
 

@@ -25,13 +25,13 @@ public class TensorFlowMnistSoftmaxImportTestCase {
         // Check constants
         Assert.assertEquals(2, model.get().largeConstants().size());
 
-        Tensor constant0 = Tensor.from(model.get().largeConstants().get("test_Variable_read"));
+        Tensor constant0 = model.get().largeConstantValues().get("test_Variable_read");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d2", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = Tensor.from(model.get().largeConstants().get("test_Variable_1_read"));
+        Tensor constant1 = model.get().largeConstantValues().get("test_Variable_1_read");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d1", 10).build(),
                      constant1.type());
