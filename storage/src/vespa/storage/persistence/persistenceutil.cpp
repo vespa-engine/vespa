@@ -80,6 +80,19 @@ MessageTracker::sendReply() {
     }
 }
 
+bool
+MessageTracker::checkForError(const spi::Result& response)
+{
+    uint32_t code = PersistenceUtil::convertErrorCode(response);
+
+    if (code != 0) {
+        fail(code, response.getErrorMessage());
+        return false;
+    }
+
+    return true;
+}
+
 void
 MessageTracker::fail(const ReturnCode& result)
 {

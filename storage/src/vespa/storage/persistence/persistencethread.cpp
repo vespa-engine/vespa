@@ -67,20 +67,6 @@ PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucke
 }
 
 bool
-PersistenceThread::checkForError(const spi::Result& response, MessageTracker& tracker)
-{
-    uint32_t code = PersistenceUtil::convertErrorCode(response);
-
-    if (code != 0) {
-        tracker.fail(code, response.getErrorMessage());
-        return false;
-    }
-
-    return true;
-}
-
-
-bool
 PersistenceThread::tasConditionExists(const api::TestAndSetCommand & cmd) {
     return cmd.getCondition().isPresent();
 }
@@ -118,7 +104,7 @@ PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP tracker)
 
     spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                                     spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker->context());
-    checkForError(response, *tracker);
+    tracker->checkForError(response);
     return tracker;
 }
 
@@ -135,7 +121,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
 
     spi::RemoveResult response = _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                                                     spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker->context());
-    if (checkForError(response, *tracker)) {
+    if (tracker->checkForError(response)) {
         tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
     }
     if (!response.wasFound()) {
@@ -157,7 +143,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trac
     
     spi::UpdateResult response = _spi.update(getBucket(cmd.getUpdate()->getId(), cmd.getBucket()),
                                              spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(), tracker->context());
-    if (checkForError(response, *tracker)) {
+    if (tracker->checkForError(response)) {
         auto reply = std::make_shared<api::UpdateReply>(cmd);
         reply->setOldTimestamp(response.getExistingTimestamp());
         tracker->setReply(std::move(reply));
@@ -189,7 +175,7 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
     spi::GetResult result =
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
 
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         if (!result.hasDocument()) {
             _env._metrics.get[cmd.getLoadType()].notFound.inc();
         }
@@ -209,7 +195,7 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd, MessageTracker::
     api::BucketInfo before = _env.getBucketInfo(cmd.getBucket());
     spi::Result result = _spi.maintain(spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
                                        cmd.verifyBody() ? spi::HIGH : spi::LOW);
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         api::BucketInfo after = _env.getBucketInfo(cmd.getBucket());
 
         RepairBucketReply::UP reply(new RepairBucketReply(cmd, after));
@@ -338,7 +324,7 @@ PersistenceThread::handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker
 {
     tracker->setMetric(_env._metrics.visit[cmd.getLoadType()]);
     spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize(), tracker->context()));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         auto reply = std::make_shared<GetIterReply>(cmd);
         reply->getEntries() = result.steal_entries();
         _env._metrics.visit[cmd.getLoadType()].
@@ -357,7 +343,7 @@ PersistenceThread::handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP 
     tracker->setMetric(_env._metrics.readBucketList);
 
     spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace(), cmd.getPartition()));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         auto reply = std::make_shared<ReadBucketListReply>(cmd);
         result.getList().swap(reply->getBuckets());
         tracker->setReply(reply);
@@ -383,7 +369,7 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTrack
     spi::CreateIteratorResult result(_spi.createIterator(
         spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
         *fieldSet, cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
     }
     return tracker;
@@ -604,7 +590,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
                   spi::Bucket(secondBucket, spi::PartitionId(lock2.disk)),
                   spi::Bucket(destBucket, spi::PartitionId(_env._partition)),
                   tracker->context());
-    if (!checkForError(result, *tracker)) {
+    if (!tracker->checkForError(result)) {
         return tracker;
     }
     uint64_t lastModified = 0;
@@ -645,7 +631,7 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd, Message
     spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
 
     spi::Result result(_spi.setActiveState(bucket, newState));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         StorBucketDatabase::WrappedEntry
                 entry = _env.getBucketDatabase(bucket.getBucket().getBucketSpace()).get(cmd.getBucketId(), "handleSetBucketState");
         if (entry.exist()) {
@@ -683,7 +669,7 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, Mess
                   spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
                   spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToKeep())),
                   tracker->context());
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<InternalBucketJoinReply>(cmd, _env.getBucketInfo(cmd.getBucket())));
     }
     return tracker;
@@ -813,7 +799,7 @@ PersistenceThread::processMessage(api::StorageMessage& msg, MessageTracker::UP t
             LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
         }
     } else {
-        api::StorageCommand& initiatingCommand = static_cast<api::StorageCommand&>(msg);
+        auto & initiatingCommand = static_cast<api::StorageCommand&>(msg);
         try {
             int64_t startTime(_component->getClock().getTimeInMillis().getTime());
 

@@ -78,7 +78,6 @@ private:
 
     // Thread main loop
     void run(framework::ThreadHandle&) override;
-    static bool checkForError(const spi::Result& response, MessageTracker& tracker);
     spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
 
     friend class TestAndSetHelper;

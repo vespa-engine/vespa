@@ -65,6 +65,8 @@ public:
 
     void sendReply();
 
+    bool checkForError(const spi::Result& response);
+
 private:
     bool                                     _sendReply;
     bool                                     _updateBucketInfo;
