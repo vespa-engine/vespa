@@ -14,7 +14,7 @@ public interface ArtifactRepository {
 
     // TODO unused, remove
     /** Returns the tenant application package of the given version. */
-    byte[] getApplicationPackage(ApplicationId application, String applicationVersion);
+    default byte[] getApplicationPackage(ApplicationId application, String applicationVersion) { return new byte[0]; }
 
     /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
