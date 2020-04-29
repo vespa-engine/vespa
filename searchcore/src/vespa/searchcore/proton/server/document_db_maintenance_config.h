@@ -47,7 +47,7 @@ private:
     vespalib::duration   _interval;
     uint32_t             _allowedLidBloat;
     double               _allowedLidBloatFactor;
-    vespalib::duration   _remove_batch_block_delay;
+    double               _remove_batch_block_rate;
     bool                 _disabled;
     uint32_t             _maxDocsToScan;
 
@@ -56,7 +56,7 @@ public:
     DocumentDBLidSpaceCompactionConfig(vespalib::duration interval,
                                        uint32_t allowedLidBloat,
                                        double allowwedLidBloatFactor,
-                                       vespalib::duration remove_batch_block_delay,
+                                       double remove_batch_block_rate,
                                        bool disabled,
                                        uint32_t maxDocsToScan = 10000);
 
@@ -66,7 +66,7 @@ public:
     vespalib::duration getInterval() const { return _interval; }
     uint32_t getAllowedLidBloat() const { return _allowedLidBloat; }
     double getAllowedLidBloatFactor() const { return _allowedLidBloatFactor; }
-    vespalib::duration get_remove_batch_block_delay() const { return _remove_batch_block_delay; }
+    double get_remove_batch_block_rate() const { return _remove_batch_block_rate; }
     bool isDisabled() const { return _disabled; }
     uint32_t getMaxDocsToScan() const { return _maxDocsToScan; }
 };

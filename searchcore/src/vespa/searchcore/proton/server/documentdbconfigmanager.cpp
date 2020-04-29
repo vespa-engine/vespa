@@ -134,7 +134,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     vespalib::from_s(proton.lidspacecompaction.interval),
                     proton.lidspacecompaction.allowedlidbloat,
                     proton.lidspacecompaction.allowedlidbloatfactor,
-                    vespalib::from_s(proton.lidspacecompaction.removebatchblockdelay),
+                    proton.lidspacecompaction.removebatchblockrate,
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
                     proton.writefilter.attribute.enumstorelimit,

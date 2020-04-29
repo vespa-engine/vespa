@@ -17,11 +17,14 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton::bucketdb {
-    class SplitBucketSession;
-    class JoinBucketsSession;
+class SplitBucketSession;
+class JoinBucketsSession;
 }
 
-namespace proton::documentmetastore { class Reader; }
+namespace proton::documentmetastore {
+class OperationListener;
+class Reader;
+}
 
 namespace proton {
     
@@ -71,7 +74,7 @@ private:
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
-    search::LidUsageStats::TimePoint _last_remove_batch;
+    documentmetastore::OperationListener::SP _op_listener;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -225,6 +228,7 @@ public:
     void compactLidSpace(DocId wantedLidLimit) override;
     void holdUnblockShrinkLidSpace() override;
     bool canShrinkLidSpace() const override;
+    void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override;
 
     SerialNum getLastSerialNum() const override {
         return getStatus().getLastSyncToken();

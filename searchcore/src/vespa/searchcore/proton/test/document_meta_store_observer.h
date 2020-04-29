@@ -185,6 +185,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
         _store.foreach(visitor);
     }
+    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
+        _store.set_operation_listener(std::move(op_listener));
+    }
 };
 
 }

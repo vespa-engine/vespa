@@ -4,6 +4,7 @@
 
 #include "i_document_scan_iterator.h"
 #include "ifrozenbuckethandler.h"
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchlib/common/lid_usage_stats.h>
@@ -28,6 +29,13 @@ struct ILidSpaceCompactionHandler
      * Returns the name of this handler.
      */
     virtual vespalib::string getName() const = 0;
+
+    /**
+     * Sets the listener used to get notifications on the operations handled by the document meta store.
+     *
+     * A call to this function should replace the previous listener if set.
+     */
+    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) = 0;
 
     /**
      * Returns the id of the sub database this handler is operating over.

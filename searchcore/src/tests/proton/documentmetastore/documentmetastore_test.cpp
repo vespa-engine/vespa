@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
@@ -1782,7 +1783,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
 void
 assertLidBloat(uint32_t expBloat, uint32_t lidLimit, uint32_t usedLids)
 {
-    LidUsageStats stats(lidLimit, usedLids, 0, 0, LidUsageStats::TimePoint());
+    LidUsageStats stats(lidLimit, usedLids, 0, 0);
     EXPECT_EQ(expBloat, stats.getLidBloat());
 }
 
@@ -2084,21 +2085,27 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     assertLidGidFound(4, dms);
 }
 
-TEST(DocumentMetaStoreTest, tracks_time_of_last_call_to_remove_batch)
+class MockOperationListener : public documentmetastore::OperationListener {
+public:
+    size_t remove_batch_cnt;
+
+    MockOperationListener()
+        : remove_batch_cnt(0)
+    {
+    }
+    void notify_remove_batch() override { ++remove_batch_cnt; }
+};
+
+TEST(DocumentMetaStoreTest, call_to_remove_batch_is_notified)
 {
     DocumentMetaStore dms(createBucketDB());
+    auto listener = std::make_shared<MockOperationListener>();
+    dms.set_operation_listener(listener);
     dms.constructFreeList();
     addLid(dms, 1);
 
-    LidUsageStats::TimePoint before = std::chrono::steady_clock::now();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     dms.removeBatch({1}, 5);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    LidUsageStats::TimePoint after = std::chrono::steady_clock::now();
-
-    auto stats = dms.getLidUsageStats();
-    EXPECT_LT(before, stats.get_last_remove_batch());
-    EXPECT_GT(after, stats.get_last_remove_batch());
+    EXPECT_EQ(1, listener->remove_batch_cnt);
 }
 
 }

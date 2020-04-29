@@ -339,6 +339,7 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 
     MockLidSpaceCompactionHandler(const vespalib::string &name_) : name(name_) {}
     virtual vespalib::string getName() const override { return name; }
+    virtual void set_operation_listener(documentmetastore::OperationListener::SP) override {}
     virtual uint32_t getSubDbId() const override { return 0; }
     virtual search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
     virtual IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }

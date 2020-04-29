@@ -23,6 +23,12 @@ LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSu
 {
 }
 
+void
+LidSpaceCompactionHandler::set_operation_listener(documentmetastore::OperationListener::SP op_listener)
+{
+    return _subDb.meta_store()->set_operation_listener(std::move(op_listener));
+}
+
 LidUsageStats
 LidSpaceCompactionHandler::getLidStatus() const
 {
