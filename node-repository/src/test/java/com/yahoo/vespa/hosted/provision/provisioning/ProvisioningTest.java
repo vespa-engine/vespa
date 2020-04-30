@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -408,8 +409,11 @@ public class ProvisioningTest {
 
     @Test
     public void test_changing_limits() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyHosts(30, new NodeResources(20, 40, 100, 4)).deployZoneApp();
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(30, hostFlavor.resources()).deployZoneApp();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -453,7 +457,14 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  5),
                                                       resources(9, 3, 12, 35, 15)));
         tester.assertNodes("Groups changed",
-                           6, 3, 10, 30, 10,
+                           6, 3, 8, 30, 10,
+                           app1, cluster1);
+
+        // Stop specifying node resources
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified),
+                                                      new ClusterResources(9, 3, NodeResources.unspecified)));
+        tester.assertNodes("No change",
+                           6, 3, 8, 30, 10,
                            app1, cluster1);
     }
 

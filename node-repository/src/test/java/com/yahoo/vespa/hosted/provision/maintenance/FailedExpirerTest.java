@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -250,7 +251,11 @@ public class FailedExpirerTest {
 
         public FailureScenario(SystemName system, Environment environment) {
             Zone zone = new Zone(system, environment, RegionName.defaultName());
-            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+            this.nodeRepository = new NodeRepository(nodeFlavors,
+                                                     new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                     curator,
+                                                     clock,
+                                                     zone,
                                                      new MockNameResolver().mockAnyLookup(),
                                                      DockerImage.fromString("docker-image"),
                                                      true);

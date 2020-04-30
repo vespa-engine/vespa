@@ -33,7 +33,7 @@ class Preparer {
         this.nodeRepository = nodeRepository;
         this.spareCount = spareCount;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, flagSource);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, flagSource);
     }
 
     /** Prepare all required resources for the given application and cluster */
