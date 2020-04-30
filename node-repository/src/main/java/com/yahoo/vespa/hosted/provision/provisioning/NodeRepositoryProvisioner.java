@@ -22,10 +22,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
-import com.yahoo.vespa.hosted.provision.autoscale.Limits;
-import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -35,6 +31,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,7 +47,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
-    private final AllocationOptimizer allocationOptimizer;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
     private final Preparer preparer;
@@ -65,7 +61,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
-        this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(zone);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
@@ -99,7 +94,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if ( requested.type() == NodeType.tenant) {
-            ClusterResources target = decideTargetResources(application, cluster, requested);
+            ClusterResources target = decideTargetResources(application, cluster.id(), requested);
             int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
             resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
@@ -136,39 +131,66 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
      * and updates the application store with the received min and max.
      */
-    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
+    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity requested) {
         try (Mutex lock = nodeRepository.lock(applicationId)) {
             Application application = nodeRepository.applications().get(applicationId).orElse(new Application(applicationId));
-            application = application.withClusterLimits(clusterSpec.id(), requested.minResources(), requested.maxResources());
+            application = application.withClusterLimits(clusterId, requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
-            return application.clusters().get(clusterSpec.id()).targetResources()
-                    .orElseGet(() -> currentResources(applicationId, clusterSpec, requested));
+            return application.clusters().get(clusterId).targetResources()
+                    .orElseGet(() -> currentResources(applicationId, clusterId, requested));
         }
     }
 
     /** Returns the current resources of this cluster, or the closes  */
     private ClusterResources currentResources(ApplicationId applicationId,
-                                              ClusterSpec clusterSpec,
+                                              ClusterSpec.Id clusterId,
                                               Capacity requested) {
         List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
-                                   .cluster(clusterSpec.id())
+                                   .cluster(clusterId)
                                    .not().retired()
                                    .not().removable()
                                    .asList();
-        AllocatableClusterResources currentResources =
-                nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type()) // new deployment: Use min
-                                : new AllocatableClusterResources(nodes, nodeRepository);
-        return ensureWithin(Limits.of(requested), currentResources);
+        if (nodes.isEmpty()) return requested.minResources(); // New deployment: Start at min
+
+        long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodes.get(0).flavor().resources());
+        return ensureWithin(requested.minResources(), requested.maxResources(), currentResources);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources ensureWithin(Limits limits, AllocatableClusterResources current) {
-        if (limits.isEmpty()) return current.toAdvertisedClusterResources();
-        if (limits.min().equals(limits.max())) return limits.min();
+    private ClusterResources ensureWithin(ClusterResources min, ClusterResources max, ClusterResources current) {
+        int nodes =  between(min.nodes(), max.nodes(), current.nodes());
+        int groups = between(min.groups(), max.groups(), current.groups());
+        if (nodes % groups != 0) {
+            // That didn't work - try to preserve current group size instead.
+            // Rounding here is needed because a node may be missing due to node failing.
+            int currentGroupsSize = Math.round((float)current.nodes() / current.groups());
+            nodes = currentGroupsSize * groups;
+            if (nodes != between(min.nodes(), max.nodes(), nodes)) {
+                // Give up: Use max
+                nodes = max.nodes();
+                groups = max.groups();
+            }
+        }
+        if (min.nodeResources() != NodeResources.unspecified && max.nodeResources() != NodeResources.unspecified) {
+            double vcpu = between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), current.nodeResources().vcpu());
+            double memoryGb = between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), current.nodeResources().memoryGb());
+            double diskGb = between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), current.nodeResources().diskGb());
+            // Combine computed scaled resources with requested non-scaled resources (for which min=max)
+            NodeResources nodeResources = min.nodeResources().withVcpu(vcpu).withMemoryGb(memoryGb).withDiskGb(diskGb);
+            return new ClusterResources(nodes, groups, nodeResources);
+        }
+        else {
+            return new ClusterResources(nodes, groups, current.nodeResources());
+        }
+    }
 
-        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
-                                  .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
-                                  .toAdvertisedClusterResources();
+    private int between(int min, int max, int n) {
+        return Math.min(max, Math.max(min, n));
+    }
+
+    private double between(double min, double max, double n) {
+        return Math.min(max, Math.max(min, n));
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {

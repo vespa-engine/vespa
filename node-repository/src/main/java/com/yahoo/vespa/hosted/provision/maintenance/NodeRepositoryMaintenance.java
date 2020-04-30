@@ -87,13 +87,13 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
+                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, provisionServiceProvider.getHostResourcesCalculator(), flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, defaults.capacityReportInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
-        rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
+        rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
-        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
-        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval);
+        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
+        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, defaults.scalingSuggestionsInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();

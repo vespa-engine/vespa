@@ -30,10 +30,11 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
     private final Autoscaler autoscaler;
 
     public ScalingSuggestionsMaintainer(NodeRepository nodeRepository,
+                                        HostResourcesCalculator hostResourcesCalculator,
                                         NodeMetricsDb metricsDb,
                                         Duration interval) {
         super(nodeRepository, interval);
-        this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
+        this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
     }
 
     @Override

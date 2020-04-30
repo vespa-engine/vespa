@@ -241,8 +241,6 @@ public class NodeResources {
         return true;
     }
 
-    public boolean isUnspecified() { return this == unspecified; }
-
     /**
      * Create this from serial form.
      *
