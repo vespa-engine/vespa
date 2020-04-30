@@ -158,6 +158,21 @@ public class InPlaceResizeProvisionTest {
         assertTrue("All initial nodes should still be allocated to the application", initialHostnames.isEmpty());
     }
 
+    @Test
+    public void in_place_resource_decrease() {
+        addParentHosts(30, new NodeResources(10, 100, 1000, 8, fast, local));
+
+        var largeResources = new NodeResources(6, 64, 800, 1);
+        new PrepareHelper(tester, app).prepare(content1, 12, 1, largeResources).activate();
+        assertSizeAndResources(content1, 12, largeResources.with(local));
+
+        var smallerResources = new NodeResources(6, 48, 500, 1);
+        new PrepareHelper(tester, app).prepare(content1, 12, 1, smallerResources).activate();
+        assertSizeAndResources(content1, 12, smallerResources.with(local));
+        assertEquals(0, listCluster(content1).retired().size());
+    }
+
+
     /** In this scenario there should be no resizing */
     @Test
     public void increase_size_decrease_resources() {
@@ -166,37 +181,36 @@ public class InPlaceResizeProvisionTest {
         NodeResources resources = new NodeResources(4, 8, 16, 1);
         NodeResources halvedResources = new NodeResources(2, 4, 8, 1);
 
-        new PrepareHelper(tester, app).prepare(container1, 4, 1, resources).activate();
-        assertSizeAndResources(container1, 4, resources);
+        new PrepareHelper(tester, app).prepare(content1, 4, 1, resources).activate();
+        assertSizeAndResources(content1, 4, resources);
 
         // No resizing since it would initially (before redistribution) lead to too few resources:
-        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
-        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
-        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+        new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
+        assertSizeAndResources(listCluster(content1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
 
         // Redeploying the same capacity should also not lead to any resizing
-        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
-        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
-        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+        new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
+        assertSizeAndResources(listCluster(content1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
 
         // Failing one of the new nodes should cause another new node to be allocated rather than
         // unretiring one of the existing nodes, to avoid resizing during unretiring
-        Node nodeToFail = listCluster(container1).not().retired().asList().get(0);
+        Node nodeToFail = listCluster(content1).not().retired().asList().get(0);
         tester.nodeRepository().fail(nodeToFail.hostname(), Agent.system, "testing");
-        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
-        assertFalse(listCluster(container1).stream().anyMatch(n -> n.equals(nodeToFail)));
-        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
-        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+        new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
+        assertFalse(listCluster(content1).stream().anyMatch(n -> n.equals(nodeToFail)));
+        assertSizeAndResources(listCluster(content1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
 
         // ... same with setting a node to want to retire
-        System.out.println("marking wantToRetire");
-        Node nodeToWantoToRetire = listCluster(container1).not().retired().asList().get(0);
+        Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
         tester.nodeRepository().write(nodeToWantoToRetire.with(nodeToWantoToRetire.status().withWantToRetire(true)),
                                       tester.nodeRepository().lock(nodeToWantoToRetire));
-        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
-        assertTrue(listCluster(container1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));
-        assertEquals(5, listCluster(container1).retired().size());
-        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+        new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
+        assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));
+        assertEquals(5, listCluster(content1).retired().size());
+        assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
     }
 
     @Test(expected = OutOfCapacityException.class)
