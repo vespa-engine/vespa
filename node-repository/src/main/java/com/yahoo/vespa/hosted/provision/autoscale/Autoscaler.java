@@ -74,8 +74,7 @@ public class Autoscaler {
         if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes,
-                                                                                        nodeRepository.resourcesCalculator());
+        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
         Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, clusterType);
         Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);

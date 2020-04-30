@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 
 import java.util.Optional;
@@ -33,7 +34,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources realResourcesOf(Node node) {
+        public NodeResources realResourcesOf(Node node, NodeRepository repository) {
             return node.flavor().resources();
         }
 

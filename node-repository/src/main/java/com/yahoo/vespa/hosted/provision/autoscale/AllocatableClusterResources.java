@@ -49,9 +49,9 @@ public class AllocatableClusterResources {
         this.fulfilment = 1;
     }
 
-    public AllocatableClusterResources(List<Node> nodes, HostResourcesCalculator calculator) {
+    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
         this.advertisedResources = nodes.get(0).flavor().resources();
-        this.realResources = calculator.realResourcesOf(nodes.get(0));
+        this.realResources = nodeRepository.resourcesCalculator().realResourcesOf(nodes.get(0), nodeRepository);
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();

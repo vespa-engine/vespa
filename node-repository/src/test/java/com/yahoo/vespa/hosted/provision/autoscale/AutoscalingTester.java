@@ -205,7 +205,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Node node) {
+        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
             if (zone.cloud().value().equals("aws"))
                 return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
             else

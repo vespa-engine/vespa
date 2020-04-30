@@ -17,6 +17,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -247,7 +248,7 @@ public class DynamicDockerProvisionTest {
     private static class MockResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources realResourcesOf(Node node) {
+        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
             if (node.type() == NodeType.host) return node.flavor().resources();
             return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
         }
