@@ -27,13 +27,11 @@ TEST_F(DiskMoveOperationHandlerTest, simple) {
         doPutOnDisk(3, 4, spi::Timestamp(1000 + i));
     }
 
-    DiskMoveOperationHandler diskMoveHandler(
-            getEnv(3),
-            getPersistenceProvider());
-    BucketDiskMoveCommand move(makeDocumentBucket(document::BucketId(16, 4)), 3, 4);
-
+    DiskMoveOperationHandler diskMoveHandler(getEnv(3),getPersistenceProvider());
+    document::Bucket bucket = makeDocumentBucket(document::BucketId(16, 4));
+    auto move = std::make_shared<BucketDiskMoveCommand>(bucket, 3, 4);
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
-    diskMoveHandler.handleBucketDiskMove(move, context);
+    diskMoveHandler.handleBucketDiskMove(*move, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), move));
 
     EXPECT_EQ("BucketId(0x4000000000000004): 10,4",
               getBucketStatus(document::BucketId(16,4)));

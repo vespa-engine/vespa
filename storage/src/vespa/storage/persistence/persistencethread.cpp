@@ -67,24 +67,12 @@ PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucke
 }
 
 bool
-PersistenceThread::checkForError(const spi::Result& response, MessageTracker& tracker)
-{
-    uint32_t code = _env.convertErrorCode(response);
-
-    if (code != 0) {
-        tracker.fail(code, response.getErrorMessage());
-        return false;
-    }
-
-    return true;
-}
-
-
-bool PersistenceThread::tasConditionExists(const api::TestAndSetCommand & cmd) {
+PersistenceThread::tasConditionExists(const api::TestAndSetCommand & cmd) {
     return cmd.getCondition().isPresent();
 }
 
-bool PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
+bool
+PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
                                             spi::Context & context, bool missingDocumentImpliesMatch) {
     try {
         TestAndSetHelper helper(*this, cmd, missingDocumentImpliesMatch);
@@ -104,36 +92,36 @@ bool PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, 
 }
 
 MessageTracker::UP
-PersistenceThread::handlePut(api::PutCommand& cmd, spi::Context & context)
+PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP tracker)
 {
     auto& metrics = _env._metrics.put[cmd.getLoadType()];
-    auto tracker = std::make_unique<MessageTracker>(metrics, _env._component.getClock());
+    tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, context)) {
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context())) {
         return tracker;
     }
 
     spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                    spi::Timestamp(cmd.getTimestamp()), cmd.getDocument(), context);
-    checkForError(response, *tracker);
+                                    spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker->context());
+    tracker->checkForError(response);
     return tracker;
 }
 
 MessageTracker::UP
-PersistenceThread::handleRemove(api::RemoveCommand& cmd, spi::Context & context)
+PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP tracker)
 {
     auto& metrics = _env._metrics.remove[cmd.getLoadType()];
-    auto tracker = std::make_unique<MessageTracker>(metrics,_env._component.getClock());
+    tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, context)) {
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context())) {
         return tracker;
     }
 
     spi::RemoveResult response = _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                                    spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), context);
-    if (checkForError(response, *tracker)) {
+                                                    spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker->context());
+    if (tracker->checkForError(response)) {
         tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
     }
     if (!response.wasFound()) {
@@ -143,19 +131,19 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, spi::Context & context)
 }
 
 MessageTracker::UP
-PersistenceThread::handleUpdate(api::UpdateCommand& cmd, spi::Context & context)
+PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP tracker)
 {
     auto& metrics = _env._metrics.update[cmd.getLoadType()];
-    auto tracker = std::make_unique<MessageTracker>(metrics, _env._component.getClock());
+    tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, context, cmd.getUpdate()->getCreateIfNonExistent())) {
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context(), cmd.getUpdate()->getCreateIfNonExistent())) {
         return tracker;
     }
     
     spi::UpdateResult response = _spi.update(getBucket(cmd.getUpdate()->getId(), cmd.getBucket()),
-                                             spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(), context);
-    if (checkForError(response, *tracker)) {
+                                             spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(), tracker->context());
+    if (tracker->checkForError(response)) {
         auto reply = std::make_shared<api::UpdateReply>(cmd);
         reply->setOldTimestamp(response.getExistingTimestamp());
         tracker->setReply(std::move(reply));
@@ -176,19 +164,18 @@ spi::ReadConsistency api_read_consistency_to_spi(api::InternalReadConsistency co
 }
 
 MessageTracker::UP
-PersistenceThread::handleGet(api::GetCommand& cmd, spi::Context & context)
+PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
 {
     auto& metrics = _env._metrics.get[cmd.getLoadType()];
-    auto tracker = std::make_unique<MessageTracker>(metrics,_env._component.getClock());
+    tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    document::FieldSetRepo repo;
-    document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
-    context.setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
+    document::FieldSet::UP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
+    tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result =
-        _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), context);
+        _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
 
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         if (!result.hasDocument()) {
             _env._metrics.get[cmd.getLoadType()].notFound.inc();
         }
@@ -199,16 +186,16 @@ PersistenceThread::handleGet(api::GetCommand& cmd, spi::Context & context)
 }
 
 MessageTracker::UP
-PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
+PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.repairs,_env._component.getClock());
+    tracker->setMetric(_env._metrics.repairs);
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
     LOG(debug, "Repair(%s): %s", cmd.getBucketId().toString().c_str(),
         (cmd.verifyBody() ? "Verifying body" : "Not verifying body"));
     api::BucketInfo before = _env.getBucketInfo(cmd.getBucket());
     spi::Result result = _spi.maintain(spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
                                        cmd.verifyBody() ? spi::HIGH : spi::LOW);
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         api::BucketInfo after = _env.getBucketInfo(cmd.getBucket());
 
         RepairBucketReply::UP reply(new RepairBucketReply(cmd, after));
@@ -225,28 +212,28 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
 }
 
 MessageTracker::UP
-PersistenceThread::handleRevert(api::RevertCommand& cmd, spi::Context & context)
+PersistenceThread::handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.revert[cmd.getLoadType()],_env._component.getClock());
+    tracker->setMetric(_env._metrics.revert[cmd.getLoadType()]);
     spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
     for (const api::Timestamp & token : tokens) {
-        spi::Result result = _spi.removeEntry(b, spi::Timestamp(token), context);
+        spi::Result result = _spi.removeEntry(b, spi::Timestamp(token), tracker->context());
     }
     return tracker;
 }
 
 MessageTracker::UP
-PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd, spi::Context & context)
+PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.createBuckets,_env._component.getClock());
+    tracker->setMetric(_env._metrics.createBuckets);
     LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
         DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
     spi::Bucket spiBucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    _spi.createBucket(spiBucket, context);
+    _spi.createBucket(spiBucket, tracker->context());
     if (cmd.getActive()) {
         _spi.setActiveState(spiBucket, spi::BucketInfo::ACTIVE);
     }
@@ -295,9 +282,9 @@ PersistenceThread::checkProviderBucketInfoMatches(const spi::Bucket& bucket, con
 }
 
 MessageTracker::UP
-PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, spi::Context & context)
+PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.deleteBuckets,_env._component.getClock());
+    tracker->setMetric(_env._metrics.deleteBuckets);
     LOG(debug, "DeletingBucket(%s)", cmd.getBucketId().toString().c_str());
     LOG_BUCKET_OPERATION(cmd.getBucketId(), "deleteBucket()");
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
@@ -308,7 +295,7 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, spi::Contex
     if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
            return tracker;
     }
-    _spi.deleteBucket(bucket, context);
+    _spi.deleteBucket(bucket, tracker->context());
     StorBucketDatabase& db(_env.getBucketDatabase(cmd.getBucket().getBucketSpace()));
     {
         StorBucketDatabase::WrappedEntry entry(db.get(cmd.getBucketId(), "FileStorThread::onDeleteBucket"));
@@ -333,12 +320,12 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, spi::Contex
 }
 
 MessageTracker::UP
-PersistenceThread::handleGetIter(GetIterCommand& cmd, spi::Context & context)
+PersistenceThread::handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.visit[cmd.getLoadType()],_env._component.getClock());
-    spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize(), context));
-    if (checkForError(result, *tracker)) {
-        GetIterReply::SP reply(new GetIterReply(cmd));
+    tracker->setMetric(_env._metrics.visit[cmd.getLoadType()]);
+    spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize(), tracker->context()));
+    if (tracker->checkForError(result)) {
+        auto reply = std::make_shared<GetIterReply>(cmd);
         reply->getEntries() = result.steal_entries();
         _env._metrics.visit[cmd.getLoadType()].
             documentsPerIterate.addValue(reply->getEntries().size());
@@ -351,12 +338,12 @@ PersistenceThread::handleGetIter(GetIterCommand& cmd, spi::Context & context)
 }
 
 MessageTracker::UP
-PersistenceThread::handleReadBucketList(ReadBucketList& cmd)
+PersistenceThread::handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.readBucketList,_env._component.getClock());
+    tracker->setMetric(_env._metrics.readBucketList);
 
     spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace(), cmd.getPartition()));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         auto reply = std::make_shared<ReadBucketListReply>(cmd);
         result.getList().swap(reply->getBuckets());
         tracker->setReply(reply);
@@ -366,33 +353,32 @@ PersistenceThread::handleReadBucketList(ReadBucketList& cmd)
 }
 
 MessageTracker::UP
-PersistenceThread::handleReadBucketInfo(ReadBucketInfo& cmd)
+PersistenceThread::handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.readBucketInfo,_env._component.getClock());
+    tracker->setMetric(_env._metrics.readBucketInfo);
     _env.updateBucketDatabase(cmd.getBucket(), _env.getBucketInfo(cmd.getBucket()));
     return tracker;
 }
 
 MessageTracker::UP
-PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, spi::Context & context)
+PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.createIterator,_env._component.getClock());
-    document::FieldSetRepo repo;
-    document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFields());
-    context.setReadConsistency(cmd.getReadConsistency());
+    tracker->setMetric(_env._metrics.createIterator);
+    document::FieldSet::UP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFields());
+    tracker->context().setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
         spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
-        *fieldSet, cmd.getSelection(), cmd.getIncludedVersions(), context));
-    if (checkForError(result, *tracker)) {
+        *fieldSet, cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
+    if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
     }
     return tracker;
 }
 
 MessageTracker::UP
-PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context & context)
+PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.splitBuckets,_env._component.getClock());
+    tracker->setMetric(_env._metrics.splitBuckets);
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
 
     // Calculate the various bucket ids involved.
@@ -411,7 +397,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context 
     SplitBitDetector::Result targetInfo;
     if (_env._config.enableMultibitSplitOptimalization) {
         targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(),
-                                                   context, cmd.getMinDocCount(), cmd.getMinByteSize());
+                                                   tracker->context(), cmd.getMinDocCount(), cmd.getMinByteSize());
     }
     if (targetInfo.empty() || !_env._config.enableMultibitSplitOptimalization) {
         document::BucketId src(cmd.getBucketId());
@@ -451,9 +437,9 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context 
     }
 #endif
     spi::Result result = _spi.split(spiBucket, spi::Bucket(target1, spi::PartitionId(lock1.disk)),
-                                    spi::Bucket(target2, spi::PartitionId(lock2.disk)), context);
+                                    spi::Bucket(target2, spi::PartitionId(lock2.disk)), tracker->context());
     if (result.hasError()) {
-        tracker->fail(_env.convertErrorCode(result), result.getErrorMessage());
+        tracker->fail(PersistenceUtil::convertErrorCode(result), result.getErrorMessage());
         return tracker;
     }
         // After split we need to take all bucket db locks to update them.
@@ -509,7 +495,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context 
                                                      spi::PartitionId(targets[i].second.diskIndex)));
                 LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
-                _spi.createBucket(createTarget, context);
+                _spi.createBucket(createTarget, tracker->context());
             }
             splitReply.getSplitInfo().emplace_back(targets[i].second.bucket.getBucketId(),
                                                    targets[i].first->getBucketInfo());
@@ -529,7 +515,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, spi::Context 
 }
 
 bool
-PersistenceThread::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker) const
+PersistenceThread::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker)
 {
     if (cmd.getSourceBuckets().size() != 2) {
         tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
@@ -554,9 +540,9 @@ PersistenceThread::validateJoinCommand(const api::JoinBucketsCommand& cmd, Messa
 }
 
 MessageTracker::UP
-PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context & context)
+PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.joinBuckets,_env._component.getClock());
+    tracker->setMetric(_env._metrics.joinBuckets);
     if (!validateJoinCommand(cmd, *tracker)) {
         return tracker;
     }
@@ -603,8 +589,8 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context 
         _spi.join(spi::Bucket(firstBucket, spi::PartitionId(lock1.disk)),
                   spi::Bucket(secondBucket, spi::PartitionId(lock2.disk)),
                   spi::Bucket(destBucket, spi::PartitionId(_env._partition)),
-                  context);
-    if (!checkForError(result, *tracker)) {
+                  tracker->context());
+    if (!tracker->checkForError(result)) {
         return tracker;
     }
     uint64_t lastModified = 0;
@@ -634,9 +620,9 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context 
 }
 
 MessageTracker::UP
-PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd)
+PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.setBucketStates,_env._component.getClock());
+    tracker->setMetric(_env._metrics.setBucketStates);
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
 
     LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
@@ -645,7 +631,7 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd)
     spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
 
     spi::Result result(_spi.setActiveState(bucket, newState));
-    if (checkForError(result, *tracker)) {
+    if (tracker->checkForError(result)) {
         StorBucketDatabase::WrappedEntry
                 entry = _env.getBucketDatabase(bucket.getBucket().getBucketSpace()).get(cmd.getBucketId(), "handleSetBucketState");
         if (entry.exist()) {
@@ -665,9 +651,9 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd)
 }
 
 MessageTracker::UP
-PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, spi::Context & context)
+PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.internalJoin,_env._component.getClock());
+    tracker->setMetric(_env._metrics.internalJoin);
     document::Bucket destBucket = cmd.getBucket();
     {
         // Create empty bucket for target.
@@ -682,17 +668,17 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, spi:
         _spi.join(spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
                   spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
                   spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToKeep())),
-                  context);
-    if (checkForError(result, *tracker)) {
+                  tracker->context());
+    if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<InternalBucketJoinReply>(cmd, _env.getBucketInfo(cmd.getBucket())));
     }
     return tracker;
 }
 
 MessageTracker::UP
-PersistenceThread::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd)
+PersistenceThread::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.recheckBucketInfo, _env._component.getClock());
+    tracker->setMetric(_env._metrics.recheckBucketInfo);
     document::Bucket bucket(cmd.getBucket());
     api::BucketInfo info(_env.getBucketInfo(bucket));
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
@@ -720,58 +706,58 @@ PersistenceThread::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd)
 }
 
 MessageTracker::UP
-PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, spi::Context & context)
+PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTracker::UP tracker)
 {
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
-        return handleGet(static_cast<api::GetCommand&>(msg), context);
+        return handleGet(static_cast<api::GetCommand&>(msg), std::move(tracker));
     case api::MessageType::PUT_ID:
-        return handlePut(static_cast<api::PutCommand&>(msg), context);
+        return handlePut(static_cast<api::PutCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVE_ID:
-        return handleRemove(static_cast<api::RemoveCommand&>(msg), context);
+        return handleRemove(static_cast<api::RemoveCommand&>(msg), std::move(tracker));
     case api::MessageType::UPDATE_ID:
-        return handleUpdate(static_cast<api::UpdateCommand&>(msg), context);
+        return handleUpdate(static_cast<api::UpdateCommand&>(msg), std::move(tracker));
     case api::MessageType::REVERT_ID:
-        return handleRevert(static_cast<api::RevertCommand&>(msg), context);
+        return handleRevert(static_cast<api::RevertCommand&>(msg), std::move(tracker));
     case api::MessageType::CREATEBUCKET_ID:
-        return handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), context);
+        return handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::DELETEBUCKET_ID:
-        return handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), context);
+        return handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::JOINBUCKETS_ID:
-        return handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), context);
+        return handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), std::move(tracker));
     case api::MessageType::SPLITBUCKET_ID:
-        return handleSplitBucket(static_cast<api::SplitBucketCommand&>(msg), context);
+        return handleSplitBucket(static_cast<api::SplitBucketCommand&>(msg), std::move(tracker));
        // Depends on iterators
     case api::MessageType::STATBUCKET_ID:
-        return _processAllHandler.handleStatBucket(static_cast<api::StatBucketCommand&>(msg), context);
+        return _processAllHandler.handleStatBucket(static_cast<api::StatBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVELOCATION_ID:
-        return _processAllHandler.handleRemoveLocation(static_cast<api::RemoveLocationCommand&>(msg), context);
+        return _processAllHandler.handleRemoveLocation(static_cast<api::RemoveLocationCommand&>(msg), std::move(tracker));
     case api::MessageType::MERGEBUCKET_ID:
-        return _mergeHandler.handleMergeBucket(static_cast<api::MergeBucketCommand&>(msg), context);
+        return _mergeHandler.handleMergeBucket(static_cast<api::MergeBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::GETBUCKETDIFF_ID:
-        return _mergeHandler.handleGetBucketDiff(static_cast<api::GetBucketDiffCommand&>(msg), context);
+        return _mergeHandler.handleGetBucketDiff(static_cast<api::GetBucketDiffCommand&>(msg), std::move(tracker));
     case api::MessageType::APPLYBUCKETDIFF_ID:
-        return _mergeHandler.handleApplyBucketDiff(static_cast<api::ApplyBucketDiffCommand&>(msg), context);
+        return _mergeHandler.handleApplyBucketDiff(static_cast<api::ApplyBucketDiffCommand&>(msg), std::move(tracker));
     case api::MessageType::SETBUCKETSTATE_ID:
-        return handleSetBucketState(static_cast<api::SetBucketStateCommand&>(msg));
+        return handleSetBucketState(static_cast<api::SetBucketStateCommand&>(msg), std::move(tracker));
     case api::MessageType::INTERNAL_ID:
         switch(static_cast<api::InternalCommand&>(msg).getType()) {
         case GetIterCommand::ID:
-            return handleGetIter(static_cast<GetIterCommand&>(msg), context);
+            return handleGetIter(static_cast<GetIterCommand&>(msg), std::move(tracker));
         case CreateIteratorCommand::ID:
-            return handleCreateIterator(static_cast<CreateIteratorCommand&>(msg), context);
+            return handleCreateIterator(static_cast<CreateIteratorCommand&>(msg), std::move(tracker));
         case ReadBucketList::ID:
-            return handleReadBucketList(static_cast<ReadBucketList&>(msg));
+            return handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
         case ReadBucketInfo::ID:
-            return handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg));
+            return handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
         case RepairBucketCommand::ID:
-            return handleRepairBucket(static_cast<RepairBucketCommand&>(msg));
+            return handleRepairBucket(static_cast<RepairBucketCommand&>(msg), std::move(tracker));
         case BucketDiskMoveCommand::ID:
-            return _diskMoveHandler.handleBucketDiskMove(static_cast<BucketDiskMoveCommand&>(msg), context);
+            return _diskMoveHandler.handleBucketDiskMove(static_cast<BucketDiskMoveCommand&>(msg), std::move(tracker));
         case InternalBucketJoinCommand::ID:
-            return handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), context);
+            return handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:
-            return handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg));
+            return handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
         default:
             LOG(warning, "Persistence thread received unhandled internal command %s", msg.toString().c_str());
             break;
@@ -780,21 +766,6 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, spi::Conte
         break;
     }
     return MessageTracker::UP();
-}
-
-MessageTracker::UP
-PersistenceThread::handleCommand(api::StorageCommand& msg)
-{
-    spi::Context context(msg.getLoadType(), msg.getPriority(), msg.getTrace().getLevel());
-    MessageTracker::UP mtracker(handleCommandSplitByType(msg, context));
-    if (mtracker && ! context.getTrace().getRoot().isEmpty()) {
-        if (mtracker->hasReply()) {
-            mtracker->getReply().getTrace().getRoot().addChild(context.getTrace().getRoot());
-        } else {
-            msg.getTrace().getRoot().addChild(context.getTrace().getRoot());
-        }
-    }
-    return mtracker;
 }
 
 void
@@ -813,7 +784,7 @@ PersistenceThread::handleReply(api::StorageReply& reply)
 }
 
 MessageTracker::UP
-PersistenceThread::processMessage(api::StorageMessage& msg)
+PersistenceThread::processMessage(api::StorageMessage& msg, MessageTracker::UP tracker)
 {
     MBUS_TRACE(msg.getTrace(), 5, "PersistenceThread: Processing message in persistence layer");
 
@@ -828,14 +799,13 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
             LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
         }
     } else {
-        api::StorageCommand& initiatingCommand = static_cast<api::StorageCommand&>(msg);
-
+        auto & initiatingCommand = static_cast<api::StorageCommand&>(msg);
         try {
             int64_t startTime(_component->getClock().getTimeInMillis().getTime());
 
             LOG(debug, "Handling command: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
-            auto tracker(handleCommand(initiatingCommand));
+            tracker = handleCommandSplitByType(initiatingCommand, std::move(tracker));
             if (!tracker) {
                 LOG(debug, "Received unsupported command %s", msg.getType().getName().c_str());
             } else {
@@ -867,47 +837,18 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
         }
     }
 
-    return MessageTracker::UP();
-}
-
-namespace {
-
-
-bool isBatchable(api::MessageType::Id id)
-{
-    return (id == api::MessageType::PUT_ID ||
-            id == api::MessageType::REMOVE_ID ||
-            id == api::MessageType::UPDATE_ID ||
-            id == api::MessageType::REVERT_ID);
-}
-
-bool hasBucketInfo(api::MessageType::Id id)
-{
-    return (isBatchable(id) ||
-            (id == api::MessageType::REMOVELOCATION_ID ||
-             id == api::MessageType::JOINBUCKETS_ID));
-}
-
+    return tracker;
 }
 
 void
-PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage & lock) {
-    std::vector<MessageTracker::UP> trackers;
-    document::Bucket bucket = lock.first->getBucket();
-
+PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage lock) {
     LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
     api::StorageMessage & msg(*lock.second);
 
-    std::unique_ptr<MessageTracker> tracker = processMessage(msg);
-    if (tracker && tracker->hasReply()) {
-        if (hasBucketInfo(msg.getType().getId())) {
-            if (tracker->getReply().getResult().success()) {
-                _env.setBucketInfo(*tracker, bucket);
-            }
-        }
-        LOG(spam, "Sending reply up: %s %" PRIu64,
-            tracker->getReply().toString().c_str(), tracker->getReply().getMsgId());
-        _env._fileStorHandler.sendReply(std::move(*tracker).stealReplySP());
+    auto tracker = std::make_unique<MessageTracker>(_env, std::move(lock.first), std::move(lock.second));
+    tracker = processMessage(msg, std::move(tracker));
+    if (tracker) {
+        tracker->sendReply();
     }
 }
 
@@ -922,7 +863,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _stripeId));
 
         if (lock.first) {
-            processLockedMessage(lock);
+            processLockedMessage(std::move(lock));
         }
 
         vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);

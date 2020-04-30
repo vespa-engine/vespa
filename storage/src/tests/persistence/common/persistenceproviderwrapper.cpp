@@ -91,14 +91,12 @@ PersistenceProviderWrapper::getBucketInfo(const spi::Bucket& bucket) const
 }
 
 spi::Result
-PersistenceProviderWrapper::put(const spi::Bucket& bucket,
-                                spi::Timestamp timestamp,
-                                const document::Document::SP& doc,
-                                spi::Context& context)
+PersistenceProviderWrapper::put(const spi::Bucket& bucket, spi::Timestamp timestamp,
+                                document::Document::SP doc, spi::Context& context)
 {
     LOG_SPI("put(" << bucket << ", " << timestamp << ", " << doc->getId() << ")");
     CHECK_ERROR(spi::Result, FAIL_PUT);
-    return _spi.put(bucket, timestamp, doc, context);
+    return _spi.put(bucket, timestamp, std::move(doc), context);
 }
 
 spi::RemoveResult

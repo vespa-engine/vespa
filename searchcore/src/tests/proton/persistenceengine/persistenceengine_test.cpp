@@ -9,7 +9,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
@@ -199,7 +198,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     void initialize() override { initialized = true; }
 
     void handlePut(FeedToken token, const Bucket& bucket,
-                   Timestamp timestamp, const document::Document::SP& doc) override {
+                   Timestamp timestamp, DocumentSP doc) override {
         token->setResult(ResultUP(new storage::spi::Result()), false);
         handle(token, bucket, timestamp, doc->getId());
     }

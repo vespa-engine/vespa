@@ -435,8 +435,7 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
 }
 
 Result
-DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
-                      Context&)
+DummyPersistence::put(const Bucket& b, Timestamp t, Document::SP doc, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "put(%s, %" PRIu64 ", %s)",
@@ -461,14 +460,13 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
 
     LOG(spam, "Inserting document %s", doc->toString(true).c_str());
 
-    DocEntry::UP entry(new DocEntry(t, NONE, Document::UP(doc->clone())));
+    auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
     (*bc)->insert(std::move(entry));
     return Result();
 }
 
 Result
-DummyPersistence::maintain(const Bucket& b,
-                           MaintenanceLevel)
+DummyPersistence::maintain(const Bucket& b, MaintenanceLevel)
 {
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     if (_simulateMaintainFailure) {
@@ -489,10 +487,7 @@ DummyPersistence::maintain(const Bucket& b,
 }
 
 RemoveResult
-DummyPersistence::remove(const Bucket& b,
-                         Timestamp t,
-                         const DocumentId& did,
-                         Context&)
+DummyPersistence::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "remove(%s, %" PRIu64 ", %s)",
@@ -518,10 +513,7 @@ DummyPersistence::remove(const Bucket& b,
 }
 
 GetResult
-DummyPersistence::get(const Bucket& b,
-                      const document::FieldSet& fieldSet,
-                      const DocumentId& did,
-                      Context&) const
+DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const DocumentId& did, Context&) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "get(%s, %s)",

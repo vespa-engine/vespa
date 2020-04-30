@@ -46,13 +46,8 @@ public:
           _deleteBucketInvocations(0)
     {}
 
-    spi::Result put(const spi::Bucket& bucket, spi::Timestamp timestamp,
-                    const document::Document::SP& doc, spi::Context& context) override
+    spi::Result put(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::Context&) override
     {
-        (void) bucket;
-        (void) timestamp;
-        (void) doc;
-        (void) context;
         _queueBarrier.await();
         // message abort stage with active opertion in disk queue
         std::this_thread::sleep_for(75ms);

@@ -80,25 +80,18 @@ public:
 }
 
 MessageTracker::UP
-ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
-                                        spi::Context& context)
+ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(
-                                       _env._metrics.removeLocation[cmd.getLoadType()],
-                                       _env._component.getClock());
+    tracker->setMetric(_env._metrics.removeLocation[cmd.getLoadType()]);
 
     LOG(debug, "RemoveLocation(%s): using selection '%s'",
         cmd.getBucketId().toString().c_str(),
         cmd.getDocumentSelection().c_str());
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    UnrevertableRemoveEntryProcessor processor(_spi, bucket, context);
-    BucketProcessor::iterateAll(_spi,
-                                bucket,
-                                cmd.getDocumentSelection(),
-                                processor,
-                                spi::NEWEST_DOCUMENT_ONLY,
-                                context);
+    UnrevertableRemoveEntryProcessor processor(_spi, bucket, tracker->context());
+    BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
+                                processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
 
     tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, processor._n_removed));
 
@@ -106,12 +99,9 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
 }
 
 MessageTracker::UP
-ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd,
-                                    spi::Context& context)
+ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(
-                                       _env._metrics.statBucket[cmd.getLoadType()],
-                                       _env._component.getClock());
+    tracker->setMetric(_env._metrics.statBucket[cmd.getLoadType()]);
     std::ostringstream ost;
 
     ost << "Persistence bucket " << cmd.getBucketId()
@@ -119,15 +109,10 @@ ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd,
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     StatEntryProcessor processor(ost);
-    BucketProcessor::iterateAll(_spi,
-               bucket,
-               cmd.getDocumentSelection(),
-               processor,
-               spi::ALL_VERSIONS,
-               context);
+    BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
+                                processor, spi::ALL_VERSIONS,tracker->context());
 
-    api::StatBucketReply::UP reply(new api::StatBucketReply(cmd, ost.str()));
-    tracker->setReply(api::StorageReply::SP(reply.release()));
+    tracker->setReply(std::make_shared<api::StatBucketReply>(cmd, ost.str()));
     return tracker;
 }
 

@@ -8,11 +8,7 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
-namespace document {
-namespace select {
-class Node;
-}
-}
+namespace document::select { class Node; }
 
 namespace storage {
 
@@ -20,9 +16,8 @@ class ProcessAllHandler : public Types {
 
 public:
     ProcessAllHandler(PersistenceUtil&, spi::PersistenceProvider&);
-    MessageTracker::UP handleRemoveLocation(api::RemoveLocationCommand&,
-                                            spi::Context&);
-    MessageTracker::UP handleStatBucket(api::StatBucketCommand&, spi::Context&);
+    MessageTracker::UP handleRemoveLocation(api::RemoveLocationCommand&, MessageTracker::UP tracker);
+    MessageTracker::UP handleStatBucket(api::StatBucketCommand&, MessageTracker::UP tracker);
 
 protected:
     PersistenceUtil& _env;

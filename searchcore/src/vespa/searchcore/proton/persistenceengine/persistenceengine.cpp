@@ -64,7 +64,7 @@ public:
         if (result.hasError()) {
             std::lock_guard<std::mutex> guard(_lock);
             if (_result.hasError()) {
-                _result = TransportLatch::mergeErrorResults(_result, result);
+                _result = TransportMerger::mergeErrorResults(_result, result);
             } else {
                 _result = result;
             }
@@ -319,34 +319,32 @@ PersistenceEngine::getBucketInfo(const Bucket& b) const
 }
 
 
-Result
-PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::SP& doc, Context&)
+void
+PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::DocumentSP doc, Context &, OperationComplete::UP onComplete)
 {
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
-            return Result(Result::ErrorType::RESOURCE_EXHAUSTED,
+            return onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::RESOURCE_EXHAUSTED,
                           make_string("Put operation rejected for document '%s': '%s'",
-                                      doc->getId().toString().c_str(), state.message().c_str()));
+                                      doc->getId().toString().c_str(), state.message().c_str())));
         }
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(doc->getType());
-    LOG(spam, "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))", b.toString().c_str(), static_cast<uint64_t>(t.getValue()),
+    LOG(spam, "putAsync(%s, %" PRIu64 ", (\"%s\", \"%s\"))", bucket.toString().c_str(), static_cast<uint64_t>(ts.getValue()),
         docType.toString().c_str(), doc->getId().toString().c_str());
     if (!doc->getId().hasDocType()) {
-        return Result(Result::ErrorType::PERMANENT_ERROR,
-                      make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str()));
+        return onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::PERMANENT_ERROR,
+                      make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str())));
     }
-    IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
+    IPersistenceHandler * handler = getHandler(rguard, bucket.getBucketSpace(), docType);
     if (!handler) {
-        return Result(Result::ErrorType::PERMANENT_ERROR,
-                      make_string("No handler for document type '%s'", docType.toString().c_str()));
+        return onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::PERMANENT_ERROR,
+                      make_string("No handler for document type '%s'", docType.toString().c_str())));
     }
-    TransportLatch latch(1);
-    handler->handlePut(feedtoken::make(latch), b, t, doc);
-    latch.await();
-    return latch.getResult();
+    auto transportContext = std::make_unique<AsyncTranportContext>(1, std::move(onComplete));
+    handler->handlePut(feedtoken::make(std::move(transportContext)), bucket, ts, std::move(doc));
 }
 
 PersistenceEngine::RemoveResult

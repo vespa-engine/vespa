@@ -55,13 +55,10 @@ public:
                           uint8_t nodeIndex,
                           spi::Context& context);
 
-    MessageTracker::UP handleMergeBucket(api::MergeBucketCommand&,
-                                         spi::Context&);
-    MessageTracker::UP handleGetBucketDiff(api::GetBucketDiffCommand&,
-                                           spi::Context&);
+    MessageTracker::UP handleMergeBucket(api::MergeBucketCommand&, MessageTracker::UP);
+    MessageTracker::UP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTracker::UP);
     void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&);
-    MessageTracker::UP handleApplyBucketDiff(api::ApplyBucketDiffCommand&,
-                                             spi::Context&);
+    MessageTracker::UP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTracker::UP);
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&);
 
 private:

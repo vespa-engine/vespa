@@ -537,9 +537,10 @@ MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
-        checkResult(_spi.put(bucket, timestamp, doc, context),
+        DocumentId docId = doc->getId();
+        checkResult(_spi.put(bucket, timestamp, std::move(doc), context),
                     bucket,
-                    doc->getId(),
+                    docId,
                     "put");
     } else {
         DocumentId docId(e._docName);
@@ -903,12 +904,9 @@ public:
 };
 
 MessageTracker::UP
-MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
-                                spi::Context& context)
+MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP tracker)
 {
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.mergeBuckets,
-                                       _env._component.getClock()));
+    tracker->setMetric(_env._metrics.mergeBuckets);
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "MergeBucket(%s) with max timestamp %" PRIu64 ".",
@@ -949,44 +947,33 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
         tracker->fail(ReturnCode::BUSY, err);
         return tracker;
     }
-    checkResult(_spi.createBucket(bucket, context), bucket, "create bucket");
+    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
 
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-    MergeStatus::SP s = MergeStatus::SP(new MergeStatus(
+    auto s = std::make_shared<MergeStatus>(
             _env._component.getClock(), cmd.getLoadType(),
-            cmd.getPriority(), cmd.getTrace().getLevel()));
+            cmd.getPriority(), cmd.getTrace().getLevel());
     _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
     s->nodeList = cmd.getNodes();
     s->maxTimestamp = Timestamp(cmd.getMaxTimestamp());
     s->timeout = cmd.getTimeout();
     s->startTime = framework::MilliSecTimer(_env._component.getClock());
 
-    std::shared_ptr<api::GetBucketDiffCommand> cmd2(
-            new api::GetBucketDiffCommand(bucket.getBucket(),
-                                          s->nodeList,
-                                          s->maxTimestamp.getTime()));
-    if (!buildBucketInfoList(bucket,
-                             cmd.getLoadType(),
-                             s->maxTimestamp,
-                             0,
-                             cmd2->getDiff(),
-                             context))
-    {
+    auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), s->nodeList, s->maxTimestamp.getTime());
+    if (!buildBucketInfoList(bucket, cmd.getLoadType(), s->maxTimestamp, 0, cmd2->getDiff(), tracker->context())) {
         LOG(debug, "Bucket non-existing in db. Failing merge.");
         tracker->fail(ReturnCode::BUCKET_DELETED,
                      "Bucket not found in buildBucketInfo step");
         return tracker;
     }
-    _env._metrics.mergeMetadataReadLatency.addValue(
-            s->startTime.getElapsedTimeAsDouble());
+    _env._metrics.mergeMetadataReadLatency.addValue(s->startTime.getElapsedTimeAsDouble());
     LOG(spam, "Sending GetBucketDiff %" PRIu64 " for %s to next node %u "
         "with diff of %u entries.",
         cmd2->getMsgId(),
         bucket.toString().c_str(),
         s->nodeList[1].index,
         uint32_t(cmd2->getDiff().size()));
-    cmd2->setAddress(createAddress(_env._component.getClusterName(),
-                                   s->nodeList[1].index));
+    cmd2->setAddress(createAddress(_env._component.getClusterName(), s->nodeList[1].index));
     cmd2->setPriority(s->context.getPriority());
     cmd2->setTimeout(s->timeout);
     cmd2->setSourceIndex(cmd.getSourceIndex());
@@ -1129,15 +1116,12 @@ namespace {
 }
 
 MessageTracker::UP
-MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
-                                  spi::Context& context)
+MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker)
 {
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.getBucketDiff,
-                                       _env._component.getClock()));
+    tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
-    checkResult(_spi.createBucket(bucket, context), bucket, "create bucket");
+    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         tracker->fail(ReturnCode::BUSY,
@@ -1151,7 +1135,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
     framework::MilliSecTimer startTime(_env._component.getClock());
     if (!buildBucketInfoList(bucket, cmd.getLoadType(),
                              Timestamp(cmd.getMaxTimestamp()),
-                             index, local, context))
+                             index, local, tracker->context()))
     {
         LOG(debug, "Bucket non-existing in db. Failing merge.");
         tracker->fail(ReturnCode::BUCKET_DELETED,
@@ -1186,31 +1170,26 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
             cmd.getMsgId(), bucket.toString().c_str(),
             cmd.getNodes()[index - 1].index, final.size(), local.size());
 
-        api::GetBucketDiffReply* reply = new api::GetBucketDiffReply(cmd);
-        tracker->setReply(api::StorageReply::SP(reply));
+        auto reply = std::make_shared<api::GetBucketDiffReply>(cmd);
         reply->getDiff().swap(final);
+        tracker->setReply(std::move(reply));
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
         MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-        MergeStatus::SP s(new MergeStatus(_env._component.getClock(),
+        auto s = std::make_shared<MergeStatus>(_env._component.getClock(),
                                           cmd.getLoadType(), cmd.getPriority(),
-                                          cmd.getTrace().getLevel()));
+                                          cmd.getTrace().getLevel());
         _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
 
-        s->pendingGetDiff =
-            api::GetBucketDiffReply::SP(new api::GetBucketDiffReply(cmd));
+        s->pendingGetDiff = std::make_shared<api::GetBucketDiffReply>(cmd);
         s->pendingGetDiff->setPriority(cmd.getPriority());
 
-        LOG(spam, "Sending GetBucketDiff for %s on to node %d, "
-                  "added %zu new entries to diff.",
+        LOG(spam, "Sending GetBucketDiff for %s on to node %d, added %zu new entries to diff.",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index,
             local.size() - remote.size());
-        std::shared_ptr<api::GetBucketDiffCommand> cmd2(
-                new api::GetBucketDiffCommand(
-                    bucket.getBucket(), cmd.getNodes(), cmd.getMaxTimestamp()));
-        cmd2->setAddress(createAddress(_env._component.getClusterName(),
-                                       cmd.getNodes()[index + 1].index));
+        auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxTimestamp());
+        cmd2->setAddress(createAddress(_env._component.getClusterName(), cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(local);
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
@@ -1330,10 +1309,9 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
 }
 
 MessageTracker::UP
-MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
-                                    spi::Context& context)
+MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTracker::UP tracker)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.applyBucketDiff, _env._component.getClock());
+    tracker->setMetric(_env._metrics.applyBucketDiff);
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "%s", cmd.toString().c_str());
@@ -1348,10 +1326,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
     bool lastInChain = index + 1u >= cmd.getNodes().size();
     if (applyDiffNeedLocalData(cmd.getDiff(), index, !lastInChain)) {
        framework::MilliSecTimer startTime(_env._component.getClock());
-        fetchLocalData(bucket, cmd.getLoadType(), cmd.getDiff(), index,
-                       context);
-        _env._metrics.mergeDataReadLatency.addValue(
-                startTime.getElapsedTimeAsDouble());
+        fetchLocalData(bucket, cmd.getLoadType(), cmd.getDiff(), index, tracker->context());
+        _env._metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Moving %zu entries, didn't need "
                   "local data on node %u (%u).",
@@ -1363,7 +1339,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_env._component.getClock());
         api::BucketInfo info(applyDiffLocally(bucket, cmd.getLoadType(),
-                                              cmd.getDiff(), index, context));
+                                              cmd.getDiff(), index, tracker->context()));
         _env._metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     } else {

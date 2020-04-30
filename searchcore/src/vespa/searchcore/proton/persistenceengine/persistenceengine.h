@@ -38,6 +38,7 @@ private:
     using Timestamp = storage::spi::Timestamp;
     using TimestampList = storage::spi::TimestampList;
     using UpdateResult = storage::spi::UpdateResult;
+    using OperationComplete = storage::spi::OperationComplete;
 
     struct IteratorEntry {
         PersistenceHandlerSequence  handler_sequence;
@@ -100,7 +101,7 @@ public:
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, const std::shared_ptr<document::Document>&, Context&) override;
+    void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
     RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
     UpdateResult update(const Bucket&, Timestamp,
                         const std::shared_ptr<document::DocumentUpdate>&, Context&) override;

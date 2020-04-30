@@ -35,4 +35,8 @@ State::fail()
     }
 }
 
+OwningState::~OwningState() {
+    ack();
+}
+
 } // namespace proton

@@ -7,20 +7,16 @@ LOG_SETUP(".persistence.diskmoveoperationhandler");
 
 namespace storage {
 
-DiskMoveOperationHandler::DiskMoveOperationHandler(PersistenceUtil& env,
-                                                   spi::PersistenceProvider& provider)
+DiskMoveOperationHandler::DiskMoveOperationHandler(PersistenceUtil& env, spi::PersistenceProvider& provider)
     : _env(env),
       _provider(provider)
 {
 }
 
 MessageTracker::UP
-DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
-                                               spi::Context& context)
+DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd, MessageTracker::UP tracker)
 {
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.movedBuckets,
-                                       _env._component.getClock()));
+    tracker->setMetric(_env._metrics.movedBuckets);
 
     document::Bucket bucket(cmd.getBucket());
     uint32_t targetDisk(cmd.getDstDisk());
@@ -46,13 +42,10 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         deviceIndex, targetDisk);
 
     spi::Bucket from(bucket, spi::PartitionId(deviceIndex));
-    spi::Bucket to(bucket, spi::PartitionId(targetDisk));
 
-    spi::Result result(
-            _provider.move(from, spi::PartitionId(targetDisk), context));
+    spi::Result result(_provider.move(from, spi::PartitionId(targetDisk), tracker->context()));
     if (result.hasError()) {
-        tracker->fail(api::ReturnCode::INTERNAL_FAILURE,
-                      result.getErrorMessage());
+        tracker->fail(api::ReturnCode::INTERNAL_FAILURE, result.getErrorMessage());
         return tracker;
     }
 
@@ -82,12 +75,7 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
     }
 
     // Answer message, setting extra info such as filesize
-    tracker->setReply(std::shared_ptr<BucketDiskMoveReply>(
-                             new BucketDiskMoveReply(
-                                     cmd,
-                                     bInfo,
-                                     sourceFileSize,
-                                     sourceFileSize)));
+    tracker->setReply(std::make_shared<BucketDiskMoveReply>(cmd, bInfo, sourceFileSize, sourceFileSize));
 
     return tracker;
 }

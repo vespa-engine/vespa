@@ -283,7 +283,7 @@ PersistenceTestUtils::doPut(const document::Document::SP& doc,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     getPersistenceProvider().createBucket(b, context);
-    getPersistenceProvider().put(b, time, doc, context);
+    getPersistenceProvider().put(b, time, std::move(doc), context);
 }
 
 spi::UpdateResult

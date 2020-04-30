@@ -190,7 +190,7 @@ TEST("require that toString() on derived classes are meaningful")
                  PutOperation().toString());
     EXPECT_EQUAL("Put(id::::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
-                 PutOperation(bucket_id1, timestamp, doc).toString());
+                 PutOperation(bucket_id1, timestamp, std::move(doc)).toString());
 
     EXPECT_EQUAL("Remove(id::::, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",

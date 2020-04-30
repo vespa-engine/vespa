@@ -42,7 +42,7 @@ public:
     virtual void initialize() = 0;
 
     virtual void handlePut(FeedToken token, const storage::spi::Bucket &bucket,
-                           storage::spi::Timestamp timestamp, const DocumentSP &doc) = 0;
+                           storage::spi::Timestamp timestamp, DocumentSP doc) = 0;
 
     virtual void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
                               storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) = 0;

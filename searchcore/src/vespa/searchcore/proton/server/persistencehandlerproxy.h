@@ -25,7 +25,7 @@ public:
 
     void initialize() override;
     void handlePut(FeedToken token, const storage::spi::Bucket &bucket,
-                   storage::spi::Timestamp timestamp, const DocumentSP &doc) override;
+                   storage::spi::Timestamp timestamp, DocumentSP doc) override;
 
     void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
                       storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) override;

@@ -255,8 +255,7 @@ public:
         storage::spi::Timestamp ts(0);
         DbDocumentId dbdId(lid);
         DbDocumentId prevDbdId(0);
-        document::Document::SP xdoc(new document::Document(doc));
-        PutOperation op(bucketId, ts, xdoc);
+        PutOperation op(bucketId, ts, std::make_shared<document::Document>(doc));
         op.setSerialNum(serialNum);
         op.setDbDocumentId(dbdId);
         op.setPrevDbDocumentId(prevDbdId);
