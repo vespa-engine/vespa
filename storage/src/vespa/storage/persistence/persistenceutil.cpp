@@ -52,12 +52,7 @@ MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
     _metric = &metric;
 }
 
-MessageTracker::~MessageTracker()
-{
-    if (_reply.get() && _reply->getResult().success()) {
-        _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
-    }
-}
+MessageTracker::~MessageTracker() = default;
 
 void
 MessageTracker::sendReply() {
@@ -69,6 +64,9 @@ MessageTracker::sendReply() {
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
             }
+        }
+        if (getReply().getResult().success()) {
+            _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
         }
         LOG(spam, "Sending reply up: %s %" PRIu64,
             getReply().toString().c_str(), getReply().getMsgId());

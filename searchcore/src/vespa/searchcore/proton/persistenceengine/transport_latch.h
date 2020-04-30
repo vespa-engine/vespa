@@ -10,8 +10,7 @@
 namespace proton {
 
 /**
- * Implementation of FeedToken::ITransport for handling the async reply for an operation.
- * Uses an internal count down latch to keep track the number of outstanding replies.
+ * Base implementation for merging results from multiple sources.
  */
 
 class TransportMerger : public feedtoken::ITransport {
@@ -29,13 +28,16 @@ private:
     void mergeWithLock(ResultUP result, bool documentWasFound);
     std::unique_ptr<std::mutex> _lock;
 };
+
+/**
+ * Implementation of FeedToken::ITransport for handling the async reply for an operation.
+ * Uses an internal count down latch to keep track the number of outstanding replies.
+ */
 class TransportLatch : public TransportMerger {
 private:
-
     using UpdateResult = storage::spi::UpdateResult;
     using RemoveResult = storage::spi::RemoveResult;
     vespalib::CountDownLatch _latch;
-
 
 public:
     TransportLatch(uint32_t cnt);

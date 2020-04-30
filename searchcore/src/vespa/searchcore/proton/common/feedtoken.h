@@ -9,19 +9,23 @@ namespace proton {
 
 typedef std::unique_ptr<storage::spi::Result> ResultUP;
 
+namespace feedtoken {
+
 /**
  * This class is used by the FeedEngine to encapsulate the necessary information
  * for an IFeedHandler to perform an async reply to an operation. A unique
  * instance of this class is passed to every invokation of the IFeedHandler.
  */
-namespace feedtoken {
-
 class ITransport {
 public:
     virtual ~ITransport() { }
     virtual void send(ResultUP result, bool documentWasFound) = 0;
 };
 
+/**
+ * This holds the result of the feed operation until it is either failed or acked.
+ * Guarantees that the result is propagated back to the invoker via ITransport interface.
+ */
 class State : public search::IDestructorCallback {
 public:
     State(const State &) = delete;
@@ -42,6 +46,11 @@ private:
     bool                  _documentWasFound;
     std::atomic<bool>     _alreadySent;
 };
+
+/**
+ * This takes ownership ov the transport object, so that it can be used fully asynchronous
+ * without invoker needing to hold any state.
+ */
 class OwningState : public State {
 public:
     OwningState(std::unique_ptr<ITransport> transport)

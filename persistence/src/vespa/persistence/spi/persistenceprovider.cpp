@@ -9,7 +9,7 @@ PersistenceProvider::~PersistenceProvider() = default;
 
 class CatchResult : public OperationComplete {
 public:
-    std::future<Result::UP> waitResult() {
+    std::future<Result::UP> future_result() {
         return promisedResult.get_future();
     }
     void onComplete(Result::UP result) override {
@@ -18,13 +18,15 @@ public:
 private:
     std::promise<Result::UP> promisedResult;
 };
+
 Result
 PersistenceProvider::put(const Bucket& bucket, Timestamp timestamp, DocumentSP doc, Context& context) {
     auto catcher = std::make_unique<CatchResult>();
-    auto future = catcher->waitResult();
+    auto future = catcher->future_result();
     putAsync(bucket, timestamp, std::move(doc), context, std::move(catcher));
     return *future.get();
 }
+
 void
 PersistenceProvider::putAsync(const Bucket &bucket, Timestamp timestamp, DocumentSP doc, Context &context,
                               OperationComplete::UP onComplete) {
