@@ -13,6 +13,7 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Confi
     : _filter(config.hwInfo),
       _path(path_in),
       _sampleInterval(60s),
+      _lastSampleTime(vespalib::steady_clock::now()),
       _periodicTimer()
 {
     setConfig(config);
@@ -30,10 +31,17 @@ DiskMemUsageSampler::setConfig(const Config &config)
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
     sampleUsage();
+    _lastSampleTime = vespalib::steady_clock::now();
     _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
-    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]()
-                                                       { sampleUsage(); }),
-                                        _sampleInterval, _sampleInterval);
+    vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
+    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
+                                            if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
+                                                return;
+                                            }
+                                            sampleUsage();
+                                            _lastSampleTime = vespalib::steady_clock::now();
+                                        }),
+                                        maxInterval, maxInterval);
 }
 
 void
