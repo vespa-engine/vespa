@@ -648,11 +648,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             break;
         case GetIterCommand::ID:
             bucket = static_cast<GetIterCommand&>(msg).getBucket();
-            [[fallthrough]];
-        case RepairBucketCommand::ID:
-            if (bucket.getBucketId().getRawId() == 0) {
-                bucket = static_cast<RepairBucketCommand&>(msg).getBucket();
-            }
             // Move to correct queue if op == MOVE
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {

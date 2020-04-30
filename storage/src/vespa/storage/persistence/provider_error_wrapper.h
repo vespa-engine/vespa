@@ -59,7 +59,6 @@ public:
     spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
     spi::Result deleteBucket(const spi::Bucket&, spi::Context&) override;
     spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-    spi::Result maintain(const spi::Bucket& bucket, spi::MaintenanceLevel level) override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1, const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2, const spi::Bucket& target, spi::Context&) override;
     spi::Result move(const spi::Bucket& source, spi::PartitionId target, spi::Context&) override;

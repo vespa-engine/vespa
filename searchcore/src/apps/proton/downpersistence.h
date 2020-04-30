@@ -47,7 +47,6 @@ public:
     Result createBucket(const Bucket&, Context&) override;
     Result deleteBucket(const Bucket&, Context&) override;
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-    Result maintain(const Bucket&, MaintenanceLevel level) override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
     Result move(const Bucket&, PartitionId target, Context&) override;

@@ -2080,23 +2080,6 @@ TEST_F(ConformanceTest, testJoinSameSourceBucketsTargetExists)
     }
 }
 
-TEST_F(ConformanceTest, testMaintain)
-{
-    document::TestDocMan testDocMan;
-    _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
-    Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-
-    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
-    spi->createBucket(bucket, context);
-
-    spi->put(bucket, Timestamp(3), doc1, context);
-
-    EXPECT_EQ(Result::ErrorType::NONE,
-                         spi->maintain(bucket, LOW).getErrorCode());
-}
-
 TEST_F(ConformanceTest, testGetModifiedBuckets)
 {
     document::TestDocMan testDocMan;

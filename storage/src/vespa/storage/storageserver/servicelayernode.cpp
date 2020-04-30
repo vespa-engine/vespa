@@ -2,7 +2,6 @@
 
 #include "servicelayernode.h"
 #include "bouncer.h"
-#include "bucketintegritychecker.h"
 #include "communicationmanager.h"
 #include "changedbucketownershiphandler.h"
 #include "mergethrottler.h"
@@ -242,7 +241,6 @@ ServiceLayerNode::createChain()
     auto* merge_throttler = new MergeThrottler(_configUri, compReg);
     chain->push_back(StorageLink::UP(merge_throttler));
     chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
-    chain->push_back(StorageLink::UP(new BucketIntegrityChecker(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new StorageBucketDBInitializer(
             _configUri, _partitions, getDoneInitializeHandler(), compReg)));

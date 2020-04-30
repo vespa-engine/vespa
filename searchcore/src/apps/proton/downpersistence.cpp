@@ -134,12 +134,6 @@ DownPersistence::getModifiedBuckets(BucketSpace) const
 
 
 Result
-DownPersistence::maintain(const Bucket&, MaintenanceLevel)
-{
-    return errorResult;
-}
-
-Result
 DownPersistence::split(const Bucket&, const Bucket&, const Bucket&, Context&)
 {
     return errorResult;

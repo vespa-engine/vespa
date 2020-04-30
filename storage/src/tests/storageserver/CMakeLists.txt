@@ -10,7 +10,6 @@ vespa_add_library(storage_teststorageserver TEST
 vespa_add_executable(storage_storageserver_gtest_runner_app TEST
     SOURCES
     bouncertest.cpp
-    bucketintegritycheckertest.cpp
     changedbucketownershiphandlertest.cpp
     communicationmanagertest.cpp
     configurable_bucket_resolver_test.cpp

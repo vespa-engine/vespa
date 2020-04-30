@@ -303,8 +303,7 @@ DummyPersistence::DummyPersistence(
       _nextIterator(1),
       _iterators(),
       _monitor(),
-      _clusterState(),
-      _simulateMaintainFailure(false)
+      _clusterState()
 {}
 
 DummyPersistence::~DummyPersistence() {}
@@ -462,27 +461,6 @@ DummyPersistence::put(const Bucket& b, Timestamp t, Document::SP doc, Context&)
 
     auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
     (*bc)->insert(std::move(entry));
-    return Result();
-}
-
-Result
-DummyPersistence::maintain(const Bucket& b, MaintenanceLevel)
-{
-    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    if (_simulateMaintainFailure) {
-        BucketContentGuard::UP bc(acquireBucketWithLock(b));
-        if (!bc.get()) {
-            return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-        }
-
-        if (!(*bc)->_entries.empty()) {
-            // Simulate a corruption in a document, remove it.
-            (*bc)->_entries.pop_back();
-        }
-        (*bc)->setOutdatedInfo(true);
-        _simulateMaintainFailure = false;
-    }
-
     return Result();
 }
 
