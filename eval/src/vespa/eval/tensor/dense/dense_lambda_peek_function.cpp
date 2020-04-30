@@ -69,9 +69,7 @@ DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
 {
 }
 
-DenseLambdaPeekFunction::~DenseLambdaPeekFunction()
-{
-}
+DenseLambdaPeekFunction::~DenseLambdaPeekFunction() = default;
 
 InterpretedFunction::Instruction
 DenseLambdaPeekFunction::compile_self(const TensorEngine &, Stash &stash) const

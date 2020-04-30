@@ -39,9 +39,7 @@ DenseCellRangeFunction::DenseCellRangeFunction(const eval::ValueType &result_typ
 {
 }
 
-DenseCellRangeFunction::~DenseCellRangeFunction()
-{
-}
+DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 
 eval::InterpretedFunction::Instruction
 DenseCellRangeFunction::compile_self(const TensorEngine &, Stash &) const

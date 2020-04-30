@@ -26,9 +26,9 @@ struct CopyNode : NodeTraverser, NodeVisitor {
     std::vector<Node_UP> stack;
 
     CopyNode() : error(), stack() {}
-    ~CopyNode();
+    ~CopyNode() override;
 
-    Node_UP get_result() {
+    Node_UP result() {
         if (error) {
             return std::move(error);
         }
@@ -203,7 +203,7 @@ NodeTools::copy(const Node &node)
 {
     CopyNode copy_node;
     node.traverse(copy_node);
-    return copy_node.get_result();
+    return copy_node.result();
 }
 
 } // namespace vespalib::eval

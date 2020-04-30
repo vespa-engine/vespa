@@ -21,7 +21,7 @@ public:
     DenseCellRangeFunction(const eval::ValueType &result_type,
                            const eval::TensorFunction &child,
                            size_t offset, size_t length);
-    ~DenseCellRangeFunction();
+    ~DenseCellRangeFunction() override;
     size_t offset() const { return _offset; }
     size_t length() const { return _length; }
     eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;

@@ -111,7 +111,6 @@ struct PeekAnalyzer {
             }
         }
         src_idx_fun = Function::create(std::move(idx_expr), dst_type.dimension_names());
-        auto str = src_idx_fun->dump_as_lambda();
     }
 
     bool step_params(std::vector<double> &params) {
