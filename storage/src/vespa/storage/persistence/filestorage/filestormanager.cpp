@@ -692,15 +692,6 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
         }
         return true;
     }
-    case RepairBucketCommand::ID:
-    {
-        shared_ptr<RepairBucketCommand> cmd(std::static_pointer_cast<RepairBucketCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
-        if (entry.exist()) {
-            handlePersistenceMessage(cmd, entry->disk);
-        }
-        return true;
-    }
     case BucketDiskMoveCommand::ID:
     {
         shared_ptr<BucketDiskMoveCommand> cmd(std::static_pointer_cast<BucketDiskMoveCommand>(msg));
