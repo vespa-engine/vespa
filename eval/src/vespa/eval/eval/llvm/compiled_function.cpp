@@ -31,16 +31,16 @@ double my_resolve(void *ctx, size_t idx) { return ((double *)ctx)[idx]; }
 
 } // namespace vespalib::eval::<unnamed>
 
-CompiledFunction::CompiledFunction(const Function &function_in, PassParams pass_params_in,
+CompiledFunction::CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in,
                                    const gbdt::Optimize::Chain &forest_optimizers)
     : _llvm_wrapper(),
       _address(nullptr),
-      _num_params(function_in.num_params()),
+      _num_params(num_params_in),
       _pass_params(pass_params_in)
 {
-    size_t id = _llvm_wrapper.make_function(function_in.num_params(),
+    size_t id = _llvm_wrapper.make_function(num_params_in,
                                             _pass_params,
-                                            function_in.root(),
+                                            root_in,
                                             forest_optimizers);
     _llvm_wrapper.compile();
     _address = _llvm_wrapper.get_function_address(id);
@@ -120,7 +120,7 @@ CompiledFunction::estimate_cost_us(const std::vector<double> &params, double bud
 }
 
 Function::Issues
-CompiledFunction::detect_issues(const Function &function)
+CompiledFunction::detect_issues(const nodes::Node &node)
 {
     struct NotSupported : NodeTraverser {
         std::vector<vespalib::string> issues;
@@ -141,7 +141,7 @@ CompiledFunction::detect_issues(const Function &function)
             }
         }
     } checker;
-    function.root().traverse(checker);
+    node.traverse(checker);
     return Function::Issues(std::move(checker.issues));
 }
 

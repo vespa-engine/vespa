@@ -38,10 +38,14 @@ private:
 
 public:
     typedef std::unique_ptr<CompiledFunction> UP;
-    CompiledFunction(const Function &function_in, PassParams pass_params_in,
+    CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in,
                      const gbdt::Optimize::Chain &forest_optimizers);
+    CompiledFunction(const Function &function_in, PassParams pass_params_in, const gbdt::Optimize::Chain &forest_optimizers)
+        : CompiledFunction(function_in.root(), function_in.num_params(), pass_params_in, forest_optimizers) {}
+    CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in)
+        : CompiledFunction(root_in, num_params_in, pass_params_in, gbdt::Optimize::best) {}
     CompiledFunction(const Function &function_in, PassParams pass_params_in)
-        : CompiledFunction(function_in, pass_params_in, gbdt::Optimize::best) {}
+        : CompiledFunction(function_in.root(), function_in.num_params(), pass_params_in, gbdt::Optimize::best) {}
     CompiledFunction(CompiledFunction &&rhs);
     size_t num_params() const { return _num_params; }
     PassParams pass_params() const { return _pass_params; }
@@ -63,7 +67,10 @@ public:
         return _llvm_wrapper.get_forests();
     }
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
-    static Function::Issues detect_issues(const Function &function);
+    static Function::Issues detect_issues(const nodes::Node &node);
+    static Function::Issues detect_issues(const Function &function) {
+        return detect_issues(function.root());
+    }
     static bool should_use_lazy_params(const Function &function);
 };
 

@@ -6,6 +6,8 @@
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
+#include <vespa/eval/tensor/dense/dense_cell_range_function.h>
+#include <vespa/eval/tensor/dense/dense_lambda_peek_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -27,42 +29,81 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", spec(1))
         .add("x3", spec({x(3)}, N()))
-        .add("x3f", spec(float_cells({x(3)}), N()));
+        .add("x3f", spec(float_cells({x(3)}), N()))
+        .add("x3m", spec({x({"0", "1", "2"})}, N()))
+        .add("x3y5", spec({x(3), y(5)}, N()))
+        .add("x3y5f", spec(float_cells({x(3), y(5)}), N()))
+        .add("x15", spec({x(15)}, N()))
+        .add("x15f", spec(float_cells({x(15)}), N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify_dynamic(const vespalib::string &expr, const vespalib::string &expect) {
+template <typename T, typename F>
+void verify_impl(const vespalib::string &expr, const vespalib::string &expect, F &&inspect) {
     EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
+    EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expect, param_repo));
-    auto info = fixture.find_all<Lambda>();
-    EXPECT_EQUAL(info.size(), 1u);
+    auto info = fixture.find_all<T>();
+    if (EXPECT_EQUAL(info.size(), 1u)) {
+        inspect(info[0]);
+    }
+}
+template <typename T>
+void verify_impl(const vespalib::string &expr, const vespalib::string &expect) {
+    verify_impl<T>(expr, expect, [](const T*){});
+}
+
+void verify_generic(const vespalib::string &expr, const vespalib::string &expect) {
+    verify_impl<Lambda>(expr, expect);
+}
+
+void verify_reshape(const vespalib::string &expr, const vespalib::string &expect) {
+    verify_impl<DenseReplaceTypeFunction>(expr, expect);
+}
+
+void verify_range(const vespalib::string &expr, const vespalib::string &expect) {
+    verify_impl<DenseCellRangeFunction>(expr, expect);
+}
+
+void verify_compiled(const vespalib::string &expr, const vespalib::string &expect,
+                     const vespalib::string &expect_idx_fun)
+{
+    verify_impl<DenseLambdaPeekFunction>(expr, expect,
+                                         [&](const DenseLambdaPeekFunction *info)
+                                         {
+                                             EXPECT_EQUAL(info->idx_fun_dump(), expect_idx_fun);
+                                         });
 }
 
 void verify_const(const vespalib::string &expr, const vespalib::string &expect) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expect, param_repo));
-    auto info = fixture.find_all<ConstValue>();
-    EXPECT_EQUAL(info.size(), 1u);
+    verify_impl<ConstValue>(expr, expect);
 }
+
+//-----------------------------------------------------------------------------
 
 TEST("require that simple constant tensor lambda works") {
     TEST_DO(verify_const("tensor(x[3])(x+1)", "tensor(x[3]):[1,2,3]"));
 }
 
 TEST("require that simple dynamic tensor lambda works") {
-    TEST_DO(verify_dynamic("tensor(x[3])(x+a)", "tensor(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor(x[3])(x+a)", "tensor(x[3]):[1,2,3]"));
 }
 
 TEST("require that tensor lambda can be used for tensor slicing") {
-    TEST_DO(verify_dynamic("tensor(x[2])(x3{x:(x+a)})", "tensor(x[2]):[2,3]"));
-    TEST_DO(verify_dynamic("tensor(x[2])(a+x3{x:(x)})", "tensor(x[2]):[2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(x3{x:(x+a)})", "tensor(x[2]):[2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(a+x3{x:(x)})", "tensor(x[2]):[2,3]"));
 }
 
-TEST("require that tensor lambda can be used for tensor casting") {
-    TEST_DO(verify_dynamic("tensor(x[3])(x3f{x:(x)})", "tensor(x[3]):[1,2,3]"));
-    TEST_DO(verify_dynamic("tensor<float>(x[3])(x3{x:(x)})", "tensor<float>(x[3]):[1,2,3]"));
+TEST("require that tensor lambda can be used for cell type casting") {
+    TEST_DO(verify_compiled("tensor(x[3])(x3f{x:(x)})", "tensor(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_compiled("tensor<float>(x[3])(x3{x:(x)})", "tensor<float>(x[3]):[1,2,3]", "f(x)(x)"));
+}
+
+TEST("require that tensor lambda can be used to convert from sparse to dense tensors") {
+    TEST_DO(verify_generic("tensor(x[3])(x3m{x:(x)})", "tensor(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(x3m{x:(x)})", "tensor(x[2]):[1,2]"));
 }
 
 TEST("require that constant nested tensor lambda using tensor peek works") {
@@ -70,7 +111,46 @@ TEST("require that constant nested tensor lambda using tensor peek works") {
 }
 
 TEST("require that dynamic nested tensor lambda using tensor peek works") {
-    TEST_DO(verify_dynamic("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})", "tensor(x[2]):[1,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})", "tensor(x[2]):[1,3]"));
+}
+
+TEST("require that tensor reshape is optimized") {
+    TEST_DO(verify_reshape("tensor(x[15])(x3y5{x:(x/5),y:(x%5)})", "x15"));
+    TEST_DO(verify_reshape("tensor(x[3],y[5])(x15{x:(x*5+y)})", "x3y5"));
+    TEST_DO(verify_reshape("tensor<float>(x[15])(x3y5f{x:(x/5),y:(x%5)})", "x15f"));
+}
+
+TEST("require that tensor reshape with non-matching cell type requires cell copy") {
+    TEST_DO(verify_compiled("tensor(x[15])(x3y5f{x:(x/5),y:(x%5)})", "x15", "f(x)((floor((x/5))*5)+(x%5))"));
+    TEST_DO(verify_compiled("tensor<float>(x[15])(x3y5{x:(x/5),y:(x%5)})", "x15f", "f(x)((floor((x/5))*5)+(x%5))"));
+    TEST_DO(verify_compiled("tensor(x[3],y[5])(x15f{x:(x*5+y)})", "x3y5", "f(x,y)((x*5)+y)"));
+    TEST_DO(verify_compiled("tensor<float>(x[3],y[5])(x15{x:(x*5+y)})", "x3y5f", "f(x,y)((x*5)+y)"));
+}
+
+TEST("require that tensor cell subrange view is optimized") {
+    TEST_DO(verify_range("tensor(y[5])(x3y5{x:1,y:(y)})", "x3y5{x:1}"));
+    TEST_DO(verify_range("tensor(x[3])(x15{x:(x+5)})", "tensor(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<float>(y[5])(x3y5f{x:1,y:(y)})", "x3y5f{x:1}"));
+    TEST_DO(verify_range("tensor<float>(x[3])(x15f{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]"));
+}
+
+TEST("require that tensor cell subrange with non-matching cell type requires cell copy") {
+    TEST_DO(verify_compiled("tensor(x[3])(x15f{x:(x+5)})", "tensor(x[3]):[6,7,8]", "f(x)(x+5)"));
+    TEST_DO(verify_compiled("tensor<float>(x[3])(x15{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]", "f(x)(x+5)"));
+}
+
+TEST("require that non-continuous cell extraction is optimized") {
+    TEST_DO(verify_compiled("tensor(x[3])(x3y5{x:(x),y:2})", "x3y5{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_compiled("tensor(x[3])(x3y5f{x:(x),y:2})", "x3y5{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_compiled("tensor<float>(x[3])(x3y5{x:(x),y:2})", "x3y5f{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_compiled("tensor<float>(x[3])(x3y5f{x:(x),y:2})", "x3y5f{y:2}", "f(x)((floor(x)*5)+2)"));
+}
+
+TEST("require that out-of-bounds cell extraction is not optimized") {
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:1,y:(x+3)})", "tensor(x[3]):[9,10,0]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:1,y:(x-1)})", "tensor(x[3]):[0,6,7]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:(x+1),y:(x)})", "tensor(x[3]):[6,12,0]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:(x-1),y:(x)})", "tensor(x[3]):[0,2,8]"));
 }
 
 TEST("require that non-double result from inner tensor lambda function fails type resolving") {

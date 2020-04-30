@@ -343,6 +343,9 @@ private:
 public:
     Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, const Function &lambda_in, NodeTypes lambda_types_in)
         : Node(result_type_in), _bindings(bindings_in), _lambda(lambda_in.shared_from_this()), _lambda_types(std::move(lambda_types_in)) {}
+    const std::vector<size_t> &bindings() const { return _bindings; }
+    const Function &lambda() const { return *_lambda; }
+    const NodeTypes &types() const { return _lambda_types; }
     static TensorSpec create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun);
     TensorSpec create_spec(const LazyParams &params, const InterpretedFunction &fun) const {
         return create_spec_impl(result_type(), params, _bindings, fun);
