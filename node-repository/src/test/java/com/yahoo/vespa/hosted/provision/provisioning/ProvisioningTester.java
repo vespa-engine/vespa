@@ -80,15 +80,26 @@ public class ProvisioningTester {
     private int nextHost = 0;
     private int nextIP = 0;
 
-    public ProvisioningTester(
-            Curator curator, NodeFlavors nodeFlavors, Zone zone, NameResolver nameResolver,
-            Orchestrator orchestrator, HostProvisioner hostProvisioner,
-            LoadBalancerServiceMock loadBalancerService, FlagSource flagSource) {
+    public ProvisioningTester(Curator curator,
+                              NodeFlavors nodeFlavors,
+                              HostResourcesCalculator resourcesCalculator,
+                              Zone zone,
+                              NameResolver nameResolver,
+                              Orchestrator orchestrator,
+                              HostProvisioner hostProvisioner,
+                              LoadBalancerServiceMock loadBalancerService,
+                              FlagSource flagSource) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
-        this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+        this.nodeRepository = new NodeRepository(nodeFlavors,
+                                                 resourcesCalculator,
+                                                 curator,
+                                                 clock,
+                                                 zone,
+                                                 nameResolver,
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
@@ -150,7 +161,26 @@ public class ProvisioningTester {
     }
 
     public Collection<HostSpec> activate(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        return activate(application, prepare(application, cluster, capacity, true));
+        List<HostSpec> preparedNodes = prepare(application, cluster, capacity, true);
+
+        // Add ip addresses and activate parent host if necessary
+        for (HostSpec prepared : preparedNodes) {
+            Node node = nodeRepository.getNode(prepared.hostname()).get();
+            if (node.ipConfig().primary().isEmpty()) {
+                node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
+                nodeRepository.write(node, nodeRepository.lock(node));
+            }
+            if (node.parentHostname().isEmpty()) continue;
+            Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+            if (parent.state() == Node.State.active) continue;
+            NestedTransaction t = new NestedTransaction();
+            if (parent.ipConfig().primary().isEmpty())
+                parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+            nodeRepository.activate(List.of(parent), t);
+            t.commit();
+        }
+
+        return activate(application, preparedNodes);
     }
 
     public Collection<HostSpec> activate(ApplicationId application, Collection<HostSpec> hosts) {
@@ -211,10 +241,11 @@ public class ProvisioningTester {
         assertEquals(explanation + ": Group count",
                      groups,
                      nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
-        for (Node node : nodeList)
-            assertEquals(explanation + ": Resources",
-                         new NodeResources(vcpu, memory, disk, 0.1),
-                         node.flavor().resources());
+        for (Node node : nodeList) {
+            var expected = new NodeResources(vcpu, memory, disk, 0.1);
+            assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.flavor().resources(),
+                       expected.compatibleWith(node.flavor().resources()));
+        }
     }
 
     public void fail(HostSpec host) {
@@ -480,6 +511,7 @@ public class ProvisioningTester {
 
         private Curator curator;
         private FlavorsConfig flavorsConfig;
+        private HostResourcesCalculator resourcesCalculator = new EmptyProvisionServiceProvider().getHostResourcesCalculator();
         private Zone zone;
         private NameResolver nameResolver;
         private Orchestrator orchestrator;
@@ -494,6 +526,16 @@ public class ProvisioningTester {
 
         public Builder flavorsConfig(FlavorsConfig flavorsConfig) {
             this.flavorsConfig = flavorsConfig;
+            return this;
+        }
+
+        public Builder flavors(List<Flavor> flavors) {
+            this.flavorsConfig = asConfig(flavors);
+            return this;
+        }
+
+        public Builder resourcesCalculator(HostResourcesCalculator resourcesCalculator) {
+            this.resourcesCalculator = resourcesCalculator;
             return this;
         }
 
@@ -539,38 +581,40 @@ public class ProvisioningTester {
                         return orch;
                     });
 
-            return new ProvisioningTester(
-                    Optional.ofNullable(curator).orElseGet(MockCurator::new),
-                    new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
-                    Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
-                    Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
-                    orchestrator,
-                    hostProvisioner,
-                    Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
-                    Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
+            return new ProvisioningTester(Optional.ofNullable(curator).orElseGet(MockCurator::new),
+                                          new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
+                                          resourcesCalculator,
+                                          Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
+                                          Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
+                                          orchestrator,
+                                          hostProvisioner,
+                                          Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
+                                          Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }
+
+        private static FlavorsConfig asConfig(List<Flavor> flavors) {
+            FlavorsConfig.Builder b = new FlavorsConfig.Builder();
+            for (Flavor flavor : flavors)
+                b.flavor(asFlavorConfig(flavor.name(), flavor.resources()));
+            return b.build();
+        }
+
+        private static FlavorsConfig.Flavor.Builder asFlavorConfig(String flavorName, NodeResources resources) {
+            FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
+            flavor.name(flavorName);
+            flavor.minCpuCores(resources.vcpu());
+            flavor.minMainMemoryAvailableGb(resources.memoryGb());
+            flavor.minDiskAvailableGb(resources.diskGb());
+            flavor.bandwidth(resources.bandwidthGbps() * 1000);
+            flavor.fastDisk(resources.diskSpeed().compatibleWith(NodeResources.DiskSpeed.fast));
+            flavor.remoteStorage(resources.storageType().compatibleWith(NodeResources.StorageType.remote));
+            return flavor;
+        }
+
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
-    }
-
-    public IdentityHostResourcesCalculator identityHostResourcesCalculator() {
-        return new IdentityHostResourcesCalculator();
-    }
-
-    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources realResourcesOf(Node node) {
-            return node.flavor().resources();
-        }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            return flavor.resources();
-        }
-
     }
 
 }

@@ -27,7 +27,9 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -55,7 +57,11 @@ public class MockNodeRepository extends NodeRepository {
      * @param flavors flavors to have in node repo
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
-        super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
+        super(flavors,
+              new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+              curator,
+              Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
+              Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               true);
