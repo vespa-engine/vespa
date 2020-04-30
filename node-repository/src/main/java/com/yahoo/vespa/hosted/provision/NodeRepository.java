@@ -38,6 +38,8 @@ import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
 
 import java.time.Clock;
@@ -92,6 +94,7 @@ public class NodeRepository extends AbstractComponent {
     private final Clock clock;
     private final Zone zone;
     private final NodeFlavors flavors;
+    private final HostResourcesCalculator resourcesCalculator;
     private final NameResolver nameResolver;
     private final OsVersions osVersions;
     private final InfrastructureVersions infrastructureVersions;
@@ -105,20 +108,37 @@ public class NodeRepository extends AbstractComponent {
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
+    public NodeRepository(NodeRepositoryConfig config,
+                          NodeFlavors flavors,
+                          ProvisionServiceProvider provisionServiceProvider,
+                          Curator curator,
+                          Zone zone) {
+        this(flavors,
+             provisionServiceProvider.getHostResourcesCalculator(),
+             curator,
+             Clock.systemUTC(),
+             zone,
+             new DnsNameResolver(),
+             DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
     }
 
     /**
      * Creates a node repository from a zookeeper provider and a clock instance
      * which will be used for time-sensitive decisions.
      */
-    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage, boolean useCuratorClientCache) {
+    public NodeRepository(NodeFlavors flavors,
+                          HostResourcesCalculator resourcesCalculator,
+                          Curator curator,
+                          Clock clock,
+                          Zone zone,
+                          NameResolver nameResolver,
+                          DockerImage dockerImage,
+                          boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
+        this.resourcesCalculator = resourcesCalculator;
         this.nameResolver = nameResolver;
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
@@ -161,6 +181,12 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns this node repo's view of the applications deployed to it */
     public Applications applications() { return applications; }
+
+    public NodeFlavors flavors() {
+        return flavors;
+    }
+
+    public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
 
     // ---------------- Query API ----------------------------------------------------------------
 
@@ -326,10 +352,6 @@ public class NodeRepository extends AbstractComponent {
                              .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
         return Collections.singletonList(getNodeAcl(node, candidates));
-    }
-
-    public NodeFlavors getAvailableFlavors() {
-        return flavors;
     }
 
     // ----------------- Node lifecycle -----------------------------------------------------------

@@ -27,15 +27,13 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     private static final Comparator<Node> hostnameComparator = Comparator.comparing(Node::hostname);
 
-    private final NodeRepository nodeRepository;
-
     @Inject
-    public SharedLoadBalancerService(NodeRepository nodeRepository) {
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "nodeRepository must be non-null");
+    public SharedLoadBalancerService() {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
+                                       NodeRepository nodeRepository) {
         var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
         proxyNodes.sort(hostnameComparator);
 

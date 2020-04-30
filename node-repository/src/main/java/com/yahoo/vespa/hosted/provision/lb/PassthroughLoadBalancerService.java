@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -17,7 +18,8 @@ import java.util.Set;
 public class PassthroughLoadBalancerService implements LoadBalancerService {
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
+                                       NodeRepository nodeRepository) {
         var real = reals.stream()
                         .min(Comparator.naturalOrder())
                         .orElseThrow(() -> new IllegalArgumentException("No reals given"));

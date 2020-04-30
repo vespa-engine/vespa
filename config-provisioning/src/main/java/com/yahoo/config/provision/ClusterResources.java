@@ -37,6 +37,8 @@ public class ClusterResources {
     public boolean smallerThan(ClusterResources other) {
         if (this.nodes < other.nodes) return true;
         if (this.groups < other.groups) return true;
+        if (this.nodeResources.isUnspecified() || other.nodeResources.isUnspecified()) return false;
+
         if ( ! this.nodeResources.justNumbers().satisfies(other.nodeResources.justNumbers())) return true;
         return false;
     }

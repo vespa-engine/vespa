@@ -26,7 +26,7 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
     }
 
     public MockProvisionServiceProvider(LoadBalancerService loadBalancerService, HostProvisioner hostProvisioner) {
-        this(loadBalancerService, hostProvisioner, new EmptyProvisionServiceProvider.NoopHostResourcesCalculator());
+        this(loadBalancerService, hostProvisioner, new EmptyProvisionServiceProvider().getHostResourcesCalculator());
     }
 
     public MockProvisionServiceProvider(LoadBalancerService loadBalancerService, HostProvisioner hostProvisioner,

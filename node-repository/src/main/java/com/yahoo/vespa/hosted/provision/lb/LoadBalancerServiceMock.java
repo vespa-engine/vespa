@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +30,8 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
+                                       NodeRepository nodeRepository) {
         var id = new LoadBalancerId(application, cluster);
         var oldInstance = instances.get(id);
         if (!force && oldInstance != null && !oldInstance.reals().isEmpty() && reals.isEmpty()) {
