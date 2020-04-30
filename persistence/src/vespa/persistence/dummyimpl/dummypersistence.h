@@ -174,7 +174,6 @@ public:
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
     Result revert(const Bucket&, Timestamp, Context&);
-    Result maintain(const Bucket& bucket, MaintenanceLevel level) override;
 
     /**
      * The following methods are used only for unit testing.
@@ -195,10 +194,6 @@ public:
         return *_clusterState;
     }
 
-    void simulateMaintenanceFailure() {
-        _simulateMaintainFailure = true;
-    }
-
 private:
     friend class BucketContentGuard;
     // Const since funcs only alter mutable field in BucketContent
@@ -217,8 +212,6 @@ private:
     vespalib::Monitor _monitor;
 
     std::unique_ptr<ClusterState> _clusterState;
-
-    bool _simulateMaintainFailure;
 
     std::unique_ptr<document::select::Node> parseDocumentSelection(
             const string& documentSelection,

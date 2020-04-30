@@ -186,32 +186,6 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
 }
 
 MessageTracker::UP
-PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd, MessageTracker::UP tracker)
-{
-    tracker->setMetric(_env._metrics.repairs);
-    NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
-    LOG(debug, "Repair(%s): %s", cmd.getBucketId().toString().c_str(),
-        (cmd.verifyBody() ? "Verifying body" : "Not verifying body"));
-    api::BucketInfo before = _env.getBucketInfo(cmd.getBucket());
-    spi::Result result = _spi.maintain(spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
-                                       cmd.verifyBody() ? spi::HIGH : spi::LOW);
-    if (tracker->checkForError(result)) {
-        api::BucketInfo after = _env.getBucketInfo(cmd.getBucket());
-
-        RepairBucketReply::UP reply(new RepairBucketReply(cmd, after));
-        reply->setAltered(!(after == before));
-        if (reply->bucketAltered()) {
-            notifyGuard.notifyAlways(cmd.getBucket(), after);
-            _env._metrics.repairFixed.inc();
-        }
-
-        _env.updateBucketDatabase(cmd.getBucket(), after);
-        tracker->setReply(api::StorageReply::SP(reply.release()));
-    }
-    return tracker;
-}
-
-MessageTracker::UP
 PersistenceThread::handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.revert[cmd.getLoadType()]);
@@ -750,8 +724,6 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTra
             return handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
         case ReadBucketInfo::ID:
             return handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
-        case RepairBucketCommand::ID:
-            return handleRepairBucket(static_cast<RepairBucketCommand&>(msg), std::move(tracker));
         case BucketDiskMoveCommand::ID:
             return _diskMoveHandler.handleBucketDiskMove(static_cast<BucketDiskMoveCommand&>(msg), std::move(tracker));
         case InternalBucketJoinCommand::ID:

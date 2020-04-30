@@ -3,7 +3,6 @@ vespa_add_library(storage_storageserver
     SOURCES
     bouncer.cpp
     bouncer_metrics.cpp
-    bucketintegritychecker.cpp
     changedbucketownershiphandler.cpp
     communicationmanager.cpp
     communicationmanagermetrics.cpp

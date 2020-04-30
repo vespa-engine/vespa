@@ -161,13 +161,6 @@ ProviderErrorWrapper::getModifiedBuckets(BucketSpace bucketSpace) const
 }
 
 spi::Result
-ProviderErrorWrapper::maintain(const spi::Bucket& bucket,
-                                  spi::MaintenanceLevel level)
-{
-    return checkResult(_impl.maintain(bucket, level));
-}
-
-spi::Result
 ProviderErrorWrapper::split(const spi::Bucket& source,
                                const spi::Bucket& target1,
                                const spi::Bucket& target2,

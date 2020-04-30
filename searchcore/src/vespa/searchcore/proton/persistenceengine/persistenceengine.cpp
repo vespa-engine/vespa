@@ -626,12 +626,6 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
 }
 
 
-Result
-PersistenceEngine::maintain(const Bucket& , MaintenanceLevel)
-{
-    return Result();
-}
-
 void
 PersistenceEngine::destroyIterators()
 {

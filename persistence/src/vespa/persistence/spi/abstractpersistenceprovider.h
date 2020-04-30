@@ -33,11 +33,6 @@ public:
     /**
      * Default impl is empty.
      */
-    Result maintain(const Bucket&, MaintenanceLevel) override { return Result(); }
-
-    /**
-     * Default impl is empty.
-     */
     Result removeEntry(const Bucket&, Timestamp, Context&) override { return Result(); }
 
     /**

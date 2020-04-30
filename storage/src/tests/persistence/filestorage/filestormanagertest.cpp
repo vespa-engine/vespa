@@ -425,47 +425,6 @@ TEST_F(FileStorManagerTest, state_change) {
     EXPECT_FALSE(getDummyPersistence().getClusterState().nodeUp());
 }
 
-TEST_F(FileStorManagerTest, repair_notifies_distributor_on_change) {
-    // Setting up manager
-    DummyStorageLink top;
-    FileStorManager *manager;
-    top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
-    setClusterState("storage:1 distributor:1");
-    top.open();
-
-    createBucket(document::BucketId(16, 1), 0);
-
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
-
-    // Creating a document to test with
-
-    for (uint32_t i = 0; i < 3; ++i) {
-        document::DocumentId docId(vespalib::make_string("id:ns:testdoctype1:n=1:%d", i));
-        auto doc = std::make_shared<Document>(*_testdoctype1, docId);
-        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, 1)), doc, i + 1);
-        cmd->setAddress(address);
-        top.sendDown(cmd);
-    }
-
-    top.waitForMessages(3, _waitTime);
-    top.reset();
-
-    getDummyPersistence().simulateMaintenanceFailure();
-
-    auto cmd = std::make_shared<RepairBucketCommand>(makeDocumentBucket(document::BucketId(16, 1)), 0);
-    top.sendDown(cmd);
-
-    top.waitForMessages(2, _waitTime);
-
-    EXPECT_EQ(
-            std::string("NotifyBucketChangeCommand(BucketId(0x4000000000000001), "
-                        "BucketInfo(crc 0xa14e7e3f, docCount 2, totDocSize 174, "
-                        "ready true, active false))"), top.getReply(0)->toString());
-
-    top.close();
-}
-
 TEST_F(FileStorManagerTest, flush) {
     // Setting up manager
     DummyStorageLink top;

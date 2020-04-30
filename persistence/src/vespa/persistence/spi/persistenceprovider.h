@@ -357,15 +357,6 @@ struct PersistenceProvider
     virtual BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const = 0;
 
     /**
-     * Allows the provider to do periodic maintenance and verification.
-     *
-     * @param level The level of maintenance to do. LOW maintenance is
-     * scheduled more often than HIGH maintenance, allowing costly operations
-     * to be run less.
-     */
-    virtual Result maintain(const Bucket&, MaintenanceLevel level) = 0;
-
-    /**
      * Splits the source bucket into the two target buckets.
      * After the split, all documents belonging to target1 should be
      * in that bucket, and all documents belonging to target2 should be
