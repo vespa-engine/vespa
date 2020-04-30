@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.concurrent.maintenance.StringSetSerializer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.DockerImage;
@@ -57,7 +59,7 @@ import static java.util.stream.Collectors.toMap;
  *
  * @author bratseth
  */
-public class CuratorDatabaseClient {
+public class CuratorDatabaseClient implements JobControl.Db {
 
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
@@ -90,8 +92,8 @@ public class CuratorDatabaseClient {
         initZK();
     }
 
-    public List<HostName> cluster() {
-        return db.cluster();
+    public List<String> cluster() {
+        return db.cluster().stream().map(HostName::value).collect(Collectors.toUnmodifiableList());
     }
 
     private void initZK() {
@@ -435,10 +437,12 @@ public class CuratorDatabaseClient {
 
     // Maintenance jobs -----------------------------------------------------------
 
+    @Override
     public Lock lockMaintenanceJob(String jobName) {
         return db.lock(lockPath.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
     }
 
+    @Override
     public Set<String> readInactiveJobs() {
         try {
             return read(inactiveJobsPath, stringSetSerializer::fromJson).orElseGet(HashSet::new);
@@ -450,6 +454,7 @@ public class CuratorDatabaseClient {
         }
     }
 
+    @Override
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
@@ -457,7 +462,8 @@ public class CuratorDatabaseClient {
                                                          stringSetSerializer.toJson(inactiveJobs)));
         transaction.commit();
     }
-    
+
+    @Override
     public Lock lockInactiveJobs() {
         return db.lock(lockPath.append("inactiveJobsLock"), defaultLockTimeout);
     }

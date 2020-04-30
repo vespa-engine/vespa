@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -14,6 +13,7 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.INFO;
@@ -23,14 +23,14 @@ import static java.util.logging.Level.INFO;
  *
  * @author mpolden
  */
-public class ContactInformationMaintainer extends Maintainer {
+public class ContactInformationMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(ContactInformationMaintainer.class.getName());
 
     private final ContactRetriever contactRetriever;
 
-    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
+    public ContactInformationMaintainer(Controller controller, Duration interval) {
+        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.contactRetriever = controller.serviceRegistry().contactRetriever();
     }
 
@@ -56,8 +56,8 @@ public class ContactInformationMaintainer extends Maintainer {
                 }
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to update contact information for " + tenant + ": " +
-                                          Exceptions.toMessageString(e) + ". Retrying in " +
-                                          maintenanceInterval());
+                                       Exceptions.toMessageString(e) + ". Retrying in " +
+                                       interval());
             }
         }
     }

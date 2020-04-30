@@ -9,6 +9,7 @@
 #include "ibucketstatecalculator.h"
 #include "iclusterstatechangedhandler.h"
 #include "iclusterstatechangednotifier.h"
+#include "remove_operations_rate_tracker.h"
 
 namespace proton {
 
@@ -37,6 +38,7 @@ private:
     bool                          _shouldCompactLidSpace;
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
+    std::shared_ptr<RemoveOperationsRateTracker> _ops_rate_tracker;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
@@ -45,7 +47,8 @@ private:
     void compactLidSpace(const search::LidUsageStats &stats);
     void refreshRunnable();
     void refreshAndConsiderRunnable();
-    bool remove_batch_is_ongoing(const search::LidUsageStats& stats) const;
+    bool remove_batch_is_ongoing() const;
+    bool remove_is_ongoing() const;
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,

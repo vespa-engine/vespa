@@ -166,6 +166,18 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
+            "use-distributor-btree-db", false,
+            "Whether to use the new B-tree bucket database in the distributors.",
+            "Takes effect at restart of distributor process",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
+            "use-three-phase-updates", false,
+            "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",
@@ -246,12 +258,6 @@ public class Flags {
             "Whether an application should receive a directly routed endpoint in its endpoint list",
             "Takes effect immediately",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
-            "nginx-upstream-proxy-protocol", false,
-            "Whether the nginx should enable proxy-protocol for all upstreams",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,

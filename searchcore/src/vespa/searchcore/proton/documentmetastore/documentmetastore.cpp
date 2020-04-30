@@ -2,6 +2,7 @@
 
 #include "documentmetastore.h"
 #include "documentmetastoresaver.h"
+#include "operation_listener.h"
 #include "search_context.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
@@ -453,7 +454,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
-      _last_remove_batch()
+      _op_listener()
 {
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
@@ -621,6 +622,9 @@ DocumentMetaStore::remove(DocId lid)
     BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
     bool result = remove(lid, bucketGuard);
     incGeneration();
+    if (result && _op_listener) {
+        _op_listener->notify_remove();
+    }
     return result;
 }
 
@@ -668,7 +672,9 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         (void) removed;
     }
     incGeneration();
-    _last_remove_batch = std::chrono::steady_clock::now();
+    if (_op_listener) {
+        _op_listener->notify_remove_batch();
+    }
 }
 
 void
@@ -776,8 +782,7 @@ DocumentMetaStore::getLidUsageStats() const
     return LidUsageStats(docIdLimit,
                          numDocs,
                          lowestFreeLid,
-                         highestUsedLid,
-                         _last_remove_batch);
+                         highestUsedLid);
 }
 
 Blueprint::UP
@@ -1018,6 +1023,12 @@ DocumentMetaStore::canShrinkLidSpace() const
 {
     return AttributeVector::canShrinkLidSpace() &&
         _shrinkLidSpaceBlockers == 0;
+}
+
+void
+DocumentMetaStore::set_operation_listener(documentmetastore::OperationListener::SP op_listener)
+{
+    _op_listener = std::move(op_listener);
 }
 
 void

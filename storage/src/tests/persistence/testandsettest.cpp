@@ -257,7 +257,7 @@ document::Document::SP TestAndSetTest::retrieveTestDocument()
     auto tracker = thread->handleGet(get, context);
     assert(tracker->getResult() == api::ReturnCode::Result::OK);
 
-    auto & reply = static_cast<api::GetReply &>(*tracker->getReply());
+    auto & reply = static_cast<api::GetReply &>(tracker->getReply());
     assert(reply.wasFound());
 
     return reply.getDocument();

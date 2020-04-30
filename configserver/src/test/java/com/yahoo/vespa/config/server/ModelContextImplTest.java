@@ -81,7 +81,7 @@ public class ModelContextImplTest {
         assertThat(context.properties().endpoints(), equalTo(endpoints));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
 
-        assertEquals(Optional.empty(), context.wantedDockerImageRepository());
+        assertEquals(Optional.empty(), context.wantedDockerImageRepo());
         assertEquals(new Version(7), context.modelVespaVersion());
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
         assertEquals(1.0, context.properties().defaultTermwiseLimit(), 0.0);

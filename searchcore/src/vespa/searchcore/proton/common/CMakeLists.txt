@@ -14,9 +14,10 @@ vespa_add_library(searchcore_pcommon STATIC
     hw_info_sampler.cpp
     indexschema_inspector.cpp
     monitored_refcount.cpp
+    operation_rate_tracker.cpp
     select_utils.cpp
-    selectpruner.cpp
     selectcontext.cpp
+    selectpruner.cpp
     state_reporter_utils.cpp
     statusreport.cpp
     DEPENDS

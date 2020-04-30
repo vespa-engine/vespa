@@ -91,40 +91,6 @@ public:
     }
 };
 
-class FlushGuard
-{
-    spi::PersistenceProvider& _spi;
-    spi::Bucket _bucket;
-    spi::Context& _context;
-    bool _hasFlushed;
-public:
-    FlushGuard(spi::PersistenceProvider& spi,
-               const spi::Bucket& bucket,
-               spi::Context& context)
-        : _spi(spi),
-          _bucket(bucket),
-          _context(context),
-          _hasFlushed(false)
-    {}
-    ~FlushGuard()
-    {
-        if (!_hasFlushed) {
-            LOG(debug, "Auto-flushing %s", _bucket.toString().c_str());
-            spi::Result result =_spi.flush(_bucket, _context);
-            if (result.hasError()) {
-                LOG(debug, "Flush %s failed: %s",
-                    _bucket.toString().c_str(),
-                    result.toString().c_str());
-            }
-        }
-    }
-    void flush() {
-        LOG(debug, "Flushing %s", _bucket.toString().c_str());
-        _hasFlushed = true;
-        checkResult(_spi.flush(_bucket, _context), _bucket, "flush");
-    }
-};
-
 struct IndirectDocEntryTimestampPredicate
 {
     bool operator()(const spi::DocEntry::UP& e1,
@@ -607,8 +573,6 @@ MergeHandler::applyDiffLocally(
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
-    FlushGuard flushGuard(_spi, bucket, context);
-
     std::shared_ptr<const document::DocumentTypeRepo> repo(_env._component.getTypeRepo());
     assert(repo.get() != nullptr);
 
@@ -701,8 +665,6 @@ MergeHandler::applyDiffLocally(
     _env._metrics.bytesMerged.inc(byteCount);
     LOG(debug, "Merge(%s): Applied %u entries locally from ApplyBucketDiff.",
         bucket.toString().c_str(), addedCount);
-
-    flushGuard.flush();
 
     spi::BucketInfoResult infoResult(_spi.getBucketInfo(bucket));
     if (infoResult.getErrorCode() != spi::Result::ErrorType::NONE) {
@@ -1371,9 +1333,7 @@ MessageTracker::UP
 MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
                                     spi::Context& context)
 {
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.applyBucketDiff,
-                                       _env._component.getClock()));
+    auto tracker = std::make_unique<MessageTracker>(_env._metrics.applyBucketDiff, _env._component.getClock());
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "%s", cmd.toString().c_str());
@@ -1429,35 +1389,30 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
             }
         }
 
-        tracker->setReply(api::StorageReply::SP(new api::ApplyBucketDiffReply(cmd)));
-        static_cast<api::ApplyBucketDiffReply&>(*tracker->getReply()).getDiff().swap(
-                cmd.getDiff());
+        tracker->setReply(std::make_shared<api::ApplyBucketDiffReply>(cmd));
+        static_cast<api::ApplyBucketDiffReply&>(tracker->getReply()).getDiff().swap(cmd.getDiff());
         LOG(spam, "Replying to ApplyBucketDiff for %s to node %d.",
             bucket.toString().c_str(), cmd.getNodes()[index - 1].index);
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
         MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-        MergeStatus::SP s(new MergeStatus(_env._component.getClock(),
-                                          cmd.getLoadType(), cmd.getPriority(),
-                                          cmd.getTrace().getLevel()));
+        auto s = std::make_shared<MergeStatus>(_env._component.getClock(),
+                                               cmd.getLoadType(), cmd.getPriority(),
+                                               cmd.getTrace().getLevel());
         _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
-        s->pendingApplyDiff =
-            api::ApplyBucketDiffReply::SP(new api::ApplyBucketDiffReply(cmd));
+        s->pendingApplyDiff = std::make_shared<api::ApplyBucketDiffReply>(cmd);
 
         LOG(spam, "Sending ApplyBucketDiff for %s on to node %d",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
-        std::shared_ptr<api::ApplyBucketDiffCommand> cmd2(
-                new api::ApplyBucketDiffCommand(
-                    bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize()));
-        cmd2->setAddress(createAddress(_env._component.getClusterName(),
-                                       cmd.getNodes()[index + 1].index));
+        auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize());
+        cmd2->setAddress(createAddress(_env._component.getClusterName(), cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
         s->pendingId = cmd2->getMsgId();
         _env._fileStorHandler.sendCommand(cmd2);
-            // Everything went fine. Don't delete state but wait for reply
+        // Everything went fine. Don't delete state but wait for reply
         stateGuard.deactivate();
         tracker->dontReply();
     }

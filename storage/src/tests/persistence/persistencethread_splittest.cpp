@@ -219,7 +219,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     if (!code.success()) {
         return;
     }
-    auto& reply = dynamic_cast<api::SplitBucketReply&>(*result->getReply());
+    auto& reply = dynamic_cast<api::SplitBucketReply&>(result->getReply());
     std::set<std::string> expected;
     for (uint32_t i=0; i<resultBuckets; ++i) {
         document::BucketId b(resultSplitLevel,

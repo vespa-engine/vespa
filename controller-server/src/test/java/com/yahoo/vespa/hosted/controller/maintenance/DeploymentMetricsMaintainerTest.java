@@ -122,7 +122,7 @@ public class DeploymentMetricsMaintainerTest {
     }
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
-        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
+        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1));
     }
 
 }

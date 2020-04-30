@@ -30,7 +30,8 @@ constexpr uint32_t SUBDB_ID = 2;
 constexpr vespalib::duration JOB_DELAY = 1s;
 constexpr uint32_t ALLOWED_LID_BLOAT = 1;
 constexpr double ALLOWED_LID_BLOAT_FACTOR = 0.3;
-constexpr vespalib::duration REMOVE_BATCH_BLOCK_DELAY = 20s;
+constexpr double REMOVE_BATCH_BLOCK_RATE = 1.0 / 21.0;
+constexpr double REMOVE_BLOCK_RATE = 1.0 / 20.0;
 constexpr uint32_t MAX_DOCS_TO_SCAN = 100;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_MOVE_OPS = 10;
@@ -82,18 +83,39 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     mutable uint32_t _iteratorCnt;
     bool _storeMoveDoneContexts;
     std::vector<IDestructorCallback::SP> _moveDoneContexts;
+    documentmetastore::OperationListener::SP _op_listener;
+    RemoveOperationsRateTracker* _rm_listener;
 
     MyHandler(bool storeMoveDoneContexts = false);
     ~MyHandler();
     void clearMoveDoneContexts() { _moveDoneContexts.clear(); }
-    void set_last_remove_batch(TimePoint last_remove_batch) {
-        for (auto& s : _stats) {
-            s = LidUsageStats(s.getLidLimit(), s.getUsedLids(),
-                              s.getLowestFreeLid(), s.getHighestUsedLid(), last_remove_batch);
+    void run_remove_ops(bool remove_batch) {
+        // This ensures to max out the threshold time in the operation rate tracker.
+        if (remove_batch) {
+            _op_listener->notify_remove_batch();
+            _op_listener->notify_remove_batch();
+            _op_listener->notify_remove_batch();
+        } else {
+            _op_listener->notify_remove();
+            _op_listener->notify_remove();
+            _op_listener->notify_remove();
+        }
+    }
+    void stop_remove_ops(bool remove_batch) {
+        if (remove_batch) {
+            _rm_listener->get_remove_batch_tracker().reset(vespalib::steady_clock::now());
+        } else {
+            _rm_listener->get_remove_tracker().reset(vespalib::steady_clock::now());
         }
     }
     virtual vespalib::string getName() const override {
         return "myhandler";
+    }
+    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
+        auto* rm_listener = dynamic_cast<RemoveOperationsRateTracker*>(op_listener.get());
+        assert(rm_listener != nullptr);
+        _op_listener = std::move(op_listener);
+        _rm_listener = rm_listener;
     }
     virtual uint32_t getSubDbId() const override { return 2; }
     virtual LidUsageStats getLidStatus() const override {
@@ -132,7 +154,9 @@ MyHandler::MyHandler(bool storeMoveDoneContexts)
       _wantedLidLimit(0),
       _iteratorCnt(0),
       _storeMoveDoneContexts(storeMoveDoneContexts),
-      _moveDoneContexts()
+      _moveDoneContexts(),
+      _op_listener(),
+      _rm_listener()
 {}
 
 MyHandler::~MyHandler() {}
@@ -265,7 +289,8 @@ struct JobTestBase : public ::testing::Test {
         _handler = std::make_unique<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS);
         _job = std::make_unique<LidSpaceCompactionJob>(DocumentDBLidSpaceCompactionConfig(interval, allowedLidBloat,
                                                                                           allowedLidBloatFactor,
-                                                                                          REMOVE_BATCH_BLOCK_DELAY,
+                                                                                          REMOVE_BATCH_BLOCK_RATE,
+                                                                                          REMOVE_BLOCK_RATE,
                                                                                           false, maxDocsToScan),
                                                        *_handler, _storer, _frozenHandler, _diskMemUsageNotifier,
                                                        BlockableMaintenanceJobConfig(resourceLimitFactor, maxOutstandingMoveOps),
@@ -274,20 +299,18 @@ struct JobTestBase : public ::testing::Test {
     ~JobTestBase();
     JobTestBase &addStats(uint32_t docIdLimit,
                           const LidVector &usedLids,
-                          const LidPairVector &usedFreePairs,
-                          TimePoint last_remove_batch = TimePoint()) {
-        return addMultiStats(docIdLimit, {usedLids}, usedFreePairs, last_remove_batch);
+                          const LidPairVector &usedFreePairs) {
+        return addMultiStats(docIdLimit, {usedLids}, usedFreePairs);
     }
     JobTestBase &addMultiStats(uint32_t docIdLimit,
                               const std::vector<LidVector> &usedLidsVector,
-                              const LidPairVector &usedFreePairs,
-                              TimePoint last_remove_batch = TimePoint()) {
+                              const LidPairVector &usedFreePairs) {
         uint32_t usedLids = usedLidsVector[0].size();
         for (auto pair : usedFreePairs) {
             uint32_t highestUsedLid = pair.first;
             uint32_t lowestFreeLid = pair.second;
             _handler->_stats.push_back(LidUsageStats
-                    (docIdLimit, usedLids, lowestFreeLid, highestUsedLid, last_remove_batch));
+                    (docIdLimit, usedLids, lowestFreeLid, highestUsedLid));
         }
         _handler->_lids = usedLidsVector;
         return *this;
@@ -297,7 +320,7 @@ struct JobTestBase : public ::testing::Test {
                           uint32_t lowestFreeLid,
                           uint32_t highestUsedLid) {
         _handler->_stats.push_back(LidUsageStats
-                (docIdLimit, numDocs, lowestFreeLid, highestUsedLid, TimePoint()));
+                (docIdLimit, numDocs, lowestFreeLid, highestUsedLid));
         return *this;
     }
     bool run() {
@@ -332,11 +355,10 @@ struct JobTestBase : public ::testing::Test {
     void assertNoWorkDone() {
         assertJobContext(0, 0, 0, 0, 0);
     }
-    JobTestBase &setupOneDocumentToCompact(TimePoint last_remove_batch = TimePoint()) {
+    JobTestBase &setupOneDocumentToCompact() {
         addStats(10, {1,3,4,5,6,9},
                  {{9,2},   // 30% bloat: move 9 -> 2
-                  {6,7}}, // no documents to move
-                 last_remove_batch);
+                  {6,7}}); // no documents to move
         return *this;
     }
     void assertOneDocumentCompacted() {
@@ -620,40 +642,77 @@ TEST_F(JobTest, job_is_re_enabled_when_node_is_no_longer_retired)
     assertOneDocumentCompacted();
 }
 
-TEST_F(JobTest, job_is_disabled_while_remove_batch_is_ongoing)
+class JobDisabledByRemoveOpsTest : public JobTest {
+public:
+    JobDisabledByRemoveOpsTest() : JobTest() {}
+
+    void job_is_disabled_while_remove_ops_are_ongoing(bool remove_batch) {
+        setupOneDocumentToCompact();
+        _handler->run_remove_ops(remove_batch);
+        EXPECT_TRUE(run()); // job is disabled
+        assertNoWorkDone();
+    }
+
+    void job_becomes_disabled_if_remove_ops_starts(bool remove_batch) {
+        setupThreeDocumentsToCompact();
+        EXPECT_FALSE(run()); // job executed as normal (with more work to do)
+        assertJobContext(2, 9, 1, 0, 0);
+
+        _handler->run_remove_ops(remove_batch);
+        EXPECT_TRUE(run()); // job is disabled
+        assertJobContext(2, 9, 1, 0, 0);
+    }
+
+    void job_is_re_enabled_when_remove_ops_are_no_longer_ongoing(bool remove_batch) {
+        job_becomes_disabled_if_remove_ops_starts(remove_batch);
+
+        _handler->stop_remove_ops(remove_batch);
+        EXPECT_FALSE(run()); // job executed as normal (with more work to do)
+        assertJobContext(3, 8, 2, 0, 0);
+    }
+};
+
+TEST_F(JobDisabledByRemoveOpsTest, config_is_propagated_to_remove_operations_rate_tracker)
 {
-    TimePoint last_remove_batch = std::chrono::steady_clock::now();
-    setupOneDocumentToCompact(last_remove_batch);
-    EXPECT_TRUE(run()); // job is disabled
-    assertNoWorkDone();
+    auto& remove_batch_tracker = _handler->_rm_listener->get_remove_batch_tracker();
+    EXPECT_EQ(vespalib::from_s(21.0), remove_batch_tracker.get_time_budget_per_op());
+    EXPECT_EQ(vespalib::from_s(21.0), remove_batch_tracker.get_time_budget_window());
+
+    auto& remove_tracker = _handler->_rm_listener->get_remove_tracker();
+    EXPECT_EQ(vespalib::from_s(20.0), remove_tracker.get_time_budget_per_op());
+    EXPECT_EQ(vespalib::from_s(20.0), remove_tracker.get_time_budget_window());
 }
 
-TEST_F(JobTest, job_becomes_disabled_if_remove_batch_starts)
+TEST_F(JobDisabledByRemoveOpsTest, job_is_disabled_while_remove_batch_is_ongoing)
 {
-    setupThreeDocumentsToCompact();
-    EXPECT_FALSE(run()); // job executed as normal (with more work to do)
-    assertJobContext(2, 9, 1, 0, 0);
-
-    _handler->set_last_remove_batch(std::chrono::steady_clock::now());
-    EXPECT_TRUE(run()); // job is disabled
-    assertJobContext(2, 9, 1, 0, 0);
+    job_is_disabled_while_remove_ops_are_ongoing(true);
 }
 
-TEST_F(JobTest, job_is_re_enabled_when_remove_batch_is_no_longer_ongoing)
+TEST_F(JobDisabledByRemoveOpsTest, job_becomes_disabled_if_remove_batch_starts)
 {
-    setupThreeDocumentsToCompact();
-    EXPECT_FALSE(run()); // job executed as normal (with more work to do)
-    assertJobContext(2, 9, 1, 0, 0);
-
-    TimePoint last_remove_batch = std::chrono::steady_clock::now();
-    _handler->set_last_remove_batch(last_remove_batch);
-    EXPECT_TRUE(run()); // job is disabled
-    assertJobContext(2, 9, 1, 0, 0);
-
-    _handler->set_last_remove_batch(last_remove_batch - REMOVE_BATCH_BLOCK_DELAY);
-    EXPECT_FALSE(run()); // job executed as normal (with more work to do)
-    assertJobContext(3, 8, 2, 0, 0);
+    job_becomes_disabled_if_remove_ops_starts(true);
 }
+
+TEST_F(JobDisabledByRemoveOpsTest, job_is_re_enabled_when_remove_batch_is_no_longer_ongoing)
+{
+    job_is_re_enabled_when_remove_ops_are_no_longer_ongoing(true);
+}
+
+TEST_F(JobDisabledByRemoveOpsTest, job_is_disabled_while_removes_are_ongoing)
+{
+    job_is_disabled_while_remove_ops_are_ongoing(false);
+}
+
+TEST_F(JobDisabledByRemoveOpsTest, job_becomes_disabled_if_removes_start)
+{
+    job_becomes_disabled_if_remove_ops_starts(false);
+}
+
+TEST_F(JobDisabledByRemoveOpsTest, job_is_re_enabled_when_removes_are_no_longer_ongoing)
+{
+    job_is_re_enabled_when_remove_ops_are_no_longer_ongoing(false);
+}
+
 
 struct MaxOutstandingJobTest : public JobTest {
     std::unique_ptr<MyCountJobRunner> runner;

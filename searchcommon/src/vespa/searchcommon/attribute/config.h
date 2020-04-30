@@ -71,6 +71,10 @@ public:
         _hnsw_index_params = params;
         return *this;
     }
+    Config& clear_hnsw_index_params() {
+        _hnsw_index_params.reset();
+        return *this;
+    }
 
     /**
      * Enable attribute posting list to consist of a bitvector in

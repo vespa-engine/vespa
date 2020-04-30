@@ -147,8 +147,7 @@ PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &
 {
     api::BucketInfo info = getBucketInfo(bucket, _partition);
 
-    static_cast<api::BucketInfoReply&>(*tracker.getReply()).
-        setBucketInfo(info);
+    static_cast<api::BucketInfoReply&>(tracker.getReply()).setBucketInfo(info);
 
     updateBucketDatabase(bucket, info);
 }

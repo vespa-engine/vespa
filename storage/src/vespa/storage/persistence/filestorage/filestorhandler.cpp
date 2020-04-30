@@ -60,12 +60,6 @@ FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId)
     return _impl->getNextMessage(disk, stripeId);
 }
 
-FileStorHandler::LockedMessage &
-FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lck)
-{
-    return _impl->getNextMessage(disk, stripeId, lck);
-}
-
 FileStorHandler::BucketLockInterface::SP
 FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk, api::LockingRequirements lockReq)
 {

@@ -607,7 +607,6 @@ public class UpgraderTest {
 
         // Setup our own upgrader as we need to control the interval
         Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10),
-                                         new JobControl(tester.controllerTester().curator()),
                                          tester.controllerTester().curator());
         upgrader.setUpgradesPerMinute(0.2);
 

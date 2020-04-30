@@ -101,26 +101,26 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        nodeFailer.deconstruct();
-        periodicApplicationMaintainer.deconstruct();
-        operatorChangeApplicationMaintainer.deconstruct();
-        reservationExpirer.deconstruct();
-        inactiveExpirer.deconstruct();
-        retiredExpirer.deconstruct();
-        failedExpirer.deconstruct();
-        dirtyExpirer.deconstruct();
-        nodeRebooter.deconstruct();
-        capacityReportMaintainer.deconstruct();
-        provisionedExpirer.deconstruct();
-        metricsReporter.deconstruct();
-        infrastructureProvisioner.deconstruct();
-        loadBalancerExpirer.ifPresent(Maintainer::deconstruct);
-        dynamicProvisioningMaintainer.ifPresent(Maintainer::deconstruct);
-        osUpgradeActivator.deconstruct();
-        rebalancer.deconstruct();
-        nodeMetricsDbMaintainer.deconstruct();
-        autoscalingMaintainer.deconstruct();
-        scalingSuggestionsMaintainer.deconstruct();
+        nodeFailer.close();
+        periodicApplicationMaintainer.close();
+        operatorChangeApplicationMaintainer.close();
+        reservationExpirer.close();
+        inactiveExpirer.close();
+        retiredExpirer.close();
+        failedExpirer.close();
+        dirtyExpirer.close();
+        nodeRebooter.close();
+        capacityReportMaintainer.close();
+        provisionedExpirer.close();
+        metricsReporter.close();
+        infrastructureProvisioner.close();
+        loadBalancerExpirer.ifPresent(NodeRepositoryMaintainer::close);
+        dynamicProvisioningMaintainer.ifPresent(NodeRepositoryMaintainer::close);
+        osUpgradeActivator.close();
+        rebalancer.close();
+        nodeMetricsDbMaintainer.close();
+        autoscalingMaintainer.close();
+        scalingSuggestionsMaintainer.close();
     }
 
     private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv() {

@@ -22,7 +22,7 @@ import java.util.Optional;
 /**
  * @author bratseth
  */
-public class Rebalancer extends Maintainer {
+public class Rebalancer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Optional<HostProvisioner> hostProvisioner;

@@ -37,9 +37,9 @@ public class ConfigServerMaintenance extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        //tenantsMaintainer.deconstruct();
-        fileDistributionMaintainer.deconstruct();
-        sessionsMaintainer.deconstruct();
+        //tenantsMaintainer.close();
+        fileDistributionMaintainer.close();
+        sessionsMaintainer.close();
     }
 
     /*

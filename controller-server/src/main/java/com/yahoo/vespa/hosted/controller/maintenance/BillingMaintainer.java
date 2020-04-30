@@ -12,12 +12,12 @@ import java.util.EnumSet;
 /**
  * @author olaa
  */
-public class BillingMaintainer extends Maintainer {
+public class BillingMaintainer extends ControllerMaintainer {
 
     private final Billing billing;
 
-    public BillingMaintainer(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, BillingMaintainer.class.getSimpleName(), EnumSet.of(SystemName.cd));
+    public BillingMaintainer(Controller controller, Duration interval) {
+        super(controller, interval, BillingMaintainer.class.getSimpleName(), EnumSet.of(SystemName.cd));
         this.billing = controller.serviceRegistry().billingService();
     }
 

@@ -21,7 +21,7 @@ import java.util.*;
  *
  * @author mgimle
  */
-public class CapacityReportMaintainer extends Maintainer {
+public class CapacityReportMaintainer extends NodeRepositoryMaintainer {
 
     private final Metric metric;
     private final NodeRepository nodeRepository;

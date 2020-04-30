@@ -39,5 +39,4 @@ public:
     }
 };
 
-} // namespace search
-
+}

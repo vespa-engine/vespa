@@ -18,6 +18,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -141,7 +142,7 @@ public class SessionPreparer {
         final ApplicationId applicationId;
 
         /** The repository part of docker image to be used for this deployment */
-        final Optional<String> dockerImageRepository;
+        final Optional<DockerImage> dockerImageRepository;
 
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final Version vespaVersion;
@@ -291,7 +292,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       Optional<String> dockerImageRepository,
+                                       Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,

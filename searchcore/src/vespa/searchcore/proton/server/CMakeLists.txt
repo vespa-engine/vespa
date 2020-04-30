@@ -10,8 +10,8 @@ vespa_add_library(searchcore_server STATIC
     combiningfeedview.cpp
     ddbstate.cpp
     disk_mem_usage_filter.cpp
-    disk_mem_usage_sampler.cpp
     disk_mem_usage_forwarder.cpp
+    disk_mem_usage_sampler.cpp
     docstorevalidator.cpp
     document_db_config_owner.cpp
     document_db_directory_holder.cpp
@@ -30,8 +30,8 @@ vespa_add_library(searchcore_server STATIC
     documentdb_commit_job.cpp
     documentdb_metrics_updater.cpp
     documentdbconfig.cpp
-    documentdbconfigscout.cpp
     documentdbconfigmanager.cpp
+    documentdbconfigscout.cpp
     documentretriever.cpp
     documentretrieverbase.cpp
     documentsubdbcollection.cpp
@@ -63,8 +63,8 @@ vespa_add_library(searchcore_server STATIC
     maintenancejobrunner.cpp
     matchers.cpp
     matchview.cpp
-    memoryconfigstore.cpp
     memory_flush_config_updater.cpp
+    memoryconfigstore.cpp
     memoryflush.cpp
     minimal_document_retriever.cpp
     move_operation_limiter.cpp
@@ -82,6 +82,7 @@ vespa_add_library(searchcore_server STATIC
     putdonecontext.cpp
     reconfig_params.cpp
     remove_batch_done_context.cpp
+    remove_operations_rate_tracker.cpp
     removedonecontext.cpp
     removedonetask.cpp
     replaypacketdispatcher.cpp

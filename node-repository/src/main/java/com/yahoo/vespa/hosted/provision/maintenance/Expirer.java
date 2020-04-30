@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public abstract class Expirer extends Maintainer {
+public abstract class Expirer extends NodeRepositoryMaintainer {
 
     protected static final Logger log = Logger.getLogger(Expirer.class.getName());
 

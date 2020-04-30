@@ -52,7 +52,6 @@ public:
     spi::RemoveResult removeIfFound(const spi::Bucket&, spi::Timestamp, const document::DocumentId&, spi::Context&) override;
     spi::UpdateResult update(const spi::Bucket&, spi::Timestamp, const spi::DocumentUpdateSP&, spi::Context&) override;
     spi::GetResult get(const spi::Bucket&, const document::FieldSet&, const document::DocumentId&, spi::Context&) const override;
-    spi::Result flush(const spi::Bucket&, spi::Context&) override;
     spi::CreateIteratorResult createIterator(const spi::Bucket&, const document::FieldSet&, const spi::Selection&,
                                              spi::IncludedVersions versions, spi::Context&) override;
     spi::IterateResult iterate(spi::IteratorId, uint64_t maxByteSize, spi::Context&) const override;

@@ -12,7 +12,7 @@ import java.time.Instant;
  *
  * @author hmusum
  */
-public class TenantsMaintainer extends Maintainer {
+public class TenantsMaintainer extends ConfigServerMaintainer {
 
     private final Duration ttlForUnusedTenant;
 

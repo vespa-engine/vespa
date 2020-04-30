@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -34,8 +35,12 @@ public interface ModelContext {
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
 
+    // TODO: Remove when 7.211 is oldest model version in use
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
     default Optional<String> wantedDockerImageRepository() { return Optional.empty(); }
+
+    /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
+    default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
 
     /** The Vespa version this model is built for */
     Version modelVespaVersion();
@@ -82,6 +87,10 @@ public interface ModelContext {
 
         // TODO Revisit in May or June 2020
         double defaultTopKProbability();
+
+        boolean useDistributorBtreeDb();
+
+        boolean useThreePhaseUpdates();
 
         // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();

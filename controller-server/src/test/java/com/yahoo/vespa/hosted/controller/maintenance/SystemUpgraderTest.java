@@ -266,7 +266,7 @@ public class SystemUpgraderTest {
         convergeServices(SystemApplication.proxy, zone1);
 
         // Confidence is reduced to broken and next zone is not scheduled for upgrade
-        new Upgrader(tester.controller(), Duration.ofDays(1), new JobControl(tester.curator()), tester.curator())
+        new Upgrader(tester.controller(), Duration.ofDays(1), tester.curator())
                 .overrideConfidence(version2, VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         systemUpgrader.maintain();
@@ -382,8 +382,8 @@ public class SystemUpgraderTest {
 
     private SystemUpgrader systemUpgrader(UpgradePolicy upgradePolicy) {
         tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
-        return new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                  new JobControl(tester.curator()));
+        return new SystemUpgrader(tester.controller(), Duration.ofDays(1)
+        );
     }
 
 }

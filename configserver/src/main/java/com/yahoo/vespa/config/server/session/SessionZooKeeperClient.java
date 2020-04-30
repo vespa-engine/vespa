@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
@@ -185,14 +186,14 @@ public class SessionZooKeeperClient {
         return new Version(configCurator.getData(versionPath()));
     }
 
-    public Optional<String> readDockerImageRepository() {
+    public Optional<DockerImage> readDockerImageRepository() {
         if ( ! configCurator.exists(dockerImageRepositoryPath())) return Optional.empty();
         String dockerImageRepository = configCurator.getData(dockerImageRepositoryPath());
-        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(dockerImageRepository);
+        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(DockerImage.fromString(dockerImageRepository));
     }
 
-    public void writeDockerImageRepository(Optional<String> dockerImageRepository) {
-        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo));
+    public void writeDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
+        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.repository()));
     }
 
     // in seconds

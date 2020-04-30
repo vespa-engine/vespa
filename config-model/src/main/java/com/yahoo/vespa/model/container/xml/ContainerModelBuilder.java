@@ -25,7 +25,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -337,6 +336,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
+        // Temporarily disable jdisc proxy-protocol in public systems
+        boolean enableProxyProtocol = !deployState.zone().system().isPublic();
+
         // If the deployment contains certificate/private key reference, setup TLS port
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
@@ -345,11 +347,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
             HostedSslConnectorFactory connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get(), enableProxyProtocol)
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enableProxyProtocol);
             server.addConnector(connectorFactory);
         } else {
-            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
+            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, enableProxyProtocol));
         }
     }
 
@@ -659,7 +661,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from(cluster.getName()))
                                                  .vespaVersion(deployState.getWantedNodeVespaVersion())
-                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo().map(DockerImage::fromString))
+                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo())
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified),
@@ -691,7 +693,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
-                .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo().map(DockerImage::fromString))
+                .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,

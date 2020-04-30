@@ -40,14 +40,17 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": "(ignore)",
+              "pending": "platform"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": "(ignore)",
+              "pending": "platform"
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-us-west-1",
+              "pending": "platform"
             }
           ],
           "allRuns": {
@@ -79,13 +82,16 @@
           "upgradePolicy": "default",
           "jobs": [
             {
-              "name": "system-test"
+              "name": "system-test",
+              "pending": "platform"
             },
             {
-              "name": "staging-test"
+              "name": "staging-test",
+              "pending": "platform"
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-us-west-1",
+              "pending": "platform"
             }
           ],
           "allRuns": {
@@ -193,14 +199,17 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": "(ignore)",
+              "pending": "platform"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": "(ignore)",
+              "pending": "platform"
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-us-west-1",
+              "pending": "platform"
             }
           ],
           "allRuns": {
@@ -269,13 +278,16 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": "(ignore)",
+              "pending": "application"
             },
             {
-              "name": "staging-test"
+              "name": "staging-test",
+              "pending": "application"
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-us-west-1",
+              "pending": "application"
             }
           ],
           "allRuns": {
@@ -324,13 +336,16 @@
           "upgradePolicy": "default",
           "jobs": [
             {
-              "name": "system-test"
+              "name": "system-test",
+              "pending": "platform"
             },
             {
-              "name": "staging-test"
+              "name": "staging-test",
+              "pending": "platform"
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-us-west-1",
+              "pending": "platform"
             }
           ],
           "allRuns": {

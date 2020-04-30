@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  *
  * @author olaa
  */
-public class ResourceMeterMaintainer extends Maintainer {
+public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private final Clock clock;
     private final Metric metric;
@@ -38,10 +38,9 @@ public class ResourceMeterMaintainer extends Maintainer {
     @SuppressWarnings("WeakerAccess")
     public ResourceMeterMaintainer(Controller controller,
                                    Duration interval,
-                                   JobControl jobControl,
                                    Metric metric,
                                    MeteringClient meteringClient) {
-        super(controller, interval, jobControl, null, SystemName.all());
+        super(controller, interval, null, SystemName.all());
         this.clock = controller.clock();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.metric = metric;

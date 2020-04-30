@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -59,6 +60,7 @@ public class Controller extends AbstractComponent {
 
     private final Supplier<String> hostnameSupplier;
     private final CuratorDb curator;
+    private final JobControl jobControl;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
     private final JobController jobController;
@@ -105,6 +107,7 @@ public class Controller extends AbstractComponent {
         tenantController = new TenantController(this, curator, accessControl);
         routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
+        jobControl = new JobControl(curator);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
@@ -270,4 +273,7 @@ public class Controller extends AbstractComponent {
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
     }
 
+    public JobControl jobControl() {
+        return jobControl;
+    }
 }

@@ -15,6 +15,7 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -101,7 +102,7 @@ public class HostedDeployTest {
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals("4.5.6", ((Deployment) deployment.get()).session().getVespaVersion().toString());
-        assertEquals(dockerImageRepository, ((Deployment) deployment.get()).session().getDockerImageRepository().get());
+        assertEquals(DockerImage.fromString(dockerImageRepository), ((Deployment) deployment.get()).session().getDockerImageRepository().get());
         assertEquals("foo", ((Deployment) deployment.get()).session().getAthenzDomain().get().value());
     }
 

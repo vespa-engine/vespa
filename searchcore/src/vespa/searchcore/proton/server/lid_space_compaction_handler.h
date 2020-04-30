@@ -23,6 +23,7 @@ public:
     virtual vespalib::string getName() const override {
         return _docTypeName + "." + _subDb.name();
     }
+    virtual void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) override;
     virtual uint32_t getSubDbId() const override { return _subDb.sub_db_id(); }
     virtual search::LidUsageStats getLidStatus() const override;
     virtual IDocumentScanIterator::UP getIterator() const override;

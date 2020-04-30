@@ -90,10 +90,15 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
 }
 
 bool
-LidSpaceCompactionJob::remove_batch_is_ongoing(const LidUsageStats& stats) const
+LidSpaceCompactionJob::remove_batch_is_ongoing() const
 {
-    LidUsageStats::TimePoint now = std::chrono::steady_clock::now();
-    return (now - stats.get_last_remove_batch()) < std::chrono::duration<double>(_cfg.get_remove_batch_block_delay());
+    return _ops_rate_tracker->remove_batch_above_threshold();
+}
+
+bool
+LidSpaceCompactionJob::remove_is_ongoing() const
+{
+    return _ops_rate_tracker->remove_above_threshold();
 }
 
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
@@ -114,13 +119,16 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _retryFrozenDocument(false),
       _shouldCompactLidSpace(false),
       _diskMemUsageNotifier(diskMemUsageNotifier),
-      _clusterStateChangedNotifier(clusterStateChangedNotifier)
+      _clusterStateChangedNotifier(clusterStateChangedNotifier),
+      _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate(),
+                                                                      config.get_remove_block_rate()))
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     if (nodeRetired) {
         setBlocked(BlockedReason::CLUSTER_STATE);
     }
+    handler.set_operation_listener(_ops_rate_tracker);
 }
 
 LidSpaceCompactionJob::~LidSpaceCompactionJob()
@@ -136,9 +144,14 @@ LidSpaceCompactionJob::run()
         return true; // indicate work is done since no work can be done
     }
     LidUsageStats stats = _handler.getLidStatus();
-    if (remove_batch_is_ongoing(stats)) {
+    if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         LOG(info, "run(): Lid space compaction is disabled while remove batch (delete buckets) is ongoing");
+        return true;
+    }
+    if (remove_is_ongoing()) {
+        // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
+        LOG(info, "run(): Lid space compaction is disabled while remove operations are ongoing");
         return true;
     }
     if (_scanItr) {

@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.persistence;
+package com.yahoo.concurrent.maintenance;
 
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -13,9 +13,9 @@ import java.util.Set;
 
 /**
  * Serialization of a set of strings to/from Json bytes using Slime.
- * 
+ *
  * The set is serialized as an array of string.
- * 
+ *
  * @author bratseth
  */
 public class StringSetSerializer {
@@ -27,11 +27,10 @@ public class StringSetSerializer {
             for (String element : stringSet)
                 array.addString(element);
             return SlimeUtils.toJsonBytes(slime);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Serialization of a string set failed", e);
         }
-        
+
     }
 
     public Set<String> fromJson(byte[] data) {

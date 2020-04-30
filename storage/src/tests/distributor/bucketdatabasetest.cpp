@@ -202,66 +202,84 @@ TEST_P(BucketDatabaseTest, find_parents) {
     // test that it is so for now to avoid breaking the world.
     EXPECT_EQ(
             std::string("0"),
-            doFindParents(toVector(document::BucketId(17, 0xcafe)),
-                          document::BucketId(17, 0xcafe)));
+            doFindParents({BucketId(17, 0xcafe)},
+                          BucketId(17, 0xcafe)));
 
     EXPECT_EQ(
             std::string("1,2"),
-            doFindParents(toVector(document::BucketId(1, 0x0),
-                                   document::BucketId(1, 0x1),
-                                   document::BucketId(2, 0x1)),
-                          document::BucketId(16, 0x1)));
+            doFindParents({BucketId(1, 0x0),
+                           BucketId(1, 0x1),
+                           BucketId(2, 0x1)},
+                          BucketId(16, 0x1)));
 
     EXPECT_EQ(
             std::string("2"),
-            doFindParents(toVector(document::BucketId(17, 0x0ffff),
-                                   document::BucketId(18, 0x1ffff),
-                                   document::BucketId(18, 0x3ffff)),
-                          document::BucketId(22, 0xfffff)));
+            doFindParents({BucketId(17, 0x0ffff),
+                           BucketId(18, 0x1ffff),
+                           BucketId(18, 0x3ffff)},
+                          BucketId(22, 0xfffff)));
 
     EXPECT_EQ(
             std::string("0,2,3"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff),
-                                   document::BucketId(17, 0x1ffff),
-                                   document::BucketId(19, 0xfffff)),
-                          document::BucketId(22, 0xfffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff),
+                           BucketId(17, 0x1ffff),
+                           BucketId(19, 0xfffff)},
+                          BucketId(22, 0xfffff)));
 
     EXPECT_EQ(
             std::string("0,1,2,3"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff),
-                                   document::BucketId(18, 0x0ffff),
-                                   document::BucketId(19, 0x0ffff)),
-                          document::BucketId(20, 0x0ffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff),
+                           BucketId(18, 0x0ffff),
+                           BucketId(19, 0x0ffff)},
+                          BucketId(20, 0x0ffff)));
 
     EXPECT_EQ(
             std::string("0,2,3"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff),
-                                   document::BucketId(17, 0x1ffff),
-                                   document::BucketId(18, 0x1ffff)),
-                          document::BucketId(22, 0x1ffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff),
+                           BucketId(17, 0x1ffff),
+                           BucketId(18, 0x1ffff)},
+                          BucketId(22, 0x1ffff)));
 
     EXPECT_EQ(
             std::string("0"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff)),
-                          document::BucketId(22, 0x1ffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff)},
+                          BucketId(22, 0x1ffff)));
 
     EXPECT_EQ( // ticket 3121525
             std::string("0"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff),
-                                   document::BucketId(19, 0x1ffff)),
-                          document::BucketId(18, 0x1ffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff),
+                           BucketId(19, 0x1ffff)},
+                          BucketId(18, 0x1ffff)));
 
     EXPECT_EQ( // ticket 3121525
             std::string("0"),
-            doFindParents(toVector(document::BucketId(16, 0x0ffff),
-                                   document::BucketId(17, 0x0ffff),
-                                   document::BucketId(19, 0x5ffff)),
-                          document::BucketId(18, 0x1ffff)));
+            doFindParents({BucketId(16, 0x0ffff),
+                           BucketId(17, 0x0ffff),
+                           BucketId(19, 0x5ffff)},
+                          BucketId(18, 0x1ffff)));
+
+    // Queried bucket is itself a parent of buckets in the DB, not a child.
+    EXPECT_EQ(std::string(""),
+              doFindParents({BucketId(16, 0x0ffff),
+                             BucketId(17, 0x0ffff),
+                             BucketId(19, 0x5ffff)},
+                            BucketId(15, 0x0ffff)));
+
+    // Queried bucket has lower used bits than any buckets in the DB, and there
+    // are buckets in an unrelated leftmost subtree.
+    EXPECT_EQ(std::string(""),
+              doFindParents({BucketId(16, 0x0000)},
+                            BucketId(8, 0xffff)));
+
+    // Similar as above test, but with subtree ordering reversed.
+    EXPECT_EQ(std::string(""),
+              doFindParents({BucketId(16, 0xffff)},
+                            BucketId(8, 0x0000)));
 }
 
 std::string
@@ -378,6 +396,13 @@ TEST_P(BucketDatabaseTest, find_all) {
                               document::BucketId(17, 0x0ffff),
                               document::BucketId(19, 0x5ffff)),
                       document::BucketId(18, 0x1ffff)));
+}
+
+TEST_P(BucketDatabaseTest, bucket_resolving_does_not_consider_unused_bits_in_id) {
+    EXPECT_EQ("0,1",
+              doFindAll({BucketId(0x840000003a7455d7),
+                         BucketId(0x840000013a7455d7)},
+                        BucketId(0x8247fe133a7455d7))); // Raw bucket ID from group hash
 }
 
 document::BucketId
@@ -704,6 +729,39 @@ TEST_P(BucketDatabaseTest, DISABLED_benchmark_const_iteration) {
         db().forEach(proc, document::BucketId());
     }, 5);
     fprintf(stderr, "Full DB iteration of %s takes %g seconds\n",
+            db().toString(false).c_str(), elapsed);
+}
+
+TEST_P(BucketDatabaseTest, DISABLED_benchmark_find_parents) {
+    constexpr uint32_t superbuckets = 1u << 16u;
+    constexpr uint32_t sub_buckets = 14;
+    constexpr uint32_t n_buckets = superbuckets * sub_buckets;
+
+    std::vector<uint64_t> bucket_keys;
+    bucket_keys.reserve(n_buckets);
+
+    for (uint32_t sb = 0; sb < superbuckets; ++sb) {
+        for (uint64_t i = 0; i < sub_buckets; ++i) {
+            document::BucketId bucket(48, (i << 32ULL) | sb); // TODO eval with different bit counts
+            bucket_keys.emplace_back(bucket.toKey());
+        }
+    }
+    fprintf(stderr, "Inserting %zu buckets into DB\n", bucket_keys.size());
+    std::sort(bucket_keys.begin(), bucket_keys.end());
+    for (uint64_t k : bucket_keys) {
+        db().update(BucketDatabase::Entry(BucketId(BucketId::keyToBucketId(k)), BI3(0, 1, 2)));
+    }
+
+    fprintf(stderr, "Invoking getParents() %zu times\n", bucket_keys.size());
+    auto elapsed = vespalib::BenchmarkTimer::benchmark([&] {
+        std::vector<BucketDatabase::Entry> entries;
+        for (uint64_t k : bucket_keys) {
+            db().getParents(BucketId(BucketId::keyToBucketId(k)), entries);
+            assert(entries.size() == 1);
+            entries.clear();
+        }
+    }, 30);
+    fprintf(stderr, "Looking up all buckets in %s takes %g seconds\n",
             db().toString(false).c_str(), elapsed);
 }
 

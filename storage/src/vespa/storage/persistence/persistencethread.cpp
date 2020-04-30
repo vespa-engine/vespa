@@ -607,10 +607,6 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, spi::Context 
     if (!checkForError(result, *tracker)) {
         return tracker;
     }
-    result = _spi.flush(spi::Bucket(destBucket, spi::PartitionId(_env._partition)), context);
-    if (!checkForError(result, *tracker)) {
-        return tracker;
-    }
     uint64_t lastModified = 0;
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
@@ -792,8 +788,8 @@ PersistenceThread::handleCommand(api::StorageCommand& msg)
     spi::Context context(msg.getLoadType(), msg.getPriority(), msg.getTrace().getLevel());
     MessageTracker::UP mtracker(handleCommandSplitByType(msg, context));
     if (mtracker && ! context.getTrace().getRoot().isEmpty()) {
-        if (mtracker->getReply()) {
-            mtracker->getReply()->getTrace().getRoot().addChild(context.getTrace().getRoot());
+        if (mtracker->hasReply()) {
+            mtracker->getReply().getTrace().getRoot().addChild(context.getTrace().getRoot());
         } else {
             msg.getTrace().getRoot().addChild(context.getTrace().getRoot());
         }
@@ -844,8 +840,8 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
                 LOG(debug, "Received unsupported command %s", msg.getType().getName().c_str());
             } else {
                 tracker->generateReply(initiatingCommand);
-                if ((tracker->getReply()
-                     && tracker->getReply()->getResult().failed())
+                if ((tracker->hasReply()
+                     && tracker->getReply().getResult().failed())
                     || tracker->getResult().failed())
                 {
                     _env._metrics.failedOperations.inc();
@@ -877,132 +873,42 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
 namespace {
 
 
-bool isBatchable(const api::StorageMessage& msg)
+bool isBatchable(api::MessageType::Id id)
 {
-    return (msg.getType().getId() == api::MessageType::PUT_ID ||
-            msg.getType().getId() == api::MessageType::REMOVE_ID ||
-            msg.getType().getId() == api::MessageType::UPDATE_ID ||
-            msg.getType().getId() == api::MessageType::REVERT_ID);
+    return (id == api::MessageType::PUT_ID ||
+            id == api::MessageType::REMOVE_ID ||
+            id == api::MessageType::UPDATE_ID ||
+            id == api::MessageType::REVERT_ID);
 }
 
-bool hasBucketInfo(const api::StorageMessage& msg)
+bool hasBucketInfo(api::MessageType::Id id)
 {
-    return (isBatchable(msg) ||
-            (msg.getType().getId() == api::MessageType::REMOVELOCATION_ID ||
-             msg.getType().getId() == api::MessageType::JOINBUCKETS_ID));
+    return (isBatchable(id) ||
+            (id == api::MessageType::REMOVELOCATION_ID ||
+             id == api::MessageType::JOINBUCKETS_ID));
 }
 
 }
 
 void
-PersistenceThread::flushAllReplies(
-        const document::Bucket& bucket,
-        std::vector<std::unique_ptr<MessageTracker> >& replies)
-{
-    if (replies.empty()) {
-        return;
-    }
-
-    try {
-        if (replies.size() > 1) {
-            _env._metrics.batchingSize.addValue(replies.size());
-        }
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-        {
-            size_t nputs = 0, nremoves = 0, nother = 0;
-            for (size_t i = 0; i < replies.size(); ++i) {
-                if (dynamic_cast<api::PutReply*>(replies[i]->getReply().get()))
-                {
-                    ++nputs;
-                } else if (dynamic_cast<api::RemoveReply*>(
-                                replies[i]->getReply().get()))
-                {
-                    ++nremoves;
-                } else {
-                    ++nother;
-                }
-            }
-            LOG_BUCKET_OPERATION(
-                    bucket.getBucketId(),
-                    vespalib::make_string(
-                            "flushing %zu operations (%zu puts, %zu removes, "
-                            "%zu other)",
-                            replies.size(), nputs, nremoves, nother));
-        }
-#endif
-        spi::Bucket b(bucket, spi::PartitionId(_env._partition));
-        // Flush is not used for anything currentlu, and the context is not correct either when batching is done
-        // So just faking it here.
-        spi::Context dummyContext(documentapi::LoadType::DEFAULT, 0, 0);
-        spi::Result result = _spi.flush(b, dummyContext);
-        uint32_t errorCode = _env.convertErrorCode(result);
-        if (errorCode != 0) {
-            for (uint32_t i = 0; i < replies.size(); ++i) {
-                replies[i]->getReply()->setResult(api::ReturnCode((api::ReturnCode::Result)errorCode, result.getErrorMessage()));
-            }
-        }
-    } catch (std::exception& e) {
-        for (uint32_t i = 0; i < replies.size(); ++i) {
-            replies[i]->getReply()->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.what()));
-        }
-    }
-
-    for (uint32_t i = 0; i < replies.size(); ++i) {
-        LOG(spam, "Sending reply up (batched): %s %" PRIu64,
-            replies[i]->getReply()->toString().c_str(), replies[i]->getReply()->getMsgId());
-        _env._fileStorHandler.sendReply(replies[i]->getReply());
-    }
-
-    replies.clear();
-}
-
-void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
-{
+PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage & lock) {
     std::vector<MessageTracker::UP> trackers;
     document::Bucket bucket = lock.first->getBucket();
 
-    while (lock.second) {
-        LOG(debug, "Inside while loop %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
-        std::shared_ptr<api::StorageMessage> msg(lock.second);
-        bool batchable = isBatchable(*msg);
+    LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
+    api::StorageMessage & msg(*lock.second);
 
-        // If the next operation wasn't batchable, we should flush
-        // everything that came before.
-        if (!batchable) {
-            flushAllReplies(bucket, trackers);
-        }
-
-        std::unique_ptr<MessageTracker> tracker = processMessage(*msg);
-        if (!tracker || !tracker->getReply()) {
-            // Was a reply
-            break;
-        }
-
-        if (hasBucketInfo(*msg)) {
-            if (tracker->getReply()->getResult().success()) {
+    std::unique_ptr<MessageTracker> tracker = processMessage(msg);
+    if (tracker && tracker->hasReply()) {
+        if (hasBucketInfo(msg.getType().getId())) {
+            if (tracker->getReply().getResult().success()) {
                 _env.setBucketInfo(*tracker, bucket);
             }
         }
-        if (batchable) {
-            LOG(spam, "Adding reply %s to batch for bucket %s",
-                tracker->getReply()->toString().c_str(), bucket.getBucketId().toString().c_str());
-
-            trackers.push_back(std::move(tracker));
-
-            if (trackers.back()->getReply()->getResult().success()) {
-                _env._fileStorHandler.getNextMessage(_env._partition, _stripeId, lock);
-            } else {
-                break;
-            }
-        } else {
-            LOG(spam, "Sending reply up: %s %" PRIu64,
-                tracker->getReply()->toString().c_str(), tracker->getReply()->getMsgId());
-            _env._fileStorHandler.sendReply(tracker->getReply());
-            break;
-        }
+        LOG(spam, "Sending reply up: %s %" PRIu64,
+            tracker->getReply().toString().c_str(), tracker->getReply().getMsgId());
+        _env._fileStorHandler.sendReply(std::move(*tracker).stealReplySP());
     }
-
-    flushAllReplies(bucket, trackers);
 }
 
 void
@@ -1016,7 +922,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _stripeId));
 
         if (lock.first) {
-            processMessages(lock);
+            processLockedMessage(lock);
         }
 
         vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);

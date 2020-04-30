@@ -16,6 +16,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
@@ -46,7 +47,7 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
 
-    private final Optional<String> wantedDockerImageRepository;
+    private final Optional<DockerImage> wantedDockerImageRepository;
 
     /** The version of Vespa we are building a model for */
     private final Version modelVespaVersion;
@@ -70,7 +71,7 @@ public class ModelContextImpl implements ModelContext {
                             Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
-                            Optional<String> wantedDockerImageRepository,
+                            Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
@@ -124,7 +125,10 @@ public class ModelContextImpl implements ModelContext {
     public Optional<File> appDir() { return appDir; }
 
     @Override
-    public Optional<String> wantedDockerImageRepository() { return wantedDockerImageRepository; }
+    public Optional<String> wantedDockerImageRepository() { return wantedDockerImageRepository.map(DockerImage::repository); }
+
+    @Override
+    public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
 
     @Override
     public Version modelVespaVersion() { return modelVespaVersion; }
@@ -147,6 +151,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isFirstTimeDeployment;
         private final boolean useAdaptiveDispatch;
         private final double defaultTopKprobability;
+        private final boolean useDistributorBtreeDb;
+        private final boolean useThreePhaseUpdates;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
@@ -187,6 +193,10 @@ public class ModelContextImpl implements ModelContext {
             defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            useDistributorBtreeDb = Flags.USE_DISTRIBUTOR_BTREE_DB.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            useThreePhaseUpdates = Flags.USE_THREE_PHASE_UPDATES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -261,6 +271,16 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double defaultTopKProbability() {
             return defaultTopKprobability;
+        }
+
+        @Override
+        public boolean useDistributorBtreeDb() {
+            return useDistributorBtreeDb;
+        }
+
+        @Override
+        public boolean useThreePhaseUpdates() {
+            return useThreePhaseUpdates;
         }
 
         // TODO: Remove

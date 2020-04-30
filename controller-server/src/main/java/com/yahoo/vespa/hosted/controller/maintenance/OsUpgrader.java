@@ -31,8 +31,8 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     private final CloudName cloud;
 
-    public OsUpgrader(Controller controller, Duration interval, JobControl jobControl, CloudName cloud) {
-        super(controller, interval, jobControl, controller.zoneRegistry().osUpgradePolicy(cloud), name(cloud));
+    public OsUpgrader(Controller controller, Duration interval, CloudName cloud) {
+        super(controller, interval, controller.zoneRegistry().osUpgradePolicy(cloud), name(cloud));
         this.cloud = cloud;
     }
 

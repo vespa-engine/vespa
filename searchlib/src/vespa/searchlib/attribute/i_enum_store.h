@@ -13,15 +13,15 @@
 #include <cassert>
 #include <set>
 
-namespace search {
-
-namespace datastore {
+namespace search::datastore {
 
 class DataStoreBase;
 
 template <typename> class UniqueStoreRemapper;
 
 }
+
+namespace search {
 
 class BufferWriter;
 class CompactionStrategy;

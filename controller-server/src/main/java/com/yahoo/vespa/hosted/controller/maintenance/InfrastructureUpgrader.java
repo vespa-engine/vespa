@@ -23,15 +23,14 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public abstract class InfrastructureUpgrader extends Maintainer {
+public abstract class InfrastructureUpgrader extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(InfrastructureUpgrader.class.getName());
 
     private final UpgradePolicy upgradePolicy;
 
-    public InfrastructureUpgrader(Controller controller, Duration interval, JobControl jobControl,
-                                  UpgradePolicy upgradePolicy, String name) {
-        super(controller, interval, jobControl, name, EnumSet.allOf(SystemName.class));
+    public InfrastructureUpgrader(Controller controller, Duration interval, UpgradePolicy upgradePolicy, String name) {
+        super(controller, interval, name, EnumSet.allOf(SystemName.class));
         this.upgradePolicy = upgradePolicy;
     }
 

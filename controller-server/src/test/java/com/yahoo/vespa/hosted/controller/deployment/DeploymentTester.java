@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
-import java.util.logging.Level;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
@@ -26,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
@@ -77,12 +77,12 @@ public class DeploymentTester {
         jobs = tester.controller().jobController();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         var jobControl = new JobControl(tester.controller().curator());
-        runner = new JobRunner(tester.controller(), Duration.ofDays(1), jobControl,
+        runner = new JobRunner(tester.controller(), Duration.ofDays(1),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
-        upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
+        upgrader = new Upgrader(tester.controller(), maintenanceInterval, tester.curator());
         upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
-        readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
-        outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
+        readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval);
+        outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval);
 
         // Get deployment job logs to stderr.
         Logger.getLogger("").setLevel(Level.FINE);

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
@@ -18,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  *
  * @author jonmv
  */
-public class JobRunner extends Maintainer {
+public class JobRunner extends ControllerMaintainer {
 
     public static final Duration jobTimeout = Duration.ofDays(1).plusHours(1);
     private static final Logger log = Logger.getLogger(JobRunner.class.getName());
@@ -34,14 +34,13 @@ public class JobRunner extends Maintainer {
     private final ExecutorService executors;
     private final StepRunner runner;
 
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl) {
-        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), new InternalStepRunner(controller));
+    public JobRunner(Controller controller, Duration duration) {
+        this(controller, duration, Executors.newFixedThreadPool(32), new InternalStepRunner(controller));
     }
 
     @TestOnly
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors,
-                     StepRunner runner) {
-        super(controller, duration, jobControl);
+    public JobRunner(Controller controller, Duration duration, ExecutorService executors, StepRunner runner) {
+        super(controller, duration);
         this.jobs = controller.jobController();
         this.jobs.setRunner(this::advance);
         this.executors = executors;
@@ -55,8 +54,8 @@ public class JobRunner extends Maintainer {
     }
 
     @Override
-    public void deconstruct() {
-        super.deconstruct();
+    public void close() {
+        super.close();
         executors.shutdown();
         try {
             executors.awaitTermination(50, TimeUnit.SECONDS);

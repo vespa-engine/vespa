@@ -5,7 +5,6 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
@@ -15,12 +14,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * @author bratseth
  * @author mpolden
  */
-public abstract class ApplicationMaintainer extends Maintainer {
+public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Metric metric;
@@ -91,8 +91,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
     }
 
     @Override
-    public void deconstruct() {
-        super.deconstruct();
+    public void close() {
+        super.close();
         this.deploymentExecutor.shutdownNow();
         try {
             // Give deployments in progress some time to complete

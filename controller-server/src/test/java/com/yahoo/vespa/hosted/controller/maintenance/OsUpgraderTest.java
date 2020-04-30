@@ -35,8 +35,8 @@ public class OsUpgraderTest {
     private static final ZoneApi zone5 = ZoneApiMock.newBuilder().withId("prod.us-north-1").withCloud("other").build();
 
     private final ControllerTester tester = new ControllerTester();
-    private final OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                                                    new JobControl(tester.controller().curator()));
+    private final OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
+    );
     @Test
     public void upgrade_os() {
         OsUpgrader osUpgrader = osUpgrader(
@@ -170,7 +170,7 @@ public class OsUpgraderTest {
               .setSystemName(system)
               .setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
         return new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                              new JobControl(tester.curator()), CloudName.defaultName());
+                              CloudName.defaultName());
     }
 
 }

@@ -11,6 +11,10 @@ import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_THREADS;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_TIMEOUT;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MIN_TIMEOUT;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.timeout;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -144,6 +148,17 @@ public class ApplicationMetricsRetrieverTest {
         // Verify successful retrieving
         wireMockRule.removeStubMapping(delayedStub);
         verifyRetrievingMetricsFromSingleNode(config, node);
+    }
+
+    @Test
+    public void test_timeout_calculation() {
+        assertEquals(MIN_TIMEOUT, timeout(1, 1));
+        assertEquals(MIN_TIMEOUT, timeout(MAX_THREADS, MAX_THREADS));
+
+        // These values must be updated if the calculation in the timeout method itself is changed.
+        assertEquals(Duration.ofSeconds(100), timeout(100, MAX_THREADS));
+        assertEquals(Duration.ofSeconds(200), timeout(200, MAX_THREADS));
+        assertEquals(MAX_TIMEOUT, timeout(240, MAX_THREADS));
     }
 
     private MetricsNodesConfig nodesConfig(String... paths) {

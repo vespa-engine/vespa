@@ -71,7 +71,6 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +

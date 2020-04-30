@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.maintenance;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.concurrent.maintenance;
 
-import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.transaction.Mutex;
 
 import java.util.Collections;
 import java.util.Map;
@@ -13,21 +12,21 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Provides status and control over running maintenance jobs.
  *
  * This is multi-thread safe.
- * 
+ *
  * @author bratseth
  */
 public class JobControl {
 
-    /** This is not stored in ZooKeeper as all nodes start all jobs */
+    /** This is not persisted as all nodes start all jobs */
     private final Map<String, Maintainer> startedJobs = new ConcurrentSkipListMap<>();
 
-    /** Used to store deactivation in ZooKeeper to make changes take effect on all nodes */
-    private final CuratorDatabaseClient db;
+    /** Used to store deactivation in a persistent shared database to make changes take effect on all nodes */
+    private final Db db;
 
-    public JobControl(CuratorDatabaseClient db) {
+    public JobControl(Db db) {
         this.db = db;
     }
-    
+
     /** Notifies this that a job was started */
     public void started(String jobSimpleClassName, Maintainer maintainer) {
         startedJobs.put(jobSimpleClassName, maintainer);
@@ -41,7 +40,7 @@ public class JobControl {
 
     /** Returns a snapshot containing the currently inactive jobs in this */
     public Set<String> inactiveJobs() { return db.readInactiveJobs(); }
-    
+
     /** Returns true if this job is not currently deactivated */
     public boolean isActive(String jobSimpleClassName) {
         return  ! inactiveJobs().contains(jobSimpleClassName);
@@ -49,7 +48,7 @@ public class JobControl {
 
     /** Set a job active or inactive */
     public void setActive(String jobSimpleClassName, boolean active) {
-        try (Lock lock = db.lockInactiveJobs()) {
+        try (var lock = db.lockInactiveJobs()) {
             Set<String> inactiveJobs = db.readInactiveJobs();
             if (active)
                 inactiveJobs.remove(jobSimpleClassName);
@@ -63,7 +62,29 @@ public class JobControl {
     public void run(String jobSimpleClassName) {
         var job = startedJobs.get(jobSimpleClassName);
         if (job == null) throw new IllegalArgumentException("No such job '" + jobSimpleClassName + "'");
-        job.runWithLock();
+        job.lockAndMaintain();
     }
-    
+
+    /** Acquire lock for running given job */
+    public Mutex lockJob(String jobSimpleClassName) {
+        return db.lockMaintenanceJob(jobSimpleClassName);
+    }
+
+    /** The database used for managing job state and synchronization */
+    public interface Db {
+
+        /** Returns the set of jobs that are temporarily inactive */
+        Set<String> readInactiveJobs();
+
+        /** Make given jobs as inactive */
+        void writeInactiveJobs(Set<String> inactiveJobs);
+
+        /** Acquire lock for changing jobs */
+        Mutex lockInactiveJobs();
+
+        /** Acquire lock for running given job */
+        Mutex lockMaintenanceJob(String job);
+
+    }
+
 }

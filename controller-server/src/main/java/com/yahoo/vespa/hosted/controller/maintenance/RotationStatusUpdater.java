@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import java.util.logging.Level;
+import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -19,6 +19,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -26,15 +27,15 @@ import java.util.stream.Collectors;
  *
  * @author mpolden
  */
-public class RotationStatusUpdater extends Maintainer {
+public class RotationStatusUpdater extends ControllerMaintainer {
 
     private static final int applicationsToUpdateInParallel = 10;
 
     private final GlobalRoutingService service;
     private final ApplicationController applications;
 
-    public RotationStatusUpdater(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl);
+    public RotationStatusUpdater(Controller controller, Duration interval) {
+        super(controller, interval);
         this.service = controller.serviceRegistry().globalRoutingService();
         this.applications = controller.applications();
     }
@@ -69,9 +70,9 @@ public class RotationStatusUpdater extends Maintainer {
             pool.awaitTermination(30, TimeUnit.SECONDS);
             if (lastException.get() != null) {
                 log.log(Level.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: ",
-                                                        failures.get(),
-                                                        attempts.get(),
-                                                        maintenanceInterval()),
+                                                     failures.get(),
+                                                     attempts.get(),
+                                                     interval()),
                         lastException.get());
             }
         } catch (InterruptedException e) {

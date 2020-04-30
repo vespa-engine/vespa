@@ -76,7 +76,7 @@ public class PeriodicApplicationMaintainerTest {
 
     @After
     public void after() {
-        this.fixture.maintainer.deconstruct();
+        this.fixture.maintainer.close();
     }
 
     @Test(timeout = 60_000)

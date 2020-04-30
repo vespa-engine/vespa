@@ -215,6 +215,7 @@ struct Fixture {
     Config _cfg;
     vespalib::string _name;
     vespalib::string _typeSpec;
+    bool _use_mock_index;
     std::unique_ptr<NearestNeighborIndexFactory> _index_factory;
     std::shared_ptr<TensorAttribute> _tensorAttr;
     std::shared_ptr<AttributeVector> _attr;
@@ -229,27 +230,45 @@ struct Fixture {
           _cfg(BasicType::TENSOR, CollectionType::SINGLE),
           _name(attr_name),
           _typeSpec(typeSpec),
-          _index_factory(std::make_unique<DefaultNearestNeighborIndexFactory>()),
+          _use_mock_index(use_mock_index),
+          _index_factory(),
           _tensorAttr(),
           _attr(),
           _denseTensors(false),
           _useDenseTensorAttribute(useDenseTensorAttribute)
     {
-        _cfg.setTensorType(ValueType::from_spec(typeSpec));
+        if (enable_hnsw_index) {
+            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
+        }
+        setup();
+    }
+
+    ~Fixture() {}
+
+    void setup() {
+        _cfg.setTensorType(ValueType::from_spec(_typeSpec));
         if (_cfg.tensorType().is_dense()) {
             _denseTensors = true;
         }
-        if (enable_hnsw_index) {
-            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
-            if (use_mock_index) {
-                _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
-            }
+        if (_use_mock_index) {
+            _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
+        } else {
+            _index_factory = std::make_unique<DefaultNearestNeighborIndexFactory>();
         }
         _tensorAttr = makeAttr();
         _attr = _tensorAttr;
         _attr->addReservedDoc();
     }
-    ~Fixture() {}
+
+    void set_hnsw_index_params(const HnswIndexParams &params) {
+        _cfg.set_hnsw_index_params(params);
+        setup();
+    }
+
+    void disable_hnsw_index() {
+        _cfg.clear_hnsw_index_params();
+        setup();
+    }
 
     std::shared_ptr<TensorAttribute> makeAttr() {
         if (_useDenseTensorAttribute) {
@@ -364,6 +383,10 @@ struct Fixture {
         return denseSpec;
     }
 
+    vespalib::FileHeader get_file_header();
+    void set_example_tensors();
+    void assert_example_tensors();
+    void save_example_tensors_with_mock_index();
     void testEmptyAttribute();
     void testSetTensorValue();
     void testSaveLoad();
@@ -371,6 +394,30 @@ struct Fixture {
     void testTensorTypeFileHeaderTag();
     void testEmptyTensor();
 };
+
+
+void
+Fixture::set_example_tensors()
+{
+    set_tensor(1, vec_2d(3, 5));
+    set_tensor(2, vec_2d(7, 9));
+}
+
+void
+Fixture::assert_example_tensors()
+{
+    assertGetTensor(vec_2d(3, 5), 1);
+    assertGetTensor(vec_2d(7, 9), 2);
+}
+
+void
+Fixture::save_example_tensors_with_mock_index()
+{
+    set_example_tensors();
+    mock_index().save_index_with_value(123);
+    save();
+    EXPECT_TRUE(vespalib::fileExists(_name + ".nnidx"));
+}
 
 void
 Fixture::testEmptyAttribute()
@@ -478,18 +525,25 @@ Fixture::testCompaction()
     TEST_DO(assertGetTensor(empty_xy_tensor, 4));
 }
 
-void
-Fixture::testTensorTypeFileHeaderTag()
+vespalib::FileHeader
+Fixture::get_file_header()
 {
-    ensureSpace(4);
-    TEST_DO(save());
-
     vespalib::FileHeader header;
     FastOS_File file;
     vespalib::string file_name = attr_name + ".dat";
     EXPECT_TRUE(file.OpenReadOnly(file_name.c_str()));
     (void) header.readFile(file);
     file.Close();
+    return header;
+}
+
+void
+Fixture::testTensorTypeFileHeaderTag()
+{
+    ensureSpace(4);
+    TEST_DO(save());
+
+    auto header = get_file_header();
     EXPECT_TRUE(header.hasTag("tensortype"));
     EXPECT_EQUAL(_typeSpec, header.getTag("tensortype").asString());
     if (_useDenseTensorAttribute) {
@@ -664,11 +718,7 @@ TEST_F("Memory usage is extracted from index when updating stats on attribute", 
 
 TEST_F("Nearest neighbor index can be saved to disk and then loaded from file", DenseTensorAttributeMockIndex)
 {
-    f.set_tensor(1, vec_2d(3, 5));
-    f.set_tensor(2, vec_2d(7, 9));
-    f.mock_index().save_index_with_value(123);
-    f.save();
-    EXPECT_TRUE(vespalib::fileExists(attr_name + ".nnidx"));
+    f.save_example_tensors_with_mock_index();
 
     f.load(); // index is loaded from saved file
     auto& index = f.mock_index();
@@ -678,8 +728,7 @@ TEST_F("Nearest neighbor index can be saved to disk and then loaded from file", 
 
 TEST_F("onLoad() reconstructs nearest neighbor index if save file does not exists", DenseTensorAttributeMockIndex)
 {
-    f.set_tensor(1, vec_2d(3, 5));
-    f.set_tensor(2, vec_2d(7, 9));
+    f.set_example_tensors();
     f.save();
     EXPECT_FALSE(vespalib::fileExists(attr_name + ".nnidx"));
 
@@ -687,6 +736,45 @@ TEST_F("onLoad() reconstructs nearest neighbor index if save file does not exist
     auto& index = f.mock_index();
     EXPECT_EQUAL(0, index.get_index_value());
     index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
+}
+
+TEST_F("onLoads() ignores saved nearest neighbor index if not enabled in config", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    f.disable_hnsw_index();
+    f.load();
+    f.assert_example_tensors();
+    EXPECT_EQUAL(f.as_dense_tensor().nearest_neighbor_index(), nullptr);
+}
+
+TEST_F("onLoad() ignores saved nearest neighbor index if major index parameters are changed", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    f.set_hnsw_index_params(HnswIndexParams(5, 20, DistanceMetric::Euclidean));
+    f.load();
+    f.assert_example_tensors();
+    auto& index = f.mock_index();
+    EXPECT_EQUAL(0, index.get_index_value());
+    index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
+}
+
+TEST_F("onLoad() uses saved nearest neighbor index if only minor index parameters are changed", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    f.set_hnsw_index_params(HnswIndexParams(4, 21, DistanceMetric::Euclidean));
+    f.load();
+    f.assert_example_tensors();
+    auto& index = f.mock_index();
+    EXPECT_EQUAL(123, index.get_index_value());
+    index.expect_adds({});
+}
+
+TEST_F("Nearest neighbor index type is added to attribute file header", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    auto header = f.get_file_header();
+    EXPECT_TRUE(header.hasTag("nearest_neighbor_index"));
+    EXPECT_EQUAL("hnsw", header.getTag("nearest_neighbor_index").asString());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

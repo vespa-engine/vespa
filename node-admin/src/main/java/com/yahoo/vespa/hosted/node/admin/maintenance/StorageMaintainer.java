@@ -106,9 +106,9 @@ public class StorageMaintainer {
 
     public boolean cleanDiskIfFull(NodeAgentContext context) {
         double totalBytes = context.node().diskSize().bytes();
-        // Delete enough bytes to get below 80% disk usage, but only if we are already using more than 90% disk
+        // Delete enough bytes to get below 70% disk usage, but only if we are already using more than 80% disk
         long bytesToRemove = diskUsageFor(context)
-                .map(diskUsage -> (long) (diskUsage.bytes() - 0.8 * totalBytes))
+                .map(diskUsage -> (long) (diskUsage.bytes() - 0.7 * totalBytes))
                 .filter(bytes -> bytes > totalBytes * 0.1)
                 .orElse(0L);
 

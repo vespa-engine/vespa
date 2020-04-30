@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
+import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -13,15 +14,15 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.FINE;
+import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.Collections.emptyList;
+import static java.util.logging.Level.FINE;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Retrieves metrics from a single Vespa node over http. To avoid unnecessary load on metrics
@@ -38,6 +39,7 @@ public class NodeMetricsClient {
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
 
     static final Duration METRICS_TTL = Duration.ofSeconds(30);
+    private static final int MAX_DIMENSIONS = 10;
 
     final Node node;
     private final HttpClient httpClient;
@@ -52,7 +54,7 @@ public class NodeMetricsClient {
         this.clock = clock;
     }
 
-    public List<MetricsPacket.Builder> getMetrics(ConsumerId consumer) {
+    public List<MetricsPacket> getMetrics(ConsumerId consumer) {
         var currentSnapshot = snapshots.get(consumer);
         if (currentSnapshot == null || currentSnapshot.isStale(clock) || currentSnapshot.metrics.isEmpty()) {
             Snapshot snapshot = retrieveMetrics(consumer);
@@ -69,14 +71,27 @@ public class NodeMetricsClient {
 
         try {
             String metricsJson = httpClient.execute(new HttpGet(metricsUri), new BasicResponseHandler());
-            var newMetrics = GenericJsonUtil.toMetricsPackets(metricsJson);
+            var metricsBuilders = GenericJsonUtil.toMetricsPackets(metricsJson);
+            var metrics = processAndBuild(metricsBuilders,
+                                          new ServiceIdDimensionProcessor(),
+                                          new ClusterIdDimensionProcessor(),
+                                          new PublicDimensionsProcessor(MAX_DIMENSIONS));
             snapshotsRetrieved ++;
-            log.log(FINE, () -> "Successfully retrieved " + newMetrics.size() + " metrics packets from " + metricsUri);
-            return new Snapshot(Instant.now(clock), newMetrics);
+            log.log(FINE, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
+
+            return new Snapshot(Instant.now(clock), metrics);
         } catch (IOException e) {
             log.warning("Unable to retrieve metrics from " + metricsUri + ": " + Exceptions.toMessageString(e));
             return new Snapshot(Instant.now(clock), emptyList());
         }
+    }
+
+    private static List<MetricsPacket> processAndBuild(List<MetricsPacket.Builder> builders,
+                                                       MetricsProcessor... processors) {
+        return builders.stream()
+                    .map(builder -> applyProcessors(builder, processors))
+                    .map(MetricsPacket.Builder::build)
+                    .collect(toList());
     }
 
     long snapshotsRetrieved() {
@@ -89,9 +104,9 @@ public class NodeMetricsClient {
     static class Snapshot {
 
         final Instant timestamp;
-        final List<MetricsPacket.Builder> metrics;
+        final List<MetricsPacket> metrics;
 
-        Snapshot(Instant timestamp, List<MetricsPacket.Builder> metrics) {
+        Snapshot(Instant timestamp, List<MetricsPacket> metrics) {
             this.timestamp = timestamp;
             this.metrics = metrics;
         }

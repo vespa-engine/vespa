@@ -176,8 +176,8 @@ public class StorageMaintainerTest {
             mockDiskUsage(950_000L);
 
             storageMaintainer.cleanDiskIfFull(context);
-            // Allocated size: 1 GB, usage: 950_000 kiB (972.8 MB). Wanted usage: 80% => 800 MB
-            verify(diskCleanup).cleanup(eq(context), any(), eq(172_800_000L));
+            // Allocated size: 1 GB, usage: 950_000 kiB (972.8 MB). Wanted usage: 70% => 700 MB
+            verify(diskCleanup).cleanup(eq(context), any(), eq(272_800_000L));
         }
 
         private void mockDiskUsage(long kBytes) {
