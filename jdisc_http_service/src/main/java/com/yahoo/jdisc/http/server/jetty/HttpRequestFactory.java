@@ -15,6 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * @author Simon Thoresen Hult
@@ -38,11 +39,11 @@ class HttpRequestFactory {
         }
     }
 
-    // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with getLocalPort() as port
+    // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with the connector's local port instead
     public static URI getUri(HttpServletRequest servletRequest) {
         try {
             StringBuffer builder = new StringBuffer(128);
-            URIUtil.appendSchemeHostPort(builder, servletRequest.getScheme(), servletRequest.getServerName(), servletRequest.getLocalPort());
+            URIUtil.appendSchemeHostPort(builder, servletRequest.getScheme(), servletRequest.getServerName(), getConnectorLocalPort(servletRequest));
             builder.append(servletRequest.getRequestURI());
             String query = servletRequest.getQueryString();
             if (query != null) {
