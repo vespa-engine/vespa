@@ -40,17 +40,14 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)",
-              "pending": "platform"
+              "coolingDownUntil": "(ignore)"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": "(ignore)",
-              "pending": "platform"
+              "coolingDownUntil": "(ignore)"
             },
             {
-              "name": "production-us-west-1",
-              "pending": "platform"
+              "name": "production-us-west-1"
             }
           ],
           "allRuns": {
@@ -82,16 +79,13 @@
           "upgradePolicy": "default",
           "jobs": [
             {
-              "name": "system-test",
-              "pending": "platform"
+              "name": "system-test"
             },
             {
-              "name": "staging-test",
-              "pending": "platform"
+              "name": "staging-test"
             },
             {
-              "name": "production-us-west-1",
-              "pending": "platform"
+              "name": "production-us-west-1"
             }
           ],
           "allRuns": {
@@ -279,11 +273,11 @@
             {
               "name": "system-test",
               "coolingDownUntil": "(ignore)",
-              "pending": "application"
+              "pending": "platform"
             },
             {
               "name": "staging-test",
-              "pending": "application"
+              "pending": "platform"
             },
             {
               "name": "production-us-west-1",
@@ -336,12 +330,10 @@
           "upgradePolicy": "default",
           "jobs": [
             {
-              "name": "system-test",
-              "pending": "platform"
+              "name": "system-test"
             },
             {
-              "name": "staging-test",
-              "pending": "platform"
+              "name": "staging-test"
             },
             {
               "name": "production-us-west-1",
@@ -355,20 +347,6 @@
                 "start": "(ignore)",
                 "status": "running"
               }
-            },
-            "system-test": {
-              "running": {
-                "number": 1,
-                "start": "(ignore)",
-                "status": "running"
-              }
-            },
-            "staging-test": {
-              "running": {
-                "number": 1,
-                "start": "(ignore)",
-                "status": "running"
-              }
             }
           },
           "upgradeRuns": {
@@ -378,9 +356,7 @@
                 "start": "(ignore)",
                 "status": "running"
               }
-            },
-            "system-test": {},
-            "staging-test": {}
+            }
           }
         }
       ]

@@ -34,6 +34,7 @@ import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.BinaryOperator.maxBy;
@@ -234,17 +235,16 @@ public class DeploymentStatus {
                     && testJobs.keySet().stream()
                                .noneMatch(test ->    test.type() == testType
                                                   && testJobs.get(test).contains(versions)))
-                    testJobs.merge(anyDeclaredTest(testType).orElse(new JobId(job.application(), testType)), List.of(versions), DeploymentStatus::union);
+                    testJobs.merge(firstDeclaredOrElseImplicitTest(testType), List.of(versions), DeploymentStatus::union);
             });
         }
         return ImmutableMap.copyOf(testJobs);
     }
 
-    private Optional<JobId> anyDeclaredTest(JobType testJob) {
+    private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
         return application.deploymentSpec().instanceNames().stream()
-                .map(application.id()::instance)
-                .flatMap(id -> declaredTest(id, testJob).stream())
-                .findFirst();
+                          .map(name -> new JobId(application.id().instance(name), testJob))
+                          .min(comparing(id -> !jobSteps.get(id).isDeclared())).orElseThrow();
     }
 
     /** JobId of any declared test of the given type, for the given instance. */
