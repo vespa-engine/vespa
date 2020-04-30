@@ -13,9 +13,10 @@ namespace proton {
  * Class to sample disk and memory usage used for filtering write operations.
  */
 class DiskMemUsageSampler {
-    DiskMemUsageFilter _filter;
+    DiskMemUsageFilter    _filter;
     std::filesystem::path _path;
-    vespalib::duration _sampleInterval;
+    vespalib::duration    _sampleInterval;
+    vespalib::steady_time _lastSampleTime;
     std::unique_ptr<vespalib::ScheduledExecutor> _periodicTimer;
 
     void sampleUsage();
