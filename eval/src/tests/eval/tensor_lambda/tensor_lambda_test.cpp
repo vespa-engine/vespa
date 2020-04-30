@@ -130,6 +130,8 @@ TEST("require that tensor reshape with non-matching cell type requires cell copy
 TEST("require that tensor cell subrange view is optimized") {
     TEST_DO(verify_range("tensor(y[5])(x3y5{x:1,y:(y)})", "x3y5{x:1}"));
     TEST_DO(verify_range("tensor(x[3])(x15{x:(x+5)})", "tensor(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<float>(y[5])(x3y5f{x:1,y:(y)})", "x3y5f{x:1}"));
+    TEST_DO(verify_range("tensor<float>(x[3])(x15f{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]"));
 }
 
 TEST("require that tensor cell subrange with non-matching cell type requires cell copy") {
