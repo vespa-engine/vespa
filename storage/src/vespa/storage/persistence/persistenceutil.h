@@ -19,7 +19,8 @@ class MessageTracker : protected Types {
 public:
     typedef std::unique_ptr<MessageTracker> UP;
 
-    MessageTracker(PersistenceUtil & env, FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+    MessageTracker(PersistenceUtil & env, MessageSender & replySender,
+                   FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     ~MessageTracker();
 
@@ -62,18 +63,28 @@ public:
     api::ReturnCode getResult() const { return _result; }
 
     spi::Context & context() { return _context; }
+    document::BucketId getBucketId() const {
+        return _bucketLock->getBucket().getBucketId();
+    }
 
     void sendReply();
 
     bool checkForError(const spi::Result& response);
 
+    static MessageTracker::UP
+    createForTesting(PersistenceUtil & env, MessageSender & replySender,
+                     FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+
 private:
+    MessageTracker(PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
+                   FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
     bool                                     _sendReply;
     bool                                     _updateBucketInfo;
     FileStorHandler::BucketLockInterface::SP _bucketLock;
     api::StorageMessage::SP                  _msg;
     spi::Context                             _context;
     PersistenceUtil                         &_env;
+    MessageSender                           &_replySender;
     FileStorThreadMetrics::Op               *_metric;
     api::StorageReply::SP                    _reply;
     api::ReturnCode                          _result;
