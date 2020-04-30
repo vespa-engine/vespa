@@ -259,7 +259,7 @@ public class DeploymentContext {
 
     /** Trigger all outstanding jobs, if any */
     public DeploymentContext triggerJobs() {
-        while (tester.controller().applications().deploymentTrigger().triggerReadyJobs() > 0);
+        tester.triggerJobs();
         return this;
     }
 

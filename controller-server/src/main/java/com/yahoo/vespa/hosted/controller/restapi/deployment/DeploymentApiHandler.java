@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -189,11 +190,15 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                           jobStatus.coolingDownUntil(status.application().require(instance.instance()).change())
                                    .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
                           if (jobsToRun.containsKey(job)) {
-                              jobObject.setString("pending", jobsToRun.get(job).stream()
-                                                                      .allMatch(versions -> versions.sourcePlatform()
-                                                                                                    .map(versions.targetPlatform()::equals)
-                                                                                                    .orElse(true))
-                                                             ? "application" : "platform");
+                              List<Versions> versionsOnThisPlatform = jobsToRun.get(job).stream()
+                                      .filter(versions -> versions.targetPlatform().equals(statistics.version()))
+                                      .collect(Collectors.toList());
+                              if ( ! versionsOnThisPlatform.isEmpty())
+                                  jobObject.setString("pending", versionsOnThisPlatform.stream()
+                                                                                       .allMatch(versions -> versions.sourcePlatform()
+                                                                                                                     .map(statistics.version()::equals)
+                                                                                                                     .orElse(true))
+                                                                 ? "application" : "platform");
                           }
                       });
                       Cursor allRunsObject = instanceObject.setObject("allRuns");
