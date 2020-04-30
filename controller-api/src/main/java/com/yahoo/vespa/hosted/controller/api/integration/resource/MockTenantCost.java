@@ -22,7 +22,7 @@ public class MockTenantCost implements TenantCost {
     }
 
     @Override
-    public List<CostInfo> getTenantCostOfMonth(TenantName tenantName, YearMonth month) {
+    public List<CostInfo> getTenantCostOfPeriod(TenantName tenantName, long startTimestamp, long endTimestamp) {
         return costInfoList;
     }
 
