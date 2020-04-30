@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+
 /**
  * A Jetty handler that enforces TLS client authentication with configurable white list.
  *
@@ -59,7 +61,7 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
     }
 
     private boolean isRequestToWhitelistedBinding(HttpServletRequest servletRequest) {
-        int localPort = servletRequest.getLocalPort();
+        int localPort = getConnectorLocalPort(servletRequest);
         List<String> whiteListedPaths = getWhitelistedPathsForPort(localPort);
         if (whiteListedPaths == null) {
             return true; // enforcer not enabled

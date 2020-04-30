@@ -103,6 +103,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
@@ -733,12 +734,36 @@ public class HttpServerTest {
         assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
     }
 
-    private void sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
+    @Test
+    public void requireThatJdiscLocalPortPropertyIsNotOverriddenByProxyProtocol() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        AccessLogMock accessLogMock = new AccessLogMock();
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/false);
+        HttpClient client = createJettyHttpClient(certificateFile);
+
+        String proxiedRemoteAddress = "192.168.0.100";
+        int proxiedRemotePort = 12345;
+        String proxyLocalAddress = "10.0.0.10";
+        int proxyLocalPort = 23456;
+        V2.Tag v2Tag = new V2.Tag(V2.Tag.Command.PROXY, null, V2.Tag.Protocol.STREAM,
+                                  proxiedRemoteAddress, proxiedRemotePort, proxyLocalAddress, proxyLocalPort, null);
+        ContentResponse response = sendJettyClientRequest(driver, client, v2Tag);
+        client.stop();
+        assertThat(driver.close(), is(true));
+
+        int clientPort = Integer.parseInt(response.getHeaders().get("Jdisc-Local-Port"));
+        assertNotEquals(proxyLocalPort, clientPort);
+    }
+
+    private ContentResponse sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
             throws InterruptedException, ExecutionException, TimeoutException {
         ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
                 .tag(tag)
                 .send();
         assertEquals(200, response.getStatus());
+        return response;
     }
 
     // Using Jetty's http client as Apache httpclient does not support the proxy-protocol v1/v2.
@@ -963,7 +988,10 @@ public class HttpServerTest {
 
         @Override
         public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            return handler.handleResponse(new Response(OK));
+            int port = request.getUri().getPort();
+            Response response = new Response(OK);
+            response.headers().put("Jdisc-Local-Port", Integer.toString(port));
+            return handler.handleResponse(response);
         }
     }
 

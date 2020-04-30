@@ -10,6 +10,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.server.HttpConnection;
+import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -67,7 +68,10 @@ public class HttpRequestFactoryTest {
     private static HttpServletRequest createMockRequest(String scheme, String serverName, String path, String queryString) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpConnection connection = mock(HttpConnection.class);
+        ServerConnector connector = mock(ServerConnector.class);
+        when(connector.getLocalPort()).thenReturn(LOCAL_PORT);
         when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
+        when(connection.getConnector()).thenReturn(connector);
         when(request.getAttribute("org.eclipse.jetty.server.HttpConnection")).thenReturn(connection);
         when(request.getProtocol()).thenReturn("HTTP/1.1");
         when(request.getScheme()).thenReturn(scheme);

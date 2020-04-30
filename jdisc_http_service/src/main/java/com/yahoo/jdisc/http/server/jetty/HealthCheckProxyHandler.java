@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A handler that proxies status.html health checks
@@ -84,7 +85,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
-        ProxyTarget proxyTarget = portToProxyTargetMapping.get(request.getLocalPort());
+        ProxyTarget proxyTarget = portToProxyTargetMapping.get(getConnectorLocalPort(servletRequest));
         if (proxyTarget != null) {
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
                 try (CloseableHttpResponse proxyResponse = proxyTarget.requestStatusHtml()) {

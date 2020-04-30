@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+
 /**
  * This class is a bridge between Jetty's {@link org.eclipse.jetty.server.handler.RequestLogHandler}
  * and our own configurable access logging in different formats provided by {@link AccessLog}.
@@ -80,7 +82,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             }
             accessLogEntry.setHttpVersion(request.getProtocol());
             accessLogEntry.setScheme(request.getScheme());
-            accessLogEntry.setLocalPort(request.getLocalPort());
+            accessLogEntry.setLocalPort(getConnectorLocalPort(request));
             Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
             if (principal != null) {
                 accessLogEntry.setUserPrincipal(principal);
