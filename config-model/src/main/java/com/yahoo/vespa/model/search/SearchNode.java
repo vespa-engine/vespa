@@ -272,7 +272,9 @@ public class SearchNode extends AbstractService implements
         }
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             Flavor nodeFlavor = getHostResource().getFlavor().get();
-            NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies);
+            NodeFlavorTuning nodeFlavorTuning = tuning.isPresent()
+                    ? new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies, tuning.get().getNumThreadsPerSearch())
+                    : new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies);
             nodeFlavorTuning.getConfig(builder);
 
             if (tuning.isPresent()) {

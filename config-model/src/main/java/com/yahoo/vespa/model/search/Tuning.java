@@ -406,4 +406,11 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
         if (searchNode != null) searchNode.getConfig(builder);
     }
 
+    public int getNumThreadsPerSearch() {
+        if (searchNode == null) return 1;
+        if (searchNode.threads == null) return 1;
+        if (searchNode.threads.numThreadsPerSearch == null) return 1;
+        return searchNode.threads.numThreadsPerSearch;
+    }
+
 }
