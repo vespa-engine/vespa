@@ -143,7 +143,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         if (relativePath.isAbsolute())
             throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
-        return relativePath.getFileSystem().getPath(pathToVespaHome.resolve(relativePath.toString()).toString());
+        return pathToVespaHome.resolve(relativePath);
     }
 
     @Override
