@@ -5,8 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-
-import java.util.ArrayList;
 import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -196,8 +194,6 @@ public class NodePrioritizer {
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
                 .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
-
-    public List<PrioritizableNode> nodes() { return new ArrayList<>(nodes.values()); }
 
     /**
      * Convert a list of nodes to a list of node priorities. This includes finding, calculating

@@ -15,7 +15,6 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -37,11 +36,7 @@ public class MaintenanceTester {
     public final ManualClock clock = new ManualClock(Instant.ofEpochMilli(0L)); // determinism
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-    public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                                    new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
-                                                                    curator,
-                                                                    clock,
-                                                                    zone,
+    public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                     true);

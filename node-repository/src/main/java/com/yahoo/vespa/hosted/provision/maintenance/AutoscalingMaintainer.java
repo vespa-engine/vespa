@@ -34,12 +34,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     private final Metric metric;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
+                                 HostResourcesCalculator hostResourcesCalculator,
                                  NodeMetricsDb metricsDb,
                                  Deployer deployer,
                                  Metric metric,
                                  Duration interval) {
         super(nodeRepository, interval);
-        this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
+        this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
         this.metric = metric;
         this.deployer = deployer;
     }

@@ -46,7 +46,7 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(NodeResources requested, Capacity capacity, ClusterSpec cluster) {
-        if (requested.isUnspecified())
+        if (requested == NodeResources.unspecified)
             requested = defaultNodeResources(cluster.type());
         ensureSufficientResources(requested, cluster);
 

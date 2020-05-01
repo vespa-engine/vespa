@@ -169,7 +169,7 @@ public class LoadBalancerProvisioner {
         log.log(Level.FINE, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                 ", targeting: " + reals);
         try {
-            return service.create(application, cluster, reals, force, nodeRepository);
+            return service.create(application, cluster, reals, force);
         } catch (Exception e) {
             throw new LoadBalancerServiceException("Failed to (re)configure load balancer for " + cluster + " in " +
                                                    application + ", targeting: " + reals + ". The operation will be " +

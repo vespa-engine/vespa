@@ -25,18 +25,21 @@ import java.util.Optional;
 public class Rebalancer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final Optional<HostProvisioner> hostProvisioner;
     private final Metric metric;
     private final Clock clock;
 
     public Rebalancer(Deployer deployer,
                       NodeRepository nodeRepository,
+                      HostResourcesCalculator hostResourcesCalculator,
                       Optional<HostProvisioner> hostProvisioner,
                       Metric metric,
                       Clock clock,
                       Duration interval) {
         super(nodeRepository, interval);
         this.deployer = deployer;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.hostProvisioner = hostProvisioner;
         this.metric = metric;
         this.clock = clock;
@@ -61,7 +64,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
     private void updateSkewMetric(NodeList allNodes) {
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, nodeRepository().resourcesCalculator());
+        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         double totalSkew = 0;
         int hostCount = 0;
         for (Node host : allNodes.nodeType((NodeType.host)).state(Node.State.active)) {
@@ -83,7 +86,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
      * Returns Move.none if no moves can be made to reduce skew.
      */
     private Move findBestMove(NodeList allNodes) {
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, nodeRepository().resourcesCalculator());
+        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         Move bestMove = Move.none;
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
