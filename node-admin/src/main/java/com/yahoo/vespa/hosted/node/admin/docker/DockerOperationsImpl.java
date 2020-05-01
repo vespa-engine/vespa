@@ -6,32 +6,32 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.net.InetAddress;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -46,15 +46,20 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final InetAddress IPV6_NPT_PREFIX = InetAddresses.forString("fd00::");
     private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
+    public static final String ETC_MACHINE_ID = "/etc/machine-id";
+
+    private static final Random random = new Random(System.nanoTime());
 
     private final Docker docker;
     private final Terminal terminal;
     private final IPAddresses ipAddresses;
+    private final FileSystem fileSystem;
 
-    public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses, FlagSource flagSource) {
+    public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses, FileSystem fileSystem) {
         this.docker = docker;
         this.terminal = terminal;
         this.ipAddresses = ipAddresses;
+        this.fileSystem = fileSystem;
     }
 
     @Override
@@ -119,6 +124,13 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withIpAddress(ipv4Address);
         }
 
+        UnixPath machineIdPath = new UnixPath(context.pathOnHostFromPathInNode(ETC_MACHINE_ID));
+        if (!machineIdPath.exists()) {
+            String machineId = String.format("%16x%16x\n", random.nextLong(), random.nextLong());
+            machineIdPath.createParents().writeUtf8File(machineId);
+            context.log(logger, "Wrote " + machineId + " to " + machineIdPath);
+        }
+
         addMounts(context, command);
 
         logger.info("Creating new container with args: " + command);
@@ -166,7 +178,7 @@ public class DockerOperationsImpl implements DockerOperations {
         ipV6Local.ifPresent(ipv6 -> etcHosts.append(ipv6.getHostAddress()).append('\t').append(hostname).append('\n'));
         ipV4Local.ifPresent(ipv4 -> etcHosts.append(ipv4.getHostAddress()).append('\t').append(hostname).append('\n'));
 
-        containerData.addFile(Paths.get("/etc/hosts"), etcHosts.toString());
+        containerData.addFile(fileSystem.getPath("/etc/hosts"), etcHosts.toString());
     }
 
     @Override
@@ -267,46 +279,43 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getContainerStats(context.containerName());
     }
 
-    private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
-        Path varLibSia = Paths.get("/var/lib/sia");
+    private void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
+        var volumes = new VolumeHelper(context, fileSystem, command);
 
         // Paths unique to each container
-        List<Path> paths = new ArrayList<>(List.of(
-                Paths.get("/etc/vespa/flags"), // local file db, to use flags before connection to cfg is established
-                Paths.get("/etc/yamas-agent"), // metrics check configuration
-                Paths.get("/opt/splunkforwarder/var/log"),  // VESPA-14917, thin pool leakage
-                Paths.get("/var/log"),                      // VESPA-14917, thin pool leakage
-                Paths.get("/var/spool/postfix/maildrop"),   // VESPA-14917, thin pool leakage
-                context.pathInNodeUnderVespaHome("logs/vespa"),
-                context.pathInNodeUnderVespaHome("logs/ysar"),
-                context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/crash"), // core dumps
-                context.pathInNodeUnderVespaHome("var/container-data"),
-                context.pathInNodeUnderVespaHome("var/db/vespa"),
-                context.pathInNodeUnderVespaHome("var/jdisc_container"),
-                context.pathInNodeUnderVespaHome("var/vespa"),
-                context.pathInNodeUnderVespaHome("var/yca"),
-                context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
-        ));
+        volumes.addPrivateVolumes(
+                ETC_MACHINE_ID,  // VESPA-18110, rotation of journal
+                "/etc/vespa/flags", // local file db, to use flags before connection to cfg is established
+                "/etc/yamas-agent", // metrics check configuration
+                "/opt/splunkforwarder/var/log",  // VESPA-14917, thin pool leakage
+                "/var/log",                      // VESPA-14917, thin pool leakage
+                "/var/log/journal",              // VESPA-18110, rotation of journal, must map exact path
+                "/var/spool/postfix/maildrop",
+
+                // Under VESPA_HOME in container
+                "logs/vespa",
+                "logs/ysar",
+                "tmp",
+                "var/crash", // core dumps
+                "var/container-data",
+                "var/db/vespa",
+                "var/jdisc_container",
+                "var/vespa",
+                "var/yca",
+                "var/zookeeper");
 
         if (context.nodeType() == NodeType.proxy) {
-            paths.add(context.pathInNodeUnderVespaHome("logs/nginx"));
-            paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
+            volumes.addPrivateVolumes("logs/nginx", "var/vespa-hosted/routing");
         } else if (context.nodeType() == NodeType.tenant)
-            paths.add(varLibSia);
-
-        paths.forEach(path -> command.withVolume(
-                context.pathOnHostFromPathInNode(path),
-                context.rewritePathInNodeForWantedDockerImage(path)));
-
+            volumes.addPrivateVolumes("/var/lib/sia");
 
         // Shared paths
         if (isInfrastructureHost(context.nodeType()))
-            command.withSharedVolume(varLibSia, varLibSia);
+            volumes.addSharedVolumeMap("/var/lib/sia", "/var/lib/sia");
 
         boolean isMain = context.zone().getSystemName() == SystemName.cd || context.zone().getSystemName() == SystemName.main;
         if (isMain && context.nodeType() == NodeType.tenant)
-            command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
+            volumes.addSharedVolumeMap("/var/zpe", "var/zpe");
     }
 
     @Override
@@ -324,6 +333,43 @@ public class DockerOperationsImpl implements DockerOperations {
         return nodeType == NodeType.config ||
                 nodeType == NodeType.proxy ||
                 nodeType == NodeType.controller;
+    }
+
+    private static class VolumeHelper {
+        private final NodeAgentContext context;
+        private final FileSystem fileSystem;
+        private final Docker.CreateContainerCommand command;
+
+        public VolumeHelper(NodeAgentContext context, FileSystem fileSystem, Docker.CreateContainerCommand command) {
+            this.context = context;
+            this.fileSystem = fileSystem;
+            this.command = command;
+        }
+
+        /**
+         * Resolve each path to an absolute relative the container's vespa home directory.
+         * Mounts the resulting path, under the container's storage directory as path in the container.
+         */
+        public void addPrivateVolumes(String... pathsInNode) {
+            Stream.of(pathsInNode).forEach(pathString -> {
+                Path pathInNode = context.rewritePathInNodeForWantedDockerImage(resolveNodePath(pathString));
+                Path pathOnHost = context.pathOnHostFromPathInNode(pathInNode.toString());
+                command.withVolume(pathOnHost, pathInNode);
+            });
+        }
+
+        /**
+         * Mounts pathOnHost on the host as pathInNode in the container.  Use for paths that
+         * might be shared with other containers.
+         */
+        public void addSharedVolumeMap(String pathOnHost, String pathInNode) {
+            command.withSharedVolume(resolveNodePath(pathOnHost), resolveNodePath(pathInNode));
+        }
+
+        private Path resolveNodePath(String pathString) {
+            Path path = fileSystem.getPath(pathString);
+            return path.isAbsolute() ? path : context.pathInNodeUnderVespaHome(path);
+        }
     }
 
 }
