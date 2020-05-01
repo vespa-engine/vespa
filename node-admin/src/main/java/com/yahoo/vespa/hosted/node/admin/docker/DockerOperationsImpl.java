@@ -293,6 +293,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 "/var/spool/postfix/maildrop",
 
                 // Under VESPA_HOME in container
+                "logs/vespa",
                 "logs/ysar",
                 "tmp",
                 "var/crash", // core dumps
