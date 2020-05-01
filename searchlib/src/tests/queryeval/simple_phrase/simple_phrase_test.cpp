@@ -43,7 +43,7 @@ class Test : public vespalib::TestApp {
     void requireThatIteratorFindsSimplePhrase(bool useBlueprint);
     void requireThatIteratorFindsLongPhrase(bool useBlueprint);
     void requireThatStrictIteratorFindsNextMatch(bool useBlueprint);
-    void requireThatPhrasesAreUnpacked(bool useBlueprint);
+    void requireThatPhrasesAreUnpacked(bool useBlueprint, bool unpack_normal_features, bool unpack_interleaved_features);
     void requireThatTermsCanBeEvaluatedInPriorityOrder();
     void requireThatBlueprintExposesFieldWithEstimate();
     void requireThatBlueprintForcesPositionDataOnChildren();
@@ -63,13 +63,19 @@ Test::Main()
     TEST_DO(requireThatIteratorFindsSimplePhrase(false));
     TEST_DO(requireThatIteratorFindsLongPhrase(false));
     TEST_DO(requireThatStrictIteratorFindsNextMatch(false));
-    TEST_DO(requireThatPhrasesAreUnpacked(false));
+    TEST_DO(requireThatPhrasesAreUnpacked(false, true, false));
+    TEST_DO(requireThatPhrasesAreUnpacked(false, true, true));
+    TEST_DO(requireThatPhrasesAreUnpacked(false, false, false));
+    TEST_DO(requireThatPhrasesAreUnpacked(false, false, true));
     TEST_DO(requireThatTermsCanBeEvaluatedInPriorityOrder());
 
     TEST_DO(requireThatIteratorFindsSimplePhrase(true));
     TEST_DO(requireThatIteratorFindsLongPhrase(true));
     TEST_DO(requireThatStrictIteratorFindsNextMatch(true));
-    TEST_DO(requireThatPhrasesAreUnpacked(true));
+    TEST_DO(requireThatPhrasesAreUnpacked(true, true, false));
+    TEST_DO(requireThatPhrasesAreUnpacked(true, true, true));
+    TEST_DO(requireThatPhrasesAreUnpacked(true, false, false));
+    TEST_DO(requireThatPhrasesAreUnpacked(true, false, true));
     TEST_DO(requireThatBlueprintExposesFieldWithEstimate());
     TEST_DO(requireThatBlueprintForcesPositionDataOnChildren());
     TEST_DO(requireThatIteratorHonorsFutureDoom());
@@ -107,6 +113,7 @@ public:
     void setStrict(bool strict) { _strict = strict; }
     void setOrder(const vector<uint32_t> &order) { _order = order; }
     const TermFieldMatchData &tmd() const { return *_md->resolveTermField(phrase_handle); }
+    TermFieldMatchData &writable_term_field_match_data() { return *_md->resolveTermField(phrase_handle); }
 
     PhraseSearchTest &addTerm(const string &term, bool last) {
         return addTerm(term, FakeResult()
@@ -156,7 +163,10 @@ public:
         } else {
             search::fef::TermFieldMatchDataArray childMatch;
             for (size_t i = 0; i < _children.size(); ++i) {
-                childMatch.add(_md->resolveTermField(childHandle(i)));
+                auto *child_term_field_match_data = _md->resolveTermField(childHandle(i));
+                child_term_field_match_data->setNeedInterleavedFeatures(tmd().needs_interleaved_features());
+                child_term_field_match_data->setNeedNormalFeatures(true);
+                childMatch.add(child_term_field_match_data);
             }
             SimplePhraseSearch::Children children;
             for (size_t i = 0; i < _children.size(); ++i) {
@@ -264,21 +274,34 @@ void Test::requireThatStrictIteratorFindsNextMatch(bool useBlueprint) {
     EXPECT_TRUE(search->isAtEnd());
 }
 
-void Test::requireThatPhrasesAreUnpacked(bool useBlueprint) {
+void Test::requireThatPhrasesAreUnpacked(bool useBlueprint, bool unpack_normal_features, bool unpack_interleaved_features) {
     PhraseSearchTest test;
     test.addTerm("foo", FakeResult()
-                 .doc(doc_match).pos(1).pos(11).pos(21));
+                 .doc(doc_match).pos(1).pos(11).pos(21).field_length(30).num_occs(3));
     test.addTerm("bar", FakeResult()
-                 .doc(doc_match).pos(2).pos(16).pos(22));
+                 .doc(doc_match).pos(2).pos(16).pos(22).field_length(30).num_occs(3));
+    test.writable_term_field_match_data().setNeedNormalFeatures(unpack_normal_features);
+    test.writable_term_field_match_data().setNeedInterleavedFeatures(unpack_interleaved_features);
     test.fetchPostings(useBlueprint);
     unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
     EXPECT_TRUE(search->seek(doc_match));
     search->unpack(doc_match);
 
     EXPECT_EQUAL(doc_match, test.tmd().getDocId());
-    EXPECT_EQUAL(2, std::distance(test.tmd().begin(), test.tmd().end()));
-    EXPECT_EQUAL(1u, test.tmd().begin()->getPosition());
-    EXPECT_EQUAL(21u, (test.tmd().begin() + 1)->getPosition());
+    if (unpack_normal_features) {
+        EXPECT_EQUAL(2, std::distance(test.tmd().begin(), test.tmd().end()));
+        EXPECT_EQUAL(1u, test.tmd().begin()->getPosition());
+        EXPECT_EQUAL(21u, (test.tmd().begin() + 1)->getPosition());
+    } else {
+        EXPECT_EQUAL(0, std::distance(test.tmd().begin(), test.tmd().end()));
+    }
+    if (unpack_interleaved_features) {
+        EXPECT_EQUAL(2u, test.tmd().getNumOccs());
+        EXPECT_EQUAL(30u, test.tmd().getFieldLength());
+    } else {
+        EXPECT_EQUAL(0u, test.tmd().getNumOccs());
+        EXPECT_EQUAL(0u, test.tmd().getFieldLength());
+    }
 }
 
 void Test::requireThatTermsCanBeEvaluatedInPriorityOrder() {

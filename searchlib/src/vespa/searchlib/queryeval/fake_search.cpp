@@ -47,6 +47,10 @@ FakeSearch::doUnpack(uint32_t docid)
     if (is_attr()) {
         _tfmda[0]->appendPosition(PosCtx(0, 0, sum_weight, 1));
     }
+    if (_tfmda[0]->needs_interleaved_features()) {
+        _tfmda[0]->setNumOccs(doc.num_occs);
+        _tfmda[0]->setFieldLength(doc.field_length);
+    }
 }
 
 void
