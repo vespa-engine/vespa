@@ -269,9 +269,9 @@ public class AutoscalingTest {
 
         // deploy
         tester.deploy(application1, cluster1, 6, 1, resources);
-        tester.addMeasurements(Resource.memory,  0.02f, 0.95f, 120, application1);
+        tester.addMeasurements(Resource.memory,  0.02f, 1f, 120, application1);
         tester.assertResources("Scaling down",
-                               6, 1, 2.8, 4.0, 95.0,
+                               6, 1, 3.0, 4.0, 100.0,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
@@ -291,7 +291,7 @@ public class AutoscalingTest {
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
-        // deploy (Why 103 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
+        // deploy (Why 83 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
 
         tester.addMeasurements(Resource.memory, 0.9f, 0.6f, 120, application1);

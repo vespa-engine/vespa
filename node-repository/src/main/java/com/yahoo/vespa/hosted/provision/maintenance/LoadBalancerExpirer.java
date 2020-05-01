@@ -99,7 +99,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             // Remove any real no longer allocated to this application
             reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
             try {
-                service.create(lb.id().application(), lb.id().cluster(), reals, true, nodeRepository());
+                service.create(lb.id().application(), lb.id().cluster(), reals, true);
                 db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
             } catch (Exception e) {
                 failed.add(lb.id());

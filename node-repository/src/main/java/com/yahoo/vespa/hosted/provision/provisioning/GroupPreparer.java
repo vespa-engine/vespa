@@ -30,14 +30,15 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
-    public GroupPreparer(NodeRepository nodeRepository,
-                         Optional<HostProvisioner> hostProvisioner,
-                         FlagSource flagSource) {
+    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
+                         HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
@@ -71,23 +72,18 @@ public class GroupPreparer {
 
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
-                NodePrioritizer prioritizer = new NodePrioritizer(nodeList,
-                                                                  application,
-                                                                  cluster,
-                                                                  requestedNodes,
-                                                                  spareCount,
-                                                                  wantedGroups,
-                                                                  nodeRepository.nameResolver(),
-                                                                  nodeRepository.resourcesCalculator(),
-                                                                  allocateFully);
+                NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
+                                                                  spareCount, wantedGroups, nodeRepository.nameResolver(),
+                                                                  hostResourcesCalculator, allocateFully);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
                 prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
+
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
-                                                               highestIndex,  nodeRepository.flavors(),
+                                                               highestIndex,  nodeRepository.getAvailableFlavors(),
                                                                nodeRepository.zone(), nodeRepository.clock());
                 allocation.offer(prioritizer.prioritize());
 

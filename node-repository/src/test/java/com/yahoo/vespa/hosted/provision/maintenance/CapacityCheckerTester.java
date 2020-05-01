@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -55,14 +54,8 @@ public class CapacityCheckerTester {
     CapacityCheckerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
-        nodeRepository = new NodeRepository(f,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
-                                            curator,
-                                            clock,
-                                            zone,
-                                            new MockNameResolver().mockAnyLookup(),
-                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true);
+        nodeRepository = new NodeRepository(f, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
+                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
     }
 
     private void updateCapacityChecker() {

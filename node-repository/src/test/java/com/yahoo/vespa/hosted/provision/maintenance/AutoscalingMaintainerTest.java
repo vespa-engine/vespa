@@ -56,6 +56,7 @@ public class AutoscalingMaintainerTest {
 
         NodeMetricsDb nodeMetricsDb = new NodeMetricsDb();
         AutoscalingMaintainer maintainer = new AutoscalingMaintainer(tester.nodeRepository(),
+                                                                     tester.identityHostResourcesCalculator(),
                                                                      nodeMetricsDb,
                                                                      deployer,
                                                                      new TestMetric(),

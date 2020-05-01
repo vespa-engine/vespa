@@ -72,6 +72,19 @@ public class Cluster {
         return new Cluster(id, min, max, suggested, target);
     }
 
+    public NodeResources capAtLimits(NodeResources resources) {
+        resources = resources.withVcpu(between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), resources.vcpu()));
+        resources = resources.withMemoryGb(between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), resources.memoryGb()));
+        resources = resources.withDiskGb(between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), resources.diskGb()));
+        return resources;
+    }
+
+    private double between(double min, double max, double value) {
+        value = Math.max(min, value);
+        value = Math.min(max, value);
+        return value;
+    }
+
     @Override
     public int hashCode() { return id.hashCode(); }
 
