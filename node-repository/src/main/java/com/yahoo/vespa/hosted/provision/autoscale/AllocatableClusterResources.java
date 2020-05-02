@@ -6,10 +6,8 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
@@ -169,21 +167,25 @@ public class AllocatableClusterResources {
             // return the cheapest flavor satisfying the target resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                NodeResources flavorResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
+                NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
+                NodeResources realResources = flavor.resources();
+
+                // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    flavor = flavor.with(FlavorOverrides.ofDisk(cappedNodeResources.diskGb()));
-                    flavorResources = flavorResources.withDiskGb(cappedNodeResources.diskGb()); // TODO: Do this in resourcesCalculator
+                    advertisedResources = advertisedResources.withDiskGb(cappedNodeResources.diskGb());
+                    realResources = realResources.withDiskGb(cappedNodeResources.diskGb());
                 }
-                if (flavor.resources().bandwidthGbps() >= cappedNodeResources.bandwidthGbps())
-                    flavorResources = flavorResources.withBandwidthGbps(limits.min().nodeResources().bandwidthGbps());
+                if (flavor.resources().bandwidthGbps() >= cappedNodeResources.bandwidthGbps()) {
+                    advertisedResources = advertisedResources.withBandwidthGbps(cappedNodeResources.bandwidthGbps());
+                    realResources = realResources.withBandwidthGbps(cappedNodeResources.bandwidthGbps());
+                }
 
-                if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), flavorResources)) continue;
+                if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), advertisedResources)) continue;
 
-                var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
-                                                                flavor,
+                var candidate = new AllocatableClusterResources(resources.with(realResources),
+                                                                advertisedResources,
                                                                 resources.nodeResources(),
-                                                                clusterType,
-                                                                nodeRepository.resourcesCalculator());
+                                                                clusterType);
                 if (best.isEmpty() || candidate.preferableTo(best.get()))
                     best = Optional.of(candidate);
             }
