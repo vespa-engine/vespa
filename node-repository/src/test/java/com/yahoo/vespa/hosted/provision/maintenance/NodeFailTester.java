@@ -24,6 +24,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -74,8 +75,14 @@ public class NodeFailTester {
     private NodeFailTester() {
         clock = new ManualClock();
         curator = new MockCurator();
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+        nodeRepository = new NodeRepository(nodeFlavors,
+                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            curator,
+                                            clock,
+                                            zone,
+                                            new MockNameResolver().mockAnyLookup(),
+                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                            true);
         provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();

@@ -35,7 +35,7 @@ public class AutoscalingIntegrationTest {
         NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(),
                                                             new OrchestratorMock(),
                                                             new MockHttpClient(tester.clock()));
-        Autoscaler autoscaler = new Autoscaler(new MockHostResourcesCalculator(), tester.nodeMetricsDb(), tester.nodeRepository());
+        Autoscaler autoscaler = new Autoscaler(tester.nodeMetricsDb(), tester.nodeRepository());
 
         ApplicationId application1 = tester.applicationId("test1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "test");
@@ -120,16 +120,6 @@ public class AutoscalingIntegrationTest {
 
         @Override
         public void close() { }
-
-    }
-
-    private static class MockHostResourcesCalculator implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources realResourcesOf(Node node) { return node.flavor().resources(); }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
 
     }
 

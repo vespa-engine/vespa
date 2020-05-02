@@ -54,7 +54,6 @@ public class RebalancerTest {
 
         Rebalancer rebalancer = new Rebalancer(deployer,
                                                tester.nodeRepository(),
-                                               tester.identityHostResourcesCalculator(),
                                                Optional.empty(),
                                                metric,
                                                tester.clock(),
