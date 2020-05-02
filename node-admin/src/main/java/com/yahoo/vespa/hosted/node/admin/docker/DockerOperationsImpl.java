@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.net.InetAddress;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final InetAddress IPV6_NPT_PREFIX = InetAddresses.forString("fd00::");
     private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
-    public static final String ETC_MACHINE_ID = "/etc/machine-id";
+    private static final String ETC_MACHINE_ID = "/etc/machine-id";
 
     private static final Random random = new Random(System.nanoTime());
 
@@ -352,8 +353,9 @@ public class DockerOperationsImpl implements DockerOperations {
          */
         public void addPrivateVolumes(String... pathsInNode) {
             Stream.of(pathsInNode).forEach(pathString -> {
-                Path pathInNode = context.rewritePathInNodeForWantedDockerImage(resolveNodePath(pathString));
-                Path pathOnHost = context.pathOnHostFromPathInNode(pathInNode.toString());
+                Path absolutePathInNode = Paths.get(resolveNodePath(pathString).toString());
+                Path pathOnHost = context.pathOnHostFromPathInNode(absolutePathInNode.toString());
+                Path pathInNode = context.rewritePathInNodeForWantedDockerImage(absolutePathInNode);
                 command.withVolume(pathOnHost, pathInNode);
             });
         }
