@@ -174,6 +174,9 @@ public class AllocatableClusterResources {
                     flavor = flavor.with(FlavorOverrides.ofDisk(cappedNodeResources.diskGb()));
                     flavorResources = flavorResources.withDiskGb(cappedNodeResources.diskGb()); // TODO: Do this in resourcesCalculator
                 }
+                if (flavor.resources().bandwidthGbps() >= cappedNodeResources.bandwidthGbps())
+                    flavorResources = flavorResources.withBandwidthGbps(limits.min().nodeResources().bandwidthGbps());
+
                 if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), flavorResources)) continue;
 
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),

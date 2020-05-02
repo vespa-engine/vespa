@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -25,6 +26,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,6 +39,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.*;
+import static com.yahoo.config.provision.NodeResources.StorageType.*;
 
 /**
  * @author freva
@@ -149,21 +154,70 @@ public class DynamicDockerProvisionTest {
     }
 
     @Test
-    public void test_changing_limits_on_aws() {
-        List<Flavor> flavors = List.of(new Flavor("1x", new NodeResources(1, 10, 100, 0.1)),
-                                       new Flavor("2x", new NodeResources(2, 20, 200, 0.1)),
-                                       new Flavor("4x", new NodeResources(4, 40, 400, 0.1)));
+    public void test_capacity_is_in_advertised_amounts_on_aws() {
+        int memoryTax = 3;
+        List<Flavor> flavors = List.of(new Flavor("2x",
+                                                  new NodeResources(2, 17, 200, 10, fast, remote)));
 
-        mockHostProvisioner(hostProvisioner, flavors.get(0));
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(CloudName.from("aws"),
                                                                                    SystemName.main,
                                                                                    Environment.prod,
                                                                                    RegionName.from("us-east")))
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(hostProvisioner)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .flagSource(flagSource)
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator())
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
+                                                                    .build();
+
+        tester.deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Deploy using real memory amount (17)
+        try {
+            tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 17, 40),
+                                                          resources(4, 1, 2, 17, 40)));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            // Success
+            String expected = "No allocation possible within limits";
+            assertEquals(expected, e.getMessage().substring(0, expected.length()));
+        }
+
+        // Deploy using advertised memory amount (17 + 3 (see MockResourcesCalculator)
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
+                                                      resources(4, 1, 2, 20, 40)));
+        tester.assertNodes("Allocation specifies memory in the advertised amount",
+                           3, 1, 2, 20, 40, 10,
+                           app1, cluster1);
+
+        // Redeploy the same
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
+                                                      resources(4, 1, 2, 20, 40)));
+        tester.assertNodes("Allocation specifies memory in the advertised amount",
+                           3, 1, 2, 20, 40, 10,
+                           app1, cluster1);
+    }
+
+    @Test
+    public void test_changing_limits_on_aws() {
+        int memoryTax = 3;
+        List<Flavor> flavors = List.of(new Flavor("1x", new NodeResources(1, 10 - memoryTax, 100, 0.1, fast, remote)),
+                                       new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
+                                       new Flavor("4x", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(CloudName.from("aws"),
+                                                                                   SystemName.main,
+                                                                                   Environment.prod,
+                                                                                   RegionName.from("us-east")))
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .flagSource(flagSource)
+                                                                    .nameResolver(nameResolver)
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -197,7 +251,6 @@ public class DynamicDockerProvisionTest {
                            app1, cluster1);
 
         // Move window below current allocation
-        System.out.println("--------- Moving window down");
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
                                                       resources(6, 3, 3, 25, 25)));
         tester.assertNodes("New allocation at new max",
@@ -247,16 +300,62 @@ public class DynamicDockerProvisionTest {
 
     private static class MockResourcesCalculator implements HostResourcesCalculator {
 
+        private final int memoryTaxGb;
+
+        public MockResourcesCalculator(int memoryTaxGb) {
+            this.memoryTaxGb = memoryTaxGb;
+        }
+
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
             if (node.type() == NodeType.host) return node.flavor().resources();
-            return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
+            return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - memoryTaxGb);
         }
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
-            if (flavor.isConfigured()) return flavor.resources();
-            return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
+            if ( ! flavor.isConfigured()) return flavor.resources();
+            return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + memoryTaxGb);
+        }
+
+    }
+
+    private static class MockHostProvisioner implements HostProvisioner {
+
+        private final List<Flavor> hostFlavors;
+        private final int memoryTaxGb;
+
+        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb) {
+            this.hostFlavors = List.copyOf(hostFlavors);
+            this.memoryTaxGb = memoryTaxGb;
+        }
+
+        @Override
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId) {
+            Optional<Flavor> hostFlavor = hostFlavors.stream().filter(f -> compatible(f, resources)).findFirst();
+            if (hostFlavor.isEmpty())
+                throw new OutOfCapacityException("No host flavor matches " + resources);
+            return provisionIndexes.stream()
+                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), "host-" + i + "-1", resources))
+                                   .collect(Collectors.toList());
+        }
+
+        private boolean compatible(Flavor hostFlavor, NodeResources nodeResources) {
+            NodeResources resourcesToVerify = nodeResources.withMemoryGb(nodeResources.memoryGb() - memoryTaxGb);
+            if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
+                && hostFlavor.resources().diskGb() >= nodeResources.diskGb())
+                resourcesToVerify = resourcesToVerify.withDiskGb(hostFlavor.resources().diskGb());
+            return hostFlavor.resources().compatibleWith(resourcesToVerify);
+        }
+
+        @Override
+        public List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException {
+            throw new RuntimeException("Not implemented: provision");
+        }
+
+        @Override
+        public void deprovision(Node host) {
+            throw new RuntimeException("Not implemented: deprovision");
         }
 
     }

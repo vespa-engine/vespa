@@ -234,6 +234,11 @@ public class ProvisioningTester {
     /** Assert on the current *non retired* nodes */
     public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk,
                             ApplicationId app, ClusterSpec cluster) {
+        assertNodes(explanation, nodes, groups, vcpu, memory, disk, 0.1, app, cluster);
+    }
+    /** Assert on the current *non retired* nodes */
+    public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk, double bandwithGbps,
+                            ApplicationId app, ClusterSpec cluster) {
         List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).not().retired().asList();
         assertEquals(explanation + ": Node count",
                      nodes,
@@ -242,7 +247,7 @@ public class ProvisioningTester {
                      groups,
                      nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
         for (Node node : nodeList) {
-            var expected = new NodeResources(vcpu, memory, disk, 0.1);
+            var expected = new NodeResources(vcpu, memory, disk, bandwithGbps);
             assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.flavor().resources(),
                        expected.compatibleWith(node.flavor().resources()));
         }
