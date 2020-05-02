@@ -62,7 +62,7 @@ import static com.yahoo.slime.SlimeUtils.optionalString;
 
 /**
  * The implementation of the /nodes/v2 API.
- * See RestApiTest for documentation.
+ * See NodesV2ApiTest for documentation.
  *
  * @author bratseth
  */

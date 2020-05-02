@@ -229,6 +229,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -623,6 +624,34 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast); // TODO: Remove
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse clusters(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
+
+        Slime slime = new Slime();
+        Cursor nodesArray = slime.setObject().setArray("clusters");
+        for (Node node : nodes) {
+            Cursor clusterObject = nodesArray.addObject();
+            clusterObject.setString("hostname", node.hostname().value());
+            clusterObject.setString("state", valueOf(node.state()));
+            node.reservedTo().ifPresent(tenant -> clusterObject.setString("reservedTo", tenant.value()));
+            clusterObject.setString("orchestration", valueOf(node.serviceState()));
+            clusterObject.setString("version", node.currentVersion().toString());
+            clusterObject.setString("flavor", node.flavor());
+            clusterObject.setDouble("vcpu", node.resources().vcpu());
+            clusterObject.setDouble("memoryGb", node.resources().memoryGb());
+            clusterObject.setDouble("diskGb", node.resources().diskGb());
+            clusterObject.setDouble("bandwidthGbps", node.resources().bandwidthGbps());
+            clusterObject.setString("diskSpeed", valueOf(node.resources().diskSpeed()));
+            clusterObject.setString("storageType", valueOf(node.resources().storageType()));
+            clusterObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast); // TODO: Remove
+            clusterObject.setString("clusterId", node.clusterId());
+            clusterObject.setString("clusterType", valueOf(node.clusterType()));
         }
         return new SlimeJsonResponse(slime);
     }
