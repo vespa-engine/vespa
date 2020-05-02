@@ -13,16 +13,13 @@ namespace search::features {
  */
 class FieldMatchExecutor : public fef::FeatureExecutor {
 private:
-    fef::PhraseSplitter             _splitter;
-    const fef::FieldInfo          & _field;
-    fieldmatch::Computer                    _cmp;
+    fef::PhraseSplitter    _splitter;
+    const fef::FieldInfo & _field;
+    fieldmatch::Computer   _cmp;
 
     void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
-    /**
-     * Constructs an executor.
-     */
     FieldMatchExecutor(const fef::IQueryEnvironment & queryEnv,
                        const fef::FieldInfo & field,
                        const fieldmatch::Params & params);

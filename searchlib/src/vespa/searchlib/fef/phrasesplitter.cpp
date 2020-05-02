@@ -2,8 +2,7 @@
 
 #include "phrasesplitter.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 void
 PhraseSplitter::considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId)
@@ -32,10 +31,9 @@ PhraseSplitter::considerTerm(uint32_t termIdx, const ITermData &term, std::vecto
     _termIdxMap.push_back(TermIdx(termIdx, false));
 }
 
-PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv,
-                               uint32_t fieldId) :
+PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv, uint32_t fieldId) :
     _queryEnv(queryEnv),
-    _matchData(NULL),
+    _matchData(nullptr),
     _terms(),
     _termMatches(),
     _termIdxMap(),
@@ -47,18 +45,18 @@ PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv,
 
     for (uint32_t i = 0; i < queryEnv.getNumTerms(); ++i) {
         const ITermData *td = queryEnv.getTerm(i);
-        assert(td != NULL);
+        assert(td != nullptr);
         considerTerm(i, *td, phraseTerms, fieldId);
         numHandles += td->numFields();
     }
 
     _skipHandles = _maxHandle + 1 + numHandles;
-    for (uint32_t i = 0; i < _terms.size(); ++i) {
+    _termMatches.reserve(_terms.size());
+    for (auto & term : _terms) {
         // start at _skipHandles + 0
-        _terms[i].field(0).setHandle(_skipHandles + _termMatches.size());
-        TermFieldMatchData empty;
-        empty.setFieldId(fieldId);
-        _termMatches.push_back(empty);
+        term.field(0).setHandle(_skipHandles + _termMatches.size());
+        _termMatches.emplace_back();
+        _termMatches.back().setFieldId(fieldId);
     }
 
     for (uint32_t i = 0; i < phraseTerms.size(); ++i) {
@@ -76,7 +74,7 @@ PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv,
     }
 }
 
-PhraseSplitter::~PhraseSplitter() {}
+PhraseSplitter::~PhraseSplitter() = default;
 
 void
 PhraseSplitter::copyTermFieldMatchData(TermFieldMatchData & dst, const TermFieldMatchData & src, uint32_t hitOffset)
@@ -96,11 +94,10 @@ PhraseSplitter::update()
     for (uint32_t i = 0; i < _copyInfo.size(); ++i) {
         const TermFieldMatchData *src = _matchData->resolveTermField(_copyInfo[i].orig_handle);
         TermFieldMatchData *dst = resolveSplittedTermField(_copyInfo[i].split_handle);
-        assert(src != NULL && dst != NULL);
+        assert(src != nullptr && dst != nullptr);
         copyTermFieldMatchData(*dst, *src, _copyInfo[i].offsetInPhrase);
     }
 
 }
 
-} // namespace fef
-} // namespace search
+}

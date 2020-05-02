@@ -5,17 +5,13 @@
 namespace search::fef {
 
 SimpleTermFieldData::SimpleTermFieldData(uint32_t fieldId)
-    : _fieldId(fieldId),
-      _matching_doc_count(0),
-      _total_doc_count(1),
+    : ITermFieldData(fieldId),
       _handle(IllegalHandle)
 {
 }
 
 SimpleTermFieldData::SimpleTermFieldData(const ITermFieldData &rhs)
-    : _fieldId(rhs.getFieldId()),
-      _matching_doc_count(rhs.get_matching_doc_count()),
-      _total_doc_count(rhs.get_total_doc_count()),
+    : ITermFieldData(rhs),
       _handle(rhs.getHandle())
 {
 }

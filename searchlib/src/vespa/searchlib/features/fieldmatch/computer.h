@@ -14,9 +14,7 @@
 #include "segmentstart.h"
 #include "simplemetrics.h"
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 /**
  * <p>Calculates a set of metrics capturing information about the degree of agreement between a query and a field
@@ -330,7 +328,7 @@ private:
 
     struct SegmentData {
         SegmentData() : segment(), valid(false) {}
-        SegmentData(const SegmentStart::SP & ss, bool v = false) : segment(ss), valid(v) {}
+        SegmentData(SegmentStart::SP ss, bool v = false) : segment(std::move(ss)), valid(v) {}
         SegmentStart::SP segment;
         bool valid;
     };
@@ -364,7 +362,4 @@ private:
     std::vector<BitVectorData>                 _cachedHits;
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}
