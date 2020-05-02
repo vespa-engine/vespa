@@ -24,23 +24,23 @@ public:
     using Config = AttributeUsageFilterConfig;
 
 private:
-    mutable Mutex _lock; // protect _attributeStats, _config, _state
+    mutable Mutex       _lock; // protect _attributeStats, _config, _state
     AttributeUsageStats _attributeStats;
-    Config _config;
-    State _state;
-    std::atomic<bool> _acceptWrite;
+    Config              _config;
+    State               _state;
+    std::atomic<bool>   _acceptWrite;
 
     void recalcState(const Guard &guard); // called with _lock held
 public:
     AttributeUsageFilter();
-    ~AttributeUsageFilter();
+    ~AttributeUsageFilter() override;
     void setAttributeStats(AttributeUsageStats attributeStats_in);
     AttributeUsageStats getAttributeUsageStats() const;
     void setConfig(Config config);
     double getEnumStoreUsedRatio() const;
     double getMultiValueUsedRatio() const;
-    virtual bool acceptWriteOperation() const override;
-    virtual State getAcceptState() const override;
+    bool acceptWriteOperation() const override;
+    State getAcceptState() const override;
 };
 
 

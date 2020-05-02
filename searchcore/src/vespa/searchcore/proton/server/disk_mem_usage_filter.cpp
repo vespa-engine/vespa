@@ -252,8 +252,7 @@ DiskMemUsageFilter::removeDiskMemUsageListener(IDiskMemUsageListener *listener)
 }
 
 void
-DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard,
-                                       DiskMemUsageState state)
+DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state)
 {
     (void) guard;
     if (_dmstate == state) {

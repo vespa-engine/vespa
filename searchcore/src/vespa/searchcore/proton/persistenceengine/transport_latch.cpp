@@ -81,8 +81,9 @@ void
 AsyncTranportContext::completeIfDone() {
     _countDown--;
     if (_countDown == 0) {
-        _onComplete->onComplete(std::make_unique<Result>());
+        _onComplete->onComplete(std::move(_result));
     }
+
 }
 AsyncTranportContext::~AsyncTranportContext() = default;
 

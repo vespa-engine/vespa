@@ -56,24 +56,20 @@ AttributeUsageFilter::recalcState(const Guard &guard)
     (void) guard;
     bool hasMessage = false;
     std::ostringstream message;
-    const AddressSpaceUsageStats &enumStoreUsage =
-        _attributeStats.enumStoreUsage();
+    const AddressSpaceUsageStats &enumStoreUsage = _attributeStats.enumStoreUsage();
     double enumStoreUsed = enumStoreUsage.getUsage().usage();
     if (enumStoreUsed > _config._enumStoreLimit) {
         hasMessage = true;
-        makeEnumStoreMessage(message, enumStoreUsed, _config._enumStoreLimit,
-                             enumStoreUsage);
+        makeEnumStoreMessage(message, enumStoreUsed, _config._enumStoreLimit, enumStoreUsage);
     }
-    const AddressSpaceUsageStats &multiValueUsage =
-        _attributeStats.multiValueUsage();
+    const AddressSpaceUsageStats &multiValueUsage = _attributeStats.multiValueUsage();
     double multiValueUsed = multiValueUsage.getUsage().usage();
     if (multiValueUsed > _config._multiValueLimit) {
         if (hasMessage) {
             message << ", ";
         }
         hasMessage = true;
-        makeMultiValueMessage(message, multiValueUsed, _config._multiValueLimit,
-                              multiValueUsage);
+        makeMultiValueMessage(message, multiValueUsed, _config._multiValueLimit, multiValueUsage);
     }
     if (hasMessage) {
         _state = State(false, message.str());
@@ -93,9 +89,7 @@ AttributeUsageFilter::AttributeUsageFilter()
 {
 }
 
-AttributeUsageFilter::~AttributeUsageFilter()
-{
-}
+AttributeUsageFilter::~AttributeUsageFilter() = default;
 
 void
 AttributeUsageFilter::setAttributeStats(AttributeUsageStats attributeStats_in)
