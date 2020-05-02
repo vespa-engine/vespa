@@ -6,7 +6,7 @@ namespace proton::feedtoken {
 
 State::State(ITransport & transport) :
     _transport(transport),
-    _result(new storage::spi::Result()),
+    _result(std::make_unique<storage::spi::Result>()),
     _documentWasFound(false),
     _alreadySent(false)
 {

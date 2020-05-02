@@ -56,7 +56,7 @@ private:
 
 public:
     DiskMemUsageFilter(const HwInfo &hwInfo);
-    ~DiskMemUsageFilter();
+    ~DiskMemUsageFilter() override;
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskUsedSize(uint64_t diskUsedSizeBytes);
     void setConfig(Config config);
