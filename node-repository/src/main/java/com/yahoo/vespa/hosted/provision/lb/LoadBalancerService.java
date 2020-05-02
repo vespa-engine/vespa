@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Set;
 
@@ -23,7 +24,8 @@ public interface LoadBalancerService {
      *                    pre-existing load balancer).
      * @return The provisioned load balancer instance
      */
-    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force);
+    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
+                                NodeRepository nodeRepository);
 
     /** Permanently remove load balancer for given application cluster */
     void remove(ApplicationId application, ClusterSpec.Id cluster);

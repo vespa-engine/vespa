@@ -79,6 +79,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     protected Duration interval() { return interval; }
 
     /** Run this while holding the job lock */
+    @SuppressWarnings("unused")
     public final void lockAndMaintain() {
         try (var lock = jobControl.lockJob(name())) {
             maintain();

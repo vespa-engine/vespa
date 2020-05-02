@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -70,12 +71,15 @@ public class DynamicProvisioningMaintainerTest {
 
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
-    private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
+    private static final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
             .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true)
             .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
-    private final DynamicProvisioningMaintainer maintainer = new DynamicProvisioningMaintainer(
-            tester.nodeRepository, Duration.ofDays(1), hostProvisioner, hostResourcesCalculator, flagSource);
+    private final DynamicProvisioningMaintainer maintainer =
+            new DynamicProvisioningMaintainer(tester.nodeRepository,
+                                              Duration.ofDays(1),
+                                              hostProvisioner,
+                                              flagSource);
 
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
@@ -212,8 +216,12 @@ public class DynamicProvisioningMaintainerTest {
 
         private final ManualClock clock = new ManualClock();
         private final Zone zone = new Zone(CloudName.from("aws"), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
-        private final NodeRepository nodeRepository = new NodeRepository(
-                nodeFlavors, new MockCurator(), clock, zone, new MockNameResolver().mockAnyLookup(),
+        private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
+                                                                         hostResourcesCalculator,
+                                                                         new MockCurator(),
+                                                                         clock,
+                                                                         zone,
+                                                                         new MockNameResolver().mockAnyLookup(),
                 DockerImage.fromString("docker-image"), true);
 
         Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {
