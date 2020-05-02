@@ -18,12 +18,17 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     private final Flavor nodeFlavor;
     private final int redundancy;
     private final int searchableCopies;
+    private final int threadsPerSearch;
 
 
     public NodeFlavorTuning(Flavor nodeFlavor, int redundancy, int searchableCopies) {
+        this(nodeFlavor, redundancy, searchableCopies, 1);
+    }
+    public NodeFlavorTuning(Flavor nodeFlavor, int redundancy, int searchableCopies, int threadsPerSearch) {
         this.nodeFlavor = nodeFlavor;
         this.redundancy = redundancy;
         this.searchableCopies = searchableCopies;
+        this.threadsPerSearch = threadsPerSearch;
     }
 
     @Override
@@ -108,8 +113,9 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
 
     private void tuneRequestThreads(ProtonConfig.Builder builder) {
         int numCores = (int)Math.ceil(nodeFlavor.getMinCpuCores());
-        builder.numsearcherthreads(numCores);
+        builder.numsearcherthreads(numCores*threadsPerSearch);
         builder.numsummarythreads(numCores);
+        builder.numthreadspersearch(threadsPerSearch);
     }
 
     private void tuneWriteFilter(ProtonConfig.Writefilter.Builder builder) {

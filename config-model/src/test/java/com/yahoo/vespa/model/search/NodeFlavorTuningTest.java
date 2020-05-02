@@ -73,6 +73,15 @@ public class NodeFlavorTuningTest {
         ProtonConfig cfg = configFromNumCoresSetting(4.5);
         assertEquals(5, cfg.numsearcherthreads());
         assertEquals(5, cfg.numsummarythreads());
+        assertEquals(1, cfg.numthreadspersearch());
+    }
+
+    @Test
+    public void require_that_num_search_threads_and_considers_explict_num_threads_per_search() {
+        ProtonConfig cfg = configFromNumCoresSetting(4.5, 3);
+        assertEquals(15, cfg.numsearcherthreads());
+        assertEquals(5, cfg.numsummarythreads());
+        assertEquals(3, cfg.numthreadspersearch());
     }
 
     @Test
@@ -206,6 +215,10 @@ public class NodeFlavorTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
     }
 
+    private static ProtonConfig configFromNumCoresSetting(double numCores, int numThreadsPerSearch) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores), new ProtonConfig.Builder(), 1, 1, numThreadsPerSearch);
+    }
+
     private static ProtonConfig configFromEnvironmentType(boolean docker) {
         String environment = (docker ? "DOCKER_CONTAINER" : "undefined");
         return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment));
@@ -220,6 +233,12 @@ public class NodeFlavorTuningTest {
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies) {
         flavorBuilder.name("my_flavor");
         NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies);
+        tuning.getConfig(protonBuilder);
+        return new ProtonConfig(protonBuilder);
+    }
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies, int numThreadsPerSearch) {
+        flavorBuilder.name("my_flavor");
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies, numThreadsPerSearch);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
