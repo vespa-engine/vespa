@@ -35,7 +35,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final DockerNetworking dockerNetworking;
     private final ZoneApi zone;
     private final FileSystem fileSystem;
-    private final Path root;
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
     private final String vespaUser;
@@ -57,7 +56,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking);
         this.zone = Objects.requireNonNull(zone);
         this.fileSystem = fileSystem;
-        this.root = fileSystem.getPath("/");
         this.pathToNodeRootOnHost = requireValidPath(pathToContainerStorage).resolve(containerName.asString());
         this.pathToVespaHome = requireValidPath(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
@@ -123,7 +121,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         if (! pathInNode.isAbsolute())
             throw new IllegalArgumentException("Expected an absolute path in the container, got: " + pathInNode);
 
-        return pathToNodeRootOnHost.resolve(pathInNode.getRoot().relativize(pathInNode).toString());
+        return pathToNodeRootOnHost.resolve(pathInNode.getRoot().relativize(pathInNode));
     }
 
     @Override
@@ -136,7 +134,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         if (!pathOnHost.startsWith(pathToNodeRootOnHost))
             throw new IllegalArgumentException("Path " + pathOnHost + " does not exist in the container");
 
-        return root.resolve(pathToNodeRootOnHost.relativize(pathOnHost).toString());
+        return pathOnHost.getRoot().resolve(pathToNodeRootOnHost.relativize(pathOnHost));
     }
 
     @Override
@@ -146,7 +144,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         if (relativePath.isAbsolute())
             throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
-        return relativePath.getFileSystem().getPath(pathToVespaHome.resolve(relativePath.toString()).toString());
+        return pathToVespaHome.resolve(relativePath);
     }
 
     @Override
