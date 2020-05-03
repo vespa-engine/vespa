@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.net.InetAddress;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -281,7 +280,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
-        var volumes = new VolumeHelper(context, fileSystem, command);
+        var volumes = new VolumeHelper(context, command);
 
         // Paths unique to each container
         volumes.addPrivateVolumes(
@@ -338,12 +337,10 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static class VolumeHelper {
         private final NodeAgentContext context;
-        private final FileSystem fileSystem;
         private final Docker.CreateContainerCommand command;
 
-        public VolumeHelper(NodeAgentContext context, FileSystem fileSystem, Docker.CreateContainerCommand command) {
+        public VolumeHelper(NodeAgentContext context, Docker.CreateContainerCommand command) {
             this.context = context;
-            this.fileSystem = fileSystem;
             this.command = command;
         }
 
@@ -353,8 +350,8 @@ public class DockerOperationsImpl implements DockerOperations {
          */
         public void addPrivateVolumes(String... pathsInNode) {
             Stream.of(pathsInNode).forEach(pathString -> {
-                Path absolutePathInNode = Paths.get(resolveNodePath(pathString).toString());
-                Path pathOnHost = context.pathOnHostFromPathInNode(absolutePathInNode.toString());
+                Path absolutePathInNode = resolveNodePath(pathString);
+                Path pathOnHost = context.pathOnHostFromPathInNode(absolutePathInNode);
                 Path pathInNode = context.rewritePathInNodeForWantedDockerImage(absolutePathInNode);
                 command.withVolume(pathOnHost, pathInNode);
             });
@@ -369,7 +366,7 @@ public class DockerOperationsImpl implements DockerOperations {
         }
 
         private Path resolveNodePath(String pathString) {
-            Path path = fileSystem.getPath(pathString);
+            Path path = context.fileSystem().getPath(pathString);
             return path.isAbsolute() ? path : context.pathInNodeUnderVespaHome(path);
         }
     }

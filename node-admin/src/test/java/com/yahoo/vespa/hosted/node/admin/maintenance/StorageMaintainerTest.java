@@ -122,7 +122,7 @@ public class StorageMaintainerTest {
 
         private NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
             NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld")
-                    .pathToContainerStorageFromFileSystem(fileSystem).build();
+                    .fileSystem(fileSystem).build();
 
             Path containerVespaHomeOnHost = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(""));
             Files.createDirectories(context.pathOnHostFromPathInNode("/etc/something"));
@@ -159,7 +159,7 @@ public class StorageMaintainerTest {
         private final FileSystem fileSystem = TestFileSystem.create();
         private final NodeAgentContext context = new NodeAgentContextImpl
                 .Builder(NodeSpec.Builder.testSpec("h123a.domain.tld").resources(new NodeResources(1, 1, 1, 1)).build())
-                .pathToContainerStorageFromFileSystem(fileSystem).build();
+                .fileSystem(fileSystem).build();
 
         @Test
         public void not_run_if_not_enough_used() throws IOException {
