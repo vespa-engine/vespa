@@ -303,7 +303,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         }
                     }),
                     fileSystem,
-                    fileSystem.getPath("/home/docker"),
+                    fileSystem.getPath("/home/docker/container-storage"),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
                     Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"),

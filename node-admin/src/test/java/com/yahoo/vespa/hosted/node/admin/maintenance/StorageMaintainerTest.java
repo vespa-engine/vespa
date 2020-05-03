@@ -52,7 +52,7 @@ public class StorageMaintainerTest {
             NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld").fileSystem(fileSystem).build();
             Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
-            terminal.expectCommand("du -xsk /home/docker/host-1 2>&1", 0, "321\t/home/docker/host-1/");
+            terminal.expectCommand("du -xsk /home/docker/container-storage/host-1 2>&1", 0, "321\t/home/docker/container-storage/host-1/");
             assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
 
             // Value should still be cached, no new execution against the terminal
@@ -80,7 +80,7 @@ public class StorageMaintainerTest {
             NodeAgentContext context1 = createNodeAgentContextAndContainerStorage(fileSystem, "container-1");
             createNodeAgentContextAndContainerStorage(fileSystem, "container-2");
 
-            Path pathToArchiveDir = fileSystem.getPath("/home/docker/container-archive");
+            Path pathToArchiveDir = fileSystem.getPath("/home/docker/container-storage/container-archive");
             Files.createDirectories(pathToArchiveDir);
 
             Path containerStorageRoot = context1.pathOnHostFromPathInNode("/").getParent();
@@ -181,7 +181,7 @@ public class StorageMaintainerTest {
         }
 
         private void mockDiskUsage(long kBytes) {
-            terminal.expectCommand("du -xsk /home/docker/h123a 2>&1", 0, kBytes + "\t/path");
+            terminal.expectCommand("du -xsk /home/docker/container-storage/h123a 2>&1", 0, kBytes + "\t/path");
         }
     }
 }
