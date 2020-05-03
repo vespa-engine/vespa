@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/itermdata.h>
+#include "vespa/searchlib/fef/iqueryenvironment.h"
+#include "vespa/searchlib/fef/itermdata.h"
 
 namespace search::features {
 
@@ -15,12 +15,22 @@ namespace search::features {
 class QueryTerm {
 private:
     const fef::ITermData *_termData;
-    fef::TermFieldHandle _handle;
-    feature_t _significance;
-    feature_t _connectedness;
+    fef::TermFieldHandle  _handle;
+    feature_t             _significance;
+    feature_t             _connectedness;
 public:
-    QueryTerm();
-    QueryTerm(const fef::ITermData *td, feature_t sig = 0, feature_t con = 0);
+    QueryTerm()
+        : _termData(nullptr),
+          _handle(fef::IllegalHandle),
+          _significance(0),
+          _connectedness(0)
+    { }
+    QueryTerm(const fef::ITermData *td, feature_t sig = 0, feature_t con = 0)
+        : _termData(td),
+          _handle(fef::IllegalHandle),
+          _significance(sig),
+          _connectedness(con)
+    { }
     const fef::ITermData *termData() const { return _termData; }
     feature_t significance() const { return _significance; }
     feature_t connectedness() const { return _connectedness; }
@@ -36,7 +46,7 @@ public:
 /**
  * Convenience typedef for a vector of QueryTerm objects.
  */
-typedef std::vector<QueryTerm> QueryTermVector;
+using QueryTermVector = std::vector<QueryTerm>;
 
 /**
  * This class is a factory for creating QueryTerm objects.
@@ -51,10 +61,20 @@ public:
      * @param lookupSignificance whether we should look up the significance for this term.
      * @param lookupConnectedness whether we should look up the connectedness this term has with the previous term.
      */
-    static QueryTerm create(const fef::IQueryEnvironment & env,
-                            uint32_t termIndex,
-                            bool lookupSignificance = true,
+    static QueryTerm create(const fef::IQueryEnvironment & env, uint32_t termIndex,
                             bool lookupConnectedness = false);
+};
+
+class QueryTermHelper {
+public:
+    QueryTermHelper(const fef::IQueryEnvironment & env);
+    const QueryTermVector & terms() const { return *_queryTerms; }
+    static const QueryTermVector & lookupAndStoreQueryTerms(const fef::IQueryEnvironment & env, fef::IObjectStore & objectStore);
+private:
+    static const QueryTermVector * lookupQueryTerms(const fef::IQueryEnvironment & env);
+    static QueryTermVector createQueryTermvector(const fef::IQueryEnvironment & env);
+    QueryTermVector         _fallBack;
+    const QueryTermVector * _queryTerms;
 };
 
 }

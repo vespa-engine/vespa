@@ -110,6 +110,8 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
     
     const NativeFieldMatchParams & getParams() const { return _params; }
+
+    void prepareSharedState(const fef::IQueryEnvironment &queryEnv, fef::IObjectStore &objectStore) const override;
 };
 
 }

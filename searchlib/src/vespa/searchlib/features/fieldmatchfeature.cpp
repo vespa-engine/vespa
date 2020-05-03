@@ -2,6 +2,7 @@
 
 #include "fieldmatchfeature.h"
 #include "utils.h"
+#include <vespa/searchlib/features/fieldmatch/computer.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -13,6 +14,24 @@ using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
 
 namespace search::features {
+
+/**
+ * Implements the executor for THE field match feature.
+ */
+class FieldMatchExecutor : public fef::FeatureExecutor {
+private:
+    fef::PhraseSplitter    _splitter;
+    const fef::FieldInfo & _field;
+    fieldmatch::Computer   _cmp;
+
+    void handle_bind_match_data(const fef::MatchData &md) override;
+
+public:
+    FieldMatchExecutor(const fef::IQueryEnvironment & queryEnv,
+                       const fef::FieldInfo & field,
+                       const fieldmatch::Params & params);
+    void execute(uint32_t docId) override;
+};
 
 FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
                                        const FieldInfo & field,
@@ -303,6 +322,13 @@ FeatureExecutor &
 FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     return stash.create<FieldMatchExecutor>(env, *_field, _params);
+}
+
+void FieldMatchBlueprint::prepareSharedState(const IQueryEnvironment &env, IObjectStore & store) const {
+    (void) env;
+    (void) store;
+    //TODO WE need too extract the const and costly parts from PhraseSpiltter and Computer
+    // and initialize it here for later reuse in the multiple search threads.
 }
 
 }

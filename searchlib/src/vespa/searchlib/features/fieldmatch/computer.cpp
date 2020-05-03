@@ -5,7 +5,6 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
-#include <iostream>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -39,7 +38,7 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
     _queryTermFieldMatch.reserve(splitter.getNumTerms());
     _cachedHits.reserve(splitter.getNumTerms());
     for (uint32_t i = 0; i < splitter.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(splitter, i, true, true);
+        QueryTerm qt = QueryTermFactory::create(splitter, i, true);
         _totalTermWeight += qt.termData()->getWeight().percent();
         _totalTermSignificance += qt.significance();
         _simpleMetrics.addQueryTerm(qt.termData()->getWeight().percent());

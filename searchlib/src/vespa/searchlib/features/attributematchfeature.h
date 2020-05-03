@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "queryterm.h"
 #include <vespa/searchlib/fef/blueprint.h>
+#include "queryterm.h"
 
 namespace search::features {
 
@@ -103,6 +103,8 @@ public:
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
 
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    void prepareSharedState(const fef::IQueryEnvironment &queryEnv, fef::IObjectStore &objectStore) const override;
 };
 
 }

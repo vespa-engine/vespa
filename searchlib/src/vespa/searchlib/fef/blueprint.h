@@ -136,6 +136,7 @@ protected:
     static const IAttributeVector *
     lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env);
     static vespalib::string createAttributeKey(vespalib::stringref attrName);
+
 public:
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;

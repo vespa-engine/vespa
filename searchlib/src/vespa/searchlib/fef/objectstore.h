@@ -23,7 +23,7 @@ template<typename T>
 class AnyWrapper : public Anything
 {
 public:
-    AnyWrapper(T value) : _value(value) { }
+    AnyWrapper(T value) : _value(std::move(value)) { }
     const T & getValue() const { return _value; }
 private:
     T _value;

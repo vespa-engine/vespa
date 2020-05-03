@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "metrics.h"
+#include "params.h"
+#include "segmentstart.h"
+#include "simplemetrics.h"
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/features/queryterm.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
-#include <string>
-#include <vector>
-#include "metrics.h"
-#include "params.h"
-#include "segmentstart.h"
-#include "simplemetrics.h"
 
 namespace search::features::fieldmatch {
 
@@ -64,8 +62,8 @@ public:
      * @param fieldInfo         The info object of the matched field.
      * @param params            The parameter object for this computer.
      */
-    Computer(const vespalib::string &propertyNamespace, const search::fef::PhraseSplitter &splitter,
-             const search::fef::FieldInfo &fieldInfo, const Params &params);
+    Computer(const vespalib::string &propertyNamespace, const fef::PhraseSplitter &splitter,
+             const fef::FieldInfo &fieldInfo, const Params &params);
 
     /**
      * Resets this object according to the given document id
@@ -127,7 +125,7 @@ public:
      *
      * @return The query environment.
      */
-    const search::fef::IQueryEnvironment &getQueryEnvironment() const {
+    const fef::IQueryEnvironment &getQueryEnvironment() const {
         return _splitter;
     }
 
@@ -216,7 +214,7 @@ public:
      * @param  The index of the term match to return.
      * @return The term match.
      */
-    const search::fef::TermFieldMatchData *getQueryTermFieldMatch(int term) const {
+    const fef::TermFieldMatchData *getQueryTermFieldMatch(int term) const {
         return _queryTermFieldMatch[term];
     }
 
@@ -323,8 +321,8 @@ private:
 
 
 private:
-    typedef std::shared_ptr<search::BitVector> BitVectorPtr;
-    typedef std::vector<const search::fef::TermFieldMatchData *> TermFieldMatchDataVector;
+    typedef std::shared_ptr<BitVector> BitVectorPtr;
+    typedef std::vector<const fef::TermFieldMatchData *> TermFieldMatchDataVector;
 
     struct SegmentData {
         SegmentData() : segment(), valid(false) {}
@@ -335,7 +333,7 @@ private:
 
     struct BitVectorData {
         BitVectorData() : bitvector(0), valid(false) {}
-        search::AllocatedBitVector bitvector;
+        AllocatedBitVector bitvector;
         bool valid;
     };
 

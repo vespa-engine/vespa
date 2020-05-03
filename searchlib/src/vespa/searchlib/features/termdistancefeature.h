@@ -24,9 +24,9 @@ struct TermDistanceParams {
 class TermDistanceExecutor : public fef::FeatureExecutor
 {
 private:
-    QueryTerm                  _termA;
-    QueryTerm                  _termB;
-    const fef::MatchData      *_md;
+    QueryTerm        _termA;
+    QueryTerm        _termB;
+    const fef::MatchData *_md;
 
     virtual void handle_bind_match_data(const fef::MatchData &md) override;
 
