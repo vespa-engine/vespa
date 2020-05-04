@@ -26,7 +26,7 @@ disk_operation_timeout int default=0 restart
 ## Number of threads to use for each mountpoint.
 num_threads int default=8 restart
 
-## Number of thread for response processing and delivery
+## Number of threads for response processing and delivery
 ## 0 will give legacy sync behavior.
 ## Negative number will choose a good number based on # cores.
 num_response_threads int default=0

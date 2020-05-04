@@ -166,31 +166,32 @@ PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, Messa
 }
 
 MessageTracker::UP
-PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP tracker)
+PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
 {
+    MessageTracker & tracker = *trackerUP;
     auto& metrics = _env._metrics.put[cmd.getLoadType()];
-    tracker->setMetric(metrics);
+    tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context())) {
-        return tracker;
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+        return trackerUP;
     }
 
     if (_sequencedExecutor == nullptr) {
         spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                                         spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),
-                                        tracker->context());
-        tracker->checkForError(response);
+                                        tracker.context());
+        tracker.checkForError(response);
     } else {
         _spi.putAsync(getBucket(cmd.getDocumentId(), cmd.getBucket()), spi::Timestamp(cmd.getTimestamp()),
-                      std::move(cmd.getDocument()), tracker->context(),
+                      std::move(cmd.getDocument()), tracker.context(),
                       std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(),
-                              makeResultTask([tracker = std::move(tracker)](spi::Result::UP response) {
+                              makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
                                   tracker->checkForError(*response);
                                   tracker->sendReply();
                               })));
     }
-    return tracker;
+    return trackerUP;
 }
 
 MessageTracker::UP
