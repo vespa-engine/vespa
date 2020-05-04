@@ -212,11 +212,11 @@ public class Curator implements AutoCloseable {
     }
 
     public CompletionWaiter getCompletionWaiter(Path waiterPath, int numMembers, String id) {
-        return CuratorCompletionWaiter.create(curatorFramework, waiterPath, numMembers, id);
+        return CuratorCompletionWaiter.create(this, waiterPath, id);
     }
 
     public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, int numMembers, String id) {
-        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, numMembers, id);
+        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, id);
     }
 
     /** Creates a listenable cache which keeps in sync with changes to all the immediate children of a path */

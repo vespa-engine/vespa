@@ -17,8 +17,8 @@ public class CuratorCompletionWaiterTest {
     @Test
     public void testCompletionWaiter() throws InterruptedException {
         Curator curator = new MockCurator();
-        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", 1, "foo");
-        Curator.CompletionWaiter notifier = CuratorCompletionWaiter.create(curator.framework(), Path.fromString("/foo"), 1, "bar");
+        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo");
+        Curator.CompletionWaiter notifier = CuratorCompletionWaiter.create(curator, Path.fromString("/foo"), "bar");
         Thread t1 = new Thread(() -> {
             try {
                 waiter.awaitCompletion(Duration.ofSeconds(120));
@@ -34,7 +34,7 @@ public class CuratorCompletionWaiterTest {
     @Test(expected = CompletionTimeoutException.class)
     public void testCompletionWaiterFailure() {
         Curator curator = new MockCurator();
-        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", 1, "foo");
+        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo");
         waiter.awaitCompletion(Duration.ofMillis(100));
     }
 }

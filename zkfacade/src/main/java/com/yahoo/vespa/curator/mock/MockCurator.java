@@ -341,6 +341,9 @@ public class MockCurator extends Curator {
         return new MockFileCache(Path.fromString(path));
     }
 
+    @Override
+    public int zooKeeperEnsembleCount() { return 1; }
+
     /**
      * Invocation of changes to the file system state is abstracted through this to allow transactional
      * changes to notify on commit

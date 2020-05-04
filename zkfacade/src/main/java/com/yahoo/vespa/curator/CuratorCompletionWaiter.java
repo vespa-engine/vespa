@@ -3,7 +3,6 @@ package com.yahoo.vespa.curator;
 
 import java.util.logging.Level;
 import com.yahoo.path.Path;
-import org.apache.curator.framework.CuratorFramework;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -21,14 +20,12 @@ import java.util.List;
 class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CuratorCompletionWaiter.class.getName());
-    private final CuratorFramework curator;
+    private final Curator curator;
     private final String barrierPath;
     private final String myId;
-    private final int memberQty;
     private final Clock clock;
 
-    CuratorCompletionWaiter(int barrierMembers, CuratorFramework curator, String barrierPath, String myId, Clock clock) {
-        this.memberQty = barrierMembers;
+    CuratorCompletionWaiter(Curator curator, String barrierPath, String myId, Clock clock) {
         this.myId = barrierPath + "/" + myId;
         this.curator = curator;
         this.barrierPath = barrierPath;
@@ -45,27 +42,51 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        if (respondents.size() < memberQty) {
+        if (respondents.size() < barrierMemberCount()) {
             throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation. " +
-                                                         "Got response from " + respondents + ", but need response from " +
-                                                         "at least " + memberQty + " server(s). " +
-                                                         "Timeout passed as argument was " + timeout.toMillis() + " ms");
+                                                 "Got response from " + respondents + ", but need response from " +
+                                                 "at least " + barrierMemberCount() + " server(s). " +
+                                                 "Timeout passed as argument was " + timeout.toMillis() + " ms");
         }
     }
 
     private List<String> awaitInternal(Duration timeout) throws Exception {
-        Instant endTime = clock.instant().plus(timeout);
+        Instant startTime = clock.instant();
+        Instant endTime = startTime.plus(timeout);
         List<String> respondents;
         do {
-            respondents = curator.getChildren().forPath(barrierPath);
-            if (respondents.size() >= memberQty) {
+            respondents = curator.framework().getChildren().forPath(barrierPath);
+
+            // First, check if all config servers responded
+            if (respondents.size() == curator.zooKeeperEnsembleCount()) {
+                log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
                 break;
             }
+            // Then, if some are missing after 2 seconds, allow if the server this code is running on is one of the repondents
+            if (usedMoreTimeThan(Duration.ofSeconds(2), startTime) && respondents.contains(myId) && respondents.size() >= barrierMemberCount()) {
+                log.log(Level.INFO, barrierCompletedMessage(respondents, startTime));
+                break;
+            }
+            // If some are still missing after 4 seconds, quorum is enough
+            if (usedMoreTimeThan(Duration.ofSeconds(4), startTime) && respondents.size() >= barrierMemberCount()) {
+                log.log(Level.INFO, barrierCompletedMessage(respondents, startTime));
+                break;
+            }
+
             Thread.sleep(100);
         } while (clock.instant().isBefore(endTime));
+
         return respondents;
     }
 
+    private boolean usedMoreTimeThan(Duration waitTime, Instant startTime) {
+        return clock.instant().isAfter(startTime.plus(waitTime));
+    }
+
+    private String barrierCompletedMessage(List<String> respondents, Instant startTime) {
+        return barrierPath + " completed in " + Duration.between(startTime, Instant.now()).toString() +
+               ", " + respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " + respondents;
+    }
 
     @Override
     public void notifyCompletion() {
@@ -77,22 +98,27 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     }
 
     private void notifyInternal() throws Exception {
-        curator.create().forPath(myId);
+        curator.framework().create().forPath(myId);
     }
 
     @Override
     public String toString() {
-        return "'" + barrierPath + "', " + memberQty + " members";
+        return "'" + barrierPath + "', " + barrierMemberCount() + " members";
     }
 
-    public static Curator.CompletionWaiter create(CuratorFramework curator, Path barrierPath, int numMembers, String id) {
-        return new CuratorCompletionWaiter(numMembers, curator, barrierPath.getAbsolute(), id, Clock.systemUTC());
+    public static Curator.CompletionWaiter create(Curator curator, Path barrierPath, String id) {
+        return new CuratorCompletionWaiter(curator, barrierPath.getAbsolute(), id, Clock.systemUTC());
     }
 
-    public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, int numMembers, String id) {
+    public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id) {
         Path waiterPath = parentPath.append(waiterNode);
         curator.delete(waiterPath);
         curator.createAtomically(parentPath, waiterPath);
-        return new CuratorCompletionWaiter(numMembers, curator.framework(), waiterPath.getAbsolute(), id, Clock.systemUTC());
+        return new CuratorCompletionWaiter(curator, waiterPath.getAbsolute(), id, Clock.systemUTC());
     }
+
+    private int barrierMemberCount() {
+        return (curator.zooKeeperEnsembleCount() / 2) + 1; // majority
+    }
+
 }
