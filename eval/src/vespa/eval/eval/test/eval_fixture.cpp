@@ -3,6 +3,9 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "eval_fixture.h"
 #include <vespa/eval/eval/make_tensor_function.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+using vespalib::make_string_short::fmt;
 
 namespace vespalib::eval::test {
 
@@ -96,7 +99,70 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
     return result;
 }
 
+void add_cell_values(TensorSpec &spec, TensorSpec::Address &addr,
+                     const std::vector<std::pair<vespalib::string, size_t> > &dims,
+                     size_t idx, size_t &seq)
+{
+    if (idx < dims.size()) {
+        for (size_t i = 0; i < dims[idx].second; ++i) {
+            addr.emplace(dims[idx].first, TensorSpec::Label(i)).first->second = TensorSpec::Label(i);
+            add_cell_values(spec, addr, dims, idx + 1, seq);
+        }
+    } else {
+        spec.add(addr, seq++);
+    }
+}
+
+TensorSpec make_dense(const vespalib::string &type,
+                      const std::vector<std::pair<vespalib::string, size_t> > &dims,
+                      size_t seed)
+{
+    TensorSpec spec(type);
+    TensorSpec::Address addr;
+    size_t seq = seed;
+    add_cell_values(spec, addr, dims, 0, seq);
+    return spec;
+}
+
 } // namespace vespalib::eval::test
+
+ParamRepo &
+EvalFixture::ParamRepo::add_vector(const char *d1, size_t s1, size_t seed)
+{
+    return add_dense({{d1, s1}}, seed);
+}
+
+ParamRepo &
+EvalFixture::ParamRepo::add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, size_t seed)
+{
+    return add_dense({{d1, s1}, {d2, s2}}, seed);
+}
+
+ParamRepo &
+EvalFixture::ParamRepo::add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, size_t seed)
+{
+    return add_dense({{d1, s1}, {d2, s2}, {d3, s3}}, seed);
+}
+
+ParamRepo &
+EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, size_t seed)
+{
+    vespalib::string prev;
+    vespalib::string name;
+    vespalib::string type;
+    for (const auto &dim: dims) {
+        if (!prev.empty()) {
+            ASSERT_LESS(prev, dim.first);
+            type += ",";
+        }
+        name += fmt("%s%zu", dim.first.c_str(), dim.second);
+        type += fmt("%s[%zu]", dim.first.c_str(), dim.second);
+        prev = dim.first;
+    }
+    add(name, make_dense(fmt("tensor(%s)", type.c_str()), dims, seed));
+    add(name + "f", make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, seed));
+    return *this;
+}
 
 void
 EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const
