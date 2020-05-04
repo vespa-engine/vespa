@@ -13,7 +13,6 @@
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
-#include <vespa/storage/bucketmover/bucketmover.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/persistence/spi/exceptions.h>
@@ -241,7 +240,6 @@ ServiceLayerNode::createChain()
     auto* merge_throttler = new MergeThrottler(_configUri, compReg);
     chain->push_back(StorageLink::UP(merge_throttler));
     chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
-    chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new StorageBucketDBInitializer(
             _configUri, _partitions, getDoneInitializeHandler(), compReg)));
     chain->push_back(StorageLink::UP(new BucketManager(_configUri, _context.getComponentRegister())));

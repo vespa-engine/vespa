@@ -5,9 +5,9 @@
 #include "diskthread.h"
 #include "processallhandler.h"
 #include "mergehandler.h"
-#include "diskmoveoperationhandler.h"
 #include "persistenceutil.h"
 #include "provider_error_wrapper.h"
+#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 
@@ -52,7 +52,6 @@ private:
     spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
-    DiskMoveOperationHandler  _diskMoveHandler;
     ServiceLayerComponent::UP _component;
     framework::Thread::UP     _thread;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;

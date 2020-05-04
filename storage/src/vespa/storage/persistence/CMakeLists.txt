@@ -3,7 +3,6 @@ vespa_add_library(storage_spersistence OBJECT
     SOURCES
     bucketownershipnotifier.cpp
     bucketprocessor.cpp
-    diskmoveoperationhandler.cpp
     fieldvisitor.cpp
     mergehandler.cpp
     messages.cpp

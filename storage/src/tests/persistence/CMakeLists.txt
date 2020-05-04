@@ -3,7 +3,6 @@
 vespa_add_executable(storage_persistence_gtest_runner_app TEST
     SOURCES
     bucketownershipnotifiertest.cpp
-    diskmoveoperationhandlertest.cpp
     mergehandlertest.cpp
     persistencequeuetest.cpp
     persistencetestutils.cpp

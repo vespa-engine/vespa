@@ -106,60 +106,6 @@ std::unique_ptr<api::StorageReply> ReadBucketInfo::makeReply() {
     return std::make_unique<ReadBucketInfoReply>(*this);
 }
 
-BucketDiskMoveCommand::BucketDiskMoveCommand(const document::Bucket &bucket,
-                                             uint16_t srcDisk, uint16_t dstDisk)
-    : api::InternalCommand(ID),
-      _bucket(bucket),
-      _srcDisk(srcDisk),
-      _dstDisk(dstDisk)
-{
-    setPriority(LOW);
-}
-
-BucketDiskMoveCommand::~BucketDiskMoveCommand() = default;
-
-void
-BucketDiskMoveCommand::setBucketId(const document::BucketId& id)
-{
-    document::Bucket newBucket(_bucket.getBucketSpace(), id);
-    _bucket = newBucket;
-}
-
-void
-BucketDiskMoveCommand::print(std::ostream& out, bool, const std::string&) const {
-    out << "BucketDiskMoveCommand(" << _bucket.getBucketId() << ", source " << _srcDisk
-        << ", target " << _dstDisk << ")";
-}
-
-BucketDiskMoveReply::BucketDiskMoveReply(const BucketDiskMoveCommand& cmd,
-                                        const api::BucketInfo& bucketInfo,
-                                        uint32_t sourceFileSize,
-                                        uint32_t destinationFileSize)
-    : api::InternalReply(ID, cmd),
-      _bucket(cmd.getBucket()),
-      _bucketInfo(bucketInfo),
-      _fileSizeOnSrc(sourceFileSize),
-      _fileSizeOnDst(destinationFileSize),
-      _srcDisk(cmd.getSrcDisk()),
-      _dstDisk(cmd.getDstDisk())
-{ }
-
-BucketDiskMoveReply::~BucketDiskMoveReply() = default;
-
-void
-BucketDiskMoveReply::print(std::ostream& out, bool, const std::string&) const
-{
-    out << "BucketDiskMoveReply(" << _bucket.getBucketId() << ", source " << _srcDisk
-        << ", target " << _dstDisk << ", " << _bucketInfo << ", " << getResult() << ")";
-}
-
-std::unique_ptr<api::StorageReply>
-BucketDiskMoveCommand::makeReply()
-{
-    return std::make_unique<BucketDiskMoveReply>(*this);
-}
-
-
 InternalBucketJoinCommand::InternalBucketJoinCommand(const document::Bucket &bucket,
                                                      uint16_t keepOnDisk, uint16_t joinFromDisk)
     : api::InternalCommand(ID),
