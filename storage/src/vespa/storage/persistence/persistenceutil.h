@@ -13,7 +13,7 @@
 
 namespace storage {
 
-class PersistenceUtil;
+struct PersistenceUtil;
 
 class MessageTracker : protected Types {
 public:
