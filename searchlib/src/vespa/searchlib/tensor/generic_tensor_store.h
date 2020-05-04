@@ -18,11 +18,11 @@ namespace tensor {
 class GenericTensorStore : public TensorStore
 {
 public:
-    using RefType = datastore::AlignedEntryRefT<22, 2>;
-    using DataStoreType = datastore::DataStoreT<RefType>;
+    using RefType = vespalib::datastore::AlignedEntryRefT<22, 2>;
+    using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
 private:
     DataStoreType _concreteStore;
-    datastore::BufferType<char> _bufferType;
+    vespalib::datastore::BufferType<char> _bufferType;
 public:
     GenericTensorStore();
 
@@ -30,7 +30,7 @@ public:
 
     std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
 
-    datastore::Handle<char> allocRawBuffer(uint32_t size);
+    vespalib::datastore::Handle<char> allocRawBuffer(uint32_t size);
 
     virtual void holdTensor(EntryRef ref) override;
 

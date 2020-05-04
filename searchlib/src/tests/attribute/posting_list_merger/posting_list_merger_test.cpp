@@ -5,7 +5,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 
-using search::btree::BTreeNoLeafData;
+using vespalib::btree::BTreeNoLeafData;
 using search::attribute::PostingListMerger;
 
 struct Posting {

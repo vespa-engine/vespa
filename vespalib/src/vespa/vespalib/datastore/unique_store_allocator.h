@@ -8,7 +8,7 @@
 #include "unique_store_entry.h"
 #include "i_compactable.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Allocator for unique values of type EntryT that is accessed via a

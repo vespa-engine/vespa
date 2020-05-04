@@ -15,7 +15,7 @@ namespace search::attribute {
 template <typename DataT>
 class PostingListMerger
 {
-    using Posting = btree::BTreeKeyData<uint32_t, DataT>;
+    using Posting = vespalib::btree::BTreeKeyData<uint32_t, DataT>;
     using PostingVector = std::vector<Posting>;
     using StartVector = std::vector<size_t>;
 

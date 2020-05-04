@@ -10,7 +10,7 @@
 #include <deque>
 #include <atomic>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Abstract class used to store data of potential different types in underlying memory buffers.

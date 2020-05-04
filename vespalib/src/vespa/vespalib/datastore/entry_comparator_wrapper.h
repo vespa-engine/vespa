@@ -4,7 +4,7 @@
 
 #include "entry_comparator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /*
  * Copyable comparator wrapper.

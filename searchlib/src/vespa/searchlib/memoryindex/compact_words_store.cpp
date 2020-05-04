@@ -44,7 +44,7 @@ CompactWordsStore::Builder::Builder(uint32_t docId_)
 CompactWordsStore::Builder::~Builder() { }
 
 CompactWordsStore::Builder &
-CompactWordsStore::Builder::insert(datastore::EntryRef wordRef)
+CompactWordsStore::Builder::insert(vespalib::datastore::EntryRef wordRef)
 {
     _words.push_back(wordRef);
     return *this;
@@ -106,7 +106,7 @@ CompactWordsStore::Store::~Store()
     _store.dropBuffers();
 }
 
-datastore::EntryRef
+vespalib::datastore::EntryRef
 CompactWordsStore::Store::insert(const Builder &builder)
 {
     size_t serializedSize = getSerializedSize(builder);
@@ -119,7 +119,7 @@ CompactWordsStore::Store::insert(const Builder &builder)
 }
 
 CompactWordsStore::Iterator
-CompactWordsStore::Store::get(datastore::EntryRef wordRef) const
+CompactWordsStore::Store::get(vespalib::datastore::EntryRef wordRef) const
 {
     RefType internalRef(wordRef);
     const uint32_t *buf = _store.getEntry<uint32_t>(internalRef);
@@ -136,7 +136,7 @@ CompactWordsStore::~CompactWordsStore() { }
 void
 CompactWordsStore::insert(const Builder &builder)
 {
-    datastore::EntryRef wordRef = _wordsStore.insert(builder);
+    vespalib::datastore::EntryRef wordRef = _wordsStore.insert(builder);
     auto insres = _docs.insert(std::make_pair(builder.docId(), wordRef));
     if (!insres.second) {
         LOG(error, "Failed inserting remove info for docid %u",

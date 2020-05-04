@@ -36,7 +36,7 @@ using search::SerialNum;
 using search::TuneFileAttributes;
 using search::TuneFileIndexManager;
 using search::TuneFileIndexing;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 using search::index::DocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::FieldLengthInfo;

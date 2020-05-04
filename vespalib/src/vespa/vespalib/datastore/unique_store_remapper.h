@@ -5,7 +5,7 @@
 #include "entryref.h"
 #include <vector>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Remapper for related UniqueStore class, used for adjusting

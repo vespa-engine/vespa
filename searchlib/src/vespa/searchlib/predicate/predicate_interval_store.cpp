@@ -4,8 +4,8 @@
 #include "predicate_interval.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 
-using search::datastore::BufferState;
-using search::datastore::EntryRef;
+using vespalib::datastore::BufferState;
+using vespalib::datastore::EntryRef;
 using std::vector;
 
 namespace search::predicate {

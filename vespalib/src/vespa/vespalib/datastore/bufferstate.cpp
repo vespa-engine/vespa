@@ -6,7 +6,7 @@
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 BufferState::FreeListList::~FreeListList()
 {

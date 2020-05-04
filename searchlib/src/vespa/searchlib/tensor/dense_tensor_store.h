@@ -17,8 +17,8 @@ namespace search::tensor {
 class DenseTensorStore : public TensorStore
 {
 public:
-    using RefType = datastore::EntryRefT<22>;
-    using DataStoreType = datastore::DataStoreT<RefType>;
+    using RefType = vespalib::datastore::EntryRefT<22>;
+    using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 
     struct TensorSizeCalc
@@ -31,9 +31,9 @@ public:
         size_t alignedSize() const;
     };
 
-    class BufferType : public datastore::BufferType<char>
+    class BufferType : public vespalib::datastore::BufferType<char>
     {
-        using CleanContext = datastore::BufferType<char>::CleanContext;
+        using CleanContext = vespalib::datastore::BufferType<char>::CleanContext;
     public:
         BufferType(const TensorSizeCalc &tensorSizeCalc);
         ~BufferType() override;
@@ -61,7 +61,7 @@ public:
     uint32_t getCellSize() const { return _tensorSizeCalc._cellSize; }
     size_t getBufSize() const { return _tensorSizeCalc.bufSize(); }
     const void *getRawBuffer(RefType ref) const;
-    datastore::Handle<char> allocRawBuffer();
+    vespalib::datastore::Handle<char> allocRawBuffer();
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;

@@ -9,7 +9,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
 
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
 using std::vector;
 
@@ -32,7 +32,7 @@ void PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex
     for (const auto &map_entry : interval_map) {
         uint64_t feature = map_entry.first;
         const auto &interval_list = map_entry.second;
-        datastore::EntryRef ref = _interval_store.insert(interval_list);
+        vespalib::datastore::EntryRef ref = _interval_store.insert(interval_list);
         assert(ref.valid());
         addPosting<IntervalT>(feature, doc_id, ref);
         _cache.set(feature, doc_id, true);
@@ -114,7 +114,7 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
     for (size_t i = 0; i < zero_constraint_doc_count; ++i) {
         uint32_t raw_id = buffer.readInt32();
         uint32_t doc_id = version == 0 ? raw_id >> 6 : raw_id;
-        builder.insert(doc_id, btree::BTreeNoLeafData::_instance);
+        builder.insert(doc_id, vespalib::btree::BTreeNoLeafData::_instance);
         observer.notifyInsert(0, doc_id, 0);
     }
     _zero_constraint_docs.assign(builder);
@@ -154,12 +154,12 @@ void PredicateIndex::indexDocument(uint32_t doc_id, const PredicateTreeAnnotatio
 
 void PredicateIndex::indexEmptyDocument(uint32_t doc_id)
 {
-    _zero_constraint_docs.insert(doc_id, btree::BTreeNoLeafData::_instance);
+    _zero_constraint_docs.insert(doc_id, vespalib::btree::BTreeNoLeafData::_instance);
 }
 
 namespace {
 void removeFromIndex(
-        uint64_t feature, uint32_t doc_id, SimpleIndex<datastore::EntryRef> &index, PredicateIntervalStore &interval_store)
+        uint64_t feature, uint32_t doc_id, SimpleIndex<vespalib::datastore::EntryRef> &index, PredicateIntervalStore &interval_store)
 {
     auto result = index.removeFromPostingList(feature, doc_id);
     if (result.second) { // Posting was removed
@@ -171,7 +171,7 @@ void removeFromIndex(
 
 class DocIdIterator : public PopulateInterface::Iterator {
 public:
-    using BTreeIterator = SimpleIndex<datastore::EntryRef>::BTreeIterator;
+    using BTreeIterator = SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
 
     DocIdIterator(BTreeIterator it) : _it(it) { }
     int32_t getNext() override {

@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class NoAggregated
 {

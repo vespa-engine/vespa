@@ -36,7 +36,7 @@ using search::IAttributeSaveTarget;
 using search::LidUsageStats;
 using search::attribute::LoadUtils;
 using search::attribute::SearchContextParams;
-using search::btree::BTreeNoLeafData;
+using vespalib::btree::BTreeNoLeafData;
 using search::fef::TermFieldMatchData;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
@@ -1095,7 +1095,7 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
 
 }  // namespace proton
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeIteratorBase<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS, BTreeDefaultTraits::PATH_SIZE>;
 

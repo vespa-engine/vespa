@@ -5,7 +5,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cassert>
 
-namespace search::datastore::test {
+namespace vespalib::datastore::test {
 
 /*
  * Class representing expected memory stats in unit tests.

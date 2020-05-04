@@ -7,7 +7,7 @@
 #include "datastore.h"
 #include <cmath>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Helper class for comparing elements in unique store. 

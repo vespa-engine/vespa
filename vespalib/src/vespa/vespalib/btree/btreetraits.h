@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <size_t LS, size_t IS, size_t PS, bool BS>
 struct BTreeTraits {

@@ -11,7 +11,7 @@ namespace search::attribute {
  * Class representing a single reference in a reference attribute.
  */
 class Reference {
-    using EntryRef = search::datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     GlobalId _gid;
     mutable uint32_t _lid;  // target lid

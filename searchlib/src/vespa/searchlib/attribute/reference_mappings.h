@@ -16,14 +16,14 @@ class Reference;
 class ReferenceMappings
 {
     using GenerationHolder = vespalib::GenerationHolder;
-    using EntryRef = search::datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     // Classes used to map from target lid to source lids
     using ReverseMappingIndices = vespalib::RcuVectorBase<EntryRef>;
-    using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
-                                             btree::NoAggregated,
+    using ReverseMapping = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData,
+                                             vespalib::btree::NoAggregated,
                                              std::less<uint32_t>,
-                                             btree::BTreeDefaultTraits,
-                                             btree::NoAggrCalc>;
+                                             vespalib::btree::BTreeDefaultTraits,
+                                             vespalib::btree::NoAggrCalc>;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     // Vector containing references to trees of lids referencing given

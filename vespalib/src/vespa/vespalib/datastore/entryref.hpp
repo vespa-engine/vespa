@@ -5,7 +5,7 @@
 #include "entryref.h"
 #include <vespa/vespalib/util/assert.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <uint32_t OffsetBits, uint32_t BufferBits>
 EntryRefT<OffsetBits, BufferBits>::EntryRefT(size_t offset_, uint32_t bufferId_) :

@@ -81,7 +81,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings)
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings,
                                                      (has_string_type() ?
                                                       std::make_unique<FoldedComparatorType>(_store.get_data_store()) :
-                                                      std::unique_ptr<datastore::EntryComparator>())));
+                                                      std::unique_ptr<vespalib::datastore::EntryComparator>())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
 }
 

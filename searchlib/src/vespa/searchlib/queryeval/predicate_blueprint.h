@@ -19,13 +19,13 @@ namespace search::queryeval {
 class PredicateBlueprint : public ComplexLeafBlueprint {
 public:
     struct IntervalEntry {
-        datastore::EntryRef entry_ref;
+        vespalib::datastore::EntryRef entry_ref;
         uint64_t subquery;
         size_t   size;
         uint64_t feature;
     };
     struct BoundsEntry {
-        datastore::EntryRef entry_ref;
+        vespalib::datastore::EntryRef entry_ref;
         uint32_t value_diff;
         uint64_t subquery;
         size_t   size;
@@ -53,8 +53,8 @@ public:
     createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
                      bool strict) const override;
 private:
-    using BTreeIterator = predicate::SimpleIndex<datastore::EntryRef>::BTreeIterator;
-    using VectorIterator = predicate::SimpleIndex<datastore::EntryRef>::VectorIterator;
+    using BTreeIterator = predicate::SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
+    using VectorIterator = predicate::SimpleIndex<vespalib::datastore::EntryRef>::VectorIterator;
     template <typename T>
     using optional = std::optional<T>;
     using Alloc = vespalib::alloc::Alloc;
@@ -78,7 +78,7 @@ private:
 
     std::vector<IntervalEntry> _interval_dict_entries;
     std::vector<BoundsEntry> _bounds_dict_entries;
-    datastore::EntryRef _zstar_dict_entry;
+    vespalib::datastore::EntryRef _zstar_dict_entry;
 
     std::vector<IntervalIteratorEntry<BTreeIterator>> _interval_btree_iterators;
     std::vector<IntervalIteratorEntry<VectorIterator>> _interval_vector_iterators;

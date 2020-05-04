@@ -5,7 +5,7 @@
 #include "btreenodestore.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename EntryType>
 void

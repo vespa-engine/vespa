@@ -54,7 +54,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
                     auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
                     _frozenRoot = frozenView.getRoot();
                     if (!_frozenRoot.valid()) {
-                        _pidx = datastore::EntryRef();
+                        _pidx = vespalib::datastore::EntryRef();
                     }
                 } else {
                     _gbv = bv; 
@@ -64,7 +64,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
             auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
             _frozenRoot = frozenView.getRoot();
             if (!_frozenRoot.valid()) {
-                _pidx = datastore::EntryRef();
+                _pidx = vespalib::datastore::EntryRef();
             }
         }
     }
@@ -92,7 +92,7 @@ PostingListSearchContextT<DataT>::fillArray()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
-                                                                 datastore::EntryRef(it.getData())));
+                                                                 vespalib::datastore::EntryRef(it.getData())));
         }
     }
     _merger.merge();
@@ -106,7 +106,7 @@ PostingListSearchContextT<DataT>::fillBitVector()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
-                                                                     datastore::EntryRef(it.getData())));
+                                                                     vespalib::datastore::EntryRef(it.getData())));
         }
     }
 }

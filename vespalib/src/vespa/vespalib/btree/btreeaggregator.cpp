@@ -3,7 +3,7 @@
 #include "btreeaggregator.hpp"
 #include "minmaxaggrcalc.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeAggregator<uint32_t, uint32_t>;
 template class BTreeAggregator<uint32_t, BTreeNoLeafData>;

@@ -9,7 +9,7 @@
 #include "raw_allocator.hpp"
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()

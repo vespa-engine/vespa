@@ -24,7 +24,7 @@ void log_debug(vespalib::string &str) {
 
 } // namespace simpleindex
 
-template class SimpleIndex<datastore::EntryRef>;
+template class SimpleIndex<vespalib::datastore::EntryRef>;
 
 }
 

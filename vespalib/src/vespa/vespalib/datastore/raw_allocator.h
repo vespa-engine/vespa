@@ -6,7 +6,7 @@
 #include "entryref.h"
 #include "handle.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Allocator used to allocate raw buffers (EntryT *) in an underlying data store

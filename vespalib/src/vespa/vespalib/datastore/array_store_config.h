@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Config specifying layout and buffer allocation strategy for an array store.

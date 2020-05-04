@@ -9,7 +9,7 @@ LOG_SETUP(".searchlib.datastore.datastorebase");
 
 using vespalib::GenerationHeldBase;
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 namespace {
 

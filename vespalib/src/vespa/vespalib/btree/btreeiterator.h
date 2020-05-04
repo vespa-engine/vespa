@@ -7,7 +7,7 @@
 #include "btreetraits.h"
 #include <vespa/fastos/dynamiclibrary.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, typename, typename, class>
 class BTreeInserter;

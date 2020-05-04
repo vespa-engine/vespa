@@ -6,7 +6,7 @@
 namespace search::attribute {
 
 using queryeval::SearchIterator;
-using btree::BTreeNode;
+using vespalib::btree::BTreeNode;
 using fef::TermFieldMatchData;
 
 EnumHintSearchContext::
@@ -25,15 +25,15 @@ EnumHintSearchContext::~EnumHintSearchContext() = default;
 
 
 void
-EnumHintSearchContext::lookupTerm(const datastore::EntryComparator &comp)
+EnumHintSearchContext::lookupTerm(const vespalib::datastore::EntryComparator &comp)
 {
     _uniqueValues = _dict_snapshot->count(comp);
 }
 
 
 void
-EnumHintSearchContext::lookupRange(const datastore::EntryComparator &low,
-                                   const datastore::EntryComparator &high)
+EnumHintSearchContext::lookupRange(const vespalib::datastore::EntryComparator &low,
+                                   const vespalib::datastore::EntryComparator &high)
 {
     _uniqueValues = _dict_snapshot->count_in_range(low, high);
 }

@@ -8,7 +8,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 using vespalib::alloc::MemoryAllocator;
 

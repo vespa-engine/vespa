@@ -8,8 +8,8 @@
 
 namespace search::enumstore {
 
-using Index = datastore::EntryRef;
-using InternalIndex = datastore::EntryRefT<22>;
+using Index = vespalib::datastore::EntryRef;
+using InternalIndex = vespalib::datastore::EntryRefT<22>;
 using IndexVector = vespalib::Array<Index>;
 using EnumHandle = attribute::IAttributeVector::EnumHandle;
 using EnumVector = vespalib::Array<uint32_t>;

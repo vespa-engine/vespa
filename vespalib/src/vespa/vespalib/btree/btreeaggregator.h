@@ -7,7 +7,7 @@
 #include "btreetraits.h"
 #include "noaggrcalc.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,

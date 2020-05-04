@@ -88,7 +88,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 {
     const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
     const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
-    DictionaryConstIterator dictItr(btree::BTreeNode::Ref(), dictionary.getAllocator());
+    DictionaryConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
 
     char *end = nullptr;
     int64_t int_term = strtoll(term.c_str(), &end, 10);
@@ -97,7 +97,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 
         dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
         if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
-            datastore::EntryRef pidx(dictItr.getData());
+            vespalib::datastore::EntryRef pidx(dictItr.getData());
             if (pidx.valid()) {
                 const PostingList &plist = self.getPostingList();
                 auto minmax = plist.getAggregated(pidx);
@@ -110,7 +110,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
 {
     assert(idx.valid());
     self.getPostingList().beginFrozen(idx, dst);
@@ -118,7 +118,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(
 
 template <typename B, typename M>
 DocumentWeightIterator
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx) const
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx) const
 {
     assert(idx.valid());
     return self.getPostingList().beginFrozen(idx);

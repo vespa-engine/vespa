@@ -6,7 +6,7 @@
 #include "btreenodeallocator.h"
 #include <vespa/vespalib/datastore/datastore.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeNodeStore<uint32_t, uint32_t, NoAggregated,
                               BTreeDefaultTraits::INTERNAL_SLOTS,

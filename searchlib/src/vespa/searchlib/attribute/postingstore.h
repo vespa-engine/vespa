@@ -19,7 +19,7 @@ class Config;
 class BitVectorEntry
 {
 public:
-    datastore::EntryRef _tree; // Daisy chained reference to tree based posting list
+    vespalib::datastore::EntryRef _tree; // Daisy chained reference to tree based posting list
     std::shared_ptr<GrowableBitVector> _bv; // bitvector
 
 public:
@@ -61,7 +61,7 @@ template <typename DataT>
 class PostingStore : public PostingListTraits<DataT>::PostingStoreBase,
     public PostingStoreBase2
 {
-    datastore::BufferType<BitVectorEntry> _bvType;
+    vespalib::datastore::BufferType<BitVectorEntry> _bvType;
 public:
     typedef DataT DataType;
     typedef typename PostingListTraits<DataT>::PostingStoreBase Parent;
@@ -75,7 +75,7 @@ public:
     typedef typename Parent::AggregatedType AggregatedType;
     typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
     typedef typename Parent::Builder Builder;
-    typedef datastore::EntryRef EntryRef;
+    typedef vespalib::datastore::EntryRef EntryRef;
     typedef std::less<uint32_t> CompareT;
     using Parent::applyNewArray;
     using Parent::applyNewTree;
@@ -94,7 +94,7 @@ public:
     using Parent::_allocator;
     using Parent::_aggrCalc;
     using Parent::BUFFERTYPE_BTREE;
-    typedef datastore::Handle<BitVectorEntry> BitVectorRefPair;
+    typedef vespalib::datastore::Handle<BitVectorEntry> BitVectorRefPair;
     
 
     PostingStore(EnumPostingTree &dict, Status &status, const Config &config);
@@ -109,7 +109,7 @@ public:
 
     BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
-            btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+            vespalib::btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
     }
 
     /*
@@ -183,10 +183,10 @@ private:
 };
 
 template <>
-inline btree::BTreeNoLeafData
-PostingStore<btree::BTreeNoLeafData>::bitVectorWeight()
+inline vespalib::btree::BTreeNoLeafData
+PostingStore<vespalib::btree::BTreeNoLeafData>::bitVectorWeight()
 {
-    return btree::BTreeNoLeafData();
+    return vespalib::btree::BTreeNoLeafData();
 }
 
 template <>

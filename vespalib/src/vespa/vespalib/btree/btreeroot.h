@@ -9,7 +9,7 @@
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t>
 class BTreeNodeAllocator;

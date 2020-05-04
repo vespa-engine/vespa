@@ -37,11 +37,11 @@ public:
 
     // Mapping from docid -> feature ref
     using PostingListEntryType = PostingListEntry<interleaved_features>;
-    using PostingList = btree::BTreeRoot<uint32_t, PostingListEntryType, search::btree::NoAggregated>;
-    using PostingListStore = btree::BTreeStore<uint32_t, PostingListEntryType,
-                                               search::btree::NoAggregated,
+    using PostingList = vespalib::btree::BTreeRoot<uint32_t, PostingListEntryType, vespalib::btree::NoAggregated>;
+    using PostingListStore = vespalib::btree::BTreeStore<uint32_t, PostingListEntryType,
+                                               vespalib::btree::NoAggregated,
                                                std::less<uint32_t>,
-                                               btree::BTreeDefaultTraits>;
+                                               vespalib::btree::BTreeDefaultTraits>;
     using PostingListKeyDataType = typename PostingListStore::KeyDataType;
 
 private:
@@ -109,7 +109,7 @@ public:
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 extern template
 class BTreeNodeDataWrap<search::memoryindex::FieldIndexBase::WordKey,
@@ -121,7 +121,7 @@ class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey,
 
 extern template
 class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
-                  datastore::EntryRef,
+                  vespalib::datastore::EntryRef,
                   NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 

@@ -54,7 +54,7 @@ OrderedFieldIndexInserter<interleaved_features>::flushWord()
     }
     //XXX: Feature store leak, removed features not marked dead
     PostingListStore &postingListStore(_fieldIndex.getPostingListStore());
-    datastore::EntryRef pidx(_dItr.getData());
+    vespalib::datastore::EntryRef pidx(_dItr.getData());
     postingListStore.apply(pidx,
                            &_adds[0],
                            &_adds[0] + _adds.size(),
@@ -101,11 +101,11 @@ OrderedFieldIndexInserter<interleaved_features>::setNextWord(const vespalib::str
         _dItr.binarySeek(key, cmp);
     }
     if (!_dItr.valid() || cmp(key, _dItr.getKey())) {
-        datastore::EntryRef wordRef = _fieldIndex.addWord(_word);
+        vespalib::datastore::EntryRef wordRef = _fieldIndex.addWord(_word);
 
         WordKey insertKey(wordRef);
         DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
-        dTree.insert(_dItr, insertKey, datastore::EntryRef().ref());
+        dTree.insert(_dItr, insertKey, vespalib::datastore::EntryRef().ref());
     }
     assert(_dItr.valid());
     assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
@@ -119,7 +119,7 @@ OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||
            (_prevDocId == docId && !_prevAdd));
-    datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
+    vespalib::datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
     _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
                                                                        cap_u16(features.num_occs()),
                                                                        cap_u16(features.field_length()))));
@@ -151,7 +151,7 @@ OrderedFieldIndexInserter<interleaved_features>::rewind()
 }
 
 template <bool interleaved_features>
-datastore::EntryRef
+vespalib::datastore::EntryRef
 OrderedFieldIndexInserter<interleaved_features>::getWordRef() const
 {
     return _dItr.getKey()._wordRef;

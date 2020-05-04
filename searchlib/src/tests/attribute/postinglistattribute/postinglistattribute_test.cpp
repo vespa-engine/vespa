@@ -458,7 +458,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         ASSERT_TRUE(itr.valid());
 
         typename VectorType::PostingList::Iterator postings;
-        postings = postingList.begin(datastore::EntryRef(itr.getData()));
+        postings = postingList.begin(vespalib::datastore::EntryRef(itr.getData()));
 
         uint32_t doc = docBegin;
         uint32_t numHits(0);
@@ -677,7 +677,7 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
     ASSERT_TRUE(itr.valid());
 
     typename AttributeType::PostingList::Iterator postings;
-    postings = postingList.begin(datastore::EntryRef(itr.getData()));
+    postings = postingList.begin(vespalib::datastore::EntryRef(itr.getData()));
 
     DocSet::iterator docBegin = expected.begin();
     DocSet::iterator docEnd = expected.end();

@@ -8,7 +8,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class EntryComparator;
 struct ICompactable;

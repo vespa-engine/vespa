@@ -4,7 +4,7 @@
 #include "btreestore.hpp"
 #include "btreeiterator.hpp"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeStore<uint32_t, uint32_t, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>;
 template class BTreeStore<uint32_t, BTreeNoLeafData, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>;

@@ -7,7 +7,7 @@
 #include "handle.h"
 #include <vespa/vespalib/util/arrayref.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Allocator used to allocate entries of a specific type in an underlying data store.

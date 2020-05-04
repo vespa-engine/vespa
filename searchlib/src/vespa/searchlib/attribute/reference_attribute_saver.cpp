@@ -8,7 +8,7 @@
 
 using vespalib::GenerationHandler;
 using document::GlobalId;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
 namespace search {
 namespace attribute {

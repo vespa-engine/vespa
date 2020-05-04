@@ -126,13 +126,13 @@ template <typename Posting,
           typename Key = uint64_t, typename DocId = uint32_t>
 class SimpleIndex {
 public:
-    using Dictionary = btree::BTree<Key, datastore::EntryRef, btree::NoAggregated>;
+    using Dictionary = vespalib::btree::BTree<Key, vespalib::datastore::EntryRef, vespalib::btree::NoAggregated>;
     using DictionaryIterator = typename Dictionary::ConstIterator;
-    using BTreeStore = btree::BTreeStore<
-            DocId, Posting, btree::NoAggregated, std::less<DocId>, btree::BTreeDefaultTraits>;
+    using BTreeStore = vespalib::btree::BTreeStore<
+            DocId, Posting, vespalib::btree::NoAggregated, std::less<DocId>, vespalib::btree::BTreeDefaultTraits>;
     using BTreeIterator = typename BTreeStore::ConstIterator;
     using PostingVector = vespalib::RcuVectorBase<Posting>;
-    using VectorStore = btree::BTree<Key, std::shared_ptr<PostingVector>, btree::NoAggregated>;
+    using VectorStore = vespalib::btree::BTree<Key, std::shared_ptr<PostingVector>, vespalib::btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
 
 private:
@@ -149,17 +149,17 @@ private:
     const SimpleIndexConfig _config;
     const DocIdLimitProvider &_limit_provider;
 
-    void insertIntoPosting(datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting);
-    void insertIntoVectorPosting(datastore::EntryRef ref, Key key, DocId doc_id, const Posting &posting);
-    void removeFromVectorPostingList(datastore::EntryRef ref, Key key, DocId doc_id);
+    void insertIntoPosting(vespalib::datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting);
+    void insertIntoVectorPosting(vespalib::datastore::EntryRef ref, Key key, DocId doc_id, const Posting &posting);
+    void removeFromVectorPostingList(vespalib::datastore::EntryRef ref, Key key, DocId doc_id);
     void pruneBelowThresholdVectors();
-    void createVectorIfOverThreshold(datastore::EntryRef ref, Key key);
-    bool removeVectorIfBelowThreshold(datastore::EntryRef ref, typename VectorStore::Iterator &it);
+    void createVectorIfOverThreshold(vespalib::datastore::EntryRef ref, Key key);
+    bool removeVectorIfBelowThreshold(vespalib::datastore::EntryRef ref, typename VectorStore::Iterator &it);
 
     void logVector(const char *action, Key key, size_t document_count,
                    double ratio, size_t vector_length) const;
     double getDocumentRatio(size_t document_count, uint32_t doc_id_limit) const;
-    size_t getDocumentCount(datastore::EntryRef ref) const;
+    size_t getDocumentCount(vespalib::datastore::EntryRef ref) const;
     bool shouldCreateVectorPosting(size_t size, double ratio) const;
     bool shouldRemoveVectorPosting(size_t size, double ratio) const;
     size_t getVectorPostingSize(const PostingVector &vector) const {
@@ -191,17 +191,17 @@ public:
     void transferHoldLists(generation_t generation);
     vespalib::MemoryUsage getMemoryUsage() const;
     template <typename FunctionType>
-    void foreach_frozen_key(datastore::EntryRef ref, Key key, FunctionType func) const;
+    void foreach_frozen_key(vespalib::datastore::EntryRef ref, Key key, FunctionType func) const;
 
     DictionaryIterator lookup(Key key) const {
         return _dictionary.getFrozenView().find(key);
     }
 
-    size_t getPostingListSize(datastore::EntryRef ref) const {
+    size_t getPostingListSize(vespalib::datastore::EntryRef ref) const {
         return _btree_posting_lists.frozenSize(ref);
     }
 
-    BTreeIterator getBTreePostingList(datastore::EntryRef ref) const {
+    BTreeIterator getBTreePostingList(vespalib::datastore::EntryRef ref) const {
         return _btree_posting_lists.beginFrozen(ref);
     }
 
@@ -220,7 +220,7 @@ public:
 template<typename Posting, typename Key, typename DocId>
 template<typename FunctionType>
 void SimpleIndex<Posting, Key, DocId>::foreach_frozen_key(
-        datastore::EntryRef ref, Key key, FunctionType func) const {
+        vespalib::datastore::EntryRef ref, Key key, FunctionType func) const {
     auto it = _vector_posting_lists.getFrozenView().find(key);
     double ratio = getDocumentRatio(getDocumentCount(ref), _limit_provider.getDocIdLimit());
     if (it.valid() && ratio > _config.foreach_vector_threshold) {

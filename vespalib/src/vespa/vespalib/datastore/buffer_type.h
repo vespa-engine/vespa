@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in a data store.

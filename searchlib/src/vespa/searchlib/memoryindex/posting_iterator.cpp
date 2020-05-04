@@ -122,7 +122,7 @@ PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved
     assert(_itr.valid());
     assert(docId == _itr.getKey());
     if (unpack_normal_features) {
-        datastore::EntryRef featureRef(_itr.getData().get_features());
+        vespalib::datastore::EntryRef featureRef(_itr.getData().get_features());
         _feature_store.setupForUnpackFeatures(featureRef, _feature_decoder);
         _feature_decoder.unpackFeatures(_matchData, docId);
     } else {

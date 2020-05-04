@@ -8,12 +8,12 @@
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 using vespalib::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using MemStats = search::datastore::test::MemStats;
-using BufferStats = search::datastore::test::BufferStats;
+using MemStats = vespalib::datastore::test::MemStats;
+using BufferStats = vespalib::datastore::test::BufferStats;
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 

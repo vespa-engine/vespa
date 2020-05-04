@@ -21,7 +21,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("iteratespeed");
 
-namespace search::btree {
+namespace vespalib::btree {
 
 enum class IterateMethod
 {
@@ -204,6 +204,6 @@ IterateSpeed::Main()
 
 }
 
-FASTOS_MAIN(search::btree::IterateSpeed);
+FASTOS_MAIN(vespalib::btree::IterateSpeed);
 
 

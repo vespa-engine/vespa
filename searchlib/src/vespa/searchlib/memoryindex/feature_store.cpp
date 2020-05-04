@@ -26,7 +26,7 @@ FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &featur
     return oldOffset;
 }
 
-datastore::EntryRef
+vespalib::datastore::EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
     uint32_t pad = RefType::pad(byteLen);
@@ -42,7 +42,7 @@ FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
     return result.ref;
 }
 
-std::pair<datastore::EntryRef, uint64_t>
+std::pair<vespalib::datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
 {
     uint64_t bitLen = (endOffset - beginOffset);
@@ -56,8 +56,8 @@ FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
     return std::make_pair(ref, bitLen);
 }
 
-datastore::EntryRef
-FeatureStore::moveFeatures(datastore::EntryRef ref, uint64_t bitLen)
+vespalib::datastore::EntryRef
+FeatureStore::moveFeatures(vespalib::datastore::EntryRef ref, uint64_t bitLen)
 {
     const uint8_t *src = getBits(ref);
     uint64_t byteLen = (bitLen + 7) / 8;
@@ -96,7 +96,7 @@ FeatureStore::~FeatureStore()
     _store.dropBuffers();
 }
 
-std::pair<datastore::EntryRef, uint64_t>
+std::pair<vespalib::datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features)
 {
     uint64_t oldOffset = writeFeatures(packedIndex, features);
@@ -106,7 +106,7 @@ FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features
 }
 
 void
-FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAndFeatures &features)
+FeatureStore::getFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref, DocIdAndFeatures &features)
 {
     setupForField(packedIndex, _d);
     setupForReadFeatures(ref, _d);
@@ -114,7 +114,7 @@ FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAn
 }
 
 size_t
-FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
+FeatureStore::bitSize(uint32_t packedIndex, vespalib::datastore::EntryRef ref)
 {
     setupForField(packedIndex, _d);
     setupForUnpackFeatures(ref, _d);
@@ -126,8 +126,8 @@ FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
     return bitLen;
 }
 
-datastore::EntryRef
-FeatureStore::moveFeatures(uint32_t packedIndex, datastore::EntryRef ref)
+vespalib::datastore::EntryRef
+FeatureStore::moveFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref)
 {
     uint64_t bitLen = bitSize(packedIndex, ref);
     return moveFeatures(ref, bitLen);

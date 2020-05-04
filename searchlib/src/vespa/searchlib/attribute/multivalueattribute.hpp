@@ -48,9 +48,9 @@ struct HashFn {
 };
 
 template <>
-struct HashFn<search::datastore::EntryRef> {
+struct HashFn<vespalib::datastore::EntryRef> {
     struct EntryRefHasher {
-        size_t operator() (const search::datastore::EntryRef& v) const noexcept {
+        size_t operator() (const vespalib::datastore::EntryRef& v) const noexcept {
             return v.ref();
         }
     };

@@ -4,7 +4,7 @@
 
 #include "entryref.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Handle to data allocated in a data store and a EntryRef used for read-only access to data later.

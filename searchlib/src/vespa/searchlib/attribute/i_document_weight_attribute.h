@@ -13,17 +13,17 @@ using DocumentWeightIterator = attribute::PostingListTraits<int32_t>::const_iter
 struct IDocumentWeightAttribute
 {
     struct LookupResult {
-        const datastore::EntryRef posting_idx;
+        const vespalib::datastore::EntryRef posting_idx;
         const uint32_t posting_size;
         const int32_t min_weight;
         const int32_t max_weight;
         LookupResult() : posting_idx(), posting_size(0), min_weight(0), max_weight(0) {}
-        LookupResult(datastore::EntryRef posting_idx_in, uint32_t posting_size_in, int32_t min_weight_in, int32_t max_weight_in)
+        LookupResult(vespalib::datastore::EntryRef posting_idx_in, uint32_t posting_size_in, int32_t min_weight_in, int32_t max_weight_in)
             : posting_idx(posting_idx_in), posting_size(posting_size_in), min_weight(min_weight_in), max_weight(max_weight_in) {}
     };
     virtual LookupResult lookup(const vespalib::string &term) const = 0;
-    virtual void create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const = 0;
-    virtual DocumentWeightIterator create(datastore::EntryRef idx) const = 0;
+    virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const = 0;
+    virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
     virtual ~IDocumentWeightAttribute() {}
 };
 

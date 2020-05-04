@@ -29,7 +29,7 @@ const uint64_t hash = 0x123;
 
 TEST("require that empty bounds posting list starts at 0.") {
     PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
-    datastore::EntryRef ref;
+    vespalib::datastore::EntryRef ref;
     PredicateBoundsPostingList<PredicateIndex::BTreeIterator>
         posting_list(index.getIntervalStore(),
                      index.getBoundsIndex().getBTreePostingList(ref), 42);

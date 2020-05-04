@@ -9,7 +9,7 @@ LOG_SETUP(".searchlib.attribute.multi_string_post_attribute");
 namespace search {
 
 IEnumStore::Index
-StringEnumIndexMapper::map(IEnumStore::Index original, const datastore::EntryComparator& compare) const
+StringEnumIndexMapper::map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const
 {
     return _dictionary.find(original, compare).getKey();
 }

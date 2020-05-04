@@ -7,7 +7,7 @@
 #include "btreenodeallocator.h"
 #include <atomic>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,

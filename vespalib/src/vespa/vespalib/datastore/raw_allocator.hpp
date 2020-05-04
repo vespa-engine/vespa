@@ -5,7 +5,7 @@
 #include "raw_allocator.h"
 #include "bufferstate.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
 RawAllocator<EntryT, RefT>::RawAllocator(DataStoreBase &store, uint32_t typeId)

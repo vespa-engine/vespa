@@ -29,9 +29,9 @@ public:
      * Class representing a word used as key in the dictionary.
      */
     struct WordKey {
-        datastore::EntryRef _wordRef;
+        vespalib::datastore::EntryRef _wordRef;
 
-        explicit WordKey(datastore::EntryRef wordRef) : _wordRef(wordRef) { }
+        explicit WordKey(vespalib::datastore::EntryRef wordRef) : _wordRef(wordRef) { }
         WordKey() : _wordRef() { }
 
         friend vespalib::asciistream&
@@ -46,7 +46,7 @@ public:
         const WordStore& _wordStore;
         const vespalib::stringref _word;
 
-        const char* getWord(datastore::EntryRef wordRef) const {
+        const char* getWord(vespalib::datastore::EntryRef wordRef) const {
             if (wordRef.valid()) {
                 return _wordStore.getWord(wordRef);
             }
@@ -66,8 +66,8 @@ public:
     };
 
     using PostingListPtr = uint32_t;
-    using DictionaryTree = btree::BTree<WordKey, PostingListPtr,
-                                        search::btree::NoAggregated,
+    using DictionaryTree = vespalib::btree::BTree<WordKey, PostingListPtr,
+                                        vespalib::btree::NoAggregated,
                                         const KeyComp>;
 
 protected:
@@ -88,12 +88,12 @@ protected:
     }
 
 public:
-    datastore::EntryRef addWord(const vespalib::stringref word) {
+    vespalib::datastore::EntryRef addWord(const vespalib::stringref word) {
         _numUniqueWords++;
         return _wordStore.addWord(word);
     }
 
-    datastore::EntryRef addFeatures(const index::DocIdAndFeatures& features) {
+    vespalib::datastore::EntryRef addFeatures(const index::DocIdAndFeatures& features) {
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 

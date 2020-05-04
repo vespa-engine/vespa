@@ -67,7 +67,7 @@ onSave(IAttributeSaveTarget &saveTarget)
     DatWriter datWriter(saveTarget);
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        datastore::EntryRef idx = _frozenIndices[docId];
+        vespalib::datastore::EntryRef idx = _frozenIndices[docId];
         vespalib::ConstArrayRef<MultiValueType> values(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(values.size());
         weightWriter.writeWeights(values);

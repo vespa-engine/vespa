@@ -9,7 +9,7 @@
 
 namespace search::attribute {
 
-using btree::BTreeNoLeafData;
+using vespalib::btree::BTreeNoLeafData;
 
 // #define FORCE_BITVECTORS
 

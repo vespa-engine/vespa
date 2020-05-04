@@ -8,7 +8,7 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/optimized.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>

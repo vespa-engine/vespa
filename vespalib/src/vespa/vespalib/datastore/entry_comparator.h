@@ -4,7 +4,7 @@
 
 #include "entryref.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Less-than comparator for two entries based on entry refs.

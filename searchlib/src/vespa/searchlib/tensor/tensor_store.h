@@ -22,16 +22,16 @@ namespace tensor {
 class TensorStore
 {
 public:
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     typedef vespalib::GenerationHandler::generation_t generation_t;
     using Tensor = vespalib::tensor::Tensor;
 
 protected:
-    datastore::DataStoreBase &_store;
+    vespalib::datastore::DataStoreBase &_store;
     const uint32_t        _typeId;
 
 public:
-    TensorStore(datastore::DataStoreBase &store);
+    TensorStore(vespalib::datastore::DataStoreBase &store);
 
     virtual ~TensorStore();
 

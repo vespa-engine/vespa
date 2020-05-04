@@ -25,7 +25,7 @@ WordStore::~WordStore()
     _store.dropBuffers();
 }
 
-datastore::EntryRef
+vespalib::datastore::EntryRef
 WordStore::addWord(const vespalib::stringref word)
 {
     size_t wordSize = word.size() + 1;

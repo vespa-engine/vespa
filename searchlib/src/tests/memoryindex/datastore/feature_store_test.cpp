@@ -6,8 +6,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("feature_store_test");
 
-using namespace search::btree;
-using namespace search::datastore;
+using namespace vespalib::btree;
+using namespace vespalib::datastore;
 using namespace search::index;
 
 using search::index::schema::CollectionType;

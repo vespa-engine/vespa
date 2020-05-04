@@ -7,7 +7,7 @@
 
 namespace vespalib { class asciistream; }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class EntryRef {
 protected:

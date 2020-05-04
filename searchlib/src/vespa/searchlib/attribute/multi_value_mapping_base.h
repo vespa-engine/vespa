@@ -17,7 +17,7 @@ namespace search::attribute {
 class MultiValueMappingBase
 {
 public:
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<EntryRef>;
 
 protected:

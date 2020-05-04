@@ -10,7 +10,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeRootBase;
 

@@ -7,7 +7,7 @@
 #include "btreenode.hpp"
 #include <vespa/vespalib/util/hdr_abort.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>

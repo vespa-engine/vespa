@@ -75,7 +75,7 @@ public:
      */
     void rewind() override;
 
-    datastore::EntryRef getWordRef() const override;
+    vespalib::datastore::EntryRef getWordRef() const override;
 };
 
 }

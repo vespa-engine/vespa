@@ -34,7 +34,7 @@ FieldIndexRemover::remove(uint32_t docId, IFieldIndexRemoveListener &listener)
 }
 
 void
-FieldIndexRemover::insert(datastore::EntryRef wordRef, uint32_t docId)
+FieldIndexRemover::insert(vespalib::datastore::EntryRef wordRef, uint32_t docId)
 {
     _wordFieldDocTuples.emplace_back(wordRef, docId);
 }

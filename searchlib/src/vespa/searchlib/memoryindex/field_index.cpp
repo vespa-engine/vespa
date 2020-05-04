@@ -32,7 +32,7 @@ using vespalib::GenerationHandler;
 
 namespace search::memoryindex {
 
-using datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
 template <bool interleaved_features>
 FieldIndex<interleaved_features>::FieldIndex(const index::Schema& schema, uint32_t fieldId)
@@ -296,7 +296,7 @@ template class FieldIndex<true>;
 
 using search::memoryindex::FieldIndexBase;
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template
 class BTreeNodeDataWrap<FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
@@ -306,7 +306,7 @@ class BTreeNodeT<FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 template
 class BTreeNodeTT<FieldIndexBase::WordKey,
-                  datastore::EntryRef,
+                  vespalib::datastore::EntryRef,
                   NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 

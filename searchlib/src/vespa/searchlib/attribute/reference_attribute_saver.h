@@ -28,7 +28,7 @@ namespace attribute {
 class ReferenceAttributeSaver : public AttributeSaver
 {
 private:
-    using EntryRef = search::datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
     using Store = ReferenceAttribute::ReferenceStore;

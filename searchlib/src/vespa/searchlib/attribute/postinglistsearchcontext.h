@@ -38,8 +38,8 @@ protected:
     uint64_t                _numValues; // attr.getStatus().getNumValues();
     bool                    _hasWeight;
     bool                    _useBitVector;
-    datastore::EntryRef     _pidx;
-    datastore::EntryRef     _frozenRoot; // Posting list in tree form
+    vespalib::datastore::EntryRef     _pidx;
+    vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
     const IEnumStore       &_esb;
@@ -53,8 +53,8 @@ protected:
 
     ~PostingListSearchContext();
 
-    void lookupTerm(const datastore::EntryComparator &comp);
-    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
+    void lookupTerm(const vespalib::datastore::EntryComparator &comp);
+    void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
     void lookupSingle();
     virtual bool useThis(const DictionaryConstIterator & it) const {
         (void) it;
@@ -99,7 +99,7 @@ protected:
     using PostingList = typename Traits::PostingList;
     using Posting = typename Traits::Posting;
     using PostingVector = std::vector<Posting>;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using FrozenView = typename PostingList::BTreeType::FrozenView;
 
     const PostingList    &_postingList;
@@ -357,9 +357,9 @@ getIterators(bool shouldApplyRangeLimit)
 
 
 
-extern template class PostingListSearchContextT<btree::BTreeNoLeafData>;
+extern template class PostingListSearchContextT<vespalib::btree::BTreeNoLeafData>;
 extern template class PostingListSearchContextT<int32_t>;
-extern template class PostingListFoldedSearchContextT<btree::BTreeNoLeafData>;
+extern template class PostingListFoldedSearchContextT<vespalib::btree::BTreeNoLeafData>;
 extern template class PostingListFoldedSearchContextT<int32_t>;
 
 }

@@ -49,10 +49,10 @@ public:
 template <bool interleaved_features>
 class PostingListEntry : public std::conditional_t<interleaved_features, InterleavedFeatures, NoInterleavedFeatures> {
     using ParentType = std::conditional_t<interleaved_features, InterleavedFeatures, NoInterleavedFeatures>;
-    mutable datastore::EntryRef _features; // reference to compressed features
+    mutable vespalib::datastore::EntryRef _features; // reference to compressed features
 
 public:
-    explicit PostingListEntry(datastore::EntryRef features, uint16_t num_occs, uint16_t field_length)
+    explicit PostingListEntry(vespalib::datastore::EntryRef features, uint16_t num_occs, uint16_t field_length)
         : ParentType(num_occs, field_length),
           _features(features)
     {
@@ -64,14 +64,14 @@ public:
     {
     }
 
-    datastore::EntryRef get_features() const { return _features; }
+    vespalib::datastore::EntryRef get_features() const { return _features; }
 
     /*
      * Reference moved features (used when compacting FeatureStore).
      * The moved features must have the same content as the original
      * features.
      */
-    void update_features(datastore::EntryRef features) const { _features = features; }
+    void update_features(vespalib::datastore::EntryRef features) const { _features = features; }
 };
 
 template class PostingListEntry<false>;

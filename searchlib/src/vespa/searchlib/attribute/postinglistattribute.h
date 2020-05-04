@@ -21,9 +21,9 @@ class EnumPostingPair
 {
 private:
     IEnumStore::Index _idx;
-    const datastore::EntryComparator *_cmp;
+    const vespalib::datastore::EntryComparator *_cmp;
 public:
-    EnumPostingPair(IEnumStore::Index idx, const datastore::EntryComparator *cmp)
+    EnumPostingPair(IEnumStore::Index idx, const vespalib::datastore::EntryComparator *cmp)
         : _idx(idx),
           _cmp(cmp)
     { }
@@ -41,7 +41,7 @@ protected:
 
     using AggregationTraits = attribute::PostingListTraits<DataType>;
     using DocId = AttributeVector::DocId;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename AggregationTraits::PostingList;
@@ -57,7 +57,7 @@ protected:
 
     virtual void updatePostings(PostingMap & changePost) = 0;
 
-    void updatePostings(PostingMap &changePost, datastore::EntryComparator &cmp);
+    void updatePostings(PostingMap &changePost, vespalib::datastore::EntryComparator &cmp);
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
@@ -65,7 +65,7 @@ protected:
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
-                       uint32_t toLid, datastore::EntryComparator &cmp);
+                       uint32_t toLid, vespalib::datastore::EntryComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
     virtual vespalib::MemoryUsage getMemoryUsage() const override;
@@ -82,7 +82,7 @@ public:
     using Parent = PostingListAttributeBase<P>;
 
     using Dictionary = EnumPostingTree;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
     using FoldedComparatorType = typename EnumStore::FoldedComparatorType;

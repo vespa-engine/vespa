@@ -149,8 +149,8 @@ public:
     bool check_link_symmetry() const;
     uint32_t count_reachable_nodes() const;
 
-    static search::datastore::ArrayStoreConfig make_default_node_store_config();
-    static search::datastore::ArrayStoreConfig make_default_link_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
 };
 
 }

@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cassert>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 namespace {
 
