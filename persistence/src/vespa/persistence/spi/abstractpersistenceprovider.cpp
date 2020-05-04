@@ -48,6 +48,13 @@ AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
     return remove(b, timestamp, id, context);
 }
 
+void
+AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
+                                           const DocumentId& id, Context& context, OperationComplete::UP onComplete)
+{
+    removeAsync(b, timestamp, id, context, std::move(onComplete));
+}
+
 BucketIdListResult
 AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
 {

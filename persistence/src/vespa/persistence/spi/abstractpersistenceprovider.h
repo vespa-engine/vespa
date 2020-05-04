@@ -39,6 +39,7 @@ public:
      * Default impl is remove().
      */
     RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;
+    void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, Context&, OperationComplete::UP) override;
 
     /**
      * Default impl empty.

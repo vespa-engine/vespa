@@ -12,6 +12,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <thread>
 
 using document::DocumentType;
 using storage::spi::test::makeSpiBucket;
@@ -54,13 +56,20 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
 {
     _node.setupDummyPersistence();
     _metrics.initDiskMetrics(numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
-    _handler.reset(new FileStorHandler(_messageKeeper, _metrics,
+    _handler = std::make_unique<FileStorHandler>(_messageKeeper, _metrics,
                                        _node.getPersistenceProvider().getPartitionStates().getList(),
-                                       _node.getComponentRegister()));
+                                       _node.getComponentRegister());
     for (uint32_t i = 0; i < numDisks; i++) {
         _diskEnvs.push_back(
                 std::make_unique<PersistenceUtil>(_config.getConfigId(), _node.getComponentRegister(), *_handler,
                                                   *_metrics.disks[i]->threads[0], i, _node.getPersistenceProvider()));
+    }
+}
+
+PersistenceTestEnvironment::~PersistenceTestEnvironment() {
+    _handler->close();
+    while (!_handler->closed(0)) {
+        std::this_thread::sleep_for(1ms);
     }
 }
 
@@ -74,15 +83,21 @@ PersistenceTestUtils::dumpBucket(const document::BucketId& bid, uint16_t disk) {
 
 void
 PersistenceTestUtils::setupDisks(uint32_t numDisks) {
-    _env.reset(new PersistenceTestEnvironment(DiskCount(numDisks), "todo-make-unique-persistencetestutils"));
+    _env = std::make_unique<PersistenceTestEnvironment>(DiskCount(numDisks), "todo-make-unique-persistencetestutils");
+    setupExecutor(numDisks);
+}
+
+void
+PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
+    _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
 }
 
 std::unique_ptr<PersistenceThread>
 PersistenceTestUtils::createPersistenceThread(uint32_t disk)
 {
-    return std::make_unique<PersistenceThread>(_env->_node.getComponentRegister(), _env->_config.getConfigId(),
-                                               getPersistenceProvider(), getEnv()._fileStorHandler,
-                                               getEnv()._metrics, disk);
+    return std::make_unique<PersistenceThread>(_sequenceTaskExecutor.get(), _env->_node.getComponentRegister(),
+                                               _env->_config.getConfigId(),getPersistenceProvider(),
+                                               getEnv()._fileStorHandler, getEnv()._metrics, disk);
 }
 
 document::Document::SP

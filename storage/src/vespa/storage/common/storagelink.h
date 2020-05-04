@@ -23,7 +23,9 @@
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/document/util/printable.h>
+#include <vespa/vespalib/util/sync.h>
 #include <atomic>
+#include <queue>
 
 namespace storage {
 
@@ -180,6 +182,36 @@ private:
      * through the storage link test.
      */
     friend struct StorageLinkTest;
+};
+
+class Queue {
+private:
+    using QueueType = std::queue<std::shared_ptr<api::StorageMessage>>;
+    QueueType         _queue;
+    vespalib::Monitor _queueMonitor;
+
+public:
+    Queue();
+    ~Queue();
+
+    /**
+     * Returns the next event from the event queue
+     * @param   msg             The next event
+     * @param   timeout         Millisecs to wait if the queue is empty
+     * (0 = don't wait, -1 = forever)
+     * @return  true or false if the queue was empty.
+     */
+    bool getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout);
+
+    /**
+     * Enqueue msg in FIFO order.
+     */
+    void enqueue(std::shared_ptr<api::StorageMessage> msg);
+
+    /** Signal queue monitor. */
+    void signal();
+
+    size_t size() const;
 };
 
 std::ostream& operator<<(std::ostream& out, StorageLink& link);

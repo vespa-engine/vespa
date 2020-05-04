@@ -4,8 +4,7 @@
 
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
-namespace storage {
-namespace bucketdb {
+namespace storage::bucketdb {
 
 struct StorageBucketInfo {
     api::BucketInfo info;
@@ -33,5 +32,4 @@ struct StorageBucketInfo {
 
 std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
 
-}
 }

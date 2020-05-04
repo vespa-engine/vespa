@@ -347,26 +347,24 @@ PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::Do
     handler->handlePut(feedtoken::make(std::move(transportContext)), bucket, ts, std::move(doc));
 }
 
-PersistenceEngine::RemoveResult
-PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
+void
+PersistenceEngine::removeAsync(const Bucket& b, Timestamp t, const DocumentId& did, Context&, OperationComplete::UP onComplete)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()), did.toString().c_str());
     if (!did.hasDocType()) {
-        return RemoveResult(Result::ErrorType::PERMANENT_ERROR,
-                            make_string("Old id scheme not supported in elastic mode (%s)", did.toString().c_str()));
+        return onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::PERMANENT_ERROR,
+                            make_string("Old id scheme not supported in elastic mode (%s)", did.toString().c_str())));
     }
     DocTypeName docType(did.getDocType());
     IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
     if (!handler) {
-        return RemoveResult(Result::ErrorType::PERMANENT_ERROR,
-                            make_string("No handler for document type '%s'", docType.toString().c_str()));
+        return onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::PERMANENT_ERROR,
+                            make_string("No handler for document type '%s'", docType.toString().c_str())));
     }
-    TransportLatch latch(1);
-    handler->handleRemove(feedtoken::make(latch), b, t, did);
-    latch.await();
-    return latch.getRemoveResult();
+    auto transportContext = std::make_unique<AsyncTranportContext>(1, std::move(onComplete));
+    handler->handleRemove(feedtoken::make(std::move(transportContext)), b, t, did);
 }
 
 

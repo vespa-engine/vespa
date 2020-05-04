@@ -10,13 +10,87 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.thread");
 
 namespace storage {
 
-PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
+namespace {
+
+class ResultTask : public vespalib::Executor::Task {
+public:
+    ResultTask() : _result(), _resultHandler(nullptr) { }
+    void setResult(spi::Result::UP result) {
+        _result = std::move(result);
+    }
+    void addResultHandler(const spi::ResultHandler * resultHandler) {
+        // Only handles a signal handler now,
+        // Can be extended if necessary later on
+        assert(_resultHandler == nullptr);
+        _resultHandler = resultHandler;
+    }
+    void handle(const spi::Result &result ) {
+        if (_resultHandler != nullptr) {
+            _resultHandler->handle(result);
+        }
+    }
+protected:
+    spi::Result::UP      _result;
+private:
+    const spi::ResultHandler * _resultHandler;
+};
+
+template<class FunctionType>
+class LambdaResultTask : public ResultTask {
+public:
+    LambdaResultTask(FunctionType && func)
+        : _func(std::move(func))
+    {}
+    ~LambdaResultTask() override {}
+    void run() override {
+        handle(*_result);
+        _func(std::move(_result));
+    }
+private:
+    FunctionType _func;
+};
+
+template <class FunctionType>
+std::unique_ptr<ResultTask>
+makeResultTask(FunctionType &&function)
+{
+    return std::make_unique<LambdaResultTask<std::decay_t<FunctionType>>>
+           (std::forward<FunctionType>(function));
+}
+
+class ResultTaskOperationDone : public spi::OperationComplete {
+public:
+    ResultTaskOperationDone(vespalib::ISequencedTaskExecutor & executor, document::BucketId bucketId,
+                            std::unique_ptr<ResultTask> task)
+        : _executor(executor),
+          _task(std::move(task)),
+          _executorId(executor.getExecutorId(bucketId.getId()))
+    {
+    }
+    void onComplete(spi::Result::UP result) override {
+        _task->setResult(std::move(result));
+        _executor.executeTask(_executorId, std::move(_task));
+    }
+    void addResultHandler(const spi::ResultHandler * resultHandler) override {
+        _task->addResultHandler(resultHandler);
+    }
+private:
+    vespalib::ISequencedTaskExecutor             & _executor;
+    std::unique_ptr<ResultTask>                    _task;
+    vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
+};
+
+}
+
+PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequencedExecutor,
+                                     ServiceLayerComponentRegister& compReg,
                                      const config::ConfigUri & configUri,
                                      spi::PersistenceProvider& provider,
                                      FileStorHandler& filestorHandler,
@@ -24,7 +98,7 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
                                      uint16_t deviceIndex)
     : _stripeId(filestorHandler.getNextStripeId(deviceIndex)),
       _env(configUri, compReg, filestorHandler, metrics, deviceIndex, provider),
-      _warnOnSlowOperations(5000),
+      _sequencedExecutor(sequencedExecutor),
       _spi(provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_spi, _env),
@@ -91,42 +165,72 @@ PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, Messa
 }
 
 MessageTracker::UP
-PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP tracker)
+PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
 {
+    MessageTracker & tracker = *trackerUP;
     auto& metrics = _env._metrics.put[cmd.getLoadType()];
-    tracker->setMetric(metrics);
+    tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context())) {
-        return tracker;
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+        return trackerUP;
     }
 
-    spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                    spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker->context());
-    tracker->checkForError(response);
-    return tracker;
+    if (_sequencedExecutor == nullptr) {
+        spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
+                                        spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),
+                                        tracker.context());
+        tracker.checkForError(response);
+    } else {
+        _spi.putAsync(getBucket(cmd.getDocumentId(), cmd.getBucket()), spi::Timestamp(cmd.getTimestamp()),
+                      std::move(cmd.getDocument()), tracker.context(),
+                      std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(),
+                              makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
+                                  tracker->checkForError(*response);
+                                  tracker->sendReply();
+                              })));
+    }
+    return trackerUP;
 }
 
 MessageTracker::UP
-PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP tracker)
+PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP)
 {
+    MessageTracker & tracker = *trackerUP;
     auto& metrics = _env._metrics.remove[cmd.getLoadType()];
-    tracker->setMetric(metrics);
+    tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context())) {
-        return tracker;
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+        return trackerUP;
     }
 
-    spi::RemoveResult response = _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                                    spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker->context());
-    if (tracker->checkForError(response)) {
-        tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
+    if (_sequencedExecutor == nullptr) {
+        spi::RemoveResult response = _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
+                                                        spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),
+                                                        tracker.context());
+        if (tracker.checkForError(response)) {
+            tracker.setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
+        }
+        if (!response.wasFound()) {
+            metrics.notFound.inc();
+        }
+    } else {
+        _spi.removeIfFoundAsync(getBucket(cmd.getDocumentId(), cmd.getBucket()),
+                         spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
+                         std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(),
+                               makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
+                                   const spi::RemoveResult & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
+                                   if (tracker->checkForError(response)) {
+                                       tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
+                                   }
+                                   if (!response.wasFound()) {
+                                       metrics.notFound.inc();
+                                   }
+                                   tracker->sendReply();
+                               })));
     }
-    if (!response.wasFound()) {
-        _env._metrics.remove[cmd.getLoadType()].notFound.inc();
-    }
-    return tracker;
+    return trackerUP;
 }
 
 MessageTracker::UP
@@ -770,37 +874,12 @@ PersistenceThread::processMessage(api::StorageMessage& msg, MessageTracker::UP t
     } else {
         auto & initiatingCommand = static_cast<api::StorageCommand&>(msg);
         try {
-            int64_t startTime(_component->getClock().getTimeInMillis().getTime());
-
             LOG(debug, "Handling command: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
-            tracker = handleCommandSplitByType(initiatingCommand, std::move(tracker));
-            if (!tracker) {
-                LOG(debug, "Received unsupported command %s", msg.getType().getName().c_str());
-            } else {
-                tracker->generateReply(initiatingCommand);
-                if ((tracker->hasReply()
-                     && tracker->getReply().getResult().failed())
-                    || tracker->getResult().failed())
-                {
-                    _env._metrics.failedOperations.inc();
-                }
-            }
-
-            int64_t stopTime(_component->getClock().getTimeInMillis().getTime());
-            if (stopTime - startTime >= _warnOnSlowOperations) {
-                LOGBT(warning, msg.getType().toString(),
-                      "Slow processing of message %s on disk %u. Processing time: %" PRId64 " ms (>=%d ms)",
-                      msg.toString().c_str(), _env._partition, stopTime - startTime, _warnOnSlowOperations);
-            } else {
-                LOGBT(spam, msg.getType().toString(), "Processing time of message %s on disk %u: %" PRId64 " ms",
-                      msg.toString(true).c_str(), _env._partition, stopTime - startTime);
-            }
-
-            return tracker;
+            return handleCommandSplitByType(initiatingCommand, std::move(tracker));
         } catch (std::exception& e) {
             LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
-            api::StorageReply::SP reply(initiatingCommand.makeReply().release());
+            api::StorageReply::SP reply(initiatingCommand.makeReply());
             reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.what()));
             _env._fileStorHandler.sendReply(reply);
         }
@@ -814,7 +893,7 @@ PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage lock) {
     LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
     api::StorageMessage & msg(*lock.second);
 
-    auto tracker = std::make_unique<MessageTracker>(_env, std::move(lock.first), std::move(lock.second));
+    auto tracker = std::make_unique<MessageTracker>(_env, _env._fileStorHandler, std::move(lock.first), std::move(lock.second));
     tracker = processMessage(msg, std::move(tracker));
     if (tracker) {
         tracker->sendReply();

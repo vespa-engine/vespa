@@ -149,11 +149,6 @@ struct MergeHandlerTest : SingleDiskPersistenceTestUtils {
         std::shared_ptr<api::ApplyBucketDiffCommand> _applyCmd;
     };
 
-    MessageTracker::UP
-    createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
-        return std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), std::move(cmd));
-    }
-
     std::string
     doTestSPIException(MergeHandler& handler,
                        PersistenceProviderWrapper& providerWrapper,
