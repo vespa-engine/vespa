@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/eval/eval/tensor_function.h>
 #include "dense_tensor_view.h"
+#include <vespa/eval/eval/tensor_function.h>
 
 namespace vespalib::tensor {
 
