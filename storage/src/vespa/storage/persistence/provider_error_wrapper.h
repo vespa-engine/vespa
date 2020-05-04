@@ -33,7 +33,7 @@ public:
     }
 };
 
-class ProviderErrorWrapper : public spi::PersistenceProvider, public spi::ResultHandler {
+class ProviderErrorWrapper : public spi::PersistenceProvider {
 public:
     explicit ProviderErrorWrapper(spi::PersistenceProvider& impl)
         : _impl(impl),
@@ -72,13 +72,9 @@ public:
     }
 
     void register_error_listener(std::shared_ptr<ProviderErrorListener> listener);
-
-    void putAsync(const spi::Bucket &, spi::Timestamp, spi::DocumentSP, spi::Context &, spi::OperationComplete::UP) override;
-
 private:
     template <typename ResultType>
     ResultType checkResult(ResultType&& result) const;
-    void handle(const spi::Result &) const override;
 
     void trigger_shutdown_listeners(vespalib::stringref reason) const;
     void trigger_resource_exhaustion_listeners(vespalib::stringref reason) const;

@@ -10,7 +10,6 @@
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -25,7 +24,6 @@ struct MessageKeeper : public MessageSender {
 
 struct PersistenceTestEnvironment {
     PersistenceTestEnvironment(DiskCount numDisks, const std::string & rootOfRoot);
-    ~PersistenceTestEnvironment();
 
     document::TestDocMan _testDocMan;
     vdstestlib::DirConfig _config;
@@ -56,22 +54,7 @@ public:
         document::Bucket _bucket;
     };
 
-    struct ReplySender : public MessageSender {
-        void sendCommand(const std::shared_ptr<api::StorageCommand> &) override {
-            abort();
-        }
-
-        void sendReply(const std::shared_ptr<api::StorageReply> & ptr) override {
-            queue.enqueue(std::move(ptr));
-        }
-
-        Queue queue;
-    };
-
     std::unique_ptr<PersistenceTestEnvironment> _env;
-    std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequenceTaskExecutor;
-    ReplySender _replySender;
-
 
     PersistenceTestUtils();
     virtual ~PersistenceTestUtils();
@@ -84,13 +67,8 @@ public:
             uint32_t maxSize = 128);
 
     void setupDisks(uint32_t disks);
-    void setupExecutor(uint32_t numThreads);
 
     void TearDown() override {
-        if (_sequenceTaskExecutor) {
-            _sequenceTaskExecutor->sync();
-            _sequenceTaskExecutor.reset();
-        }
         _env.reset();
     }
 
@@ -111,21 +89,6 @@ public:
     std::string getBucketStatus(const document::BucketId& id);
 
     spi::PersistenceProvider& getPersistenceProvider();
-
-    MessageTracker::UP
-    createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
-        return MessageTracker::createForTesting(getEnv(), _replySender, NoBucketLock::make(bucket), std::move(cmd));
-    }
-
-    api::ReturnCode
-    fetchResult(const MessageTracker::UP & tracker) {
-        if (tracker) {
-            return tracker->getResult();
-        }
-        std::shared_ptr<api::StorageMessage> msg;
-        _replySender.queue.getNext(msg, 60000);
-        return dynamic_cast<api::StorageReply &>(*msg).getResult();
-    }
 
     /**
        Performs a put to the given disk.
