@@ -23,6 +23,6 @@ TestComponentRegister::TestComponentRegister(ComponentRegisterImpl::UP compReg)
     // register status pages without a server
 }
 
-TestComponentRegister::~TestComponentRegister() {}
+TestComponentRegister::~TestComponentRegister() = default;
 
 }

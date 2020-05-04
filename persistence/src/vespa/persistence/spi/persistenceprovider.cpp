@@ -2,6 +2,7 @@
 
 #include "persistenceprovider.h"
 #include <future>
+#include <cassert>
 
 namespace storage::spi {
 
@@ -9,14 +10,20 @@ PersistenceProvider::~PersistenceProvider() = default;
 
 class CatchResult : public OperationComplete {
 public:
+    CatchResult() : _promisedResult(), _resulthandler(nullptr) {}
     std::future<Result::UP> future_result() {
-        return promisedResult.get_future();
+        return _promisedResult.get_future();
     }
     void onComplete(Result::UP result) override {
-        promisedResult.set_value(std::move(result));
+        _promisedResult.set_value(std::move(result));
+    }
+    void addResultHandler(const ResultHandler * resultHandler) override {
+        assert(_resulthandler == nullptr);
+        _resulthandler = resultHandler;
     }
 private:
-    std::promise<Result::UP> promisedResult;
+    std::promise<Result::UP>  _promisedResult;
+    const ResultHandler      *_resulthandler;
 };
 
 Result

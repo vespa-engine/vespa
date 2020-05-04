@@ -9,12 +9,17 @@ template <typename ResultType>
 ResultType
 ProviderErrorWrapper::checkResult(ResultType&& result) const
 {
+    handle(result);
+    return std::forward<ResultType>(result);
+}
+
+void
+ProviderErrorWrapper::handle(const spi::Result & result) const {
     if (result.getErrorCode() == spi::Result::ErrorType::FATAL_ERROR) {
         trigger_shutdown_listeners(result.getErrorMessage());
     } else if (result.getErrorCode() == spi::Result::ErrorType::RESOURCE_EXHAUSTED) {
         trigger_resource_exhaustion_listeners(result.getErrorMessage());
     }
-    return std::forward<ResultType>(result);
 }
 
 void ProviderErrorWrapper::trigger_shutdown_listeners(vespalib::stringref reason) const {
@@ -189,6 +194,12 @@ ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket,
                                 spi::Timestamp ts, spi::Context& context)
 {
     return checkResult(_impl.removeEntry(bucket, ts, context));
+}
+
+void ProviderErrorWrapper::putAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi::DocumentSP doc,
+                                    spi::Context &context, spi::OperationComplete::UP onComplete) {
+    onComplete->addResultHandler(this);
+    _impl.putAsync(bucket, ts, std::move(doc), context, std::move(onComplete));
 }
 
 } // ns storage
