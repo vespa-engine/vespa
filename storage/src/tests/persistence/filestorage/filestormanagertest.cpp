@@ -201,8 +201,12 @@ std::unique_ptr<DiskThread> createThread(vdstestlib::DirConfig& config,
                                        uint16_t deviceIndex)
 {
     (void) config;
-    return std::make_unique<PersistenceThread>(nullptr,node.getComponentRegister(), config.getConfigId(),
-                                               provider, filestorHandler, metrics, deviceIndex);
+    std::unique_ptr<DiskThread> disk;
+    disk.reset(new PersistenceThread(
+            node.getComponentRegister(), config.getConfigId(), provider,
+            filestorHandler, metrics,
+            deviceIndex));
+    return disk;
 }
 
 namespace {

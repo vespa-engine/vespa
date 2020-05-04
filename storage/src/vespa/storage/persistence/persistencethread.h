@@ -10,7 +10,6 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 namespace storage {
 
@@ -20,9 +19,9 @@ class TestAndSetHelper;
 class PersistenceThread final : public DiskThread, public Types
 {
 public:
-    PersistenceThread(vespalib::ISequencedTaskExecutor *, ServiceLayerComponentRegister&,
-                      const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
-                      FileStorHandler& filestorHandler, FileStorThreadMetrics& metrics, uint16_t deviceIndex);
+    PersistenceThread(ServiceLayerComponentRegister&, const config::ConfigUri & configUri,
+                      spi::PersistenceProvider& provider, FileStorHandler& filestorHandler,
+                      FileStorThreadMetrics& metrics, uint16_t deviceIndex);
     ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */
@@ -49,7 +48,7 @@ public:
 private:
     uint32_t                  _stripeId;
     PersistenceUtil           _env;
-    vespalib::ISequencedTaskExecutor * _sequencedExecutor;
+    uint32_t                  _warnOnSlowOperations;
     spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;

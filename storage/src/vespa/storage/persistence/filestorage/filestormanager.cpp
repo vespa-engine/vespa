@@ -15,7 +15,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.filestor.manager");
@@ -89,13 +88,6 @@ FileStorManager::print(std::ostream& out, bool verbose, const std::string& inden
     out << "FileStorManager";
 }
 
-namespace {
-
-uint32_t computeNumResponseThreads(int configured) {
-    return (configured < 0) ? std::max(1u, std::thread::hardware_concurrency()/4) : configured;
-}
-
-}
 /**
  * If live configuration, assuming storageserver makes sure no messages are
  * incoming during reconfiguration
@@ -117,16 +109,12 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
         _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
-        uint32_t numResposeThreads = computeNumResponseThreads(_config->numResponseThreads);
-        if (numResposeThreads > 0) {
-            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResposeThreads, 10000, vespalib::Executor::OptimizeFor::ADAPTIVE);
-        }
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {
                 LOG(spam, "Setting up disk %u", i);
                 for (uint32_t j = 0; j < numThreads; j++) {
-                    _disks[i].push_back(std::make_shared<PersistenceThread>(_sequencedExecutor.get(), _compReg, _configUri, *_provider,
-                                                                            *_filestorHandler, *_metrics->disks[i]->threads[j], i));
+                    _disks[i].push_back(std::make_shared<PersistenceThread>(_compReg, _configUri, *_provider, *_filestorHandler,
+                                                                            *_metrics->disks[i]->threads[j], i));
                 }
             } else {
                 _filestorHandler->disable(i);

@@ -23,7 +23,7 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::RemoveLocationCommand>("id.user == 4", bucket);
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
-    auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
+    auto tracker = handler.handleRemoveLocation(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd));
 
     EXPECT_EQ("DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
@@ -47,7 +47,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
-    auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
+    auto tracker = handler.handleRemoveLocation(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd));
 
     EXPECT_EQ("DocEntry(100, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(101, 0, Doc(id:mail:testdoctype1:n=4:33113.html))\n"
@@ -74,7 +74,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_ty
     auto cmd = std::make_shared<api::RemoveLocationCommand>("unknowndoctype.headerval % 2 == 0", bucket);
 
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
-    ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
+    ASSERT_THROW(handler.handleRemoveLocation(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd)), std::exception);
 
     EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
               dumpBucket(bucketId));
@@ -88,7 +88,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_bogus_selectio
     auto cmd = std::make_shared<api::RemoveLocationCommand>("id.bogus != badgers", bucket);
 
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
-    ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
+    ASSERT_THROW(handler.handleRemoveLocation(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd)), std::exception);
 
     EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
               dumpBucket(bucketId));
@@ -107,7 +107,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "testdoctype1.headerval % 2 == 0");
-    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
+    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd));
 
     ASSERT_TRUE(tracker->hasReply());
     auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());
@@ -141,7 +141,7 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
-    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
+    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd));
 
     ASSERT_TRUE(tracker->hasReply());
     auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());
@@ -187,7 +187,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
-    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
+    MessageTracker::UP tracker = handler.handleStatBucket(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), cmd));
 
     ASSERT_TRUE(tracker->hasReply());
     auto& reply = dynamic_cast<api::StatBucketReply&>(tracker->getReply());

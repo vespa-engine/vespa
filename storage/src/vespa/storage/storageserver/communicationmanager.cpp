@@ -28,6 +28,45 @@ using document::FixedBucketSpaces;
 
 namespace storage {
 
+Queue::Queue() = default;
+Queue::~Queue() = default;
+
+bool Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout) {
+    vespalib::MonitorGuard sync(_queueMonitor);
+    bool first = true;
+    while (true) { // Max twice
+        if (!_queue.empty()) {
+            LOG(spam, "Picking message from queue");
+            msg = std::move(_queue.front());
+            _queue.pop();
+            return true;
+        }
+        if (timeout == 0 || !first) {
+            return false;
+        }
+        sync.wait(timeout);
+        first = false;
+    }
+
+    return false;
+}
+
+void Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
+    vespalib::MonitorGuard sync(_queueMonitor);
+    _queue.emplace(std::move(msg));
+    sync.unsafeSignalUnlock();
+}
+
+void Queue::signal() {
+    vespalib::MonitorGuard sync(_queueMonitor);
+    sync.unsafeSignalUnlock();
+}
+
+size_t Queue::size() const {
+    vespalib::MonitorGuard sync(_queueMonitor);
+    return _queue.size();
+}
+
 StorageTransportContext::StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg)
     : _docAPIMsg(std::move(msg))
 { }

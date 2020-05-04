@@ -40,6 +40,11 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
         : context(spi::LoadType(0, "default"), 0, 0)
     {}
 
+    MessageTracker::UP
+    createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
+        return std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(bucket), std::move(cmd));
+    }
+
     void SetUp() override {
         SingleDiskPersistenceTestUtils::SetUp();
 
@@ -54,9 +59,8 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
     }
 
     void TearDown() override {
-        thread->flush();
-        SingleDiskPersistenceTestUtils::TearDown();
         thread.reset(nullptr);
+        SingleDiskPersistenceTestUtils::TearDown();
     }
 
     std::shared_ptr<api::UpdateCommand> conditional_update_test(
@@ -87,7 +91,7 @@ TEST_F(TestAndSetTest, conditional_put_not_executed_on_condition_mismatch) {
     auto putTwo = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestampTwo);
     setTestCondition(*putTwo);
 
-    ASSERT_EQ(fetchResult(thread->handlePut(*putTwo, createTracker(putTwo, BUCKET))).getResult(),
+    ASSERT_EQ(thread->handlePut(*putTwo, createTracker(putTwo, BUCKET))->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId), dumpBucket(BUCKET_ID));
 }
@@ -107,7 +111,7 @@ TEST_F(TestAndSetTest, conditional_put_executed_on_condition_match) {
     auto putTwo = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestampTwo);
     setTestCondition(*putTwo);
 
-    ASSERT_EQ(fetchResult(thread->handlePut(*putTwo, createTracker(putTwo, BUCKET))).getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(thread->handlePut(*putTwo, createTracker(putTwo, BUCKET))->getResult().getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
               expectedDocEntryString(timestampTwo, testDocId),
               dumpBucket(BUCKET_ID));
@@ -219,7 +223,7 @@ TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {
     auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
     put->setCondition(documentapi::TestAndSetCondition("bjarne"));
 
-    ASSERT_EQ(fetchResult(thread->handlePut(*put, createTracker(put, BUCKET))).getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
+    ASSERT_EQ(thread->handlePut(*put, createTracker(put, BUCKET))->getResult().getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
@@ -231,7 +235,7 @@ TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     setTestCondition(*put);
     thread->handlePut(*put, createTracker(put, BUCKET));
 
-    ASSERT_EQ(fetchResult(thread->handlePut(*put, createTracker(put, BUCKET))).getResult(),
+    ASSERT_EQ(thread->handlePut(*put, createTracker(put, BUCKET))->getResult().getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
@@ -275,7 +279,7 @@ void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timesta
     }
 
     auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
-    fetchResult(thread->handlePut(*put, createTracker(put, BUCKET)));
+    thread->handlePut(*put, createTracker(put, BUCKET));
 }
 
 void TestAndSetTest::assertTestDocumentFoundAndMatchesContent(const document::FieldValue & value)
