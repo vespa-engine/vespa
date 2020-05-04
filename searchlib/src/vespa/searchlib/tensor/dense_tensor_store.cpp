@@ -8,7 +8,7 @@
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
-using search::datastore::Handle;
+using vespalib::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
@@ -53,7 +53,7 @@ DenseTensorStore::TensorSizeCalc::alignedSize() const
 }
 
 DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc)
-    : datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, RefType::offsetSize())
+    : vespalib::datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, RefType::offsetSize())
 {}
 
 DenseTensorStore::BufferType::~BufferType() = default;

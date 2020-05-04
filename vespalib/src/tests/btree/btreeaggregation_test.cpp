@@ -27,9 +27,9 @@
 LOG_SETUP("btreeaggregation_test");
 
 using vespalib::GenerationHandler;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
-namespace search::btree {
+namespace vespalib::btree {
 
 namespace {
 
@@ -1234,4 +1234,4 @@ Test::Main()
 
 }
 
-TEST_APPHOOK(search::btree::Test);
+TEST_APPHOOK(vespalib::btree::Test);

@@ -4,7 +4,7 @@
 
 #include "minmaxaggregated.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class MinMaxAggrCalc
 {

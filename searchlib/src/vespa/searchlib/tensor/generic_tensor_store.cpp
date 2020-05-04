@@ -10,7 +10,7 @@
 #include <vespa/vespalib/util/macro.h>
 
 using document::DeserializeException;
-using search::datastore::Handle;
+using vespalib::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;
 

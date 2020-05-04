@@ -6,7 +6,7 @@
 #include "i_unique_store_dictionary.h"
 #include "datastore.hpp"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename Allocator>
 UniqueStoreBuilder<Allocator>::UniqueStoreBuilder(Allocator& allocator, IUniqueStoreDictionary& dict, uint32_t uniqueValuesHint)

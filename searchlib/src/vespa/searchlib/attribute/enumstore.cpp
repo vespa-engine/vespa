@@ -40,8 +40,8 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
     return sz;
 }
 
-std::unique_ptr<datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare)
+std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
 {
     if (has_postings) {
         if (folded_compare) {
@@ -56,20 +56,20 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr
 
 }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template class DataStoreT<search::IEnumStore::InternalIndex>;
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template
 class BTreeBuilder<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class BTreeBuilder<search::IEnumStore::Index, datastore::EntryRef, NoAggregated,
+class BTreeBuilder<search::IEnumStore::Index, vespalib::datastore::EntryRef, NoAggregated,
                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 }

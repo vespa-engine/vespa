@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class EntryComparatorWrapper;
 

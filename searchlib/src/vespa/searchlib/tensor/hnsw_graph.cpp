@@ -34,7 +34,7 @@ HnswGraph::remove_node_for_document(uint32_t docid)
 {
     auto node_ref = node_refs[docid].load_acquire();
     nodes.remove(node_ref);
-    search::datastore::EntryRef invalid;
+    vespalib::datastore::EntryRef invalid;
     node_refs[docid].store_release(invalid);
 }
 
@@ -84,6 +84,6 @@ HnswGraph::histograms() const
 
 namespace vespalib {
 
-template class RcuVectorBase<search::datastore::AtomicEntryRef>;
+template class RcuVectorBase<vespalib::datastore::AtomicEntryRef>;
 
 }

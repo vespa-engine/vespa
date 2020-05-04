@@ -12,7 +12,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("multivaluemapping_test");
 
-using search::datastore::ArrayStoreConfig;
+using vespalib::datastore::ArrayStoreConfig;
 
 template <typename EntryT>
 void

@@ -9,7 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("enum_comparator_test");
 
-using namespace search::btree;
+using namespace vespalib::btree;
 
 namespace search {
 
@@ -20,8 +20,8 @@ using StringEnumStore = EnumStoreT<const char*>;
 using EnumIndex = IEnumStore::Index;
 
 using TreeType = BTreeRoot<EnumIndex, BTreeNoLeafData,
-                           btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper>;
+                           vespalib::btree::NoAggregated,
+                           const vespalib::datastore::EntryComparatorWrapper>;
 using NodeAllocator = TreeType::NodeAllocatorType;
 
 class Test : public vespalib::TestApp {

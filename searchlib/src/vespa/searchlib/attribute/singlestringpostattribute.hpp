@@ -52,7 +52,7 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::
-makePostingChange(const datastore::EntryComparator *cmpa,
+makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
                   Dictionary &dict,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)

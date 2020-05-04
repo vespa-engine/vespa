@@ -6,7 +6,7 @@
 #include "postingdata.h"
 #include <vespa/vespalib/util/array.h>
 
-namespace search::datastore { class EntryComparator; }
+namespace vespalib::datastore { class EntryComparator; }
 
 namespace search {
 
@@ -49,7 +49,7 @@ class EnumIndexMapper
 {
 public:
     virtual ~EnumIndexMapper() { }
-    virtual IEnumStore::Index map(IEnumStore::Index original, const datastore::EntryComparator& compare) const;
+    virtual IEnumStore::Index map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const;
     virtual bool hasFold() const { return false; }
 };
 
@@ -61,7 +61,7 @@ private:
 public:
     template <typename MultivalueMapping>
     static PostingMap compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-                              const datastore::EntryComparator & compare, const EnumIndexMapper & mapper);
+                              const vespalib::datastore::EntryComparator & compare, const EnumIndexMapper & mapper);
 };
 
 template <>
@@ -70,7 +70,7 @@ PostingChange<AttributePosting>::add(uint32_t docId, int32_t weight)
 {
     (void) weight;
     _additions.push_back(AttributePosting(docId,
-                                 btree::BTreeNoLeafData()));
+                                 vespalib::btree::BTreeNoLeafData()));
 }
 
 

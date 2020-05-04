@@ -26,7 +26,7 @@ namespace storage {
 // TODO create and use a new DB interface with better bulk loading, snapshot and iteration support
 class BTreeBucketDatabase : public BucketDatabase {
 
-    struct KeyUsedBitsMinMaxAggrCalc : search::btree::MinMaxAggrCalc {
+    struct KeyUsedBitsMinMaxAggrCalc : vespalib::btree::MinMaxAggrCalc {
         constexpr static bool aggregate_over_values() { return false; }
         constexpr static int32_t getVal(uint64_t key) noexcept {
             static_assert(document::BucketId::CountBits == 6u);
@@ -35,12 +35,12 @@ class BTreeBucketDatabase : public BucketDatabase {
     };
 
     // Mapping from u64: bucket key -> <MSB u32: gc timestamp, LSB u32: ArrayStore ref>
-    using BTree = search::btree::BTree<uint64_t, uint64_t,
-                                       search::btree::MinMaxAggregated,
+    using BTree = vespalib::btree::BTree<uint64_t, uint64_t,
+                                       vespalib::btree::MinMaxAggregated,
                                        std::less<>,
-                                       search::btree::BTreeDefaultTraits,
+                                       vespalib::btree::BTreeDefaultTraits,
                                        KeyUsedBitsMinMaxAggrCalc>;
-    using ReplicaStore = search::datastore::ArrayStore<BucketCopy>;
+    using ReplicaStore = vespalib::datastore::ArrayStore<BucketCopy>;
     using GenerationHandler = vespalib::GenerationHandler;
 
     BTree _tree;
@@ -84,7 +84,7 @@ private:
                                         const document::BucketId& bucket,
                                         std::vector<Entry>& entries) const;
 
-    static search::datastore::ArrayStoreConfig make_default_array_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_array_store_config();
 
     class ReadGuardImpl : public ReadGuard {
         const BTreeBucketDatabase* _db;

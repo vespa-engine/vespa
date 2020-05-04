@@ -13,7 +13,7 @@
 #include <cassert>
 #include <set>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class DataStoreBase;
 
@@ -37,8 +37,8 @@ public:
     using IndexVector = enumstore::IndexVector;
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
-    using EnumIndexRemapper = datastore::UniqueStoreRemapper<InternalIndex>;
-    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
+    using EnumIndexRemapper = vespalib::datastore::UniqueStoreRemapper<InternalIndex>;
+    using Enumerator = vespalib::datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
 
     struct CompareEnumIndex {
         using Index = IEnumStore::Index;

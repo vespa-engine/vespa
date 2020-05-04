@@ -13,7 +13,7 @@
 #include <atomic>
 #include <algorithm>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 namespace uniquestore {
 

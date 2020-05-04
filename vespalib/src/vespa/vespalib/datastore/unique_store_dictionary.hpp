@@ -14,7 +14,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename DictionaryT, typename ParentT>
 UniqueStoreDictionary<DictionaryT, ParentT>::

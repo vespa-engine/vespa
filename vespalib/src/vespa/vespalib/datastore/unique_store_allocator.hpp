@@ -6,7 +6,7 @@
 #include "unique_store_value_filter.h"
 #include "datastore.hpp"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
 constexpr float ALLOC_GROW_FACTOR = 0.2;

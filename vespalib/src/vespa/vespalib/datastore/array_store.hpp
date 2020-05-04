@@ -7,7 +7,7 @@
 #include <atomic>
 #include <algorithm>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)

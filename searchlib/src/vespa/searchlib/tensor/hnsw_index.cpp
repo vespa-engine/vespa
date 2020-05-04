@@ -15,7 +15,7 @@
 namespace search::tensor {
 
 using search::StateExplorerUtils;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
 namespace {
 
@@ -48,14 +48,14 @@ bool operator< (const PairDist &a, const PairDist &b) {
 
 }
 
-search::datastore::ArrayStoreConfig
+vespalib::datastore::ArrayStoreConfig
 HnswIndex::make_default_node_store_config()
 {
     return NodeStore::optimizedConfigForHugePage(max_level_array_size, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                  small_page_size, min_num_arrays_for_new_buffer, alloc_grow_factor).enable_free_lists(true);
 }
 
-search::datastore::ArrayStoreConfig
+vespalib::datastore::ArrayStoreConfig
 HnswIndex::make_default_link_store_config()
 {
     return LinkStore::optimizedConfigForHugePage(max_link_array_size, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,

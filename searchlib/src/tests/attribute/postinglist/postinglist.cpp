@@ -96,18 +96,18 @@ private:
     std::vector<RandomValue> _randomValues;
 
 public:
-    typedef datastore::DataStore<int> IntKeyStore;
-    typedef btree::BTreeKeyData<uint32_t, btree::BTreeNoLeafData>
+    typedef vespalib::datastore::DataStore<int> IntKeyStore;
+    typedef vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>
     AttributePosting;
-    typedef btree::BTreeStore<uint32_t,
-                              btree::BTreeNoLeafData,
-                              btree::NoAggregated,
+    typedef vespalib::btree::BTreeStore<uint32_t,
+                              vespalib::btree::BTreeNoLeafData,
+                              vespalib::btree::NoAggregated,
                               std::less<uint32_t>,
-                              btree::BTreeDefaultTraits>
+                              vespalib::btree::BTreeDefaultTraits>
     PostingList;
     typedef PostingList::NodeAllocatorType PostingListNodeAllocator;
-    typedef datastore::EntryRef PostingIdx;
-    typedef datastore::EntryRef StoreIndex;
+    typedef vespalib::datastore::EntryRef PostingIdx;
+    typedef vespalib::datastore::EntryRef StoreIndex;
 
     class IntComp {
     private:
@@ -127,8 +127,8 @@ public:
         }
     };
 
-    typedef btree::BTreeRoot<StoreIndex, PostingIdx,
-                             btree::NoAggregated,
+    typedef vespalib::btree::BTreeRoot<StoreIndex, PostingIdx,
+                             vespalib::btree::NoAggregated,
                              const IntComp &> IntEnumTree;
     typedef IntEnumTree::NodeAllocatorType IntEnumNodeAllocator;
     typedef IntEnumTree Tree;
@@ -375,7 +375,7 @@ insertRandomValues(Tree &tree,
         PostingIdx oldIdx = itr.getData();
         PostingIdx newIdx = oldIdx;
         AttributePosting newPosting(i->_docId,
-                                    btree::BTreeNoLeafData());
+                                    vespalib::btree::BTreeNoLeafData());
         std::vector<AttributePosting> additions;
         std::vector<uint32_t> removals;
         additions.push_back(newPosting);
@@ -591,7 +591,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
     std::vector<uint32_t> toHold;
 
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        datastore::BufferState &state = valueHandle.getBufferState(bufferId);
+        vespalib::datastore::BufferState &state = valueHandle.getBufferState(bufferId);
         if (state.isActive()) {
             toHold.push_back(bufferId);
             // Freelists already disabled due to variable sized data

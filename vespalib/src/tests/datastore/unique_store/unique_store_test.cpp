@@ -12,10 +12,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_test");
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using search::datastore::test::BufferStats;
+using vespalib::datastore::test::BufferStats;
 
 template <typename UniqueStoreT>
 struct TestBase : public ::testing::Test {

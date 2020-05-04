@@ -63,8 +63,8 @@ private:
     // Lids are stored as keys in the tree, sorted by their gid
     // counterpart.  The LidGidKeyComparator class maps from lids -> metadata by
     // using the metadata store.
-    typedef search::btree::BTree<DocId, search::btree::BTreeNoLeafData,
-                                 search::btree::NoAggregated, const KeyComp &> TreeType;
+    typedef vespalib::btree::BTree<DocId, vespalib::btree::BTreeNoLeafData,
+                                 vespalib::btree::NoAggregated, const KeyComp &> TreeType;
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
@@ -273,7 +273,7 @@ public:
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 extern template class BTreeIteratorBase<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS, BTreeDefaultTraits::PATH_SIZE>;
 

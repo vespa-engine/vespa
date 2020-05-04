@@ -6,7 +6,7 @@
 #include <vespa/vespalib/datastore/bufferstate.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
 UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store)

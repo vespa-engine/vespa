@@ -13,19 +13,19 @@ class IEnumStore;
  * Concrete dictionary for an enum store that extends the functionality of a unique store dictionary.
  */
 template <typename DictionaryT>
-class EnumStoreDictionary : public datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary> {
+class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary> {
 private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
     using Index = IEnumStoreDictionary::Index;
     using IndexSet = IEnumStoreDictionary::IndexSet;
     using IndexVector = IEnumStoreDictionary::IndexVector;
-    using ParentUniqueStoreDictionary = datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary>;
+    using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary>;
     using generation_t = IEnumStoreDictionary::generation_t;
 
     IEnumStore& _enumStore;
 
     void remove_unused_values(const IndexSet& unused,
-                              const datastore::EntryComparator& cmp);
+                              const vespalib::datastore::EntryComparator& cmp);
 
 public:
     EnumStoreDictionary(IEnumStore& enumStore);
@@ -36,16 +36,16 @@ public:
 
     void set_ref_counts(const EnumVector& hist) override;
 
-    void free_unused_values(const datastore::EntryComparator& cmp) override;
+    void free_unused_values(const vespalib::datastore::EntryComparator& cmp) override;
 
     void free_unused_values(const IndexSet& to_remove,
-                            const datastore::EntryComparator& cmp) override;
+                            const vespalib::datastore::EntryComparator& cmp) override;
 
-    void remove(const datastore::EntryComparator& comp, datastore::EntryRef ref) override;
-    bool find_index(const datastore::EntryComparator& cmp, Index& idx) const override;
-    bool find_frozen_index(const datastore::EntryComparator& cmp, Index& idx) const override;
+    void remove(const vespalib::datastore::EntryComparator& comp, vespalib::datastore::EntryRef ref) override;
+    bool find_index(const vespalib::datastore::EntryComparator& cmp, Index& idx) const override;
+    bool find_frozen_index(const vespalib::datastore::EntryComparator& cmp, Index& idx) const override;
     std::vector<attribute::IAttributeVector::EnumHandle>
-    find_matching_enums(const datastore::EntryComparator& cmp) const override;
+    find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const override;
 
     EnumPostingTree& get_posting_dictionary() override;
     const EnumPostingTree& get_posting_dictionary() const override;
@@ -63,18 +63,18 @@ public:
 class EnumStoreFoldedDictionary : public EnumStoreDictionary<EnumPostingTree>
 {
 private:
-    std::unique_ptr<datastore::EntryComparator> _folded_compare;
+    std::unique_ptr<vespalib::datastore::EntryComparator> _folded_compare;
 
 public:
-    EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<datastore::EntryComparator> folded_compare);
+    EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
     ~EnumStoreFoldedDictionary() override;
-    datastore::UniqueStoreAddResult add(const datastore::EntryComparator& comp, std::function<datastore::EntryRef(void)> insertEntry) override;
-    void remove(const datastore::EntryComparator& comp, datastore::EntryRef ref) override;
+    vespalib::datastore::UniqueStoreAddResult add(const vespalib::datastore::EntryComparator& comp, std::function<vespalib::datastore::EntryRef(void)> insertEntry) override;
+    void remove(const vespalib::datastore::EntryComparator& comp, vespalib::datastore::EntryRef ref) override;
 };
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 extern template
 class BTreeNodeT<search::IEnumStore::Index, search::EnumTreeTraits::INTERNAL_SLOTS>;
@@ -110,19 +110,19 @@ class BTreeNodeStore<search::IEnumStore::Index, uint32_t, NoAggregated,
 
 extern template
 class BTreeRoot<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
-                const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeRoot<search::IEnumStore::Index, uint32_t, NoAggregated,
-                const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeRootT<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
-                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                 const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeRootT<search::IEnumStore::Index, uint32_t, NoAggregated,
-                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                 const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeRootBase<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
@@ -149,23 +149,23 @@ class BTreeIteratorBase<search::IEnumStore::Index, uint32_t, NoAggregated,
                         search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS, search::EnumTreeTraits::PATH_SIZE>;
 
 extern template class BTreeConstIterator<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
-                                         const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                                         const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template class BTreeConstIterator<search::IEnumStore::Index, uint32_t, NoAggregated,
-                                         const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                                         const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeIterator<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
-                    const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                    const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 extern template
 class BTreeIterator<search::IEnumStore::Index, uint32_t, NoAggregated,
-                    const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+                    const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTree<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
-            const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+            const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 extern template
 class BTree<search::IEnumStore::Index, uint32_t, NoAggregated,
-            const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
+            const vespalib::datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 }

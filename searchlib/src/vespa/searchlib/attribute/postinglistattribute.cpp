@@ -115,7 +115,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            datastore::EntryComparator &cmp)
+                                            vespalib::datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
         auto& change = elem.second;
@@ -160,7 +160,7 @@ PostingListAttributeBase<P>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
               uint32_t fromLid,
               uint32_t toLid,
-              datastore::EntryComparator &cmp)
+              vespalib::datastore::EntryComparator &cmp)
 {
     PostingChange<P> postings;
 

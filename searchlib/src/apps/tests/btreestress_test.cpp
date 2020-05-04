@@ -24,7 +24,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("btreestress_test");
 
-using MyTree = search::btree::BTree<uint32_t, uint32_t>;
+using MyTree = vespalib::btree::BTree<uint32_t, uint32_t>;
 using MyTreeIterator = typename MyTree::Iterator;
 using MyTreeConstIterator = typename MyTree::ConstIterator;
 using GenerationHandler = vespalib::GenerationHandler;

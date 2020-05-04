@@ -5,7 +5,7 @@
 #include "free_list_allocator.h"
 #include "bufferstate.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT, typename ReclaimerT>
 FreeListAllocator<EntryT, RefT, ReclaimerT>::FreeListAllocator(DataStoreBase &store, uint32_t typeId)

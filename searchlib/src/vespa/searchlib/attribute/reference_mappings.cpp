@@ -69,7 +69,7 @@ void
 ReferenceMappings::addReverseMapping(const Reference &entry, uint32_t lid)
 {
     EntryRef revMapIdx = entry.revMapIdx();
-    ReverseMapping::KeyDataType add(lid, btree::BTreeNoLeafData());
+    ReverseMapping::KeyDataType add(lid, vespalib::btree::BTreeNoLeafData());
     _reverseMapping.apply(revMapIdx, &add, &add + 1, nullptr, nullptr);
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);

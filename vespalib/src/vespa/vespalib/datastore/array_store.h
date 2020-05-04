@@ -10,7 +10,7 @@
 #include "i_compaction_context.h"
 #include <vespa/vespalib/util/array.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Datastore for storing arrays of type EntryT that is accessed via a 32-bit EntryRef.

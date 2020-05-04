@@ -7,7 +7,7 @@
 #include <cassert>
 #include <limits>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /*
  * Class containing common metadata for entries in unique store.

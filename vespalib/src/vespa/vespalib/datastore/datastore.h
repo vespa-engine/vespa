@@ -8,7 +8,7 @@
 #include "free_list_raw_allocator.h"
 #include "raw_allocator.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template<typename EntryType>
 struct DefaultReclaimer {
@@ -19,7 +19,7 @@ struct DefaultReclaimer {
 
 }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Concrete data store using the given EntryRef type to reference stored data.

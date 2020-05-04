@@ -20,7 +20,7 @@ namespace search::predicate {
 class DocumentFeaturesStore {
     typedef memoryindex::WordStore WordStore;
     struct Range {
-        datastore::EntryRef label_ref;
+        vespalib::datastore::EntryRef label_ref;
         int64_t from;
         int64_t to;
     };
@@ -31,7 +31,7 @@ class DocumentFeaturesStore {
         const WordStore &_word_store;
         const vespalib::string _word;
 
-        const char *getWord(datastore::EntryRef ref) const {
+        const char *getWord(vespalib::datastore::EntryRef ref) const {
             return ref.valid() ? _word_store.getWord(ref) : _word.c_str();
         }
 
@@ -41,8 +41,8 @@ class DocumentFeaturesStore {
               _word(word) {
         }
 
-        bool operator()(const datastore::EntryRef &lhs,
-                        const datastore::EntryRef &rhs) const {
+        bool operator()(const vespalib::datastore::EntryRef &lhs,
+                        const vespalib::datastore::EntryRef &rhs) const {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
@@ -50,8 +50,8 @@ class DocumentFeaturesStore {
     typedef vespalib::hash_map<uint32_t, FeatureVector> DocumentFeaturesMap;
     typedef vespalib::Array<Range> RangeVector;
     typedef vespalib::hash_map<uint32_t, RangeVector> RangeFeaturesMap;
-    typedef btree::BTree<datastore::EntryRef, btree::BTreeNoLeafData,
-                         btree::NoAggregated, const KeyComp &> WordIndex;
+    typedef vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
+                         vespalib::btree::NoAggregated, const KeyComp &> WordIndex;
 
     DocumentFeaturesMap _docs;
     RangeFeaturesMap _ranges;

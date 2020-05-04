@@ -5,7 +5,7 @@
 #include "entryref.h"
 
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /*
  * Representation of result of adding a value to unique store.

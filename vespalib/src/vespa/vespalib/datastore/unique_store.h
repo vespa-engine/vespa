@@ -13,7 +13,7 @@
 #include "unique_store_comparator.h"
 #include "unique_store_entry.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename Allocator>
 class UniqueStoreBuilder;

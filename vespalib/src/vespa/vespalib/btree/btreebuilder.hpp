@@ -4,7 +4,7 @@
 
 #include "btreebuilder.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>

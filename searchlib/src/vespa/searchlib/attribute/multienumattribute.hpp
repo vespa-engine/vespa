@@ -27,7 +27,7 @@ MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & i
     if (c._enumScratchPad == Change::UNSET_ENUM) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
-    idx = EnumIndex(datastore::EntryRef(c._enumScratchPad));
+    idx = EnumIndex(vespalib::datastore::EntryRef(c._enumScratchPad));
     return true;
 }
 

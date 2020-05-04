@@ -5,7 +5,7 @@
 #include "entryref.h"
 #include <atomic>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * A wrapper for std::atomic of type EntryRef that supports copy and move constructors and assignment operator,

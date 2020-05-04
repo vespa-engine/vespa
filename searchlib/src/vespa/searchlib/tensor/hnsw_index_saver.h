@@ -17,7 +17,7 @@ namespace search::tensor {
  **/
 class HnswIndexSaver : public NearestNeighborIndexSaver {
 public:
-    using LevelVector = std::vector<search::datastore::EntryRef>;
+    using LevelVector = std::vector<vespalib::datastore::EntryRef>;
 
     HnswIndexSaver(const HnswGraph &graph);
     ~HnswIndexSaver();

@@ -8,7 +8,7 @@
 
 namespace search::attribute {
 
-using btree::BTreeNode;
+using vespalib::btree::BTreeNode;
 
 PostingListSearchContext::
 PostingListSearchContext(const Dictionary &dictionary,
@@ -44,7 +44,7 @@ PostingListSearchContext::~PostingListSearchContext() = default;
 
 
 void
-PostingListSearchContext::lookupTerm(const datastore::EntryComparator &comp)
+PostingListSearchContext::lookupTerm(const vespalib::datastore::EntryComparator &comp)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), comp);
     _upperDictItr = _lowerDictItr;
@@ -56,8 +56,8 @@ PostingListSearchContext::lookupTerm(const datastore::EntryComparator &comp)
 
 
 void
-PostingListSearchContext::lookupRange(const datastore::EntryComparator &low,
-                                      const datastore::EntryComparator &high)
+PostingListSearchContext::lookupRange(const vespalib::datastore::EntryComparator &low,
+                                      const vespalib::datastore::EntryComparator &high)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;
@@ -72,13 +72,13 @@ void
 PostingListSearchContext::lookupSingle()
 {
     if (_lowerDictItr.valid()) {
-        _pidx = datastore::EntryRef(_lowerDictItr.getData());
+        _pidx = vespalib::datastore::EntryRef(_lowerDictItr.getData());
     }
 }
 
-template class PostingListSearchContextT<btree::BTreeNoLeafData>;
+template class PostingListSearchContextT<vespalib::btree::BTreeNoLeafData>;
 template class PostingListSearchContextT<int32_t>;
-template class PostingListFoldedSearchContextT<btree::BTreeNoLeafData>;
+template class PostingListFoldedSearchContextT<vespalib::btree::BTreeNoLeafData>;
 template class PostingListFoldedSearchContextT<int32_t>;
 
 }

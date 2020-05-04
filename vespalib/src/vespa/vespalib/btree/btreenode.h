@@ -11,7 +11,7 @@
 #include <utility>
 #include <cstddef>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename, typename> class Allocator;
 template <typename> class BufferType;
@@ -22,7 +22,7 @@ template <typename, typename ...> struct Assigner;
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeNodeAllocator;
 template <typename, typename, typename, size_t, size_t> class BTreeNodeStore;

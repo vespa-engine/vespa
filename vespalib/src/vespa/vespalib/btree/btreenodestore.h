@@ -6,7 +6,7 @@
 #include "btreetraits.h"
 #include <vespa/vespalib/datastore/datastore.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class BTreeNodeReclaimer
 {

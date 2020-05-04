@@ -10,7 +10,7 @@
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/handle.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,

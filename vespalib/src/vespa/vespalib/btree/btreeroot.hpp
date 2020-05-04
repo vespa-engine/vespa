@@ -10,7 +10,7 @@
 #include "btreeaggregator.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 //----------------------- BTreeRoot ------------------------------------------//
 

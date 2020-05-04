@@ -49,7 +49,7 @@ private:
     using SelfType = SingleValueNumericPostingAttribute<B>;
     using SingleSearchContext = typename SingleValueNumericEnumAttribute<B>::SingleSearchContext;
     using SingleNumericSearchContext = SingleSearchContext;
-    using SinglePostingSearchContext = attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, btree::BTreeNoLeafData>;
+    using SinglePostingSearchContext = attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, vespalib::btree::BTreeNoLeafData>;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
 
@@ -63,7 +63,7 @@ private:
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
     void applyUpdateValueChange(const Change & c, EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> & currEnumIndices);
-    void makePostingChange(const datastore::EntryComparator *cmp,
+    void makePostingChange(const vespalib::datastore::EntryComparator *cmp,
                            const std::map<DocId, EnumIndex> &currEnumIndices,
                            PostingMap &changePost);
 

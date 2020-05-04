@@ -4,7 +4,7 @@
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/array_store_config.h>
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 using AllocSpec = ArrayStoreConfig::AllocSpec;
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;

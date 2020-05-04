@@ -25,8 +25,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("field_index_test");
 
-using namespace search::btree;
-using namespace search::datastore;
+using namespace vespalib::btree;
+using namespace vespalib::datastore;
 
 namespace search {
 

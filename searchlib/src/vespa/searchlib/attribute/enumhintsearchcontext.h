@@ -6,7 +6,7 @@
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search::datastore { class EntryComparator; }
+namespace vespalib::datastore { class EntryComparator; }
 
 namespace search::attribute {
 
@@ -28,8 +28,8 @@ protected:
                           uint64_t numValues);
     ~EnumHintSearchContext() override;
 
-    void lookupTerm(const datastore::EntryComparator &comp);
-    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
+    void lookupTerm(const vespalib::datastore::EntryComparator &comp);
+    void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
 
     queryeval::SearchIterator::UP
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;

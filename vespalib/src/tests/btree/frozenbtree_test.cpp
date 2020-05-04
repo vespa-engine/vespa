@@ -13,14 +13,14 @@
 #include <vespa/log/log.h>
 LOG_SETUP("frozenbtree_test");
 
-using search::btree::BTreeRoot;
-using search::btree::BTreeNode;
-using search::btree::BTreeInternalNode;
-using search::btree::BTreeLeafNode;
-using search::btree::BTreeDefaultTraits;
+using vespalib::btree::BTreeRoot;
+using vespalib::btree::BTreeNode;
+using vespalib::btree::BTreeInternalNode;
+using vespalib::btree::BTreeLeafNode;
+using vespalib::btree::BTreeDefaultTraits;
 using vespalib::GenerationHandler;
 
-namespace search {
+namespace vespalib {
 
 
 class FrozenBTreeTest : public vespalib::TestApp
@@ -468,4 +468,4 @@ FrozenBTreeTest::Main()
 
 }
 
-TEST_APPHOOK(search::FrozenBTreeTest);
+TEST_APPHOOK(vespalib::FrozenBTreeTest);

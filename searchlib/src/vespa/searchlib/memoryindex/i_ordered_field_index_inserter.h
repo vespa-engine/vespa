@@ -33,7 +33,7 @@ public:
     /**
      * Returns the reference to the current word (only used by unit tests).
      */
-    virtual datastore::EntryRef getWordRef() const = 0;
+    virtual vespalib::datastore::EntryRef getWordRef() const = 0;
 
     /**
      * Remove (word, docId) tuple.

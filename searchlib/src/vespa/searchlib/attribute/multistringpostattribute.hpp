@@ -30,7 +30,7 @@ class StringEnumIndexMapper : public EnumIndexMapper
 {
 public:
     StringEnumIndexMapper(const EnumPostingTree & dictionary) : _dictionary(dictionary) { }
-    IEnumStore::Index map(IEnumStore::Index original, const datastore::EntryComparator& compare) const override;
+    IEnumStore::Index map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const override;
     virtual bool hasFold() const override { return true; }
 private:
     const EnumPostingTree & _dictionary;
@@ -104,12 +104,12 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(
 {
     const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
     const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
-    DictionaryConstIterator dictItr(btree::BTreeNode::Ref(), dictionary.getAllocator());
+    DictionaryConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
     auto comp = self._enumStore.make_folded_comparator(term.c_str());
 
     dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
     if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
-        datastore::EntryRef pidx(dictItr.getData());
+        vespalib::datastore::EntryRef pidx(dictItr.getData());
         if (pidx.valid()) {
             const PostingList &plist = self.getPostingList();
             auto minmax = plist.getAggregated(pidx);
@@ -121,7 +121,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(
 
 template <typename B, typename T>
 void
-MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
+MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
 {
     assert(idx.valid());
     self.getPostingList().beginFrozen(idx, dst);
@@ -129,7 +129,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::create(
 
 template <typename B, typename M>
 DocumentWeightIterator
-MultiValueStringPostingAttributeT<B, M>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx) const
+MultiValueStringPostingAttributeT<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx) const
 {
     assert(idx.valid());
     return self.getPostingList().beginFrozen(idx);

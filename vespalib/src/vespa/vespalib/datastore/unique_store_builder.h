@@ -4,7 +4,7 @@
 
 #include "unique_store_allocator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class IUniqueStoreDictionary;
 

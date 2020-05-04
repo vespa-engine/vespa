@@ -102,7 +102,7 @@ removeDupRemovals(std::vector<uint32_t> &removals)
 }
 
 IEnumStore::Index
-EnumIndexMapper::map(IEnumStore::Index original, const datastore::EntryComparator& compare) const
+EnumIndexMapper::map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const
 {
     (void) compare;
     return original;
@@ -140,14 +140,14 @@ public:
                  const WeightedIndex * entriesOld, size_t szOld,
                  AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
 
-    ActualChangeComputer(const datastore::EntryComparator& compare, const EnumIndexMapper& mapper);
+    ActualChangeComputer(const vespalib::datastore::EntryComparator& compare, const EnumIndexMapper& mapper);
     ~ActualChangeComputer();
 
 private:
     WeightedIndexVector _oldEntries;
     WeightedIndexVector _newEntries;
     vespalib::hash_map<uint32_t, uint32_t> _cachedMapping;
-    const datastore::EntryComparator &_compare;
+    const vespalib::datastore::EntryComparator &_compare;
     const EnumIndexMapper &_mapper;
     const bool _hasFold;
 
@@ -161,7 +161,7 @@ private:
         if (itr.second) {
             itr.first->second = _mapper.map(unmapped, _compare).ref();
         }
-        return EnumIndex(datastore::EntryRef(itr.first->second));
+        return EnumIndex(vespalib::datastore::EntryRef(itr.first->second));
     }
 
 
@@ -232,7 +232,7 @@ public:
 };
 
 template <typename WeightedIndex>
-ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const datastore::EntryComparator &compare,
+ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const vespalib::datastore::EntryComparator &compare,
                                                           const EnumIndexMapper &mapper)
     : _oldEntries(),
       _newEntries(),
@@ -288,7 +288,7 @@ template <typename MultivalueMapping>
 PostingMap
 PostingChangeComputerT<WeightedIndex, PostingMap>::
 compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-        const datastore::EntryComparator & compare, const EnumIndexMapper & mapper)
+        const vespalib::datastore::EntryComparator & compare, const EnumIndexMapper & mapper)
 {
     typedef ActualChangeComputer<WeightedIndex> AC;
     AC actualChange(compare, mapper);
@@ -318,7 +318,7 @@ template class PostingChange<AttributePosting>;
 
 template class PostingChange<AttributeWeightPosting>;
 
-typedef PostingChange<btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
+typedef PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
 typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
 typedef IEnumStore::Index EnumIndex;
 typedef multivalue::WeightedValue<EnumIndex> WeightedIndex; 
@@ -332,13 +332,13 @@ typedef std::vector<std::pair<uint32_t, std::vector<ValueIndex>>> DocIndicesValu
 template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
              ::compute<WeightedMultiValueMapping>(const WeightedMultiValueMapping &,
                                                    const DocIndicesWeighted &,
-                                                   const datastore::EntryComparator &,
+                                                   const vespalib::datastore::EntryComparator &,
                                                    const EnumIndexMapper &);
 
 template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
              ::compute<ValueMultiValueMapping>(const ValueMultiValueMapping &,
                                                 const DocIndicesValue &,
-                                                const datastore::EntryComparator &,
+                                                const vespalib::datastore::EntryComparator &,
                                                 const EnumIndexMapper &);
 
 }

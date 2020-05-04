@@ -78,7 +78,7 @@ public:
         }
     }
 
-    virtual datastore::EntryRef getWordRef() const override { return datastore::EntryRef(); }
+    virtual vespalib::datastore::EntryRef getWordRef() const override { return vespalib::datastore::EntryRef(); }
 
     virtual void remove(uint32_t docId) override {
         addComma();

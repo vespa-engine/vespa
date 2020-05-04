@@ -17,19 +17,19 @@ struct Interval;
 class PredicateIntervalStore {
     class DataStoreAdapter;
     typedef PredicateRefCache<DataStoreAdapter, 8> RefCacheType;
-    typedef datastore::DataStoreT<datastore::EntryRefT<18, 6>> DataStoreType;
+    typedef vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<18, 6>> DataStoreType;
     typedef DataStoreType::RefType RefType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     DataStoreType _store;
-    datastore::BufferType<uint32_t> _size1Type;
+    vespalib::datastore::BufferType<uint32_t> _size1Type;
 
     class DataStoreAdapter {
         const DataStoreType &_store;
     public:
         DataStoreAdapter(const DataStoreType &store) : _store(store) {}
         const uint32_t *getBuffer(uint32_t ref) const {
-            RefType entry_ref = datastore::EntryRef(ref);
+            RefType entry_ref = vespalib::datastore::EntryRef(ref);
             return _store.getEntry<uint32_t>(entry_ref);
         }
     };
@@ -59,7 +59,7 @@ public:
      * IntervalT is either Interval or IntervalWithBounds.
      */
     template <typename IntervalT>
-    datastore::EntryRef insert(const std::vector<IntervalT> &intervals);
+    vespalib::datastore::EntryRef insert(const std::vector<IntervalT> &intervals);
 
     /**
      * Removes an entry. The entry remains accessible until commit
@@ -69,7 +69,7 @@ public:
      * Remove is currently disabled, as the ref cache is assumed to
      * keep the total number of different entries low.
      */
-    void remove(datastore::EntryRef ref);
+    void remove(vespalib::datastore::EntryRef ref);
 
     void trimHoldLists(generation_t used_generation);
 
@@ -89,12 +89,12 @@ public:
      * single interval optimization.
      */
     template <typename IntervalT>
-    const IntervalT *get(datastore::EntryRef btree_ref,
+    const IntervalT *get(vespalib::datastore::EntryRef btree_ref,
                          uint32_t &size_out,
                          IntervalT *single_buf) const
     {
         uint32_t size = btree_ref.ref() >> RefCacheType::SIZE_SHIFT;
-        RefType data_ref(datastore::EntryRef(btree_ref.ref() & RefCacheType::DATA_REF_MASK));
+        RefType data_ref(vespalib::datastore::EntryRef(btree_ref.ref() & RefCacheType::DATA_REF_MASK));
         if (__builtin_expect(size == 0, true)) {  // single-interval optimization
             *single_buf = IntervalT();
             single_buf->interval = data_ref.ref();

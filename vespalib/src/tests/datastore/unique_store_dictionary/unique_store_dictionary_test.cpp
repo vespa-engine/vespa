@@ -7,8 +7,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_dictionary_test");
 
-using namespace search::datastore;
-using namespace search::datastore::uniquestore;
+using namespace vespalib::datastore;
+using namespace vespalib::datastore::uniquestore;
 
 class Comparator : public EntryComparator {
 private:

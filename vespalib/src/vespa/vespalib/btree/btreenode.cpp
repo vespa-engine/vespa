@@ -2,7 +2,7 @@
 
 #include "btreenode.hpp"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 NoAggregated BTreeNodeAggregatedWrap<NoAggregated>::_instance;
 
@@ -25,4 +25,4 @@ template class BTreeLeafNodeTemp<uint32_t, uint32_t, NoAggregated, 16>;
 template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated, 16>;
 template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 
-} // namespace search::btree
+} // namespace vespalib::btree

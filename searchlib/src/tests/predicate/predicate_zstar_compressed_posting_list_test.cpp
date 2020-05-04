@@ -29,7 +29,7 @@ const uint64_t hash = 0x123;
 
 TEST("require that empty posting list starts at 0.") {
     PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
-    datastore::EntryRef ref;
+    vespalib::datastore::EntryRef ref;
     PredicateZstarCompressedPostingList<PredicateIndex::BTreeIterator>
         posting_list(index.getIntervalStore(), index.getIntervalIndex().getBTreePostingList(ref));
     EXPECT_EQUAL(0u, posting_list.getDocId());

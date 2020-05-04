@@ -93,7 +93,7 @@ AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
 setupPostingInfo()
 {
     if (_iterator.valid()) {
-        const btree::MinMaxAggregated &a(_iterator.getAggregated());
+        const vespalib::btree::MinMaxAggregated &a(_iterator.getAggregated());
         _postingInfo = MinMaxPostingInfo(a.getMin(), a.getMax());
         _postingInfoValid = true;
     }
@@ -116,7 +116,7 @@ AttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
 setupPostingInfo()
 {
     if (_iterator.valid()) {
-        const btree::MinMaxAggregated a(_iterator.getAggregated());
+        const vespalib::btree::MinMaxAggregated a(_iterator.getAggregated());
         _postingInfo = MinMaxPostingInfo(a.getMin(), a.getMax());
         _postingInfoValid = true;
     }

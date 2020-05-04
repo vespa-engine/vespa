@@ -4,7 +4,7 @@
 
 #include "free_list_raw_allocator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
 FreeListRawAllocator<EntryT, RefT>::FreeListRawAllocator(DataStoreBase &store, uint32_t typeId)

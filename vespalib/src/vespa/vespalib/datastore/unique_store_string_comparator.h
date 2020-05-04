@@ -5,7 +5,7 @@
 #include "entry_comparator.h"
 #include "unique_store_string_allocator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Compare two strings based on entry refs.

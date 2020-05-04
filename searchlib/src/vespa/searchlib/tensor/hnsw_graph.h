@@ -14,11 +14,11 @@ namespace search::tensor {
  * that is used for approximate K-nearest neighbor search.
  */
 struct HnswGraph {
-    using AtomicEntryRef = search::datastore::AtomicEntryRef;
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
 
     // This uses 10 bits for buffer id -> 1024 buffers.
     // As we have very short arrays we get less fragmentation with fewer and larger buffers.
-    using EntryRefType = search::datastore::EntryRefT<22>;
+    using EntryRefType = vespalib::datastore::EntryRefT<22>;
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
@@ -26,13 +26,13 @@ struct HnswGraph {
 
     // This stores the level arrays for all nodes.
     // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
-    using NodeStore = search::datastore::ArrayStore<AtomicEntryRef, EntryRefType>;
-    using StoreConfig = search::datastore::ArrayStoreConfig;
+    using NodeStore = vespalib::datastore::ArrayStore<AtomicEntryRef, EntryRefType>;
+    using StoreConfig = vespalib::datastore::ArrayStoreConfig;
     using LevelArrayRef = NodeStore::ConstArrayRef;
 
     // This stores all link arrays.
     // A link array consists of the document ids of the nodes a particular node is linked to.
-    using LinkStore = search::datastore::ArrayStore<uint32_t, EntryRefType>;
+    using LinkStore = vespalib::datastore::ArrayStore<uint32_t, EntryRefType>;
     using LinkArrayRef = LinkStore::ConstArrayRef;
 
     NodeRefVector node_refs;

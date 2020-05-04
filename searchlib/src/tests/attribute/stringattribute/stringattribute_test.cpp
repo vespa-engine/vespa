@@ -19,7 +19,7 @@ namespace search {
 
 using attribute::CollectionType;
 using attribute::IAttributeVector;
-using datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
 class StringAttributeTest : public vespalib::TestApp
 {

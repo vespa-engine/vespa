@@ -13,7 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.imported_search_context");
 
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 using search::queryeval::EmptySearch;
 using search::queryeval::SearchIterator;
 using search::attribute::ISearchContext;
@@ -64,7 +64,7 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
         if (_merger.emptyArray()) {
             return SearchIterator::UP(new EmptySearch());
         } else {
-            using Posting = btree::BTreeKeyData<uint32_t, int32_t>;
+            using Posting = vespalib::btree::BTreeKeyData<uint32_t, int32_t>;
             using DocIt = DocIdIterator<Posting>;
             DocIt postings;
             auto array = _merger.getArray();

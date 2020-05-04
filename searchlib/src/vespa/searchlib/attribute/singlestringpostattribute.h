@@ -52,7 +52,7 @@ private:
     using StringSingleImplSearchContext = typename SingleValueStringAttributeT<B>::StringSingleImplSearchContext;
     using StringSinglePostingSearchContext = attribute::StringPostingSearchContext<StringSingleImplSearchContext,
                                                                                    SelfType,
-                                                                                   btree::BTreeNoLeafData>;
+                                                                                   vespalib::btree::BTreeNoLeafData>;
     using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
     using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 
@@ -72,7 +72,7 @@ private:
                                 std::map<DocId, EnumIndex> &currEnumIndices);
 
     void
-    makePostingChange(const datastore::EntryComparator *cmp,
+    makePostingChange(const vespalib::datastore::EntryComparator *cmp,
                       Dictionary &dict,
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);

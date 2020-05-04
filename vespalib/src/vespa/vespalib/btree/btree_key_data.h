@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 /**
  * Empty class to use as DataT template parameter for BTree classes to
@@ -82,4 +82,4 @@ public:
 extern template class BTreeKeyData<uint32_t, uint32_t>;
 extern template class BTreeKeyData<uint32_t, int32_t>;
 
-} // namespace search::btree
+} // namespace vespalib::btree

@@ -132,7 +132,7 @@ ReferenceAttribute::buildReverseMapping()
             }
             prevRef = elem.first;
         }
-        adds.emplace_back(elem.second, btree::BTreeNoLeafData());
+        adds.emplace_back(elem.second, vespalib::btree::BTreeNoLeafData());
     }
     if (prevRef.valid()) {
         buildReverseMapping(prevRef, adds);
@@ -472,7 +472,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 using Reference = search::attribute::Reference;
 

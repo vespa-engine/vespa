@@ -28,8 +28,8 @@ template <typename EntryT>
 bool
 EnumStoreComparator<EntryT>::equal(const EntryT& lhs, const EntryT& rhs)
 {
-    return !datastore::UniqueStoreComparatorHelper<EntryT>::less(lhs, rhs) &&
-            !datastore::UniqueStoreComparatorHelper<EntryT>::less(rhs, lhs);
+    return !vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::less(lhs, rhs) &&
+            !vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::less(rhs, lhs);
 }
 
 EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store)

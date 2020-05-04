@@ -6,7 +6,7 @@
 
 namespace search::predicate {
 
-using BTreeSet = btree::BTree<uint32_t, btree::BTreeNoLeafData>;
+using BTreeSet = vespalib::btree::BTree<uint32_t, vespalib::btree::BTreeNoLeafData>;
 using ZeroConstraintDocs = BTreeSet::FrozenView;
 
 struct Constants {

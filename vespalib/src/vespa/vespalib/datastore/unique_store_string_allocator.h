@@ -10,7 +10,7 @@
 #include <cassert>
 #include <string>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 namespace string_allocator {
 

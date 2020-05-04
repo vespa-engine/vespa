@@ -4,7 +4,7 @@
 
 #include "noaggregated.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class NoAggrCalc
 {

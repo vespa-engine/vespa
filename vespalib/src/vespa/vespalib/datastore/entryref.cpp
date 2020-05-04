@@ -3,7 +3,7 @@
 #include "entryref.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template EntryRefT<24u, 8u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<31u, 1u>::EntryRefT(size_t, uint32_t);

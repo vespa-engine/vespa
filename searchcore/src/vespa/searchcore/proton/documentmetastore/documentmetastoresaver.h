@@ -20,10 +20,10 @@ class DocumentMetaStoreSaver : public search::AttributeSaver
 public:
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using DocId = documentmetastore::IStore::DocId;
-    using GidIterator = search::btree::BTreeConstIterator<
+    using GidIterator = vespalib::btree::BTreeConstIterator<
         DocId,
-        search::btree::BTreeNoLeafData,
-        search::btree::NoAggregated,
+        vespalib::btree::BTreeNoLeafData,
+        vespalib::btree::NoAggregated,
         const KeyComp &>;
     using MetaDataStore = vespalib::RcuVectorBase<RawDocumentMetaData>;
 

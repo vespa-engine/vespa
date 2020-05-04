@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class BtreeNoLeafData;
 
@@ -24,5 +24,5 @@ void printData(ostream &os, const BTreeNoLeafData &data)
     (void) data;
 }
 
-} // namespace search::btree::test
-} // namespace search::btree
+} // namespace vespalib::btree::test
+} // namespace vespalib::btree

@@ -60,7 +60,7 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
 struct FieldIndexRemoverTest : public ::testing::Test {
     MockRemoveListener _listener;
     std::vector<std::unique_ptr<WordStore>> _wordStores;
-    std::vector<std::map<vespalib::string, datastore::EntryRef>> _wordToRefMaps;
+    std::vector<std::map<vespalib::string, vespalib::datastore::EntryRef>> _wordToRefMaps;
     std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
 
     FieldIndexRemoverTest()
@@ -77,12 +77,12 @@ struct FieldIndexRemoverTest : public ::testing::Test {
         }
         _wordToRefMaps.resize(numFields);
     }
-    datastore::EntryRef getWordRef(const vespalib::string &word, uint32_t fieldId) {
+    vespalib::datastore::EntryRef getWordRef(const vespalib::string &word, uint32_t fieldId) {
         auto &wordToRefMap = _wordToRefMaps[fieldId];
         WordStore &wordStore = *_wordStores[fieldId];
         auto itr = wordToRefMap.find(word);
         if (itr == wordToRefMap.end()) {
-            datastore::EntryRef ref = wordStore.addWord(word);
+            vespalib::datastore::EntryRef ref = wordStore.addWord(word);
             wordToRefMap[word] = ref;
             return ref;
         }

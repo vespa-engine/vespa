@@ -21,9 +21,9 @@ LOG_SETUP("btree_test");
 #include <vespa/vespalib/test/btree/btree_printer.h>
 
 using vespalib::GenerationHandler;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
-namespace search::btree {
+namespace vespalib::btree {
 
 namespace {
 
@@ -1521,4 +1521,4 @@ Test::Main()
 
 }
 
-TEST_APPHOOK(search::btree::Test);
+TEST_APPHOOK(vespalib::btree::Test);

@@ -36,7 +36,7 @@ namespace storage {
 
 using Entry = BucketDatabase::Entry;
 using ConstEntryRef = BucketDatabase::ConstEntryRef;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 using vespalib::ConstArrayRef;
 using document::BucketId;
 
@@ -49,7 +49,7 @@ BTreeBucketDatabase::BTreeBucketDatabase()
 
 BTreeBucketDatabase::~BTreeBucketDatabase() = default;
 
-search::datastore::ArrayStoreConfig BTreeBucketDatabase::make_default_array_store_config() {
+vespalib::datastore::ArrayStoreConfig BTreeBucketDatabase::make_default_array_store_config() {
     return ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                     4 * 1024, 8 * 1024, 0.2).enable_free_lists(true);
 }

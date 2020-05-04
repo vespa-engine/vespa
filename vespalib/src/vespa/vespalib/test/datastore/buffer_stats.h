@@ -5,7 +5,7 @@
 #include <cassert>
 #include <cstddef>
 
-namespace search::datastore::test {
+namespace vespalib::datastore::test {
 
 /*
  * Class representing expected buffer stats in unit tests.

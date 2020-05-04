@@ -5,7 +5,7 @@
 #include "unique_store_string_allocator.h"
 #include "datastore.hpp"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
 UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()

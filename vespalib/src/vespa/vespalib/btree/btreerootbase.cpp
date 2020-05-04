@@ -3,7 +3,7 @@
 #include "btreerootbase.h"
 #include "btreerootbase.hpp"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeRootBase<uint32_t, uint32_t, NoAggregated,
                              BTreeDefaultTraits::INTERNAL_SLOTS,

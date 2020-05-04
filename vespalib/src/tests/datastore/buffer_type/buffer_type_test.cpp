@@ -3,7 +3,7 @@
 #include <vespa/vespalib/datastore/buffer_type.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 
 using IntBufferType = BufferType<int>;
 constexpr uint32_t ARRAYS_SIZE(4);

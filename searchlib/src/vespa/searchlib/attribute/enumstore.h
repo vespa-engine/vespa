@@ -25,7 +25,7 @@ namespace search {
 /**
  * Class storing and providing access to all unique values stored in an enumerated attribute vector.
  *
- * It uses an instance of datastore::UniqueStore to store the actual values.
+ * It uses an instance of vespalib::datastore::UniqueStore to store the actual values.
  * It also exposes the dictionary used for fast lookups into the set of unique values.
  *
  * @tparam EntryType The type of the entries/values stored.
@@ -38,15 +38,15 @@ public:
                                               EnumStoreStringComparator,
                                               EnumStoreComparator<EntryT>>;
     using AllocatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
-                                             datastore::UniqueStoreStringAllocator<InternalIndex>,
-                                             datastore::UniqueStoreAllocator<EntryT, InternalIndex>>;
-    using UniqueStoreType = datastore::UniqueStore<EntryT, InternalIndex, ComparatorType, AllocatorType>;
+                                             vespalib::datastore::UniqueStoreStringAllocator<InternalIndex>,
+                                             vespalib::datastore::UniqueStoreAllocator<EntryT, InternalIndex>>;
+    using UniqueStoreType = vespalib::datastore::UniqueStore<EntryT, InternalIndex, ComparatorType, AllocatorType>;
     using FoldedComparatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
                                                     EnumStoreFoldedStringComparator,
                                                     ComparatorType>;
     using EntryType = EntryT;
     using EnumStoreType = EnumStoreT<EntryT>;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 private:
@@ -60,7 +60,7 @@ private:
 
     void free_value_if_unused(Index idx, IndexSet &unused) override;
 
-    const datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
+    const vespalib::datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
     }
 
@@ -113,12 +113,12 @@ public:
     class NonEnumeratedLoader {
     private:
         AllocatorType& _allocator;
-        datastore::IUniqueStoreDictionary& _dict;
+        vespalib::datastore::IUniqueStoreDictionary& _dict;
         std::vector<EntryRef> _refs;
         std::vector<uint32_t> _payloads;
 
     public:
-        NonEnumeratedLoader(AllocatorType& allocator, datastore::IUniqueStoreDictionary& dict)
+        NonEnumeratedLoader(AllocatorType& allocator, vespalib::datastore::IUniqueStoreDictionary& dict)
             : _allocator(allocator),
               _dict(dict),
               _refs(),
@@ -211,8 +211,8 @@ public:
     std::unique_ptr<Enumerator> make_enumerator() const override;
 };
 
-std::unique_ptr<datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare);
+std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
 
 
 template <>
@@ -227,20 +227,20 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 
 }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 extern template
 class DataStoreT<search::IEnumStore::Index>;
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 extern template
 class BTreeBuilder<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 extern template
-class BTreeBuilder<search::IEnumStore::Index, datastore::EntryRef, NoAggregated,
+class BTreeBuilder<search::IEnumStore::Index, vespalib::datastore::EntryRef, NoAggregated,
                    search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 }

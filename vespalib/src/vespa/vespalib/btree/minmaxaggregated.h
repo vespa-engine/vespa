@@ -5,7 +5,7 @@
 #include <limits>
 #include <cstdint>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class MinMaxAggregated
 {

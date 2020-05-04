@@ -7,7 +7,7 @@ namespace search {
 
 namespace tensor {
 
-TensorStore::TensorStore(datastore::DataStoreBase &store)
+TensorStore::TensorStore(vespalib::datastore::DataStoreBase &store)
     : _store(store),
       _typeId(0)
 {

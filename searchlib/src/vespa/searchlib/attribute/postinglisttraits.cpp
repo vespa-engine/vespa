@@ -7,7 +7,7 @@
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 using NoD = search::attribute::PostingListTraits<BTreeNoLeafData>;
 using WD = search::attribute::PostingListTraits<int32_t>;

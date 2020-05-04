@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Interface for moving an entry as part of compaction of data in old

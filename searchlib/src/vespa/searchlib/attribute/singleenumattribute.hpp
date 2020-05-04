@@ -264,7 +264,7 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        if (_enumIndices[lid] != datastore::EntryRef(e)) {
+        if (_enumIndices[lid] != vespalib::datastore::EntryRef(e)) {
             this->clearDoc(lid);
         }
     }
@@ -286,7 +286,7 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
     }
     uint32_t shrink_docs = _enumIndices.size() - committedDocIdLimit;
     if (shrink_docs > 0u) {
-        datastore::EntryRef default_value_ref(e);
+        vespalib::datastore::EntryRef default_value_ref(e);
         assert(default_value_ref.valid());
         uint32_t default_value_ref_count = this->_enumStore.get_ref_count(default_value_ref);
         assert(default_value_ref_count >= shrink_docs);

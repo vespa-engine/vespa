@@ -34,9 +34,9 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
     // Lids are stored as keys in the tree, sorted by their gid counterpart.
     // The LidGidKeyComparator class maps from lids -> metadata by using the metadata store.
     // TODO(geirst): move this typedef and iterator functions away from this interface.
-    typedef search::btree::BTree<DocId,
-            search::btree::BTreeNoLeafData,
-            search::btree::NoAggregated,
+    typedef vespalib::btree::BTree<DocId,
+            vespalib::btree::BTreeNoLeafData,
+            vespalib::btree::NoAggregated,
             const documentmetastore::LidGidKeyComparator &> TreeType;
     typedef TreeType::Iterator Iterator;
     typedef std::shared_ptr<IDocumentMetaStore> SP;

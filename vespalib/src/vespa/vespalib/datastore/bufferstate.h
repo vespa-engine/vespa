@@ -8,7 +8,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Represents a memory allocated buffer (used in a data store) with its state.
