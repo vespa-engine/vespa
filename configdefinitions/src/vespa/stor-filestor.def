@@ -26,6 +26,11 @@ disk_operation_timeout int default=0 restart
 ## Number of threads to use for each mountpoint.
 num_threads int default=8 restart
 
+## Number of threads for response processing and delivery
+## 0 will give legacy sync behavior.
+## Negative number will choose a good number based on # cores.
+num_response_threads int default=0
+
 ## When merging, if we find more than this number of documents that exist on all
 ## of the same copies, send a separate apply bucket diff with these entries
 ## to an optimized merge chain that guarantuees minimum data transfer.
