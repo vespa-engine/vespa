@@ -91,10 +91,10 @@ struct PeekAnalyzer {
     PeekAnalyzer(const ValueType &dst_type, const ValueType &src_type,
                  const TensorPeek::DimList &dim_list)
     {
-        for (const auto dim: dst_type.dimensions()) {
+        for (const auto& dim: dst_type.dimensions()) {
             dst_dim_sizes.push_back(dim.size);
         }
-        for (const auto dim: src_type.dimensions()) {
+        for (const auto& dim: src_type.dimensions()) {
             src_dim_sizes.push_back(dim.size);
         }
         Node_UP idx_expr;
