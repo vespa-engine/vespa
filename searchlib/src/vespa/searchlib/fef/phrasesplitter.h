@@ -8,8 +8,7 @@
 #include "termfieldmatchdata.h"
 #include "fieldinfo.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class is used to split all phrase terms in a query environment
@@ -94,7 +93,7 @@ public:
 
     const ITermData * getTerm(uint32_t idx) const override {
         if (idx >= _termIdxMap.size()) {
-            return NULL;
+            return nullptr;
         }
         const TermIdx & ti = _termIdxMap[idx];
         return ti.splitted ? &_terms[ti.idx] : _queryEnv.getTerm(ti.idx);
@@ -104,8 +103,8 @@ public:
      * Inherit doc from MatchData.
      **/
     const TermFieldMatchData * resolveTermField(TermFieldHandle handle) const {
-        if (_matchData == NULL) {
-            return NULL;
+        if (_matchData == nullptr) {
+            return nullptr;
         }
         return handle < _skipHandles ? _matchData->resolveTermField(handle) : resolveSplittedTermField(handle);
     }
@@ -118,6 +117,4 @@ public:
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

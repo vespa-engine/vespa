@@ -61,9 +61,7 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
         QueryTerm qt = QueryTermFactory::create(env, i);
 
         typedef search::fef::ITermFieldRangeAdapter FRA;
-
         for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
-
             uint32_t fieldId = iter.get().getFieldId();
             if (_params.considerField(fieldId)) { // only consider fields with contribution
                 qt.fieldHandle(iter.get().getHandle());
@@ -71,13 +69,13 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
             }
         }
     }
-    for (std::map<uint32_t, QueryTermVector>::const_iterator itr = fields.begin(); itr != fields.end(); ++itr) {
-        if (itr->second.size() >= 2) {
-            FieldSetup setup(itr->first);
-            generateTermPairs(env, itr->second, _params.slidingWindow, setup);
+    for (const auto & entry : fields) {
+        if (entry.second.size() >= 2) {
+            FieldSetup setup(entry.first);
+            generateTermPairs(env, entry.second, _params.slidingWindow, setup);
             if (!setup.pairs.empty()) {
-                _setups.push_back(setup);
-                _totalFieldWeight += params.vector[itr->first].fieldWeight;
+                _setups.push_back(std::move(setup));
+                _totalFieldWeight += params.vector[entry.first].fieldWeight;
             }
         }
     }

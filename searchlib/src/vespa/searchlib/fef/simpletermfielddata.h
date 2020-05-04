@@ -15,9 +15,6 @@ namespace search::fef {
 class SimpleTermFieldData : public ITermFieldData
 {
 private:
-    uint32_t        _fieldId;
-    uint32_t        _matching_doc_count;
-    uint32_t        _total_doc_count;
     TermFieldHandle _handle;
 
 public:
@@ -33,26 +30,11 @@ public:
      **/
     SimpleTermFieldData(uint32_t fieldId);
 
-    uint32_t getFieldId() const override final { return _fieldId; }
-
-    uint32_t get_matching_doc_count() const override { return _matching_doc_count; }
-
-    uint32_t get_total_doc_count() const override { return _total_doc_count; }
-
     using ITermFieldData::getHandle;
 
     TermFieldHandle getHandle(MatchDataDetails requestedDetails) const override {
         (void) requestedDetails;
         return _handle;
-    }
-
-    /**
-     * Sets the document frequency.
-     **/
-    SimpleTermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) {
-        _matching_doc_count = matching_doc_count;
-        _total_doc_count = total_doc_count;
-        return *this;
     }
 
     /**

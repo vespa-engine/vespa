@@ -80,8 +80,8 @@ public:
 class NativeProximityBlueprint : public fef::Blueprint {
 private:
     NativeProximityParams _params;
-    vespalib::string           _defaultProximityBoost;
-    vespalib::string           _defaultRevProximityBoost;
+    vespalib::string      _defaultProximityBoost;
+    vespalib::string      _defaultRevProximityBoost;
 
 public:
     NativeProximityBlueprint();
