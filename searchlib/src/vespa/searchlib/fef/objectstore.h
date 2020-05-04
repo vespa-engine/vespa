@@ -25,6 +25,7 @@ class AnyWrapper : public Anything
 public:
     AnyWrapper(T value) : _value(std::move(value)) { }
     const T & getValue() const { return _value; }
+    static const T & getValue(const Anything & any) { return static_cast<const AnyWrapper &>(any).getValue(); }
 private:
     T _value;
 };

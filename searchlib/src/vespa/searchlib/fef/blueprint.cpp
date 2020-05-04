@@ -83,6 +83,8 @@ Blueprint::prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore &
     (void) queryEnv; (void) objectStore;
 }
 
+using IAttributeVectorWrapper = AnyWrapper<const attribute::IAttributeVector *>;
+
 const attribute::IAttributeVector *
 Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
                                    const IQueryEnvironment & env, IObjectStore & store)
@@ -90,10 +92,10 @@ Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::strin
     const Anything * obj = store.get(key);
     if (obj == nullptr) {
         const IAttributeVector * attribute = env.getAttributeContext().getAttribute(attrName);
-        store.add(key, std::make_unique<AnyWrapper<const IAttributeVector *>>(attribute));
+        store.add(key, std::make_unique<IAttributeVectorWrapper>(attribute));
         return attribute;
     }
-    return static_cast<const AnyWrapper<const IAttributeVector *> *>(obj)->getValue();
+    return IAttributeVectorWrapper::getValue(*obj);
 }
 
 const attribute::IAttributeVector *
@@ -101,7 +103,7 @@ Blueprint::lookupAttribute(const vespalib::string & key, vespalib::stringref att
 {
     const Anything * attributeArg = env.getObjectStore().get(key);
     const IAttributeVector * attribute = (attributeArg != nullptr)
-                                       ? static_cast<const AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
+                                       ? IAttributeVectorWrapper::getValue(*attributeArg)
                                        : nullptr;
     if (attribute == nullptr) {
         attribute = env.getAttributeContext().getAttribute(attrName);

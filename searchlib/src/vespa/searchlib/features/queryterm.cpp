@@ -22,8 +22,8 @@ QueryTermFactory::create(const IQueryEnvironment & env, uint32_t termIdx, bool l
 }
 
 QueryTermHelper::QueryTermHelper(const IQueryEnvironment &env)
-        : _fallBack(),
-          _queryTerms(lookupQueryTerms(env))
+    : _fallBack(),
+      _queryTerms(lookupQueryTerms(env))
 {
     if (_queryTerms == nullptr) {
         _fallBack = createQueryTermvector(env);
@@ -34,7 +34,7 @@ QueryTermHelper::QueryTermHelper(const IQueryEnvironment &env)
 namespace {
 
 using QueryTermVectorWrapper = AnyWrapper<QueryTermVector>;
-const vespalib::string QUERY_TERMS_KEY("queryvectorhelper.queryterms");
+const vespalib::string QUERY_TERMS_KEY("querytermhelper.queryterms");
 
 }
 const QueryTermVector &
@@ -52,7 +52,7 @@ const QueryTermVector *
 QueryTermHelper::lookupQueryTerms(const IQueryEnvironment & env)
 {
     const Anything * obj = env.getObjectStore().get(QUERY_TERMS_KEY);
-    return (obj != nullptr) ? & static_cast<const QueryTermVectorWrapper *>(obj)->getValue() : nullptr;
+    return (obj != nullptr) ? & QueryTermVectorWrapper::getValue(*obj) : nullptr;
 }
 
 QueryTermVector
@@ -60,7 +60,7 @@ QueryTermHelper::createQueryTermvector(const IQueryEnvironment &env) {
     QueryTermVector vector;
     vector.reserve(env.getNumTerms());
     for (size_t i(0); i < env.getNumTerms(); i++) {
-        vector.emplace_back(QueryTermFactory::create(env, i));
+        vector.push_back(QueryTermFactory::create(env, i));
     }
     return vector;
 }
