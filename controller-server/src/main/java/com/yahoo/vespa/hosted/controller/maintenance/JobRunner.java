@@ -58,9 +58,14 @@ public class JobRunner extends ControllerMaintainer {
         super.close();
         executors.shutdown();
         try {
-            executors.awaitTermination(50, TimeUnit.SECONDS);
+            if ( ! executors.awaitTermination(10, TimeUnit.SECONDS)) {
+                executors.shutdownNow();
+                if ( ! executors.awaitTermination(40, TimeUnit.SECONDS))
+                    throw new IllegalStateException("Failed shutting down " + JobRunner.class.getName());
+            }
         }
         catch (InterruptedException e) {
+            log.log(Level.WARNING, "Interrupted during shutdown of " + JobRunner.class.getName(), e);
             Thread.currentThread().interrupt();
         }
     }
