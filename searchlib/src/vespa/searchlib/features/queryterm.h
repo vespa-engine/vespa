@@ -58,13 +58,16 @@ public:
      *
      * @param env the environment used to lookup TermData object, significance, and connectedness.
      * @param termIndex the index to use when looking up the TermData object.
-     * @param lookupSignificance whether we should look up the significance for this term.
      * @param lookupConnectedness whether we should look up the connectedness this term has with the previous term.
      */
-    static QueryTerm create(const fef::IQueryEnvironment & env, uint32_t termIndex,
-                            bool lookupConnectedness = false);
+    static QueryTerm create(const fef::IQueryEnvironment & env, uint32_t termIndex, bool lookupConnectedness = false);
 };
 
+/**
+ * Helper class to allow simple reuse of processed QueryTermVector
+ * containing all terms in the query. Primary reason is to reduce expensive recomputation
+ * when multiple features need the same and also only compute it once per query and one once per search thread.
+ */
 class QueryTermHelper {
 public:
     QueryTermHelper(const fef::IQueryEnvironment & env);
