@@ -29,7 +29,7 @@ namespace {
                 (id == api::MessageType::REMOVELOCATION_ID ||
                  id == api::MessageType::JOINBUCKETS_ID));
     }
-    constexpr double WARN_ON_SLOW_OPERATIONS = 5.0;
+    const vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
 }
 
 MessageTracker::MessageTracker(PersistenceUtil & env,
@@ -70,18 +70,20 @@ MessageTracker::~MessageTracker() = default;
 
 void
 MessageTracker::sendReply() {
-    generateReply(static_cast<api::StorageCommand &>(*_msg));
+    if ( ! _msg->getType().isReply()) {
+        generateReply(static_cast<api::StorageCommand &>(*_msg));
+    }
     if ((hasReply() && getReply().getResult().failed()) || getResult().failed()) {
         _env._metrics.failedOperations.inc();
     }
-    double duration = _timer.getElapsedTimeAsDouble();
+    vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
     if (duration >= WARN_ON_SLOW_OPERATIONS) {
         LOGBT(warning, _msg->getType().toString(),
-              "Slow processing of message %s on disk %u. Processing time: %4.0f ms (>=%4.0f ms)",
-              _msg->toString().c_str(), _env._partition, duration, WARN_ON_SLOW_OPERATIONS);
+              "Slow processing of message %s on disk %u. Processing time: %1.1f s (>=%1.1f s)",
+              _msg->toString().c_str(), _env._partition, vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
     } else {
-        LOGBT(spam, _msg->getType().toString(), "Processing time of message %s on disk %u: %4.0f ms",
-              _msg->toString(true).c_str(), _env._partition, duration);
+        LOGBT(spam, _msg->getType().toString(), "Processing time of message %s on disk %u: %1.1f s",
+              _msg->toString(true).c_str(), _env._partition, vespalib::to_s(duration));
     }
     if (hasReply()) {
         if ( ! _context.getTrace().getRoot().isEmpty()) {
