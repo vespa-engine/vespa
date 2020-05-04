@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include "queryterm.h"
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 

@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include "vespa/searchlib/fef/iqueryenvironment.h"
-#include "vespa/searchlib/fef/itermdata.h"
+#include <vespa/searchlib/fef/iqueryenvironment.h>
+#include <vespa/searchlib/fef/itermdata.h>
 
 namespace search::features {
 
