@@ -102,15 +102,30 @@ public:
 
     void fillPositions(TermFieldMatchData &tmd) {
         if (_tmds.size() == 1) {
-            for (const fef::TermFieldMatchDataPosition & pos : *_tmds[0]) {
-                tmd.appendPosition(pos);
+            if (tmd.needs_normal_features()) {
+                for (const fef::TermFieldMatchDataPosition & pos : *_tmds[0]) {
+                    tmd.appendPosition(pos);
+                }
+            }
+            if (tmd.needs_interleaved_features()) {
+                tmd.setNumOccs(_tmds[0]->size());
+                tmd.setFieldLength(_tmds[0]->getFieldLength());
             }
         } else {
+            const bool needs_normal_features = tmd.needs_normal_features();
+            uint32_t num_occs = 0;
             while (iterator(_eval_order[0]) != end(_eval_order[0])) {
                 if (match()) {
-                    tmd.appendPosition(*iterator(0));
+                    if (needs_normal_features) {
+                        tmd.appendPosition(*iterator(0));
+                    }
+                    ++num_occs;
                 }
                 ++iterator(_eval_order[0]);
+            }
+            if (tmd.needs_interleaved_features()) {
+                tmd.setNumOccs(num_occs);
+                tmd.setFieldLength(_tmds[0]->getFieldLength());
             }
         }
     }

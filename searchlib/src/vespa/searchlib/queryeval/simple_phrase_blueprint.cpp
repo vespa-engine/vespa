@@ -65,7 +65,10 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
-        childMatch.add(childState.field(0).resolve(*md));
+        auto *child_term_field_match_data = childState.field(0).resolve(*md);
+        child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
+        child_term_field_match_data->setNeedNormalFeatures(true);
+        childMatch.add(child_term_field_match_data);
         children[i] = _terms[i]->createSearch(*md, strict).release();
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
