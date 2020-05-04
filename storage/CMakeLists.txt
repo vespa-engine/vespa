@@ -24,7 +24,6 @@ vespa_define_module(
     LIBS
     src/vespa/storage
     src/vespa/storage/bucketdb
-    src/vespa/storage/bucketmover
     src/vespa/storage/common
     src/vespa/storage/common/hostreporter
     src/vespa/storage/config
@@ -52,7 +51,6 @@ vespa_define_module(
     TESTS
     src/tests
     src/tests/bucketdb
-    src/tests/bucketmover
     src/tests/common
     src/tests/common/hostreporter
     src/tests/distributor

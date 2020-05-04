@@ -102,7 +102,6 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequence
       _spi(provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_spi, _env),
-      _diskMoveHandler(_env, _spi),
       _bucketOwnershipNotifier(),
       _flushMonitor(),
       _closed(false)
@@ -810,8 +809,6 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTra
             return handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
         case ReadBucketInfo::ID:
             return handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
-        case BucketDiskMoveCommand::ID:
-            return _diskMoveHandler.handleBucketDiskMove(static_cast<BucketDiskMoveCommand&>(msg), std::move(tracker));
         case InternalBucketJoinCommand::ID:
             return handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:

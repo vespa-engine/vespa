@@ -658,22 +658,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 }
             }
             break;
-        case BucketDiskMoveCommand::ID:
-            // Fail bucket not found if op != MOVE
-            // Fail and log error if op == MOVE
-        {
-            api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
-            if (cmd.getBucket() == source) {
-                if (op == MOVE) {
-                    returnCode = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
-                                                 "Multiple bucket disk move commands pending at the same time "
-                                                 " towards bucket " + source.toString());
-                } else {
-                    returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
-                }
-            }
-            break;
-        }
         case ReadBucketInfo::ID:
         case RecheckBucketInfoCommand::ID:
         {
