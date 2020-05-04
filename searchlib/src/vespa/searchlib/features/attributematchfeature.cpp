@@ -61,8 +61,8 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
     _md(nullptr)
 {
     _buffer.allocate(_params.attribute->getMaxValueCount());
-    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(env, i);
+    QueryTermHelper queryTerms(env);
+    for (const QueryTerm & qt : queryTerms.terms()) {
         _totalTermWeight += qt.termData()->getWeight().percent();
         _totalTermSignificance += qt.significance();
 
@@ -71,8 +71,9 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
             _totalAttrTermWeight += qt.termData()->getWeight().percent();
             const ITermFieldData *field = qt.termData()->lookupField(_params.attrInfo->id());
             if (field != nullptr) {
-                qt.fieldHandle(field->getHandle());
-                _queryTerms.push_back(qt);
+                QueryTerm myQt(qt);
+                myQt.fieldHandle(field->getHandle());
+                _queryTerms.push_back(myQt);
             }
         }
     }
@@ -300,7 +301,7 @@ AttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment &env,
 Blueprint::UP
 AttributeMatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new AttributeMatchBlueprint());
+    return std::make_unique<AttributeMatchBlueprint>();
 }
 
 bool
@@ -366,6 +367,11 @@ AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib:
     } else { // FLOAT
         return stash.create<AttributeMatchExecutor<WeightedFloatContent>>(env, amp);
     }
+}
+
+void
+AttributeMatchBlueprint::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const {
+    QueryTermHelper::lookupAndStoreQueryTerms(queryEnv, objectStore);
 }
 
 }

@@ -46,10 +46,11 @@ NativeFieldMatchExecutor::NativeFieldMatchExecutor(const IQueryEnvironment & env
     _divisor(0),
     _md(nullptr)
 {
-    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        MyQueryTerm qt(QueryTermFactory::create(env, i));
-        if (qt.termData()->getWeight().percent() != 0) // only consider query terms with contribution
+    QueryTermHelper queryTerms(env);
+    for (const QueryTerm & qtTmp : queryTerms.terms()) {
+        if (qtTmp.termData()->getWeight().percent() != 0) // only consider query terms with contribution
         {
+            MyQueryTerm qt(qtTmp);
             typedef search::fef::ITermFieldRangeAdapter FRA;
             uint32_t totalFieldWeight = 0;
             for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
@@ -177,6 +178,11 @@ NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib
     } else {
         return native;
     }
+}
+
+void
+NativeFieldMatchBlueprint::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const {
+    QueryTermHelper::lookupAndStoreQueryTerms(queryEnv, objectStore);
 }
 
 }

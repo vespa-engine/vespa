@@ -47,7 +47,6 @@ NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t f
     return score;
 }
 
-
 NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
                                                  const NativeProximityParams & params) :
     FeatureExecutor(),
@@ -56,16 +55,16 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
     _totalFieldWeight(0),
     _md(nullptr)
 {
+    QueryTermHelper queryTerms(env);
     std::map<uint32_t, QueryTermVector> fields;
-    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(env, i);
-
+    for (const QueryTerm & qt : queryTerms.terms()) {
         typedef search::fef::ITermFieldRangeAdapter FRA;
         for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
             uint32_t fieldId = iter.get().getFieldId();
             if (_params.considerField(fieldId)) { // only consider fields with contribution
-                qt.fieldHandle(iter.get().getHandle());
-                fields[fieldId].push_back(qt);
+                QueryTerm myQt = qt;
+                myQt.fieldHandle(iter.get().getHandle());
+                fields[fieldId].push_back(myQt);
             }
         }
     }
@@ -211,6 +210,11 @@ NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib:
         return native;
     }
 
+}
+
+void
+NativeProximityBlueprint::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const {
+    QueryTermHelper::lookupAndStoreQueryTerms(queryEnv, objectStore);
 }
 
 }

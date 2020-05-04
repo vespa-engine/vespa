@@ -3,6 +3,7 @@
 #pragma once
 
 #include "queryterm.h"
+#include <cstdint>
 
 namespace search::fef {
     class TermFieldMatchData;
