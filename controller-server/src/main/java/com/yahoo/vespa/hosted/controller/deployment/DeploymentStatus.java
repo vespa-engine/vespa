@@ -492,7 +492,7 @@ public class DeploymentStatus {
                 if ( ! blocked)
                     return current == now ? Optional.empty() : Optional.of(current);
             }
-            return Optional.of(Instant.MAX);
+            return Optional.of(now.plusSeconds(1 << 30)); // Some time in the future that doesn't look like anything you'd expect.
         }
 
     }
