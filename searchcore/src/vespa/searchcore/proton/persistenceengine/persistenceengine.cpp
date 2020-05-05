@@ -412,7 +412,7 @@ PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP 
     }
     IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
 
-    if ( handler == nullptr) {
+    if (handler == nullptr) {
         return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str())));
     }
     auto transportContext = std::make_unique<AsyncTranportContext>(1, std::move(onComplete));

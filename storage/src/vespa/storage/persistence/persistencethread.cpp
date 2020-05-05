@@ -213,6 +213,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
             metrics.notFound.inc();
         }
     } else {
+        // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
         auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
             const spi::RemoveResult & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
             if (tracker->checkForError(response)) {
@@ -250,6 +251,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trac
             tracker.setReply(std::move(reply));
         }
     } else {
+        // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
         auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
             const spi::UpdateResult & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
             if (tracker->checkForError(response)) {
