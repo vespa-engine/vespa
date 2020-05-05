@@ -29,22 +29,36 @@ namespace {
                 (id == api::MessageType::REMOVELOCATION_ID ||
                  id == api::MessageType::JOINBUCKETS_ID));
     }
-
+    const vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
 }
 
 MessageTracker::MessageTracker(PersistenceUtil & env,
+                               MessageSender & replySender,
+                               FileStorHandler::BucketLockInterface::SP bucketLock,
+                               api::StorageMessage::SP msg)
+    : MessageTracker(env, replySender, true, std::move(bucketLock), std::move(msg))
+{}
+MessageTracker::MessageTracker(PersistenceUtil & env,
+                               MessageSender & replySender,
+                               bool updateBucketInfo,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
                                api::StorageMessage::SP msg)
     : _sendReply(true),
-      _updateBucketInfo(hasBucketInfo(msg->getType().getId())),
+      _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
       _bucketLock(std::move(bucketLock)),
       _msg(std::move(msg)),
       _context(_msg->getLoadType(), _msg->getPriority(), _msg->getTrace().getLevel()),
       _env(env),
+      _replySender(replySender),
       _metric(nullptr),
       _result(api::ReturnCode::OK),
       _timer(_env._component.getClock())
 { }
+
+MessageTracker::UP
+MessageTracker::createForTesting(PersistenceUtil &env, MessageSender &replySender, FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg) {
+    return MessageTracker::UP(new MessageTracker(env, replySender, false, std::move(bucketLock), std::move(msg)));
+}
 
 void
 MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
@@ -56,6 +70,21 @@ MessageTracker::~MessageTracker() = default;
 
 void
 MessageTracker::sendReply() {
+    if ( ! _msg->getType().isReply()) {
+        generateReply(static_cast<api::StorageCommand &>(*_msg));
+    }
+    if ((hasReply() && getReply().getResult().failed()) || getResult().failed()) {
+        _env._metrics.failedOperations.inc();
+    }
+    vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
+    if (duration >= WARN_ON_SLOW_OPERATIONS) {
+        LOGBT(warning, _msg->getType().toString(),
+              "Slow processing of message %s on disk %u. Processing time: %1.1f s (>=%1.1f s)",
+              _msg->toString().c_str(), _env._partition, vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
+    } else {
+        LOGBT(spam, _msg->getType().toString(), "Processing time of message %s on disk %u: %1.1f s",
+              _msg->toString(true).c_str(), _env._partition, vespalib::to_s(duration));
+    }
     if (hasReply()) {
         if ( ! _context.getTrace().getRoot().isEmpty()) {
             getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
@@ -70,7 +99,7 @@ MessageTracker::sendReply() {
         }
         LOG(spam, "Sending reply up: %s %" PRIu64,
             getReply().toString().c_str(), getReply().getMsgId());
-        _env._fileStorHandler.sendReply(std::move(_reply));
+        _replySender.sendReply(std::move(_reply));
     } else {
         if ( ! _context.getTrace().getRoot().isEmpty()) {
             _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
@@ -105,8 +134,8 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
         return;
     }
 
-    if (!_reply.get()) {
-        _reply.reset(cmd.makeReply().release());
+    if (!_reply) {
+        _reply = cmd.makeReply();
         _reply->setResult(_result);
     }
 
@@ -138,7 +167,7 @@ PersistenceUtil::PersistenceUtil(
 {
 }
 
-PersistenceUtil::~PersistenceUtil() { }
+PersistenceUtil::~PersistenceUtil() = default;
 
 void
 PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i)

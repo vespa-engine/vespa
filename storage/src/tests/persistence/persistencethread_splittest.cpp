@@ -214,7 +214,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     cmd->setMinByteSize(maxSize);
     cmd->setMinDocCount(maxCount);
     cmd->setSourceIndex(0);
-    MessageTracker::UP result = thread->handleSplitBucket(*cmd, std::make_unique<MessageTracker>(getEnv(), NoBucketLock::make(docBucket), cmd));
+    MessageTracker::UP result = thread->handleSplitBucket(*cmd, createTracker(cmd, docBucket));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {

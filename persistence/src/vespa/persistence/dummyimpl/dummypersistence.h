@@ -156,6 +156,7 @@ public:
     Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
     RemoveResult remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&) override;
+    UpdateResult update(const Bucket&, Timestamp, DocumentUpdateSP, Context&) override;
 
     CreateIteratorResult createIterator(const Bucket&,
                                         const document::FieldSet& fs,

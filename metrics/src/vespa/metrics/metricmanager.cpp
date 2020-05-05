@@ -766,9 +766,9 @@ namespace {
 void
 MetricManager::run()
 {
+    vespalib::MonitorGuard sync(_waiter);
     while (!stopping()) {
         time_t currentTime = _timer->getTime();
-        vespalib::MonitorGuard sync(_waiter);
         time_t next = tick(sync, currentTime);
         if (currentTime < next) {
             sync.wait((next - currentTime) * 1000);

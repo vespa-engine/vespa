@@ -20,12 +20,6 @@ public:
     Result initialize() override { return Result(); };
 
     /**
-     * Updates the document by calling get(), updating the document,
-     * then calling put() on the result.
-     */
-    UpdateResult update(const Bucket&, Timestamp, const DocumentUpdateSP&, Context&) override;
-
-    /**
      * Default impl empty.
      */
     Result createBucket(const Bucket&, Context&) override { return Result(); }
@@ -39,6 +33,7 @@ public:
      * Default impl is remove().
      */
     RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;
+    void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, Context&, OperationComplete::UP) override;
 
     /**
      * Default impl empty.
