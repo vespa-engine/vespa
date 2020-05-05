@@ -21,6 +21,7 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    FilterWiring compute_filter_wiring() override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -45,6 +46,7 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    FilterWiring compute_filter_wiring() override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -62,6 +64,7 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    FilterWiring compute_filter_wiring() override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;

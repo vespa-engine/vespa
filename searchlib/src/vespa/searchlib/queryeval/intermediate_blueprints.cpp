@@ -148,6 +148,48 @@ AndNotBlueprint::inheritStrict(size_t i) const
     return (i == 0);
 }
 
+struct FilterInfoAndNot : FilterWiring::Info {
+    std::shared_ptr<FilterWiring::Info> positive;
+    std::vector<std::shared_ptr<FilterWiring::Info>> negatives;
+    double compute_whitelist_ratio() const override {
+        double ratio = positive->compute_whitelist_ratio();
+        for (const auto &child : negatives) {
+            double blacklisted = child->compute_blacklist_ratio();
+            ratio *= (1.0 - blacklisted);
+        }
+        return ratio;
+    }
+    double compute_blacklist_ratio() const override {
+        double ratio = positive->compute_blacklist_ratio();
+        for (const auto &child : negatives) {
+            double whitelisted = child->compute_whitelist_ratio();
+            ratio *= (1.0 - whitelisted);
+        }
+        return ratio;
+    }
+};
+
+FilterWiring
+AndNotBlueprint::compute_filter_wiring() {
+    FilterWiring retval;
+    auto me = std::make_shared<FilterInfoAndNot>();
+    assert(childCnt() > 1);
+    auto positive = getChild(0).compute_filter_wiring();
+    me->positive = positive.untargeted_info;
+    for (size_t i = 1; i < childCnt(); ++i) {
+        Blueprint &child = getChild(i);
+        auto child_wiring = child.compute_filter_wiring();
+        for (auto &couple : child_wiring.targets) {
+            FilterInfoForceFilter force_filter;
+            couple.target.set_filter_info(force_filter);
+        }
+        me->negatives.emplace_back(child_wiring.untargeted_info);
+    }
+    retval.untargeted_info = me;
+    return retval;
+}
+
+
 SearchIterator::UP
 AndNotBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
                                           bool strict, search::fef::MatchData &md) const
@@ -218,6 +260,49 @@ bool
 AndBlueprint::inheritStrict(size_t i) const
 {
     return (i == 0);
+}
+
+struct FilterInfoAnd : FilterWiring::Info {
+    std::vector<std::shared_ptr<FilterWiring::Info>> children;
+    double compute_whitelist_ratio() const override {
+        double ratio = 1.0;
+        for (const auto &child : children) {
+            ratio *= child->compute_whitelist_ratio();
+        }
+        return ratio;
+    }
+    double compute_blacklist_ratio() const override {
+        double ratio = 1.0;
+        for (const auto &child : children) {
+            ratio *= child->compute_blacklist_ratio();
+        }
+        return ratio;
+    }
+};
+
+FilterWiring
+AndBlueprint::compute_filter_wiring() {
+    FilterWiring retval;
+    auto me = std::make_shared<FilterInfoAnd>();
+    std::vector<std::shared_ptr<FilterInfoAnd>> duplicates;
+    assert(childCnt() > 0);
+    for (size_t i = 0; i < childCnt(); ++i) {
+        Blueprint &child = getChild(i);
+        auto child_wiring = child.compute_filter_wiring();
+        for (auto &duplicate : duplicates) {
+            duplicate->children.emplace_back(child_wiring.untargeted_info);
+        }
+        for (auto &couple : child_wiring.targets) {
+            auto duplicate = std::make_shared<FilterInfoAnd>();
+            duplicate->children = me->children;
+            duplicate->children.emplace_back(couple.filter_info);
+            duplicates.push_back(duplicate);
+            retval.targets.emplace_back(couple.target, duplicate);
+        }
+        me->children.emplace_back(child_wiring.untargeted_info);
+    }
+    retval.untargeted_info = me;
+    return retval;
 }
 
 SearchIterator::UP
@@ -300,6 +385,41 @@ bool
 OrBlueprint::inheritStrict(size_t) const
 {
     return true;
+}
+
+struct FilterInfoOr : FilterWiring::Info {
+    std::vector<std::shared_ptr<FilterWiring::Info>> children;
+    double compute_whitelist_ratio() const override {
+        double ratio = 1.0;
+        for (const auto &child : children) {
+            ratio *= (1.0 - child->compute_whitelist_ratio());
+        }
+        return (1.0 - ratio);
+    }
+    double compute_blacklist_ratio() const override {
+        double ratio = 1.0;
+        for (const auto &child : children) {
+            ratio *= (1.0 - child->compute_blacklist_ratio());
+        }
+        return (1.0 - ratio);
+    }
+};
+
+FilterWiring
+OrBlueprint::compute_filter_wiring() {
+    FilterWiring retval;
+    auto me = std::make_shared<FilterInfoOr>();
+    assert(childCnt() > 0);
+    for (size_t i = 0; i < childCnt(); ++i) {
+        Blueprint &child = getChild(i);
+        auto child_wiring = child.compute_filter_wiring();
+        for (auto &couple : child_wiring.targets) {
+            retval.targets.emplace_back(couple.target, couple.filter_info);
+        }
+        me->children.emplace_back(child_wiring.untargeted_info);
+    }
+    retval.untargeted_info = me;
+    return retval;
 }
 
 SearchIterator::UP
