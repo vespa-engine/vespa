@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
@@ -163,7 +164,7 @@ public class CoredumpHandlerTest {
                 "}}";
 
 
-        Path coredumpDirectoryInContainer = fileSystem.getPath("/var/crash/id-123");
+        Path coredumpDirectoryInContainer = Paths.get("/var/crash/id-123");
         Path coredumpDirectory = context.pathOnHostFromPathInNode(coredumpDirectoryInContainer);
         Files.createDirectories(coredumpDirectory);
         Files.createFile(coredumpDirectory.resolve("dump_core.456"));

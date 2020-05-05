@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public interface NodeAgentContext extends TaskContext {
 
@@ -52,9 +52,6 @@ public interface NodeAgentContext extends TaskContext {
      */
     double unscaledVcpu();
 
-    /** The file system used by the NodeAgentContext.  All paths must have the same provider. */
-    FileSystem fileSystem();
-
     /**
      * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
      *
@@ -63,9 +60,8 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathOnHostFromPathInNode(Path pathInNode);
 
-    default Path pathOnHostFromPathInNode(String pathInNode) {
-        return pathOnHostFromPathInNode(fileSystem().getPath(pathInNode));
-    }
+    /** @see #pathOnHostFromPathInNode(Path) */
+    Path pathOnHostFromPathInNode(String pathInNode);
 
     /**
      * This method is the inverse of {@link #pathOnHostFromPathInNode(Path)}
@@ -75,9 +71,9 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathInNodeFromPathOnHost(Path pathOnHost);
 
-    default Path pathInNodeFromPathOnHost(String pathOnHost) {
-        return pathInNodeFromPathOnHost(fileSystem().getPath(pathOnHost));
-    }
+    /** @see #pathOnHostFromPathInNode(Path) */
+    Path pathInNodeFromPathOnHost(String pathOnHost);
+
 
     /**
      * @param relativePath relative path under Vespa home in container
@@ -85,9 +81,8 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathInNodeUnderVespaHome(Path relativePath);
 
-    default Path pathInNodeUnderVespaHome(String relativePath) {
-        return pathInNodeUnderVespaHome(fileSystem().getPath(relativePath));
-    }
+    /** @see #pathInNodeUnderVespaHome(Path) */
+    Path pathInNodeUnderVespaHome(String relativePath);
 
     /**
      * Rewrite the given path in node to a path required by the image.
@@ -95,5 +90,12 @@ public interface NodeAgentContext extends TaskContext {
      * configuring mounts.
      * TODO: Remove when everyone has migrated of vespa/ci image
      */
-    Path rewritePathInNodeForWantedDockerImage(Path path);
+    default Path rewritePathInNodeForWantedDockerImage(Path path) {
+        if (!node().wantedDockerImage().get().repository().endsWith("/vespa/ci")) return path;
+
+        Path originalVespaHome = pathInNodeUnderVespaHome("");
+        if (!path.startsWith(originalVespaHome)) return path;
+
+        return Paths.get("/home/y").resolve(originalVespaHome.relativize(path));
+    }
 }
