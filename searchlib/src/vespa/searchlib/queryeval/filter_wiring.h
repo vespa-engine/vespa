@@ -13,7 +13,7 @@ struct FilterWiring {
     struct Info {
         virtual double compute_whitelist_ratio() const = 0;
         virtual double compute_blacklist_ratio() const = 0;
-        virtual ~Info() {}
+        virtual ~Info();
     };
     struct TargetInfo {
         Blueprint &target;
@@ -24,7 +24,7 @@ struct FilterWiring {
     std::vector<TargetInfo> targets;
     std::shared_ptr<Info> untargeted_info;
     FilterWiring();
-    ~FilterWiring() {}
+    ~FilterWiring();
 };
 
 struct FilterInfoNop : FilterWiring::Info {
@@ -36,10 +36,5 @@ struct FilterInfoForceFilter : FilterWiring::Info {
     double compute_whitelist_ratio() const override { return 0.0; }
     double compute_blacklist_ratio() const override { return 1.0; }
 };
-
-FilterWiring::FilterWiring()
-   : targets(),
-     untargeted_info(std::make_shared<FilterInfoNop>())
-{}
 
 }
