@@ -109,6 +109,8 @@ struct PersistenceProvider
 
     /**
      * Store the given document at the given microsecond time.
+     * An implementation must always implement atleast put or putAsync.
+     * If not an eternal recursion will occur.
      */
     virtual Result put(const Bucket&, Timestamp, DocumentSP, Context&);
     virtual void putAsync(const Bucket &, Timestamp , DocumentSP , Context &, OperationComplete::UP );
@@ -166,6 +168,9 @@ struct PersistenceProvider
      * For such a provider, iterating with removes and all versions should
      * semantically be the same thing and yield the same results.
      *
+     * An implementation must always implement atleast remove or removeAsync.
+     * If not an eternal recursion will occur.
+     *
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
@@ -182,6 +187,8 @@ struct PersistenceProvider
      * resend removes. It is legal to still store a remove entry, but note that
      * you will then be prone to user patterns mentioned above to fill up your
      * buckets.
+     * An implementation must always implement atleast removeIfFound or removeIfFoundAsync.
+     * If not an eternal recursion will occur.
      * <p/>
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
@@ -200,6 +207,8 @@ struct PersistenceProvider
 
     /**
      * Partially modifies a document referenced by the document update.
+     * An implementation must always implement atleast update or updateAsync.
+     * If not an eternal recursion will occur.
      *
      * @param timestamp The timestamp to use for the new update entry.
      * @param update The document update to apply to the stored document.
