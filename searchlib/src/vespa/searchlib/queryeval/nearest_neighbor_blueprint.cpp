@@ -104,6 +104,18 @@ NearestNeighborBlueprint::fetchPostings(const ExecuteInfo &execInfo) {
     }
 }
 
+FilterWiring
+NearestNeighborBlueprint::compute_filter_wiring() {
+    FilterWiring retval;
+    retval.targets.emplace_back(*this, std::make_shared<FilterInfoNop>());
+    return retval;
+}
+
+void NearestNeighborBlueprint::set_filter_info(const FilterWiring::Info &filter_info) {
+    // XXX missing implementation
+    (void) filter_info;
+}
+
 std::unique_ptr<SearchIterator>
 NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda, bool strict) const
 {

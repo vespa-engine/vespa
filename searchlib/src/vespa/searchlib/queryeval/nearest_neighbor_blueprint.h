@@ -42,6 +42,9 @@ public:
     const vespalib::tensor::DenseTensorView& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
 
+    FilterWiring compute_filter_wiring() override;
+    void set_filter_info(const FilterWiring::Info &filter_info) override;
+
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
