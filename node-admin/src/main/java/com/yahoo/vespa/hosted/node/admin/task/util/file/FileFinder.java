@@ -41,7 +41,7 @@ public class FileFinder {
     private Predicate<FileAttributes> matcher;
     private int maxDepth = Integer.MAX_VALUE;
 
-    public FileFinder(Path basePath, Predicate<FileAttributes> initialMatcher) {
+    private FileFinder(Path basePath, Predicate<FileAttributes> initialMatcher) {
         this.basePath = basePath;
         this.matcher = initialMatcher;
     }
