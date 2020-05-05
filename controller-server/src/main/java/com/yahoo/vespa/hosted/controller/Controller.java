@@ -231,7 +231,7 @@ public class Controller extends AbstractComponent {
                 Set<Version> newVersions = newStatus.versionsIn(cloud);
                 if (currentStatus.versionsIn(cloud).size() > 1 && newVersions.size() == 1) {
                     log.info("All nodes in " + cloud + " cloud upgraded to OS version " +
-                             newVersions.iterator().next());
+                             newVersions.iterator().next().toFullString());
                 }
             }
             curator.writeOsVersionStatus(newStatus);

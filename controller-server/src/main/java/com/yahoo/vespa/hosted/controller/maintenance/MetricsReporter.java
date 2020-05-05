@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -168,7 +167,7 @@ public class MetricsReporter extends ControllerMaintainer {
     private static Map<ApplicationId, Integer> deploymentWarnings(DeploymentStatusList statuses) {
         return statuses.asList().stream()
                        .flatMap(status -> status.application().instances().values().stream())
-                        .collect(Collectors.toMap(Instance::id, a -> maxWarningCountOf(a.deployments().values())));
+                       .collect(Collectors.toMap(Instance::id, a -> maxWarningCountOf(a.deployments().values())));
     }
 
     private static int maxWarningCountOf(Collection<Deployment> deployments) {
@@ -188,7 +187,8 @@ public class MetricsReporter extends ControllerMaintainer {
 
     private static Map<String, String> dimensions(NodeVersion nodeVersion) {
         return Map.of("host", nodeVersion.hostname().value(),
-                      "zone", nodeVersion.zone().value());
+                      "zone", nodeVersion.zone().value(),
+                      "currentVersion", nodeVersion.currentVersion().toFullString());
     }
 
 }

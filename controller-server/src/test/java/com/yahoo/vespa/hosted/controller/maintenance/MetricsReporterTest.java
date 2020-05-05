@@ -226,7 +226,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void nodes_failing_system_upgrade() {
+    public void platform_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
@@ -279,7 +279,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void nodes_failing_os_upgrade() {
+    public void os_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
@@ -420,13 +420,13 @@ public class MetricsReporterTest {
 
     private void assertPlatformChangeDuration(Duration duration, List<Node> nodes) {
         for (var node : nodes) {
-            assertEquals(duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()));
+            assertEquals("Platform change duration of " + node.hostname(), duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()));
         }
     }
 
     private void assertOsChangeDuration(Duration duration, List<Node> nodes) {
         for (var node : nodes) {
-            assertEquals(duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()));
+            assertEquals("OS change duration of " + node.hostname(), duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()));
         }
     }
 
