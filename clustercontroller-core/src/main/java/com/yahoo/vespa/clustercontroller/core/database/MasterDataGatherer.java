@@ -121,7 +121,10 @@ public class MasterDataGatherer {
                     if (nextMasterData.containsKey(index)) {
                         nextMasterData.remove(index);
                     } else {
-                        log.log(Level.SEVERE, "Fleetcontroller " + nodeIndex + ": Strangely, we already had data from node " + index + " when trying to remove it");
+                        // May happen when pending data watch error callbacks are triggered concurrently with
+                        // internal voting state having already been cleared due to connectivity issues.
+                        log.log(Level.INFO, String.format("Fleetcontroller %d: ignoring removal of vote from node %d " +
+                                "since it was not present in existing vote mapping", nodeIndex, index));
                     }
                 } else {
                     Integer value = Integer.valueOf(data);
