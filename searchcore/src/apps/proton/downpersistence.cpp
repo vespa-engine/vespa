@@ -83,7 +83,7 @@ DownPersistence::removeEntry(const Bucket&, Timestamp, Context&)
     return errorResult;
 }
 
-UpdateResult DownPersistence::update(const Bucket&, Timestamp, const DocumentUpdate::SP&, Context&)
+UpdateResult DownPersistence::update(const Bucket&, Timestamp, DocumentUpdate::SP, Context&)
 {
     return UpdateResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }

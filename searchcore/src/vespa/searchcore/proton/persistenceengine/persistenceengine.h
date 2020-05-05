@@ -103,7 +103,7 @@ public:
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
     void removeAsync(const Bucket&, Timestamp, const document::DocumentId&, Context&, OperationComplete::UP) override;
-    UpdateResult update(const Bucket&, Timestamp, const std::shared_ptr<document::DocumentUpdate>&, Context&) override;
+    void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, Context&, OperationComplete::UP) override;
     GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
     CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
                                         IncludedVersions, Context&) override;

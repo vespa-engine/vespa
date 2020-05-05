@@ -458,12 +458,12 @@ TEST_F("require that puts are routed to handler", SimpleFixture)
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.engine.put(bucket1, tstamp1, doc1, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
 
     f.engine.put(bucket1, tstamp1, doc2, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
 
     EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
                  f.engine.put(bucket1, tstamp1, doc3, context));
@@ -490,14 +490,14 @@ TEST_F("require that updates are routed to handler", SimpleFixture)
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.hset.handler1.setExistingTimestamp(tstamp2);
     UpdateResult ur = f.engine.update(bucket1, tstamp1, upd1, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
     EXPECT_EQUAL(tstamp2, ur.getExistingTimestamp());
 
     f.hset.handler2.setExistingTimestamp(tstamp3);
     ur = f.engine.update(bucket1, tstamp1, upd2, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
     EXPECT_EQUAL(tstamp3, ur.getExistingTimestamp());
 
     EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
@@ -533,31 +533,31 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     RemoveResult rr = f.engine.remove(bucket1, tstamp1, docId3, context);
-    assertHandler(bucket0, tstamp0, docId0, f.hset.handler1);
-    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
+    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler1));
+    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
     EXPECT_FALSE(rr.wasFound());
     EXPECT_TRUE(rr.hasError());
     EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
 
     f.hset.handler1.setExistingTimestamp(tstamp2);
     rr = f.engine.remove(bucket1, tstamp1, docId1, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
     EXPECT_TRUE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 
     f.hset.handler1.setExistingTimestamp(tstamp0);
     f.hset.handler2.setExistingTimestamp(tstamp3);
     rr = f.engine.remove(bucket1, tstamp1, docId2, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
     EXPECT_TRUE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 
     f.hset.handler2.setExistingTimestamp(tstamp0);
     rr = f.engine.remove(bucket1, tstamp1, docId2, context);
-    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
-    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
+    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
+    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
     EXPECT_FALSE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 }

@@ -4,6 +4,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -30,7 +31,7 @@ BucketContent::BucketContent()
       _outdatedInfo(true),
       _active(false)
 { }
-BucketContent::~BucketContent() { }
+BucketContent::~BucketContent() = default;
 
 uint32_t
 BucketContent::computeEntryChecksum(const BucketEntry& e) const
@@ -306,11 +307,10 @@ DummyPersistence::DummyPersistence(
       _clusterState()
 {}
 
-DummyPersistence::~DummyPersistence() {}
+DummyPersistence::~DummyPersistence() = default;
 
 document::select::Node::UP
-DummyPersistence::parseDocumentSelection(const string& documentSelection,
-                                         bool allowLeaf)
+DummyPersistence::parseDocumentSelection(const string& documentSelection, bool allowLeaf)
 {
     document::select::Node::UP ret;
     try {
@@ -462,6 +462,37 @@ DummyPersistence::put(const Bucket& b, Timestamp t, Document::SP doc, Context&)
     auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
     (*bc)->insert(std::move(entry));
     return Result();
+}
+
+UpdateResult
+DummyPersistence::update(const Bucket& bucket, Timestamp ts, DocumentUpdateSP upd, Context& context)
+{
+    GetResult getResult = get(bucket, document::AllFields(), upd->getId(), context);
+
+    if (getResult.hasError()) {
+        return UpdateResult(getResult.getErrorCode(), getResult.getErrorMessage());
+    }
+
+    auto docToUpdate = getResult.getDocumentPtr();
+    Timestamp updatedTs = getResult.getTimestamp();
+    if (!docToUpdate) {
+        if (!upd->getCreateIfNonExistent()) {
+            return UpdateResult();
+        } else {
+            docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
+            updatedTs = ts;
+        }
+    }
+
+    upd->applyTo(*docToUpdate);
+
+    Result putResult = put(bucket, ts, std::move(docToUpdate), context);
+
+    if (putResult.hasError()) {
+        return UpdateResult(putResult.getErrorCode(), putResult.getErrorMessage());
+    }
+
+    return UpdateResult(updatedTs);
 }
 
 RemoveResult

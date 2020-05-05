@@ -124,12 +124,12 @@ PersistenceProviderWrapper::removeIfFound(const spi::Bucket& bucket,
 spi::UpdateResult
 PersistenceProviderWrapper::update(const spi::Bucket& bucket,
                                    spi::Timestamp timestamp,
-                                   const document::DocumentUpdate::SP& upd,
+                                   document::DocumentUpdate::SP upd,
                                    spi::Context& context)
 {
     LOG_SPI("update(" << bucket << ", " << timestamp << ", " << upd->getId() << ")");
     CHECK_ERROR(spi::UpdateResult, FAIL_UPDATE);
-    return _spi.update(bucket, timestamp, upd, context);
+    return _spi.update(bucket, timestamp, std::move(upd), context);
 }
 
 spi::GetResult

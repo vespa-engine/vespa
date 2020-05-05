@@ -20,12 +20,6 @@ public:
     Result initialize() override { return Result(); };
 
     /**
-     * Updates the document by calling get(), updating the document,
-     * then calling put() on the result.
-     */
-    UpdateResult update(const Bucket&, Timestamp, const DocumentUpdateSP&, Context&) override;
-
-    /**
      * Default impl empty.
      */
     Result createBucket(const Bucket&, Context&) override { return Result(); }

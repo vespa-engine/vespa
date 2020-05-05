@@ -84,47 +84,35 @@ ProviderErrorWrapper::put(const spi::Bucket& bucket, spi::Timestamp ts, spi::Doc
 }
 
 spi::RemoveResult
-ProviderErrorWrapper::remove(const spi::Bucket& bucket,
-                                spi::Timestamp ts,
-                                const document::DocumentId& docId,
-                                spi::Context& context)
+ProviderErrorWrapper::remove(const spi::Bucket& bucket, spi::Timestamp ts, const document::DocumentId& docId, spi::Context& context)
 {
     return checkResult(_impl.remove(bucket, ts, docId, context));
 }
 
 spi::RemoveResult
-ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket,
-                                       spi::Timestamp ts,
-                                       const document::DocumentId& docId,
-                                       spi::Context& context)
+ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket, spi::Timestamp ts,
+                                    const document::DocumentId& docId, spi::Context& context)
 {
     return checkResult(_impl.removeIfFound(bucket, ts, docId, context));
 }
 
 spi::UpdateResult
-ProviderErrorWrapper::update(const spi::Bucket& bucket,
-                                spi::Timestamp ts,
-                                const spi::DocumentUpdateSP& docUpdate,
-                                spi::Context& context)
+ProviderErrorWrapper::update(const spi::Bucket& bucket, spi::Timestamp ts,
+                             spi::DocumentUpdateSP docUpdate, spi::Context& context)
 {
-    return checkResult(_impl.update(bucket, ts, docUpdate, context));
+    return checkResult(_impl.update(bucket, ts, std::move(docUpdate), context));
 }
 
 spi::GetResult
-ProviderErrorWrapper::get(const spi::Bucket& bucket,
-                             const document::FieldSet& fieldSet,
-                             const document::DocumentId& docId,
-                             spi::Context& context) const
+ProviderErrorWrapper::get(const spi::Bucket& bucket, const document::FieldSet& fieldSet,
+                          const document::DocumentId& docId, spi::Context& context) const
 {
     return checkResult(_impl.get(bucket, fieldSet, docId, context));
 }
 
 spi::CreateIteratorResult
-ProviderErrorWrapper::createIterator(const spi::Bucket& bucket,
-                                        const document::FieldSet& fieldSet,
-                                        const spi::Selection& selection,
-                                        spi::IncludedVersions versions,
-                                        spi::Context& context)
+ProviderErrorWrapper::createIterator(const spi::Bucket& bucket, const document::FieldSet& fieldSet,
+                                     const spi::Selection& selection, spi::IncludedVersions versions, spi::Context& context)
 {
     return checkResult(_impl.createIterator(bucket, fieldSet, selection, versions, context));
 }
@@ -187,7 +175,7 @@ ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket, spi::Timestamp ts, 
 
 void
 ProviderErrorWrapper::putAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi::DocumentSP doc,
-                                    spi::Context &context, spi::OperationComplete::UP onComplete)
+                               spi::Context &context, spi::OperationComplete::UP onComplete)
 {
     onComplete->addResultHandler(this);
     _impl.putAsync(bucket, ts, std::move(doc), context, std::move(onComplete));
@@ -203,10 +191,18 @@ ProviderErrorWrapper::removeAsync(const spi::Bucket &bucket, spi::Timestamp ts, 
 
 void
 ProviderErrorWrapper::removeIfFoundAsync(const spi::Bucket &bucket, spi::Timestamp ts, const document::DocumentId &docId,
-                                  spi::Context & context, spi::OperationComplete::UP onComplete)
+                                         spi::Context & context, spi::OperationComplete::UP onComplete)
 {
     onComplete->addResultHandler(this);
     _impl.removeIfFoundAsync(bucket, ts, docId, context, std::move(onComplete));
+}
+
+void
+ProviderErrorWrapper::updateAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi::DocumentUpdateSP upd,
+                                  spi::Context &context, spi::OperationComplete::UP onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.updateAsync(bucket, ts, std::move(upd), context, std::move(onComplete));
 }
 
 } // ns storage

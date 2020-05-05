@@ -171,7 +171,7 @@ TEST_F(TestAndSetTest, conditional_update_not_executed_on_condition_mismatch) {
     putTestDocument(false, timestampOne);
     auto updateUp = conditional_update_test(false, timestampTwo);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))->getResult().getResult(),
+    ASSERT_EQ(fetchResult(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))).getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId), dumpBucket(BUCKET_ID));
 
@@ -184,7 +184,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_on_condition_match) {
     putTestDocument(true, timestampOne);
     auto updateUp = conditional_update_test(false, timestampTwo);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(fetchResult(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))).getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
               expectedDocEntryString(timestampTwo, testDocId),
               dumpBucket(BUCKET_ID));
@@ -196,7 +196,7 @@ TEST_F(TestAndSetTest, conditional_update_not_executed_when_no_document_and_no_a
     api::Timestamp updateTimestamp = 200;
     auto updateUp = conditional_update_test(false, updateTimestamp);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))->getResult().getResult(),
+    ASSERT_EQ(fetchResult(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))).getResult(),
               api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
@@ -205,7 +205,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_when_no_document_but_auto_cre
     api::Timestamp updateTimestamp = 200;
     auto updateUp = conditional_update_test(true, updateTimestamp);
 
-    ASSERT_EQ(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))->getResult().getResult(), api::ReturnCode::Result::OK);
+    ASSERT_EQ(fetchResult(thread->handleUpdate(*updateUp, createTracker(updateUp, BUCKET))).getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(updateTimestamp, testDocId), dumpBucket(BUCKET_ID));
     assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
 }

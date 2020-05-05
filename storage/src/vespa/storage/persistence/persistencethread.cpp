@@ -176,19 +176,17 @@ PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
         return trackerUP;
     }
 
+    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
     if (_sequencedExecutor == nullptr) {
-        spi::Result response = _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                        spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),
-                                        tracker.context());
+        spi::Result response = _spi.put(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),tracker.context());
         tracker.checkForError(response);
     } else {
-        _spi.putAsync(getBucket(cmd.getDocumentId(), cmd.getBucket()), spi::Timestamp(cmd.getTimestamp()),
-                      std::move(cmd.getDocument()), tracker.context(),
-                      std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(),
-                              makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
-                                  tracker->checkForError(*response);
-                                  tracker->sendReply();
-                              })));
+        auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
+            tracker->checkForError(*response);
+            tracker->sendReply();
+        });
+        _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker.context(),
+                      std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     }
     return trackerUP;
 }
@@ -205,10 +203,9 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
         return trackerUP;
     }
 
+    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
     if (_sequencedExecutor == nullptr) {
-        spi::RemoveResult response = _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                                                        spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),
-                                                        tracker.context());
+        spi::RemoveResult response = _spi.removeIfFound(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),tracker.context());
         if (tracker.checkForError(response)) {
             tracker.setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
         }
@@ -216,42 +213,56 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
             metrics.notFound.inc();
         }
     } else {
-        _spi.removeIfFoundAsync(getBucket(cmd.getDocumentId(), cmd.getBucket()),
-                         spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
-                         std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(),
-                               makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-                                   const spi::RemoveResult & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
-                                   if (tracker->checkForError(response)) {
-                                       tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
-                                   }
-                                   if (!response.wasFound()) {
-                                       metrics.notFound.inc();
-                                   }
-                                   tracker->sendReply();
-                               })));
+        auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
+            const spi::RemoveResult & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
+            if (tracker->checkForError(response)) {
+                tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
+            }
+            if (!response.wasFound()) {
+                metrics.notFound.inc();
+            }
+            tracker->sendReply();
+        });
+        _spi.removeIfFoundAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
+                                std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     }
     return trackerUP;
 }
 
 MessageTracker::UP
-PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP tracker)
+PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP)
 {
+    MessageTracker & tracker = *trackerUP;
     auto& metrics = _env._metrics.update[cmd.getLoadType()];
-    tracker->setMetric(metrics);
+    tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, tracker->context(), cmd.getUpdate()->getCreateIfNonExistent())) {
-        return tracker;
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.getUpdate()->getCreateIfNonExistent())) {
+        return trackerUP;
     }
-    
-    spi::UpdateResult response = _spi.update(getBucket(cmd.getUpdate()->getId(), cmd.getBucket()),
-                                             spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(), tracker->context());
-    if (tracker->checkForError(response)) {
-        auto reply = std::make_shared<api::UpdateReply>(cmd);
-        reply->setOldTimestamp(response.getExistingTimestamp());
-        tracker->setReply(std::move(reply));
+
+    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
+    if (_sequencedExecutor == nullptr) {
+        spi::UpdateResult response = _spi.update(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()),tracker.context());
+        if (tracker.checkForError(response)) {
+            auto reply = std::make_shared<api::UpdateReply>(cmd);
+            reply->setOldTimestamp(response.getExistingTimestamp());
+            tracker.setReply(std::move(reply));
+        }
+    } else {
+        auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
+            const spi::UpdateResult & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
+            if (tracker->checkForError(response)) {
+                auto reply = std::make_shared<api::UpdateReply>(cmd);
+                reply->setOldTimestamp(response.getExistingTimestamp());
+                tracker->setReply(std::move(reply));
+            }
+            tracker->sendReply();
+        });
+        _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()), tracker.context(),
+                         std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     }
-    return tracker;
+    return trackerUP;
 }
 
 namespace {

@@ -74,4 +74,20 @@ PersistenceProvider::removeIfFoundAsync(const Bucket &bucket, Timestamp timestam
     onComplete->onComplete(std::make_unique<RemoveResult>(result));
 }
 
+UpdateResult
+PersistenceProvider::update(const Bucket& bucket, Timestamp timestamp, DocumentUpdateSP upd, Context& context) {
+    auto catcher = std::make_unique<CatchResult>();
+    auto future = catcher->future_result();
+    updateAsync(bucket, timestamp, std::move(upd), context, std::move(catcher));
+    return dynamic_cast<const UpdateResult &>(*future.get());
+}
+
+void
+PersistenceProvider::updateAsync(const Bucket &bucket, Timestamp timestamp, DocumentUpdateSP upd, Context &context,
+                                        OperationComplete::UP onComplete)
+{
+    UpdateResult result = update(bucket, timestamp, std::move(upd), context);
+    onComplete->onComplete(std::make_unique<UpdateResult>(result));
+}
+
 }

@@ -368,34 +368,34 @@ PersistenceEngine::removeAsync(const Bucket& b, Timestamp t, const DocumentId& d
 }
 
 
-PersistenceEngine::UpdateResult
-PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP& upd, Context&)
+void
+PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP upd, Context&, OperationComplete::UP onComplete)
 {
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
-            return UpdateResult(Result::ErrorType::RESOURCE_EXHAUSTED,
+            return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::RESOURCE_EXHAUSTED,
                                 make_string("Update operation rejected for document '%s': '%s'",
-                                            upd->getId().toString().c_str(), state.message().c_str()));
+                                            upd->getId().toString().c_str(), state.message().c_str())));
         }
     }
     try {
         upd->eagerDeserialize();
     } catch (document::FieldNotFoundException & e) {
-        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
-                                        upd->getId().toString().c_str(), upd->getType().getName().c_str()));
+                                        upd->getId().toString().c_str(), upd->getType().getName().c_str())));
     } catch (document::DocumentTypeNotFoundException & e) {
-        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s'.",
-                                        upd->getId().toString().c_str(), e.getDocumentTypeName().c_str()));
+                                        upd->getId().toString().c_str(), e.getDocumentTypeName().c_str())));
 
     } catch (document::WrongTensorTypeException &e) {
-        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s': 'Wrong tensor type: %s'",
                                         upd->getId().toString().c_str(),
                                         upd->getType().getName().c_str(),
-                                        e.getMessage().c_str()));
+                                        e.getMessage().c_str())));
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(upd->getType());
@@ -403,24 +403,20 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         b.toString().c_str(), static_cast<uint64_t>(t.getValue()), docType.toString().c_str(),
         upd->getId().toString().c_str(), (upd->getCreateIfNonExistent() ? "true" : "false"));
     if (!upd->getId().hasDocType()) {
-        return UpdateResult(Result::ErrorType::PERMANENT_ERROR,
-                            make_string("Old id scheme not supported in elastic mode (%s)", upd->getId().toString().c_str()));
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::PERMANENT_ERROR,
+                            make_string("Old id scheme not supported in elastic mode (%s)", upd->getId().toString().c_str())));
     }
     if (upd->getId().getDocType() != docType.getName()) {
-        return UpdateResult(Result::ErrorType::PERMANENT_ERROR,
-                            make_string("Update operation rejected due to bad id (%s, %s)", upd->getId().toString().c_str(), docType.getName().c_str()));
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::PERMANENT_ERROR,
+                            make_string("Update operation rejected due to bad id (%s, %s)", upd->getId().toString().c_str(), docType.getName().c_str())));
     }
     IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
 
-    if (handler) {
-        TransportLatch latch(1);
-        LOG(debug, "update = %s", upd->toXml().c_str());
-        handler->handleUpdate(feedtoken::make(latch), b, t, upd);
-        latch.await();
-        return latch.getUpdateResult();
-    } else {
-        return UpdateResult(Result::ErrorType::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str()));
+    if ( handler == nullptr) {
+        return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str())));
     }
+    auto transportContext = std::make_unique<AsyncTranportContext>(1, std::move(onComplete));
+    handler->handleUpdate(feedtoken::make(std::move(transportContext)), b, t, std::move(upd));
 }
 
 

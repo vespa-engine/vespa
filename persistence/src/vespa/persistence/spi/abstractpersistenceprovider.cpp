@@ -8,39 +8,6 @@
 
 namespace storage::spi {
 
-UpdateResult
-AbstractPersistenceProvider::update(const Bucket& bucket, Timestamp ts,
-                                    const DocumentUpdate::SP& upd, Context& context)
-{
-    GetResult getResult = get(bucket, document::AllFields(), upd->getId(), context);
-
-    if (getResult.hasError()) {
-        return UpdateResult(getResult.getErrorCode(), getResult.getErrorMessage());
-    }
-
-    auto docToUpdate = getResult.getDocumentPtr();
-    Timestamp updatedTs = getResult.getTimestamp();
-    if (!docToUpdate) {
-        if (!upd->getCreateIfNonExistent()) {
-            return UpdateResult();
-        } else {
-            docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
-            updatedTs = ts;
-        }
-    }
-
-    upd->applyTo(*docToUpdate);
-
-    Result putResult = put(bucket, ts, std::move(docToUpdate), context);
-
-    if (putResult.hasError()) {
-        return UpdateResult(putResult.getErrorCode(),
-                            putResult.getErrorMessage());
-    }
-
-    return UpdateResult(updatedTs);
-}
-
 RemoveResult
 AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
                                            const DocumentId& id, Context& context)
@@ -50,7 +17,7 @@ AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
 
 void
 AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
-                                           const DocumentId& id, Context& context, OperationComplete::UP onComplete)
+                                                const DocumentId& id, Context& context, OperationComplete::UP onComplete)
 {
     removeAsync(b, timestamp, id, context, std::move(onComplete));
 }
