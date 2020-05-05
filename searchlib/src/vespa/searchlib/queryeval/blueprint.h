@@ -5,6 +5,7 @@
 #include "field_spec.h"
 #include "unpackinfo.h"
 #include "executeinfo.h"
+#include "filter_wiring.h"
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -187,10 +188,18 @@ public:
     const Blueprint &root() const;
 
     double hit_ratio() const { return getState().hit_ratio(_docid_limit); }        
-
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
+
+    // call this on root blueprint node to compute and propagate filter info:
+    void propagate_filter_wiring();
+
+    // compute filter info for a blueprint tree:
+    virtual FilterWiring compute_filter_wiring();
+
+    // tell a blueprint about filters that will influence its results:
+    virtual void set_filter_info(const FilterWiring::Info &filter_info);
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
 

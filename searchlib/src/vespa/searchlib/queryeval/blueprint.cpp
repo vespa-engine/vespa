@@ -130,6 +130,25 @@ Blueprint::asSlime(const vespalib::slime::Inserter & inserter) const
     return cursor;
 }
 
+void
+Blueprint::propagate_filter_wiring() {
+    auto wiring = compute_filter_wiring();
+    for (auto &couple : wiring.targets) {
+        couple.target.set_filter_info(*couple.filter_info);
+    }
+}
+
+FilterWiring
+Blueprint::compute_filter_wiring() {
+    FilterWiring empty;
+    return empty;
+}
+
+void
+Blueprint::set_filter_info(const FilterWiring::Info &) {
+    // default NOP
+}
+
 vespalib::string
 Blueprint::getClassName() const
 {
