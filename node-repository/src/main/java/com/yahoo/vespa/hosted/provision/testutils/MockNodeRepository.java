@@ -54,6 +54,7 @@ public class MockNodeRepository extends NodeRepository {
 
     /**
      * Constructor
+     *
      * @param flavors flavors to have in node repo
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
@@ -153,11 +154,11 @@ public class MockNodeRepository extends NodeRepository {
 
         ApplicationId app1Id = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        provisioner.prepare(app1Id,
-                            cluster1Id,
-                            Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
-                                          new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)), false, true),
-                            null);
+        activate(provisioner.prepare(app1Id,
+                                     cluster1Id,
+                                     Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
+                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)), false, true),
+                                null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
         cluster1 = cluster1.withSuggested(Optional.of(new ClusterResources(6, 2,

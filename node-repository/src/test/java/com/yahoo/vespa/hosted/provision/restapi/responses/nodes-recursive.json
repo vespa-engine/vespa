@@ -5,7 +5,9 @@
     @include(node3.json),
     @include(cfg2.json),
     @include(node10.json),
-    @include(node1.json),
+    @include(docker-node3.json),
+    @include(node14.json),
+    @include(node4.json),
     @include(docker-node4.json),
     @include(node6.json),
     @include(docker-container1.json),
@@ -14,9 +16,7 @@
     @include(node13.json),
     @include(node2.json),
     @include(docker-node1.json),
-    @include(docker-node3.json),
-    @include(node14.json),
-    @include(node4.json),
+    @include(node1.json),
     @include(node55.json),
     @include(node5.json)
   ]

@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host1.yahoo.com",
   "id": "host1.yahoo.com",
-  "state": "reserved",
+  "state": "active",
   "type": "tenant",
   "hostname": "host1.yahoo.com",
   "openStackId": "node1",
@@ -46,7 +46,11 @@
       "event": "reserved",
       "at": 123,
       "agent": "application"
-    }
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"}
   ],
   "ipAddresses": [
     "127.0.1.1",

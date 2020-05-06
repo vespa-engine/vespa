@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host10.yahoo.com",
   "id": "host10.yahoo.com",
-  "state": "reserved",
+  "state": "active",
   "type": "tenant",
   "hostname": "host10.yahoo.com",
   "parentHostname": "parent1.yahoo.com",
@@ -47,6 +47,11 @@
     },
     {
       "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
       "at": 123,
       "agent": "application"
     }

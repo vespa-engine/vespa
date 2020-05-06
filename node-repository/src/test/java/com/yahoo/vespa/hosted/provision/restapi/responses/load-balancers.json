@@ -2,7 +2,7 @@
   "loadBalancers": [
     {
       "id": "tenant1:application1:instance1:id1",
-      "state": "reserved",
+      "state": "active",
       "changedAt": 123,
       "application": "application1",
       "tenant": "tenant1",

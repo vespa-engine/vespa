@@ -4,36 +4,48 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Serializes application information for nodes/v2/application responses
  */
 public class ApplicationSerializer {
 
-    public static Slime toSlime(Application application, URI applicationUri) {
+    public static Slime toSlime(Application application, List<Node> applicationNodes, URI applicationUri) {
         Slime slime = new Slime();
-        toSlime(application, slime.setObject(), applicationUri);
+        toSlime(application, applicationNodes, slime.setObject(), applicationUri);
         return slime;
     }
 
-    private static void toSlime(Application application, Cursor object, URI applicationUri) {
+    private static void toSlime(Application application,
+                                List<Node> applicationNodes,
+                                Cursor object,
+                                URI applicationUri) {
         object.setString("url", applicationUri.toString());
         object.setString("id", application.id().toFullString());
-        clustersToSlime(application.clusters().values(), object.setObject("clusters"));
+        clustersToSlime(application.clusters().values(), applicationNodes, object.setObject("clusters"));
     }
 
-    private static void clustersToSlime(Collection<Cluster> clusters, Cursor clustersObject) {
-        clusters.forEach(cluster -> toSlime(cluster, clustersObject.setObject(cluster.id().value())));
+    private static void clustersToSlime(Collection<Cluster> clusters, List<Node> applicationNodes, Cursor clustersObject) {
+        clusters.forEach(cluster -> toSlime(cluster, applicationNodes, clustersObject.setObject(cluster.id().value())));
     }
 
-    private static void toSlime(Cluster cluster, Cursor clusterObject) {
+    private static void toSlime(Cluster cluster, List<Node> applicationNodes, Cursor clusterObject) {
+        List<Node> nodes = NodeList.copyOf(applicationNodes).not().retired().cluster(cluster.id()).asList();
+        int groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).flavor().resources());
+
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
         toSlime(cluster.maxResources(), clusterObject.setObject("max"));
+        toSlime(currentResources, clusterObject.setObject("current"));
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
     }
