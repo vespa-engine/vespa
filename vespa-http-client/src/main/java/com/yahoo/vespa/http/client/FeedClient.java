@@ -54,7 +54,7 @@ public interface FeedClient extends AutoCloseable {
     /**
      * Issues a document operation to the configured cluster(s).
      * If the pipeline and buffers are full, this call will be blocking, ensuring that operations are not
-     * produced faster than the can be handled. Transient failured are retried internally by this client.
+     * produced faster than the can be handled. Transient failures are retried internally by this client.
      * Exactly one callback will always be received for each (completed) call to this.
      *
      * @param documentId the document id of the document

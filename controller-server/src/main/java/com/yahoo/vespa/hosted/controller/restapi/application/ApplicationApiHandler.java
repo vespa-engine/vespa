@@ -9,6 +9,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
@@ -29,7 +30,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -44,9 +44,11 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -229,6 +231,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -238,6 +241,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -408,7 +412,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor applicationArray = slime.setArray();
-        for (Application application : controller.applications().asList(tenant)) {
+        for (com.yahoo.vespa.hosted.controller.Application application : controller.applications().asList(tenant)) {
             if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
                 Cursor applicationObject = applicationArray.addObject();
                 applicationObject.setString("tenant", application.id().tenant().value());
@@ -587,7 +591,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(messageBuilder.toString());
     }
 
-    private Application getApplication(String tenantName, String applicationName) {
+    private com.yahoo.vespa.hosted.controller.Application getApplication(String tenantName, String applicationName) {
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenantName, applicationName);
         return controller.applications().getApplication(applicationId)
                          .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
@@ -614,15 +618,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.flavor());
-            nodeObject.setDouble("vcpu", node.resources().vcpu());
-            nodeObject.setDouble("memoryGb", node.resources().memoryGb());
-            nodeObject.setDouble("diskGb", node.resources().diskGb());
-            nodeObject.setDouble("bandwidthGbps", node.resources().bandwidthGbps());
-            nodeObject.setString("diskSpeed", valueOf(node.resources().diskSpeed()));
-            nodeObject.setString("storageType", valueOf(node.resources().storageType()));
+            toSlime(node.resources(), nodeObject);
             nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast); // TODO: Remove
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse clusters(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        Application application = controller.serviceRegistry().configServer().nodeRepository().getApplication(zone, id);
+
+        Slime slime = new Slime();
+        Cursor clustersObject = slime.setObject().setObject("clusters");
+        for (Cluster cluster : application.clusters().values()) {
+            Cursor clusterObject = clustersObject.setObject(cluster.id().value());
+            toSlime(cluster.min(), clusterObject.setObject("min"));
+            toSlime(cluster.max(), clusterObject.setObject("max"));
+            toSlime(cluster.current(), clusterObject.setObject("current"));
+            cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+            cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
         }
         return new SlimeJsonResponse(slime);
     }
@@ -716,7 +733,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(type.jobName() + " for " + id + " resumed");
     }
 
-    private void toSlime(Cursor object, Application application, HttpRequest request) {
+    private void toSlime(Cursor object, com.yahoo.vespa.hosted.controller.Application application, HttpRequest request) {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("deployments", withPath("/application/v4" +
@@ -854,7 +871,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
-        Application application = status.application();
+        com.yahoo.vespa.hosted.controller.Application application = status.application();
         object.setString("tenant", instance.id().tenant().value());
         object.setString("application", instance.id().application().value());
         object.setString("instance", instance.id().instance().value());
@@ -1349,7 +1366,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector requestObject = toSlime(request.getData()).get();
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         Credentials credentials = accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest());
-        Application application = controller.applications().createApplication(id, credentials);
+        com.yahoo.vespa.hosted.controller.Application application = controller.applications().createApplication(id, credentials);
         Slime slime = new Slime();
         toSlime(id, slime.setObject(), request);
         return new SlimeJsonResponse(slime);
@@ -1513,7 +1530,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
-        Optional<Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
+        Optional<com.yahoo.vespa.hosted.controller.Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
 
         Inspector sourceRevision = deployOptions.field("sourceRevision");
         Inspector buildNumber = deployOptions.field("buildNumber");
@@ -1656,7 +1673,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tenantType(tenant));
-        List<Application> applications = controller.applications().asList(tenant.name());
+        List<com.yahoo.vespa.hosted.controller.Application> applications = controller.applications().asList(tenant.name());
         switch (tenant.type()) {
             case athenz:
                 AthenzTenant athenzTenant = (AthenzTenant) tenant;
@@ -1690,7 +1707,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         // TODO jonmv: This should list applications, not instances.
         Cursor applicationArray = object.setArray("applications");
-        for (Application application : applications) {
+        for (com.yahoo.vespa.hosted.controller.Application application : applications) {
             DeploymentStatus status = controller.jobController().deploymentStatus(application);
             for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
                                                                           : application.instances().values())
@@ -1699,6 +1716,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 else
                     toSlime(instance.id(), applicationArray.addObject(), request);
         }
+    }
+
+    private void toSlime(ClusterResources resources, Cursor object) {
+        object.setLong("nodes", resources.nodes());
+        object.setLong("groups", resources.groups());
+        toSlime(resources.nodeResources(), object.setObject("nodeResources"));
+        object.setDouble("cost", resources.nodes() * resources.nodeResources().cost());
+    }
+
+    private void toSlime(NodeResources resources, Cursor object) {
+        object.setDouble("vcpu", resources.vcpu());
+        object.setDouble("memoryGb", resources.memoryGb());
+        object.setDouble("diskGb", resources.diskGb());
+        object.setDouble("bandwidthGbps", resources.bandwidthGbps());
+        object.setString("diskSpeed", valueOf(resources.diskSpeed()));
+        object.setString("storageType", valueOf(resources.storageType()));
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5

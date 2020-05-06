@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -97,7 +99,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
-    public void provision(ZoneId zone, ApplicationId application) {
+    public void provision(ZoneId zone, ApplicationId application, ClusterSpec.Id clusterId) {
+        Cluster cluster = new Cluster(clusterId,
+                                      new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
+                                      new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
+                                      new ClusterResources(2, 1, new NodeResources(2,  8, 50, 1, slow, remote)),
+                                      Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
+                                      Optional.empty());
+        nodeRepository.putApplication(zone,
+                                      new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
+                                                                                                                     List.of(cluster)));
+
         Node parent = nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream().findAny()
                                       .orElseThrow(() -> new IllegalStateException("No parent hosts in " + zone));
         nodeRepository().putNodes(zone, new Node.Builder().hostname(hostFor(application, zone))
@@ -114,7 +126,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                           .resources(new NodeResources(2, 8, 50, 1, slow, remote))
                                                           .serviceState(Node.ServiceState.unorchestrated)
                                                           .flavor("d-2-8-50")
-                                                          .clusterId("cluster")
+                                                          .clusterId(clusterId.value())
                                                           .clusterType(Node.ClusterType.container)
                                                           .build());
     }
@@ -326,10 +338,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             throw prepareException;
         }
         DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
+
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
+        ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
 
         if (nodeRepository().list(id.zoneId(), id.applicationId()).isEmpty())
-            provision(id.zoneId(), id.applicationId());
+            provision(id.zoneId(), id.applicationId(), cluster);
 
         this.rotationNames.put(
                 id,
@@ -342,7 +356,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
                                                                    id.applicationId(),
-                                                                   ClusterSpec.Id.from("default"),
+                                                                   cluster,
                                                                    HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString()),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"))));

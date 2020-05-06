@@ -1,0 +1,58 @@
+{
+  "clusters": {
+    "default": {
+      "min": {
+        "nodes": 2,
+        "groups": 1,
+        "nodeResources": {
+          "vcpu": 1.0,
+          "memoryGb": 4.0,
+          "diskGb": 20.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "slow",
+          "storageType": "remote"
+        },
+        "cost": 35.4
+      },
+      "max": {
+        "nodes": 2,
+        "groups": 1,
+        "nodeResources": {
+          "vcpu": 4.0,
+          "memoryGb": 16.0,
+          "diskGb": 90.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "slow",
+          "storageType": "remote"
+        },
+        "cost": 142.5
+      },
+      "current": {
+        "nodes": 2,
+        "groups": 1,
+        "nodeResources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "slow",
+          "storageType": "remote"
+        },
+        "cost": 71.7
+      },
+      "target": {
+        "nodes": 2,
+        "groups": 1,
+        "nodeResources": {
+          "vcpu": 3.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "slow",
+          "storageType": "remote"
+        },
+        "cost": 95.7
+      }
+    }
+  }
+}

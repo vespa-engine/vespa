@@ -70,6 +70,8 @@ public interface NodeRepository {
                                       .collect(Collectors.toList());
     }
 
+    Application getApplication(ZoneId zone, ApplicationId application);
+
     /** Upgrade all nodes of given type to a new version */
     void upgrade(ZoneId zone, NodeType type, Version version);
 

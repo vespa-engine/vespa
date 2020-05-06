@@ -10,6 +10,11 @@ import java.util.Objects;
  */
 public class NodeResources {
 
+    // Standard unit cost in dollars per hour
+    private static final double cpuUnitCost = 12.0;
+    private static final double memoryUnitCost = 1.2;
+    private static final double diskUnitCost = 0.045;
+
     public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
@@ -112,6 +117,11 @@ public class NodeResources {
     public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
     public StorageType storageType() { return storageType; }
+
+    /** Returns the standard cost of these resources, in dollars per hour */
+    public double cost() {
+        return vcpu * cpuUnitCost + memoryGb * memoryUnitCost + diskGb * diskUnitCost;
+    }
 
     public NodeResources withVcpu(double vcpu) {
         if (vcpu == this.vcpu) return this;

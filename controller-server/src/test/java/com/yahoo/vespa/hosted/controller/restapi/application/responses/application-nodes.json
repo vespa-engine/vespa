@@ -13,7 +13,7 @@
       "diskSpeed": "slow",
       "storageType": "remote",
       "fastDisk": false,
-      "clusterId": "cluster",
+      "clusterId": "default",
       "clusterType": "container"
     }
   ]

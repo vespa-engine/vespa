@@ -494,8 +494,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET nodes
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/nodes", GET)
-                             .userIdentity(USER_ID),
+                                      .userIdentity(USER_ID),
                               new File("application-nodes.json"));
+
+        // GET clusters
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/clusters", GET)
+                                      .userIdentity(USER_ID),
+                              new File("application-clusters.json"));
 
         // GET logs
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-central-1/instance/default/logs?from=1233&to=3214", GET)

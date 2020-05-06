@@ -19,11 +19,6 @@ import java.util.Optional;
  */
 public class AllocatableClusterResources {
 
-    // We only depend on the ratios between these values
-    private static final double cpuUnitCost = 12.0;
-    private static final double memoryUnitCost = 1.2;
-    private static final double diskUnitCost = 0.045;
-
     /** The node count in the cluster */
     private final int nodes;
 
@@ -107,7 +102,7 @@ public class AllocatableClusterResources {
 
     public ClusterSpec.Type clusterType() { return clusterType; }
 
-    public double cost() { return nodes * costOf(advertisedResources); }
+    public double cost() { return nodes * advertisedResources.cost(); }
 
     /**
      * Returns the fraction measuring how well the real resources fulfils the ideal: 1 means completely fulfilled,
@@ -115,12 +110,6 @@ public class AllocatableClusterResources {
      * The real may be short of the ideal due to resource limits imposed by the system or application.
      */
     public double fulfilment() { return fulfilment; }
-
-    private static double costOf(NodeResources resources) {
-        return resources.vcpu() * cpuUnitCost +
-               resources.memoryGb() * memoryUnitCost +
-               resources.diskGb() * diskUnitCost;
-    }
 
     private static double fulfilment(NodeResources realResources, NodeResources idealResources) {
         double vcpuFulfilment     = Math.min(1, realResources.vcpu()     / idealResources.vcpu());
