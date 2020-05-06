@@ -148,6 +148,37 @@ AndNotBlueprint::inheritStrict(size_t i) const
     return (i == 0);
 }
 
+void
+AndNotBlueprint::filter_info_setup(const FilterInfo &input) {
+    assert(childCnt() > 0);
+    getChild(0).filter_info_setup(input);
+    FilterInfo inverted;
+    inverted.is_inside_not = true;
+    inverted.inverted = ! input.inverted;
+    for (size_t idx = 1; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        if (child.getState().needs_filter_info_setup()) {
+            child.filter_info_setup(inverted);
+        }
+    }
+}
+
+FilterInfo
+AndNotBlueprint::compute_global_filter_info(const FilterInfo &input)
+{
+    FilterInfo inverted;
+    inverted.is_inside_not = true;
+    inverted.inverted = ! input.inverted;
+    assert(childCnt() > 0);
+    FilterInfo result = getChild(0).compute_global_filter_info(input);
+    for (size_t idx = 1; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        FilterInfo child_filter = child.compute_global_filter_info(inverted);
+        result.whitelist_ratio *= (1.0 - child_filter.whitelist_ratio);
+    }
+    return result;
+}
+
 SearchIterator::UP
 AndNotBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
                                           bool strict, search::fef::MatchData &md) const
@@ -218,6 +249,19 @@ bool
 AndBlueprint::inheritStrict(size_t i) const
 {
     return (i == 0);
+}
+
+FilterInfo
+AndBlueprint::compute_global_filter_info(const FilterInfo &input) {
+    double ratio = 1.0;
+    for (size_t idx = 0; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        FilterInfo child_filter = child.compute_global_filter_info(input);
+        ratio *= child_filter.whitelist_ratio;
+    }
+    FilterInfo retval;
+    retval.whitelist_ratio = ratio;
+    return retval;
 }
 
 SearchIterator::UP
@@ -300,6 +344,22 @@ bool
 OrBlueprint::inheritStrict(size_t) const
 {
     return true;
+}
+
+FilterInfo
+OrBlueprint::compute_global_filter_info(const FilterInfo &input) {
+    FilterInfo retval;
+    if (getState().needs_filter_info_setup()) {
+        return retval;
+    }
+    double blacklist_ratio = 1.0;
+    for (size_t idx = 0; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        FilterInfo child_filter = child.compute_global_filter_info(input);
+        blacklist_ratio *= (1.0 - child_filter.whitelist_ratio);
+    }
+    retval.whitelist_ratio = (1.0 - blacklist_ratio);
+    return retval;
 }
 
 SearchIterator::UP
@@ -567,6 +627,17 @@ SourceBlenderBlueprint::exposeFields() const
 void
 SourceBlenderBlueprint::sort(std::vector<Blueprint*> &) const
 {
+}
+
+void
+SourceBlenderBlueprint::filter_info_setup(const FilterInfo &input) {
+    for (size_t idx = 0; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        if (child.getState().needs_filter_info_setup()) {
+            FilterInfo sub_state = child.compute_global_filter_info(input);
+            child.filter_info_setup(sub_state);
+        }
+    }
 }
 
 bool

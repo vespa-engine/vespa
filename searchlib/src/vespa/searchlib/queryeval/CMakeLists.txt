@@ -18,6 +18,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     fake_search.cpp
     fake_searchable.cpp
     field_spec.cpp
+    filter_info.cpp
     get_weight_from_node.cpp
     hitcollector.cpp
     intermediate_blueprints.cpp

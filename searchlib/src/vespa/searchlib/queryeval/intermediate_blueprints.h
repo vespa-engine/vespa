@@ -17,6 +17,8 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
+    FilterInfo compute_global_filter_info(const FilterInfo &input) override;
+    void filter_info_setup(const FilterInfo &input) override;
     void optimize_self() override;
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
@@ -36,6 +38,7 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
+    FilterInfo compute_global_filter_info(const FilterInfo &input) override;
     void optimize_self() override;
 
 private:
@@ -58,6 +61,7 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
+    FilterInfo compute_global_filter_info(const FilterInfo &input) override;
     void optimize_self() override;
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
@@ -162,6 +166,8 @@ private:
 
 public:
     SourceBlenderBlueprint(const ISourceSelector &selector);
+    void filter_info_setup(const FilterInfo &input) override;
+
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(std::vector<Blueprint*> &children) const override;

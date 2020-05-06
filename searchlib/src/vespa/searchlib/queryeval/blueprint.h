@@ -5,6 +5,7 @@
 #include "field_spec.h"
 #include "unpackinfo.h"
 #include "executeinfo.h"
+#include "filter_info.h"
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -63,6 +64,7 @@ public:
         uint32_t          _cost_tier;
         uint32_t          _tree_size;
         bool              _allow_termwise_eval;
+        bool              _needs_filter_info_setup;
 
     public:
         static constexpr uint32_t COST_TIER_NORMAL = 1;
@@ -101,6 +103,8 @@ public:
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
+        void needs_filter_info_setup(bool value) { _needs_filter_info_setup = value; }
+        bool needs_filter_info_setup() const { return _needs_filter_info_setup; }
         void cost_tier(uint32_t value) { _cost_tier = value; }
         uint32_t cost_tier() const { return _cost_tier; }
     };
@@ -174,6 +178,10 @@ public:
     virtual void setDocIdLimit(uint32_t limit) { _docid_limit = limit; }
     uint32_t get_docid_limit() const { return _docid_limit; }
 
+    void propagate_filter_info();
+    virtual FilterInfo compute_global_filter_info(const FilterInfo &input);
+    virtual void filter_info_setup(const FilterInfo &input);
+
     static Blueprint::UP optimize(Blueprint::UP bp);
     virtual void optimize(Blueprint* &self) = 0;
     virtual void optimize_self();
@@ -244,6 +252,7 @@ private:
     uint32_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
+    bool infer_needs_filter_info_setup() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
     virtual double computeNextHitRate(const Blueprint & child, double hitRate) const;
@@ -266,6 +275,7 @@ public:
 
     void setDocIdLimit(uint32_t limit) override final;
 
+    void filter_info_setup(const FilterInfo &input) override;
     void optimize(Blueprint* &self) override final;
 
     IndexList find(const IPredicate & check) const;
@@ -304,6 +314,7 @@ protected:
     void setEstimate(HitEstimate est);
     void set_cost_tier(uint32_t value);
     void set_allow_termwise_eval(bool value);
+    void set_needs_filter_info_setup(bool value);
     void set_tree_size(uint32_t value);
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);

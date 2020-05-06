@@ -85,6 +85,26 @@ Blueprint::Blueprint()
 
 Blueprint::~Blueprint() = default;
 
+void
+Blueprint::propagate_filter_info() {
+    if (getState().needs_filter_info_setup()) {
+         FilterInfo start_state;
+         FilterInfo end_state = compute_global_filter_info(start_state);
+         filter_info_setup(end_state);
+    }
+}
+
+FilterInfo
+Blueprint::compute_global_filter_info(const FilterInfo &) {
+    FilterInfo nop;
+    return nop;
+}
+
+void
+Blueprint::filter_info_setup(const FilterInfo &) {
+    // default NOP
+}
+
 Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
     Blueprint *root = bp.release();
@@ -249,6 +269,17 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
     return true;
 };
 
+bool
+IntermediateBlueprint::infer_needs_filter_info_setup() const
+{
+    for (const Blueprint * child : _children) {
+        if (child->getState().needs_filter_info_setup()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 size_t
 IntermediateBlueprint::count_termwise_nodes(const UnpackInfo &unpack) const
 {
@@ -313,6 +344,7 @@ IntermediateBlueprint::calculateState() const
     state.estimate(calculateEstimate());
     state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
+    state.needs_filter_info_setup(infer_needs_filter_info_setup());
     state.tree_size(calculate_tree_size());
     return state;
 }
@@ -336,6 +368,16 @@ IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double 
         return false; // higher up will be better
     }
     return (count_termwise_nodes(unpack) > 1);
+}
+
+void
+IntermediateBlueprint::filter_info_setup(const FilterInfo &input) {
+    for (size_t idx = 0; idx < childCnt(); ++idx) {
+        auto &child = getChild(idx);
+        if (child.getState().needs_filter_info_setup()) {
+            child.filter_info_setup(input);
+        }
+    }
 }
 
 void
@@ -561,6 +603,13 @@ void
 LeafBlueprint::set_allow_termwise_eval(bool value)
 {
     _state.allow_termwise_eval(value);
+    notifyChange();
+}
+
+void
+LeafBlueprint::set_needs_filter_info_setup(bool value)
+{
+    _state.needs_filter_info_setup(value);
     notifyChange();
 }
 

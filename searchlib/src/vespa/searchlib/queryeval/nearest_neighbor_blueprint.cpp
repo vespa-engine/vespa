@@ -74,7 +74,10 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     }
     uint32_t est_hits = _attr_tensor.getNumDocs();
     if (_approximate && nns_index) {
-        est_hits = std::min(target_num_hits, est_hits);
+        est_hits = std::min(_target_num_hits, est_hits);
+        set_needs_filter_info_setup(true);
+    } else {
+        _approximate = false;
     }
     setEstimate(HitEstimate(est_hits, false));
 }
@@ -88,12 +91,27 @@ NearestNeighborBlueprint::perform_top_k()
     if (_approximate && nns_index) {
         auto lhs_type = _query_tensor->fast_type();
         auto rhs_type = _attr_tensor.getTensorType();
-        // XXX deal with different cell types later
-        if (lhs_type == rhs_type) {
-            auto lhs = _query_tensor->cellsRef();
-            uint32_t k = _target_num_hits;
-            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
-        }
+        assert (lhs_type == rhs_type);
+        auto lhs = _query_tensor->cellsRef();
+        uint32_t k = _target_num_hits;
+        _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
+    } else {
+        _approximate = false;
+    }
+}
+
+void
+NearestNeighborBlueprint::filter_info_setup(const FilterInfo &input) {
+    if (input.is_inside_not) {
+        // XXX do something here to handle being inside not
+        return;
+    }
+    if (input.whitelist_ratio < 0.05) {
+        _approximate = false;
+    } else if (_approximate) {
+        _target_num_hits *= (1.0 / input.whitelist_ratio);
+        uint32_t est_hits = std::min(_target_num_hits, _attr_tensor.getNumDocs());
+        setEstimate(HitEstimate(est_hits, false));
     }
 }
 
@@ -101,6 +119,8 @@ void
 NearestNeighborBlueprint::fetchPostings(const ExecuteInfo &execInfo) {
     if (execInfo.isStrict()) {
         perform_top_k();
+    } else {
+        _approximate = false;
     }
 }
 

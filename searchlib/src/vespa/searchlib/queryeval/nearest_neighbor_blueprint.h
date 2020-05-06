@@ -47,6 +47,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
+    void filter_info_setup(const FilterInfo &input) override;
 };
 
 }
