@@ -11,8 +11,7 @@ class Blueprint;
 
 struct FilterWiring {
     struct Info {
-        virtual double compute_whitelist_ratio() const = 0;
-        virtual double compute_blacklist_ratio() const = 0;
+        virtual double compute_whitelist_ratio(bool inside_not) const = 0;
         virtual ~Info();
     };
     struct TargetInfo {
@@ -28,13 +27,15 @@ struct FilterWiring {
 };
 
 struct FilterInfoNop : FilterWiring::Info {
-    double compute_whitelist_ratio() const override { return 1.0; }
-    double compute_blacklist_ratio() const override { return 0.0; }
+    double compute_whitelist_ratio(bool inside_not) const override {
+        return inside_not ? 0.0 : 1.0;
+    }
 };
 
 struct FilterInfoForceFilter : FilterWiring::Info {
-    double compute_whitelist_ratio() const override { return 0.0; }
-    double compute_blacklist_ratio() const override { return 1.0; }
+    double compute_whitelist_ratio(bool inside_not) const override {
+        return inside_not ? 1.0 : 0.0;
+    }
 };
 
 }

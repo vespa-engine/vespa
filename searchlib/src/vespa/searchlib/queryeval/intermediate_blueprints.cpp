@@ -151,19 +151,11 @@ AndNotBlueprint::inheritStrict(size_t i) const
 struct FilterInfoAndNot : FilterWiring::Info {
     std::shared_ptr<FilterWiring::Info> positive;
     std::vector<std::shared_ptr<FilterWiring::Info>> negatives;
-    double compute_whitelist_ratio() const override {
-        double ratio = positive->compute_whitelist_ratio();
+    double compute_whitelist_ratio(bool inside_not) const override {
+        double ratio = positive->compute_whitelist_ratio(inside_not);
         for (const auto &child : negatives) {
-            double blacklisted = child->compute_blacklist_ratio();
+            double blacklisted = child->compute_whitelist_ratio(! inside_not);
             ratio *= (1.0 - blacklisted);
-        }
-        return ratio;
-    }
-    double compute_blacklist_ratio() const override {
-        double ratio = positive->compute_blacklist_ratio();
-        for (const auto &child : negatives) {
-            double whitelisted = child->compute_whitelist_ratio();
-            ratio *= (1.0 - whitelisted);
         }
         return ratio;
     }
@@ -264,17 +256,10 @@ AndBlueprint::inheritStrict(size_t i) const
 
 struct FilterInfoAnd : FilterWiring::Info {
     std::vector<std::shared_ptr<FilterWiring::Info>> children;
-    double compute_whitelist_ratio() const override {
+    double compute_whitelist_ratio(bool inside_not) const override {
         double ratio = 1.0;
         for (const auto &child : children) {
-            ratio *= child->compute_whitelist_ratio();
-        }
-        return ratio;
-    }
-    double compute_blacklist_ratio() const override {
-        double ratio = 1.0;
-        for (const auto &child : children) {
-            ratio *= child->compute_blacklist_ratio();
+            ratio *= child->compute_whitelist_ratio(inside_not);
         }
         return ratio;
     }
@@ -389,17 +374,10 @@ OrBlueprint::inheritStrict(size_t) const
 
 struct FilterInfoOr : FilterWiring::Info {
     std::vector<std::shared_ptr<FilterWiring::Info>> children;
-    double compute_whitelist_ratio() const override {
+    double compute_whitelist_ratio(bool inside_not) const override {
         double ratio = 1.0;
         for (const auto &child : children) {
-            ratio *= (1.0 - child->compute_whitelist_ratio());
-        }
-        return (1.0 - ratio);
-    }
-    double compute_blacklist_ratio() const override {
-        double ratio = 1.0;
-        for (const auto &child : children) {
-            ratio *= (1.0 - child->compute_blacklist_ratio());
+            ratio *= (1.0 - child->compute_whitelist_ratio(inside_not));
         }
         return (1.0 - ratio);
     }
