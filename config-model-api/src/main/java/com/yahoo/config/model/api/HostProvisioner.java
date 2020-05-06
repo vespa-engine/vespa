@@ -18,9 +18,6 @@ public interface HostProvisioner {
     // TODO: Remove
     HostSpec allocateHost(String alias);
 
-    @Deprecated // TODO: Remove after April 2020
-    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
-
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *

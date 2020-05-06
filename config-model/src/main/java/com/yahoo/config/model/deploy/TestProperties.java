@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
@@ -65,7 +64,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
-    @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
     @Override
@@ -86,7 +84,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public double defaultTopKProbability() { return topKProbability; }
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
-    @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
