@@ -427,11 +427,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse application(String id, URI uri) {
-        Optional<Application> application = nodeRepository.applications().get(ApplicationId.fromFullString(id));
+    private HttpResponse application(String idString, URI uri) {
+        ApplicationId id = ApplicationId.fromFullString(idString);
+        Optional<Application> application = nodeRepository.applications().get(id);
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
+                                                    nodeRepository.getNodes(id, Node.State.active),
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }

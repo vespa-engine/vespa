@@ -27,6 +27,18 @@
           "storageType" : "any"
         }
       },
+      "current" : {
+        "nodes" : 2,
+        "groups" : 1,
+        "resources" : {
+          "vcpu" : 2.0,
+          "memoryGb" : 8.0,
+          "diskGb" : 50.0,
+          "bandwidthGbps" : 1.0,
+          "diskSpeed" : "fast",
+          "storageType" : "local"
+        }
+      },
       "suggested" : {
         "nodes" : 6,
         "groups" : 2,

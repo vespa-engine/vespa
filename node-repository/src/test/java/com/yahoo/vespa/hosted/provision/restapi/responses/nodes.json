@@ -16,7 +16,13 @@
       "url": "http://localhost:8080/nodes/v2/node/host10.yahoo.com"
     },
     {
-      "url": "http://localhost:8080/nodes/v2/node/host1.yahoo.com"
+      "url": "http://localhost:8080/nodes/v2/node/dockerhost3.yahoo.com"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/node/host14.yahoo.com"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com"
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/dockerhost4.yahoo.com"
@@ -43,13 +49,7 @@
       "url": "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"
     },
     {
-      "url": "http://localhost:8080/nodes/v2/node/dockerhost3.yahoo.com"
-    },
-    {
-      "url": "http://localhost:8080/nodes/v2/node/host14.yahoo.com"
-    },
-    {
-      "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com"
+      "url": "http://localhost:8080/nodes/v2/node/host1.yahoo.com"
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/host55.yahoo.com"
