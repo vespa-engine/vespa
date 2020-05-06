@@ -50,7 +50,7 @@ athenzDnsSuffix string default=""
 ztsUrl string default=""
 
 # Maintainers
-maintainerIntervalMinutes int default=30
+maintainerIntervalMinutes int default=5
 # TODO: Default set to a high value (1 year) => maintainer will not run, change when maintainer verified out in prod
 tenantsMaintainerIntervalMinutes int default=525600
 keepUnusedFileReferencesHours int default=24
