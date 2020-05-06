@@ -151,7 +151,7 @@ public class AllocatableClusterResources {
         NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
         cappedNodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(cappedNodeResources, clusterType);
 
-        if (nodeRepository.zone().cloud().allowHostSharing()) {
+        if (nodeRepository.zone().getCloud().allowHostSharing()) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(cappedNodeResources))

@@ -21,7 +21,7 @@ public class AwsAccessControlValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
 
         if (! needsAccessControlValidation(model, deployState)) return;
-        if(! deployState.zone().cloud().requireAccessControl()) return;
+        if(! deployState.zone().getCloud().requireAccessControl()) return;
 
         List<String> offendingClusters = new ArrayList<>();
         for (var cluster : model.getContainerClusters().values()) {

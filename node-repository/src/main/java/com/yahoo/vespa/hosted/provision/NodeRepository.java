@@ -651,7 +651,7 @@ public class NodeRepository extends AbstractComponent {
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
                 List<Node> removed = new ArrayList<>(children);
-                if (zone.cloud().dynamicProvisioning())
+                if (zone.getCloud().dynamicProvisioning())
                     db.removeNodes(List.of(node));
                 else {
                     node = node.with(IP.Config.EMPTY);
@@ -797,7 +797,7 @@ public class NodeRepository extends AbstractComponent {
         if (host.status().wantToRetire() || host.allocation().map(alloc -> alloc.membership().retired()).orElse(false))
             return false;
 
-        if (!zone.cloud().dynamicProvisioning()) return host.state() == State.active;
+        if (!zone.getCloud().dynamicProvisioning()) return host.state() == State.active;
         else return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
     }
 

@@ -28,7 +28,7 @@ public class CapacityPolicies {
     public CapacityPolicies(Zone zone) {
         this.zone = zone;
         this.nodeResourceLimits = new NodeResourceLimits(zone);
-        this.isUsingAdvertisedResources = zone.cloud().dynamicProvisioning();
+        this.isUsingAdvertisedResources = zone.getCloud().dynamicProvisioning();
     }
 
     public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {

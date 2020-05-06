@@ -38,7 +38,7 @@ public class CapacityReportMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected void maintain() {
-        if (nodeRepository.zone().cloud().dynamicProvisioning()) return; // Hosts and nodes are 1-1
+        if (nodeRepository.zone().getCloud().dynamicProvisioning()) return; // Hosts and nodes are 1-1
 
         CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();

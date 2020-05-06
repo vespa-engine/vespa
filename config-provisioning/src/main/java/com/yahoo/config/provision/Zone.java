@@ -63,7 +63,11 @@ public class Zone {
     }
 
     /** Returns the current cloud */
-    public Cloud cloud() { return cloud; }
+    // TODO: For compatibility with older config models. Remove after June 2020
+    public CloudName cloud() { return cloud.name(); }
+
+    /** Returns the current cloud */
+    public Cloud getCloud() { return cloud; }
 
     /** Returns the current system */
     public SystemName system() { return systemName; }
