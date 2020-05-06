@@ -249,6 +249,17 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
     return true;
 };
 
+bool
+IntermediateBlueprint::infer_wants_global_filter() const
+{
+    for (const Blueprint * child : _children) {
+        if (child->getState().wants_global_filter()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 size_t
 IntermediateBlueprint::count_termwise_nodes(const UnpackInfo &unpack) const
 {
@@ -313,6 +324,7 @@ IntermediateBlueprint::calculateState() const
     state.estimate(calculateEstimate());
     state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
+    state.wants_global_filter(infer_wants_global_filter());
     state.tree_size(calculate_tree_size());
     return state;
 }
@@ -561,6 +573,13 @@ void
 LeafBlueprint::set_allow_termwise_eval(bool value)
 {
     _state.allow_termwise_eval(value);
+    notifyChange();
+}
+
+void
+LeafBlueprint::set_wants_global_filter(bool value)
+{
+    _state.wants_global_filter(value);
     notifyChange();
 }
 
