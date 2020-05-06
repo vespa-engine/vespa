@@ -11,12 +11,12 @@ import java.util.Optional;
  */
 public class Cluster {
 
-    private ClusterSpec.Id id;
-    private ClusterResources min;
-    private ClusterResources max;
-    private ClusterResources current;
-    private Optional<ClusterResources> target;
-    private Optional<ClusterResources> suggested;
+    private final ClusterSpec.Id id;
+    private final ClusterResources min;
+    private final ClusterResources max;
+    private final ClusterResources current;
+    private final Optional<ClusterResources> target;
+    private final Optional<ClusterResources> suggested;
 
     public Cluster(ClusterSpec.Id id,
                    ClusterResources min,
