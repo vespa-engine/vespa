@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -40,9 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.*;
-import static com.yahoo.config.provision.NodeResources.StorageType.*;
 
 /**
  * @author freva
@@ -160,7 +159,9 @@ public class DynamicDockerProvisionTest {
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(CloudName.from("aws"),
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Cloud.defaultCloud()
+                                                                                        .withDynamicProvisioning(true)
+                                                                                        .withAllowHostSharing(false),
                                                                                    SystemName.main,
                                                                                    Environment.prod,
                                                                                    RegionName.from("us-east")))
@@ -210,7 +211,9 @@ public class DynamicDockerProvisionTest {
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4x", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(CloudName.from("aws"),
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Cloud.defaultCloud()
+                                                                                        .withDynamicProvisioning(true)
+                                                                                        .withAllowHostSharing(false),
                                                                                    SystemName.main,
                                                                                    Environment.prod,
                                                                                    RegionName.from("us-east")))

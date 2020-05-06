@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -11,7 +12,11 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.MemoryGenerationCounter;
+import com.yahoo.vespa.config.server.PortRangeAllocator;
+import com.yahoo.vespa.config.server.SuperModelManager;
+import com.yahoo.vespa.config.server.SuperModelRequestHandler;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
@@ -29,7 +34,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yahoo.vespa.config.server.SuperModelRequestHandlerTest.emptyNodeFlavors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -94,7 +98,7 @@ public class RpcTester implements AutoCloseable {
                                                                configserverConfig,
                                                                new SuperModelManager(
                                                                        configserverConfig,
-                                                                       emptyNodeFlavors(),
+                                                                       Zone.defaultZone()   ,
                                                                        generationCounter,
                                                                        new InMemoryFlagSource())),
                                   Metrics.createTestMetrics(), new HostRegistries(),
