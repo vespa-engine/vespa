@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -153,7 +154,7 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue(tester.nodeRepository.getNode("host2").isEmpty());
         assertTrue(tester.nodeRepository.getNode("host3").isPresent());
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
-        verify(hostProvisioner, times(2)).provisionHosts(argThatLambda(list -> list.size() == 1), eq(new NodeResources(2, 3, 2, 1)), any(), any());
+        verify(hostProvisioner, times(2)).provisionHosts(argThatLambda(list -> list.size() == 1), eq(new NodeResources(2, 3, 2, 1)), any());
         verifyNoMoreInteractions(hostProvisioner);
     }
 

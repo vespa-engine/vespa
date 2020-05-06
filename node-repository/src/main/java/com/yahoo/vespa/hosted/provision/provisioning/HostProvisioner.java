@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -23,12 +22,9 @@ public interface HostProvisioner {
      *                         on the form of <code>[prefix][index].[domain]</code>
      * @param resources the resources needed per node
      * @param applicationId id of the application that will own the provisioned host
-     * @param osVersion the OS version to use. If this version does not exist, implementations may choose a suitable
-     *                  fallback version.
      * @return list of {@link ProvisionedHost} describing the provisioned nodes
      */
-    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                         ApplicationId applicationId, Version osVersion);
+    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId);
 
     /**
      * Continue provisioning of given list of Nodes.

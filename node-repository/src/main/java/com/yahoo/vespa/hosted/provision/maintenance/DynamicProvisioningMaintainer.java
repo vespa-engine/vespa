@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -18,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
@@ -122,12 +122,10 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         // pre-provisioning is best effort, do one host at a time
         preProvisionCapacity.forEach(resources -> {
             try {
-                Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
-                List<Node> hosts = hostProvisioner.provisionHosts(nodeRepository().database().getProvisionIndexes(1),
-                                                                  resources, preprovisionAppId, osVersion)
-                                                  .stream()
-                                                  .map(ProvisionedHost::generateHost)
-                                                  .collect(Collectors.toList());
+                List<Node> hosts = hostProvisioner.provisionHosts(
+                        nodeRepository().database().getProvisionIndexes(1), resources, preprovisionAppId).stream()
+                        .map(ProvisionedHost::generateHost)
+                        .collect(Collectors.toList());
                 nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.WARNING, "Failed to pre-provision " + resources + ":" + e.getMessage());
