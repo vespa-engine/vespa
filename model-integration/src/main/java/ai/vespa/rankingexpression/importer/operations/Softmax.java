@@ -40,7 +40,6 @@ public class Softmax extends IntermediateOperation {
         TensorFunction input = inputs.get(0).function().get();
         TensorFunction sum = new Reduce(input, Reduce.Aggregator.sum, reduceDimensions);
         TensorFunction div = new Join(input, sum, ScalarFunctions.divide());
-        System.out.println(div);
         return div;
     }
 
