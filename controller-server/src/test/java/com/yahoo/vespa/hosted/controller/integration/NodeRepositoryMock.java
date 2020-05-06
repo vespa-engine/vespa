@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 public class NodeRepositoryMock implements NodeRepository {
 
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
+    private final Map<ZoneId, Map<ApplicationId, Application>> applications = new HashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
 
     /** Add or update given nodes in zone */
@@ -41,6 +43,11 @@ public class NodeRepositoryMock implements NodeRepository {
         nodeRepository.putIfAbsent(zone, new HashMap<>());
         nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(Node::hostname,
                                                                                 Function.identity())));
+    }
+
+    public void putApplication(ZoneId zone, Application application) {
+        applications.putIfAbsent(zone, new HashMap<>());
+        applications.get(zone).put(application.id(), application);
     }
 
     /** Add or update given node in zone */
@@ -159,6 +166,11 @@ public class NodeRepositoryMock implements NodeRepository {
         return nodeRepository.getOrDefault(zone, Collections.emptyMap()).values().stream()
                              .filter(node -> hostnames.contains(node.hostname()))
                              .collect(Collectors.toList());
+    }
+
+    @Override
+    public Application getApplication(ZoneId zone, ApplicationId applicationId) {
+        return applications.get(zone).get(applicationId);
     }
 
     @Override

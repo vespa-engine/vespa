@@ -191,11 +191,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
 
-    private HttpResponse runJob(String job) {
-        nodeRepository.jobControl().run(job);
-        return new MessageResponse("Executed job '" + job + "'");
-    }
-
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
@@ -203,6 +198,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse runJob(String job) {
+        nodeRepository.jobControl().run(job);
+        return new MessageResponse("Executed job '" + job + "'");
     }
 
     private HttpResponse deleteNode(String hostname) {

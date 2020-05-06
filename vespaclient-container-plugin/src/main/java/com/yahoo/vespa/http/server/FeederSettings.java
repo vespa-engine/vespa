@@ -47,6 +47,7 @@ public class FeederSettings {
             }
         }
         {
+            // TODO: Change default to JSON on Vespa 8
             String tmpDataFormat = request.getHeader(Headers.DATA_FORMAT);
             if (tmpDataFormat != null) {
                 dataFormat = DataFormat.valueOf(tmpDataFormat);
