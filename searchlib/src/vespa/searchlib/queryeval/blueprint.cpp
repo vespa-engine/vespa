@@ -95,8 +95,11 @@ Blueprint::propagate_filter_info() {
 }
 
 FilterInfo
-Blueprint::compute_global_filter_info(const FilterInfo &) {
+Blueprint::compute_global_filter_info(const FilterInfo &input) {
     FilterInfo nop;
+    if (input.inverted) {
+        nop.whitelist_ratio = 0.0;
+    }
     return nop;
 }
 
