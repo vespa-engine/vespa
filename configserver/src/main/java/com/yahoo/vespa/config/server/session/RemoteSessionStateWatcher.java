@@ -78,7 +78,8 @@ public class RemoteSessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Session.Status.parse(Utf8.toString(node.getData()));
-                    sessionChanged(newStatus);
+                    if (newStatus != currentStatus)
+                        sessionChanged(newStatus);
                 }
             } catch (Exception e) {
                 log.log(Level.WARNING, session.logPre() + "Error handling session change from " + currentStatus.name() +
