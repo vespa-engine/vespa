@@ -35,10 +35,6 @@ public interface ModelContext {
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
 
-    // TODO: Remove when 7.211 is oldest model version in use
-    /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
-    default Optional<String> wantedDockerImageRepository() { return Optional.empty(); }
-
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
     default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
 
@@ -68,9 +64,6 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         boolean useAdaptiveDispatch();
 
-        // TODO: Remove after April 2020
-        default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
-
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
 
         // TODO Revisit in May or June 2020
@@ -91,14 +84,6 @@ public interface ModelContext {
         boolean useDistributorBtreeDb();
 
         boolean useThreePhaseUpdates();
-
-        // TODO: Remove once there are no Vespa versions below 7.170
-        boolean useBucketSpaceMetric();
-
-        default boolean useNewAthenzFilter() { return true; } // TODO bjorncs: Remove after end of April
-
-        // TODO: Remove after April 2020
-        default boolean usePhraseSegmenting() { return false; }
 
         default String proxyProtocol() { return "https+proxy-protocol"; } // TODO bjorncs: Remove after end of May
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }

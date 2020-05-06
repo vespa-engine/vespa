@@ -8,12 +8,11 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.Provisioned;
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
@@ -123,9 +122,6 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<File> appDir() { return appDir; }
-
-    @Override
-    public Optional<String> wantedDockerImageRepository() { return wantedDockerImageRepository.map(DockerImage::repository); }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
@@ -246,9 +242,6 @@ public class ModelContextImpl implements ModelContext {
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
         @Override
-        public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
-
-        @Override
         public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
 
         @Override
@@ -282,13 +275,6 @@ public class ModelContextImpl implements ModelContext {
         public boolean useThreePhaseUpdates() {
             return useThreePhaseUpdates;
         }
-
-        // TODO: Remove
-        @Override
-        public boolean useBucketSpaceMetric() { return true; }
-
-        @Override
-        public boolean useNewAthenzFilter() { return true; }
 
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }

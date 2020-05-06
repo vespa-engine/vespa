@@ -123,12 +123,6 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
-    @Deprecated // TODO: Remove after April 2020
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, int groups, ProvisionLogger logger) {
-        return prepare(cluster, requestedCapacity.withGroups(groups), logger);
-    }
-
-    @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         provisioned.add(cluster.id(), requested);
         if (useMaxResources)

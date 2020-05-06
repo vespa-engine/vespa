@@ -33,13 +33,6 @@ public class StaticProvisioner implements HostProvisioner {
         throw new UnsupportedOperationException("Allocating a single host from provisioning info is not supported");
     }
 
-
-    @Override
-    @Deprecated // TODO: Remove after April 2020
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-        return prepare(cluster, capacity.withGroups(groups), logger);
-    }
-
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
         List<HostSpec> hostsAlreadyAllocatedToCluster = 
