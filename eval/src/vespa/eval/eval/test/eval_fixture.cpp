@@ -101,51 +101,51 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
 
 void add_cell_values(TensorSpec &spec, TensorSpec::Address &addr,
                      const std::vector<std::pair<vespalib::string, size_t> > &dims,
-                     size_t idx, size_t &seq)
+                     size_t idx, size_t &seq, std::function<double(size_t)> gen)
 {
     if (idx < dims.size()) {
         for (size_t i = 0; i < dims[idx].second; ++i) {
             addr.emplace(dims[idx].first, TensorSpec::Label(i)).first->second = TensorSpec::Label(i);
-            add_cell_values(spec, addr, dims, idx + 1, seq);
+            add_cell_values(spec, addr, dims, idx + 1, seq, gen);
         }
     } else {
-        spec.add(addr, seq++);
+        spec.add(addr, gen(seq++));
     }
 }
 
 TensorSpec make_dense(const vespalib::string &type,
                       const std::vector<std::pair<vespalib::string, size_t> > &dims,
-                      size_t seed)
+                      std::function<double(size_t)> gen)
 {
     TensorSpec spec(type);
     TensorSpec::Address addr;
-    size_t seq = seed;
-    add_cell_values(spec, addr, dims, 0, seq);
+    size_t seq = 0;
+    add_cell_values(spec, addr, dims, 0, seq, gen);
     return spec;
 }
 
 } // namespace vespalib::eval::test
 
 ParamRepo &
-EvalFixture::ParamRepo::add_vector(const char *d1, size_t s1, size_t seed)
+EvalFixture::ParamRepo::add_vector(const char *d1, size_t s1, gen_fun_t gen)
 {
-    return add_dense({{d1, s1}}, seed);
+    return add_dense({{d1, s1}}, gen);
 }
 
 ParamRepo &
-EvalFixture::ParamRepo::add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, size_t seed)
+EvalFixture::ParamRepo::add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, gen_fun_t gen)
 {
-    return add_dense({{d1, s1}, {d2, s2}}, seed);
+    return add_dense({{d1, s1}, {d2, s2}}, gen);
 }
 
 ParamRepo &
-EvalFixture::ParamRepo::add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, size_t seed)
+EvalFixture::ParamRepo::add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, gen_fun_t gen)
 {
-    return add_dense({{d1, s1}, {d2, s2}, {d3, s3}}, seed);
+    return add_dense({{d1, s1}, {d2, s2}, {d3, s3}}, gen);
 }
 
 ParamRepo &
-EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, size_t seed)
+EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, gen_fun_t gen)
 {
     vespalib::string prev;
     vespalib::string name;
@@ -159,8 +159,8 @@ EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, 
         type += fmt("%s[%zu]", dim.first.c_str(), dim.second);
         prev = dim.first;
     }
-    add(name, make_dense(fmt("tensor(%s)", type.c_str()), dims, seed));
-    add(name + "f", make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, seed));
+    add(name, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
+    add(name + "f", make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
     return *this;
 }
 

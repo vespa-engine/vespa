@@ -14,6 +14,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_multi_matmul_function.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
+    dense_single_reduce_function.cpp
     dense_tensor.cpp
     dense_tensor_address_mapper.cpp
     dense_tensor_cells_iterator.cpp
