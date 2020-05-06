@@ -294,7 +294,7 @@ public class DynamicDockerProvisionTest {
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
             NodeResources nodeResources = (NodeResources) invocation.getArguments()[1];
             return provisionIndexes.stream()
-                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources))
+                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources, Version.emptyVersion))
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any(), any(), any());
     }
@@ -337,7 +337,7 @@ public class DynamicDockerProvisionTest {
             if (hostFlavor.isEmpty())
                 throw new OutOfCapacityException("No host flavor matches " + resources);
             return provisionIndexes.stream()
-                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), "host-" + i + "-1", resources))
+                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), "host-" + i + "-1", resources, osVersion))
                                    .collect(Collectors.toList());
         }
 

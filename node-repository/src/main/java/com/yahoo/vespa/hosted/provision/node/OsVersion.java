@@ -19,8 +19,8 @@ public class OsVersion {
     private final Optional<Version> wanted;
 
     public OsVersion(Optional<Version> current, Optional<Version> wanted) {
-        this.current = requireNonEmpty(current);
-        this.wanted = requireNonEmpty(wanted);
+        this.current = current;
+        this.wanted = requireNonZero(wanted);
     }
 
     /** The version this node is currently running, if any */
@@ -78,10 +78,10 @@ public class OsVersion {
                wanted.map(Version::toFullString).orElse("<unset>") + "]";
     }
 
-    private static Optional<Version> requireNonEmpty(Optional<Version> version) {
+    private static Optional<Version> requireNonZero(Optional<Version> version) {
         Objects.requireNonNull(version, "version must be non-null");
         if (version.isEmpty()) return version;
-        if (version.get().isEmpty()) throw new IllegalArgumentException("version must be non-empty");
+        if (version.get().isEmpty()) throw new IllegalArgumentException("version must be non-zero");
         return version;
     }
 
