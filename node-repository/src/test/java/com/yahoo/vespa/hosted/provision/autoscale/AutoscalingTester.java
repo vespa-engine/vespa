@@ -241,7 +241,8 @@ class AutoscalingTester {
                                               "hostname" + index,
                                               hostFlavor,
                                               "nodename" + index,
-                                              resources));
+                                              resources,
+                                              osVersion));
             }
             return hosts;
         }
