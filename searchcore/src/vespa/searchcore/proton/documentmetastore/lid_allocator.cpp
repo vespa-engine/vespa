@@ -14,6 +14,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
+using search::queryeval::FilterInfo;
 using vespalib::GenerationHolder;
 
 namespace proton::documentmetastore {
@@ -222,6 +223,12 @@ public:
           _matchDataVector()
     {
         setEstimate(HitEstimate(_activeLids.size(), false));
+    }
+
+    FilterInfo compute_global_filter_info(const FilterInfo &) override {
+        FilterInfo retval;
+        retval.whitelist_ratio = _activeLids.countTrueBits() / (double)_docIdLimit;
+        return retval;
     }
 
     bool isWhiteList() const override { return true; }
