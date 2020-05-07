@@ -240,19 +240,22 @@ public class MetricsReporterTest {
         tester.upgradeSystem(version0);
         reporter.maintain();
         var hosts = tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id());
-        assertPlatformChangeDuration(Duration.ZERO, hosts);
+        assertPlatformChangeDuration(Duration.ZERO, hosts, version0);
 
-        for (var version : List.of(Version.fromString("7.1"), Version.fromString("7.2"))) {
+        var targets = List.of(Version.fromString("7.1"), Version.fromString("7.2"));
+        for (int i = 0; i < targets.size(); i++) {
+            var currentVersion = i == 0 ? version0 : targets.get(i - 1);
+            var version = targets.get(i);
             // System starts upgrading to next version
             tester.upgradeController(version);
             reporter.maintain();
-            assertPlatformChangeDuration(Duration.ZERO, hosts);
+            assertPlatformChangeDuration(Duration.ZERO, hosts, currentVersion);
             systemUpgrader.maintain();
 
             // 30 minutes pass and nothing happens
             tester.clock().advance(Duration.ofMinutes(30));
             runAll(tester::computeVersionStatus, reporter);
-            assertPlatformChangeDuration(Duration.ZERO, hosts);
+            assertPlatformChangeDuration(Duration.ZERO, hosts, currentVersion);
 
             // 1/3 nodes upgrade within timeout
             assertEquals("Wanted version is raised for all nodes", version,
@@ -267,13 +270,13 @@ public class MetricsReporterTest {
             // 2/3 spend their budget and are reported as failures
             tester.clock().advance(Duration.ofHours(1));
             runAll(tester::computeVersionStatus, reporter);
-            assertPlatformChangeDuration(Duration.ZERO, List.of(firstHost));
-            assertPlatformChangeDuration(Duration.ofHours(1), hosts.subList(1, hosts.size()));
+            assertPlatformChangeDuration(Duration.ZERO, List.of(firstHost), version);
+            assertPlatformChangeDuration(Duration.ofHours(1), hosts.subList(1, hosts.size()), currentVersion);
 
             // Remaining nodes eventually upgrade
             upgradeTo(version, hosts.subList(1, hosts.size()), zone, tester);
             runAll(tester::computeVersionStatus, reporter);
-            assertPlatformChangeDuration(Duration.ZERO, hosts);
+            assertPlatformChangeDuration(Duration.ZERO, hosts, version);
             assertEquals(version, tester.controller().systemVersion());
         }
     }
@@ -299,18 +302,21 @@ public class MetricsReporterTest {
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
         runAll(statusUpdater, reporter);
         List<Node> hosts = tester.configServer().nodeRepository().list(zone);
-        assertOsChangeDuration(Duration.ZERO, hosts);
+        assertOsChangeDuration(Duration.ZERO, hosts, version0);
 
-        for (var version : List.of(Version.fromString("8.1"), Version.fromString("8.2"))) {
+        var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
+        for (int i = 0; i < targets.size(); i++) {
+            var currentVersion = i == 0 ? version0 : targets.get(i - 1);
+            var version = targets.get(i);
             // System starts upgrading to next OS version
             tester.controller().upgradeOsIn(cloud, version, false);
             runAll(osUpgrader, statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 
             // Over 30 minutes pass and nothing happens
             tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 
             // Nodes are told to upgrade, but do not suspend yet
             assertEquals("Wanted OS version is raised for all nodes", version,
@@ -323,40 +329,40 @@ public class MetricsReporterTest {
             // Another 30 minutes pass
             tester.clock().advance(Duration.ofMinutes(30));
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 
             // 3/6 hosts suspend
             var suspendedHosts = hosts.subList(0, 3);
             suspend(suspendedHosts, zone, tester);
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 
             // Two hosts spend 20 minutes upgrading
             var hostsUpgraded = suspendedHosts.subList(0, 2);
             tester.clock().advance(Duration.ofMinutes(20));
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ofMinutes(20), hostsUpgraded);
+            assertOsChangeDuration(Duration.ofMinutes(20), hostsUpgraded, currentVersion);
             upgradeOsTo(version, hostsUpgraded, zone, tester);
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hostsUpgraded);
+            assertOsChangeDuration(Duration.ZERO, hostsUpgraded, version);
 
             // One host consumes budget without upgrading
             var brokenHost = suspendedHosts.get(2);
             tester.clock().advance(Duration.ofMinutes(15));
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ofMinutes(35), List.of(brokenHost));
+            assertOsChangeDuration(Duration.ofMinutes(35), List.of(brokenHost), currentVersion);
 
             // Host eventually upgrades and is no longer reported
             upgradeOsTo(version, List.of(brokenHost), zone, tester);
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, List.of(brokenHost));
+            assertOsChangeDuration(Duration.ZERO, List.of(brokenHost), version);
 
             // Remaining hosts suspend and upgrade successfully
             var remainingHosts = hosts.subList(3, hosts.size());
             suspend(remainingHosts, zone, tester);
             upgradeOsTo(version, remainingHosts, zone, tester);
             runAll(statusUpdater, reporter);
-            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsChangeDuration(Duration.ZERO, hosts, version);
         }
     }
 
@@ -412,21 +418,28 @@ public class MetricsReporterTest {
         return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, id).intValue();
     }
 
-    private Duration getChangeDuration(String metric, HostName hostname) {
-        return metrics.getMetric((dimensions) -> hostname.value().equals(dimensions.get("host")), metric)
+    private Duration getChangeDuration(String metric, HostName hostname, Version currentVersion) {
+        return metrics.getMetrics((dimensions) -> hostname.value().equals(dimensions.get("host")) &&
+                                                  currentVersion.toFullString().equals(dimensions.get("currentVersion")))
+                      .values()
+                      .stream()
+                      .map(metrics -> metrics.get(metric))
                       .map(n -> Duration.ofSeconds(n.longValue()))
+                      .findFirst()
                       .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for " + hostname));
     }
 
-    private void assertPlatformChangeDuration(Duration duration, List<Node> nodes) {
+    private void assertPlatformChangeDuration(Duration duration, List<Node> nodes, Version currentVersion) {
         for (var node : nodes) {
-            assertEquals("Platform change duration of " + node.hostname(), duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()));
+            assertEquals("Platform change duration of " + node.hostname() + " on version " + currentVersion,
+                         duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname(), currentVersion));
         }
     }
 
-    private void assertOsChangeDuration(Duration duration, List<Node> nodes) {
+    private void assertOsChangeDuration(Duration duration, List<Node> nodes, Version currentVersion) {
         for (var node : nodes) {
-            assertEquals("OS change duration of " + node.hostname(), duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()));
+            assertEquals("OS change duration of " + node.hostname() + " on version " + currentVersion,
+                         duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname(), currentVersion));
         }
     }
 
