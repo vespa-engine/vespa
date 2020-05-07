@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.os;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -91,7 +92,7 @@ public class OsVersions {
             }
 
             if (!force && oldTarget.filter(v -> v.isAfter(newTarget)).isPresent()) {
-                throw new IllegalArgumentException("Cannot set target OS version to " + newTarget +
+                throw new IllegalArgumentException("Cannot set target OS version to " + newTarget.toFullString() +
                                                    " without setting 'force', as it's lower than the current version: "
                                                    + oldTarget.get());
             }
@@ -119,14 +120,14 @@ public class OsVersions {
 
     /** Trigger upgrade of nodes of given type*/
     private void upgrade(NodeType type, Version version) {
-        var nodes = nodeRepository.list().nodeType(type);
-        var numberToUpgrade = Math.max(0, maxActiveUpgrades - nodes.changingOsVersionTo(version).size());
-        var nodesToUpgrade = nodes.not().changingOsVersionTo(version)
-                                  .not().onOsVersion(version)
-                                  .byIncreasingOsVersion()
-                                  .first(numberToUpgrade);
+        var activeNodes = nodeRepository.list().nodeType(type).state(Node.State.active);
+        var numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(version).size());
+        var nodesToUpgrade = activeNodes.not().changingOsVersionTo(version)
+                                        .not().onOsVersion(version)
+                                        .byIncreasingOsVersion()
+                                        .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;
-        log.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + type + " to OS version " + version);
+        log.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + type + " to OS version " + version.toFullString());
         nodeRepository.upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(version));
     }
 

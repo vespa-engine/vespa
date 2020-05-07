@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -29,11 +31,13 @@ import static org.junit.Assert.fail;
 public class OsVersionsTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
 
     @Test
     public void test_versions() {
         var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
         tester.makeReadyNodes(10, "default", NodeType.host);
+        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
         Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
 
         // Upgrade OS
@@ -78,13 +82,21 @@ public class OsVersionsTest {
         int maxActiveUpgrades = 5;
         var versions = new OsVersions(tester.nodeRepository(), maxActiveUpgrades);
         tester.makeReadyNodes(totalNodes, "default", NodeType.host);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).nodeType(NodeType.host);
+        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
         for (int i = totalNodes - maxActiveUpgrades - 1; i >= 0; i--) {
             setCurrentVersion(List.of(hostNodesList.get(i)), new Version(7, 0, i));
         }
+
+        // Deprovisioned hosts are not considered
+        for (var host : tester.makeReadyNodes(10, "default", NodeType.host)) {
+            tester.nodeRepository().fail(host.hostname(), Agent.system, OsVersions.class.getSimpleName());
+            tester.nodeRepository().removeRecursively(host.hostname());
+        }
+        assertEquals(10, tester.nodeRepository().getNodes(Node.State.deprovisioned).size());
 
         // Set target
         var version1 = Version.fromString("7.1");
@@ -117,6 +129,7 @@ public class OsVersionsTest {
     public void test_newer_upgrade_aborts_upgrade_to_stale_version() {
         var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
         tester.makeReadyNodes(10, "default", NodeType.host);
+        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
 
         // Some nodes are targeting an older version
