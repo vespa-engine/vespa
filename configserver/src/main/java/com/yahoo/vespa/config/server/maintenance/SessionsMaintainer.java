@@ -36,7 +36,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
         // Expired remote sessions are sessions that belong to an application that have external deployments that
         // are no longer active
         if (hostedVespa) {
-            Duration expiryTime = Duration.ofMinutes(expiryTimeFlag.value());
+            Duration expiryTime = Duration.ofDays(expiryTimeFlag.value());
             int deleted = applicationRepository.deleteExpiredRemoteSessions(expiryTime);
             log.log(LogLevel.INFO, "Deleted " + deleted + " expired remote sessions, expiry time " + expiryTime);
         }
