@@ -21,7 +21,7 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     }
 
     private TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Duration ttlForUnusedTenant) {
-        super(applicationRepository, curator, interval, interval);
+        super(applicationRepository, curator, interval);
         this.ttlForUnusedTenant = ttlForUnusedTenant;
     }
 
