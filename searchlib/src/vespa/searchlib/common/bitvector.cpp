@@ -20,9 +20,9 @@ using vespalib::alloc::Alloc;
 
 namespace {
 
-void verifyContains(const search::BitVector & a, const search::BitVector & b) __attribute__((noinline));
+void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b) __attribute__((noinline));
 
-void verifyContains(const search::BitVector & a, const search::BitVector & b)
+void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b)
 {
     if (a.getStartIndex() < b.getStartIndex()) {
         throw IllegalArgumentException(make_string("[%d, %d] is not contained in [%d, %d]",
@@ -177,7 +177,7 @@ BitVector::countInterval(Index start, Index end) const
 void
 BitVector::orWith(const BitVector & right)
 {
-    verifyContains(*this, right);
+    verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
         ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
@@ -208,7 +208,7 @@ BitVector::repairEnds()
 void
 BitVector::andWith(const BitVector & right)
 {
-    verifyContains(*this, right);
+    verifyInclusiveStart(*this, right);
 
     uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
     IAccelrated::getAccelrator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
@@ -224,7 +224,7 @@ BitVector::andWith(const BitVector & right)
 void
 BitVector::andNotWith(const BitVector& right)
 {
-    verifyContains(*this, right);
+    verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
         ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
