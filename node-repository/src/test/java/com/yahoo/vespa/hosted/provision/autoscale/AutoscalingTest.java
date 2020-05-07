@@ -1,9 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.google.common.collect.Sets;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -12,14 +11,11 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.io.IOUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -284,7 +280,10 @@ public class AutoscalingTest {
         flavors.add(new Flavor("aws-large",  new NodeResources(3, 150, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         flavors.add(new Flavor("aws-medium", new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         flavors.add(new Flavor("aws-small",  new NodeResources(3,  80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        AutoscalingTester tester = new AutoscalingTester(new Zone(CloudName.from("aws"), SystemName.main,
+        AutoscalingTester tester = new AutoscalingTester(new Zone(Cloud.defaultCloud()
+                                                                       .withDynamicProvisioning(true)
+                                                                       .withAllowHostSharing(false),
+                                                                  SystemName.main,
                                                                   Environment.prod, RegionName.from("us-east")),
                                                          flavors);
 

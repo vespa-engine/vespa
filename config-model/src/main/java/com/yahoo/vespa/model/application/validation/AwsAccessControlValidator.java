@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.util.ArrayList;
@@ -18,14 +17,11 @@ import static com.yahoo.vespa.model.container.http.AccessControl.hasHandlerThatN
  */
 public class AwsAccessControlValidator extends Validator {
 
-    // NOTE: must be the same as the name in the declaration of the AWS cloud in hosted.
-    static final String AWS_CLOUD_NAME = "aws";
-
     @Override
     public void validate(VespaModel model, DeployState deployState) {
 
         if (! needsAccessControlValidation(model, deployState)) return;
-        if(! deployState.zone().cloud().equals(CloudName.from(AWS_CLOUD_NAME))) return;
+        if(! deployState.zone().getCloud().requireAccessControl()) return;
 
         List<String> offendingClusters = new ArrayList<>();
         for (var cluster : model.getContainerClusters().values()) {

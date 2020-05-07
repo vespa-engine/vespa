@@ -5,13 +5,11 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -72,8 +70,7 @@ public class ValidationTester {
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                                                             .zone(new Zone(CloudName.defaultName(),
-                                                                            SystemName.defaultSystem(),
+                                                             .zone(new Zone(SystemName.defaultSystem(),
                                                                             environment,
                                                                             RegionName.defaultName()))
                                                              .applicationPackage(newApp)

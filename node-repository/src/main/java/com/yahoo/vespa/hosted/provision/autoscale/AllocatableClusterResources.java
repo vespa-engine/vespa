@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -141,7 +140,7 @@ public class AllocatableClusterResources {
         NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
         cappedNodeResources = new NodeResourceLimits(nodeRepository.zone()).enlargeToLegal(cappedNodeResources, clusterType);
 
-        if (allowsHostSharing(nodeRepository.zone().cloud())) {
+        if (nodeRepository.zone().getCloud().allowHostSharing()) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(cappedNodeResources))
@@ -185,12 +184,6 @@ public class AllocatableClusterResources {
     private static boolean between(NodeResources min, NodeResources max, NodeResources r) {
         if ( ! min.isUnspecified() && ! r.justNumbers().satisfies(min.justNumbers())) return false;
         if ( ! max.isUnspecified() && ! max.justNumbers().satisfies(r.justNumbers())) return false;
-        return true;
-    }
-
-    // TODO: Put this in zone config instead?
-    private static boolean allowsHostSharing(CloudName cloudName) {
-        if (cloudName.value().equals("aws")) return false;
         return true;
     }
 

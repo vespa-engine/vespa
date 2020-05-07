@@ -206,7 +206,7 @@ class AutoscalingTester {
 
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            if (zone.cloud().value().equals("aws"))
+            if (zone.getCloud().dynamicProvisioning())
                 return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
             else
                 return node.flavor().resources();
@@ -214,7 +214,7 @@ class AutoscalingTester {
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
-            if (zone.cloud().value().equals("aws"))
+            if (zone.getCloud().dynamicProvisioning())
                 return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
             else
                 return flavor.resources();

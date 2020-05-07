@@ -2,15 +2,16 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import java.util.*;
 
 /**
  * Performs analysis on the node repository to produce metrics that pertain to the capacity of the node repository.
@@ -37,7 +38,7 @@ public class CapacityReportMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected void maintain() {
-        if (nodeRepository.zone().cloud().value().equals("aws")) return; // Hosts and nodes are 1-1
+        if (nodeRepository.zone().getCloud().dynamicProvisioning()) return; // Hosts and nodes are 1-1
 
         CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -214,7 +214,7 @@ public class DynamicProvisioningMaintainerTest {
         static final ApplicationId proxyApp = ApplicationId.from("vespa", "proxy", "default");
 
         private final ManualClock clock = new ManualClock();
-        private final Zone zone = new Zone(CloudName.from("aws"), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+        private final Zone zone = new Zone(Cloud.defaultCloud().withDynamicProvisioning(true), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
         private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
                                                                          hostResourcesCalculator,
                                                                          new MockCurator(),

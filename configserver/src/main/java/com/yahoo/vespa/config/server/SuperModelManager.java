@@ -9,9 +9,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
@@ -19,10 +17,10 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,11 +47,11 @@ public class SuperModelManager implements SuperModelProvider {
 
     @Inject
     public SuperModelManager(ConfigserverConfig configserverConfig,
-                             NodeFlavors nodeFlavors,
+                             Zone zone,
                              GenerationCounter generationCounter,
                              FlagSource flagSource) {
         this.flagSource = flagSource;
-        this.zone = new Zone(configserverConfig, nodeFlavors);
+        this.zone = zone;
         this.generationCounter = generationCounter;
         this.masterGeneration = configserverConfig.masterGeneration();
         makeNewSuperModelConfigProvider(new SuperModel());

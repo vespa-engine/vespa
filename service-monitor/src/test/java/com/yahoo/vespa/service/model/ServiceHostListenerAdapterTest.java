@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -30,8 +29,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author hakonhall
+ */
 public class ServiceHostListenerAdapterTest {
-    private final Zone zone = new Zone(CloudName.from("AWS"), SystemName.cd, Environment.dev, RegionName.from("us-east-1"));
+    private final Zone zone = new Zone(SystemName.cd, Environment.dev, RegionName.from("us-east-1"));
     private final ModelGenerator generator = new ModelGenerator(zone);
     private final ServiceHostListener listener = mock(ServiceHostListener.class);
     private final ServiceHostListenerAdapter adapter = new ServiceHostListenerAdapter(listener, generator);

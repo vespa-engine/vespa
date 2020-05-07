@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provisioning.CloudConfig;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -16,15 +17,17 @@ import java.util.Optional;
  */
 public class Zone {
 
-    private final CloudName cloudName;
+    private final Cloud cloud;
     private final SystemName systemName;
     private final Environment environment;
     private final RegionName region;
     private final Optional<NodeFlavors> nodeFlavors;
 
     @Inject
-    public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
-        this(CloudName.from(configserverConfig.cloud()),
+    public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors, CloudConfig cloudConfig) {
+        this(new Cloud(CloudName.from(configserverConfig.cloud()), cloudConfig.dynamicProvisioning(),
+                       cloudConfig.allowHostSharing(), cloudConfig.reprovisionToUpgradeOs(),
+                       cloudConfig.requireAccessControl()),
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
              RegionName.from(configserverConfig.region()),
@@ -38,21 +41,21 @@ public class Zone {
 
     /** Create from system, environment and region. Use for testing. */
     public Zone(SystemName systemName, Environment environment, RegionName region) {
-        this(CloudName.defaultName(), systemName, environment, region);
+        this(Cloud.defaultCloud(), systemName, environment, region);
     }
 
     /** Create from cloud, system, environment and region. Use for testing. */
-    public Zone(CloudName cloudName, SystemName systemName, Environment environment, RegionName region) {
-        this(cloudName, systemName, environment, region, null);
+    public Zone(Cloud cloud, SystemName systemName, Environment environment, RegionName region) {
+        this(cloud, systemName, environment, region, null);
     }
 
     /** Create from cloud, system, environment, region and node flavors. Use for testing. */
-    private Zone(CloudName cloudName,
+    private Zone(Cloud cloud,
                  SystemName systemName,
                  Environment environment,
                  RegionName region,
                  NodeFlavors nodeFlavors) {
-        this.cloudName = cloudName;
+        this.cloud = cloud;
         this.systemName = systemName;
         this.environment = environment;
         this.region = region;
@@ -60,7 +63,11 @@ public class Zone {
     }
 
     /** Returns the current cloud */
-    public CloudName cloud() { return cloudName; }
+    // TODO: For compatibility with older config models. Remove after June 2020
+    public CloudName cloud() { return cloud.name(); }
+
+    /** Returns the current cloud */
+    public Cloud getCloud() { return cloud; }
 
     /** Returns the current system */
     public SystemName system() { return systemName; }
@@ -80,7 +87,7 @@ public class Zone {
 
     /** Do not use */
     public static Zone defaultZone() {
-        return new Zone(CloudName.defaultName(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+        return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
     }
 
     @Override
