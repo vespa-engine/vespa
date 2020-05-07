@@ -55,7 +55,7 @@ public class MetricsReporter extends ControllerMaintainer {
     private final Clock clock;
 
     // Tracks hosts and versions for which we have reported change duration metrics
-    private final ConcurrentHashMap<HostName, Set<Version>> reportedVersions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<HostName, Map<String, Set<Version>>> reportedVersions = new ConcurrentHashMap<>();
 
     public MetricsReporter(Controller controller, Metric metric) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
@@ -115,8 +115,8 @@ public class MetricsReporter extends ControllerMaintainer {
         changeDurations.forEach((nodeVersion, duration) -> {
             // Zero the metric for past versions because our metrics framework remembers the last value for each unique
             // dimension set for each metric.
-            reportVersion(nodeVersion.hostname(), nodeVersion.currentVersion());
-            for (var reportedVersion : reportedVersions.get(nodeVersion.hostname())) {
+            reportVersion(metricName, nodeVersion.hostname(), nodeVersion.currentVersion());
+            for (var reportedVersion : reportedVersions.getOrDefault(nodeVersion.hostname(), Map.of()).get(metricName)) {
                 if (reportedVersion.equals(nodeVersion.currentVersion())) continue;
                 metric.set(metricName, 0, metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone(), reportedVersion)));
             }
@@ -124,12 +124,12 @@ public class MetricsReporter extends ControllerMaintainer {
         });
     }
 
-    private void reportVersion(HostName hostname, Version version) {
+    private void reportVersion(String metricName, HostName hostname, Version version) {
         reportedVersions.compute(hostname, (ignored, values) -> {
             if (values == null) {
-                values = new HashSet<>();
+                values = new HashMap<>();
             }
-            values.add(version);
+            values.computeIfAbsent(metricName, k -> new HashSet<>()).add(version);
             return values;
         });
     }
@@ -214,5 +214,3 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
 }
-
-

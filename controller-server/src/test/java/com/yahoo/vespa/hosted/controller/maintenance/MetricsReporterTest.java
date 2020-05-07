@@ -22,8 +22,10 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
@@ -305,6 +307,7 @@ public class MetricsReporterTest {
         assertOsChangeDuration(Duration.ZERO, hosts, version0);
 
         var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
+        var allVersions = Stream.concat(Stream.of(version0), targets.stream()).collect(Collectors.toSet());
         for (int i = 0; i < targets.size(); i++) {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var version = targets.get(i);
@@ -363,6 +366,20 @@ public class MetricsReporterTest {
             upgradeOsTo(version, remainingHosts, zone, tester);
             runAll(statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts, version);
+
+            // Dimensions used for OS metric are only known OS versions
+            for (var host : hosts) {
+                Set<Version> versionDimensions = metrics.getMetrics((dimensions) -> host.hostname().value().equals(dimensions.get("host")))
+                                                        .entrySet()
+                                                        .stream()
+                                                        .filter(kv -> kv.getValue().containsKey(MetricsReporter.OS_CHANGE_DURATION))
+                                                        .map(kv -> kv.getKey().getDimensions())
+                                                        .map(dimensions -> dimensions.get("currentVersion"))
+                                                        .map(Version::fromString)
+                                                        .collect(Collectors.toSet());
+                assertTrue("Reports only OS versions", allVersions.containsAll(versionDimensions));
+            }
+
         }
     }
 
