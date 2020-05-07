@@ -2,8 +2,7 @@
 
 #include "truesearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 TrueSearch::doSeek(uint32_t docid)
@@ -24,9 +23,6 @@ TrueSearch::TrueSearch(fef::TermFieldMatchData & tfmd) :
     _tfmd.resetOnlyDocId(0);
 }
 
-TrueSearch::~TrueSearch()
-{
-}
+TrueSearch::~TrueSearch() = default;
 
-} // namespace queryeval
-} // namespace search
+}

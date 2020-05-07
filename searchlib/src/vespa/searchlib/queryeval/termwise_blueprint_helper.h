@@ -7,8 +7,7 @@
 #include "unpackinfo.h"
 #include "searchiterator.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Utility used to keep track of which children can be evaluated
@@ -28,5 +27,4 @@ struct TermwiseBlueprintHelper {
     void insert_termwise(SearchIterator::UP search, bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
+}

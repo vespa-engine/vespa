@@ -5,8 +5,7 @@
 #include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 BitVector::UP
 AndSearch::get_hits(uint32_t begin_id) {
@@ -24,12 +23,14 @@ AndSearch::and_hits_into(BitVector &result, uint32_t begin_id)
     TermwiseHelper::andChildren(result, getChildren().begin(), getChildren().end(), begin_id);
 }
 
-SearchIterator::UP AndSearch::andWith(UP filter, uint32_t estimate_)
+SearchIterator::UP
+AndSearch::andWith(UP filter, uint32_t estimate_)
 {
     return offerFilterToChildren(std::move(filter), estimate_);
 }
 
-SearchIterator::UP AndSearch::offerFilterToChildren(UP filter, uint32_t estimate_)
+SearchIterator::UP
+AndSearch::offerFilterToChildren(UP filter, uint32_t estimate_)
 {
     const Children & children(getChildren());
     for (uint32_t i(0); filter && (i < children.size()); ++i) {
@@ -38,7 +39,8 @@ SearchIterator::UP AndSearch::offerFilterToChildren(UP filter, uint32_t estimate
     return filter;
 }
 
-void AndSearch::doUnpack(uint32_t docid)
+void
+AndSearch::doUnpack(uint32_t docid)
 {
     const Children & children(getChildren());
     for (uint32_t i(0); i < children.size(); ++i) {
@@ -126,5 +128,4 @@ AndSearch::create(const MultiSearch::Children &children, bool strict, const Unpa
     }
 }
 
-}  // namespace queryeval
-}  // namespace search
+}
