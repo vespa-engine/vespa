@@ -265,6 +265,11 @@ public class Flags {
             "Takes effect on next application redeploy",
             APPLICATION_ID);
 
+    public static final UnboundLongFlag CONFIGSERVER_SESSIONS_EXPIRY_INTERVAL_IN_DAYS = defineLongFlag(
+            "configserver-sessions-expiry-interval-in-days", 28,
+            "Expiry time for unused sessions in config server",
+            "Takes effect on next run of config server maintainer SessionsMaintainer");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

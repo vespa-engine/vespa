@@ -24,10 +24,6 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     protected final ApplicationRepository applicationRepository;
 
-    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
-        this(applicationRepository, curator, interval, interval);
-    }
-
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration initialDelay, Duration interval) {
         super(null, interval, initialDelay, new JobControl(new JobControlDb(curator)));
         this.applicationRepository = applicationRepository;
