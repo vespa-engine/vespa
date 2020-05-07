@@ -6,6 +6,8 @@ import com.google.common.collect.Multiset;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+
+import java.time.Clock;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -81,13 +83,14 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public int deleteExpiredSessions(Duration expiryTime) {
+    public int deleteExpiredSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getSessions()) {
             RemoteSession session = getSession(sessionId);
             if (session == null) continue; // Internal sessions not in synch with zk, continue
+            if (session.getStatus() == Session.Status.ACTIVATE) continue;
             Instant created = Instant.ofEpochSecond(session.getCreateTime());
-            if (sessionHasExpired(created, expiryTime)) {
+            if (sessionHasExpired(created, expiryTime, clock)) {
                 log.log(Level.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 session.delete();
                 deleted++;
@@ -96,8 +99,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return deleted;
     }
 
-    private boolean sessionHasExpired(Instant created, Duration expiryTime) {
-        return (created.plus(expiryTime).isBefore(Instant.now()));
+    private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
+        return (created.plus(expiryTime).isBefore(clock.instant()));
     }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {

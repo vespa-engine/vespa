@@ -80,7 +80,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -675,9 +674,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
+        return deleteExpiredRemoteSessions(clock, expiryTime);
+    }
+
+    public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         return tenantRepository.getAllTenants()
                 .stream()
-                .map(tenant -> tenant.getRemoteSessionRepo().deleteExpiredSessions(expiryTime))
+                .map(tenant -> tenant.getRemoteSessionRepo().deleteExpiredSessions(clock, expiryTime))
                 .mapToInt(i -> i)
                 .sum();
     }
