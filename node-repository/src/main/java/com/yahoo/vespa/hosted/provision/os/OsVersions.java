@@ -1,16 +1,13 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -28,24 +25,16 @@ public class OsVersions {
 
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
-    /**
-     * The maximum number of nodes, within a single node type, that can upgrade in parallel. We limit the number of
-     * concurrent upgrades to avoid overloading the orchestrator.
-     */
-    private static final int MAX_ACTIVE_UPGRADES = 30;
-
-    private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
-    private final int maxActiveUpgrades;
+    private final Upgrader upgrader;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, MAX_ACTIVE_UPGRADES);
+        this(nodeRepository, new DelegatingUpgrader(nodeRepository, 30));
     }
 
-    OsVersions(NodeRepository nodeRepository, int maxActiveUpgrades) {
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "nodeRepository must be non-null");
+    OsVersions(NodeRepository nodeRepository, Upgrader upgrader) {
         this.db = nodeRepository.database();
-        this.maxActiveUpgrades = maxActiveUpgrades;
+        this.upgrader = upgrader;
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersions()) {
@@ -72,7 +61,7 @@ public class OsVersions {
         try (Lock lock = db.lockOsVersions()) {
             var osVersions = db.readOsVersions();
             osVersions.remove(nodeType);
-            disableUpgrade(nodeType);
+            upgrader.disableUpgrade(nodeType);
             db.writeOsVersions(osVersions);
         }
     }
@@ -111,34 +100,11 @@ public class OsVersions {
             var currentVersion = osVersions.get(nodeType);
             if (currentVersion == null) return; // No target version set for this type
             if (active) {
-                upgrade(nodeType, currentVersion);
+                upgrader.upgrade(nodeType, currentVersion);
             } else {
-                disableUpgrade(nodeType);
+                upgrader.disableUpgrade(nodeType);
             }
         }
-    }
-
-    /** Trigger upgrade of nodes of given type*/
-    private void upgrade(NodeType type, Version version) {
-        var activeNodes = nodeRepository.list().nodeType(type).state(Node.State.active);
-        var numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(version).size());
-        var nodesToUpgrade = activeNodes.not().changingOsVersionTo(version)
-                                        .not().onOsVersion(version)
-                                        .byIncreasingOsVersion()
-                                        .first(numberToUpgrade);
-        if (nodesToUpgrade.size() == 0) return;
-        log.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + type + " to OS version " + version.toFullString());
-        nodeRepository.upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(version));
-    }
-
-    /** Disable OS upgrade for all nodes of given type */
-    private void disableUpgrade(NodeType type) {
-        var nodesUpgrading = nodeRepository.list()
-                                           .nodeType(type)
-                                           .changingOsVersion();
-        if (nodesUpgrading.size() == 0) return;
-        log.info("Disabling OS upgrade of all " + type + " nodes");
-        nodeRepository.upgradeOs(NodeListFilter.from(nodesUpgrading.asList()), Optional.empty());
     }
 
     private static void require(NodeType nodeType) {

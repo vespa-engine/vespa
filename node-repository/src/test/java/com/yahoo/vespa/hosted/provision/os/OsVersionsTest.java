@@ -35,7 +35,7 @@ public class OsVersionsTest {
 
     @Test
     public void test_versions() {
-        var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         tester.makeReadyNodes(10, "default", NodeType.host);
         tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
         Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
@@ -80,7 +80,7 @@ public class OsVersionsTest {
     public void test_max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), maxActiveUpgrades);
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
         tester.makeReadyNodes(totalNodes, "default", NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).nodeType(NodeType.host);
         tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
@@ -127,7 +127,7 @@ public class OsVersionsTest {
 
     @Test
     public void test_newer_upgrade_aborts_upgrade_to_stale_version() {
-        var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         tester.makeReadyNodes(10, "default", NodeType.host);
         tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
