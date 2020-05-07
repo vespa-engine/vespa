@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Duration;
 
@@ -27,12 +28,13 @@ public class ConfigServerMaintenance extends AbstractComponent {
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
-                                   FileDistributionFactory fileDistributionFactory) {
+                                   FileDistributionFactory fileDistributionFactory,
+                                   FlagSource flagSource) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
         // TODO: Disabled until we have application metadata
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
-        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
+        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
     }
 
     @Override
