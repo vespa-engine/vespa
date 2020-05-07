@@ -24,7 +24,7 @@ void verifyContains(const search::BitVector & a, const search::BitVector & b) __
 
 void verifyContains(const search::BitVector & a, const search::BitVector & b)
 {
-    if ((a.getStartIndex() < b.getStartIndex()) || (a.size() > b.size())) {
+    if (a.getStartIndex() < b.getStartIndex()) {
         throw IllegalArgumentException(make_string("[%d, %d] is not contained in [%d, %d]",
                                                    a.getStartIndex(), a.size(), b.getStartIndex(), b.size()),
                                        VESPA_STRLOC);
@@ -178,8 +178,17 @@ void
 BitVector::orWith(const BitVector & right)
 {
     verifyContains(*this, right);
-    IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
 
+    if (right.size() < size()) {
+        ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+        }
+        Index last(right.size() - 1);
+        getWordIndex(last)[0] |= (right.getWordIndex(last)[0] & ~endBits(last));
+    } else {
+        IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    }
     repairEnds();
     invalidateCachedCount();
 }
@@ -201,9 +210,13 @@ BitVector::andWith(const BitVector & right)
 {
     verifyContains(*this, right);
 
-    IAccelrated::getAccelrator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
+    IAccelrated::getAccelrator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+    if (right.size() < size()) {
+        clearInterval(right.size(), size());
+    }
 
-    setGuardBit();
+    repairEnds();
     invalidateCachedCount();
 }
 
@@ -213,9 +226,18 @@ BitVector::andNotWith(const BitVector& right)
 {
     verifyContains(*this, right);
 
-    IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    if (right.size() < size()) {
+        ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+        }
+        Index last(right.size() - 1);
+        getWordIndex(last)[0] &= ~(right.getWordIndex(last)[0] & ~endBits(last));
+    } else {
+        IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    }
 
-    setGuardBit();
+    repairEnds();
     invalidateCachedCount();
 }
 

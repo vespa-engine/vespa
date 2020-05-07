@@ -300,15 +300,54 @@ TEST("requireThatInitRangeStaysWithinBounds") {
     EXPECT_TRUE(it->isAtEnd());
 }
 
+void
+setEveryNthBit(uint32_t n, BitVector & bv, uint32_t offset, uint32_t end) {
+    for (uint32_t i(0); i < (end - offset); i++) {
+        if ((i % n) == 0) {
+            bv.setBit(offset + i);
+        } else {
+            bv.clearBit(offset + i);
+        }
+    }
+    bv.invalidateCachedCount();
+}
+BitVector::UP
+createEveryNthBitSet(uint32_t n, uint32_t end) {
+    BitVector::UP bv(BitVector::create(0, end));
+    setEveryNthBit(n, *bv, 0, end);
+    return bv;
+}
+
+template<typename Func>
+void
+verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t sz1, uint32_t sz2, Func func) {
+    BitVector::UP aLarger = createEveryNthBitSet(2, sz2);
+
+    BitVector::UP bSmall = createEveryNthBitSet(3, sz1);
+    BitVector::UP bLarger = createEveryNthBitSet(3, sz2);
+    bLarger->clearInterval(sz1, sz2);
+    EXPECT_EQUAL(bSmall->countTrueBits(), bLarger->countTrueBits());
+
+    BitVector::UP aLarger2 = BitVector::create(*aLarger);
+    EXPECT_TRUE(*aLarger == *aLarger2);
+    func(*aLarger, *bLarger);
+    func(*aLarger2, *bSmall);
+    EXPECT_TRUE(*aLarger == *aLarger2);
+}
+
 TEST("requireThatAndWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAnd(offset);
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+                                                     [](BitVector & a, const BitVector & b) { a.andWith(b); });
     }
 }
 
 TEST("requireThatOrWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testOr(offset);
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+                                                     [](BitVector & a, const BitVector & b) { a.orWith(b); });
     }
 }
 
@@ -316,6 +355,8 @@ TEST("requireThatOrWorks") {
 TEST("requireThatAndNotWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAndNot(offset);
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+                                                     [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
     }
 }
 
