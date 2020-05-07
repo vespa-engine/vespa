@@ -16,8 +16,6 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -48,12 +46,15 @@ import static org.mockito.Mockito.verify;
  */
 public class DynamicDockerProvisionTest {
 
+    private static final Zone zone = new Zone(
+            Cloud.defaultCloud().withDynamicProvisioning(true).withAllowHostSharing(false),
+            SystemName.main,
+            Environment.prod,
+            RegionName.from("us-east"));
     private final MockNameResolver nameResolver = new MockNameResolver().mockAnyLookup();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-            .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
-            .hostProvisioner(hostProvisioner).flagSource(flagSource).nameResolver(nameResolver).build();
+            .zone(zone).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
 
     @Test
     public void dynamically_provision_with_empty_node_repo() {
@@ -120,7 +121,7 @@ public class DynamicDockerProvisionTest {
 
     @Test
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).build();
         NodeResources resources = new NodeResources(10, 10, 10, 10);
         ApplicationId app = tester.makeApplicationId();
 
@@ -159,15 +160,9 @@ public class DynamicDockerProvisionTest {
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Cloud.defaultCloud()
-                                                                                        .withDynamicProvisioning(true)
-                                                                                        .withAllowHostSharing(false),
-                                                                                   SystemName.main,
-                                                                                   Environment.prod,
-                                                                                   RegionName.from("us-east")))
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
-                                                                    .flagSource(flagSource)
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax))
                                                                     .build();
@@ -211,15 +206,9 @@ public class DynamicDockerProvisionTest {
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4x", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Cloud.defaultCloud()
-                                                                                        .withDynamicProvisioning(true)
-                                                                                        .withAllowHostSharing(false),
-                                                                                   SystemName.main,
-                                                                                   Environment.prod,
-                                                                                   RegionName.from("us-east")))
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
-                                                                    .flagSource(flagSource)
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax))
                                                                     .build();

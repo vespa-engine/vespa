@@ -72,7 +72,6 @@ public class DynamicProvisioningMaintainerTest {
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
     private static final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-            .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true)
             .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
     private final DynamicProvisioningMaintainer maintainer =
             new DynamicProvisioningMaintainer(tester.nodeRepository,

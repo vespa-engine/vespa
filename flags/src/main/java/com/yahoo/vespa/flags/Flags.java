@@ -127,12 +127,6 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
-            "enable-dynamic-provisioning", false,
-            "Provision a new docker host when we otherwise can't allocate a docker node",
-            "Takes effect on next deployment",
-            APPLICATION_ID);
-
     public static final UnboundListFlag<PreprovisionCapacity> PREPROVISION_CAPACITY = defineListFlag(
             "preprovision-capacity", List.of(), PreprovisionCapacity.class,
             "List of node resources and their count that should be present in zone to receive new deployments. When a " +
