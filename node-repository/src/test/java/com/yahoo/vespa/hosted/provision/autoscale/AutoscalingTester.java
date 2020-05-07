@@ -15,9 +15,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -47,23 +44,16 @@ class AutoscalingTester {
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
-        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), null);
+        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)));
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.deployZoneApp();
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
-        this(zone,
-             flavors,
-             new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true));
-    }
-
-    private AutoscalingTester(Zone zone, List<Flavor> flavors, FlagSource flagSource) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(new MockHostResourcesCalculator(zone))
                                                              .hostProvisioner(new MockHostProvisioner(flavors))
-                                                             .flagSource(flagSource)
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);

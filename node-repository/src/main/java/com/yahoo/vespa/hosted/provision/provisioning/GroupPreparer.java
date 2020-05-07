@@ -8,8 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
@@ -32,7 +30,6 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
-    private final BooleanFlag dynamicProvisioningEnabledFlag;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository,
@@ -40,7 +37,6 @@ public class GroupPreparer {
                          FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
-        this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
@@ -62,9 +58,7 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
-        boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
-                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value();
+        boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
         try (Mutex lock = nodeRepository.lock(application)) {
 

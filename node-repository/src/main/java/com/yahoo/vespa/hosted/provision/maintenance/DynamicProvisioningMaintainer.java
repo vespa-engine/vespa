@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
@@ -44,7 +43,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
-    private final BooleanFlag dynamicProvisioningEnabled;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     DynamicProvisioningMaintainer(NodeRepository nodeRepository,
@@ -53,13 +51,12 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                   FlagSource flagSource) {
         super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
-        this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
     @Override
     protected void maintain() {
-        if (! dynamicProvisioningEnabled.value()) return;
+        if (! nodeRepository().zone().getCloud().dynamicProvisioning()) return;
 
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
