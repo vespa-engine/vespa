@@ -8,9 +8,12 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/loadedenumvalue.h>
+#include <vespa/searchlib/attribute/loadedvalue.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -149,16 +152,30 @@ logAttributeWrongType(const AttributeVector::SP &attr, const AttributeHeader &he
 
 }
 
+void
+AttributeInitializer::readHeader()
+{
+    if (!_attrDir->empty()) {
+        search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
+        vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
+        if (serialNum != 0) {
+            _header = std::make_unique<const AttributeHeader>(extractHeader(attrFileName));
+            if (_header->getCreateSerialNum() <= _currentSerialNum && headerTypeOK(*_header, _spec.getConfig()) && (serialNum >= _currentSerialNum)) {
+                _header_ok = true;
+            }
+        }
+    }
+}
+
 AttributeVector::SP
 AttributeInitializer::tryLoadAttribute() const
 {
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
-    if (serialNum != 0) {
-        AttributeHeader header = extractHeader(attrFileName);
-        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig()) || (serialNum < _currentSerialNum)) {
-            setupEmptyAttribute(attr, serialNum, header);
+    if (serialNum != 0 && _header) {
+        if (!_header_ok) {
+            setupEmptyAttribute(attr, serialNum, *_header);
             return attr;
         }
         if (!loadAttribute(attr, serialNum)) {
@@ -223,8 +240,11 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
       _documentSubDbName(documentSubDbName),
       _spec(spec),
       _currentSerialNum(currentSerialNum),
-      _factory(factory)
+      _factory(factory),
+      _header(),
+      _header_ok(false)
 {
+    readHeader();
 }
 
 AttributeInitializer::~AttributeInitializer() = default;
@@ -237,6 +257,37 @@ AttributeInitializer::init() const
     } else {
         return AttributeInitializerResult(createAndSetupEmptyAttribute());
     }
+}
+
+size_t
+AttributeInitializer::get_transient_memory_usage() const
+{
+    if (_header_ok) {
+        auto &header = *_header;
+        if (_spec.getConfig().fastSearch()) {
+            if (header.getEnumerated()) {
+                return sizeof(search::attribute::LoadedEnumAttribute) * header.get_total_value_count();
+            } else {
+                switch (_spec.getConfig().basicType().type()) {
+                case BasicType::Type::INT8:
+                    return sizeof(search::attribute::LoadedValue<int8_t>) * header.get_total_value_count();
+                case BasicType::Type::INT16:
+                    return sizeof(search::attribute::LoadedValue<int16_t>) * header.get_total_value_count();
+                case BasicType::Type::INT32:
+                    return sizeof(search::attribute::LoadedValue<int32_t>) * header.get_total_value_count();
+                case BasicType::Type::INT64:
+                    return sizeof(search::attribute::LoadedValue<int64_t>) * header.get_total_value_count();
+                case BasicType::Type::FLOAT:
+                    return sizeof(search::attribute::LoadedValue<float>) * header.get_total_value_count();
+                case BasicType::Type::DOUBLE:
+                    return sizeof(search::attribute::LoadedValue<double>) * header.get_total_value_count();
+                default:
+                    return 0u;
+                }
+            }
+        }
+    }
+    return 0u;
 }
 
 } // namespace proton

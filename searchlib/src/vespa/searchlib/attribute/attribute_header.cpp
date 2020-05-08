@@ -28,6 +28,9 @@ const vespalib::string euclidean = "euclidean";
 const vespalib::string angular = "angular";
 const vespalib::string geodegrees = "geodegrees";
 const vespalib::string doc_id_limit_tag = "docIdLimit";
+const vespalib::string enumerated_tag = "enumerated";
+const vespalib::string unique_value_count_tag = "uniqueValueCount";
+const vespalib::string total_value_count_tag = "totalValueCount";
 
 }
 
@@ -165,6 +168,15 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
     if (header.hasTag(doc_id_limit_tag)) {
         _numDocs = header.getTag(doc_id_limit_tag).asInteger();
     }
+    if (header.hasTag(enumerated_tag)) {
+        _enumerated = header.getTag(enumerated_tag).asInteger() != 0;
+    }
+    if (header.hasTag(total_value_count_tag)) {
+        _totalValueCount = header.getTag(total_value_count_tag).asInteger();
+    }
+    if (header.hasTag(unique_value_count_tag)) {
+        _uniqueValueCount = header.getTag(unique_value_count_tag).asInteger();
+    }
     if (header.hasTag(versionTag)) {
         _version = header.getTag(versionTag).asInteger();
     }
@@ -188,14 +200,14 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
         header.putTag(Tag(createIfNonExistentTag, _collectionType.createIfNonExistant()));
         header.putTag(Tag(removeIfZeroTag, _collectionType.removeIfZero()));
     }
-    header.putTag(Tag("uniqueValueCount", _uniqueValueCount));
-    header.putTag(Tag("totalValueCount", _totalValueCount));
+    header.putTag(Tag(unique_value_count_tag, _uniqueValueCount));
+    header.putTag(Tag(total_value_count_tag, _totalValueCount));
     header.putTag(Tag(doc_id_limit_tag, _numDocs));
     header.putTag(Tag("frozen", 0));
     header.putTag(Tag("fileBitSize", 0));
     header.putTag(Tag(versionTag, _version));
     if (_enumerated) {
-        header.putTag(Tag("enumerated", 1));
+        header.putTag(Tag(enumerated_tag, 1));
     }
     if (_createSerialNum != 0u) {
         header.putTag(Tag(createSerialNumTag, _createSerialNum));
