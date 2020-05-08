@@ -215,9 +215,14 @@ public class CoredumpHandlerTest {
 
     @Test
     public void report_enqueued_and_processed_metrics() throws IOException {
+        Path processingPath = crashPathInContainer.resolve("processing");
         Files.createFile(crashPathInContainer.resolve("dump-1"));
         Files.createFile(crashPathInContainer.resolve("dump-2"));
         Files.createFile(crashPathInContainer.resolve("hs_err_pid2.log"));
+        Files.createDirectory(processingPath);
+        Files.createFile(processingPath.resolve("metadata.json"));
+        Files.createFile(processingPath.resolve("dump-3"));
+
         new UnixPath(doneCoredumpsPath.resolve("container-123").resolve("dump-3-folder").resolve("dump-3"))
                 .createParents()
                 .createNewFile();
@@ -226,7 +231,7 @@ public class CoredumpHandlerTest {
         List<DimensionMetrics> updatedMetrics = metrics.getMetricsByType(Metrics.DimensionType.PRETAGGED);
         assertEquals(1, updatedMetrics.size());
         Map<String, Number> values = updatedMetrics.get(0).getMetrics();
-        assertEquals(2, values.get("coredumps.enqueued").intValue());
+        assertEquals(3, values.get("coredumps.enqueued").intValue());
         assertEquals(1, values.get("coredumps.processed").intValue());
     }
 

@@ -211,7 +211,8 @@ public class CoredumpHandler {
         int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPathOnHost)
                 .match(nameStartsWith(".").negate())
                 .match(nameMatches(HS_ERR_PATTERN).negate())
-                .maxDepth(1)
+                .match(nameEndsWith(".lz4").negate())
+                .match(nameStartsWith("metadata").negate())
                 .list().size();
 
         metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.enqueued", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfUnprocessedCoredumps);
