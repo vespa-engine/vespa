@@ -69,7 +69,8 @@ Blueprint::State::State(const FieldSpecBaseList &fields_in)
       _estimate(),
       _cost_tier(COST_TIER_NORMAL),
       _tree_size(1),
-      _allow_termwise_eval(true)
+      _allow_termwise_eval(true),
+      _want_global_filter(false)
 {
 }
 
@@ -250,10 +251,10 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
 };
 
 bool
-IntermediateBlueprint::infer_wants_global_filter() const
+IntermediateBlueprint::infer_want_global_filter() const
 {
     for (const Blueprint * child : _children) {
-        if (child->getState().wants_global_filter()) {
+        if (child->getState().want_global_filter()) {
             return true;
         }
     }
@@ -324,7 +325,7 @@ IntermediateBlueprint::calculateState() const
     state.estimate(calculateEstimate());
     state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
-    state.wants_global_filter(infer_wants_global_filter());
+    state.want_global_filter(infer_want_global_filter());
     state.tree_size(calculate_tree_size());
     return state;
 }
@@ -577,9 +578,9 @@ LeafBlueprint::set_allow_termwise_eval(bool value)
 }
 
 void
-LeafBlueprint::set_wants_global_filter(bool value)
+LeafBlueprint::set_want_global_filter(bool value)
 {
-    _state.wants_global_filter(value);
+    _state.want_global_filter(value);
     notifyChange();
 }
 

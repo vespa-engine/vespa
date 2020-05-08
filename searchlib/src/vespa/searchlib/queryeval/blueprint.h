@@ -63,7 +63,7 @@ public:
         uint32_t          _cost_tier;
         uint32_t          _tree_size;
         bool              _allow_termwise_eval;
-        bool              _wants_global_filter;
+        bool              _want_global_filter;
 
     public:
         static constexpr uint32_t COST_TIER_NORMAL = 1;
@@ -102,8 +102,8 @@ public:
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
-        void wants_global_filter(bool value) { _wants_global_filter = value; }
-        bool wants_global_filter() const { return _wants_global_filter; }
+        void want_global_filter(bool value) { _want_global_filter = value; }
+        bool want_global_filter() const { return _want_global_filter; }
         void cost_tier(uint32_t value) { _cost_tier = value; }
         uint32_t cost_tier() const { return _cost_tier; }
     };
@@ -247,7 +247,7 @@ private:
     uint32_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
-    bool infer_wants_global_filter() const;
+    bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
     virtual double computeNextHitRate(const Blueprint & child, double hitRate) const;
@@ -308,7 +308,7 @@ protected:
     void setEstimate(HitEstimate est);
     void set_cost_tier(uint32_t value);
     void set_allow_termwise_eval(bool value);
-    void set_wants_global_filter(bool value);
+    void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
