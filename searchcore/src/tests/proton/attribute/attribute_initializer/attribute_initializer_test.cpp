@@ -212,7 +212,7 @@ TEST("require that too old attribute is not loaded")
     EXPECT_EQUAL(1u, av->getNumDocs());
 }
 
-TEST("require that transient memory usage for first time posting list attribute load after enabling posting lists")
+TEST("require that transient memory usage is reported for first time posting list attribute load after enabling posting lists")
 {
     saveAttr("a", int32_wset, 10, 2);
     Fixture f;
@@ -220,12 +220,20 @@ TEST("require that transient memory usage for first time posting list attribute 
     EXPECT_EQUAL(40u, avi->get_transient_memory_usage());
 }
 
-TEST("require that transient memory usage for normal posting list attribute load")
+TEST("require that transient memory usage is reported for normal posting list attribute load")
 {
     saveAttr("a", get_int32_wset_fs(), 10, 2);
     Fixture f;
     auto avi = f.createInitializer({"a", get_int32_wset_fs()}, 5);
     EXPECT_EQUAL(24u, avi->get_transient_memory_usage());
+}
+
+TEST("require that transient memory usage is reported for attribute load without posting list")
+{
+    saveAttr("a", int32_wset, 10, 2);
+    Fixture f;
+    auto avi = f.createInitializer({"a", int32_wset}, 5);
+    EXPECT_EQUAL(0u, avi->get_transient_memory_usage());
 }
 
 }
