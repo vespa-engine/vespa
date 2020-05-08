@@ -39,6 +39,7 @@ private:
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
     std::shared_ptr<RemoveOperationsRateTracker> _ops_rate_tracker;
+    bool _is_disabled;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
