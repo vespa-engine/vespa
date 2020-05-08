@@ -6,6 +6,17 @@
 using vespalib::Stash;
 using namespace vespalib::eval;
 
+TEST("require that aggregator list returns appropriate entries") {
+    auto list = Aggregator::list();
+    ASSERT_EQUAL(list.size(), 6u);
+    EXPECT_EQUAL(int(list[0]), int(Aggr::AVG));
+    EXPECT_EQUAL(int(list[1]), int(Aggr::COUNT));
+    EXPECT_EQUAL(int(list[2]), int(Aggr::PROD));
+    EXPECT_EQUAL(int(list[3]), int(Aggr::SUM));
+    EXPECT_EQUAL(int(list[4]), int(Aggr::MAX));
+    EXPECT_EQUAL(int(list[5]), int(Aggr::MIN));
+}
+
 TEST("require that AVG aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::AVG, stash);

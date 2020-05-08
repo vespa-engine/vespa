@@ -14,6 +14,7 @@
 #include "dense/dense_multi_matmul_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
 #include "dense/dense_add_dimension_optimizer.h"
+#include "dense/dense_single_reduce_function.h"
 #include "dense/dense_remove_dimension_optimizer.h"
 #include "dense/dense_lambda_peek_optimizer.h"
 #include "dense/dense_inplace_join_function.h"
@@ -260,27 +261,40 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
 {
     using Child = TensorFunction::Child;
     Child root(expr);
-    std::vector<Child::CREF> nodes({root});
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        nodes[i].get().get().push_children(nodes);
-    }
     LOG(debug, "tensor function before optimization:\n%s\n", root.get().as_string().c_str());
-    while (!nodes.empty()) {
-        const Child &child = nodes.back();
-        child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
-        child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
-        child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
-        child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
-        child.set(DenseDotProductFunction::optimize(child.get(), stash));
-        child.set(DenseXWProductFunction::optimize(child.get(), stash));
-        child.set(DenseMatMulFunction::optimize(child.get(), stash));
-        child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
-        child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
-        child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
-        child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
-        child.set(DenseInplaceMapFunction::optimize(child.get(), stash));
-        child.set(DenseInplaceJoinFunction::optimize(child.get(), stash));
-        nodes.pop_back();
+    {
+        std::vector<Child::CREF> nodes({root});
+        for (size_t i = 0; i < nodes.size(); ++i) {
+            nodes[i].get().get().push_children(nodes);
+        }
+        while (!nodes.empty()) {
+            const Child &child = nodes.back().get();
+            child.set(DenseDotProductFunction::optimize(child.get(), stash));
+            child.set(DenseXWProductFunction::optimize(child.get(), stash));
+            child.set(DenseMatMulFunction::optimize(child.get(), stash));
+            child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
+            nodes.pop_back();
+        }
+    }
+    {
+        std::vector<Child::CREF> nodes({root});
+        for (size_t i = 0; i < nodes.size(); ++i) {
+            nodes[i].get().get().push_children(nodes);
+        }
+        while (!nodes.empty()) {
+            const Child &child = nodes.back().get();
+            child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
+            child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
+            child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
+            child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
+            child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
+            child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
+            child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
+            child.set(DenseInplaceMapFunction::optimize(child.get(), stash));
+            child.set(DenseInplaceJoinFunction::optimize(child.get(), stash));
+            child.set(DenseSingleReduceFunction::optimize(child.get(), stash));
+            nodes.pop_back();
+        }
     }
     LOG(debug, "tensor function after optimization:\n%s\n", root.get().as_string().c_str());
     return root.get();

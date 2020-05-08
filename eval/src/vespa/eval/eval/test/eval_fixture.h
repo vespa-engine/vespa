@@ -10,6 +10,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 #include <set>
+#include <functional>
 
 namespace vespalib::eval::test {
 
@@ -26,6 +27,8 @@ public:
 
     struct ParamRepo {
         std::map<vespalib::string,Param> map;
+        using gen_fun_t = std::function<double(size_t)>;
+        static double gen_N(size_t seq) { return (seq + 1); }
         ParamRepo() : map() {}
         ParamRepo &add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in) {
             map.insert_or_assign(name, Param(std::move(value_in), is_mutable_in));
@@ -37,10 +40,10 @@ public:
         ParamRepo &add_mutable(const vespalib::string &name, const TensorSpec &value) {
             return add(name, value, true);
         }
-        ParamRepo &add_vector(const char *d1, size_t s1, size_t seed = 1);
-        ParamRepo &add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, size_t seed = 1);
-        ParamRepo &add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, size_t seed = 1);
-        ParamRepo &add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, size_t seed = 1);
+        ParamRepo &add_vector(const char *d1, size_t s1, gen_fun_t = gen_N);
+        ParamRepo &add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, gen_fun_t gen = gen_N);
+        ParamRepo &add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, gen_fun_t gen = gen_N);
+        ParamRepo &add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, gen_fun_t gen = gen_N);
         ~ParamRepo() {}
     };
 
