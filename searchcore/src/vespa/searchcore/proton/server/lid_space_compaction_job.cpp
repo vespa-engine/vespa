@@ -121,7 +121,8 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _diskMemUsageNotifier(diskMemUsageNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate(),
-                                                                      config.get_remove_block_rate()))
+                                                                      config.get_remove_block_rate())),
+      _is_disabled(false)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
@@ -146,13 +147,22 @@ LidSpaceCompactionJob::run()
     LidUsageStats stats = _handler.getLidStatus();
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
-        LOG(info, "run(): Lid space compaction is disabled while remove batch (delete buckets) is ongoing");
+        LOG(info, "%s: Lid space compaction is disabled while remove batch (delete buckets) is ongoing",
+            _handler.getName().c_str());
+        _is_disabled = true;
         return true;
     }
     if (remove_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
-        LOG(info, "run(): Lid space compaction is disabled while remove operations are ongoing");
+        LOG(info, "%s: Lid space compaction is disabled while remove operations are ongoing",
+            _handler.getName().c_str());
+        _is_disabled = true;
         return true;
+    }
+    if (_is_disabled) {
+        LOG(info, "%s: Lid space compaction is re-enabled as remove operations are no longer ongoing",
+            _handler.getName().c_str());
+        _is_disabled = false;
     }
     if (_scanItr) {
         return scanDocuments(stats);
@@ -180,11 +190,11 @@ LidSpaceCompactionJob::notifyClusterStateChanged(const IBucketStateCalculator::S
     bool nodeRetired = newCalc->nodeRetired();
     if (!nodeRetired) {
         if (isBlocked(BlockedReason::CLUSTER_STATE)) {
-            LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
+            LOG(info, "%s: Lid space compaction is un-blocked as node is no longer retired", _handler.getName().c_str());
             unBlock(BlockedReason::CLUSTER_STATE);
         }
     } else {
-        LOG(info, "notifyClusterStateChanged(): Node is retired -> lid space compaction job disabled");
+        LOG(info, "%s: Lid space compaction is blocked as node is retired", _handler.getName().c_str());
         setBlocked(BlockedReason::CLUSTER_STATE);
     }
 }
