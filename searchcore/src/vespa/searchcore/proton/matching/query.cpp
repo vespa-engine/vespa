@@ -189,6 +189,13 @@ void
 Query::optimize()
 {
     _blueprint = Blueprint::optimize(std::move(_blueprint));
+    if (_blueprint->getState().want_global_filter()) {
+        // XXX we need to somehow compute a real global filter
+        std::shared_ptr<search::BitVector> empty_global_filter;
+        _blueprint->set_global_filter(empty_global_filter);
+        // optimized order may change after accounting for global filter:
+        _blueprint = Blueprint::optimize(std::move(_blueprint));
+    }
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
 
