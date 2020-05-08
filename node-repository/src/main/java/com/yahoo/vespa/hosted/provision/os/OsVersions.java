@@ -7,12 +7,14 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 /**
- * Thread-safe class that manages target OS versions for nodes in this repository.
+ * Thread-safe class that manages an OS version change for nodes in this repository. An {@link Upgrader} decides how a
+ * {@link OsVersionChange} is applied to nodes.
  *
  * A version target is initially inactive. Activation decision is taken by
  * {@link com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator}.
@@ -37,19 +39,29 @@ public class OsVersions {
         this.upgrader = upgrader;
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
-        try (var lock = db.lockOsVersions()) {
-            db.writeOsVersions(db.readOsVersions());
+        try (var lock = db.lockOsVersionChange()) {
+            db.writeOsVersionChange(db.readOsVersionChange());
         }
     }
 
-    /** Returns the current target versions for each node type */
-    public Map<NodeType, Version> targets() {
-        return db.readOsVersions();
+    /** Returns the current OS version change */
+    public OsVersionChange readChange() {
+        return db.readOsVersionChange();
+    }
+
+    /** Write the current OS version change with the result of the given operation applied */
+    public void writeChange(UnaryOperator<OsVersionChange> operation) {
+        try (var lock = db.lockOsVersionChange()) {
+            OsVersionChange change = readChange();
+            OsVersionChange newChange = operation.apply(change);
+            if (newChange.equals(change)) return; // Nothing changed
+            db.writeOsVersionChange(newChange);
+        }
     }
 
     /** Returns the current target version for given node type, if any */
     public Optional<Version> targetFor(NodeType type) {
-        return Optional.ofNullable(targets().get(type));
+        return Optional.ofNullable(readChange().targets().get(type));
     }
 
     /**
@@ -58,26 +70,26 @@ public class OsVersions {
      */
     public void removeTarget(NodeType nodeType) {
         require(nodeType);
-        try (Lock lock = db.lockOsVersions()) {
-            var osVersions = db.readOsVersions();
-            osVersions.remove(nodeType);
+        writeChange((change) -> {
+            var targets = new HashMap<>(change.targets());
+            targets.remove(nodeType);
             upgrader.disableUpgrade(nodeType);
-            db.writeOsVersions(osVersions);
-        }
+            return change.with(targets);
+        });
     }
 
-    /** Set the target OS version for nodes of given type */
+    /** Set the target OS version and upgrade budget for nodes of given type */
     public void setTarget(NodeType nodeType, Version newTarget, boolean force) {
         require(nodeType);
         if (newTarget.isEmpty()) {
-            throw  new IllegalArgumentException("Invalid target version: " + newTarget.toFullString());
+            throw new IllegalArgumentException("Invalid target version: " + newTarget.toFullString());
         }
-        try (Lock lock = db.lockOsVersions()) {
-            var osVersions = db.readOsVersions();
-            var oldTarget = Optional.ofNullable(osVersions.get(nodeType));
+        writeChange((change) -> {
+            var targets = new HashMap<>(change.targets());
+            var oldTarget = Optional.ofNullable(targets.get(nodeType));
 
             if (oldTarget.filter(v -> v.equals(newTarget)).isPresent()) {
-                return; // Old target matches new target, nothing to do
+                return change; // Old target matches new target, nothing to do
             }
 
             if (!force && oldTarget.filter(v -> v.isAfter(newTarget)).isPresent()) {
@@ -86,21 +98,20 @@ public class OsVersions {
                                                    + oldTarget.get());
             }
 
-            osVersions.put(nodeType, newTarget);
-            db.writeOsVersions(osVersions);
+            targets.put(nodeType, newTarget);
             log.info("Set OS target version for " + nodeType + " nodes to " + newTarget.toFullString());
-        }
+            return change.with(targets);
+        });
     }
 
     /** Resume or halt upgrade of given node type */
     public void resumeUpgradeOf(NodeType nodeType, boolean resume) {
         require(nodeType);
-        try (Lock lock = db.lockOsVersions()) {
-            var osVersions = db.readOsVersions();
-            var currentVersion = osVersions.get(nodeType);
-            if (currentVersion == null) return; // No target version set for this type
+        try (Lock lock = db.lockOsVersionChange()) {
+            var targetVersion = readChange().targets().get(nodeType);
+            if (targetVersion == null) return; // No target version set for this type
             if (resume) {
-                upgrader.upgrade(nodeType, currentVersion);
+                upgrader.upgrade(nodeType, targetVersion);
             } else {
                 upgrader.disableUpgrade(nodeType);
             }

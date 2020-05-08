@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
@@ -36,12 +36,11 @@ public class OsVersionsTest {
     @Test
     public void test_versions() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
-        tester.makeReadyNodes(10, "default", NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
+        provisionInfraApplication(10);
         Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
 
         // Upgrade OS
-        assertTrue("No versions set", versions.targets().isEmpty());
+        assertTrue("No versions set", versions.readChange().targets().isEmpty());
         var version1 = Version.fromString("7.1");
         versions.setTarget(NodeType.host, version1, false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
@@ -81,9 +80,8 @@ public class OsVersionsTest {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
-        tester.makeReadyNodes(totalNodes, "default", NodeType.host);
+        provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).nodeType(NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
@@ -128,8 +126,7 @@ public class OsVersionsTest {
     @Test
     public void test_newer_upgrade_aborts_upgrade_to_stale_version() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
-        tester.makeReadyNodes(10, "default", NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
+        provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
 
         // Some nodes are targeting an older version
@@ -143,6 +140,11 @@ public class OsVersionsTest {
 
         // Wanted version is changed to newest target for all nodes
         assertEquals(version2, minVersion(hostNodes.get(), OsVersion::wanted));
+    }
+
+    private void provisionInfraApplication(int nodeCount) {
+        tester.makeReadyNodes(nodeCount, "default", NodeType.host);
+        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
     }
 
     private Version minVersion(NodeList nodes, Function<OsVersion, Optional<Version>> versionField) {
