@@ -63,6 +63,8 @@ public:
     bool getEnumerated() const { return _enumerated; }
     uint64_t getCreateSerialNum() const { return _createSerialNum; }
     uint32_t getVersion() const  { return _version; }
+    uint64_t get_total_value_count() const { return _totalValueCount; }
+    uint64_t get_unique_value_count() const { return _uniqueValueCount; }
     const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
     bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
