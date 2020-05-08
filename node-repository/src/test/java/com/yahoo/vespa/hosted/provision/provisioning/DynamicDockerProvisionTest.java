@@ -11,6 +11,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -31,7 +33,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -218,7 +222,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
-        // Limits where each number are within flavor limits but but which don't contain any flavor leads to an error
+        // Limits where each number is within flavor limits but but which don't contain any flavor leads to an error
         try {
             tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 3.8, 20, 40),
                                                           resources(10, 5, 5, 25, 50)));
@@ -272,12 +276,52 @@ public class DynamicDockerProvisionTest {
                            app1, cluster1);
     }
 
+    @Test
+    public void test_changing_storage_type_on_aws() {
+        int memoryTax = 3;
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
+                                       new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
+                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)),
+                                       new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)));
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .nameResolver(nameResolver)
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
+                                                                    .build();
+
+        tester.deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, local),
+                                                      resources(6, 3, 3, 25, 400, fast, local)));
+        tester.assertNodes("Initial deployment: Local disk",
+                           4, 2, 2, 20, 200, fast, local,
+                           app1, cluster1);
+
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, remote),
+                                                      resources(6, 3, 3, 25, 400, fast, remote)));
+        tester.assertNodes("Change from local to remote disk",
+                           4, 2, 2, 20, 200, fast, remote,
+                           app1, cluster1);
+    }
+
+
     private static ClusterSpec clusterSpec(String clusterId) {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
     private ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk) {
-        return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1));
+        return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1,
+                                                                     DiskSpeed.getDefault(), StorageType.getDefault()));
+    }
+
+    private ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk,
+                                       DiskSpeed diskSpeed, StorageType storageType) {
+        return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1, diskSpeed, storageType));
     }
 
     @SuppressWarnings("unchecked")

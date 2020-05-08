@@ -182,6 +182,8 @@ public class AllocatableClusterResources {
     }
 
     private static boolean between(NodeResources min, NodeResources max, NodeResources r) {
+        if ( ! min.isUnspecified() && ! min.justNonNumbers().compatibleWith(r.justNonNumbers())) return false;
+        if ( ! max.isUnspecified() && ! max.justNonNumbers().compatibleWith(r.justNonNumbers())) return false;
         if ( ! min.isUnspecified() && ! r.justNumbers().satisfies(min.justNumbers())) return false;
         if ( ! max.isUnspecified() && ! max.justNumbers().satisfies(r.justNumbers())) return false;
         return true;
