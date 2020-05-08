@@ -312,23 +312,23 @@ setEveryNthBit(uint32_t n, BitVector & bv, uint32_t offset, uint32_t end) {
     bv.invalidateCachedCount();
 }
 BitVector::UP
-createEveryNthBitSet(uint32_t n, uint32_t end) {
-    BitVector::UP bv(BitVector::create(0, end));
-    setEveryNthBit(n, *bv, 0, end);
+createEveryNthBitSet(uint32_t n, uint32_t offset, uint32_t sz) {
+    BitVector::UP bv(BitVector::create(offset, offset + sz));
+    setEveryNthBit(n, *bv, offset, offset + sz);
     return bv;
 }
 
 template<typename Func>
 void
-verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t sz1, uint32_t sz2, Func func) {
-    BitVector::UP aLarger = createEveryNthBitSet(2, sz2);
+verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t offset, uint32_t sz1, uint32_t sz2, Func func) {
+    BitVector::UP aLarger = createEveryNthBitSet(2, offset, sz2);
 
-    BitVector::UP bSmall = createEveryNthBitSet(3, sz1);
-    BitVector::UP bLarger = createEveryNthBitSet(3, sz2);
-    bLarger->clearInterval(sz1, sz2);
+    BitVector::UP bSmall = createEveryNthBitSet(3, 0, offset + sz1);
+    BitVector::UP bLarger = createEveryNthBitSet(3, 0, offset + sz2);
+    bLarger->clearInterval(offset + sz1, offset + sz2);
     EXPECT_EQUAL(bSmall->countTrueBits(), bLarger->countTrueBits());
 
-    BitVector::UP aLarger2 = BitVector::create(*aLarger);
+    BitVector::UP aLarger2 = BitVector::create(*aLarger, aLarger->getStartIndex(), aLarger->size());
     EXPECT_TRUE(*aLarger == *aLarger2);
     func(*aLarger, *bLarger);
     func(*aLarger2, *bSmall);
@@ -338,7 +338,7 @@ verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t sz1, uint32_t sz2, Func fu
 TEST("requireThatAndWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAnd(offset);
-        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andWith(b); });
     }
 }
@@ -346,7 +346,7 @@ TEST("requireThatAndWorks") {
 TEST("requireThatOrWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testOr(offset);
-        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.orWith(b); });
     }
 }
@@ -355,7 +355,7 @@ TEST("requireThatOrWorks") {
 TEST("requireThatAndNotWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAndNot(offset);
-        verifyThatLongerWithShorterWorksAsZeroPadded(offset+256, offset+256 + offset + 3,
+        verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
     }
 }

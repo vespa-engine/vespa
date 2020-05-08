@@ -25,7 +25,7 @@ void verifyInclusiveStart(const search::BitVector & a, const search::BitVector &
 void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b)
 {
     if (a.getStartIndex() < b.getStartIndex()) {
-        throw IllegalArgumentException(make_string("[%d, %d] is not contained in [%d, %d]",
+        throw IllegalArgumentException(make_string("[%d, %d] starts before which is not allowed currently [%d, %d]",
                                                    a.getStartIndex(), a.size(), b.getStartIndex(), b.size()),
                                        VESPA_STRLOC);
     }
@@ -132,7 +132,7 @@ BitVector::Index
 BitVector::count() const
 {
     // Subtract by one to compensate for guard bit
-    return countInterval(getStartIndex(), getEndIndex());
+    return countInterval(getStartIndex(), size());
 }
 
 BitVector::Index
@@ -351,8 +351,8 @@ BitVector::create(Index start, Index end)
 BitVector::UP
 BitVector::create(const BitVector & org, Index start, Index end)
 {
-    return (start == 0)
-           ? create(end)
+    return ((start == 0) && (end == org.size()))
+           ? create(org)
            : std::make_unique<PartialBitVector>(org, start, end);
 }
 
