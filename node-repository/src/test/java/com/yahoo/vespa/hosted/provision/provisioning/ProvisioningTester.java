@@ -14,6 +14,8 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
@@ -234,10 +236,11 @@ public class ProvisioningTester {
     /** Assert on the current *non retired* nodes */
     public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk,
                             ApplicationId app, ClusterSpec cluster) {
-        assertNodes(explanation, nodes, groups, vcpu, memory, disk, 0.1, app, cluster);
+        assertNodes(explanation, nodes, groups, vcpu, memory, disk, DiskSpeed.getDefault(), StorageType.getDefault(), app, cluster);
     }
-    /** Assert on the current *non retired* nodes */
-    public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk, double bandwithGbps,
+
+    public void assertNodes(String explanation, int nodes, int groups, double vcpu, double memory, double disk,
+                            DiskSpeed diskSpeed, StorageType storageType,
                             ApplicationId app, ClusterSpec cluster) {
         List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).not().retired().asList();
         assertEquals(explanation + ": Node count",
@@ -247,7 +250,7 @@ public class ProvisioningTester {
                      groups,
                      nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
         for (Node node : nodeList) {
-            var expected = new NodeResources(vcpu, memory, disk, bandwithGbps);
+            var expected = new NodeResources(vcpu, memory, disk, 0.1, diskSpeed, storageType);
             assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.flavor().resources(),
                        expected.compatibleWith(node.flavor().resources()));
         }
