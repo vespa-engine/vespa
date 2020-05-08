@@ -62,6 +62,9 @@ TEST("test AndNot Blueprint") {
         AndNotBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
     }
     {
         std::vector<Blueprint *> children;
@@ -130,6 +133,9 @@ TEST("test And Blueprint") {
         AndBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
     }
     {
         std::vector<Blueprint *> children;
@@ -202,6 +208,10 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(2u, a->getState().numFields());
         o.addChild(ap(MyLeafSpec(0, true).create()));
         EXPECT_EQUAL(0u, a->getState().numFields());
+
+        EXPECT_EQUAL(false, o.getState().want_global_filter());
+        o.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, o.getState().want_global_filter());
     }
     {
         std::vector<Blueprint *> children;
@@ -349,6 +359,10 @@ TEST("test Rank Blueprint") {
         RankBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
     }
     {
         std::vector<Blueprint *> children;

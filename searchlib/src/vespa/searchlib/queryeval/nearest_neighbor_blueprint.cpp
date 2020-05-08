@@ -77,6 +77,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
         est_hits = std::min(target_num_hits, est_hits);
     }
     setEstimate(HitEstimate(est_hits, false));
+    set_want_global_filter(true);
 }
 
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
