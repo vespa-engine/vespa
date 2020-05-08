@@ -54,7 +54,7 @@ private:
     mutable std::mutex  _lock;
     mutable std::vector<std::string> _log;
     uint32_t _failureMask;
-    using Guard = std::unique_lock<std::mutex>;
+    using Guard = std::lock_guard<std::mutex>;
 public:
     PersistenceProviderWrapper(spi::PersistenceProvider& spi);
     ~PersistenceProviderWrapper() override;
@@ -66,9 +66,6 @@ public:
     void setResult(const spi::Result& result) {
         Guard guard(_lock);
         _result = result;
-    }
-    void clearResult() {
-        _result = spi::Result(spi::Result::ErrorType::NONE, "");
     }
     spi::Result getResult() const {
         Guard guard(_lock);
