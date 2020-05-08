@@ -264,6 +264,12 @@ public class Flags {
             "Expiry time for unused sessions in config server",
             "Takes effect on next run of config server maintainer SessionsMaintainer");
 
+    public static final UnboundBooleanFlag USE_CLOUD_INIT_FORMAT = defineFeatureFlag(
+            "use-cloud-init", false,
+            "Use the cloud-init format when provisioning hosts",
+            "Takes effect immediately",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
