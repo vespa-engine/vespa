@@ -8,8 +8,7 @@
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /**
  * Comparator class used by the lid<->gid btree to get the lids
@@ -55,6 +54,5 @@ public:
 
 };
 
-} // namespace documentmetastore
-} // namespace proton
+}
 

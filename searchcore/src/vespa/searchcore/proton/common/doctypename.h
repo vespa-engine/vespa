@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search { namespace engine { class Request; } }
+namespace search::engine { class Request; }
 namespace document { class DocumentType; }
 
 namespace proton {

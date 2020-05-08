@@ -3,8 +3,7 @@
 
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 /**
  * Implementation of IThreadService that overrides isCurrentThread() to true.
@@ -41,6 +40,5 @@ public:
     }
 };
 
-} // namespace test
-} // namespace proton
+}
 

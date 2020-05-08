@@ -6,8 +6,7 @@
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Class used to calculate the rank score for a set of documents using
@@ -32,5 +31,4 @@ public:
     virtual search::feature_t score(uint32_t docId) override;
 };
 
-} // namespace proton::matching
-} // namespace proton
+}

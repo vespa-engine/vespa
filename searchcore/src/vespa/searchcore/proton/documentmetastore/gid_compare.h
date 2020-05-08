@@ -4,8 +4,7 @@
 
 #include <vespa/document/base/globalid.h>
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /**
  * Interface for comparing global document ids for ordering.
@@ -44,6 +43,5 @@ public:
 };
 
 
-} // namespace documentmetastore
-} // namespace proton
+}
 

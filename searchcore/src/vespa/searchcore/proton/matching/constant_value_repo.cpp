@@ -4,8 +4,7 @@
 
 using vespalib::eval::ConstantValue;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 ConstantValueRepo::ConstantValueRepo(const ConstantValueFactory &factory)
     : _factory(factory),
@@ -29,5 +28,4 @@ ConstantValueRepo::getConstant(const vespalib::string &name) const
     return ConstantValue::UP(nullptr);
 }
 
-}
 }

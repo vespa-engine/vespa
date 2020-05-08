@@ -6,8 +6,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 /*
  * Mockup of gid to lid change handler, used by unit tests to track
@@ -61,5 +60,4 @@ public:
     const std::vector<std::unique_ptr<IGidToLidChangeListener>> &getListeners() const { return _listeners; }
 };
 
-}
 }

@@ -5,19 +5,19 @@
 #include <memory>
 
 namespace document { class DocumentType; }
-namespace vespa { namespace config { namespace search { namespace internal {
+namespace vespa::config::search::internal {
 class InternalAttributesType;
 class InternalIndexschemaType;
 class InternalSummarymapType;
 class InternalSummaryType;
-} } } }
+}
 
 namespace proton {
 
 struct IDocumentTypeInspector;
 class IIndexschemaInspector;
 
-/*
+/**
  * Class to build adjusted attributes config and summary map config
  * to eliminate need for reprocessing when system is online.
  */

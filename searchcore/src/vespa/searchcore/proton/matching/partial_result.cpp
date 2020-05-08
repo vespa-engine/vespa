@@ -2,8 +2,7 @@
 
 #include "partial_result.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -128,5 +127,4 @@ PartialResult::merge(Source &rhs)
     }
 }
 
-} // namespace proton::matching
-} // namespace proton
+}

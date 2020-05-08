@@ -4,10 +4,9 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "tls_stats.h"
 
-namespace proton {
-namespace flushengine {
+namespace proton::flushengine {
 
-/*
+/**
  * Class representing statistics for a transaction log server over multiple
  * domains.
  */
@@ -25,5 +24,4 @@ public:
     const TlsStats &getTlsStats(const vespalib::string &domain) const;
 };
 
-} // namespace proton::flushengine
-} // namespace proton
+}

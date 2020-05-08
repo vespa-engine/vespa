@@ -5,8 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.tls_stats_map");
 
-namespace proton {
-namespace flushengine {
+namespace proton::flushengine {
 
 TlsStatsMap::TlsStatsMap(Map &&map)
     : _map(std::move(map))
@@ -23,7 +22,6 @@ TlsStatsMap::getTlsStats(const vespalib::string &domain) const {
     LOG_ABORT("should not be reached");
 }
 
-}
 }
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, proton::flushengine::TlsStats);

@@ -7,8 +7,7 @@
 using search::transactionlog::DomainInfo;
 using search::transactionlog::DomainStats;
 
-namespace proton {
-namespace flushengine {
+namespace proton::flushengine {
 
 TlsStatsFactory::TlsStatsFactory(TransLogServer::SP tls)
     : _tls(tls)
@@ -34,5 +33,4 @@ TlsStatsFactory::create()
     return TlsStatsMap(std::move(map));
 }
 
-} // namespace proton::flushengine
-} // namespace proton
+}

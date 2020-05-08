@@ -5,8 +5,7 @@
 #include "document_meta_store_observer.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
 {
@@ -31,6 +30,5 @@ struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
     void               constructFreeList()       override { return _context.constructFreeList(); }
 };
 
-} // namespace test
-} // namespace proton
+}
 
