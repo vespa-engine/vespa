@@ -131,6 +131,7 @@ public:
         set_cost_tier(value);
         return *this;
     }
+    using LeafBlueprint::set_want_global_filter;
 };
 
 //-----------------------------------------------------------------------------
@@ -141,10 +142,11 @@ private:
     FieldSpecBaseList      _fields;
     Blueprint::HitEstimate _estimate;
     uint32_t               _cost_tier;
+    bool                   _want_global_filter;
 
 public:
     explicit MyLeafSpec(uint32_t estHits, bool empty = false)
-        : _fields(), _estimate(estHits, empty), _cost_tier(0) {}
+        : _fields(), _estimate(estHits, empty), _cost_tier(0), _want_global_filter(false) {}
 
     MyLeafSpec &addField(uint32_t fieldId, uint32_t handle) {
         _fields.add(FieldSpecBase(fieldId, handle));
@@ -153,6 +155,10 @@ public:
     MyLeafSpec &cost_tier(uint32_t value) {
         assert(value > 0);
         _cost_tier = value;
+        return *this;
+    }
+    MyLeafSpec &want_global_filter() {
+        _want_global_filter = true;
         return *this;
     }
     MyLeaf *create() const {
@@ -165,6 +171,7 @@ public:
         if (_cost_tier > 0) {
             leaf->cost_tier(_cost_tier);
         }
+        leaf->set_want_global_filter(_want_global_filter);
         return leaf;
     }
 };
