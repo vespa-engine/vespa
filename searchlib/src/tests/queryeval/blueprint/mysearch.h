@@ -110,6 +110,7 @@ public:
 class MyLeaf : public SimpleLeafBlueprint
 {
     typedef search::fef::TermFieldMatchDataArray TFMDA;
+    bool _got_global_filter;
 
 public:
     SearchIterator::UP
@@ -119,7 +120,7 @@ public:
     }
 
     MyLeaf(const FieldSpecBaseList &fields)
-        : SimpleLeafBlueprint(fields)
+        : SimpleLeafBlueprint(fields), _got_global_filter(false)
     {}
 
     MyLeaf &estimate(uint32_t hits, bool empty = false) {
@@ -131,6 +132,11 @@ public:
         set_cost_tier(value);
         return *this;
     }
+    void set_global_filter(std::shared_ptr<BitVector>) override {
+        _got_global_filter = true;
+    }
+    bool got_global_filter() const { return _got_global_filter; }
+    // make public
     using LeafBlueprint::set_want_global_filter;
 };
 
