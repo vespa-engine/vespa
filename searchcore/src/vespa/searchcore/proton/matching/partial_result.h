@@ -6,8 +6,7 @@
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vector>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * The best hits from each match thread are put into a partial result
@@ -51,6 +50,5 @@ public:
     virtual void merge(Source &rhs) override;
 };
 
-} // namespace proton::matching
-} // namespace proton
+}
 

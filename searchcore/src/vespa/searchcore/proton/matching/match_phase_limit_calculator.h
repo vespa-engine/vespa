@@ -7,8 +7,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * This class is used for all calculations related to limiting the
@@ -48,5 +47,4 @@ public:
     }
 };
 
-} // namespace proton::matching
-} // namespace proton
+}

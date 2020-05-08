@@ -9,8 +9,7 @@ using search::query::Node;
 using search::query::TemplateTermVisitor;
 using std::vector;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 class TermDataExtractorVisitor
@@ -54,5 +53,4 @@ void TermDataExtractor::extractTerms(const Node &node,
     const_cast<Node &>(node).accept(visitor);
 }
 
-}  // namespace matching
-}  // namespace proton
+}

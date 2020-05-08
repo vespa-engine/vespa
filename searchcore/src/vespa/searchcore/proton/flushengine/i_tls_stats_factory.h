@@ -3,12 +3,11 @@
 
 #include "tls_stats.h"
 
-namespace proton {
-namespace flushengine {
+namespace proton::flushengine {
 
 class TlsStatsMap;
 
-/*
+/**
  * Class used to create statistics for a transaction log server over
  * multiple domains.
  */
@@ -18,5 +17,4 @@ public:
     virtual TlsStatsMap create() = 0;
 };
 
-} // namespace proton::flushengine
-} // namespace proton
+}
