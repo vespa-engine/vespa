@@ -42,10 +42,21 @@ public class OsVersionsSerializer {
         var versions = new TreeMap<NodeType, Version>(); // Use TreeMap to sort by node type
         var inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            var version = Version.fromString(value.field(VERSION_FIELD).asString());
-            versions.put(NodeSerializer.nodeTypeFromString(key), version);
+            if (isNodeType(key)) {
+                var version = Version.fromString(value.field(VERSION_FIELD).asString());
+                versions.put(NodeSerializer.nodeTypeFromString(key), version);
+            }
         });
         return versions;
+    }
+
+    private static boolean isNodeType(String name) {
+        try {
+            NodeType.valueOf(name);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
     }
 
 }
