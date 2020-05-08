@@ -134,9 +134,9 @@ public class Presentation implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof Presentation)) return false;
+        if ( ! (o instanceof Presentation)) return false;
         Presentation p = (Presentation) o;
-        return QueryHelper.equals(bolding,p.bolding) && QueryHelper.equals(summary,p.summary);
+        return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
     }
 
     @Override

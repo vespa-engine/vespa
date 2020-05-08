@@ -100,7 +100,7 @@ public class MixedTensorTestCase {
                 cell().label("x", "2").label("y", 2).value(6).
                 build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{},y[3]):{{x:1,y:0}:1.0,{x:1,y:1}:2.0,{x:1,y:2}:0.0,{x:2,y:0}:4.0,{x:2,y:1}:5.0,{x:2,y:2}:6.0}",
+        assertEquals("tensor(x{},y[3]):{1:[1.0, 2.0, 0.0],2:[4.0, 5.0, 6.0]}",
                 tensor.toString());
     }
 
