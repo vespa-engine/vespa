@@ -92,14 +92,14 @@ public class OsVersions {
         }
     }
 
-    /** Activate or deactivate upgrade of given node type. This is used for resuming or pausing an OS upgrade. */
-    public void setActive(NodeType nodeType, boolean active) {
+    /** Resume or halt upgrade of given node type */
+    public void resumeUpgradeOf(NodeType nodeType, boolean resume) {
         require(nodeType);
         try (Lock lock = db.lockOsVersions()) {
             var osVersions = db.readOsVersions();
             var currentVersion = osVersions.get(nodeType);
             if (currentVersion == null) return; // No target version set for this type
-            if (active) {
+            if (resume) {
                 upgrader.upgrade(nodeType, currentVersion);
             } else {
                 upgrader.disableUpgrade(nodeType);

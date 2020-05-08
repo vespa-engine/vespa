@@ -53,10 +53,10 @@ public class OsVersionsTest {
         assertEquals(version2, versions.targetFor(NodeType.host).get());
 
         // Target can be (de)activated
-        versions.setActive(NodeType.host, true);
+        versions.resumeUpgradeOf(NodeType.host, true);
         assertTrue("Target version activated", hostNodes.get().stream()
                                                         .allMatch(node -> node.status().osVersion().wanted().isPresent()));
-        versions.setActive(NodeType.host, false);
+        versions.resumeUpgradeOf(NodeType.host, false);
         assertTrue("Target version deactivated", hostNodes.get().stream()
                                                           .allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
@@ -105,7 +105,7 @@ public class OsVersionsTest {
 
         // Activate target
         for (int i = 0; i < totalNodes; i += maxActiveUpgrades) {
-            versions.setActive(NodeType.host, true);
+            versions.resumeUpgradeOf(NodeType.host, true);
             var nodes = hostNodes.get();
             var nodesUpgrading = nodes.changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
@@ -121,7 +121,7 @@ public class OsVersionsTest {
         }
 
         // Activating again after all nodes have upgraded does nothing
-        versions.setActive(NodeType.host, true);
+        versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals("All nodes upgraded", version1, minVersion(hostNodes.get(), OsVersion::current));
     }
 
@@ -139,7 +139,7 @@ public class OsVersionsTest {
         // Trigger upgrade to next version
         var version2 = Version.fromString("7.2");
         versions.setTarget(NodeType.host, version2, false);
-        versions.setActive(NodeType.host, true);
+        versions.resumeUpgradeOf(NodeType.host, true);
 
         // Wanted version is changed to newest target for all nodes
         assertEquals(version2, minVersion(hostNodes.get(), OsVersion::wanted));
