@@ -21,6 +21,7 @@ LOG_SETUP("blueprint_test");
 using namespace search::queryeval;
 using namespace search::fef;
 using namespace search::query;
+using search::BitVector;
 
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {
@@ -41,6 +42,10 @@ struct RememberExecuteInfo : public MyLeaf {
 
 Blueprint::UP ap(Blueprint *b) { return Blueprint::UP(b); }
 Blueprint::UP ap(Blueprint &b) { return Blueprint::UP(&b); }
+
+bool got_global_filter(Blueprint &b) {
+    return (static_cast<MyLeaf &>(b)).got_global_filter();
+}
 
 TEST("test AndNot Blueprint") {
     AndNotBlueprint b;
@@ -65,6 +70,10 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
+        std::shared_ptr<BitVector> empty_global_filter;
+        a.set_global_filter(empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -136,6 +145,10 @@ TEST("test And Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
+        std::shared_ptr<BitVector> empty_global_filter;
+        a.set_global_filter(empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -212,6 +225,10 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(false, o.getState().want_global_filter());
         o.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, o.getState().want_global_filter());
+        std::shared_ptr<BitVector> empty_global_filter;
+        o.set_global_filter(empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(o.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(o.getChild(o.childCnt() - 1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -363,6 +380,10 @@ TEST("test Rank Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
+        std::shared_ptr<BitVector> empty_global_filter;
+        a.set_global_filter(empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;

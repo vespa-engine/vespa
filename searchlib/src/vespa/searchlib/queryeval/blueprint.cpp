@@ -104,6 +104,11 @@ Blueprint::get_replacement()
     return Blueprint::UP();
 }
 
+void
+Blueprint::set_global_filter(std::shared_ptr<BitVector>)
+{
+}
+
 const Blueprint &
 Blueprint::root() const
 {
@@ -363,6 +368,16 @@ IntermediateBlueprint::optimize(Blueprint* &self)
     optimize_self();
     sort(_children);
     maybe_eliminate_self(self, get_replacement());
+}
+
+void
+IntermediateBlueprint::set_global_filter(std::shared_ptr<BitVector> global_filter)
+{
+    for (auto & child : _children) {
+        if (child->getState().want_global_filter()) {
+            child->set_global_filter(global_filter);
+        }
+    }
 }
 
 SearchIterator::UP

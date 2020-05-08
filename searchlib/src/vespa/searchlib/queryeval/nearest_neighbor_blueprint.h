@@ -41,6 +41,7 @@ public:
     const tensor::DenseTensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::tensor::DenseTensorView& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
+    void set_global_filter(std::shared_ptr<BitVector> global_filter) override;
 
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;

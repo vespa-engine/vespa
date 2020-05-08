@@ -83,6 +83,13 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
 
 void
+NearestNeighborBlueprint::set_global_filter(std::shared_ptr<BitVector> global_filter)
+{
+    // XXX do something with global_filter here
+    (void) global_filter;
+}
+
+void
 NearestNeighborBlueprint::perform_top_k()
 {
     auto nns_index = _attr_tensor.nearest_neighbor_index();
