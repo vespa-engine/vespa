@@ -134,7 +134,7 @@ public class MixedTensor implements Tensor {
     @Override
     public String toString() {
         if (type.rank() == 0) return Tensor.toStandardString(this);
-        if (type.rank() > 1 && type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
+        if (type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty()))
             return Tensor.toStandardString(this);
         if (type.dimensions().stream().filter(d -> d.isMapped()).count() > 1) return Tensor.toStandardString(this);
 
