@@ -56,6 +56,8 @@ verify_roundtrip_serialization(const HnswIPO& hnsw_params_in)
     EXPECT_EQ(tensor_type, attr_header.getTensorType());
     EXPECT_EQ(num_docs, attr_header.getNumDocs());
     EXPECT_EQ(create_serial_num, attr_header.getCreateSerialNum());
+    EXPECT_EQ(total_value_count, attr_header.get_total_value_count());
+    EXPECT_EQ(unique_value_count, attr_header.get_unique_value_count());
     EXPECT_EQ(version, attr_header.getVersion());
     EXPECT_EQ(false, attr_header.getPredicateParamsSet());
     const auto& hnsw_params_out = attr_header.get_hnsw_index_params();
