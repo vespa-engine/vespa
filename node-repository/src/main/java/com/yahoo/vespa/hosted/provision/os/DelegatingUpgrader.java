@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -35,17 +34,17 @@ public class DelegatingUpgrader implements Upgrader {
     }
 
     @Override
-    public void upgrade(NodeType type, Version version) {
-        NodeList activeNodes = nodeRepository.list().nodeType(type).state(Node.State.active);
-        int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(version).size());
-        NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(version)
-                                             .not().onOsVersion(version)
+    public void upgradeTo(OsVersionTarget target) {
+        NodeList activeNodes = nodeRepository.list().nodeType(target.nodeType()).state(Node.State.active);
+        int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
+        NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
+                                             .not().onOsVersion(target.version())
                                              .byIncreasingOsVersion()
                                              .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;
-        LOG.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + type + " to OS version " +
-                 version.toFullString());
-        nodeRepository.upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(version));
+        LOG.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + target.nodeType() + " to OS version " +
+                 target.version().toFullString());
+        nodeRepository.upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(target.version()));
     }
 
     @Override

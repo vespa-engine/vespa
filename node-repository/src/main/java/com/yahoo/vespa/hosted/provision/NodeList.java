@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.component.Version;
@@ -48,6 +48,11 @@ public class NodeList implements Iterable<Node> {
     /** Returns the subset of nodes which are retired */
     public NodeList retired() {
         return filter(node -> node.allocation().get().membership().retired());
+    }
+
+    /** Returns the subset of nodes that are being deprovisioned */
+    public NodeList deprovisioning() {
+        return filter(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
     /** Returns the subset of nodes which are removable */

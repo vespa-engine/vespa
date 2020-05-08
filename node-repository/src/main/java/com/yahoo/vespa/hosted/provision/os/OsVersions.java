@@ -7,14 +7,15 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.util.HashMap;
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 /**
  * Thread-safe class that manages an OS version change for nodes in this repository. An {@link Upgrader} decides how a
- * {@link OsVersionChange} is applied to nodes.
+ * {@link OsVersionTarget} is applied to nodes.
  *
  * A version target is initially inactive. Activation decision is taken by
  * {@link com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator}.
@@ -31,12 +32,12 @@ public class OsVersions {
     private final Upgrader upgrader;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, new DelegatingUpgrader(nodeRepository, 30));
+        this(nodeRepository, upgraderIn(nodeRepository));
     }
 
     OsVersions(NodeRepository nodeRepository, Upgrader upgrader) {
-        this.db = nodeRepository.database();
-        this.upgrader = upgrader;
+        this.db = Objects.requireNonNull(nodeRepository).database();
+        this.upgrader = Objects.requireNonNull(upgrader);
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -61,7 +62,7 @@ public class OsVersions {
 
     /** Returns the current target version for given node type, if any */
     public Optional<Version> targetFor(NodeType type) {
-        return Optional.ofNullable(readChange().targets().get(type));
+        return Optional.ofNullable(readChange().targets().get(type)).map(OsVersionTarget::version);
     }
 
     /**
@@ -71,23 +72,18 @@ public class OsVersions {
     public void removeTarget(NodeType nodeType) {
         require(nodeType);
         writeChange((change) -> {
-            var targets = new HashMap<>(change.targets());
-            targets.remove(nodeType);
             upgrader.disableUpgrade(nodeType);
-            return change.with(targets);
+            return change.withoutTarget(nodeType);
         });
     }
 
     /** Set the target OS version and upgrade budget for nodes of given type */
-    public void setTarget(NodeType nodeType, Version newTarget, boolean force) {
+    public void setTarget(NodeType nodeType, Version newTarget, Optional<Duration> upgradeBudget, boolean force) {
         require(nodeType);
-        if (newTarget.isEmpty()) {
-            throw new IllegalArgumentException("Invalid target version: " + newTarget.toFullString());
-        }
+        requireNonZero(newTarget);
+        requireUpgradeBudget(upgradeBudget);
         writeChange((change) -> {
-            var targets = new HashMap<>(change.targets());
-            var oldTarget = Optional.ofNullable(targets.get(nodeType));
-
+            var oldTarget = targetFor(nodeType);
             if (oldTarget.filter(v -> v.equals(newTarget)).isPresent()) {
                 return change; // Old target matches new target, nothing to do
             }
@@ -98,9 +94,8 @@ public class OsVersions {
                                                    + oldTarget.get());
             }
 
-            targets.put(nodeType, newTarget);
             log.info("Set OS target version for " + nodeType + " nodes to " + newTarget.toFullString());
-            return change.with(targets);
+            return change.withTarget(newTarget, nodeType, upgradeBudget);
         });
     }
 
@@ -108,13 +103,25 @@ public class OsVersions {
     public void resumeUpgradeOf(NodeType nodeType, boolean resume) {
         require(nodeType);
         try (Lock lock = db.lockOsVersionChange()) {
-            var targetVersion = readChange().targets().get(nodeType);
-            if (targetVersion == null) return; // No target version set for this type
+            var target = readChange().targets().get(nodeType);
+            if (target == null) return; // No target set for this type
             if (resume) {
-                upgrader.upgrade(nodeType, targetVersion);
+                upgrader.upgradeTo(target);
             } else {
                 upgrader.disableUpgrade(nodeType);
             }
+        }
+    }
+
+    private void requireUpgradeBudget(Optional<Duration> upgradeBudget) {
+        if (upgrader instanceof RetiringUpgrader && upgradeBudget.isEmpty()) {
+            throw new IllegalArgumentException("Zone requires a time budget for OS upgrades");
+        }
+    }
+
+    private static void requireNonZero(Version version) {
+        if (version.isEmpty()) {
+            throw new IllegalArgumentException("Invalid target version: " + version.toFullString());
         }
     }
 
@@ -122,6 +129,13 @@ public class OsVersions {
         if (!nodeType.isDockerHost()) {
             throw new IllegalArgumentException("Node type '" + nodeType + "' does not support OS upgrades");
         }
+    }
+
+    private static Upgrader upgraderIn(NodeRepository nodeRepository) {
+        if (nodeRepository.zone().getCloud().reprovisionToUpgradeOs()) {
+            return new RetiringUpgrader(nodeRepository);
+        }
+        return new DelegatingUpgrader(nodeRepository, 30);
     }
 
 }
