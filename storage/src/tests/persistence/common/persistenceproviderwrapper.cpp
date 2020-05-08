@@ -9,11 +9,13 @@
     { \
         std::ostringstream logStream; \
         logStream << ops; \
+        Guard guard(_lock); \
         _log.push_back(logStream.str()); \
     }
 
 #define CHECK_ERROR(className, failType) \
     { \
+        Guard guard(_lock); \
         if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
             return className(_result.getErrorCode(), _result.getErrorMessage()); \
         } \
@@ -42,16 +44,18 @@ includedVersionsToString(spi::IncludedVersions versions)
 PersistenceProviderWrapper::PersistenceProviderWrapper(spi::PersistenceProvider& spi)
     : _spi(spi),
       _result(spi::Result(spi::Result::ErrorType::NONE, "")),
+      _lock(),
       _log(),
       _failureMask(0)
 { }
-PersistenceProviderWrapper::~PersistenceProviderWrapper() {}
+PersistenceProviderWrapper::~PersistenceProviderWrapper() = default;
 
 
 std::string
 PersistenceProviderWrapper::toString() const
 {
     std::ostringstream ss;
+    Guard guard(_lock);
     for (size_t i = 0; i < _log.size(); ++i) {
         ss << _log[i] << "\n";
     }
@@ -74,8 +78,7 @@ PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionI
 }
 
 spi::Result
-PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket,
-                                         spi::Context& context)
+PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
 {
     LOG_SPI("createBucket(" << bucket << ")");
     CHECK_ERROR(spi::Result, FAIL_CREATE_BUCKET);

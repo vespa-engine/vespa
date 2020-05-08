@@ -19,6 +19,7 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vector>
 #include <string>
+#include <mutex>
 
 namespace storage {
 
@@ -50,8 +51,10 @@ public:
 private:
     spi::PersistenceProvider& _spi;
     spi::Result _result;
+    mutable std::mutex  _lock;
     mutable std::vector<std::string> _log;
     uint32_t _failureMask;
+    using Guard = std::unique_lock<std::mutex>;
 public:
     PersistenceProviderWrapper(spi::PersistenceProvider& spi);
     ~PersistenceProviderWrapper() override;
@@ -61,12 +64,16 @@ public:
      * return the given error without the wrapped SPI ever being invoked.
      */
     void setResult(const spi::Result& result) {
+        Guard guard(_lock);
         _result = result;
     }
     void clearResult() {
         _result = spi::Result(spi::Result::ErrorType::NONE, "");
     }
-    const spi::Result& getResult() const { return _result; }
+    spi::Result getResult() const {
+        Guard guard(_lock);
+        return _result;
+    }
     /**
      * Set a mask for operations to fail with _result
      */
@@ -81,8 +88,10 @@ public:
     /**
      * Clear log of all operations performed.
      */
-    void clearOperationLog() { _log.clear(); }
-    const std::vector<std::string>& getOperationLog() const { return _log; }
+    void clearOperationLog() {
+        Guard guard(_lock);
+        _log.clear();
+    }
 
     spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
     spi::PartitionStateListResult getPartitionStates() const override;
