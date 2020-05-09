@@ -74,7 +74,6 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
                 false)),
       _timer(std::move(timer)),
       _lastProcessedTime(0),
-      _firstIteration(true),
       _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
@@ -744,8 +743,22 @@ void
 MetricManager::run()
 {
     vespalib::MonitorGuard sync(_waiter);
+    // For a slow system to still be doing metrics tasks each n'th
+    // second, rather than each n'th + time to do something seconds,
+    // we constantly add next time to do something from the last timer.
+    // For that to work, we need to initialize timers on first iteration
+    // to set them to current time.
+    time_t currentTime = _timer->getTime();
+    for (auto & snapshot : _snapshots) {
+        snapshot->setFromTime(currentTime);
+    }
+    for (auto hook : _periodicUpdateHooks) {
+        hook->_nextCall = currentTime;
+    }
+    // Ensure correct time for first snapshot
+    _snapshots[0]->getSnapshot().setToTime(currentTime);
     while (!stopping()) {
-        time_t currentTime = _timer->getTime();
+        currentTime = _timer->getTime();
         time_t next = tick(sync, currentTime);
         if (currentTime < next) {
             sync.wait((next - currentTime) * 1000);
@@ -761,23 +774,6 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
 {
     LOG(spam, "Worker thread starting to process for time %" PRIu64 ".",
         static_cast<uint64_t>(currentTime));
-        // For a slow system to still be doing metrics tasks each n'th
-        // second, rather than each n'th + time to do something seconds,
-        // we constantly add next time to do something from the last timer.
-        // For that to work, we need to initialize timers on first iteration
-        // to set them to current time.
-    time_t nextWorkTime;
-    if (_firstIteration) {
-        for (uint32_t i=0; i<_snapshots.size(); ++i) {
-            _snapshots[i]->setFromTime(currentTime);
-        }
-        for (auto hook : _periodicUpdateHooks) {
-            hook->_nextCall = currentTime;
-        }
-            // Ensure correct time for first snapshot
-        _snapshots[0]->getSnapshot().setToTime(currentTime);
-        _firstIteration = false;
-    }
 
     // Check for new config and reconfigure
     if (_configSubscriber.get() && _configSubscriber->nextConfigNow()) {
@@ -790,18 +786,18 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
     checkMetricsAltered(guard);
 
         // Set next work time to the time we want to take next snapshot.
-    nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
+    time_t nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
     time_t nextUpdateHookTime;
     if (nextWorkTime <= currentTime || _forceEventLogging) {
-            // If taking a new snapshot or logging, force calls to all
-            // update hooks.
+        // If taking a new snapshot or logging, force calls to all
+        // update hooks.
         LOG(debug, "%s. Calling update hooks.", nextWorkTime <= currentTime
                  ? "Time to do snapshot" : "Out of sequence event logging");
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, true);
         updateSnapshotMetrics(guard);
     } else {
-            // If not taking a new snapshot. Only give update hooks to
-            // periodic hooks wanting it.
+        // If not taking a new snapshot. Only give update hooks to
+        // periodic hooks wanting it.
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, false);
     }
         // Do snapshotting if it is time
