@@ -94,7 +94,7 @@ void
 BitVector::clearIntervalNoInvalidation(Range range_in)
 {
     Range range = sanitize(range_in);
-    if ( ! range.validNonZero()) return;
+    if ( ! range.validNonZero()) { return; }
 
     Index last = range.end() - 1;
     Index startw = wordNum(range.start());
@@ -113,7 +113,7 @@ void
 BitVector::setInterval(Index start_in, Index end_in)
 {
     Range range = sanitize(Range(start_in, end_in));
-    if ( ! range.validNonZero()) return;
+    if ( ! range.validNonZero()) { return; }
 
     Index last = range.end() - 1;
     Index startw = wordNum(range.start());
@@ -140,7 +140,7 @@ BitVector::Index
 BitVector::countInterval(Range range_in) const
 {
     Range range = sanitize(range_in);
-    if ( ! range.validNonZero()) return 0;
+    if ( ! range.validNonZero()) { return 0; }
 
     Index last = range.end() - 1;
     // Count bits in range [start..end>
