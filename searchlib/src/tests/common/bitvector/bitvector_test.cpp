@@ -325,14 +325,19 @@ verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t offset, uint32_t sz1, uint
 
     BitVector::UP bSmall = createEveryNthBitSet(3, 0, offset + sz1);
     BitVector::UP bLarger = createEveryNthBitSet(3, 0, offset + sz2);
+    BitVector::UP bEmpty = createEveryNthBitSet(3, 0, 0);
     bLarger->clearInterval(offset + sz1, offset + sz2);
     EXPECT_EQUAL(bSmall->countTrueBits(), bLarger->countTrueBits());
 
     BitVector::UP aLarger2 = BitVector::create(*aLarger, aLarger->getStartIndex(), aLarger->size());
+    BitVector::UP aLarger3 = BitVector::create(*aLarger, aLarger->getStartIndex(), aLarger->size());
     EXPECT_TRUE(*aLarger == *aLarger2);
+    EXPECT_TRUE(*aLarger == *aLarger3);
     func(*aLarger, *bLarger);
     func(*aLarger2, *bSmall);
+    func(*aLarger3, *bEmpty);
     EXPECT_TRUE(*aLarger == *aLarger2);
+    //EXPECT_TRUE(*aLarger == *aLarger3);
 }
 
 TEST("requireThatAndWorks") {
@@ -360,6 +365,17 @@ TEST("requireThatAndNotWorks") {
     }
 }
 
+TEST("test that empty bitvectors does not crash") {
+    BitVector::UP empty = BitVector::create(0);
+    EXPECT_EQUAL(0u, empty->countTrueBits());
+    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    empty->setInterval(0,17);
+    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    empty->clearInterval(0,17);
+    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    empty->notSelf();
+    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+}
 
 TEST("requireThatNotWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {

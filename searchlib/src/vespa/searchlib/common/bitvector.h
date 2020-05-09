@@ -282,7 +282,9 @@ private:
     Index getActiveSize() const { return size() - getStartIndex(); }
     size_t getActiveBytes() const { return numActiveBytes(getStartIndex(), size()); }
     size_t numActiveWords() const { return numActiveWords(getStartIndex(), size()); }
-    static size_t numActiveWords(Index start, Index end) { return (numWords(end) - wordNum(start)); }
+    static size_t numActiveWords(Index start, Index end) {
+        return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
+    }
     static Index invalidCount() { return std::numeric_limits<Index>::max(); }
     void setGuardBit() { setBit(size()); }
     void incNumBits() {

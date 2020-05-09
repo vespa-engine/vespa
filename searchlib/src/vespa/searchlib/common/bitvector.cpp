@@ -91,9 +91,10 @@ BitVector::clearInterval(Index start, Index end)
 }
 
 void
-BitVector::clearIntervalNoInvalidation(Index start, Index end)
+BitVector::clearIntervalNoInvalidation(Index start_in, Index end)
 {
-    if (start >= end) { return; }
+    Index start = std::max(start_in, getStartIndex());
+    if (start >= end || end == 0 || size() == 0) { return; }
 
     Index last = std::min(end, size()) - 1;
     Index startw = wordNum(start);
@@ -109,9 +110,10 @@ BitVector::clearIntervalNoInvalidation(Index start, Index end)
 }
 
 void
-BitVector::setInterval(Index start, Index end)
+BitVector::setInterval(Index start_in, Index end)
 {
-    if (start >= end) { return; }
+    Index start = std::max(start_in, getStartIndex());
+    if (start >= end || end == 0 || size() == 0) { return; }
 
     Index last = std::min(end, size()) - 1;
     Index startw = wordNum(start);
@@ -131,14 +133,14 @@ BitVector::setInterval(Index start, Index end)
 BitVector::Index
 BitVector::count() const
 {
-    // Subtract by one to compensate for guard bit
     return countInterval(getStartIndex(), size());
 }
 
 BitVector::Index
-BitVector::countInterval(Index start, Index end) const
+BitVector::countInterval(Index start_in, Index end) const
 {
-    if (start >= end) return 0;
+    Index start = std::max(start_in, getStartIndex());
+    if (start >= end || end == 0 || size() == 0) { return 0; }
 
     Index last = std::min(end, size()) - 1;
     // Count bits in range [start..end>
@@ -180,12 +182,14 @@ BitVector::orWith(const BitVector & right)
     verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
-        ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-        if (commonBytes > 0) {
-            IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+        if (right.size() > 0) {
+            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
+            if (commonBytes > 0) {
+                IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+            }
+            Index last(right.size() - 1);
+            getWordIndex(last)[0] |= (right.getWordIndex(last)[0] & ~endBits(last));
         }
-        Index last(right.size() - 1);
-        getWordIndex(last)[0] |= (right.getWordIndex(last)[0] & ~endBits(last));
     } else {
         IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
     }
@@ -196,11 +200,12 @@ BitVector::orWith(const BitVector & right)
 void
 BitVector::repairEnds()
 {
-    if (size() == 0) return;
-    Index start(getStartIndex());
-    Index last(size() - 1);
-    getWordIndex(start)[0] &= ~startBits(start);
-    getWordIndex(last)[0] &= ~endBits(last);
+    if (size() != 0) {
+        Index start(getStartIndex());
+        Index last(size() - 1);
+        getWordIndex(start)[0] &= ~startBits(start);
+        getWordIndex(last)[0] &= ~endBits(last);
+    }
     setGuardBit();
 }
 
@@ -227,12 +232,14 @@ BitVector::andNotWith(const BitVector& right)
     verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
-        ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-        if (commonBytes > 0) {
-            IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+        if (right.size() > 0) {
+            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
+            if (commonBytes > 0) {
+                IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+            }
+            Index last(right.size() - 1);
+            getWordIndex(last)[0] &= ~(right.getWordIndex(last)[0] & ~endBits(last));
         }
-        Index last(right.size() - 1);
-        getWordIndex(last)[0] &= ~(right.getWordIndex(last)[0] & ~endBits(last));
     } else {
         IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
     }
