@@ -18,12 +18,7 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
       bytes("bytes", {}, "bytes stored", this),
       active("activebuckets", {}, "Number of active buckets on the node", this),
       ready("readybuckets", {}, "Number of ready buckets on the node", this)
-{
-    docs.logOnlyIfSet();
-    bytes.logOnlyIfSet();
-    active.logOnlyIfSet();
-    ready.logOnlyIfSet();
-}
+{}
 
 DataStoredMetrics::~DataStoredMetrics() = default;
 
@@ -34,12 +29,7 @@ BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metri
           bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
           active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
           ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this)
-{
-    docs.logOnlyIfSet();
-    bytes.logOnlyIfSet();
-    active_buckets.logOnlyIfSet();
-    ready_buckets.logOnlyIfSet();
-}
+{}
 
 BucketSpaceMetrics::~BucketSpaceMetrics() = default;
 

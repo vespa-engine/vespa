@@ -12,9 +12,7 @@ CountMetric<T, SumOnAdd>::CountMetric(const String& name, Tags dimensions,
                                       const String& desc, MetricSet* owner)
     : AbstractCountMetric(name, std::move(dimensions), desc, owner),
       _values()
-{
-    _values.setFlag(LOG_IF_UNSET);
-}
+{}
 
 template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other,
@@ -129,17 +127,6 @@ CountMetric<T, SumOnAdd>::addToPart(Metric& other) const
     } else {
         o.set((_values.getValues()._value + o._values.getValues()._value) / 2);
     }
-}
-
-template <typename T, bool SumOnAdd>
-bool
-CountMetric<T, SumOnAdd>::logEvent(const String& fullName) const
-{
-    Values values(_values.getValues());
-    if (!logIfUnset() && values._value == 0) return false;
-    sendLogCountEvent(
-            fullName, static_cast<uint64_t>(values._value));
-    return true;
 }
 
 template <typename T, bool SumOnAdd>

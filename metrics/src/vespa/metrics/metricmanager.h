@@ -107,11 +107,11 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     vespalib::Monitor _waiter;
     typedef std::pair<uint32_t, time_t> PeriodTimePair;
-    PeriodTimePair _logPeriod;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;
     std::atomic<time_t> _lastProcessedTime;
+    bool _firstIteration;
     bool _forceEventLogging;
     // Should be added to config, but wont now due to problems with
     // upgrading

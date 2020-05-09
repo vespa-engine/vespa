@@ -251,15 +251,6 @@ SumMetric<AddendMetric>::getDoubleValue(stringref id) const
 }
 
 template<typename AddendMetric>
-bool
-SumMetric<AddendMetric>::logEvent(const String & fullName) const
-{
-    std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
-    if (sum.second.get() == 0) return false;
-    return sum.second->logEvent(fullName);
-}
-
-template<typename AddendMetric>
 void
 SumMetric<AddendMetric>::print(std::ostream& out, bool verbose,
                                const std::string& indent,

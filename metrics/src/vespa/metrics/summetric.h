@@ -59,7 +59,6 @@ public:
     void addMetricToSum(const AddendMetric&);
     void removeMetricFromSum(const AddendMetric&);
 
-    bool logEvent(const String& fullName) const override;
     void print(std::ostream&, bool verbose, const std::string& indent, uint64_t secondsPassed) const override;
     int64_t getLongValue(stringref id) const override;
     double getDoubleValue(stringref id) const override;
