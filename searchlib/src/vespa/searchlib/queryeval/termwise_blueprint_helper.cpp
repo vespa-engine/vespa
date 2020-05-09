@@ -3,8 +3,7 @@
 #include "termwise_blueprint_helper.h"
 #include "termwise_search.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &self,
                                                  const MultiSearch::Children &subSearches,
@@ -32,7 +31,7 @@ TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &se
     }
 }
 
-TermwiseBlueprintHelper::~TermwiseBlueprintHelper() { }
+TermwiseBlueprintHelper::~TermwiseBlueprintHelper() = default;
 
 void
 TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict)
@@ -41,5 +40,4 @@ TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict)
     children.insert(children.begin() + first_termwise, termwise_search.release());
 }
 
-} // namespace queryeval
-} // namespace search
+}

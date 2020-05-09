@@ -23,10 +23,20 @@ class PartialBitVector;
 class BitVector : protected BitWord
 {
 public:
-    typedef BitWord::Index Index;
-    typedef vespalib::GenerationHolder GenerationHolder;
-    typedef vespalib::GenerationHeldBase GenerationHeldBase;
-    typedef std::unique_ptr<BitVector> UP;
+    using Index = BitWord::Index;
+    using GenerationHolder = vespalib::GenerationHolder;
+    using GenerationHeldBase = vespalib::GenerationHeldBase;
+    using UP = std::unique_ptr<BitVector>;
+    class Range {
+    public:
+        Range(Index start_in, Index end_in) : _start(start_in), _end(end_in) {}
+        Index start() const { return _start; }
+        Index end() const { return _end; }
+        bool validNonZero() const { return _end > _start; }
+    private:
+        Index _start;
+        Index _end;
+    };
     BitVector(const BitVector &) = delete;
     BitVector& operator = (const BitVector &) = delete;
     virtual ~BitVector() = default;
@@ -56,7 +66,6 @@ public:
      * @return The Index of the first valid bit of the bitvector.
      */
     Index getStartIndex() const { return _startOffset; }
-    Index getEndIndex() const { return getStartIndex() + size(); }
 
     /**
      * Get next bit set in the bitvector (inclusive start).
@@ -73,7 +82,7 @@ public:
     }
 
     /**
-     * Iterate over all true bits in th einclusive range.
+     * Iterate over all true bits in the inclusive range.
      *
      * @param func callback
      * @param start first bit
@@ -86,7 +95,7 @@ public:
     }
 
     /**
-     * Iterate over all true bits in th einclusive range.
+     * Iterate over all true bits in the inclusive range.
      *
      * @param func callback
      * @param start first bit
@@ -207,7 +216,10 @@ public:
      * @param start first bit to be counted
      * @param end limit
      */
-    Index countInterval(Index start, Index end) const;
+    Index countInterval(Index start, Index end) const {
+        return countInterval(Range(start, end));
+    }
+    Index countInterval(Range range) const;
 
     /**
      * Perform an andnot with an internal array representation.
@@ -257,7 +269,7 @@ protected:
     void init(void * buf,  Index start, Index end);
     void updateCount() const { _numTrueBits.store(count(), std::memory_order_relaxed); }
     void setTrueBits(Index numTrueBits) { _numTrueBits.store(numTrueBits, std::memory_order_relaxed); }
-    VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Index start, Index end);
+    VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Range range);
     bool isValidCount() const { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
     static bool isValidCount(Index v) { return v != invalidCount(); }
     static Index numWords(Index bits) { return wordNum(bits + 1 + (WordLen - 1)); }
@@ -283,7 +295,9 @@ private:
     Index getActiveSize() const { return size() - getStartIndex(); }
     size_t getActiveBytes() const { return numActiveBytes(getStartIndex(), size()); }
     size_t numActiveWords() const { return numActiveWords(getStartIndex(), size()); }
-    static size_t numActiveWords(Index start, Index end) { return (numWords(end) - wordNum(start)); }
+    static size_t numActiveWords(Index start, Index end) {
+        return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
+    }
     static Index invalidCount() { return std::numeric_limits<Index>::max(); }
     void setGuardBit() { setBit(size()); }
     void incNumBits() {
@@ -298,6 +312,10 @@ private:
         }
     }
     VESPA_DLL_LOCAL void repairEnds();
+    Range sanitize(Range range) const {
+        return Range(std::max(range.start(), getStartIndex()),
+                     std::min(range.end(), size()));
+    }
     Index count() const;
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>

@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include "searchiterator.h"
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class TrueSearch : public SearchIterator
 {
@@ -21,5 +20,4 @@ public:
     ~TrueSearch();
 };
 
-} // namespace queryeval
-} // namespace search
+}
