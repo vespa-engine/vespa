@@ -85,46 +85,46 @@ BitVector::clear()
 void
 BitVector::clearInterval(Index start, Index end)
 {
-    clearIntervalNoInvalidation(start, end);
+    clearIntervalNoInvalidation(Range(start, end));
 
     invalidateCachedCount();
 }
 
 void
-BitVector::clearIntervalNoInvalidation(Index start_in, Index end)
+BitVector::clearIntervalNoInvalidation(Range range_in)
 {
-    Index start = std::max(start_in, getStartIndex());
-    if (start >= end || end == 0 || size() == 0) { return; }
+    Range range = sanitize(range_in);
+    if ( ! range.validNonZero()) return;
 
-    Index last = std::min(end, size()) - 1;
-    Index startw = wordNum(start);
+    Index last = range.end() - 1;
+    Index startw = wordNum(range.start());
     Index endw = wordNum(last);
 
     if (endw > startw) {
-        _words[startw++] &= startBits(start);
+        _words[startw++] &= startBits(range.start());
         memset(_words+startw, 0, sizeof(*_words)*(endw-startw));
         _words[endw] &= endBits(last);
     } else {
-        _words[startw] &= (startBits(start) | endBits(last));
+        _words[startw] &= (startBits(range.start()) | endBits(last));
     }
 }
 
 void
-BitVector::setInterval(Index start_in, Index end)
+BitVector::setInterval(Index start_in, Index end_in)
 {
-    Index start = std::max(start_in, getStartIndex());
-    if (start >= end || end == 0 || size() == 0) { return; }
+    Range range = sanitize(Range(start_in, end_in));
+    if ( ! range.validNonZero()) return;
 
-    Index last = std::min(end, size()) - 1;
-    Index startw = wordNum(start);
+    Index last = range.end() - 1;
+    Index startw = wordNum(range.start());
     Index endw = wordNum(last);
 
     if (endw > startw) {
-        _words[startw++] |= checkTab(start);
+        _words[startw++] |= checkTab(range.start());
         memset(_words + startw, 0xff, sizeof(*_words)*(endw-startw));
         _words[endw] |= ~endBits(last);
     } else {
-        _words[startw] |= ~(startBits(start) | endBits(last));
+        _words[startw] |= ~(startBits(range.start()) | endBits(last));
     }
 
     invalidateCachedCount();
@@ -133,28 +133,28 @@ BitVector::setInterval(Index start_in, Index end)
 BitVector::Index
 BitVector::count() const
 {
-    return countInterval(getStartIndex(), size());
+    return countInterval(Range(getStartIndex(), size()));
 }
 
 BitVector::Index
-BitVector::countInterval(Index start_in, Index end) const
+BitVector::countInterval(Range range_in) const
 {
-    Index start = std::max(start_in, getStartIndex());
-    if (start >= end || end == 0 || size() == 0) { return 0; }
+    Range range = sanitize(range_in);
+    if ( ! range.validNonZero()) return 0;
 
-    Index last = std::min(end, size()) - 1;
+    Index last = range.end() - 1;
     // Count bits in range [start..end>
-    Index startw = wordNum(start);
+    Index startw = wordNum(range.start());
     Index endw = wordNum(last);
     Word *bitValues = _words;
 
     if (startw == endw) {
-        return Optimized::popCount(bitValues[startw] & ~(startBits(start) | endBits(last)));
+        return Optimized::popCount(bitValues[startw] & ~(startBits(range.start()) | endBits(last)));
     }
     Index res = 0;
     // Limit to full words
-    if ((start & (WordLen - 1)) != 0) {
-        res += Optimized::popCount(bitValues[startw] & ~startBits(start));
+    if ((range.start() & (WordLen - 1)) != 0) {
+        res += Optimized::popCount(bitValues[startw] & ~startBits(range.start()));
         ++startw;
     }
     // Align start to 16 bytes
@@ -358,7 +358,7 @@ BitVector::create(Index start, Index end)
 BitVector::UP
 BitVector::create(const BitVector & org, Index start, Index end)
 {
-    return ((start == 0) && (end == org.size()))
+    return ((start == 0) && (end == org.size()) && (org.getStartIndex() == 0))
            ? create(org)
            : std::make_unique<PartialBitVector>(org, start, end);
 }

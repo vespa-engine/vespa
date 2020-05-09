@@ -130,9 +130,9 @@ AllocatedBitVector::grow(Index newSize, Index newCapacity)
         swap(tbv);
     } else {
         if (newSize > size()) {
-            Index oldSz(size());
+            Range clearRange(size(), newSize);
             setSize(newSize);
-            clearIntervalNoInvalidation(oldSz, newSize);
+            clearIntervalNoInvalidation(clearRange);
         } else {
             clearInterval(newSize, size());
             setSize(newSize);
