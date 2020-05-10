@@ -14,7 +14,7 @@ class BitEncode64 : public bitcompression::EncodeContext64<bigEndian>
 
 public:
     BitEncode64();
-    ~BitEncode64();
+    ~BitEncode64() override;
 
     typedef bitcompression::EncodeContext64<bigEndian> EC;
 
@@ -28,10 +28,8 @@ public:
     }
 
     std::pair<uint64_t *, size_t>
-    grabComprBuffer(void *&comprBufMalloc)
-    {
-        std::pair<void *, size_t> tres = _cbuf.grabComprBuffer(comprBufMalloc);
-        return std::make_pair(static_cast<uint64_t *>(tres.first), tres.second);
+    grabComprBuffer(vespalib::alloc::Alloc & comprAlloc) {
+        return _cbuf.grabComprBuffer(comprAlloc);
     }
 };
 

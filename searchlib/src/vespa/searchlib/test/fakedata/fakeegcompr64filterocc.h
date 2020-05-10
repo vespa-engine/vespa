@@ -12,25 +12,26 @@ namespace search::fakedata {
 class FakeEGCompr64FilterOcc : public FakePosting
 {
 protected:
+    using Alloc = vespalib::alloc::Alloc;
     std::pair<uint64_t *, size_t> _compressed;
     std::pair<uint64_t *, size_t> _l1SkipCompressed;
     std::pair<uint64_t *, size_t> _l2SkipCompressed;
     std::pair<uint64_t *, size_t> _l3SkipCompressed;
     std::pair<uint64_t *, size_t> _l4SkipCompressed;
-    void *_compressedMalloc;
-    void *_l1SkipCompressedMalloc;
-    void *_l2SkipCompressedMalloc;
-    void *_l3SkipCompressedMalloc;
-    void *_l4SkipCompressedMalloc;
+    Alloc _compressedAlloc;
+    Alloc _l1SkipCompressedAlloc;
+    Alloc _l2SkipCompressedAlloc;
+    Alloc _l3SkipCompressedAlloc;
+    Alloc _l4SkipCompressedAlloc;
     unsigned int _docIdLimit;
     unsigned int _hitDocs;
-    uint32_t _lastDocId;
-    size_t _bitSize;
-    size_t _l1SkipBitSize;
-    size_t _l2SkipBitSize;
-    size_t _l3SkipBitSize;
-    size_t _l4SkipBitSize;
-    bool _bigEndian;
+    uint32_t     _lastDocId;
+    size_t       _bitSize;
+    size_t       _l1SkipBitSize;
+    size_t       _l2SkipBitSize;
+    size_t       _l3SkipBitSize;
+    size_t       _l4SkipBitSize;
+    bool         _bigEndian;
 
 private:
     void setup(const FakeWord &fw);
@@ -39,10 +40,10 @@ private:
     void setupT(const FakeWord &fw);
 
 public:
-    FakeEGCompr64FilterOcc(const FakeWord &fw);
+    explicit FakeEGCompr64FilterOcc(const FakeWord &fw);
     FakeEGCompr64FilterOcc(const FakeWord &fw, bool bigEndian, const char *nameSuffix);
 
-    ~FakeEGCompr64FilterOcc();
+    ~FakeEGCompr64FilterOcc() override;
 
     static void forceLink();
 
