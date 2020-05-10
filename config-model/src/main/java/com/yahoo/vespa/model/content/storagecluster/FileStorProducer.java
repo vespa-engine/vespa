@@ -11,8 +11,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 public class FileStorProducer implements StorFilestorConfig.Producer {
 
     public static class Builder {
-        protected FileStorProducer build(ContentCluster parent, Integer numResonseThreads, ModelElement clusterElem) {
-            return new FileStorProducer(parent, getThreads(clusterElem), numResonseThreads);
+        protected FileStorProducer build(ContentCluster parent, Integer numResponseThreads, ModelElement clusterElem) {
+            return new FileStorProducer(parent, getThreads(clusterElem), numResponseThreads);
         }
 
        private Integer getThreads(ModelElement clusterElem) {
