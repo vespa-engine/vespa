@@ -10,13 +10,13 @@ class ComprBuffer
 {
 private:
     void allocComprBuf();
+    const uint32_t   _unitSize; // Size of unit in bytes, doubles up as alignment
+    bool             _padBefore;
+    void            *_comprBuf;
+    size_t           _comprBufSize;
+    void            *_comprBufMalloc;
+    FileAlign        _aligner;
 public:
-    void *_comprBuf;
-    size_t _comprBufSize;
-    uint32_t _unitSize; // Size of unit in bytes, doubles up as alignment
-    bool _padBefore;
-    void *_comprBufMalloc;
-    FileAlign _aligner;
 
     ComprBuffer(const ComprBuffer &) = delete;
     ComprBuffer &operator=(const ComprBuffer &) = delete;
@@ -30,7 +30,26 @@ public:
 
     static size_t minimumPadding() { return 8; }
     uint32_t getUnitBitSize() const { return _unitSize * 8; }
-    bool getPadBefore() const { return _padBefore; }
+    uint32_t getUnitSize() const { return _unitSize; }
+    const uint64_t * getComprBuf() const { return static_cast<const uint64_t *>(_comprBuf); }
+    uint64_t * getComprBuf() { return static_cast<uint64_t *>(_comprBuf); }
+    size_t getComprBufSize() const { return _comprBufSize; }
+    void setComprBuf(void * buf, size_t sz) {
+        _comprBuf = buf;
+        _comprBufSize = sz;
+    }
+
+    const uint64_t * getAdjustedBuf(size_t offset) const {
+        return getComprBuf() + _aligner.adjustElements(offset / sizeof(uint64_t),getComprBufSize());
+    }
+    const FileAlign & getAligner() const { return _aligner; }
+
+    void * stealComprBuf() {
+        void * stolen = _comprBufMalloc;
+        _comprBufMalloc = nullptr;
+        setComprBuf(nullptr, 0);
+        return stolen;
+    }
 
     /*
      * When encoding to memory instead of file, the compressed buffer must

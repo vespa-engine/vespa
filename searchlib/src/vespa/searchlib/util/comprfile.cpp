@@ -17,7 +17,7 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
                                    uint64_t fileSize,
                                    ComprBuffer &cbuf)
 {
-    assert(cbuf._comprBuf != NULL);
+    assert(cbuf.getComprBuf() != nullptr);
 
     bool isretryread = false;
 
@@ -33,13 +33,13 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
 
     // Assert that file read offset is aligned on unit boundary
     assert((static_cast<size_t>(fileReadByteOffset) &
-            (cbuf._unitSize - 1)) == 0);
+            (cbuf.getUnitSize() - 1)) == 0);
     // Get direct IO file alignment
-    size_t fileDirectIOAlign = cbuf._aligner.getDirectIOFileAlign();
+    size_t fileDirectIOAlign = cbuf.getAligner().getDirectIOFileAlign();
     // calculate number of pad units before requested start
     int padBeforeUnits = static_cast<int>
                          (static_cast<size_t>(fileReadByteOffset) &
-                          (fileDirectIOAlign - 1)) / cbuf._unitSize;
+                          (fileDirectIOAlign - 1)) / cbuf.getUnitSize();
     // No padding before if at end of file.
     if (fileReadByteOffset >= fileSize)
         padBeforeUnits = 0;
@@ -67,9 +67,8 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
     int64_t readBits = static_cast<int64_t>(stopOffset) -
                        (static_cast<int64_t>(fileReadByteOffset) << 3) +
                        padBeforeUnits * cbuf.getUnitBitSize();
-    int64_t bufferBits = cbuf._comprBufSize * cbuf.getUnitBitSize();
-    if (readBits > 0 && (bufferBits < readBits))
-    {
+    int64_t bufferBits = cbuf.getComprBufSize() * cbuf.getUnitBitSize();
+    if (readBits > 0 && (bufferBits < readBits)) {
         isMore = true;
         readBits = bufferBits;
     }
@@ -82,15 +81,15 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
     }
     // Move remaining integers to padding area before start of buffer
     if (remainingUnits + extraRemainingUnits > 0)
-        memmove(static_cast<char *>(cbuf._comprBuf) -
-                (remainingUnits + extraRemainingUnits) * cbuf._unitSize,
+        memmove(reinterpret_cast<char *>(cbuf.getComprBuf()) -
+                (remainingUnits + extraRemainingUnits) * cbuf.getUnitSize(),
                 static_cast<const char *>(decodeContext.getUnitPtr()) -
-                extraRemainingUnits * cbuf._unitSize,
-                (remainingUnits + extraRemainingUnits) * cbuf._unitSize);
+                extraRemainingUnits * cbuf.getUnitSize(),
+                (remainingUnits + extraRemainingUnits) * cbuf.getUnitSize());
 
     // Adjust file position to direct IO boundary if needed before read
     if (padBeforeUnits != 0) {
-        fileReadByteOffset -= padBeforeUnits * cbuf._unitSize;
+        fileReadByteOffset -= padBeforeUnits * cbuf.getUnitSize();
         file.SetPosition(fileReadByteOffset);
     }
     int readUnits0 = 0;
@@ -99,43 +98,41 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
                                       cbuf.getUnitBitSize());
 
     // Try to align end of read to an alignment boundary
-    int readUnits = cbuf._aligner.adjustElements(fileReadByteOffset /
-            cbuf._unitSize, readUnits0);
+    int readUnits = cbuf.getAligner().adjustElements(fileReadByteOffset /
+            cbuf.getUnitSize(), readUnits0);
     if (readUnits < readUnits0)
         isMore = true;
 
     if (readUnits > 0) {
         int64_t padBytes = fileReadByteOffset +
-                           static_cast<int64_t>(readUnits) * cbuf._unitSize -
-                           fileSize;
+                           static_cast<int64_t>(readUnits) * cbuf.getUnitSize() - fileSize;
         if (!isMore && padBytes > 0) {
             // Pad reading of file written with smaller unit size with
             // NUL bytes.
-            file.ReadBuf(cbuf._comprBuf, readUnits * cbuf._unitSize -
-                         padBytes);
-            memset(static_cast<char *>(cbuf._comprBuf) +
-                   readUnits * cbuf._unitSize - padBytes,
+            file.ReadBuf(cbuf.getComprBuf(), readUnits * cbuf.getUnitSize() - padBytes);
+            memset(reinterpret_cast<char *>(cbuf.getComprBuf()) +
+                   readUnits * cbuf.getUnitSize() - padBytes,
                    0,
                    padBytes);
         } else
-            file.ReadBuf(cbuf._comprBuf, readUnits * cbuf._unitSize);
+            file.ReadBuf(cbuf.getComprBuf(), readUnits * cbuf.getUnitSize());
     }
     // If at end of file then add units of zero bits as padding
     if (!isMore)
-        memset(static_cast<char *>(cbuf._comprBuf) +
-               readUnits * cbuf._unitSize,
+        memset(reinterpret_cast<char *>(cbuf.getComprBuf()) +
+               readUnits * cbuf.getUnitSize(),
                0,
-               cbuf._unitSize * ComprBuffer::minimumPadding());
+               cbuf.getUnitSize() * ComprBuffer::minimumPadding());
 
     assert(remainingUnits + readUnits >= 0);
-    decodeContext.afterRead(static_cast<char *>(cbuf._comprBuf) +
+    decodeContext.afterRead(reinterpret_cast<char *>(cbuf.getComprBuf()) +
                             (padBeforeUnits - remainingUnits) *
-                            static_cast<int32_t>(cbuf._unitSize),
+                            static_cast<int32_t>(cbuf.getUnitSize()),
                             (remainingUnits + readUnits - padBeforeUnits),
                             fileReadByteOffset +
-                            readUnits * cbuf._unitSize,
+                            readUnits * cbuf.getUnitSize(),
                             isMore);
-    fileReadByteOffset += readUnits * cbuf._unitSize;
+    fileReadByteOffset += readUnits * cbuf.getUnitSize();
     if (!isretryread &&
         decodeContext.endOfChunk() &&
         isMore) {
@@ -217,7 +214,7 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
         return;
     }
     pos = newPosition / cbuf.getUnitBitSize();
-    pos *= cbuf._unitSize;
+    pos *= cbuf.getUnitSize();
     fileReadByteOffset = pos;
     bitOffset = static_cast<int>(static_cast<uint32_t>(newPosition) &
                                  (cbuf.getUnitBitSize() - 1));
@@ -233,7 +230,6 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
     assert(decodeContext.getBitPosV() == newPosition);
 }
 
-
 void
 ComprFileWriteBase::
 WriteComprBuffer(ComprFileEncodeContext &encodeContext,
@@ -242,13 +238,13 @@ WriteComprBuffer(ComprFileEncodeContext &encodeContext,
                  uint64_t &fileWriteByteOffset,
                  bool flushSlack)
 {
-    assert(cbuf._comprBuf != NULL);
+    assert(cbuf.getComprBuf() != nullptr);
 
-    int chunkUsedUnits = encodeContext.getUsedUnits(cbuf._comprBuf);
+    int chunkUsedUnits = encodeContext.getUsedUnits(cbuf.getComprBuf());
 
     if (chunkUsedUnits == 0)
         return;
-    int chunkSizeNormalMax = encodeContext.getNormalMaxUnits(cbuf._comprBuf);
+    int chunkSizeNormalMax = encodeContext.getNormalMaxUnits(cbuf.getComprBuf());
     int chunksize = chunkUsedUnits;
     /*
      * Normally, only flush the normal buffer and copy the slack
@@ -256,11 +252,11 @@ WriteComprBuffer(ComprFileEncodeContext &encodeContext,
      */
     if (!flushSlack && chunksize > chunkSizeNormalMax)
         chunksize = chunkSizeNormalMax;
-    assert(static_cast<unsigned int>(chunksize) <= cbuf._comprBufSize ||
+    assert(static_cast<unsigned int>(chunksize) <= cbuf.getComprBufSize() ||
                  (flushSlack &&
-                  static_cast<unsigned int>(chunksize) <= cbuf._comprBufSize +
+                  static_cast<unsigned int>(chunksize) <= cbuf.getComprBufSize() +
                   ComprBuffer::minimumPadding()));
-    file.WriteBuf(cbuf._comprBuf, cbuf._unitSize * chunksize);
+    file.WriteBuf(cbuf.getComprBuf(), cbuf.getUnitSize() * chunksize);
 
     int remainingUnits = chunkUsedUnits - chunksize;
     assert(remainingUnits == 0 ||
@@ -269,17 +265,14 @@ WriteComprBuffer(ComprFileEncodeContext &encodeContext,
             ComprBuffer::minimumPadding()));
     // Copy any slack after buffer to the start of the buffer
     if (remainingUnits > 0)
-        memmove(cbuf._comprBuf,
-                static_cast<char *>(cbuf._comprBuf) +
-                chunksize * cbuf._unitSize,
-                cbuf._unitSize * remainingUnits);
+        memmove(cbuf.getComprBuf(),
+                reinterpret_cast<const char *>(cbuf.getComprBuf()) +
+                chunksize * cbuf.getUnitSize(),
+                cbuf.getUnitSize() * remainingUnits);
 
-    fileWriteByteOffset += chunksize * cbuf._unitSize;
-    encodeContext.afterWrite(cbuf,
-                             remainingUnits,
-                             fileWriteByteOffset);
+    fileWriteByteOffset += chunksize * cbuf.getUnitSize();
+    encodeContext.afterWrite(cbuf, remainingUnits, fileWriteByteOffset);
 }
-
 
 ComprFileReadContext::
 ComprFileReadContext(ComprFileDecodeContext &decodeContext)
@@ -290,29 +283,24 @@ ComprFileReadContext(ComprFileDecodeContext &decodeContext)
       _bitOffset(0),
       _stopOffset(0),
       _readAll(true),
-      _file(NULL)
+      _file(nullptr)
 {
 }
-
 
 ComprFileReadContext::
 ComprFileReadContext(uint32_t unitSize)
     : ComprBuffer(unitSize),
-      _decodeContext(NULL),
+      _decodeContext(nullptr),
       _fileSize(0),
       _fileReadByteOffset(0),
       _bitOffset(0),
       _stopOffset(0),
       _readAll(true),
-      _file(NULL)
+      _file(nullptr)
 {
 }
 
-
-ComprFileReadContext::~ComprFileReadContext()
-{
-}
-
+ComprFileReadContext::~ComprFileReadContext() = default;
 
 void
 ComprFileReadContext::readComprBuffer(uint64_t stopOffset, bool readAll)
@@ -327,7 +315,6 @@ ComprFileReadContext::readComprBuffer(uint64_t stopOffset, bool readAll)
             *this);
 }
 
-
 void
 ComprFileReadContext::readComprBuffer()
 {
@@ -340,25 +327,6 @@ ComprFileReadContext::readComprBuffer()
             _fileSize,
             *this);
 }
-
-
-void
-ComprFileReadContext::setPosition(uint64_t newPosition,
-                                  uint64_t stopOffset,
-                                  bool readAll)
-{
-    setStopOffset(stopOffset, readAll);
-    search::ComprFileReadBase::SetPosition(newPosition,
-            stopOffset,
-            readAll,
-            *_decodeContext,
-            _bitOffset,
-            *_file,
-            _fileReadByteOffset,
-            _fileSize,
-            *this);
-}
-
 
 void
 ComprFileReadContext::setPosition(uint64_t newPosition)
@@ -374,15 +342,11 @@ ComprFileReadContext::setPosition(uint64_t newPosition)
             *this);
 }
 
-
 void
-ComprFileReadContext::allocComprBuf(unsigned int comprBufSize,
-                                    size_t preferredFileAlignment)
+ComprFileReadContext::allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment)
 {
-    ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment,
-                               _file, true);
+    ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment, _file, true);
 }
-
 
 void
 ComprFileReadContext::referenceWriteContext(const ComprFileWriteContext &rhs)
@@ -390,17 +354,17 @@ ComprFileReadContext::referenceWriteContext(const ComprFileWriteContext &rhs)
     ComprFileEncodeContext *e = rhs.getEncodeContext();
     ComprFileDecodeContext *d = getDecodeContext();
 
-    assert(e != NULL);
-    int usedUnits = e->getUsedUnits(rhs._comprBuf);
+    assert(e != nullptr);
+    int usedUnits = e->getUsedUnits(rhs.getComprBuf());
     assert(usedUnits >= 0);
 
     referenceComprBuf(rhs);
-    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
-    setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
-    if (d != NULL) {
-        d->afterRead(_comprBuf,
+    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * getUnitSize());
+    setFileSize(static_cast<uint64_t>(usedUnits) * getUnitSize());
+    if (d != nullptr) {
+        d->afterRead(getComprBuf(),
                      usedUnits,
-                     static_cast<uint64_t>(usedUnits) * _unitSize,
+                     static_cast<uint64_t>(usedUnits) * getUnitSize(),
                      false);
         d->setupBits(0);
         setBitOffset(-1);
@@ -413,14 +377,13 @@ ComprFileReadContext::reference_compressed_buffer(void *buffer, size_t usedUnits
 {
     ComprFileDecodeContext *d = getDecodeContext();
 
-    _comprBuf = buffer;
-    _comprBufSize = usedUnits;
-    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
-    setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
-    if (d != NULL) {
-        d->afterRead(_comprBuf,
+    setComprBuf(buffer, usedUnits);
+    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * getUnitSize());
+    setFileSize(static_cast<uint64_t>(usedUnits) * getUnitSize());
+    if (d != nullptr) {
+        d->afterRead(getComprBuf(),
                      usedUnits,
-                     static_cast<uint64_t>(usedUnits) * _unitSize,
+                     static_cast<uint64_t>(usedUnits) * getUnitSize(),
                      false);
         d->setupBits(0);
         setBitOffset(-1);
@@ -432,31 +395,26 @@ ComprFileWriteContext::
 ComprFileWriteContext(ComprFileEncodeContext &encodeContext)
     : ComprBuffer(encodeContext.getUnitByteSize()),
       _encodeContext(&encodeContext),
-      _file(NULL),
+      _file(nullptr),
       _fileWriteByteOffset(0)
 {
 }
-
 
 ComprFileWriteContext::
 ComprFileWriteContext(uint32_t unitSize)
     : ComprBuffer(unitSize),
-      _encodeContext(NULL),
-      _file(NULL),
+      _encodeContext(nullptr),
+      _file(nullptr),
       _fileWriteByteOffset(0)
 {
 }
 
-
-ComprFileWriteContext::~ComprFileWriteContext()
-{
-}
-
+ComprFileWriteContext::~ComprFileWriteContext() = default;
 
 void
 ComprFileWriteContext::writeComprBuffer(bool flushSlack)
 {
-    if (_file != NULL) {
+    if (_file != nullptr) {
         search::ComprFileWriteBase::WriteComprBuffer(*_encodeContext,
                 *this,
                 *_file,
@@ -465,41 +423,32 @@ ComprFileWriteContext::writeComprBuffer(bool flushSlack)
         return;
     }
 
-    int chunkUsedUnits = _encodeContext->getUsedUnits(_comprBuf);
-    int chunkSizeNormalMax = _encodeContext->getNormalMaxUnits(_comprBuf);
+    int chunkUsedUnits = _encodeContext->getUsedUnits(getComprBuf());
+    int chunkSizeNormalMax = _encodeContext->getNormalMaxUnits(getComprBuf());
 
     if (chunkUsedUnits >= chunkSizeNormalMax) {
         int overflowUnits = chunkUsedUnits - chunkSizeNormalMax;
         expandComprBuf(overflowUnits);
     }
 
-    _encodeContext->afterWrite(*this,
-                               chunkUsedUnits,
-                               0);
+    _encodeContext->afterWrite(*this, chunkUsedUnits, 0);
 }
-
 
 std::pair<void *, size_t>
 ComprFileWriteContext::grabComprBuffer(void *&comprBufMalloc)
 {
-    assert(_file == NULL);
+    assert(_file == nullptr);
     std::pair<void *, size_t> res =
-        std::make_pair(_comprBuf, _encodeContext->getUsedUnits(_comprBuf));
-    comprBufMalloc = _comprBufMalloc;
-    _comprBuf = _comprBufMalloc = NULL;
-    _comprBufSize = 0;
+        std::make_pair(getComprBuf(), _encodeContext->getUsedUnits(getComprBuf()));
+    comprBufMalloc = stealComprBuf();
     return res;
 }
 
-
 void
-ComprFileWriteContext::allocComprBuf(unsigned int comprBufSize,
-                                     size_t preferredFileAlignment)
+ComprFileWriteContext::allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment)
 {
-    ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment,
-                               _file, false);
+    ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment, _file, false);
 }
-
 
 void
 ComprFileWriteContext::allocComprBuf()

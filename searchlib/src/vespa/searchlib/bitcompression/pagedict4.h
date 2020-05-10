@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "countcompression.h"
 #include <limits>
 #include <vespa/vespalib/stllike/string.h>
-#include "countcompression.h"
 
 namespace search::bitcompression {
 
@@ -153,8 +153,7 @@ public:
                       const StartOffset &startOffset,
                       uint64_t wordNum);
 
-    void
-    flush();
+    void flush();
 };
 
 
@@ -240,58 +239,26 @@ private:
     EC &_spe;
 
 public:
-    PageDict4SPWriter(SSWriter &sparseSparsewriter,
-                      EC &spe);
+    PageDict4SPWriter(SSWriter &sparseSparsewriter, EC &spe);
 
     ~PageDict4SPWriter();
+    void setup();
+    void flushPage();
+    void flush();
+    void resetPage();
+    void addL3Skip(vespalib::stringref word, const StartOffset &startOffset, uint64_t wordNum, uint64_t pageNum);
+    void addL4Skip(size_t &lcp);
+    void addL5Skip(size_t &lcp);
 
-    void
-    setup();
-
-    void
-    flushPage();
-
-    void
-    flush();
-
-    void
-    resetPage();
-
-    void
-    addL3Skip(vespalib::stringref word,
-              const StartOffset &startOffset,
-              uint64_t wordNum,
-              uint64_t pageNum);
-
-
-    void
-    addL4Skip(size_t &lcp);
-
-    void
-    addL5Skip(size_t &lcp);
-
-    bool
-    empty() const
-    {
-        return _l3Entries == 0;
-    }
-
-    uint32_t
-    getSparsePageNum() const
-    {
-        return _sparsePageNum;
-    }
+    bool empty() const { return _l3Entries == 0; }
+    uint32_t getSparsePageNum() const { return _sparsePageNum; }
 
     /*
      * Add overflow counts entry.
      *
      * startOffset represents file position / accNumDocs at start of entry.
      */
-    void
-    addOverflowCounts(vespalib::stringref word,
-                      const Counts &counts,
-                      const StartOffset &startOffset,
-                      uint64_t wordNum)
+    void addOverflowCounts(vespalib::stringref word, const Counts &counts, const StartOffset &startOffset, uint64_t wordNum)
     {
         _ssWriter.addOverflowCounts(word, counts, startOffset, wordNum);
     }
@@ -385,50 +352,19 @@ private:
                       const Counts &counts);
 
 public:
-    PageDict4PWriter(SPWriter &spWriter,
-                     EC &pe);
-
+    PageDict4PWriter(SPWriter &spWriter, EC &pe);
     ~PageDict4PWriter();
 
-    void
-    setup();
-
-    void
-    flushPage();
-
-    void
-    flush();
-
-    void
-    resetPage();
-
-    void
-    addCounts(vespalib::stringref word,
-              const Counts &counts);
-
-    void
-    addL1Skip(size_t &lcp);
-
-    void
-    addL2Skip(size_t &lcp);
-
-    bool
-    empty() const
-    {
-        return _countsEntries == 0;
-    }
-
-    uint64_t
-    getPageNum() const
-    {
-        return _pageNum;
-    }
-
-    uint64_t
-    getWordNum() const
-    {
-        return _wordNum - 1;
-    }
+    void setup();
+    void flushPage();
+    void flush();
+    void resetPage();
+    void addCounts(vespalib::stringref word, const Counts &counts);
+    void addL1Skip(size_t &lcp);
+    void addL2Skip(size_t &lcp);
+    bool empty() const { return _countsEntries == 0;}
+    uint64_t getPageNum() const { return _pageNum; }
+    uint64_t getWordNum() const { return _wordNum - 1; }
 };
 
 
@@ -450,7 +386,6 @@ public:
     bool _overflow;
 
     PageDict4SSLookupRes();
-
     ~PageDict4SSLookupRes();
 };
 
@@ -505,9 +440,7 @@ public:
         {
         }
 
-        bool
-        operator<(vespalib::stringref word) const
-        {
+        bool operator<(vespalib::stringref word) const {
             return _l7Word < word;
         }
     };
@@ -530,9 +463,7 @@ public:
         {
         }
 
-        bool
-        operator<(uint64_t wordNum) const
-        {
+        bool operator<(uint64_t wordNum) const {
             return _wordNum < wordNum;
         }
     };
@@ -564,23 +495,12 @@ public:
                       uint64_t spFileBitLen,
                       uint32_t pFileHeaderSize,
                       uint64_t pFileBitLen);
-
     ~PageDict4SSReader();
 
-    void
-    setup(DC &ssd);
-
-    PageDict4SSLookupRes
-    lookup(vespalib::stringref key);
-
-    PageDict4SSLookupRes
-    lookupOverflow(uint64_t wordNum) const;
-
-    const DC &
-    getSSD() const
-    {
-        return _ssd;
-    }
+    void setup(DC &ssd);
+    PageDict4SSLookupRes lookup(vespalib::stringref key);
+    PageDict4SSLookupRes lookupOverflow(uint64_t wordNum) const;
+    const DC & getSSD() const { return _ssd; }
 };
 
 
@@ -630,7 +550,6 @@ public:
 
 public:
     PageDict4PLookupRes();
-
     ~PageDict4PLookupRes();
 
     bool
@@ -735,20 +654,15 @@ public:
             : _vector(),
               _cur(),
               _end()
-        {
-        }
-        void clear() {
-            _vector.clear();
-        }
+        {}
+        void clear() { _vector.clear(); }
         void setup() {
             _cur = _vector.cbegin();
             _end = _vector.cend();
         }
         bool valid() const { return _cur != _end; }
         const Element *operator->() const { return _cur.operator->(); }
-        void step() {
-            ++_cur;
-        }
+        void step() { ++_cur; }
         void push_back(const Element &element) {
             _vector.push_back(element);
         }
@@ -782,39 +696,17 @@ public:
     CheckVector<L4SkipCheck> _l4SkipChecks;
     CheckVector<L5SkipCheck> _l5SkipChecks;
 
-
-    PageDict4Reader(const SSReader &ssReader,
-                    DC &spd,
-                    DC &pd);
-
+    PageDict4Reader(const SSReader &ssReader, DC &spd,DC &pd);
     ~PageDict4Reader();
 
-    void
-    setup();
-
-    void
-    setupPage();
-
-    void
-    setupSPage();
-
-    void
-    decodePWord(vespalib::string &word);
-
-    void
-    decodeSPWord(vespalib::string &word);
-
-    void
-    decodeSSWord(vespalib::string &word);
-
-    void
-    readCounts(vespalib::string &word,
-               uint64_t &wordNum,
-               Counts &counts);
-
-    void
-    readOverflowCounts(vespalib::string &word,
-                       Counts &counts);
+    void setup();
+    void setupPage();
+    void setupSPage();
+    void decodePWord(vespalib::string &word);
+    void decodeSPWord(vespalib::string &word);
+    void decodeSSWord(vespalib::string &word);
+    void readCounts(vespalib::string &word, uint64_t &wordNum, Counts &counts);
+    void readOverflowCounts(vespalib::string &word, Counts &counts);
 };
 
 }

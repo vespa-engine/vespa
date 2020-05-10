@@ -750,7 +750,7 @@ public:
           _fileWriteBias(other._fileWriteBias)
     { }
 
-    ~EncodeContext64Base() { }
+    ~EncodeContext64Base() = default;
 
     EncodeContext64Base &
     operator=(const EncodeContext64Base &rhs)
@@ -767,8 +767,8 @@ public:
     /**
      * Get number of used units (e.g. _valI - start)
      */
-    int getUsedUnits(void *start) override {
-        return _valI - static_cast<uint64_t *>(start);
+    int getUsedUnits(const uint64_t * start) override {
+        return _valI - start;
     }
 
     /**
@@ -783,9 +783,9 @@ public:
      */
     void
     afterWrite(search::ComprBuffer &cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) override {
-        _valI = static_cast<uint64_t *>(cbuf._comprBuf) + remainingUnits;
+        _valI = cbuf.getComprBuf() + remainingUnits;
         _fileWriteBias = (bufferStartFilePos -
-                          reinterpret_cast<unsigned long>(cbuf._comprBuf) +
+                          reinterpret_cast<unsigned long>(cbuf.getComprBuf()) +
                           sizeof(uint64_t)) << 3;
         adjustBufSize(cbuf);
     }
@@ -796,12 +796,9 @@ public:
     void adjustBufSize(search::ComprBuffer &cbuf) override {
         uint64_t fileWriteOffset =
             (_fileWriteBias +
-             ((reinterpret_cast<unsigned long>(cbuf._comprBuf) -
+             ((reinterpret_cast<unsigned long>(cbuf.getComprBuf()) -
                sizeof(uint64_t)) << 3)) >> 3;
-        _valE = static_cast<uint64_t *>(cbuf._comprBuf) +
-                cbuf._aligner.adjustElements(
-                        fileWriteOffset / sizeof(uint64_t),
-                        cbuf._comprBufSize);
+        _valE = cbuf.getAdjustedBuf(fileWriteOffset);
     }
 
     uint32_t getUnitByteSize() const override {
@@ -809,11 +806,9 @@ public:
     }
 
     void setupWrite(search::ComprBuffer &cbuf) {
-        _valI = static_cast<uint64_t *>(cbuf._comprBuf);
+        _valI = cbuf.getComprBuf();
 
-        _fileWriteBias =
-            (sizeof(uint64_t) -
-             reinterpret_cast<unsigned long>(cbuf._comprBuf)) << 3;
+        _fileWriteBias = (sizeof(uint64_t) - reinterpret_cast<unsigned long>(cbuf.getComprBuf())) << 3;
         // Buffer for compressed data now has padding after it
         adjustBufSize(cbuf);
         _cacheInt = 0;
@@ -842,10 +837,6 @@ public:
         _fileWriteBias = writeOffset -
                          (reinterpret_cast<unsigned long>(_valI) << 3) +
                          _cacheFree;
-    }
-
-    uint64_t getBitPosV() const override {
-        return getWriteOffset();
     }
 
     /*
@@ -1177,10 +1168,7 @@ public:
     {
     }
 
-    virtual
-    ~DecodeContext64Base()
-    {
-    }
+    virtual ~DecodeContext64Base() = default;
 
     DecodeContext64Base &
     operator=(const DecodeContext64Base &rhs)
@@ -1321,14 +1309,10 @@ private:
 public:
     typedef EncodeContext64<bigEndian> EC;
 
-    DecodeContext64()
-        : DecodeContext64Base()
-    {
-    }
+    DecodeContext64() = default;
 
 
-    DecodeContext64(const uint64_t *compr,
-                    int bitOffset)
+    DecodeContext64(const uint64_t *compr, int bitOffset)
         : DecodeContext64Base(compr + 1,
                               reinterpret_cast<const uint64_t *>(PTRDIFF_MAX),
                               nullptr,
@@ -1346,9 +1330,7 @@ public:
      * data beyond is available, to avoid issues when prefetching bits
      * into two registers (_val and _cacheInt).
      */
-    DecodeContext64(const uint64_t *compr,
-                    int bitOffset,
-                    uint64_t bitLength)
+    DecodeContext64(const uint64_t *compr, int bitOffset, uint64_t bitLength)
         : DecodeContext64Base(compr + 1,
                               nullptr,
                               nullptr,
@@ -1554,52 +1536,26 @@ public:
     using ParentClass::readHeader;
     using ParentClass::readBytes;
 
-    FeatureDecodeContext()
-        : ParentClass()
-    {
-    }
+    FeatureDecodeContext() = default;
 
-    FeatureDecodeContext(const uint64_t *compr,
-                         int bitOffset)
+    FeatureDecodeContext(const uint64_t *compr, int bitOffset)
         : ParentClass(compr, bitOffset)
     {
     }
 
-    FeatureDecodeContext(const uint64_t *compr,
-                         int bitOffset,
-                         uint64_t bitLength)
+    FeatureDecodeContext(const uint64_t *compr, int bitOffset, uint64_t bitLength)
         : ParentClass(compr, bitOffset, bitLength)
     {
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
+    virtual void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
 
-    virtual const vespalib::string &
-    getIdentifier() const;
-
-    virtual void
-    readFeatures(DocIdAndFeatures &features);
-
-    virtual void
-    skipFeatures(unsigned int count);
-
-    virtual void
-    unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
-                   uint32_t docId);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params) const;
+    virtual const vespalib::string & getIdentifier() const;
+    virtual void readFeatures(DocIdAndFeatures &features);
+    virtual void skipFeatures(unsigned int count);
+    virtual void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId);
+    virtual void setParams(const PostingListParams &params);
+    virtual void getParams(PostingListParams &params) const;
 };
 
 typedef FeatureDecodeContext<true> FeatureDecodeContextBE;
@@ -1633,9 +1589,7 @@ public:
         return *this;
     }
 
-    void
-    setWriteContext(search::ComprFileWriteContext *writeContext)
-    {
+    void setWriteContext(search::ComprFileWriteContext *writeContext) {
         _writeContext = writeContext;
     }
 
@@ -1653,29 +1607,18 @@ public:
 
     using ParentClass::writeBits;
 
-    void
-    writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
+    void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
+    void writeBytes(vespalib::ConstArrayRef<char> buf);
+    void writeString(vespalib::stringref buf);
+    virtual void writeHeader(const vespalib::GenericHeader &header);
 
-    void
-    writeBytes(vespalib::ConstArrayRef<char> buf);
-
-    void
-    writeString(vespalib::stringref buf);
-
-    virtual void
-    writeHeader(const vespalib::GenericHeader &header);
-
-    void
-    writeComprBufferIfNeeded()
-    {
+    void writeComprBufferIfNeeded() {
         if (_valI >= _valE) {
             _writeContext->writeComprBuffer(false);
         }
     }
 
-    void
-    writeComprBuffer()
-    {
+    void writeComprBuffer() {
         _writeContext->writeComprBuffer(true);
     }
 
@@ -1689,26 +1632,11 @@ public:
         writeComprBufferIfNeeded();
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    virtual void
-    writeHeader(vespalib::GenericHeader &header,
-                const vespalib::string &prefix) const;
-
+    virtual void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
+    virtual void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
     virtual const vespalib::string &getIdentifier() const;
-
     virtual void writeFeatures(const DocIdAndFeatures &features);
-
-    /*
-     * Set parameters.
-     */
     virtual void setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
     virtual void getParams(PostingListParams &params) const;
 };
 

@@ -14,9 +14,7 @@ BitEncode64<bigEndian>::BitEncode64()
 }
 
 template <bool bigEndian>
-BitEncode64<bigEndian>::~BitEncode64()
-{
-}
+BitEncode64<bigEndian>::~BitEncode64() = default;
 
 template class BitEncode64<true>;
 template class BitEncode64<false>;

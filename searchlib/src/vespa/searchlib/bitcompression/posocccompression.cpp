@@ -3,7 +3,6 @@
 #include "compression.h"
 #include "posocccompression.h"
 #include "posocc_fields_params.h"
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -14,7 +13,6 @@ LOG_SETUP(".posocccompression");
 
 using search::index::DocIdAndFeatures;
 using search::index::PostingListParams;
-using search::index::SchemaUtil;
 using search::index::Schema;
 using search::fef::TermFieldMatchData;
 using vespalib::GenericHeader;

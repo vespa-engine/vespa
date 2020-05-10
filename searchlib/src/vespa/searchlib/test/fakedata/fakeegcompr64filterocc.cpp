@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fakeegcompr64filterocc.h"
+#include "bitencode64.h"
+#include "bitdecode64.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.test.fake_eg_compr64_filter_occ");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
-
-#include "bitencode64.h"
-#include "bitdecode64.h"
 
 namespace search::fakedata {
 
@@ -612,7 +610,7 @@ private:
     typedef BitDecode64<bigEndian> DC;
 
 public:
-    DC _docIdBits;
+    DC       _docIdBits;
     uint32_t _residue;
     uint32_t _lastDocId;
 
@@ -764,9 +762,7 @@ FakeEGCompr64LEFilterOcc::FakeEGCompr64LEFilterOcc(const FakeWord &fw)
 }
 
 
-FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc()
-{
-}
+FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc() = default;
 
 
 static FPFactoryInit
