@@ -4,9 +4,7 @@
 #include "fakeword.h"
 #include "fakeposting.h"
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 /*
  * Old compressed posocc format.
@@ -62,6 +60,4 @@ public:
     queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
-} // namespace fakedata
-
-} // namespace search
+}

@@ -43,16 +43,14 @@ setDecoderPosition(PostingListCountFileDecodeContext &ctx,
                    const ComprBuffer &cb,
                    uint64_t offset)
 {
-    ctx.afterRead(cb._comprBuf,
-                  cb._comprBufSize,
-                  cb._comprBufSize * sizeof(uint64_t),
+    ctx.afterRead(cb.getComprBuf(),
+                  cb.getComprBufSize(),
+                  cb.getComprBufSize() * sizeof(uint64_t),
                   false);
-    setDecoderPositionHelper(ctx, cb._comprBuf, offset);
+    setDecoderPositionHelper(ctx, cb.getComprBuf(), offset);
 }
 
-
 }
-
 
 uint32_t
 PageDict4PageParams::getFileHeaderPad(uint32_t offset)
@@ -181,9 +179,7 @@ PageDict4SSWriter::PageDict4SSWriter(SSEC &sse)
 {
 }
 
-PageDict4SSWriter::~PageDict4SSWriter()
-{
-}
+PageDict4SSWriter::~PageDict4SSWriter() = default;
 
 void
 PageDict4SSWriter::addL6Skip(vespalib::stringref word,
@@ -365,16 +361,16 @@ PageDict4SPWriter::flushPage()
     e.writeComprBufferIfNeeded();
     if (_prevL5Size > 0) {
         _eL5.flush();
-        const uint64_t *l5Buf = static_cast<const uint64_t *>(_wcL5._comprBuf);
+        const uint64_t *l5Buf = _wcL5.getComprBuf();
         e.writeBits(l5Buf, 0, _prevL5Size);
     }
     if (_prevL4Size > 0) {
         _eL4.flush();
-        const uint64_t *l4Buf = static_cast<const uint64_t *>(_wcL4._comprBuf);
+        const uint64_t *l4Buf = _wcL4.getComprBuf();
         e.writeBits(l4Buf, 0, _prevL4Size);
     }
     _eL3.flush();
-    const uint64_t *l3Buf = static_cast<const uint64_t *>(_wcL3._comprBuf);
+    const uint64_t *l3Buf = _wcL3.getComprBuf();
     e.writeBits(l3Buf, 0, _prevL3Size);
     uint32_t padding = getPageBitSize() - _headerSize - _prevL5Size - _prevL4Size -
                        _prevL3Size - wordsSize * 8;
@@ -646,9 +642,7 @@ PageDict4PWriter::setup()
 }
 
 
-PageDict4PWriter::~PageDict4PWriter()
-{
-}
+PageDict4PWriter::~PageDict4PWriter() = default;
 
 
 void
@@ -679,17 +673,16 @@ PageDict4PWriter::flushPage()
     e.writeComprBufferIfNeeded();
     if (_l2Size > 0) {
         _eL2.flush();
-        const uint64_t *l2Buf = static_cast<const uint64_t *>(_wcL2._comprBuf);
+        const uint64_t *l2Buf = _wcL2.getComprBuf();
         e.writeBits(l2Buf, 0, _l2Size);
     }
     if (_l1Size > 0) {
         _eL1.flush();
-        const uint64_t *l1Buf = static_cast<const uint64_t *>(_wcL1._comprBuf);
+        const uint64_t *l1Buf = _wcL1.getComprBuf();
         e.writeBits(l1Buf, 0, _l1Size);
     }
     _eCounts.flush();
-    const uint64_t *countsBuf = static_cast<const uint64_t *>
-                                (_wcCounts._comprBuf);
+    const uint64_t *countsBuf = _wcCounts.getComprBuf();
     e.writeBits(countsBuf, 0, _countsSize);
     uint32_t padding = getPageBitSize() - _headerSize - _l2Size - _l1Size -
                        _countsSize - _countsWordOffset * 8;
@@ -755,9 +748,7 @@ PageDict4PWriter::resetPage()
 
 
 void
-PageDict4PWriter::
-addCounts(vespalib::stringref word,
-          const Counts &counts)
+PageDict4PWriter::addCounts(vespalib::stringref word, const Counts &counts)
 {
     assert(_countsWordOffset == _words.size());
     size_t lcp = getLCP(_pendingCountsWord, _countsWord);
@@ -812,8 +803,7 @@ addCounts(vespalib::stringref word,
 
 /* Private use */
 void
-PageDict4PWriter::addOverflowCounts(vespalib::stringref word,
-                                    const Counts &counts)
+PageDict4PWriter::addOverflowCounts(vespalib::stringref word, const Counts &counts)
 {
     assert(_countsEntries == 0);
     assert(_countsSize == 0);
@@ -924,10 +914,7 @@ PageDict4SSLookupRes()
 }
 
 
-PageDict4SSLookupRes::
-~PageDict4SSLookupRes()
-{
-}
+PageDict4SSLookupRes::~PageDict4SSLookupRes() = default;
 
 
 PageDict4SSReader::
@@ -954,15 +941,11 @@ PageDict4SSReader(ComprBuffer &cb,
       _overflows()
 {
     // Reference existing compressed buffer
-    _cb._comprBuf = cb._comprBuf;
-    _cb._comprBufSize = cb._comprBufSize;
+    _cb.referenceComprBuf(cb);
 }
 
 
-PageDict4SSReader::
-~PageDict4SSReader()
-{
-}
+PageDict4SSReader::~PageDict4SSReader() = default;
 
 
 void
@@ -1222,9 +1205,7 @@ lookupOverflow(uint64_t wordNum) const
     assert(!_overflows.empty());
 
     OverflowVector::const_iterator lb =
-        std::lower_bound(_overflows.begin(),
-                         _overflows.end(),
-                         wordNum);
+        std::lower_bound(_overflows.begin(), _overflows.end(), wordNum);
 
     assert(lb != _overflows.end());
     assert(lb->_wordNum == wordNum);
@@ -1311,10 +1292,7 @@ PageDict4SPLookupRes()
 }
 
 
-PageDict4SPLookupRes::
-~PageDict4SPLookupRes()
-{
-}
+PageDict4SPLookupRes::~PageDict4SPLookupRes() = default;
 
 
 void
@@ -1515,10 +1493,7 @@ PageDict4PLookupRes()
 }
 
 
-PageDict4PLookupRes::
-~PageDict4PLookupRes()
-{
-}
+PageDict4PLookupRes::~PageDict4PLookupRes() = default;
 
 bool
 PageDict4PLookupRes::
@@ -1703,9 +1678,7 @@ lookup(const SSReader &ssReader,
    return _res;
 }
 
-PageDict4Reader::PageDict4Reader(const SSReader &ssReader,
-                                 DC &spd,
-                                 DC &pd)
+PageDict4Reader::PageDict4Reader(const SSReader &ssReader, DC &spd, DC &pd)
     : _pd(pd),
       _countsResidue(0),
       _ssReader(ssReader),
@@ -1759,9 +1732,7 @@ PageDict4Reader::setup()
 }
 
 
-PageDict4Reader::~PageDict4Reader()
-{
-}
+PageDict4Reader::~PageDict4Reader() = default;
 
 namespace {
 
@@ -2137,9 +2108,7 @@ PageDict4Reader::decodeSSWord(vespalib::string &word)
 }
 
 void
-PageDict4Reader::readCounts(vespalib::string &word,
-                            uint64_t &wordNum,
-                            Counts &counts)
+PageDict4Reader::readCounts(vespalib::string &word, uint64_t &wordNum, Counts &counts)
 {
     if (_countsResidue > 0) {
         assert(_cc != _ce);
@@ -2215,8 +2184,7 @@ PageDict4Reader::readCounts(vespalib::string &word,
 
 
 void
-PageDict4Reader::readOverflowCounts(vespalib::string &word,
-                                    Counts &counts)
+PageDict4Reader::readOverflowCounts(vespalib::string &word, Counts &counts)
 {
     uint64_t wordNum = _pd.readBits(64);
 

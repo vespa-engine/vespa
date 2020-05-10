@@ -8,10 +8,11 @@
 namespace search {
 
 ComprBuffer::ComprBuffer(uint32_t unitSize)
-    : _comprBuf(NULL),
+    : _unitSize(unitSize),
+      _padBefore(false),
+      _comprBuf(nullptr),
       _comprBufSize(0),
-      _unitSize(unitSize),
-      _comprBufMalloc(NULL)
+      _comprBufMalloc(nullptr)
 { }
 
 
@@ -25,8 +26,8 @@ void
 ComprBuffer::dropComprBuf()
 {
     free(_comprBufMalloc);
-    _comprBuf = NULL;
-    _comprBufMalloc = NULL;
+    _comprBuf = nullptr;
+    _comprBufMalloc = nullptr;
 }
 
 

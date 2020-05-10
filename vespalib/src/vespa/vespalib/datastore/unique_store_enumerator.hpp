@@ -19,9 +19,7 @@ UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary 
 }
 
 template <typename RefT>
-UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator()
-{
-}
+UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator() = default;
 
 template <typename RefT>
 void

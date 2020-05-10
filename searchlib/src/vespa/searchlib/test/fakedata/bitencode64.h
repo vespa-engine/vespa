@@ -5,11 +5,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/util/comprfile.h>
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 template <bool bigEndian>
 class BitEncode64 : public bitcompression::EncodeContext64<bigEndian>
@@ -18,20 +14,15 @@ class BitEncode64 : public bitcompression::EncodeContext64<bigEndian>
 
 public:
     BitEncode64();
-
     ~BitEncode64();
 
     typedef bitcompression::EncodeContext64<bigEndian> EC;
 
-    void
-    writeComprBuffer()
-    {
+    void writeComprBuffer() {
         _cbuf.writeComprBuffer(true);
     }
 
-    void
-    writeComprBufferIfNeeded()
-    {
+    void writeComprBufferIfNeeded() {
         if (this->_valI >= this->_valE)
             _cbuf.writeComprBuffer(false);
     }
@@ -40,20 +31,11 @@ public:
     grabComprBuffer(void *&comprBufMalloc)
     {
         std::pair<void *, size_t> tres = _cbuf.grabComprBuffer(comprBufMalloc);
-        return std::make_pair(static_cast<uint64_t *>(tres.first),
-                              tres.second);
+        return std::make_pair(static_cast<uint64_t *>(tres.first), tres.second);
     }
 };
 
 extern template class BitEncode64<true>;
-
 extern template class BitEncode64<false>;
 
-typedef BitEncode64<true> BitEncode64BE;
-
-typedef BitEncode64<false> BitEncode64LE;
-
-} // namespace fakedata
-
-} // namespace search
-
+}

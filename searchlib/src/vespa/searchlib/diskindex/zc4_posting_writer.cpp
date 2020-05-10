@@ -21,9 +21,7 @@ Zc4PostingWriter<bigEndian>::Zc4PostingWriter(PostingListCounts &counts)
 }
 
 template <bool bigEndian>
-Zc4PostingWriter<bigEndian>::~Zc4PostingWriter()
-{
-}
+Zc4PostingWriter<bigEndian>::~Zc4PostingWriter() = default;
 
 template <bool bigEndian>
 void
@@ -122,9 +120,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
     }
 
     // Write features
-    e.writeBits(static_cast<const uint64_t *>(_featureWriteContext._comprBuf),
-                0,
-                _featureOffset);
+    e.writeBits(_featureWriteContext.getComprBuf(), 0, _featureOffset);
 
     _counts._numDocs += numDocs;
     if (hasMore || !_counts._segments.empty()) {
@@ -179,8 +175,7 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
     uint32_t docIdK = _dynamicK ? e.calcDocIdK(numDocs, _docIdLimit) : K_VALUE_ZCPOSTING_DELTA_DOCID;
 
     uint32_t baseDocId = 1;
-    const uint64_t *features =
-        static_cast<const uint64_t *>(_featureWriteContext._comprBuf);
+    const uint64_t *features = _featureWriteContext.getComprBuf();
     uint64_t featureOffset = 0;
 
     std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();

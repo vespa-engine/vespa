@@ -14,7 +14,7 @@ class ComprFileWriteContext;
 class ComprFileDecodeContext
 {
 public:
-    virtual ~ComprFileDecodeContext() { }
+    virtual ~ComprFileDecodeContext() = default;
 
     /**
      *
@@ -82,7 +82,7 @@ public:
                             ComprBuffer &cbuf);
 
 protected:
-    virtual ~ComprFileReadBase() { }
+    virtual ~ComprFileReadBase() = default;
 };
 
 
@@ -104,13 +104,11 @@ public:
 
     void readComprBuffer(uint64_t stopOffset, bool readAll);
     void readComprBuffer();
-    void setPosition(uint64_t newPosition, uint64_t stopOffset, bool readAll);
     void setPosition(uint64_t newPosition);
     void allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment);
     void setDecodeContext(ComprFileDecodeContext *decodeContext) { _decodeContext = decodeContext; }
     ComprFileDecodeContext *getDecodeContext() const { return _decodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }
-    FastOS_FileInterface *getFile() const { return _file; }
 
     /**
      * Get file offset for end of compressed buffer.
@@ -125,14 +123,6 @@ public:
     void setFileSize(uint64_t fileSize) { _fileSize = fileSize; }
 
     /*
-     * Set stop offset for sequential read.
-     */
-    void setStopOffset(uint64_t stopOffset, bool readAll) {
-        _stopOffset = stopOffset;
-        _readAll = readAll;
-    }
-
-    /*
      * For unit testing only. Reference data owned by rhs, only works as
      * long as rhs is live and unchanged.
      */
@@ -144,12 +134,12 @@ public:
 class ComprFileEncodeContext
 {
 public:
-    virtual ~ComprFileEncodeContext() { }
+    virtual ~ComprFileEncodeContext() = default;
 
     /**
      * Get number of used units (e.g. _valI - start)
      */
-    virtual int getUsedUnits(void *start) = 0;
+    virtual int getUsedUnits(const uint64_t * start) = 0;
 
     /**
      * Get normal full buffer size (e.g. _valE - start)
@@ -170,8 +160,6 @@ public:
      * Get size of each unit (typically 4 or 8)
      */
     virtual uint32_t getUnitByteSize() const = 0;
-
-    virtual uint64_t getBitPosV() const = 0;
 };
 
 class ComprFileWriteBase
@@ -184,7 +172,7 @@ public:
                                  bool flushSlack);
 
 protected:
-    virtual ~ComprFileWriteBase() { }
+    virtual ~ComprFileWriteBase() = default;
 };
 
 
@@ -206,17 +194,11 @@ public:
     void setEncodeContext(ComprFileEncodeContext *encodeContext) { _encodeContext = encodeContext; }
     ComprFileEncodeContext *getEncodeContext() const { return _encodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }
-    FastOS_FileInterface *getFile() const { return _file; }
 
     /**
      * Get file offset for start of compressed buffer.
      */
     uint64_t getBufferStartFilePos() const { return _fileWriteByteOffset; }
-
-    /**
-     * Set file offset for start of compressed byffer.
-     */
-    void setBufferStartFilePos(uint64_t bufferStartFilePos) { _fileWriteByteOffset = bufferStartFilePos; }
 
     /**
      * Grab compressed buffer from write context.  This is only legal when

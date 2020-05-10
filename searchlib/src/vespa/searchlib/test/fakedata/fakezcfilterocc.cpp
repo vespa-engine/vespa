@@ -26,9 +26,7 @@ using search::bitcompression::FeatureEncodeContext;
 using search::ComprFileWriteContext;
 using namespace search::diskindex;
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 namespace {
 
@@ -97,8 +95,8 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)
       _hitDocs(0),
       _lastDocId(0u),
       _compressedBits(0),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _compressedMalloc(NULL),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _compressedMalloc(nullptr),
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(true),
@@ -121,7 +119,7 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw,
       _hitDocs(0),
       _lastDocId(0u),
       _compressedBits(0),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(bigEndian),
@@ -204,8 +202,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     writer.on_close();
 
     std::pair<void *, size_t> ectxData = writeContext.grabComprBuffer(_compressedMalloc);
-    _compressed = std::make_pair(static_cast<uint64_t *>(ectxData.first),
-                                 ectxData.second);
+    _compressed = std::make_pair(static_cast<uint64_t *>(ectxData.first), ectxData.second);
     read_header<bigEndian>();
 }
 
@@ -430,7 +427,7 @@ FakeFilterOccZCArrayIterator(const uint64_t *compressed,
                              uint32_t docIdLimit,
                              const fef::TermFieldMatchDataArray &matchData)
     : queryeval::RankedSearchIteratorBase(matchData),
-      _valI(NULL),
+      _valI(nullptr),
       _residue(0),
       _lastDocId(0),
       _decodeContext(compressed, bitOffset),
@@ -956,7 +953,4 @@ static FPFactoryInit
 initNoSkipPoslecf(std::make_pair("Zc5NoSkipPosOccLE.cf",
                                  makeFPFactory<FPFactoryT<FakeZc5NoSkipPosOccCf<false> > >));
 
-
-} // namespace fakedata
-
-} // namespace search
+}

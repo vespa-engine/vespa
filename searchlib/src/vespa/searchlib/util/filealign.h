@@ -35,7 +35,7 @@ public:
      *
      * @return adjusted number of bytes for IO
      */
-    size_t adjustSize(int64_t offset, size_t size);
+    size_t adjustSize(int64_t offset, size_t size) const;
 
     /**
      * Adjust number of elements for IO (read or write), reducing
@@ -47,7 +47,7 @@ public:
      *
      * @return adjusted number of elements for IO
      */
-    size_t adjustElements(int64_t eoffset, size_t esize);
+    size_t adjustElements(int64_t eoffset, size_t esize) const;
 
     /**
      * Setup alignment
