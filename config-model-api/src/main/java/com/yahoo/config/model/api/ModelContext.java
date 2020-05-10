@@ -70,6 +70,9 @@ public interface ModelContext {
         double defaultTermwiseLimit();
 
         // TODO Revisit in May or June 2020
+        int defaultNumResponseThreads();
+
+        // TODO Revisit in May or June 2020
         double threadPoolSizeFactor();
 
         // TODO Revisit in May or June 2020

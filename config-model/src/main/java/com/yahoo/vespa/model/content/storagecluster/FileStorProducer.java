@@ -11,8 +11,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 public class FileStorProducer implements StorFilestorConfig.Producer {
 
     public static class Builder {
-        protected FileStorProducer build(ContentCluster parent, ModelElement clusterElem) {
-            return new FileStorProducer(parent, getThreads(clusterElem));
+        protected FileStorProducer build(ContentCluster parent, Integer numResonseThreads, ModelElement clusterElem) {
+            return new FileStorProducer(parent, getThreads(clusterElem), numResonseThreads);
         }
 
        private Integer getThreads(ModelElement clusterElem) {
@@ -41,18 +41,23 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
        }
     }
 
-    private Integer numThreads;
-    private ContentCluster cluster;
+    private final Integer numThreads;
+    private final ContentCluster cluster;
+    private final Integer numResponseThreads;
 
-    public FileStorProducer(ContentCluster parent, Integer numThreads) {
+    public FileStorProducer(ContentCluster parent, Integer numThreads, Integer numResponseThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
+        this.numResponseThreads = numResponseThreads;
     }
 
     @Override
     public void getConfig(StorFilestorConfig.Builder builder) {
         if (numThreads != null) {
             builder.num_threads(numThreads);
+        }
+        if (numResponseThreads != null) {
+            builder.num_response_threads(numResponseThreads);
         }
         builder.enable_multibit_split_optimalization(cluster.getPersistence().enableMultiLevelSplitting());
     }

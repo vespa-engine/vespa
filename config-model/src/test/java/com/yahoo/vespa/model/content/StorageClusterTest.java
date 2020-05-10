@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Flavor;
@@ -20,16 +23,28 @@ import org.junit.Test;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class StorageClusterTest {
 
-    StorageCluster parse(String xml, Flavor flavor) throws Exception {
-        MockRoot root = new MockRoot("", new MockApplicationPackage.Builder().build(),
-                new SingleNodeProvisioner(flavor));
+    StorageCluster parse(String xml, Flavor flavor) {
+        MockRoot root = new MockRoot("", new DeployState.Builder()
+                .applicationPackage(new MockApplicationPackage.Builder().build())
+                .modelHostProvisioner(new SingleNodeProvisioner(flavor)).build());
         return parse(xml, root);
     }
-    StorageCluster parse(String xml) throws Exception {
+
+    StorageCluster parse(String xml, Flavor flavor, ModelContext.Properties properties) {
+        MockRoot root = new MockRoot("", new DeployState.Builder()
+                .applicationPackage(new MockApplicationPackage.Builder().build())
+                .modelHostProvisioner(new SingleNodeProvisioner(flavor))
+                .properties(properties).build());
+        return parse(xml, root);
+    }
+
+    StorageCluster parse(String xml) {
         MockRoot root = new MockRoot();
         return parse(xml, root);
     }
@@ -47,7 +62,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testBasics() throws Exception {
+    public void testBasics() {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
               "  <group>" +
@@ -62,7 +77,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMerges() throws Exception {
+    public void testMerges() {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("" +
                 "<content id=\"foofighters\">\n" +
@@ -106,7 +121,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreads() throws Exception {
+    public void testPersistenceThreads() {
 
         StorageCluster stc = parse(
                 "<cluster id=\"bees\">\n" +
@@ -127,7 +142,8 @@ public class StorageClusterTest {
             StorFilestorConfig config = new StorFilestorConfig(builder);
 
             assertEquals(7, config.num_threads());
-            assertEquals(false, config.enable_multibit_split_optimalization());
+            assertFalse(config.enable_multibit_split_optimalization());
+            assertEquals(0, config.num_response_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());
@@ -140,7 +156,29 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreadsOld() throws Exception {
+    public void testResponseThreads() {
+
+        StorageCluster stc = parse(
+                "<cluster id=\"bees\">\n" +
+                        "    <documents/>" +
+                        "    <tuning>\n" +
+                        "        <persistence-threads count=\"7\"/>\n" +
+                        "    </tuning>\n" +
+                        "  <group>" +
+                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                        "  </group>" +
+                        "</cluster>",
+                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()),
+                new TestProperties().setDefaultNumResponseThreads(3)
+        );
+        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
+        stc.getConfig(builder);
+        StorFilestorConfig config = new StorFilestorConfig(builder);
+        assertEquals(3, config.num_response_threads());
+    }
+
+    @Test
+    public void testPersistenceThreadsOld() {
 
         StorageCluster stc = parse(
                 "<cluster id=\"bees\">\n" +
@@ -165,7 +203,7 @@ public class StorageClusterTest {
             StorFilestorConfig config = new StorFilestorConfig(builder);
 
             assertEquals(4, config.num_threads());
-            assertEquals(false, config.enable_multibit_split_optimalization());
+            assertFalse(config.enable_multibit_split_optimalization());
         }
         {
             assertEquals(1, stc.getChildren().size());
@@ -178,7 +216,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testNoPersistenceThreads() throws Exception {
+    public void testNoPersistenceThreads() {
         StorageCluster stc = parse(
                 "<cluster id=\"bees\">\n" +
                         "    <documents/>" +
@@ -208,7 +246,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() throws Exception {
+    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -299,7 +337,7 @@ public class StorageClusterTest {
         cluster.getStorageNodes().getConfig(builder);
 
         PersistenceConfig config = new PersistenceConfig(builder);
-        assertEquals(true, config.fail_partition_on_error());
+        assertTrue(config.fail_partition_on_error());
         assertEquals(34 * 60, config.revert_time_period());
         assertEquals(5 * 24 * 60 * 60, config.keep_remove_time_period());
     }

@@ -160,6 +160,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag DEFAULT_NUM_RESPONSE_THREADS = defineIntFlag(
+            "default-num-response-threads", 0,
+            "Default number of threads used for processing put/update/remove responses.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
             "use-distributor-btree-db", false,
             "Whether to use the new B-tree bucket database in the distributors.",

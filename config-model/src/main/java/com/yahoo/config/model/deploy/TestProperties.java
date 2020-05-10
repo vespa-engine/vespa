@@ -46,6 +46,7 @@ public class TestProperties implements ModelContext.Properties {
     private double softStartSeconds = 0.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
+    private int defaultNumResponseThreads = 0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
 
@@ -81,6 +82,10 @@ public class TestProperties implements ModelContext.Properties {
         return softStartSeconds;
     }
 
+    @Override public int defaultNumResponseThreads() {
+        return defaultNumResponseThreads;
+    }
+
     @Override public double defaultTopKProbability() { return topKProbability; }
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
@@ -98,6 +103,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseDistributorBtreeDB(boolean useBtreeDb) {
         useDistributorBtreeDb = useBtreeDb;
+        return this;
+    }
+
+    public TestProperties setDefaultNumResponseThreads(int numResponseThreads) {
+        defaultNumResponseThreads = numResponseThreads;
         return this;
     }
 
