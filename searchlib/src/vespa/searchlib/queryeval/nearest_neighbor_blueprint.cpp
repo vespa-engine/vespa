@@ -121,7 +121,8 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
         return NnsIndexIterator::create(tfmd, _found_hits, _dist_fun);
     }
     const vespalib::tensor::DenseTensorView &qT = *_query_tensor;
-    return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor, _distance_heap, _dist_fun);
+    return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor,
+                                           _distance_heap, nullptr, _dist_fun);
 }
 
 void
