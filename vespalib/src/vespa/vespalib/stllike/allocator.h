@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/alloc.h>
+
 namespace vespalib {
 
 /**
@@ -13,16 +15,22 @@ template <typename T>
 class allocator_large {
     using PtrAndSize = alloc::MemoryAllocator::PtrAndSize;
 public:
-    allocator_large() : _allocator(alloc::MemoryAllocator::select_allocator()) {}
+    allocator_large() noexcept : _allocator(alloc::MemoryAllocator::select_allocator()) {}
     using value_type = T;
-    T * allocate(std::size_t n) {
+    constexpr T * allocate(std::size_t n) {
         return static_cast<T *>(_allocator->alloc(n*sizeof(T)).first);
     }
     void deallocate(T * p, std::size_t n) {
         _allocator->free(p, n*sizeof(T));
     }
+    alloc::MemoryAllocator * allocator() const { return _allocator; }
 private:
     const alloc::MemoryAllocator * _allocator;
 };
+
+template< class T1, class T2 >
+constexpr bool operator==( const allocator_large<T1>& lhs, const allocator_large<T2>& rhs ) noexcept {
+    return lhs.allocator() == rhs.allocator();
+}
 
 }
