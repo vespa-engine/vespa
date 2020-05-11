@@ -115,10 +115,8 @@ protected:
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level) const;
-    FurthestPriQ search_l0(const TypedCells& input, uint32_t neighbors_to_find,
-                           HnswCandidate entry_point, const BitVector &filter) const;
-
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+                      uint32_t level, const search::BitVector *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
                                          const BitVector *filter, uint32_t explore_k) const;
 

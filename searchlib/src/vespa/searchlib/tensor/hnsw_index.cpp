@@ -210,15 +210,23 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
 }
 
 void
-HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level) const
+HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
+                        FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
 {
     NearestPriQ candidates;
     uint32_t doc_id_limit = _graph.node_refs.size();
+    if (filter) {
+        assert(filter->size() >= doc_id_limit);
+    }
     auto visited = _visited_set_pool.get(doc_id_limit);
     for (const auto &entry : best_neighbors.peek()) {
         assert(entry.docid < doc_id_limit);
         candidates.push(entry);
         visited.mark(entry.docid);
+        if (filter && !filter->testBit(entry.docid)) {
+            assert(best_neighbors.size() == 1);
+            best_neighbors.pop();
+        }
     }
     double limit_dist = std::numeric_limits<double>::max();
 
@@ -236,49 +244,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
             double dist_to_input = calc_distance(input, neighbor_docid);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_docid, dist_to_input);
-                best_neighbors.emplace(neighbor_docid, dist_to_input);
-                if (best_neighbors.size() > neighbors_to_find) {
-                    best_neighbors.pop();
-                    limit_dist = best_neighbors.top().distance;
-                }
-            }
-        }
-    }
-}
-
-FurthestPriQ
-HnswIndex::search_l0(const TypedCells& input, uint32_t neighbors_to_find,
-                     HnswCandidate entry_point, const BitVector &filter) const
-{
-    FurthestPriQ best_neighbors;
-    const uint32_t level = 0;
-    NearestPriQ candidates;
-    uint32_t doc_id_limit = _graph.node_refs.size();
-    auto visited = _visited_set_pool.get(doc_id_limit);
-
-    assert(entry_point.docid < doc_id_limit);
-    candidates.push(entry_point);
-    visited.mark(entry_point.docid);
-    if (filter.testBit(entry_point.docid)) {
-        best_neighbors.push(entry_point);
-    }
-    double limit_dist = std::numeric_limits<double>::max();
-
-    while (!candidates.empty()) {
-        auto cand = candidates.top();
-        if (cand.distance > limit_dist) {
-            break;
-        }
-        candidates.pop();
-        for (uint32_t neighbor_docid : _graph.get_link_array(cand.docid, level)) {
-            if ((neighbor_docid >= doc_id_limit) || visited.is_marked(neighbor_docid)) {
-                continue;
-            }
-            visited.mark(neighbor_docid);
-            double dist_to_input = calc_distance(input, neighbor_docid);
-            if (dist_to_input < limit_dist) {
-                candidates.emplace(neighbor_docid, dist_to_input);
-                if (filter.testBit(neighbor_docid)) {
+                if ((!filter) || filter->testBit(neighbor_docid)) {
                     best_neighbors.emplace(neighbor_docid, dist_to_input);
                     if (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
@@ -288,7 +254,6 @@ HnswIndex::search_l0(const TypedCells& input, uint32_t neighbors_to_find,
             }
         }
     }
-    return best_neighbors;
 }
 
 HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
@@ -506,9 +471,9 @@ HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
 FurthestPriQ
 HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const
 {
+    FurthestPriQ best_neighbors;
     if (get_entry_level() < 0) {
-        FurthestPriQ empty;
-        return empty;
+        return best_neighbors;
     }
     uint32_t entry_docid = get_entry_docid();
     int search_level = get_entry_level();
@@ -518,14 +483,9 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVecto
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
     }
-    if (filter) {
-        return search_l0(vector, k, entry_point, *filter);
-    } else {
-        FurthestPriQ best_neighbors;
-        best_neighbors.push(entry_point);
-        search_layer(vector, k, best_neighbors, 0);
-        return best_neighbors;
-    }
+    best_neighbors.push(entry_point);
+    search_layer(vector, k, best_neighbors, 0, filter);
+    return best_neighbors;
 }
 
 HnswNode
