@@ -28,6 +28,7 @@ private:
     const search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
+    std::shared_ptr<search::BitVector> _global_filter;
 
     void perform_top_k();
 public:
