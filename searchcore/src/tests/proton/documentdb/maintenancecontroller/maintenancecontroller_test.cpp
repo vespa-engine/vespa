@@ -3,11 +3,14 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/fastos/thread.h>
+#include <vespa/config-attributes.h>
+#include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
@@ -60,6 +63,7 @@ using storage::spi::Timestamp;
 using vespalib::Slime;
 using vespalib::makeClosure;
 using vespalib::makeTask;
+using vespa::config::search::AttributesConfigBuilder;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
@@ -885,6 +889,8 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
                                             _jobTrackers, *this,
                                             _readyAttributeManager,
                                             _notReadyAttributeManager,
+                                            std::make_unique<const AttributeConfigInspector>(AttributesConfigBuilder()),
+                                            std::make_shared<TransientMemoryUsageProvider>(),
                                             _attributeUsageFilter);
     }
 }

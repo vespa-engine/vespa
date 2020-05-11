@@ -9,6 +9,8 @@ namespace vespalib { class ScheduledExecutor; }
 
 namespace proton {
 
+class ITransientMemoryUsageProvider;
+
 /*
  * Class to sample disk and memory usage used for filtering write operations.
  */
@@ -18,10 +20,13 @@ class DiskMemUsageSampler {
     vespalib::duration    _sampleInterval;
     vespalib::steady_time _lastSampleTime;
     std::unique_ptr<vespalib::ScheduledExecutor> _periodicTimer;
+    std::mutex            _lock;
+    std::vector<std::shared_ptr<const ITransientMemoryUsageProvider>> _transient_memory_usage_providers;
 
     void sampleUsage();
     void sampleDiskUsage();
     void sampleMemoryUsage();
+    void sample_transient_memory_usage();
 public:
     struct Config {
         DiskMemUsageFilter::Config filterConfig;
@@ -55,6 +60,8 @@ public:
 
     const DiskMemUsageFilter &writeFilter() const { return _filter; }
     IDiskMemUsageNotifier &notifier() { return _filter; }
+    void add_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider);
+    void remove_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider);
 };
 
 

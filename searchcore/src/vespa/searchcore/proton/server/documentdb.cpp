@@ -13,10 +13,12 @@
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -163,6 +165,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _state(),
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
+      _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
       _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
@@ -929,7 +932,7 @@ DocumentDB::hasDocument(const document::DocumentId &id)
 }
 
 void
-DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
+DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector)
 {
     // Called by executor thread
     _maintenanceController.killJobs();
@@ -954,6 +957,8 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _visibility,  // ICommitable
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
+            std::move(attribute_config_inspector),
+            _transient_memory_usage_provider,
             _writeFilter);
 }
 
@@ -963,18 +968,21 @@ DocumentDB::performStartMaintenance()
     // Called by executor thread
     // Only start once, after replay done
 
-    DocumentDBMaintenanceConfig::SP maintenanceConfig;
+    std::shared_ptr<DocumentDBConfig> activeConfig;
     {
         lock_guard guard(_configMutex);
         if (_state.getClosed())
             return;
-        assert(_activeConfigSnapshot);
-        maintenanceConfig = _activeConfigSnapshot->getMaintenanceConfigSP();
+        activeConfig = _activeConfigSnapshot;
     }
+    assert(activeConfig);
     if (_maintenanceController.getStopping()) {
         return;
     }
-    injectMaintenanceJobs(*maintenanceConfig);
+    auto maintenanceConfig = activeConfig->getMaintenanceConfigSP();
+    const auto &attributes_config = activeConfig->getAttributesConfig();
+    auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
+    injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
     _maintenanceController.start(maintenanceConfig);
 }
 
@@ -992,10 +1000,12 @@ DocumentDB::forwardMaintenanceConfig()
     assert(activeConfig);
     DocumentDBMaintenanceConfig::SP
         maintenanceConfig(activeConfig->getMaintenanceConfigSP());
+    const auto &attributes_config = activeConfig->getAttributesConfig();
+    auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
     if (!_state.getClosed()) {
         if (_maintenanceController.getStarted() &&
             !_maintenanceController.getStopping()) {
-            injectMaintenanceJobs(*maintenanceConfig);
+            injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
         }
         _maintenanceController.newConfig(maintenanceConfig);
     }
@@ -1084,6 +1094,12 @@ uint32_t
 DocumentDB::getDistributionKey() const
 {
     return _owner.getDistributionKey();
+}
+
+std::shared_ptr<const ITransientMemoryUsageProvider>
+DocumentDB::transient_memory_usage_provider()
+{
+    return _transient_memory_usage_provider;
 }
 
 } // namespace proton

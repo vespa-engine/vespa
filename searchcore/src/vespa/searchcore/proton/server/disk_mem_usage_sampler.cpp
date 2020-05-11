@@ -3,6 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/searchcore/proton/common/i_transient_memory_usage_provider.h>
 #include <filesystem>
 
 using vespalib::makeLambdaTask;
@@ -14,7 +15,9 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Confi
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(vespalib::steady_clock::now()),
-      _periodicTimer()
+      _periodicTimer(),
+      _lock(),
+      _transient_memory_usage_providers()
 {
     setConfig(config);
 }
@@ -49,6 +52,7 @@ DiskMemUsageSampler::sampleUsage()
 {
     sampleMemoryUsage();
     sampleDiskUsage();
+    sample_transient_memory_usage();
 }
 
 namespace {
@@ -116,6 +120,39 @@ void
 DiskMemUsageSampler::sampleMemoryUsage()
 {
     _filter.setMemoryStats(vespalib::ProcessMemoryStats::create());
+}
+
+void
+DiskMemUsageSampler::sample_transient_memory_usage()
+{
+    size_t max_transient_memory_usage = 0;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        for (auto provider : _transient_memory_usage_providers) {
+            auto transient_memory_usage = provider->get_transient_memory_usage();
+            max_transient_memory_usage = std::max(max_transient_memory_usage, transient_memory_usage);
+        }
+    }
+    _filter.set_transient_memory_usage(max_transient_memory_usage);
+}
+
+void
+DiskMemUsageSampler::add_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    _transient_memory_usage_providers.push_back(provider);
+}
+
+void
+DiskMemUsageSampler::remove_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    for (auto itr = _transient_memory_usage_providers.begin(); itr != _transient_memory_usage_providers.end(); ++itr) {
+        if (*itr == provider) {
+            _transient_memory_usage_providers.erase(itr);
+            break;
+        }
+    }
 }
 
 } // namespace proton
