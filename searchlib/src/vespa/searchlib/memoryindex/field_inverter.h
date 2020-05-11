@@ -9,9 +9,9 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/vespalib/stllike/allocator.h>
 #include <limits>
 #include <map>
+#include <set>
 
 namespace search::index { class FieldLengthCalculator; }
 
@@ -115,8 +115,8 @@ private:
         void set_field_length(uint32_t field_length) { _field_length = field_length; }
     };
 
-    using ElemInfoVec = std::vector<ElemInfo, vespalib::allocator_large<ElemInfo>>;
-    using PosInfoVec = std::vector<PosInfo, vespalib::allocator_large<PosInfo>>;
+    using ElemInfoVec = std::vector<ElemInfo>;
+    using PosInfoVec = std::vector<PosInfo>;
 
     class CompareWordRef {
         const char *const _wordBuffer;
@@ -161,7 +161,6 @@ private:
         uint32_t getLen() const   { return _len; }
     };
 
-    using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
     // Current field state.
     uint32_t                       _fieldId;   // current field id
     uint32_t                       _elem;      // current element
@@ -175,8 +174,8 @@ private:
     ElemInfoVec                    _elems;
     PosInfoVec                     _positions;
     index::DocIdAndPosOccFeatures  _features;
-    UInt32Vector                   _elementWordRefs;
-    UInt32Vector                   _wordRefs;
+    std::vector<uint32_t>          _elementWordRefs;
+    std::vector<uint32_t>          _wordRefs;
 
     using SpanTerm = std::pair<document::Span, const document::FieldValue *>;
     using SpanTermVector = std::vector<SpanTerm>;
@@ -185,16 +184,18 @@ private:
     // Info about aborted and pending documents.
     std::vector<PositionRange>        _abortedDocs;
     std::map<uint32_t, PositionRange> _pendingDocs;
-    UInt32Vector                      _removeDocs;
+    std::vector<uint32_t>             _removeDocs;
 
     FieldIndexRemover                &_remover;
     IOrderedFieldIndexInserter       &_inserter;
     index::FieldLengthCalculator     &_calculator;
 
-    void invertNormalDocTextField(const document::FieldValue &val);
+    void
+    invertNormalDocTextField(const document::FieldValue &val);
 
 public:
     void startElement(int32_t weight);
+
     void endElement();
 
 private:
@@ -252,9 +253,14 @@ public:
     processAnnotations(const document::StringFieldValue &value);
 
 private:
-    void processNormalDocTextField(const document::StringFieldValue &field);
-    void processNormalDocArrayTextField(const document::ArrayFieldValue &field);
-    void processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
+    void
+    processNormalDocTextField(const document::StringFieldValue &field);
+
+    void
+    processNormalDocArrayTextField(const document::ArrayFieldValue &field);
+
+    void
+    processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
 
     const index::Schema &getSchema() const { return _schema; }
 
@@ -307,7 +313,7 @@ public:
     /**
      * Setup remove of word in old version of document.
      */
-    void remove(const vespalib::stringref word, uint32_t docId) override;
+    virtual void remove(const vespalib::stringref word, uint32_t docId) override;
 
     void removeDocument(uint32_t docId) {
         abortPendingDoc(docId);
