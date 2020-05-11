@@ -268,7 +268,7 @@ TEST("testGrowingChunkedBySize") {
     config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
-    verifyGrowing(config,60, 120);
+    verifyGrowing(config, 40, 120);
 }
 
 TEST("testGrowingChunkedByNumLids") {
