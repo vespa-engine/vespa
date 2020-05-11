@@ -3,10 +3,12 @@ package com.yahoo.vespa.http.server;
 
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.json.JsonFeedReader;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -31,7 +33,14 @@ public class FeedReaderFactory {
                 try {
                     return new VespaXMLFeedReader(inputStream, docTypeManager);
                 } catch (Exception e) {
-                    throw new RuntimeException("Could not create VespaXMLFeedReader", e);
+                    byte [] peek;
+                    try {
+                        peek = new byte[Math.min(200, inputStream.available())];
+                        inputStream.read(peek);
+                    } catch (IOException  io) {
+                        peek = new byte [0];
+                    }
+                    throw new RuntimeException("Could not create VespaXMLFeedReader. First characters are: " + Utf8.toString(peek), e);
                 }
             case JSON_UTF8:
                 return new JsonFeedReader(inputStream, docTypeManager);
