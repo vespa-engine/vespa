@@ -197,8 +197,8 @@ FieldInverter::sortWords()
     // Populate word numbers in word buffer and mapping from
     // word numbers to word reference.
     // TODO: shrink word buffer to only contain unique words
-    std::vector<uint32_t>::const_iterator w(_wordRefs.begin() + 1);
-    std::vector<uint32_t>::const_iterator we(_wordRefs.end());
+    auto w(_wordRefs.begin() + 1);
+    auto we(_wordRefs.end());
     uint32_t wordNum = 1;   // First valid word number
     const char *lastWord = getWordFromRef(*w);
     updateWordNum(*w, wordNum);

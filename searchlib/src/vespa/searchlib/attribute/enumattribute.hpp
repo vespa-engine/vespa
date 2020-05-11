@@ -19,9 +19,7 @@ EnumAttribute(const vespalib::string &baseFileName,
 }
 
 template <typename B>
-EnumAttribute<B>::~EnumAttribute()
-{
-}
+EnumAttribute<B>::~EnumAttribute() = default;
 
 template <typename B>
 void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
