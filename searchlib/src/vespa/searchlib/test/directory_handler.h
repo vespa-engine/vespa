@@ -5,8 +5,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class DirectoryHandler
 {
@@ -40,5 +39,3 @@ public:
 };
 
 }
-}
-

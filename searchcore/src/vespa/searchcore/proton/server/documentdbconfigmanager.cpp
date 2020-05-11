@@ -192,6 +192,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
     LogDataStore::Config logConfig;
     logConfig.setMaxFileSize(log.maxfilesize)
+            .setMaxNumLids(log.maxnumlids)
             .setMaxDiskBloatFactor(std::min(flush.diskbloatfactor, flush.each.diskbloatfactor))
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .compactCompression(deriveCompression(log.compact.compression))

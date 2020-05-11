@@ -81,33 +81,26 @@ ChunkFormat::deserialize(const void * buffer, size_t len, bool skipcrc)
     uint32_t crc32(0);
     raw >> crc32;
     raw.rp(currPos);
-    ChunkFormat::UP format;
     if (version == ChunkFormatV1::VERSION) {
         if (skipcrc) {
-            format.reset(new ChunkFormatV1(raw));
+            return std::make_unique<ChunkFormatV1>(raw);
         } else {
-            format.reset(new ChunkFormatV1(raw, crc32));
+            return std::make_unique<ChunkFormatV1>(raw, crc32);
         }
     } else if (version == ChunkFormatV2::VERSION) {
         if (skipcrc) {
-            format.reset(new ChunkFormatV2(raw));
+            return std::make_unique<ChunkFormatV2>(raw);
         } else {
-            format.reset(new ChunkFormatV2(raw, crc32));
+            return std::make_unique<ChunkFormatV2>(raw, crc32);
         }
     } else {
         throw ChunkException(make_string("Unknown version %d", version), VESPA_STRLOC);
     }
-    return format;
 }
 
-ChunkFormat::ChunkFormat() :
-    _dataBuf()
-{
-}
+ChunkFormat::ChunkFormat() = default;
 
-ChunkFormat::~ChunkFormat()
-{
-}
+ChunkFormat::~ChunkFormat() = default;
 
 ChunkFormat::ChunkFormat(size_t maxSize) :
     _dataBuf(maxSize)

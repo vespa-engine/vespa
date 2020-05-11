@@ -16,6 +16,11 @@ LOG_SETUP(".searchlib.docstore.logdatastore");
 
 namespace search {
 
+namespace {
+    constexpr size_t DEFAULT_MAX_FILESIZE = 1000000000ul;
+    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32 * 1024 * 1024;
+}
+
 using vespalib::LockGuard;
 using vespalib::getLastErrorString;
 using vespalib::getErrorString;
@@ -30,10 +35,11 @@ using docstore::BucketCompacter;
 using namespace std::literals;
 
 LogDataStore::Config::Config()
-    : _maxFileSize(1000000000ul),
+    : _maxFileSize(DEFAULT_MAX_FILESIZE),
       _maxDiskBloatFactor(0.2),
       _maxBucketSpread(2.5),
       _minFileSizeFactor(0.2),
+      _maxNumLids(DEFAULT_MAX_LIDS_PER_FILE),
       _skipCrcOnRead(false),
       _compactCompression(CompressionConfig::LZ4),
       _fileConfig()
@@ -202,9 +208,9 @@ LogDataStore::requireSpace(LockGuard guard, WriteableFileChunk & active)
 {
     assert(active.getFileId() == getActiveFileId(guard));
     size_t oldSz(active.getDiskFootprint());
-    LOG(spam, "Checking file %s size %ld < %ld",
-              active.getName().c_str(), oldSz, _config.getMaxFileSize());
-    if (oldSz > _config.getMaxFileSize()) {
+    LOG(spam, "Checking file %s size %ld < %ld AND #lids %u < %u",
+              active.getName().c_str(), oldSz, _config.getMaxFileSize(), active.getNumLids(), _config.getMaxNumLids());
+    if ((oldSz > _config.getMaxFileSize()) || (active.getNumLids() >= _config.getMaxNumLids())) {
         FileId fileId = allocateFileId(guard);
         setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
@@ -220,9 +226,9 @@ LogDataStore::requireSpace(LockGuard guard, WriteableFileChunk & active)
         active.flushPendingChunks(active.getSerialNum());
         active.freeze();
         // TODO: Delay create of new file
-        LOG(debug, "Closed file %s of size %ld due to maxsize of %ld reached. Bloat is %ld",
-                   active.getName().c_str(), active.getDiskFootprint(),
-                   _config.getMaxFileSize(), active.getDiskBloat());
+        LOG(debug, "Closed file %s of size %ld and %u lids due to maxsize of %ld or maxlids %u reached. Bloat is %ld",
+                   active.getName().c_str(), active.getDiskFootprint(), active.getNumLids(),
+                   _config.getMaxFileSize(), _config.getMaxNumLids(), active.getDiskBloat());
     }
 }
 
