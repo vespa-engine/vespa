@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -116,7 +117,7 @@ class NodeAllocation {
                     if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
                     if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
-                    if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
+                    if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname()))
                         wantToRetireNode = true;
                     if ((! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
                         accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
@@ -130,11 +131,11 @@ class NodeAllocation {
                     ++rejectedWithClashingParentHost;
                     continue;
                 }
-                if ( ! exclusiveTo(application.tenant(), offered.parentHostname())) {
+                if ( ! exclusiveTo(application.tenant(), application.application(), offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname())) {
+                if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -172,30 +173,35 @@ class NodeAllocation {
     }
 
     /**
-     * If a parent host is given, and it hosts another tenant with an application which requires exclusive access
+     * If a parent host is given, and it hosts another application which requires exclusive access
      * to the physical host, then we cannot host this application on it.
      */
-    private boolean exclusiveTo(TenantName tenant, Optional<String> parentHostname) {
+    private boolean exclusiveTo(TenantName tenant, ApplicationName application, Optional<String> parentHostname) {
         if (parentHostname.isEmpty()) return true;
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-
             if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
-                 ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
+                 ! allocatedTo(tenant, application, nodeOnHost))
                 return false;
         }
         return true;
     }
 
-    private boolean hostsOnly(TenantName tenant, Optional<String> parentHostname) {
+    /** Returns true if this host only hosts the given applicaton (in any instance) */
+    private boolean hostsOnly(TenantName tenant, ApplicationName application, Optional<String> parentHostname) {
         if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
 
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
-                return false;
+            if ( ! allocatedTo(tenant, application, nodeOnHost)) return false;
         }
         return true;
+    }
+
+    private boolean allocatedTo(TenantName tenant, ApplicationName application, Node node) {
+        if (node.allocation().isEmpty()) return false;
+        ApplicationId owner = node.allocation().get().owner();
+        return owner.tenant().equals(tenant) && owner.application().equals(application);
     }
 
     /**

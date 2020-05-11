@@ -101,9 +101,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if ( requested.type() == NodeType.tenant) {
             ClusterResources target = decideTargetResources(application, cluster, requested);
             int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
+            groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
             resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
             nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
             logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
         }

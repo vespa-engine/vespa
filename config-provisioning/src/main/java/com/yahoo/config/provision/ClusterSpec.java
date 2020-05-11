@@ -66,8 +66,7 @@ public final class ClusterSpec {
 
     /**
      * Returns whether the physical hosts running the nodes of this application can
-     * also run nodes of other applications. Using exclusive nodes for containers increases security
-     * and increases cost.
+     * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.
      */
     public boolean isExclusive() { return exclusive; }
 
@@ -84,7 +83,7 @@ public final class ClusterSpec {
         return new Builder(type, id, false);
     }
 
-    /** Creates a ClusterSpec for an existing cluster, group id and vespa version needs to be set */
+    /** Creates a ClusterSpec for an existing cluster, group id and Vespa version needs to be set */
     public static Builder specification(Type type, Id id) {
         return new Builder(type, id, true);
     }
