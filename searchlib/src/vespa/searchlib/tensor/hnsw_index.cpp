@@ -474,10 +474,11 @@ struct NeighborsByDocId {
 };
 
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
+HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
+                          const BitVector *filter, uint32_t explore_k) const
 {
     std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), nullptr);
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
     while (candidates.size() > k) {
         candidates.pop();
     }
@@ -490,20 +491,16 @@ HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
 }
 
 std::vector<NearestNeighborIndex::Neighbor>
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
+{
+    return top_k_by_docid(k, vector, nullptr, explore_k);
+}
+
+std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
                                   const BitVector &filter, uint32_t explore_k) const
 {
-    std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), &filter);
-    while (candidates.size() > k) {
-        candidates.pop();
-    }
-    result.reserve(candidates.size());
-    for (const HnswCandidate & hit : candidates.peek()) {
-        result.emplace_back(hit.docid, hit.distance);
-    }
-    std::sort(result.begin(), result.end(), NeighborsByDocId());
-    return result;
+    return top_k_by_docid(k, vector, &filter, explore_k);
 }
 
 FurthestPriQ

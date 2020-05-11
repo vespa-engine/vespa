@@ -119,6 +119,9 @@ protected:
     FurthestPriQ search_l0(const TypedCells& input, uint32_t neighbors_to_find,
                            HnswCandidate entry_point, const BitVector &filter) const;
 
+    std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
+                                         const BitVector *filter, uint32_t explore_k) const;
+
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
               RandomLevelGenerator::UP level_generator, const Config& cfg);
