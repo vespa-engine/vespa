@@ -1722,7 +1722,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setLong("nodes", resources.nodes());
         object.setLong("groups", resources.groups());
         toSlime(resources.nodeResources(), object.setObject("nodeResources"));
-        object.setDouble("cost", resources.nodes() * resources.nodeResources().cost());
+        if ( ! controller.zoneRegistry().system().isPublic())
+            object.setDouble("cost", Math.round(resources.nodes() * resources.nodeResources().cost() * 100.0 / 3.0) / 100.0);
     }
 
     private void toSlime(NodeResources resources, Cursor object) {
