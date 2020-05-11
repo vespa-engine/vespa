@@ -52,12 +52,9 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
               "this distributor", this),
       mutable_dbs("mutable", this),
       read_only_dbs("read_only", this)
-{
-    docsStored.logOnlyIfSet();
-    bytesStored.logOnlyIfSet();
-}
+{}
 
-DistributorMetricSet::~DistributorMetricSet() { }
+DistributorMetricSet::~DistributorMetricSet() = default;
 
 } // storage
 

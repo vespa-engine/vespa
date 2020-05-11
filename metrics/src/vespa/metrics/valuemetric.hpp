@@ -15,9 +15,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
         const String& description, MetricSet* owner)
     : AbstractValueMetric(name, std::move(dimensions), description, owner),
       _values()
-{
-    _values.setFlag(LOG_IF_UNSET);
-}
+{}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
@@ -25,8 +23,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
         CopyType copyType, MetricSet* owner)
     : AbstractValueMetric(other, owner),
       _values(other._values, copyType == CLONE ? other._values.size() : 1)
-{
-}
+{}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 ValueMetric<AvgVal, TotVal, SumOnAdd>::~ValueMetric() { }
@@ -179,18 +176,6 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getAverage() const
     Values values(_values.getValues());
     if (values._count == 0) return 0;
     return static_cast<double>(values._total) / values._count;
-}
-
-template<typename AvgVal, typename TotVal, bool SumOnAdd>
-bool
-ValueMetric<AvgVal, TotVal, SumOnAdd>::logEvent(const String& fullName) const
-{
-    Values values(_values.getValues());
-    if (!logIfUnset() && !inUse(values)) return false;
-    sendLogEvent(fullName, SumOnAdd
-            ? static_cast<double>(values._last)
-            : static_cast<double>(values._total) / values._count);
-    return true;
 }
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>

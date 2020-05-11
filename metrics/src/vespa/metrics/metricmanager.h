@@ -107,7 +107,6 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     vespalib::Monitor _waiter;
     typedef std::pair<uint32_t, time_t> PeriodTimePair;
-    PeriodTimePair _logPeriod;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;

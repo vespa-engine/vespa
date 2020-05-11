@@ -163,10 +163,6 @@ public:
     /** Reset all metric values. */
     virtual void reset() = 0;
 
-    virtual bool logFromTotalMetrics() const { return false; }
-    /** Implement to make metric able to log event. */
-    virtual bool logEvent(const String& fullName) const = 0;
-
     void print(std::ostream& out, bool verbose,
                        const std::string& indent) const override {
         print(out, verbose, indent, 0);

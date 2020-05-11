@@ -281,14 +281,6 @@ MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
     }
 }
 
-bool
-MetricSet::logEvent(const String& fullName) const
-{
-    (void) fullName;
-    throw vespalib::IllegalStateException(
-            "logEvent() cannot be called on metrics set.", VESPA_STRLOC);
-}
-
 void
 MetricSet::reset()
 {

@@ -182,7 +182,7 @@ private:
     SpanTermVector                      _terms;
 
     // Info about aborted and pending documents.
-    std::vector<PositionRange>      _abortedDocs;
+    std::vector<PositionRange>        _abortedDocs;
     std::map<uint32_t, PositionRange> _pendingDocs;
     std::vector<uint32_t>             _removeDocs;
 
