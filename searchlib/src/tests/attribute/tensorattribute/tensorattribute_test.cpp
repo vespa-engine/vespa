@@ -186,6 +186,16 @@ public:
         (void) explore_k;
         return std::vector<Neighbor>();
     }
+    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, vespalib::tensor::TypedCells vector,
+                                                 const search::BitVector& filter, uint32_t explore_k) const override
+    {
+        (void) k;
+        (void) vector;
+        (void) explore_k;
+        (void) filter;
+        return std::vector<Neighbor>();
+    }
+
     
     const search::tensor::DistanceFunction *distance_function() const override { return nullptr; }
 };

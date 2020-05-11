@@ -14,6 +14,8 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::fileutil { class LoadedBuffer; }
 
+namespace search { class BitVector; }
+
 namespace search::tensor {
 
 class NearestNeighborIndexSaver;
@@ -52,6 +54,12 @@ public:
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::tensor::TypedCells vector,
                                              uint32_t explore_k) const = 0;
+
+    // only return neighbors where the corresponding filter bit is set
+    virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
+                                                         vespalib::tensor::TypedCells vector,
+                                                         const BitVector &filter,
+                                                         uint32_t explore_k) const = 0;
 
     virtual const DistanceFunction *distance_function() const = 0;
 };
