@@ -204,7 +204,7 @@ public:
      * Grab compressed buffer from write context.  This is only legal when
      * no file is attached.
      */
-    std::pair<void *, size_t> grabComprBuffer(void *&comprBufMalloc);
+    std::pair<uint64_t *, size_t> grabComprBuffer(vespalib::alloc::Alloc & comprAlloc);
 };
 
 }

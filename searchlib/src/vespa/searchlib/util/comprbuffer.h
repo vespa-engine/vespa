@@ -3,18 +3,20 @@
 #pragma once
 
 #include <vespa/searchlib/util/filealign.h>
+#include <vespa/vespalib/util/alloc.h>
 
 namespace search {
 
 class ComprBuffer
 {
 private:
+    using Alloc = vespalib::alloc::Alloc;
     void allocComprBuf();
     const uint32_t   _unitSize; // Size of unit in bytes, doubles up as alignment
     bool             _padBefore;
     void            *_comprBuf;
     size_t           _comprBufSize;
-    void            *_comprBufMalloc;
+    Alloc            _comprAlloc;
     FileAlign        _aligner;
 public:
 
@@ -44,11 +46,9 @@ public:
     }
     const FileAlign & getAligner() const { return _aligner; }
 
-    void * stealComprBuf() {
-        void * stolen = _comprBufMalloc;
-        _comprBufMalloc = nullptr;
+    Alloc stealComprBuf() {
         setComprBuf(nullptr, 0);
-        return stolen;
+        return std::move(_comprAlloc);
     }
 
     /*

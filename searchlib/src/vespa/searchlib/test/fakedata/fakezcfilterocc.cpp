@@ -96,7 +96,7 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)
       _lastDocId(0u),
       _compressedBits(0),
       _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
-      _compressedMalloc(nullptr),
+      _compressedAlloc(),
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(true),
@@ -201,8 +201,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     _lastDocId = fw._postings.back()._docId;
     writer.on_close();
 
-    std::pair<void *, size_t> ectxData = writeContext.grabComprBuffer(_compressedMalloc);
-    _compressed = std::make_pair(static_cast<uint64_t *>(ectxData.first), ectxData.second);
+    _compressed = writeContext.grabComprBuffer(_compressedAlloc);
     read_header<bigEndian>();
 }
 
@@ -288,10 +287,7 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
     assert(static_cast<int32_t>(features.doc_id()) == -1);
 }
 
-FakeZcFilterOcc::~FakeZcFilterOcc()
-{
-    free(_compressedMalloc);
-}
+FakeZcFilterOcc::~FakeZcFilterOcc() = default;
 
 
 void

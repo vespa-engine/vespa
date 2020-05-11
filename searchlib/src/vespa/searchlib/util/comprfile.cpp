@@ -434,13 +434,13 @@ ComprFileWriteContext::writeComprBuffer(bool flushSlack)
     _encodeContext->afterWrite(*this, chunkUsedUnits, 0);
 }
 
-std::pair<void *, size_t>
-ComprFileWriteContext::grabComprBuffer(void *&comprBufMalloc)
+std::pair<uint64_t *, size_t>
+ComprFileWriteContext::grabComprBuffer(vespalib::alloc::Alloc & comprAlloc)
 {
     assert(_file == nullptr);
-    std::pair<void *, size_t> res =
+    std::pair<uint64_t *, size_t> res =
         std::make_pair(getComprBuf(), _encodeContext->getUsedUnits(getComprBuf()));
-    comprBufMalloc = stealComprBuf();
+    comprAlloc = stealComprBuf();
     return res;
 }
 
