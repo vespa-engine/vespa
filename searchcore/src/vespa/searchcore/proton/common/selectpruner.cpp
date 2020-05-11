@@ -179,9 +179,9 @@ SelectPruner::visitAndBranch(const And &expr)
         rhs._node->setParentheses();
     }
     if (_inverted) {
-        _node.reset(new Or(std::move(lhs._node), std::move(rhs._node), "or"));
+        _node = std::make_unique<Or>(std::move(lhs._node), std::move(rhs._node), "or");
     } else {
-        _node.reset(new And(std::move(lhs._node), std::move(rhs._node), "and"));
+        _node = std::make_unique<And>(std::move(lhs._node), std::move(rhs._node), "and");
     }
     addNodeCount(lhs);
     addNodeCount(rhs);
@@ -205,10 +205,10 @@ SelectPruner::visitComparison(const Compare &expr)
     bool lhsNullVal = lhs.isNullVal();
     bool rhsNullVal = rhs.isNullVal();
     const Operator &op(getOperator(expr.getOperator()));
-    _node.reset(new Compare(std::move(lhs._valueNode),
-                            op,
-                            std::move(rhs._valueNode),
-                            expr.getBucketIdFactory()));
+    _node = std::make_unique<Compare>(std::move(lhs._valueNode),
+                                      op,
+                                      std::move(rhs._valueNode),
+                                      expr.getBucketIdFactory());
     _priority = ComparePriority;
     if (_constVal && (lhsNullVal || rhsNullVal)) {
         if (!lhsNullVal || !rhsNullVal) {
@@ -243,7 +243,7 @@ SelectPruner::visitDocumentType(const DocType &expr)
         _inverted = true;
         res = !res;
     }
-    _node.reset(new Constant(res));
+    _node = std::make_unique<Constant>(res);
     _resultSet.add(res ? Result::True : Result::False);
     _priority = DocumentTypePriority;
 }
@@ -338,9 +338,9 @@ SelectPruner::visitOrBranch(const Or &expr)
         rhs._node->setParentheses();
     }
     if (_inverted) {
-        _node.reset(new And(std::move(lhs._node), std::move(rhs._node), "and"));
+        _node = std::make_unique<And>(std::move(lhs._node), std::move(rhs._node), "and");
     } else {
-        _node.reset(new Or(std::move(lhs._node), std::move(rhs._node), "or"));
+        _node = std::make_unique<Or>(std::move(lhs._node), std::move(rhs._node), "or");
     }
     addNodeCount(lhs);
     addNodeCount(rhs);
@@ -375,7 +375,7 @@ SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
     }
     ValueNode::UP child(std::move(_valueNode));
     const vespalib::string &funcName(expr.getFunctionName());
-    _valueNode.reset(new FunctionValueNode(funcName, std::move(child)));
+    _valueNode = std::make_unique<FunctionValueNode>(funcName, std::move(child));
     if (_priority < FuncPriority) {
         _valueNode->setParentheses();
     }
@@ -406,7 +406,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     const bool is_imported = docType->has_imported_field_name(name);
     if (complex || !is_imported) {
         try {
-            std::unique_ptr<Field> fp(new Field(docType->getField(name)));
+            auto fp = std::make_unique<Field>(docType->getField(name));
             if (!fp) {
                 setInvalidVal();
                 return;
@@ -476,7 +476,7 @@ SelectPruner::invertNode()
         _node->setParentheses();
     }
     NodeUP node(std::move(_node));
-    _node.reset(new Not(std::move(node), "not"));
+    _node = std::make_unique<Not>(std::move(node), "not");
     _priority = NotPriority;
     _inverted = !_inverted;
 }
@@ -529,7 +529,7 @@ SelectPruner::setInvalidVal()
 {
     _constVal = true;
     _priority = InvalidValPriority;
-    _valueNode.reset(new InvalidValueNode("invalidval"));
+    _valueNode = std::make_unique<InvalidValueNode>("invalidval");
 }
 
 
@@ -538,7 +538,7 @@ SelectPruner::setInvalidConst()
 {
     _constVal = true;
     _priority = InvalidConstPriority;
-    _node.reset(new InvalidConstant("invalid"));
+    _node = std::make_unique<InvalidConstant>("invalid");
 }
 
 void
@@ -554,7 +554,7 @@ SelectPruner::setTernaryConst(bool val)
 {
     _constVal = true;
     _priority = ConstPriority;
-    _node.reset(new Constant(val));
+    _node = std::make_unique<Constant>(val);
 }
 
 void

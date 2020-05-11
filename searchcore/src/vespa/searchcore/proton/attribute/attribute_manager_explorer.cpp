@@ -37,9 +37,9 @@ AttributeManagerExplorer::get_children_names() const
 std::unique_ptr<vespalib::StateExplorer>
 AttributeManagerExplorer::get_child(vespalib::stringref name) const
 {
-    ExclusiveAttributeReadAccessor::UP attr = _mgr->getExclusiveReadAccessor(name);
+    auto attr = _mgr->getExclusiveReadAccessor(name);
     if (attr.get() != nullptr) {
-        return std::unique_ptr<vespalib::StateExplorer>(new AttributeVectorExplorer(std::move(attr)));
+        return std::make_unique<AttributeVectorExplorer>(std::move(attr));
     }
     return std::unique_ptr<vespalib::StateExplorer>();
 }
