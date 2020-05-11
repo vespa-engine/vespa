@@ -222,7 +222,7 @@ enum PathGroup {
     paymentProcessor(PathPrefix.none, "/payment/notification"),
 
     /** Invoice management */
-    invoiceManagement(PathPrefix.none, "/billing/v1/invoice");
+    invoiceManagement(PathPrefix.none, "/billing/v1/invoice/{*}");
 
 
     final List<String> pathSpecs;
