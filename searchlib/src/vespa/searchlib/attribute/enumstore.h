@@ -17,6 +17,7 @@
 #include <vespa/vespalib/datastore/unique_store_string_allocator.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa//vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
 
@@ -114,8 +115,8 @@ public:
     private:
         AllocatorType& _allocator;
         vespalib::datastore::IUniqueStoreDictionary& _dict;
-        std::vector<EntryRef> _refs;
-        std::vector<uint32_t> _payloads;
+        std::vector<EntryRef, vespalib::allocator_large<EntryRef>> _refs;
+        std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _payloads;
 
     public:
         NonEnumeratedLoader(AllocatorType& allocator, vespalib::datastore::IUniqueStoreDictionary& dict)
