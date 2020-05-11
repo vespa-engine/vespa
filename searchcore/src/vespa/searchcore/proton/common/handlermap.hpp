@@ -85,7 +85,7 @@ public:
                             "Handler is null for docType '%s'",
                             docTypeNameVer.toString().c_str()));
         }
-        iterator it = _handlers.find(docTypeNameVer);
+        auto it = _handlers.find(docTypeNameVer);
         if (it == _handlers.end()) {
             _handlers[docTypeNameVer] = handler;
             return HandlerSP();
@@ -105,7 +105,7 @@ public:
     HandlerSP
     getHandler(const DocTypeName &docTypeNameVer) const
     {
-        const_iterator it = _handlers.find(docTypeNameVer);
+        auto it = _handlers.find(docTypeNameVer);
         if (it != _handlers.end()) {
             return it->second;
         }
@@ -122,7 +122,7 @@ public:
     T *
     getHandlerPtr(const DocTypeName &docTypeNameVer) const
     {
-        const_iterator it = _handlers.find(docTypeNameVer);
+        auto it = _handlers.find(docTypeNameVer);
         return (it != _handlers.end()) ? it->second.get() : nullptr;
     }
 
@@ -147,7 +147,7 @@ public:
     HandlerSP
     removeHandler(const DocTypeName &docTypeNameVer)
     {
-        iterator it = _handlers.find(docTypeNameVer);
+        auto it = _handlers.find(docTypeNameVer);
         if (it == _handlers.end()) {
             return HandlerSP();
         }

@@ -146,7 +146,7 @@ AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP 
 AttributeVector::SP
 AttributeManager::findAttribute(const vespalib::string &name) const
 {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     return (itr != _attributes.end())
         ? itr->second.getAttribute()
         : AttributeVector::SP();
@@ -155,7 +155,7 @@ AttributeManager::findAttribute(const vespalib::string &name) const
 const AttributeManager::FlushableWrap *
 AttributeManager::findFlushable(const vespalib::string &name) const
 {
-    FlushableMap::const_iterator itr = _flushables.find(name);
+    auto itr = _flushables.find(name);
     return (itr != _flushables.end()) ? &itr->second : nullptr;
 }
 
@@ -232,7 +232,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _documentSubDbName(documentSubDbName),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _factory(new AttributeFactory()),
+      _factory(std::make_shared<AttributeFactory>()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
       _hwInfo(hwInfo),
@@ -369,15 +369,16 @@ AttributeManager::padAttribute(AttributeVector &v, uint32_t docIdLimit)
             v.commit();
         }
     }
-    if (needCommit > 1)
+    if (needCommit > 1) {
         v.commit();
+    }
     assert(v.getNumDocs() >= docIdLimit);
 }
 
 AttributeGuard::UP
 AttributeManager::getAttribute(const vespalib::string &name) const
 {
-    return AttributeGuard::UP(new AttributeGuard(findAttribute(name)));
+    return std::make_unique<AttributeGuard>(findAttribute(name));
 }
 
 std::unique_ptr<search::attribute::AttributeReadGuard>
@@ -540,7 +541,7 @@ AttributeManager::getAttributeFieldWriter() const
 AttributeVector *
 AttributeManager::getWritableAttribute(const vespalib::string &name) const
 {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra()) {
         return nullptr;
     }
@@ -570,7 +571,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
 
 void
 AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;
     }
