@@ -4,7 +4,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
-#include <vespa/vespalib/stllike/allocator.h>
 #include <cstddef>
 #include <algorithm>
 
@@ -552,19 +551,6 @@ TEST("test that begin and end are identical with empty hashtables") {
     EXPECT_TRUE(empty.begin() == empty.end());
     hash_set<int> empty_but_reserved(10);
     EXPECT_TRUE(empty_but_reserved.begin() == empty_but_reserved.end());
-}
-
-TEST ("test that large_allocator works fine with std::vector") {
-    using V = std::vector<uint64_t, allocator_large<uint64_t>>;
-    V a;
-    a.push_back(1);
-    a.reserve(14);
-    for (size_t i(0); i < 400000; i++) {
-        a.push_back(i);
-    }
-    V b = std::move(a);
-    V c = b;
-    ASSERT_EQUAL(b.size(), c.size());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

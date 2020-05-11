@@ -46,9 +46,9 @@ public:
     void move_entries(ICompactable& compactable) override;
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;
-    void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
+    void build(const std::vector<EntryRef> &refs, const std::vector<uint32_t> &ref_counts, std::function<void(EntryRef)> hold) override;
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
-    void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
+    void build_with_payload(const std::vector<EntryRef>& refs, const std::vector<uint32_t>& payloads) override;
     std::unique_ptr<ReadSnapshot> get_read_snapshot() const override;
 };
 

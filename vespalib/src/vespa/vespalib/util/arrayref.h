@@ -15,13 +15,11 @@ class ArrayRef {
 public:
     ArrayRef() : _v(nullptr), _sz(0) { }
     ArrayRef(T * v, size_t sz) : _v(v), _sz(sz) { }
-    template<typename A=std::allocator<T>>
-    ArrayRef(std::vector<T, A> & v) : _v(&v[0]), _sz(v.size()) { }
+    ArrayRef(std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
     ArrayRef(Array<T> &v) : _v(&v[0]), _sz(v.size()) { }
     T & operator [] (size_t i) { return _v[i]; }
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
-    bool empty() const { return _sz == 0; }
     T *begin() { return _v; }
     T *end() { return _v + _sz; }
 private:
@@ -33,14 +31,12 @@ template <typename T>
 class ConstArrayRef {
 public:
     ConstArrayRef(const T *v, size_t sz) : _v(v), _sz(sz) { }
-    template<typename A=std::allocator<T>>
-    ConstArrayRef(const std::vector<T, A> & v) : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef(const ArrayRef<T> & v) : _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef(const Array<T> &v) : _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef() : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
-    bool empty() const { return _sz == 0; }
     const T *cbegin() const { return _v; }
     const T *cend() const { return _v + _sz; }
     const T *begin() const { return _v; }
