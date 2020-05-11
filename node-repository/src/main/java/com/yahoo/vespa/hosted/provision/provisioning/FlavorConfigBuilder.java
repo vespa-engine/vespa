@@ -19,7 +19,15 @@ public class FlavorConfigBuilder {
         return new FlavorsConfig(builder);
     }
 
-    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, double bandwidth, Flavor.Type type) {
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
+                                                  double cpu, double mem, double disk, double bandwidth,
+                                                  Flavor.Type type) {
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type);
+    }
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
+                                                  double cpu, double mem, double disk, double bandwidth,
+                                                  boolean fastDisk, boolean remoteStorage,
+                                                  Flavor.Type type) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -27,6 +35,8 @@ public class FlavorConfigBuilder {
         flavor.minMainMemoryAvailableGb(mem);
         flavor.bandwidth(1000 * bandwidth);
         flavor.environment(type.name());
+        flavor.fastDisk(fastDisk);
+        flavor.remoteStorage(remoteStorage);
         builder.flavor(flavor);
         return flavor;
     }
@@ -37,15 +47,15 @@ public class FlavorConfigBuilder {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (String flavorName : flavors) {
             if (flavorName.equals("docker"))
-                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, 1.5 /* bandwidth Gbps*/, Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 1., 3., 2., 1.5, Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("docker2"))
-                flavorConfigBuilder.addFlavor(flavorName, 2. /* cpu*/, 4. /* mem GB*/, 4. /*disk GB*/, 0.5, /* bandwidth Gbps*/ Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 2.,  4., 4., 0.5, Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("host"))
-                flavorConfigBuilder.addFlavor(flavorName, 7. /* cpu*/, 10. /* mem GB*/, 12. /*disk GB*/, 5 /* bandwidth Gbps*/, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 7., 10., 12., 5, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("devhost"))
-                flavorConfigBuilder.addFlavor(flavorName, 4. /* cpu*/, 8. /* mem GB*/, 10 /*disk GB*/, 10 /* bandwidth Gbps*/, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 4.,  8., 10, 10, Flavor.Type.BARE_METAL);
             else
-                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, 3 /* bandwidth Gbps*/, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 1.,  3., 2., 3, Flavor.Type.BARE_METAL);
         }
         return new NodeFlavors(flavorConfigBuilder.build());
     }
