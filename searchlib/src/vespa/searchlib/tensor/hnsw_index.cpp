@@ -477,7 +477,7 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
 {
     std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), nullptr);
     while (candidates.size() > k) {
         candidates.pop();
     }
@@ -494,7 +494,7 @@ HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
                                   const BitVector &filter, uint32_t explore_k) const
 {
     std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), &filter);
     while (candidates.size() > k) {
         candidates.pop();
     }
@@ -507,27 +507,7 @@ HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
 }
 
 FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k) const
-{
-    FurthestPriQ best_neighbors;
-    if (get_entry_level() < 0) {
-        return best_neighbors;
-    }
-    uint32_t entry_docid = get_entry_docid();
-    int search_level = get_entry_level();
-    double entry_dist = calc_distance(vector, entry_docid);
-    HnswCandidate entry_point(entry_docid, entry_dist);
-    while (search_level > 0) {
-        entry_point = find_nearest_in_layer(vector, entry_point, search_level);
-        --search_level;
-    }
-    best_neighbors.push(entry_point);
-    search_layer(vector, k, best_neighbors, 0);
-    return best_neighbors;
-}
-
-FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector &filter) const
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const
 {
     if (get_entry_level() < 0) {
         FurthestPriQ empty;
@@ -541,7 +521,14 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVecto
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
     }
-    return search_l0(vector, k, entry_point, filter);
+    if (filter) {
+        return search_l0(vector, k, entry_point, *filter);
+    } else {
+        FurthestPriQ best_neighbors;
+        best_neighbors.push(entry_point);
+        search_layer(vector, k, best_neighbors, 0);
+        return best_neighbors;
+    }
 }
 
 HnswNode

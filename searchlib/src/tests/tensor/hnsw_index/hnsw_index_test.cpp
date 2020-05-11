@@ -122,7 +122,7 @@ public:
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid);
-        auto rv = index->top_k_candidates(qv, k).peek();
+        auto rv = index->top_k_candidates(qv, k, nullptr).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {

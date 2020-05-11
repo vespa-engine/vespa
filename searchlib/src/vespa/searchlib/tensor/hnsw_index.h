@@ -142,8 +142,7 @@ public:
                                                  const BitVector &filter, uint32_t explore_k) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector &filter) const;
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const;
 
     uint32_t get_entry_docid() const { return _graph.entry_docid; }
     int32_t get_entry_level() const { return _graph.entry_level; }
