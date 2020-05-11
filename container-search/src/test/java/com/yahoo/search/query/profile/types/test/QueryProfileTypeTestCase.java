@@ -2,6 +2,7 @@
 package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.tensor.Tensor;
@@ -338,20 +339,22 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrictThroughQuery() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setType(type);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(profile);
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         CompiledQueryProfile cprofile = cRegistry.getComponent("test");
 
-        Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cprofile);
+        Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cprofile);
 
         assertEquals(0, query.errors().size());
 
@@ -365,13 +368,13 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesStrictThroughQuery() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setType(typeStrict);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(profile);
         registry.register(newUser);
@@ -381,11 +384,11 @@ public class QueryProfileTypeTestCase {
         Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
 
-        assertEquals("newUserValue1",query.properties().get("myUserQueryProfile.myUserString"));
-        assertEquals(845,query.properties().get("myUserQueryProfile.myUserInteger"));
+        assertEquals("newUserValue1", query.properties().get("myUserQueryProfile.myUserString"));
+        assertEquals(845, query.properties().get("myUserQueryProfile.myUserInteger"));
 
         try {
-            query.properties().set("myUserQueryProfile.someKey","value");
+            query.properties().set("myUserQueryProfile.someKey", "value");
             fail("Should not be allowed to set this");
         }
         catch (IllegalArgumentException e) {
@@ -405,7 +408,8 @@ public class QueryProfileTypeTestCase {
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
         Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
                                                               "=" + encode(tensorString),
-                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
         assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
@@ -417,26 +421,23 @@ public class QueryProfileTypeTestCase {
 
     @Test
     public void testIllegalStrictAssignmentFromRequest() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setType(typeStrict);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
 
         profile.set("myUserQueryProfile", newUser, registry);
 
         try {
-            new Query(
-                    HttpRequest.createTestRequest(
-                            "?myUserQueryProfile.nondeclared=someValue",
-                            com.yahoo.jdisc.http.HttpRequest.Method.GET),
-                    profile.compile(null));
+            new Query(HttpRequest.createTestRequest("?myUserQueryProfile.nondeclared=someValue",
+                                                    com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                      profile.compile(null));
             fail("Above statement should throw");
         } catch (QueryException e) {
             // As expected.
-            assertThat(
-                    Exceptions.toMessageString(e),
-                    containsString("Could not set 'myUserQueryProfile.nondeclared' to 'someValue': 'nondeclared' is not declared in query profile type 'userStrict', and the type is strict"));
+            assertThat(Exceptions.toMessageString(e),
+                       containsString("Could not set 'myUserQueryProfile.nondeclared' to 'someValue': 'nondeclared' is not declared in query profile type 'userStrict', and the type is strict"));
         }
     }
 
@@ -474,7 +475,9 @@ public class QueryProfileTypeTestCase {
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
 
-        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("topMap"));
+        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("topMap"));
 
         assertEquals(0, query.errors().size());
 
@@ -487,25 +490,25 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testAnonTypedOverridingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
-        subMap.set("typeProfile",test, registry);
+        subMap.set("typeProfile", test, registry);
 
-        QueryProfile myUser=new QueryProfile("myUser");
+        QueryProfile myUser = new QueryProfile("myUser");
         myUser.setType(user);
-        myUser.set("myUserString","userValue1", registry);
-        myUser.set("myUserInteger",442, registry);
-        test.set("myQueryProfile",myUser, registry);
+        myUser.set("myUserString", "userValue1", registry);
+        myUser.set("myUserInteger", 442, registry);
+        test.set("myQueryProfile", myUser, registry);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -526,14 +529,14 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testSettingValueInStrictTypeNestedUnderUntypedMaps() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(typeStrict);
-        subMap.set("typeProfile",test, registry);
+        subMap.set("typeProfile", test, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -542,16 +545,14 @@ public class QueryProfileTypeTestCase {
 
         try {
             new Query(
-                    HttpRequest.createTestRequest(
-                            "?subMap.typeProfile.someValue=value",
-                            com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                    HttpRequest.createTestRequest("?subMap.typeProfile.someValue=value",
+                                                  com.yahoo.jdisc.http.HttpRequest.Method.GET),
                     cRegistry.getComponent("topMap"));
             fail("Above statement should throw");
         } catch (QueryException e) {
             // As expected.
-            assertThat(
-                    Exceptions.toMessageString(e),
-                    containsString("Could not set 'subMap.typeProfile.someValue' to 'value': 'someValue' is not declared in query profile type 'testtypeStrict', and the type is strict"));
+            assertThat(Exceptions.toMessageString(e),
+                       containsString("Could not set 'subMap.typeProfile.someValue' to 'value': 'someValue' is not declared in query profile type 'testtypeStrict', and the type is strict"));
         }
     }
 
@@ -562,19 +563,19 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedSettingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
+        QueryProfile subMap = new QueryProfile("topSubMap");
         topMap.set("subMap",subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
         subMap.set("typeProfile",test, registry);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -582,11 +583,64 @@ public class QueryProfileTypeTestCase {
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
 
-        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("topMap"));
+        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("topMap"));
         assertEquals(0, query.errors().size());
 
         assertEquals("newUserValue1", query.properties().get("subMap.typeProfile.myUserQueryProfile.myUserString"));
         assertEquals(845, query.properties().get("subMap.typeProfile.myUserQueryProfile.myUserInteger"));
+    }
+
+    @Test
+    public void testNestedTypeName() {
+        ComponentId.resetGlobalCountersForTests();
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("testType");
+        registry.getTypeRegistry().register(type);
+        type.addField(new FieldDescription("ranking.features.query(embedding_profile)",
+                                           "tensor<float>(model{},x[128])"),
+                      registry.getTypeRegistry());
+        QueryProfile test = new QueryProfile("test");
+        registry.register(test);
+        test.setType(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query("?query=foo", cRegistry.getComponent("test"));
+
+        // With a prefix we're not in the built-in type space
+        query.properties().set("prefix.ranking.foo", 0.1);
+        assertEquals(0.1, query.properties().get("prefix.ranking.foo"));
+    }
+
+    @Test
+    public void testNestedTypeNameUsingBuiltInTypes() {
+        ComponentId.resetGlobalCountersForTests();
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("testType");
+        type.inherited().add(Query.getArgumentType()); // Include native type checking
+        registry.getTypeRegistry().register(type);
+        type.addField(new FieldDescription("ranking.features.query(embedding_profile)",
+                                           "tensor<float>(model{},x[128])"),
+                      registry.getTypeRegistry());
+        QueryProfile test = new QueryProfile("test");
+        registry.register(test);
+        test.setType(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query("?query=foo", cRegistry.getComponent("test"));
+
+        // Cannot set a property in a strict built-in type
+        try {
+            query.properties().set("ranking.foo", 0.1);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("'foo' is not a valid property in 'ranking'. See the query api for valid keys starting by 'ranking'.",
+                         e.getCause().getMessage());
+        }
+
+        // With a prefix we're not in the built-in type space
+        query.properties().set("prefix.ranking.foo", 0.1);
+        assertEquals(0.1, query.properties().get("prefix.ranking.foo"));
     }
 
     private void assertWrongType(QueryProfile profile,String typeName,String name,Object value) {

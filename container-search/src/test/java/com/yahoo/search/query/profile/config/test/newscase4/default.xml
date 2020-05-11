@@ -9,7 +9,7 @@
 
     <query-profile for="parent" inherits="parent" />
     <query-profile for="parent,child" >
-      <field name="ranking.features">0.1</field>
+      <field name="ranking.features.foo">0.1</field>
     </query-profile>
 </query-profile>
 

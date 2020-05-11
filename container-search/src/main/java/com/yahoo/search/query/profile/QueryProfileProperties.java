@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.protect.Validator;
+import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.DimensionalValue;
@@ -94,11 +95,15 @@ public class QueryProfileProperties extends Properties {
 
             // Check types
             if ( ! profile.getTypes().isEmpty()) {
-                QueryProfileType type = null;
+                QueryProfileType type;
+                QueryProfileType explicitTypeFromField = null;
                 for (int i = 0; i < name.size(); i++) {
-                    if (type == null) // We're on the first iteration, or no type is explicitly specified
+                    if (explicitTypeFromField != null)
+                        type = explicitTypeFromField;
+                    else
                         type = profile.getType(name.first(i), context);
                     if (type == null) continue;
+
                     String localName = name.get(i);
                     FieldDescription fieldDescription = type.getField(localName);
                     if (fieldDescription == null && type.isStrict())
@@ -115,7 +120,7 @@ public class QueryProfileProperties extends Properties {
                         }
                         else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
                             // If a type is specified, use that instead of the type implied by the name
-                            type = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
+                            explicitTypeFromField = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
                         }
                     }
 

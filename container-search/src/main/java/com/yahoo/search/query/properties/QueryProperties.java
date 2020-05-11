@@ -69,7 +69,7 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(Ranking.QUERYCACHE)) return ranking.getQueryCache();
                 if (key.last().equals(Ranking.LIST_FEATURES)) return ranking.getListFeatures();
             }
-            else if (key.size()>=3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
+            else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
                 if (key.size() == 3) {
                     MatchPhase matchPhase = ranking.getMatchPhase();
                     if (key.last().equals(MatchPhase.ATTRIBUTE)) return matchPhase.getAttribute();
@@ -144,7 +144,6 @@ public class QueryProperties extends Properties {
         return super.get(key, context, substitution);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void set(CompoundName key, Object value, Map<String,String> context) {
         // Note: The defaults here are never used
@@ -172,7 +171,7 @@ public class QueryProperties extends Properties {
                 else if (key.last().equals(Model.RESTRICT))
                     model.setRestrict(asString(value,""));
                 else
-                    throwIllegalParameter(key.last(),Model.MODEL);
+                    throwIllegalParameter(key.last(), Model.MODEL);
             }
             else if (key.first().equals(Ranking.RANKING)) {
                 Ranking ranking = query.getRanking();
@@ -189,46 +188,66 @@ public class QueryProperties extends Properties {
                         ranking.setQueryCache(asBoolean(value, false));
                     else if (key.last().equals(Ranking.LIST_FEATURES))
                         ranking.setListFeatures(asBoolean(value,false));
+                    else
+                        throwIllegalParameter(key.last(), Ranking.RANKING);
                 }
-                else if (key.size()>=3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
+                else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
                     if (key.size() == 3) {
                         MatchPhase matchPhase = ranking.getMatchPhase();
-                        if (key.last().equals(MatchPhase.ATTRIBUTE)) {
+                        if (key.last().equals(MatchPhase.ATTRIBUTE))
                             matchPhase.setAttribute(asString(value, null));
-                        } else if (key.last().equals(MatchPhase.ASCENDING)) {
+                        else if (key.last().equals(MatchPhase.ASCENDING))
                             matchPhase.setAscending(asBoolean(value, false));
-                        } else if (key.last().equals(MatchPhase.MAX_HITS)) {
+                        else if (key.last().equals(MatchPhase.MAX_HITS))
                             matchPhase.setMaxHits(asLong(value, null));
-                        } else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE)) {
+                        else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE))
                             matchPhase.setMaxFilterCoverage(asDouble(value, 0.2));
-                        }
+                        else
+                            throwIllegalParameter(key.rest().toString(), Ranking.MATCH_PHASE);
                     } else if (key.size() > 3 && key.get(2).equals(Ranking.DIVERSITY)) {
                         Diversity diversity = ranking.getMatchPhase().getDiversity();
                         if (key.last().equals(Diversity.ATTRIBUTE)) {
                             diversity.setAttribute(asString(value, null));
-                        } else if (key.last().equals(Diversity.MINGROUPS)) {
+                        }
+                        else if (key.last().equals(Diversity.MINGROUPS)) {
                             diversity.setMinGroups(asLong(value, null));
-                        } else if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
-                            if (key.last().equals(Diversity.FACTOR)) {
+                        }
+                        else if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
+                            if (key.last().equals(Diversity.FACTOR))
                                 diversity.setCutoffFactor(asDouble(value, 10.0));
-                            } else if (key.last().equals(Diversity.STRATEGY)) {
+                            else if (key.last().equals(Diversity.STRATEGY))
                                 diversity.setCutoffStrategy(asString(value, "loose"));
-                            }
+                            else
+                                throwIllegalParameter(key.rest().toString(), Diversity.CUTOFF);
+                        }
+                        else {
+                            throwIllegalParameter(key.rest().toString(), Ranking.DIVERSITY);
                         }
                     }
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
                     SoftTimeout soft = ranking.getSoftTimeout();
-                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, true));
-                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, null));
-                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, null));
+                    if (key.last().equals(SoftTimeout.ENABLE))
+                        soft.setEnable(asBoolean(value, true));
+                    else if (key.last().equals(SoftTimeout.FACTOR))
+                        soft.setFactor(asDouble(value, null));
+                    else if (key.last().equals(SoftTimeout.TAILCOST))
+                        soft.setTailcost(asDouble(value, null));
+                    else
+                        throwIllegalParameter(key.rest().toString(), Ranking.SOFTTIMEOUT);
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                     Matching matching = ranking.getMatching();
-                    if (key.last().equals(Matching.TERMWISELIMIT)) matching.setTermwiselimit(asDouble(value, 1.0));
-                    if (key.last().equals(Matching.NUMTHREADSPERSEARCH)) matching.setNumThreadsPerSearch(asInteger(value, 1));
-                    if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) matching.setNumSearchPartitions(asInteger(value, 1));
-                    if (key.last().equals(Matching.MINHITSPERTHREAD)) matching.setMinHitsPerThread(asInteger(value, 0));
+                    if (key.last().equals(Matching.TERMWISELIMIT))
+                        matching.setTermwiselimit(asDouble(value, 1.0));
+                    else if (key.last().equals(Matching.NUMTHREADSPERSEARCH))
+                        matching.setNumThreadsPerSearch(asInteger(value, 1));
+                    else if (key.last().equals(Matching.NUMSEARCHPARTITIIONS))
+                        matching.setNumSearchPartitions(asInteger(value, 1));
+                    else if (key.last().equals(Matching.MINHITSPERTHREAD))
+                        matching.setMinHitsPerThread(asInteger(value, 0));
+                    else
+                        throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
                 }
                 else if (key.size() > 2) {
                     String restKey = key.rest().rest().toString();
@@ -237,7 +256,7 @@ public class QueryProperties extends Properties {
                     else if (key.get(1).equals(Ranking.PROPERTIES))
                         ranking.getProperties().put(restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("properties")));
                     else
-                        throwIllegalParameter(key.rest().toString(),Ranking.RANKING);
+                        throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
                 }
             }
             else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
@@ -259,11 +278,12 @@ public class QueryProperties extends Properties {
                     query.getSelect().setGroupingExpressionString(asString(value, ""));
                 }
                 else if (key.size() == 2) {
-                    if (key.last().equals(Select.WHERE)) {
+                    if (key.last().equals(Select.WHERE))
                         query.getSelect().setWhereString(asString(value, ""));
-                    } else if (key.last().equals(Select.GROUPING)) {
+                    else if (key.last().equals(Select.GROUPING))
                         query.getSelect().setGroupingString(asString(value, ""));
-                    }
+                    else
+                        throwIllegalParameter(key.rest().toString(), Select.SELECT);
                 }
                 else {
                     throwIllegalParameter(key.last(), Select.SELECT);
@@ -345,7 +365,7 @@ public class QueryProperties extends Properties {
 
     private void throwIllegalParameter(String key,String namespace) {
         throw new IllegalArgumentException("'" + key + "' is not a valid property in '" + namespace +
-                                           "'. See the search api for valid keys starting by '" + namespace + "'.");
+                                           "'. See the query api for valid keys starting by '" + namespace + "'.");
     }
 
     @Override
