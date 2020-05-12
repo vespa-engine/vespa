@@ -23,11 +23,11 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public abstract class InfrastructureUpgrader extends ControllerMaintainer {
+public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(InfrastructureUpgrader.class.getName());
 
-    private final UpgradePolicy upgradePolicy;
+    protected final UpgradePolicy upgradePolicy;
 
     public InfrastructureUpgrader(Controller controller, Duration interval, UpgradePolicy upgradePolicy, String name) {
         super(controller, interval, name, EnumSet.allOf(SystemName.class));
@@ -40,7 +40,7 @@ public abstract class InfrastructureUpgrader extends ControllerMaintainer {
     }
 
     /** Deploy a list of system applications until they converge on the given version */
-    private void upgradeAll(Version target, List<SystemApplication> applications) {
+    private void upgradeAll(VERSION target, List<SystemApplication> applications) {
         for (List<ZoneApi> zones : upgradePolicy.asList()) {
             boolean converged = true;
             for (ZoneApi zone : zones) {
@@ -63,11 +63,11 @@ public abstract class InfrastructureUpgrader extends ControllerMaintainer {
     }
 
     /** Returns whether all applications have converged to the target version in zone */
-    private boolean upgradeAll(Version target, List<SystemApplication> applications, ZoneApi zone) {
+    private boolean upgradeAll(VERSION target, List<SystemApplication> applications, ZoneApi zone) {
         boolean converged = true;
         for (SystemApplication application : applications) {
             if (convergedOn(target, application.dependencies(), zone)) {
-                if (shouldUpgrade(target, application, zone)) {
+                if (changeTargetTo(target, application, zone)) {
                     upgrade(target, application, zone);
                 }
                 converged &= convergedOn(target, application, zone);
@@ -76,24 +76,24 @@ public abstract class InfrastructureUpgrader extends ControllerMaintainer {
         return converged;
     }
 
-    private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneApi zone) {
+    private boolean convergedOn(VERSION target, List<SystemApplication> applications, ZoneApi zone) {
         return applications.stream().allMatch(application -> convergedOn(target, application, zone));
     }
 
-    /** Returns whether application in zone should be told to upgrade to given target */
-    protected abstract boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone);
+    /** Returns whether target version for application in zone should be changed */
+    protected abstract boolean changeTargetTo(VERSION target, SystemApplication application, ZoneApi zone);
 
     /** Upgrade component to target version. Implementation should be idempotent */
-    protected abstract void upgrade(Version target, SystemApplication application, ZoneApi zone);
+    protected abstract void upgrade(VERSION target, SystemApplication application, ZoneApi zone);
 
     /** Returns whether application has converged to target version in zone */
-    protected abstract boolean convergedOn(Version target, SystemApplication application, ZoneApi zone);
+    protected abstract boolean convergedOn(VERSION target, SystemApplication application, ZoneApi zone);
 
     /** Returns the target version for the component upgraded by this, if any */
-    protected abstract Optional<Version> targetVersion();
+    protected abstract Optional<VERSION> targetVersion();
 
-    /** Returns whether the upgrader should require given node to upgrade */
-    protected abstract boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
+    /** Returns whether the upgrader should expect given node to upgrade */
+    protected abstract boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
 
     /** Find the minimum value of a version field in a zone by comparing all nodes */
     protected final Optional<Version> minVersion(ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
@@ -102,7 +102,7 @@ public abstract class InfrastructureUpgrader extends ControllerMaintainer {
                                .nodeRepository()
                                .list(zone.getId(), application.id())
                                .stream()
-                               .filter(node -> requireUpgradeOf(node, application, zone))
+                               .filter(node -> expectUpgradeOf(node, application, zone))
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {

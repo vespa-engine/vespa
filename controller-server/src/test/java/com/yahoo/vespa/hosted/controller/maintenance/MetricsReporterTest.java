@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -290,8 +291,7 @@ public class MetricsReporterTest {
         var zone = ZoneId.from("prod.eu-west-1");
         var cloud = CloudName.defaultName();
         tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
-        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        CloudName.defaultName());
+        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1), Cloud.defaultCloud());
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
         );
         tester.configServer().bootstrap(List.of(zone), SystemApplication.configServerHost, SystemApplication.tenantHost);

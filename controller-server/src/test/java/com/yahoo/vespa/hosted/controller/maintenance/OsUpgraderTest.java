@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
@@ -136,7 +137,7 @@ public class OsUpgraderTest {
     private List<Node> nodesRequiredToUpgrade(ZoneId zone, SystemApplication application) {
         return nodeRepository().list(zone, application.id())
                                .stream()
-                               .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
+                               .filter(OsUpgrader::canUpgrade)
                                .collect(Collectors.toList());
     }
 
@@ -169,8 +170,7 @@ public class OsUpgraderTest {
               .setZones(zone1, zone2, zone3, zone4, zone5)
               .setSystemName(system)
               .setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
-        return new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                              CloudName.defaultName());
+        return new OsUpgrader(tester.controller(), Duration.ofDays(1), Cloud.defaultCloud());
     }
 
 }

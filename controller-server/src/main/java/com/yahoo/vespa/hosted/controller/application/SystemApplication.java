@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -63,8 +64,11 @@ public enum SystemApplication {
                          .orElse(false);
     }
 
-    /** Returns whether this should receive OS upgrades */
-    public boolean shouldUpgradeOs() {
+    /** Returns whether this should receive OS upgrades in given cloud */
+    public boolean shouldUpgradeOsIn(Cloud cloud) {
+        if (cloud.reprovisionToUpgradeOs()) {
+            return nodeType == NodeType.host; // TODO(mpolden): Remove once all node types are supported
+        }
         return nodeType.isDockerHost();
     }
 

@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class OsUpgrader extends InfrastructureUpgrader {
+public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     private static final Logger log = Logger.getLogger(OsUpgrader.class.getName());
 
@@ -30,57 +30,58 @@ public class OsUpgrader extends InfrastructureUpgrader {
             Node.State.reserved
     );
 
-    private final CloudName cloud;
+    private final Cloud cloud;
 
-    public OsUpgrader(Controller controller, Duration interval, CloudName cloud) {
-        super(controller, interval, controller.zoneRegistry().osUpgradePolicy(cloud), name(cloud));
+    public OsUpgrader(Controller controller, Duration interval, Cloud cloud) {
+        super(controller, interval, controller.zoneRegistry().osUpgradePolicy(cloud.name()), name(cloud.name()));
         this.cloud = cloud;
     }
 
     @Override
-    protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target, zone.getId(), zone.getCloudName()));
-        controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(), target);
+    protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
+        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target,
+                               zone.getId(), zone.getCloudName()));
+        controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(),
+                                                                                 target.osVersion().version());
     }
 
     @Override
-    protected boolean convergedOn(Version target, SystemApplication application, ZoneApi zone) {
-        return currentVersion(zone, application, target).equals(target);
+    protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
+        return currentVersion(zone, application, target.osVersion().version()).equals(target.osVersion().version());
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
-        return cloud.equals(zone.getCloudName()) && eligibleForUpgrade(node, application);
+    protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
+        return cloud.name().equals(zone.getCloudName()) && // Cloud is managed by this upgrader
+               application.shouldUpgradeOsIn(cloud) &&     // Application should upgrade in this cloud
+               canUpgrade(node);                           // Node is in an upgradable state
     }
 
     @Override
-    protected Optional<Version> targetVersion() {
+    protected Optional<OsVersionTarget> targetVersion() {
         // Return target if we have nodes in this cloud on a lower version
-        return controller().osVersionTarget(cloud)
-                           .map(OsVersionTarget::osVersion)
-                           .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
-                                                         .anyMatch(node -> node.currentVersion().isBefore(target.version())))
-                           .map(OsVersion::version);
+        return controller().osVersionTarget(cloud.name())
+                           .filter(target -> controller().osVersionStatus().nodesIn(cloud.name()).stream()
+                                                         .anyMatch(node -> node.currentVersion().isBefore(target.osVersion().version())));
     }
 
     @Override
-    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
-        if (!application.shouldUpgradeOs()) return false;                      // Never upgrade
+    protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
+        if (!application.shouldUpgradeOsIn(cloud)) return false;
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
                            .osVersion(application.nodeType())
-                           .map(target::isAfter)                               // Upgrade if target is after current
-                           .orElse(true);                                      // Upgrade if target is unset
+                           .map(currentTarget -> target.osVersion().version().isAfter(currentTarget))
+                           .orElse(true);
     }
 
     private Version currentVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
     }
 
-    /** Returns whether node in application should be upgraded by this */
-    public static boolean eligibleForUpgrade(Node node, SystemApplication application) {
-        return upgradableNodeStates.contains(node.state()) &&
-               application.shouldUpgradeOs();
+    /** Returns whether node is in a state where it can be upgraded */
+    public static boolean canUpgrade(Node node) {
+        return upgradableNodeStates.contains(node.state());
     }
 
     private static String name(CloudName cloud) {

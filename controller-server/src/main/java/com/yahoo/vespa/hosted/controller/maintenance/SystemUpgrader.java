@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -19,7 +18,7 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class SystemUpgrader extends InfrastructureUpgrader {
+public class SystemUpgrader extends InfrastructureUpgrader<Version> {
 
     private static final Logger log = Logger.getLogger(SystemUpgrader.class.getName());
 
@@ -46,7 +45,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
+    protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
         return eligibleForUpgrade(node);
     }
 
@@ -59,7 +58,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
+    protected boolean changeTargetTo(Version target, SystemApplication application, ZoneApi zone) {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
