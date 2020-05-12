@@ -26,6 +26,9 @@ public class VipStatus {
 
     private final boolean initiallyInRotation;
 
+    /** Override default, require all content clusters up */
+    private final boolean requireAllUp;
+
     /** The current state of this */
     private boolean currentlyInRotation;
 
@@ -59,6 +62,7 @@ public class VipStatus {
         this.clustersStatus = clustersStatus;
         this.healthState = healthState;
         initiallyInRotation = vipStatusConfig.initiallyInRotation();
+        requireAllUp = vipStatusConfig.requireAllUp();
         healthState.status(StateMonitor.Status.initializing);
         clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
         updateCurrentlyInRotation();
@@ -117,7 +121,8 @@ public class VipStatus {
                 currentlyInRotation = rotationOverride;
             } else {
                 if (healthState.status() == StateMonitor.Status.up) {
-                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
+                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(
+                            requireAllUp ? ClustersStatus.Require.ALL : ClustersStatus.Require.ONE);
                 }
                 else if (healthState.status() == StateMonitor.Status.initializing) {
                     currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL)

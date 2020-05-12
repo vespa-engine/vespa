@@ -28,9 +28,10 @@ public class VipStatusTestCase {
         return b.build();
     }
 
-    private static VipStatus getVipStatus(String[] clusters, StateMonitor.Status startState, boolean initiallyInRotation) {
+    private static VipStatus getVipStatus(String[] clusters, StateMonitor.Status startState,
+                                          boolean initiallyInRotation, boolean requireAllUp) {
         return new VipStatus(getSearchersConfig(clusters),
-                             new VipStatusConfig.Builder().initiallyInRotation(initiallyInRotation).build(),
+                             new VipStatusConfig.Builder().initiallyInRotation(initiallyInRotation).requireAllUp(requireAllUp).build(),
                              new ClustersStatus(),
                              new StateMonitor(1000, startState, new SystemTimer(), runnable -> {
                                  Thread thread = new Thread(runnable, "StateMonitor");
@@ -52,7 +53,7 @@ public class VipStatusTestCase {
     }
 
     private static void verifyUpOrDown(String[] clusters, StateMonitor.Status status) {
-        VipStatus v = getVipStatus(clusters, status, true);
+        VipStatus v = getVipStatus(clusters, status, true, false);
         remove(clusters, v);
         // initial state
         assertFalse(v.isInRotation());
@@ -75,7 +76,7 @@ public class VipStatusTestCase {
     public void testUpRequireAllDown() {
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
 
-        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true);
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true, false);
         assertFalse(v.isInRotation());
         add(clusters, v);
         assertTrue(v.isInRotation());
@@ -102,14 +103,30 @@ public class VipStatusTestCase {
     @Test
     public void testNoClustersConfiguringInitiallyInRotationFalse() {
         String[] clusters = {};
-        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, false);
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, false, false);
         assertFalse(v.isInRotation());
     }
 
     @Test
     public void testNoClustersConfiguringInitiallyInRotationTrue() {
         String[] clusters = {};
-        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true);
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true, false);
+        assertTrue(v.isInRotation());
+    }
+
+    @Test
+    public void testRequireAllUp() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = getVipStatus(clusters, StateMonitor.Status.initializing, true, true);
+        assertFalse(v.isInRotation());
+        add(clusters, v);
+        assertTrue(v.isInRotation());
+
+        v.removeFromRotation(clusters[0]);
+        assertFalse(v.isInRotation());
+
+        v.addToRotation(clusters[0]);
         assertTrue(v.isInRotation());
     }
 
