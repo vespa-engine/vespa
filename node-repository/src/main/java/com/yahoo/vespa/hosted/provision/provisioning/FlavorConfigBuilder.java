@@ -47,15 +47,15 @@ public class FlavorConfigBuilder {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (String flavorName : flavors) {
             if (flavorName.equals("docker"))
-                flavorConfigBuilder.addFlavor(flavorName, 1., 3., 2., 1.5, Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 1., 30., 2., 1.5, Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("docker2"))
-                flavorConfigBuilder.addFlavor(flavorName, 2.,  4., 4., 0.5, Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 2.,  40., 4., 0.5, Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("host"))
-                flavorConfigBuilder.addFlavor(flavorName, 7., 10., 12., 5, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 7., 100., 12., 5, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("devhost"))
-                flavorConfigBuilder.addFlavor(flavorName, 4.,  8., 10, 10, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 4.,  80., 10, 10, Flavor.Type.BARE_METAL);
             else
-                flavorConfigBuilder.addFlavor(flavorName, 1.,  3., 2., 3, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 1.,  30., 2., 3, Flavor.Type.BARE_METAL);
         }
         return new NodeFlavors(flavorConfigBuilder.build());
     }

@@ -78,7 +78,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 2, 2, 2), NodeType.host, 1);
+        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 4, 2, 2), NodeType.host, 1);
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 
