@@ -104,7 +104,7 @@ public class SessionPreparerTest {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionFactory();
+        fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionProvider();
         preparer = createPreparer();
     }
 
@@ -122,7 +122,7 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                componentRegistry.getFileDistributionFactory(),
+                componentRegistry.getFileDistributionProvider(),
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(componentRegistry.getConfigserverConfig()),
                 componentRegistry.getConfigserverConfig(),
@@ -152,13 +152,13 @@ public class SessionPreparerTest {
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
         prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0));
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0 + 1)); // App is distributed to  other config servers
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1)); // Only builds the newest version
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1 + 1)); // Only builds the newest version,  + 1 because app is distributed to other config servers
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 

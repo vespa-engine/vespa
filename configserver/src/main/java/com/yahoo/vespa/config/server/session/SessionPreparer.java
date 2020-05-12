@@ -7,12 +7,14 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -23,6 +25,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
+
 import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
@@ -31,6 +34,7 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
@@ -112,6 +116,7 @@ public class SessionPreparer {
                                        Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
                                        Instant now) {
         Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
+        preparation.distributeApplicationPackage();
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -161,6 +166,7 @@ public class SessionPreparer {
         private PrepareResult prepareResult;
 
         private final PreparedModelsBuilder preparedModelsBuilder;
+        private final FileDistributionProvider fileDistributionProvider;
 
         Preparation(SessionContext context, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
@@ -169,24 +175,19 @@ public class SessionPreparer {
             this.params = params;
             this.currentActiveApplicationSet = currentActiveApplicationSet;
             this.tenantPath = tenantPath;
-
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
             this.endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
-
             this.endpointCertificateMetadata = params.endpointCertificateMetadata()
                     .or(() -> params.tlsSecretsKeyName().map(EndpointCertificateMetadataSerializer::fromString));
-
             endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-
             this.endpointsSet = getEndpoints(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
-
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
@@ -197,14 +198,15 @@ public class SessionPreparer {
                                                               zone,
                                                               endpointsSet,
                                                               params.isBootstrap(),
-                                                              ! currentActiveApplicationSet.isPresent(),
+                                                              currentActiveApplicationSet.isEmpty(),
                                                               context.getFlagSource(),
                                                               endpointCertificateSecrets,
                                                               athenzDomain);
+            this.fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
-                                                                   fileDistributionFactory,
+                                                                   fileDistributionProvider,
                                                                    hostProvisionerProvider,
                                                                    context,
                                                                    logger,
@@ -219,6 +221,16 @@ public class SessionPreparer {
                 String used = params.getTimeoutBudget().timesUsed();
                 throw new RuntimeException("prepare timed out "+used+" after "+step+" step: " + applicationId);
             }
+        }
+
+        void distributeApplicationPackage() {
+            FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
+            FileReference fileReference = fileRegistry.addFile("");
+            FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
+            log.log(Level.INFO, "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
+            properties.configServerSpecs().stream()
+                    .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
+                    .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
         }
 
         void preprocess() {

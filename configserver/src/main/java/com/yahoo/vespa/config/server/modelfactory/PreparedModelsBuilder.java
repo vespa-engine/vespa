@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -22,13 +23,12 @@ import com.yahoo.config.provision.DockerImage;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
-import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SessionContext;
 
@@ -52,14 +52,14 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final SessionContext context;
     private final DeployLogger logger;
     private final PrepareParams params;
-    private final FileDistributionFactory fileDistributionFactory;
+    private final FileDistributionProvider fileDistributionProvider;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final ModelContext.Properties properties;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  PermanentApplicationPackage permanentApplicationPackage,
                                  ConfigDefinitionRepo configDefinitionRepo,
-                                 FileDistributionFactory fileDistributionFactory,
+                                 FileDistributionProvider fileDistributionProvider,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  SessionContext context,
                                  DeployLogger logger,
@@ -70,14 +70,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
-
-        this.fileDistributionFactory = fileDistributionFactory;
-
+        this.fileDistributionProvider = fileDistributionProvider;
         this.context = context;
         this.logger = logger;
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
-
         this.properties = properties;
     }
 
@@ -91,7 +88,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     Instant now) {
         Version modelVersion = modelFactory.version();
         log.log(Level.FINE, "Building model " + modelVersion + " for " + applicationId);
-        FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
         Provisioned provisioned = new Provisioned();
@@ -120,7 +116,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private Optional<Model> modelOf(Version version) {
-        if ( ! currentActiveApplicationSet.isPresent()) return Optional.empty();
+        if (currentActiveApplicationSet.isEmpty()) return Optional.empty();
         return currentActiveApplicationSet.get().get(version).map(Application::getModel);
     }
 
@@ -130,12 +126,12 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                             Provisioned provisioned) {
         Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties.applicationId(),
                                                                                               provisioned);
-        if ( ! allocatedHosts.isPresent()) return nodeRepositoryProvisioner;
+        if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner;
         
         Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts,
                                                                               properties.applicationId(),
                                                                               provisioned);
-        if ( ! staticProvisioner.isPresent()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
+        if (staticProvisioner.isEmpty()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
             
         // Nodes are already allocated by a model and we should use them unless this model requests hosts from a
         // previously unallocated cluster. This allows future models to stop allocate certain clusters.
@@ -153,7 +149,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private void validateModelHosts(HostValidator<ApplicationId> hostValidator, ApplicationId applicationId, Model model) {
-        hostValidator.verifyHosts(applicationId, model.getHosts().stream().map(hostInfo -> hostInfo.getHostname())
+        hostValidator.verifyHosts(applicationId, model.getHosts().stream()
+                .map(HostInfo::getHostname)
                 .collect(Collectors.toList()));
     }
 
@@ -162,11 +159,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
         public final Version version;
         public final Model model;
-        public final FileDistributionProvider fileDistributionProvider;
+        public final com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider fileDistributionProvider;
         public final List<ConfigChangeAction> actions;
 
         public PreparedModelResult(Version version, Model model,
-                                   FileDistributionProvider fileDistributionProvider, List<ConfigChangeAction> actions) {
+                                   com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider fileDistributionProvider, List<ConfigChangeAction> actions) {
             this.version = version;
             this.model = model;
             this.fileDistributionProvider = fileDistributionProvider;
