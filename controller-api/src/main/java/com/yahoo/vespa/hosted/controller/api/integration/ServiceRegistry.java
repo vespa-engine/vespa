@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
@@ -69,8 +68,6 @@ public interface ServiceRegistry {
     ApplicationStore applicationStore();
 
     RunDataStore runDataStore();
-
-    TenantCost tenantCost();
 
     ZoneRegistry zoneRegistry();
 

@@ -207,8 +207,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/cost")) return tenantCost(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -345,63 +343,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse tenant(Tenant tenant, HttpRequest request) {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, request);
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse tenantCost(String tenantName, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
-                .map(tenant -> tenantCost(tenant, request))
-                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
-    }
-
-    private HttpResponse tenantCost(Tenant tenant, HttpRequest request) {
-        Set<YearMonth> months = controller.serviceRegistry().tenantCost().monthsWithMetering(tenant.name());
-
-        var slime = new Slime();
-        var objectCursor = slime.setObject();
-        var monthsCursor = objectCursor.setArray("months");
-
-        months.forEach(month -> monthsCursor.addString(month.toString()));
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse tenantCost(String tenantName, String dateString, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
-                .map(tenant -> tenantCost(tenant, tenantCostParseDate(dateString), request))
-                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
-    }
-
-    private YearMonth tenantCostParseDate(String dateString) {
-        try {
-            return YearMonth.parse(dateString);
-        } catch (DateTimeParseException e){
-            throw new IllegalArgumentException("Could not parse year-month '" + dateString + "'");
-        }
-    }
-
-    private HttpResponse tenantCost(Tenant tenant, YearMonth month, HttpRequest request) {
-        var slime = new Slime();
-        Cursor cursor = slime.setObject();
-        cursor.setString("month", month.toString());
-        List<CostInfo> costInfos = controller.serviceRegistry().tenantCost()
-                .getTenantCostOfMonth(tenant.name(), month);
-        Cursor array = cursor.setArray("items");
-
-        costInfos.forEach(costInfo -> {
-            Cursor costObject = array.addObject();
-            costObject.setString("applicationId", costInfo.getApplicationId().serializedForm());
-            costObject.setString("zoneId", costInfo.getZoneId().value());
-            Cursor cpu = costObject.setObject("cpu");
-            cpu.setDouble("usage", costInfo.getCpuHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
-            cpu.setLong("charge", costInfo.getCpuCost());
-            Cursor memory = costObject.setObject("memory");
-            memory.setDouble("usage", costInfo.getMemoryHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
-            memory.setLong("charge", costInfo.getMemoryCost());
-            Cursor disk = costObject.setObject("disk");
-            disk.setDouble("usage", costInfo.getDiskHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
-            disk.setLong("charge", costInfo.getDiskCost());
-        });
-
         return new SlimeJsonResponse(slime);
     }
 
