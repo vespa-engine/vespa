@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
 
@@ -25,9 +26,9 @@ public class CapacityPolicies {
     /* Deployments must match 1-to-1 the advertised resources of a physical host */
     private final boolean isUsingAdvertisedResources;
 
-    public CapacityPolicies(Zone zone) {
-        this.zone = zone;
-        this.nodeResourceLimits = new NodeResourceLimits(zone);
+    public CapacityPolicies(NodeRepository nodeRepository) {
+        this.zone = nodeRepository.zone();
+        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.isUsingAdvertisedResources = zone.getCloud().dynamicProvisioning();
     }
 
@@ -45,31 +46,23 @@ public class CapacityPolicies {
         }
     }
 
-    public NodeResources decideNodeResources(NodeResources requested, Capacity capacity, ClusterSpec cluster) {
-        if (requested.isUnspecified())
-            requested = defaultNodeResources(cluster.type());
-        ensureSufficientResources(requested, cluster);
+    public NodeResources decideNodeResources(NodeResources target, Capacity capacity, ClusterSpec cluster) {
+        if (target.isUnspecified())
+            target = defaultNodeResources(cluster.type());
+        nodeResourceLimits.ensureWithinAdvertisedLimits(target, cluster);
 
-        if (capacity.isRequired()) return requested;
+        if (capacity.isRequired()) return target;
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            requested = requested.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
+            target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
         // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
         if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
-            requested = requested.withVcpu(0.1);
+            target = target.withVcpu(0.1);
 
-        return requested;
-    }
-
-    private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
-        double minMemoryGb = nodeResourceLimits.minMemoryGb(cluster.type());
-        if (resources.memoryGb() >= minMemoryGb) return;
-        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
-                "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
-                minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
+        return target;
     }
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {

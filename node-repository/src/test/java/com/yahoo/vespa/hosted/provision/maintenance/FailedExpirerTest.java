@@ -259,7 +259,7 @@ public class FailedExpirerTest {
                                                      new MockNameResolver().mockAnyLookup(),
                                                      DockerImage.fromString("docker-image"),
                                                      true);
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30));
         }
 
@@ -328,12 +328,13 @@ public class FailedExpirerTest {
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-            Capacity capacity = Capacity.from(new ClusterResources(hostname.length, 1, flavor), false, true);
+            Capacity capacity = Capacity.from(new ClusterResources(hostname.length, 1, flavor), true, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 
         public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
-            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, null);
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity,
+                                                               (level, message) -> System.out.println(level + ": " + message) );
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, Set.copyOf(preparedNodes));
             transaction.commit();

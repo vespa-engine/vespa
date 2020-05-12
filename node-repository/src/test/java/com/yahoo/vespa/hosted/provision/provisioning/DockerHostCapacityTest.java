@@ -33,8 +33,8 @@ public class DockerHostCapacityTest {
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
-    private final NodeResources resources1 = new NodeResources(1, 3, 2, 1.5);
-    private final NodeResources resources2 = new NodeResources(2, 4, 4, 0.5);
+    private final NodeResources resources1 = new NodeResources(1, 30, 2, 1.5);
+    private final NodeResources resources2 = new NodeResources(2, 40, 4, 0.5);
 
     @Before
     public void setup() {
@@ -90,9 +90,9 @@ public class DockerHostCapacityTest {
 
     @Test
     public void freeCapacityOf() {
-        assertEquals(new NodeResources(5, 4, 8, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 40, 8, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host1, false));
-        assertEquals(new NodeResources(5, 6, 8, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 60, 8, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host3, false));
 
         doAnswer(invocation -> {
@@ -100,9 +100,9 @@ public class DockerHostCapacityTest {
             return totalHostResources.subtract(new NodeResources(1, 2, 3, 0.5, NodeResources.DiskSpeed.any));
         }).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
-        assertEquals(new NodeResources(4, 2, 5, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(4, 38, 5, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host1, false));
-        assertEquals(new NodeResources(4, 4, 5, 4, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(4, 58, 5, 4, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host3, false));
     }
 

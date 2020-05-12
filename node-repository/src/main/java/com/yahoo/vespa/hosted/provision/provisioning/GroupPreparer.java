@@ -83,8 +83,7 @@ public class GroupPreparer {
                 prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
-                                                               highestIndex,  nodeRepository.flavors(),
-                                                               nodeRepository.zone(), nodeRepository.clock());
+                                                               highestIndex,  nodeRepository);
                 allocation.offer(prioritizer.prioritize());
 
                 if (dynamicProvisioningEnabled) {

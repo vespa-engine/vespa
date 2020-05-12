@@ -5,6 +5,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+
+import java.util.Locale;
 
 /**
  * Defines the resource limits for nodes in various zones
@@ -13,20 +17,42 @@ import com.yahoo.config.provision.Zone;
  */
 public class NodeResourceLimits {
 
-    private final Zone zone;
+    private final NodeRepository nodeRepository;
 
-    public NodeResourceLimits(Zone zone) {
-        this.zone = zone;
+    public NodeResourceLimits(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
     }
 
-    public int minMemoryGb(ClusterSpec.Type clusterType) {
-        if (zone.system() == SystemName.dev) return 1; // Allow small containers in dev system
+    /** Validates the resources applications ask for */
+    public void ensureWithinAdvertisedLimits(NodeResources advertisedResources, ClusterSpec cluster) {
+        double minMemoryGb = minAdvertisedMemoryGb(cluster.type());
+        if (advertisedResources.memoryGb() >= minMemoryGb) return;
+        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
+                                                         "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
+                                                         minMemoryGb, cluster.type().name(), cluster.id().value(), advertisedResources.memoryGb()));
+    }
+
+    /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
+    public boolean isWithinRealLimits(Node candidateTenantNode, ClusterSpec cluster) {
+        NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(candidateTenantNode, nodeRepository);
+
+        if (realResources.memoryGb() < minRealMemoryGb(cluster.type())) return false;
+
+        return true;
+    }
+
+    public NodeResources enlargeToLegal(NodeResources advertisedResources, ClusterSpec.Type clusterType) {
+        return advertisedResources.withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), advertisedResources.memoryGb()));
+    }
+
+    private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
+        if (nodeRepository.zone().system() == SystemName.dev) return 1; // Allow small containers in dev system
         if (clusterType == ClusterSpec.Type.admin) return 2;
         return 4;
     }
 
-    public NodeResources enlargeToLegal(NodeResources resources, ClusterSpec.Type clusterType) {
-        return resources.withMemoryGb(Math.max(minMemoryGb(clusterType), resources.memoryGb()));
+    private double minRealMemoryGb(ClusterSpec.Type clusterType) {
+        return minAdvertisedMemoryGb(clusterType) - 0.7;
     }
 
 }

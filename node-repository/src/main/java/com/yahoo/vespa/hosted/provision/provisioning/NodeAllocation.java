@@ -14,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
@@ -74,20 +75,18 @@ class NodeAllocation {
     /** The next membership index to assign to a new node */
     private final MutableInteger highestIndex;
 
-    private final NodeFlavors flavors;
-    private final Zone zone;
-    private final Clock clock;
+    private final NodeRepository nodeRepository;
+    private final NodeResourceLimits nodeResourceLimits;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                   MutableInteger highestIndex, NodeFlavors flavors, Zone zone, Clock clock) {
+                   MutableInteger highestIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
         this.highestIndex = highestIndex;
-        this.flavors = flavors;
-        this.zone = zone;
-        this.clock = clock;
+        this.nodeRepository = nodeRepository;
+        nodeResourceLimits = new NodeResourceLimits(nodeRepository);
     }
 
     /**
@@ -104,6 +103,8 @@ class NodeAllocation {
         List<Node> accepted = new ArrayList<>();
         for (PrioritizableNode node : nodesPrioritized) {
             Node offered = node.node;
+            if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) continue;
+
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
@@ -145,7 +146,7 @@ class NodeAllocation {
                 node.node = offered.allocate(application,
                                              ClusterMembership.from(cluster, highestIndex.add(1)),
                                              requestedNodes.resources().orElse(node.node.flavor().resources()),
-                                             clock.instant());
+                                             nodeRepository.clock().instant());
                 accepted.add(acceptNode(node, false, false));
             }
         }
@@ -159,7 +160,9 @@ class NodeAllocation {
     }
 
     private boolean checkForClashingParentHost() {
-        return zone.system() == SystemName.main && zone.environment().isProduction() &&  ! application.instance().isTester();
+        return nodeRepository.zone().system() == SystemName.main &&
+               nodeRepository.zone().environment().isProduction() &&
+               ! application.instance().isTester();
     }
 
     private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<PrioritizableNode> accepted, Node offered) {
@@ -229,7 +232,7 @@ class NodeAllocation {
     }
 
     private boolean hasCompatibleFlavor(PrioritizableNode node) {
-        return requestedNodes.isCompatible(node.node.flavor(), flavors) || node.isResizable;
+        return requestedNodes.isCompatible(node.node.flavor(), nodeRepository.flavors()) || node.isResizable;
     }
 
     private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire, boolean resizeable) {
@@ -255,7 +258,7 @@ class NodeAllocation {
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
-            node = node.retire(clock.instant());
+            node = node.retire(nodeRepository.clock().instant());
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
             // group may be different
@@ -332,7 +335,7 @@ class NodeAllocation {
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
-                    node.node = node.node.retire(Agent.application, clock.instant());
+                    node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
                     surplusNodes.add(node.node); // offer this node to other groups
                     if (--deltaRetiredCount == 0) break;
                 }
