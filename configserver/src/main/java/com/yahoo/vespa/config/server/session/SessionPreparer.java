@@ -44,7 +44,9 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerialize
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -78,6 +80,7 @@ public class SessionPreparer {
     private final Zone zone;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
+    private final BooleanFlag distributeApplicationPackage;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -100,6 +103,7 @@ public class SessionPreparer {
         this.zone = zone;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
+        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
     }
 
     /**
@@ -224,6 +228,8 @@ public class SessionPreparer {
         }
 
         void distributeApplicationPackage() {
+            if ( ! distributeApplicationPackage.value()) return;
+
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addFile("");
             FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();

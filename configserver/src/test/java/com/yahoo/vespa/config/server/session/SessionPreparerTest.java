@@ -152,13 +152,13 @@ public class SessionPreparerTest {
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
         prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0 + 1)); // App is distributed to  other config servers
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0));
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1 + 1)); // Only builds the newest version,  + 1 because app is distributed to other config servers
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1)); // Only builds the newest version
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
