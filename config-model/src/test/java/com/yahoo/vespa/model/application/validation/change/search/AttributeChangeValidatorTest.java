@@ -168,10 +168,18 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
+    public void changing_distance_metric_without_hnsw_index_enabled_is_ok() throws Exception {
+        new Fixture("field f1 type tensor(x[2]) { indexing: attribute }",
+                "field f1 type tensor(x[2]) { indexing: attribute \n attribute { " +
+                        "distance-metric: geodegrees \n } }").
+                assertValidation();
+    }
+
+    @Test
     public void changing_distance_metric_with_hnsw_index_enabled_requires_restart() throws Exception {
         new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
-                "field f1 type tensor(x[2]) { indexing: attribute | index \n index { " +
-                        "distance-metric: geodegrees \n hnsw } }").
+                "field f1 type tensor(x[2]) { indexing: attribute | index \n attribute { " +
+                        "distance-metric: geodegrees \n } }").
                 assertValidation(newRestartAction("Field 'f1' changed: change property " +
                         "'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'"));
     }

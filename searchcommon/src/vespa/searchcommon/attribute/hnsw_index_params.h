@@ -14,6 +14,7 @@ class HnswIndexParams {
 private:
     uint32_t _max_links_per_node;
     uint32_t _neighbors_to_explore_at_insert;
+    // This is always the same as in the attribute config, and is duplicated here to simplify usage.
     DistanceMetric _distance_metric;
 
 public:

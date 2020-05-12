@@ -18,6 +18,7 @@ Config::Config() :
     _compactionStrategy(),
     _predicateParams(),
     _tensorType(vespalib::eval::ValueType::error_type()),
+    _distance_metric(DistanceMetric::Euclidean),
     _hnsw_index_params()
 {
 }
@@ -36,6 +37,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
       _compactionStrategy(),
       _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type()),
+      _distance_metric(DistanceMetric::Euclidean),
       _hnsw_index_params()
 {
 }
@@ -63,6 +65,7 @@ Config::operator==(const Config &b) const
            _predicateParams == b._predicateParams &&
            (_basicType.type() != BasicType::Type::TENSOR ||
             _tensorType == b._tensorType) &&
+            _distance_metric == b._distance_metric &&
             _hnsw_index_params == b._hnsw_index_params;
 }
 

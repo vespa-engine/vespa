@@ -278,14 +278,25 @@ AttributeManagerTest::testConfigConvert()
         AttributeVector::Config out = ConfigConverter::convert(a);
         EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());
     }
-    { // hnsw index params (enabled)
-        auto dm_in = AttributesConfig::Attribute::Index::Hnsw::Distancemetric::ANGULAR;
-        auto dm_out = search::attribute::DistanceMetric::Angular;
+    { // distance metric (default)
         CACA a;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.distance_metric() == DistanceMetric::Euclidean);
+    }
+    { // distance metric (explicit)
+        CACA a;
+        a.distancemetric = AttributesConfig::Attribute::Distancemetric::GEODEGREES;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.distance_metric() == DistanceMetric::GeoDegrees);
+    }
+    { // hnsw index params (enabled)
+        auto dm_in = AttributesConfig::Attribute::Distancemetric::ANGULAR;
+        auto dm_out = DistanceMetric::Angular;
+        CACA a;
+        a.distancemetric = dm_in;
         a.index.hnsw.enabled = true;
         a.index.hnsw.maxlinkspernode = 32;
         a.index.hnsw.neighborstoexploreatinsert = 300;
-        a.index.hnsw.distancemetric = dm_in;
         auto out = ConfigConverter::convert(a);
         EXPECT_TRUE(out.hnsw_index_params().has_value());
         EXPECT_EQUAL(32u, out.hnsw_index_params().value().max_links_per_node());

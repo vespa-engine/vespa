@@ -1212,6 +1212,7 @@ Object sortingSetting(SortingOperation sorting, String attributeName) :
  */
 Object attributeSetting(FieldOperationContainer field, AttributeOperation attribute, String attributeName) :
 {
+    String str;
 }
 {
     (
@@ -1228,6 +1229,7 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
           attribute.setAliasedName(aliasedName);
       }
       | attributeTensorType(attribute)
+      | <DISTANCEMETRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
     )
     { return null; }
 }
@@ -1816,7 +1818,6 @@ Object indexBody(IndexOperation index) :
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
-      | <DISTANCEMETRIC> <COLON> str = identifierWithDash()            { index.setDistanceMetric(str); }
       | hnswIndex(index)                                               { }
     )
     { return null; }

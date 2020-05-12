@@ -5,6 +5,7 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -24,6 +25,7 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private String alias;
     private String aliasedName;
     private Optional<TensorType> tensorType = Optional.empty();
+    private Optional<String> distanceMetric = Optional.empty();
 
     public AttributeOperation(String name) {
         this.name = name;
@@ -116,6 +118,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.tensorType = Optional.of(tensorType);
     }
 
+    public void setDistanceMetric(String value) {
+        this.distanceMetric = Optional.of(value);
+    }
+
     public void apply(SDField field) {
         Attribute attribute = null;
         if (attributeIsSuffixOfStructField(field.getName())) {
@@ -152,6 +158,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         }
         if (tensorType.isPresent()) {
             attribute.setTensorType(tensorType.get());
+        }
+        if (distanceMetric.isPresent()) {
+            String upper = distanceMetric.get().toUpperCase(Locale.ENGLISH);
+            attribute.setDistanceMetric(Attribute.DistanceMetric.valueOf(upper));
         }
     }
 

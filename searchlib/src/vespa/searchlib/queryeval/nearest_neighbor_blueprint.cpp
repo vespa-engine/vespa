@@ -65,8 +65,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     auto rct = _attr_tensor.getTensorType().cell_type();
     auto fixup_fun = vespalib::tensor::select_2<ConvertCellsSelector>(lct, rct);
     fixup_fun(_query_tensor, _attr_tensor.getTensorType());
-    auto def_dm = search::attribute::DistanceMetric::Euclidean;
-    _fallback_dist_fun = search::tensor::make_distance_function(def_dm, rct);
+    _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.getConfig().distance_metric(), rct);
     _dist_fun = _fallback_dist_fun.get();
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (nns_index) {

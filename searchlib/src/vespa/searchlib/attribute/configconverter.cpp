@@ -73,10 +73,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
-    if (cfg.index.hnsw.enabled) {
-        using CfgDm = AttributesConfig::Attribute::Index::Hnsw::Distancemetric;
-        DistanceMetric dm;
-        switch (cfg.index.hnsw.distancemetric) {
+    using CfgDm = AttributesConfig::Attribute::Distancemetric;
+    DistanceMetric dm(DistanceMetric::Euclidean);
+    switch (cfg.distancemetric) {
         case CfgDm::EUCLIDEAN:
             dm = DistanceMetric::Euclidean;
             break;
@@ -86,7 +85,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::GEODEGREES:
             dm = DistanceMetric::GeoDegrees;
             break;
-        }
+    }
+    retval.set_distance_metric(dm);
+    if (cfg.index.hnsw.enabled) {
         retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
                                                      cfg.index.hnsw.neighborstoexploreatinsert,
                                                      dm));

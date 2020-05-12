@@ -9,6 +9,7 @@
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/eval/eval/value_type.h>
+#include <cassert>
 #include <optional>
 
 namespace search::attribute {
@@ -35,6 +36,7 @@ public:
     bool huge()                           const { return _huge; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
     vespalib::eval::ValueType tensorType() const { return _tensorType; }
+    DistanceMetric distance_metric() const { return _distance_metric; }
     const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
     /**
@@ -67,7 +69,12 @@ public:
         _tensorType = tensorType_in;
         return *this;
     }
+    Config& set_distance_metric(DistanceMetric value) {
+        _distance_metric = value;
+        return *this;
+    }
     Config& set_hnsw_index_params(const HnswIndexParams& params) {
+        assert(_distance_metric == params.distance_metric());
         _hnsw_index_params = params;
         return *this;
     }
@@ -122,6 +129,7 @@ private:
     CompactionStrategy _compactionStrategy;
     PredicateParams    _predicateParams;
     vespalib::eval::ValueType _tensorType;
+    DistanceMetric _distance_metric;
     std::optional<HnswIndexParams> _hnsw_index_params;
 };
 

@@ -2,12 +2,20 @@ search test {
   document test {
     field t1 type tensor(x[128]) {
       indexing: attribute | index
-      index {
+      attribute {
         distance-metric: angular
+      }
+      index {
         hnsw {
           max-links-per-node: 32
           neighbors-to-explore-at-insert: 300
         }
+      }
+    }
+    field t2 type tensor(x[2]) {
+      indexing: attribute
+      attribute {
+        distance-metric: geodegrees
       }
     }
   }
