@@ -59,7 +59,7 @@ public class OsVersionStatus {
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
     public static OsVersionStatus compute(Controller controller) {
         var osVersions = new HashMap<OsVersion, List<NodeVersion>>();
-        controller.osVersions().forEach(osVersion -> osVersions.put(osVersion, new ArrayList<>()));
+        controller.osVersionTargets().forEach(target -> osVersions.put(target.osVersion(), new ArrayList<>()));
 
         for (var application : SystemApplication.all()) {
             if (!application.shouldUpgradeOs()) continue;

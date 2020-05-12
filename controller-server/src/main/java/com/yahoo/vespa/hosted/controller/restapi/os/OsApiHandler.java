@@ -6,22 +6,22 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -157,13 +157,13 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private Slime osVersions() {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        Set<OsVersion> osVersions = controller.osVersions();
+        Set<OsVersionTarget> targets = controller.osVersionTargets();
 
         Cursor versions = root.setArray("versions");
         controller.osVersionStatus().versions().forEach((osVersion, nodeVersions) -> {
             Cursor currentVersionObject = versions.addObject();
             currentVersionObject.setString("version", osVersion.version().toFullString());
-            currentVersionObject.setBool("targetVersion", osVersions.contains(osVersion));
+            currentVersionObject.setBool("targetVersion", targets.stream().anyMatch(target -> target.osVersion().equals(osVersion)));
             currentVersionObject.setString("cloud", osVersion.cloud().value());
             Cursor nodesArray = currentVersionObject.setArray("nodes");
             nodeVersions.asMap().values().forEach(nodeVersion -> {

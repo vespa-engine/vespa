@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -38,6 +39,11 @@ public class Serializers {
     public static Optional<Instant> optionalInstant(Inspector field) {
         var value = optionalLong(field);
         return value.isPresent() ? Optional.of(Instant.ofEpochMilli(value.getAsLong())) : Optional.empty();
+    }
+
+    public static Optional<Duration> optionalDuration(Inspector field) {
+        var value = optionalLong(field);
+        return value.isPresent() ? Optional.of(Duration.ofMillis(value.getAsLong())) : Optional.empty();
     }
 
 }

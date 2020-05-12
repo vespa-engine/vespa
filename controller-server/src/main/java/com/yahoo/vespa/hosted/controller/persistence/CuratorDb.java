@@ -31,8 +31,8 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -98,6 +98,7 @@ public class CuratorDb implements JobControl.Db {
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
+    private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
@@ -297,12 +298,12 @@ public class CuratorDb implements JobControl.Db {
 
     // Infrastructure upgrades
 
-    public void writeOsVersions(Set<OsVersion> versions) {
-        curator.set(osTargetVersionPath(), asJson(osVersionSerializer.toSlime(versions)));
+    public void writeOsVersionTargets(Set<OsVersionTarget> versions) {
+        curator.set(osVersionTargetsPath(), asJson(osVersionTargetSerializer.toSlime(versions)));
     }
 
-    public Set<OsVersion> readOsVersions() {
-        return readSlime(osTargetVersionPath()).map(osVersionSerializer::fromSlime).orElseGet(Collections::emptySet);
+    public Set<OsVersionTarget> readOsVersionTargets() {
+        return readSlime(osVersionTargetsPath()).map(osVersionTargetSerializer::fromSlime).orElseGet(Collections::emptySet);
     }
 
     public void writeOsVersionStatus(OsVersionStatus status) {
@@ -598,7 +599,7 @@ public class CuratorDb implements JobControl.Db {
         return root.append("upgrader").append("confidenceOverrides");
     }
 
-    private static Path osTargetVersionPath() {
+    private static Path osVersionTargetsPath() {
         return root.append("osUpgrader").append("targetVersion");
     }
 

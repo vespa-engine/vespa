@@ -65,7 +65,7 @@ public class OsUpgraderTest {
         CloudName cloud = CloudName.defaultName();
         tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), false);
         tester.controller().upgradeOsIn(cloud, version1, false);
-        assertEquals(1, tester.controller().osVersions().size()); // Only allows one version per cloud
+        assertEquals(1, tester.controller().osVersionTargets().size()); // Only allows one version per cloud
         statusUpdater.maintain();
 
         // zone 1: begins upgrading

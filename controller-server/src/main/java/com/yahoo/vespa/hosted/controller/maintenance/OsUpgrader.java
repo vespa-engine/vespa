@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -55,7 +56,8 @@ public class OsUpgrader extends InfrastructureUpgrader {
     @Override
     protected Optional<Version> targetVersion() {
         // Return target if we have nodes in this cloud on a lower version
-        return controller().osVersion(cloud)
+        return controller().osVersionTarget(cloud)
+                           .map(OsVersionTarget::osVersion)
                            .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
                                                          .anyMatch(node -> node.currentVersion().isBefore(target.version())))
                            .map(OsVersion::version);
