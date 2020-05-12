@@ -215,7 +215,7 @@ public class NodeResources {
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH,"[vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb" +
+        return String.format(Locale.ENGLISH, "[vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb" +
                             (bandwidthGbps > 0 ? ", bandwidth: %4$.1f Gbps" : "") +
                             ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
                             ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]",
