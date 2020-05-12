@@ -25,20 +25,20 @@ public:
         const DenseTensorView &queryTensor;
         const DenseTensorAttribute &tensorAttribute;
         NearestNeighborDistanceHeap &distanceHeap;
-        const search::BitVector *bit_vector;
+        const search::BitVector *filter;
         const search::tensor::DistanceFunction *distanceFunction;
         
         Params(fef::TermFieldMatchData &tfmd_in,
                const DenseTensorView &queryTensor_in,
                const DenseTensorAttribute &tensorAttribute_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
-               const search::BitVector *bit_vector_in,
+               const search::BitVector *filter_in,
                const search::tensor::DistanceFunction *distanceFunction_in)
           : tfmd(tfmd_in),
             queryTensor(queryTensor_in),
             tensorAttribute(tensorAttribute_in),
             distanceHeap(distanceHeap_in),
-            bit_vector(bit_vector_in),
+            filter(filter_in),
             distanceFunction(distanceFunction_in)
         {}
     };
@@ -53,7 +53,7 @@ public:
             const vespalib::tensor::DenseTensorView &queryTensor,
             const search::tensor::DenseTensorAttribute &tensorAttribute,
             NearestNeighborDistanceHeap &distanceHeap,
-            const search::BitVector *bit_vector,
+            const search::BitVector *filter,
             const search::tensor::DistanceFunction *dist_fun);
 
     const Params& params() const { return _params; }

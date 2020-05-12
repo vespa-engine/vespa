@@ -30,7 +30,7 @@ is_compatible(const vespalib::eval::ValueType& lhs,
  * Keeps a heap of the K best hit distances.
  * Currently always does brute-force scanning, which is very expensive.
  **/
-template <bool strict, bool no_bitvector>
+template <bool strict, bool has_filter>
 class NearestNeighborImpl : public NearestNeighborIterator
 {
 public:
@@ -49,7 +49,7 @@ public:
     void doSeek(uint32_t docId) override {
         double distanceLimit = params().distanceHeap.distanceLimit();
         while (__builtin_expect((docId < getEndId()), true)) {
-            if (no_bitvector || params().bit_vector->testBit(docId)) {
+            if ((!has_filter) || params().filter->testBit(docId)) {
                 double d = computeDistance(docId, distanceLimit);
                 if (d <= distanceLimit) {
                     _lastScore = d;
@@ -86,12 +86,12 @@ private:
     double                 _lastScore;
 };
 
-template <bool strict, bool no_bitvector>
-NearestNeighborImpl<strict, no_bitvector>::~NearestNeighborImpl() = default;
+template <bool strict, bool has_filter>
+NearestNeighborImpl<strict, has_filter>::~NearestNeighborImpl() = default;
 
 namespace {
 
-template <bool no_bitvector>
+template <bool has_filter>
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict(bool strict, const NearestNeighborIterator::Params &params)
 {
@@ -99,10 +99,10 @@ resolve_strict(bool strict, const NearestNeighborIterator::Params &params)
     CellType rct = params.tensorAttribute.getTensorType().cell_type();
     if (lct != rct) abort();
     if (strict) {
-        using NNI = NearestNeighborImpl<true, no_bitvector>;
+        using NNI = NearestNeighborImpl<true, has_filter>;
         return std::make_unique<NNI>(params);
     } else {
-        using NNI = NearestNeighborImpl<false, no_bitvector>;
+        using NNI = NearestNeighborImpl<false, has_filter>;
         return std::make_unique<NNI>(params);
     }
 }
@@ -116,12 +116,12 @@ NearestNeighborIterator::create(
         const vespalib::tensor::DenseTensorView &queryTensor,
         const search::tensor::DenseTensorAttribute &tensorAttribute,
         NearestNeighborDistanceHeap &distanceHeap,
-        const search::BitVector *bit_vector,
+        const search::BitVector *filter,
         const search::tensor::DistanceFunction *dist_fun)
 
 {
-    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap, bit_vector, dist_fun);
-    if (!bit_vector) {
+    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap, filter, dist_fun);
+    if (filter) {
         return resolve_strict<true>(strict, params);
     } else  {
         return resolve_strict<false>(strict, params);
