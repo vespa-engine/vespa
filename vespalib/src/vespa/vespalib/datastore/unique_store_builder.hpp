@@ -20,9 +20,7 @@ UniqueStoreBuilder<Allocator>::UniqueStoreBuilder(Allocator& allocator, IUniqueS
 }
 
 template <typename Allocator>
-UniqueStoreBuilder<Allocator>::~UniqueStoreBuilder()
-{
-}
+UniqueStoreBuilder<Allocator>::~UniqueStoreBuilder() = default;
 
 template <typename Allocator>
 void

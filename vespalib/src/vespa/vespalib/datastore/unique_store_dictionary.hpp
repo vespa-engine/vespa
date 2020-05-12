@@ -158,8 +158,8 @@ UniqueStoreDictionary<DictionaryT, ParentT>::get_memory_usage() const
 
 template <typename DictionaryT, typename ParentT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT>::build(const std::vector<EntryRef> &refs,
-                                                   const std::vector<uint32_t> &ref_counts,
+UniqueStoreDictionary<DictionaryT, ParentT>::build(vespalib::ConstArrayRef<EntryRef> refs,
+                                                   vespalib::ConstArrayRef<uint32_t> ref_counts,
                                                    std::function<void(EntryRef)> hold)
 {
     assert(refs.size() == ref_counts.size());
@@ -188,8 +188,8 @@ UniqueStoreDictionary<DictionaryT, ParentT>::build(vespalib::ConstArrayRef<Entry
 
 template <typename DictionaryT, typename ParentT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT>::build_with_payload(const std::vector<EntryRef>& refs,
-                                                                const std::vector<uint32_t>& payloads)
+UniqueStoreDictionary<DictionaryT, ParentT>::build_with_payload(vespalib::ConstArrayRef<EntryRef> refs,
+                                                                vespalib::ConstArrayRef<uint32_t> payloads)
 {
     assert(refs.size() == payloads.size());
     typename DictionaryType::Builder builder(_dict.getAllocator());

@@ -17,6 +17,10 @@ public:
     virtual ~MemoryAllocator() { }
     virtual PtrAndSize alloc(size_t sz) const = 0;
     virtual void free(PtrAndSize alloc) const = 0;
+    // Allow for freeing memory there size is the size requested, and not the size allocated.
+    virtual void free(void * ptr, size_t sz) const {
+        free(PtrAndSize(ptr, sz));
+    }
     /*
      * If possible the allocations will be resized. If it was possible it will return the real size,
      * if not it shall return 0.
@@ -30,6 +34,7 @@ public:
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
+    static const MemoryAllocator * select_allocator(size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 };
 
 /**
