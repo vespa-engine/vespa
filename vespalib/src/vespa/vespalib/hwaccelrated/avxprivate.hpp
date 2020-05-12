@@ -123,7 +123,7 @@ double euclideanDistanceSelectAlignment(const T * af, const T * bf, size_t sz)
         if (validAlignment(bf, ALIGN)) {
             return euclideanDistanceT<T, VLEN, ALIGN, ALIGN>(af, bf, sz);
         } else {
-            return euclideanDistanceT<T, ALIGN, ALIGN, 1>(af, bf, sz);
+            return euclideanDistanceT<T, VLEN, ALIGN, 1>(af, bf, sz);
         }
     } else {
         if (validAlignment(bf, ALIGN)) {
