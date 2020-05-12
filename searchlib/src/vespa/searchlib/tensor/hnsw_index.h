@@ -115,7 +115,10 @@ protected:
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level) const;
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+                      uint32_t level, const search::BitVector *filter = nullptr) const;
+    std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
+                                         const BitVector *filter, uint32_t explore_k) const;
 
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
@@ -136,9 +139,11 @@ public:
     bool load(const fileutil::LoadedBuffer& buf) override;
 
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
+    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, TypedCells vector,
+                                                 const BitVector &filter, uint32_t explore_k) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const;
 
     uint32_t get_entry_docid() const { return _graph.entry_docid; }
     int32_t get_entry_level() const { return _graph.entry_level; }

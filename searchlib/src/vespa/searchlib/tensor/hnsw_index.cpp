@@ -210,15 +210,23 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
 }
 
 void
-HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level) const
+HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
+                        FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
 {
     NearestPriQ candidates;
     uint32_t doc_id_limit = _graph.node_refs.size();
+    if (filter) {
+        assert(filter->size() >= doc_id_limit);
+    }
     auto visited = _visited_set_pool.get(doc_id_limit);
     for (const auto &entry : best_neighbors.peek()) {
         assert(entry.docid < doc_id_limit);
         candidates.push(entry);
         visited.mark(entry.docid);
+        if (filter && !filter->testBit(entry.docid)) {
+            assert(best_neighbors.size() == 1);
+            best_neighbors.pop();
+        }
     }
     double limit_dist = std::numeric_limits<double>::max();
 
@@ -236,10 +244,12 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
             double dist_to_input = calc_distance(input, neighbor_docid);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_docid, dist_to_input);
-                best_neighbors.emplace(neighbor_docid, dist_to_input);
-                if (best_neighbors.size() > neighbors_to_find) {
-                    best_neighbors.pop();
-                    limit_dist = best_neighbors.top().distance;
+                if ((!filter) || filter->testBit(neighbor_docid)) {
+                    best_neighbors.emplace(neighbor_docid, dist_to_input);
+                    if (best_neighbors.size() > neighbors_to_find) {
+                        best_neighbors.pop();
+                        limit_dist = best_neighbors.top().distance;
+                    }
                 }
             }
         }
@@ -429,10 +439,11 @@ struct NeighborsByDocId {
 };
 
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
+HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
+                          const BitVector *filter, uint32_t explore_k) const
 {
     std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
     while (candidates.size() > k) {
         candidates.pop();
     }
@@ -444,8 +455,21 @@ HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
     return result;
 }
 
+std::vector<NearestNeighborIndex::Neighbor>
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
+{
+    return top_k_by_docid(k, vector, nullptr, explore_k);
+}
+
+std::vector<NearestNeighborIndex::Neighbor>
+HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
+                                  const BitVector &filter, uint32_t explore_k) const
+{
+    return top_k_by_docid(k, vector, &filter, explore_k);
+}
+
 FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k) const
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const
 {
     FurthestPriQ best_neighbors;
     if (get_entry_level() < 0) {
@@ -460,7 +484,7 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k) const
         --search_level;
     }
     best_neighbors.push(entry_point);
-    search_layer(vector, k, best_neighbors, 0);
+    search_layer(vector, k, best_neighbors, 0, filter);
     return best_neighbors;
 }
 
