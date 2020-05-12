@@ -315,7 +315,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
-        builder.feeding.concurrency(0.40); // As if specified 0.8 in services.xml
+        builder.feeding.concurrency(0.50); // As if specified 1.0 in services.xml
         boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
