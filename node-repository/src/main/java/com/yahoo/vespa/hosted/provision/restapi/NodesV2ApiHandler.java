@@ -49,6 +49,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -360,12 +361,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private MessageResponse setTargetVersions(HttpRequest request) {
         NodeType nodeType = NodeType.valueOf(lastElement(request.getUri().getPath()).toLowerCase());
         Inspector inspector = toSlime(request.getData()).get();
-        List<String> messageParts = new ArrayList<>(3);
+        List<String> messageParts = new ArrayList<>(4);
 
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
         Inspector osVersionField = inspector.field("osVersion");
         Inspector dockerImageField = inspector.field("dockerImage");
+        Inspector upgradeBudgetField = inspector.field("upgradeBudget");
 
         if (versionField.valid()) {
             Version version = Version.fromString(versionField.asString());
@@ -380,8 +382,19 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                 messageParts.add("osVersion to null");
             } else {
                 Version osVersion = Version.fromString(v);
-                nodeRepository.osVersions().setTarget(nodeType, osVersion, force);
+                Optional<Duration> upgradeBudget = Optional.of(upgradeBudgetField)
+                                                           .filter(Inspector::valid)
+                                                           .map(Inspector::asString)
+                                                           .map(s -> {
+                                                               try {
+                                                                   return Duration.parse(s);
+                                                               } catch (Exception e) {
+                                                                   throw new IllegalArgumentException("Invalid duration '" + s + "'", e);
+                                                               }
+                                                           });
+                nodeRepository.osVersions().setTarget(nodeType, osVersion, upgradeBudget, force);
                 messageParts.add("osVersion to " + osVersion.toFullString());
+                upgradeBudget.ifPresent(d -> messageParts.add("upgradeBudget to " + d));
             }
         }
 

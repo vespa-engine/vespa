@@ -1,36 +1,28 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
-import com.yahoo.application.Networking;
-import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
-import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ComparisonFailure;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -807,6 +799,19 @@ public class NodesV2ApiTest {
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}," +
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}" +
                        "]}");
+
+        // Schedule OS upgrade with budget
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
+                                   Utf8.toBytes("{\"osVersion\": \"7.42.1\", \"upgradeBudget\": \"PT24H\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set osVersion to 7.42.1, upgradeBudget to PT24H for nodes of type host\"}");
+
+        // Invalid budget
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
+                                          Utf8.toBytes("{\"osVersion\": \"7.42.1\", \"upgradeBudget\": \"foo\"}"),
+                                          Request.Method.PATCH),
+                              400,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid duration 'foo': Text cannot be parsed to a Duration\"}");
     }
 
     @Test

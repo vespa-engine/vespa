@@ -1,9 +1,10 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -12,6 +13,8 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -31,43 +34,42 @@ import static org.junit.Assert.fail;
 public class OsVersionsTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
+    private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "infra", "default");
 
     @Test
-    public void test_versions() {
-        var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
-        tester.makeReadyNodes(10, "default", NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
+    public void versions() {
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
+        provisionInfraApplication(10);
         Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
 
         // Upgrade OS
-        assertTrue("No versions set", versions.targets().isEmpty());
+        assertTrue("No versions set", versions.readChange().targets().isEmpty());
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, false);
+        versions.setTarget(NodeType.host, version1, Optional.empty(), false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
         assertTrue("Per-node wanted OS version remains unset", hostNodes.get().stream().allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
         // Upgrade OS again
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, false);
+        versions.setTarget(NodeType.host, version2, Optional.empty(), false);
         assertEquals(version2, versions.targetFor(NodeType.host).get());
 
         // Target can be (de)activated
-        versions.setActive(NodeType.host, true);
+        versions.resumeUpgradeOf(NodeType.host, true);
         assertTrue("Target version activated", hostNodes.get().stream()
                                                         .allMatch(node -> node.status().osVersion().wanted().isPresent()));
-        versions.setActive(NodeType.host, false);
+        versions.resumeUpgradeOf(NodeType.host, false);
         assertTrue("Target version deactivated", hostNodes.get().stream()
                                                           .allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
         // Downgrading fails
         try {
-            versions.setTarget(NodeType.host, version1, false);
+            versions.setTarget(NodeType.host, version1, Optional.empty(), false);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
         // Forcing downgrade succeeds
-        versions.setTarget(NodeType.host, version1, true);
+        versions.setTarget(NodeType.host, version1, Optional.empty(), true);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Target can be removed
@@ -77,13 +79,12 @@ public class OsVersionsTest {
     }
 
     @Test
-    public void test_max_active_upgrades() {
+    public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), maxActiveUpgrades);
-        tester.makeReadyNodes(totalNodes, "default", NodeType.host);
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
+        provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).nodeType(NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
@@ -100,12 +101,12 @@ public class OsVersionsTest {
 
         // Set target
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, false);
+        versions.setTarget(NodeType.host, version1, Optional.empty(), false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Activate target
         for (int i = 0; i < totalNodes; i += maxActiveUpgrades) {
-            versions.setActive(NodeType.host, true);
+            versions.resumeUpgradeOf(NodeType.host, true);
             var nodes = hostNodes.get();
             var nodesUpgrading = nodes.changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
@@ -121,15 +122,14 @@ public class OsVersionsTest {
         }
 
         // Activating again after all nodes have upgraded does nothing
-        versions.setActive(NodeType.host, true);
+        versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals("All nodes upgraded", version1, minVersion(hostNodes.get(), OsVersion::current));
     }
 
     @Test
-    public void test_newer_upgrade_aborts_upgrade_to_stale_version() {
-        var versions = new OsVersions(tester.nodeRepository(), Integer.MAX_VALUE);
-        tester.makeReadyNodes(10, "default", NodeType.host);
-        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
+    public void newer_upgrade_aborts_upgrade_to_stale_version() {
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
+        provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
 
         // Some nodes are targeting an older version
@@ -138,11 +138,105 @@ public class OsVersionsTest {
 
         // Trigger upgrade to next version
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, false);
-        versions.setActive(NodeType.host, true);
+        versions.setTarget(NodeType.host, version2, Optional.empty(), false);
+        versions.resumeUpgradeOf(NodeType.host, true);
 
         // Wanted version is changed to newest target for all nodes
         assertEquals(version2, minVersion(hostNodes.get(), OsVersion::wanted));
+    }
+
+    @Test
+    public void upgrade_by_retiring() {
+        var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
+        var clock = (ManualClock) tester.nodeRepository().clock();
+        int hostCount = 10;
+        provisionInfraApplication(hostCount);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
+                                                   .nodeType(NodeType.host)
+                                                   .not().state(Node.State.deprovisioned);
+
+        // Target is set and upgrade started
+        var version1 = Version.fromString("7.1");
+        Duration totalBudget = Duration.ofHours(12);
+        Duration nodeBudget = totalBudget.dividedBy(hostCount);
+        versions.setTarget(NodeType.host, version1, Optional.of(totalBudget),false);
+        versions.resumeUpgradeOf(NodeType.host, true);
+
+        // One host is deprovisioning
+        assertEquals(1, hostNodes.get().deprovisioning().size());
+
+        // Nothing happens on next resume as first host has not spent its budget
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(1, hostNodes.get().deprovisioning().size());
+
+        // Budget has been spent and another host is retired
+        clock.advance(nodeBudget);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(2, hostNodes.get().deprovisioning().size());
+
+        // Two nodes complete their upgrade by being reprovisioned
+        completeUpgradeOf(hostNodes.get().deprovisioning().asList());
+        assertEquals(2, hostNodes.get().onOsVersion(version1).size());
+        // The remaining hosts complete their upgrade
+        for (int i = 0; i < hostCount - 2; i++) {
+            clock.advance(nodeBudget);
+            versions.resumeUpgradeOf(NodeType.host, true);
+            NodeList nodesDeprovisioning = hostNodes.get().deprovisioning();
+            assertEquals(1, nodesDeprovisioning.size());
+            completeUpgradeOf(nodesDeprovisioning.asList());
+        }
+
+        // All hosts upgraded and none are deprovisioning
+        assertEquals(hostCount, hostNodes.get().onOsVersion(version1).not().deprovisioning().size());
+        assertEquals(hostCount, tester.nodeRepository().list().state(Node.State.deprovisioned).size());
+        var lastRetiredAt = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+
+        // Resuming after everything has upgraded does nothing
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(0, hostNodes.get().deprovisioning().size());
+
+        // Another upgrade is triggered. Last retirement time is preserved
+        clock.advance(Duration.ofDays(1));
+        var version2 = Version.fromString("7.2");
+        versions.setTarget(NodeType.host, version2, Optional.of(totalBudget), false);
+        assertEquals(lastRetiredAt, versions.readChange().targets().get(NodeType.host).lastRetiredAt().get());
+    }
+
+    @Test
+    public void upgrade_by_retiring_everything_at_once() {
+        var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
+        int hostCount = 3;
+        provisionInfraApplication(hostCount, NodeType.confighost);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
+                                                   .nodeType(NodeType.confighost)
+                                                   .not().state(Node.State.deprovisioned);
+
+        // Target is set with zero budget and upgrade started
+        var version1 = Version.fromString("7.1");
+        versions.setTarget(NodeType.confighost, version1, Optional.of(Duration.ZERO),false);
+        for (int i = 0; i < hostCount; i++) {
+            versions.resumeUpgradeOf(NodeType.confighost, true);
+        }
+
+        // All hosts are deprovisioning
+        assertEquals(hostCount, hostNodes.get().deprovisioning().size());
+
+        // Nodes complete their upgrade by being reprovisioned
+        completeUpgradeOf(hostNodes.get().deprovisioning().asList(), NodeType.confighost);
+        assertEquals(hostCount, hostNodes.get().onOsVersion(version1).size());
+    }
+
+    private List<Node> provisionInfraApplication(int nodeCount) {
+        return provisionInfraApplication(nodeCount, NodeType.host);
+    }
+
+    private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType) {
+        var nodes = tester.makeReadyNodes(nodeCount, "default", nodeType);
+        tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
+        return nodes.stream()
+                    .map(Node::hostname)
+                    .flatMap(hostname -> tester.nodeRepository().getNode(hostname).stream())
+                    .collect(Collectors.toList());
     }
 
     private Version minVersion(NodeList nodes, Function<OsVersion, Optional<Version>> versionField) {
@@ -174,13 +268,21 @@ public class OsVersionsTest {
     }
 
     private void completeUpgradeOf(List<Node> nodes) {
-        for (var node : nodes) {
-            try (var lock = tester.nodeRepository().lock(node)) {
-                node = tester.nodeRepository().getNode(node.hostname()).get();
-                node = node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(node.status().osVersion().wanted())));
-                tester.nodeRepository().write(node, lock);
+        completeUpgradeOf(nodes, NodeType.host);
+    }
+
+    private void completeUpgradeOf(List<Node> nodes, NodeType nodeType) {
+        writeNode(nodes, (node) -> {
+            Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
+            if (node.status().wantToDeprovision()) {
+                // Complete upgrade by deprovisioning stale hosts and provisioning new ones
+                tester.nodeRepository().park(node.hostname(), false, Agent.system,
+                                             OsVersionsTest.class.getSimpleName());
+                tester.nodeRepository().removeRecursively(node.hostname());
+                node = provisionInfraApplication(1, nodeType).get(0);
             }
-        }
+            return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
+        });
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -12,7 +12,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -27,6 +26,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.os.OsVersionChange;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -488,19 +488,19 @@ public class CuratorDatabaseClient implements JobControl.Db {
 
     // OS versions -----------------------------------------------------------
 
-    public Map<NodeType, Version> readOsVersions() {
-        return read(osVersionsPath, OsVersionsSerializer::fromJson).orElseGet(TreeMap::new);
+    public OsVersionChange readOsVersionChange() {
+        return read(osVersionsPath, OsVersionChangeSerializer::fromJson).orElse(OsVersionChange.NONE);
     }
 
-    public void writeOsVersions(Map<NodeType, Version> versions) {
+    public void writeOsVersionChange(OsVersionChange change) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(osVersionsPath.getAbsolute(),
-                                                         OsVersionsSerializer.toJson(versions)));
+                                                         OsVersionChangeSerializer.toJson(change)));
         transaction.commit();
     }
 
-    public Lock lockOsVersions() {
+    public Lock lockOsVersionChange() {
         return db.lock(lockPath.append("osVersionsLock"), defaultLockTimeout);
     }
 
