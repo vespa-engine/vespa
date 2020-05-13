@@ -20,7 +20,6 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -46,6 +45,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -234,10 +235,22 @@ public class SessionPreparerTest {
         var containerEndpointsFromModel = modelContext.properties().endpoints();
         assertEquals(Set.copyOf(expected), containerEndpointsFromModel);
 
-        // Writing empty container endpoints keeps old value
+        // Preparing with null container endpoints keeps old value. This is what happens when deployments happen from
+        // an existing session (e.g. internal redeployment).
         params = new PrepareParams.Builder().applicationId(applicationId).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
         assertEquals(expected, readContainerEndpoints(applicationId));
+
+        // Preparing with empty container endpoints keeps old value
+        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+        assertEquals(expected, readContainerEndpoints(applicationId));
+
+        // Preparing with empty container endpoints clears endpoints with feature flag set
+        flagSource.withBooleanFlag(Flags.CONFIGSERVER_UNSET_ENDPOINTS.id(), true);
+        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+        assertEquals(List.of(), readContainerEndpoints(applicationId));
     }
 
     @Test

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -14,9 +13,9 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -25,8 +24,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
-
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -45,6 +42,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import org.xml.sax.SAXException;
@@ -58,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -81,6 +80,7 @@ public class SessionPreparer {
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final BooleanFlag distributeApplicationPackage;
+    private final BooleanFlag unsetEndpoints;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -104,6 +104,7 @@ public class SessionPreparer {
         this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
+        this.unsetEndpoints = Flags.CONFIGSERVER_UNSET_ENDPOINTS.bindTo(flagSource);
     }
 
     /**
@@ -119,7 +120,10 @@ public class SessionPreparer {
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
                                        Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
                                        Instant now) {
-        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
+        boolean allowUnsettingEndpoints = unsetEndpoints.with(FetchVector.Dimension.APPLICATION_ID, params.getApplicationId().serializedForm())
+                                                        .value();
+        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath,
+                                                  allowUnsettingEndpoints);
         preparation.distributeApplicationPackage();
         preparation.preprocess();
         try {
@@ -128,7 +132,11 @@ public class SessionPreparer {
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
-                preparation.writeContainerEndpointsZK();
+                if (allowUnsettingEndpoints) {
+                    preparation.writeContainerEndpointsZK();
+                } else {
+                    preparation.legacyWriteContainerEndpointsZK();
+                }
                 preparation.distribute();
             }
             log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() +
@@ -156,8 +164,8 @@ public class SessionPreparer {
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final Version vespaVersion;
 
-        final ContainerEndpointsCache containerEndpoints;
-        final Set<ContainerEndpoint> endpointsSet;
+        final ContainerEndpointsCache containerEndpointsCache;
+        final List<ContainerEndpoint> containerEndpoints;
         final ModelContext.Properties properties;
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
         private final EndpointCertificateRetriever endpointCertificateRetriever;
@@ -173,7 +181,8 @@ public class SessionPreparer {
         private final FileDistributionProvider fileDistributionProvider;
 
         Preparation(SessionContext context, DeployLogger logger, PrepareParams params,
-                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
+                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                    boolean allowUnsettingEndpoints) {
             this.context = context;
             this.logger = logger;
             this.params = params;
@@ -182,7 +191,7 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
-            this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
+            this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
             this.endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
             this.endpointCertificateMetadata = params.endpointCertificateMetadata()
@@ -190,7 +199,11 @@ public class SessionPreparer {
             endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-            this.endpointsSet = getEndpoints(params.containerEndpoints());
+            if (allowUnsettingEndpoints) {
+                this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
+            } else {
+                this.containerEndpoints = getEndpoints(params.containerEndpoints());
+            }
             this.athenzDomain = params.athenzDomain();
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
@@ -200,7 +213,7 @@ public class SessionPreparer {
                                                               configserverConfig.athenzDnsSuffix(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              endpointsSet,
+                                                              Set.copyOf(containerEndpoints),
                                                               params.isBootstrap(),
                                                               currentActiveApplicationSet.isEmpty(),
                                                               context.getFlagSource(),
@@ -282,10 +295,14 @@ public class SessionPreparer {
         }
 
         void writeContainerEndpointsZK() {
-            if (!params.containerEndpoints().isEmpty()) { // Use endpoints from parameter when explicitly given
-                containerEndpoints.write(applicationId, params.containerEndpoints());
-            }
+            containerEndpointsCache.write(applicationId, containerEndpoints);
             checkTimeout("write container endpoints to zookeeper");
+        }
+
+        void legacyWriteContainerEndpointsZK() {
+            if (!containerEndpoints.isEmpty()) {
+                writeContainerEndpointsZK();
+            }
         }
 
         void distribute() {
@@ -298,11 +315,18 @@ public class SessionPreparer {
             return prepareResult.getConfigChangeActions();
         }
 
-        private Set<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
-            if (endpoints == null || endpoints.isEmpty()) {
-                endpoints = this.containerEndpoints.read(applicationId);
+        private List<ContainerEndpoint> readEndpointsIfNull(List<ContainerEndpoint> endpoints) {
+            if (endpoints == null) { // endpoints is only set when prepared via HTTP
+                endpoints = this.containerEndpointsCache.read(applicationId);
             }
-            return ImmutableSet.copyOf(endpoints);
+            return List.copyOf(endpoints);
+        }
+
+        private List<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
+            if (endpoints == null || endpoints.isEmpty()) {
+                endpoints = this.containerEndpointsCache.read(applicationId);
+            }
+            return List.copyOf(endpoints);
         }
 
     }
