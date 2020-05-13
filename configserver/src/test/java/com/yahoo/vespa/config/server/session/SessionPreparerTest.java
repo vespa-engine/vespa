@@ -45,6 +45,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -244,6 +245,12 @@ public class SessionPreparerTest {
         params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
         assertEquals(expected, readContainerEndpoints(applicationId));
+
+        // Preparing with empty container endpoints clears endpoints with feature flag set
+        flagSource.withBooleanFlag(Flags.CONFIGSERVER_UNSET_ENDPOINTS.id(), true);
+        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+        assertEquals(List.of(), readContainerEndpoints(applicationId));
     }
 
     @Test
