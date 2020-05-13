@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -22,6 +23,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -290,15 +292,14 @@ public class MetricsReporterTest {
         var zone = ZoneId.from("prod.eu-west-1");
         var cloud = CloudName.defaultName();
         tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
-        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        CloudName.defaultName());
+        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1), Cloud.defaultCloud());
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
         );
         tester.configServer().bootstrap(List.of(zone), SystemApplication.configServerHost, SystemApplication.tenantHost);
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().upgradeOsIn(cloud, version0, Optional.empty(), false);
         osUpgrader.maintain();
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
@@ -312,7 +313,7 @@ public class MetricsReporterTest {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var version = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, version, false);
+            tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
             runAll(osUpgrader, statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 

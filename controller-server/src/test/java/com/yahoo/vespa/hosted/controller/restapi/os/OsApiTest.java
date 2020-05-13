@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
@@ -36,11 +37,11 @@ public class OsApiTest extends ControllerContainerTest {
 
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/os/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
-    private static final CloudName cloud1 = CloudName.from("cloud1");
-    private static final CloudName cloud2 = CloudName.from("cloud2");
-    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1).build();
-    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1).build();
-    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2).build();
+    private static final Cloud cloud1 = new Cloud(CloudName.from("cloud1"), false, true, false, false);
+    private static final Cloud cloud2 = new Cloud(CloudName.from("cloud2"), true, false, true, true);
+    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1.name()).build();
+    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1.name()).build();
+    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2.name()).build();
 
     private ContainerTester tester;
     private List<OsUpgrader> osUpgraders;
@@ -51,8 +52,9 @@ public class OsApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(operator);
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
-                          .setOsUpgradePolicy(cloud1, UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
-                          .setOsUpgradePolicy(cloud2, UpgradePolicy.create().upgrade(zone3));
+                          .addCloud(cloud1, cloud2)
+                          .setOsUpgradePolicy(cloud1.name(), UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
+                          .setOsUpgradePolicy(cloud2.name(), UpgradePolicy.create().upgrade(zone3));
         osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
                                cloud1),
@@ -70,8 +72,8 @@ public class OsApiTest extends ControllerContainerTest {
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\", \"upgradeBudget\": \"PT24H\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();

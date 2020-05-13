@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMemb
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -76,7 +77,7 @@ public interface NodeRepository {
     void upgrade(ZoneId zone, NodeType type, Version version);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    void upgradeOs(ZoneId zone, NodeType type, Version version);
+    void upgradeOs(ZoneId zone, NodeType type, Version version, Optional<Duration> upgradeBudget);
 
     /** Get target versions for upgrades in given zone */
     TargetVersions targetVersionsOf(ZoneId zone);

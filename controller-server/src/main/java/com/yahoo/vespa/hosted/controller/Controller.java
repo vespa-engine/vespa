@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -26,12 +27,14 @@ import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -188,33 +191,37 @@ public class Controller extends AbstractComponent {
 
     /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
      * upgrades to this version */
-    public Optional<OsVersion> osVersion(CloudName cloud) {
-        return osVersions().stream().filter(osVersion -> osVersion.cloud().equals(cloud)).findFirst();
+    public Optional<OsVersionTarget> osVersionTarget(CloudName cloud) {
+        return osVersionTargets().stream().filter(target -> target.osVersion().cloud().equals(cloud)).findFirst();
     }
 
     /** Returns all target OS versions in this system */
-    public Set<OsVersion> osVersions() {
-        return curator.readOsVersions();
+    public Set<OsVersionTarget> osVersionTargets() {
+        return curator.readOsVersionTargets();
     }
 
     /** Set the target OS version for infrastructure on cloud in this system */
-    public void upgradeOsIn(CloudName cloud, Version version, boolean force) {
+    public void upgradeOsIn(CloudName cloudName, Version version, Optional<Duration> upgradeBudget, boolean force) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        if (!clouds().contains(cloud)) {
-            throw new IllegalArgumentException("Cloud '" + cloud.value() + "' does not exist in this system");
+        Cloud cloud = zoneRegistry.cloud(cloudName);
+        if (cloud == null) {
+            throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
+        }
+        if (cloud.reprovisionToUpgradeOs() && upgradeBudget.isEmpty()) {
+            throw new IllegalArgumentException("Cloud '" + cloudName.value() + "' requires a time budget for OS upgrades");
         }
         try (Lock lock = curator.lockOsVersions()) {
-            Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
-            if (!force && versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&
-                                                                  osVersion.version().isAfter(version))) {
-                throw new IllegalArgumentException("Cannot downgrade cloud '" + cloud.value() + "' to version " +
+            Set<OsVersionTarget> targets = new TreeSet<>(curator.readOsVersionTargets());
+            if (!force && targets.stream().anyMatch(target -> target.osVersion().cloud().equals(cloudName) &&
+                                                               target.osVersion().version().isAfter(version))) {
+                throw new IllegalArgumentException("Cannot downgrade cloud '" + cloudName.value() + "' to version " +
                                                    version.toFullString());
             }
-            versions.removeIf(osVersion -> osVersion.cloud().equals(cloud)); // Only allow a single target per cloud
-            versions.add(new OsVersion(version, cloud));
-            curator.writeOsVersions(versions);
+            targets.removeIf(target -> target.osVersion().cloud().equals(cloudName)); // Only allow a single target per cloud
+            targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget));
+            curator.writeOsVersionTargets(targets);
         }
     }
 

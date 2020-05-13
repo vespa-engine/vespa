@@ -59,18 +59,19 @@ public class OsVersionStatus {
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
     public static OsVersionStatus compute(Controller controller) {
         var osVersions = new HashMap<OsVersion, List<NodeVersion>>();
-        controller.osVersions().forEach(osVersion -> osVersions.put(osVersion, new ArrayList<>()));
+        controller.osVersionTargets().forEach(target -> osVersions.put(target.osVersion(), new ArrayList<>()));
 
         for (var application : SystemApplication.all()) {
-            if (!application.shouldUpgradeOs()) continue;
             for (var zone : zonesToUpgrade(controller)) {
+                var cloud = controller.zoneRegistry().cloud(zone.getCloudName());
+                if (!application.shouldUpgradeOsIn(cloud)) continue;
                 var targetOsVersion = controller.serviceRegistry().configServer().nodeRepository()
                                                 .targetVersionsOf(zone.getId())
                                                 .osVersion(application.nodeType())
                                                 .orElse(Version.emptyVersion);
 
                 for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getId(), application.id())) {
-                    if (!OsUpgrader.eligibleForUpgrade(node, application)) continue;
+                    if (!OsUpgrader.canUpgrade(node)) continue;
                     var suspendedAt = node.suspendedSince();
                     var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), node.currentOsVersion(),
                                                       targetOsVersion, suspendedAt);

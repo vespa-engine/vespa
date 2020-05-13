@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
@@ -16,43 +17,45 @@ import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mpolden
  */
 public class OsUpgraderTest {
 
-    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").build();
-    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").build();
-    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.us-central-1").build();
-    private static final ZoneApi zone4 = ZoneApiMock.newBuilder().withId("prod.us-east-3").build();
-    private static final ZoneApi zone5 = ZoneApiMock.newBuilder().withId("prod.us-north-1").withCloud("other").build();
-
     private final ControllerTester tester = new ControllerTester();
-    private final OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
-    );
+    private final OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1));
+
     @Test
     public void upgrade_os() {
-        OsUpgrader osUpgrader = osUpgrader(
-                UpgradePolicy.create()
-                             .upgrade(zone1)
-                             .upgradeInParallel(zone2, zone3)
-                             .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
-                             .upgrade(zone4),
-                SystemName.cd
-        );
+        Cloud cloud1 = new Cloud(CloudName.from("c1"), false, true, false, true);
+        Cloud cloud2 = new Cloud(CloudName.from("c2"), false, true, false, true);
+        ZoneApi zone1 = zone("prod.eu-west-1", cloud1);
+        ZoneApi zone2 = zone("prod.us-west-1", cloud1);
+        ZoneApi zone3 = zone("prod.us-central-1", cloud1);
+        ZoneApi zone4 = zone("prod.us-east-3", cloud1);
+        ZoneApi zone5 = zone("prod.us-north-1", cloud2);
+        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+                                                   .upgrade(zone1)
+                                                   .upgradeInParallel(zone2, zone3)
+                                                   .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
+                                                   .upgrade(zone4);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud1, cloud2);
 
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
                                         List.of(SystemApplication.tenantHost));
 
-        // Add system applications that exist in a real system, but are currently not upgraded
+        // Add system applications that exist in a real system, but isn't upgraded
         tester.configServer().addNodes(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
                                        List.of(SystemApplication.configServer));
 
@@ -62,10 +65,9 @@ public class OsUpgraderTest {
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
-        CloudName cloud = CloudName.defaultName();
-        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), false);
-        tester.controller().upgradeOsIn(cloud, version1, false);
-        assertEquals(1, tester.controller().osVersions().size()); // Only allows one version per cloud
+        tester.controller().upgradeOsIn(cloud1.name(), Version.fromString("7.0"), Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud1.name(), version1, Optional.empty(), false);
+        assertEquals(1, tester.controller().osVersionTargets().size()); // Only allows one version per cloud
         statusUpdater.maintain();
 
         // zone 1: begins upgrading
@@ -102,8 +104,72 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
         assertWanted(version1, SystemApplication.tenantHost, zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId());
         statusUpdater.maintain();
-        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
+        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud1.name()).stream()
                                                         .allMatch(node -> node.currentVersion().equals(version1)));
+    }
+
+    @Test
+    public void upgrade_os_with_budget() {
+        Cloud cloud = new Cloud(CloudName.from("cloud"), false, true, true, true);
+        ZoneApi zone1 = zone("dev.us-east-1", cloud);
+        ZoneApi zone2 = zone("prod.us-west-1", cloud);
+        ZoneApi zone3 = zone("prod.us-central-1", cloud);
+        ZoneApi zone4 = zone("prod.eu-west-1", cloud);
+        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+                                                   .upgrade(zone1)
+                                                   .upgradeInParallel(zone2, zone3)
+                                                   .upgrade(zone4);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud);
+
+        // Bootstrap system
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
+                                        List.of(SystemApplication.tenantHost));
+        tester.configServer().addNodes(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
+                                       List.of(SystemApplication.configServerHost)); // Not supported yet
+
+        // Upgrade without budget fails
+        Version version = Version.fromString("7.1");
+        try {
+            tester.controller().upgradeOsIn(cloud.name(), version, Optional.empty(), false);
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
+
+        // Upgrade with budget
+        tester.controller().upgradeOsIn(cloud.name(), version, Optional.of(Duration.ofHours(12)), false);
+        assertEquals(Duration.ofHours(12), tester.controller().osVersionTarget(cloud.name()).get().upgradeBudget().get());
+        statusUpdater.maintain();
+        osUpgrader.maintain();
+
+        // First zone upgrades
+        assertWanted(Version.emptyVersion, SystemApplication.configServerHost, zone1.getId());
+        assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1.getId(), SystemApplication.tenantHost, version));
+        completeUpgrade(version, SystemApplication.tenantHost, zone1.getId());
+
+        // Next set of zones upgrade
+        osUpgrader.maintain();
+        for (var zone : List.of(zone2.getId(), zone3.getId())) {
+            assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(6),
+                         upgradeBudget(zone, SystemApplication.tenantHost, version));
+            completeUpgrade(version, SystemApplication.tenantHost, zone);
+        }
+
+        // Last zone upgrades
+        osUpgrader.maintain();
+        assertEquals("Last prod zone gets the budget of a single zone", Duration.ofHours(6),
+                     upgradeBudget(zone4.getId(), SystemApplication.tenantHost, version));
+        completeUpgrade(version, SystemApplication.tenantHost, zone4.getId());
+
+        // All host applications upgraded
+        statusUpdater.maintain();
+        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud.name()).stream()
+                                                        .allMatch(node -> node.currentVersion().equals(version)));
+    }
+
+    private Duration upgradeBudget(ZoneId zone, SystemApplication application, Version version) {
+        var upgradeBudget = tester.configServer().nodeRepository().osUpgradeBudget(zone, application.nodeType(), version);
+        assertTrue("Expected budget for upgrade to " + version + " of " + application.id() + " in " + zone,
+                   upgradeBudget.isPresent());
+        return upgradeBudget.get();
     }
 
     private List<NodeVersion> nodesOn(Version version) {
@@ -136,7 +202,7 @@ public class OsUpgraderTest {
     private List<Node> nodesRequiredToUpgrade(ZoneId zone, SystemApplication application) {
         return nodeRepository().list(zone, application.id())
                                .stream()
-                               .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
+                               .filter(OsUpgrader::canUpgrade)
                                .collect(Collectors.toList());
     }
 
@@ -164,13 +230,19 @@ public class OsUpgraderTest {
         return tester.configServer().nodeRepository();
     }
 
-    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, SystemName system) {
+    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, SystemName system, Cloud managedCloud, Cloud... otherClouds) {
+        var zones = upgradePolicy.asList().stream().flatMap(Collection::stream).collect(Collectors.toList());
         tester.zoneRegistry()
-              .setZones(zone1, zone2, zone3, zone4, zone5)
+              .setZones(zones)
+              .addCloud(managedCloud)
+              .addCloud(otherClouds)
               .setSystemName(system)
-              .setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
-        return new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                              CloudName.defaultName());
+              .setOsUpgradePolicy(managedCloud.name(), upgradePolicy);
+        return new OsUpgrader(tester.controller(), Duration.ofDays(1), managedCloud);
+    }
+
+    private static ZoneApi zone(String id, Cloud cloud) {
+        return ZoneApiMock.newBuilder().withId(id).withCloud(cloud.name().value()).build();
     }
 
 }

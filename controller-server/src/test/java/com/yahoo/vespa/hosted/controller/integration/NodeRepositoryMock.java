@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
     private final Map<ZoneId, Map<ApplicationId, Application>> applications = new HashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
+    private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
 
     /** Add or update given nodes in zone */
     public void putNodes(ZoneId zone, List<Node> nodes) {
@@ -190,7 +192,8 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void upgradeOs(ZoneId zone, NodeType type, Version version) {
+    public void upgradeOs(ZoneId zone, NodeType type, Version version, Optional<Duration> upgradeBudget) {
+        upgradeBudget.ifPresent(d -> this.osUpgradeBudgets.put(Objects.hash(zone, type, version), d));
         this.targetVersions.compute(zone, (ignored, targetVersions) -> {
             if (targetVersions == null) {
                 targetVersions = TargetVersions.EMPTY;
@@ -221,6 +224,10 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public void retireAndDeprovision(ZoneId zoneId, String hostName) {
         nodeRepository.get(zoneId).remove(HostName.from(hostName));
+    }
+
+    public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
+        return Optional.ofNullable(osUpgradeBudgets.get(Objects.hash(zone, type, version)));
     }
 
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {

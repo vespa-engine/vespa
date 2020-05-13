@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -93,5 +94,8 @@ public interface ZoneRegistry {
 
     /** Returns a URL to the controller's api endpoint */
     URI apiUrl();
+
+    /** Get cloud by name */
+    Cloud cloud(CloudName name);
 
 }

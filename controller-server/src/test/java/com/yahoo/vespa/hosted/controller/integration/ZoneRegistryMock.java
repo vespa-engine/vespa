@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -36,6 +37,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+    private final Map<CloudName, Cloud> clouds = new HashMap<>();
 
     private List<? extends ZoneApi> zones;
     private SystemName system;
@@ -60,6 +62,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                              ZoneApiMock.fromId("prod.us-west-1"),
                              ZoneApiMock.fromId("prod.us-central-1"),
                              ZoneApiMock.fromId("prod.eu-west-1"));
+        var cloud = Cloud.defaultCloud();
+        this.clouds.put(cloud.name(), cloud);
         // All zones use a shared routing method by default
         setRoutingMethod(this.zones, RoutingMethod.shared);
     }
@@ -95,6 +99,13 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock setOsUpgradePolicy(CloudName cloud, UpgradePolicy upgradePolicy) {
         osUpgradePolicies.put(cloud, upgradePolicy);
+        return this;
+    }
+
+    public ZoneRegistryMock addCloud(Cloud... clouds) {
+        for (var cloud : clouds) {
+            this.clouds.put(cloud.name(), cloud);
+        }
         return this;
     }
 
@@ -196,6 +207,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public URI apiUrl() {
         return URI.create("https://api.tld:4443/");
+    }
+
+    @Override
+    public Cloud cloud(CloudName name) {
+        return clouds.get(name);
     }
 
     @Override

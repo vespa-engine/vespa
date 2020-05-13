@@ -15,8 +15,8 @@ public class Cloud {
     private final boolean reprovisionToUpgradeOs;
     private final boolean requireAccessControl;
 
-    protected Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean reprovisionToUpgradeOs,
-                    boolean requireAccessControl) {
+    public Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean reprovisionToUpgradeOs,
+                 boolean requireAccessControl) {
         this.name = name;
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
