@@ -65,6 +65,7 @@ public:
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     size_t get_transient_memory_usage() const;
+    double get_relative_transient_memory_usage() const;
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;

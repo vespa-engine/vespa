@@ -712,6 +712,7 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         metrics.resourceUsage.diskUtilization.set(usageState.diskState().utilization());
         metrics.resourceUsage.memory.set(usageState.memoryState().usage());
         metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
+        metrics.resourceUsage.transient_memory.set(usageFilter.get_relative_transient_memory_usage());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));

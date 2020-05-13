@@ -10,6 +10,7 @@ ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
       diskUtilization("disk_utilization", {}, "The relative amount of disk used compared to the disk resource limit", this),
       memory("memory", {}, "The relative amount of memory used by this process (value in the range [0, 1])", this),
       memoryUtilization("memory_utilization", {}, "The relative amount of memory used compared to the memory resource limit", this),
+      transient_memory("transient_memory", {}, "The relative amount of transient memory needed for load (value in the range [0, 1])", this),
       memoryMappings("memory_mappings", {}, "The number of mapped memory areas", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)", this)

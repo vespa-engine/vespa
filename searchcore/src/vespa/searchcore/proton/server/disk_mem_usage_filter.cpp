@@ -218,6 +218,13 @@ DiskMemUsageFilter::get_transient_memory_usage() const
     return _transient_memory_usage;
 }
 
+double
+DiskMemUsageFilter::get_relative_transient_memory_usage() const
+{
+    Guard guard(_lock);
+    return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
+}
+
 DiskMemUsageFilter::Config
 DiskMemUsageFilter::getConfig() const
 {
