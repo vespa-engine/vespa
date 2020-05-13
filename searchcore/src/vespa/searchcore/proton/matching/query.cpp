@@ -13,6 +13,7 @@
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchcore/proton/documentmetastore/white_list_provider.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
@@ -156,6 +157,11 @@ void
 Query::setWhiteListBlueprint(Blueprint::UP whiteListBlueprint)
 {
     _whiteListBlueprint = std::move(whiteListBlueprint);
+    using proton::documentmetastore::WhiteListProvider;
+    auto wlf = dynamic_cast<WhiteListProvider *>(_whiteListBlueprint.get());
+    if (wlf) {
+        _global_white_list = wlf->get_white_list_filter();
+    }
 }
 
 void
@@ -188,11 +194,11 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 void
 Query::optimize()
 {
+    using search::queryeval::GlobalFilter;
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     if (_blueprint->getState().want_global_filter()) {
-        // XXX we need to somehow compute a real global filter
-        auto empty_global_filter = search::queryeval::GlobalFilter::create();
-        _blueprint->set_global_filter(*empty_global_filter);
+        auto global_filter = GlobalFilter::create(std::move(_global_white_list));
+        _blueprint->set_global_filter(*global_filter);
         // optimized order may change after accounting for global filter:
         _blueprint = Blueprint::optimize(std::move(_blueprint));
     }

@@ -23,6 +23,7 @@ private:
     Blueprint::UP           _blueprint;
     search::fef::Location   _location;
     Blueprint::UP           _whiteListBlueprint;
+    search::BitVector::UP   _global_white_list;
 
 public:
     Query();
