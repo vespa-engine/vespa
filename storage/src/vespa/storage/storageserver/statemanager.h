@@ -106,7 +106,7 @@ private:
     bool sendGetNodeStateReplies(
             framework::MilliSecTime olderThanTime = framework::MilliSecTime(0),
             uint16_t index = 0xffff);
-    void mark_controller_as_having_observed_explicit_node_state(uint16_t controller_index);
+    void mark_controller_as_having_observed_explicit_node_state(const vespalib::LockGuard &, uint16_t controller_index);
 
     lib::Node thisNode() const;
 
