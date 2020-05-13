@@ -40,6 +40,7 @@ public:
         Config();
 
         Config & setMaxFileSize(size_t v) { _maxFileSize = v; return *this; }
+        Config & setMaxNumLids(size_t v) { _maxNumLids = v; return *this; }
         Config & setMaxDiskBloatFactor(double v) { _maxDiskBloatFactor = v; return *this; }
         Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
         Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
@@ -51,6 +52,7 @@ public:
         double getMaxDiskBloatFactor() const { return _maxDiskBloatFactor; }
         double getMaxBucketSpread() const { return _maxBucketSpread; }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
+        uint32_t getMaxNumLids() const { return _maxNumLids; }
 
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
@@ -64,6 +66,7 @@ public:
         double                      _maxDiskBloatFactor;
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
+        uint32_t                    _maxNumLids;
         bool                        _skipCrcOnRead;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;

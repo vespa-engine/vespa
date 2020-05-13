@@ -57,7 +57,7 @@ Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const Compre
 Chunk::Chunk(uint32_t id, const Config & config) :
     _id(id),
     _lastSerial(static_cast<uint64_t>(-1l)),
-    _format(new ChunkFormatV2(config.getMaxBytes()))
+    _format(std::make_unique<ChunkFormatV2>(config.getMaxBytes()))
 {
     _lids.reserve(4096/sizeof(Entry));
 }

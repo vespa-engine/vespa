@@ -22,6 +22,7 @@ using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
 using search::index::DummyFileHeaderContext;
+using search::test::DirectoryHandler;
 
 class MyTlSyncer : public transactionlog::SyncProxy {
     SerialNum _syncedTo;
@@ -202,15 +203,9 @@ TEST("test that DirectIOPadding works accordng to spec") {
 }
 #endif
 
-TEST("testGrowing") {
-    FastOS_File::EmptyAndRemoveDirectory("growing");
-    EXPECT_TRUE(FastOS_File::MakeDirectory("growing"));
-    LogDataStore::Config config; //(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
-                                // WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
-    config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
-            .compactCompression({CompressionConfig::LZ4})
-            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
-    vespalib::ThreadStackExecutor executor(8, 128*1024);
+void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
+    DirectoryHandler tmpDir("growing");
+    vespalib::ThreadStackExecutor executor(4, 128*1024);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
@@ -243,30 +238,32 @@ TEST("testGrowing") {
         datastore.compact(30000);
         datastore.remove(31000, 0);
         checkStats(datastore, 31000, 30000);
+        EXPECT_LESS_EQUAL(minFiles, datastore.getAllActiveFiles().size());
+        EXPECT_GREATER_EQUAL(maxFiles, datastore.getAllActiveFiles().size());
     }
     {
         LogDataStore datastore(executor, "growing", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         checkStats(datastore, 30000, 30000);
+        EXPECT_LESS_EQUAL(minFiles, datastore.getAllActiveFiles().size());
+        EXPECT_GREATER_EQUAL(maxFiles, datastore.getAllActiveFiles().size());
     }
-
-    FastOS_File::EmptyAndRemoveDirectory("growing");
+}
+TEST("testGrowingChunkedBySize") {
+    LogDataStore::Config config;
+    config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
+            .compactCompression({CompressionConfig::LZ4})
+            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
+    verifyGrowing(config, 40, 120);
 }
 
-class TmpDirectory {
-public:
-    TmpDirectory(const vespalib::string & dir) : _dir(dir)
-    {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-        ASSERT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
-    }
-    ~TmpDirectory() {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-    }
-    const vespalib::string & getDir() const { return _dir; }
-private:
-    vespalib::string _dir;
-};
+TEST("testGrowingChunkedByNumLids") {
+    LogDataStore::Config config;
+    config.setMaxNumLids(1000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
+            .compactCompression({CompressionConfig::LZ4})
+            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
+    verifyGrowing(config,10, 10);
+}
 
 void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz)
 {
@@ -349,7 +346,7 @@ public:
     ~VisitStore();
     IDataStore & getStore() { return _datastore; }
 private:
-    TmpDirectory                  _myDir;
+    DirectoryHandler              _myDir;
     LogDataStore::Config          _config;
     DummyFileHeaderContext        _fileHeaderContext;
     vespalib::ThreadStackExecutor _executor;
@@ -357,8 +354,7 @@ private:
     LogDataStore                  _datastore;
 };
 
-VisitStore::~VisitStore() {
-}
+VisitStore::~VisitStore() =default;
 
 TEST("test visit cache does not cache empty ones and is able to access some backing store.") {
     const char * A7 = "aAaAaAa";
@@ -500,7 +496,7 @@ private:
         vespalib::hash_set<uint32_t>  _actual;
         bool                          _allowVisitCaching;
     };
-    TmpDirectory                     _myDir;    
+    DirectoryHandler                 _myDir;
     document::DocumentTypeRepo       _repo;
     LogDocumentStore::Config         _config;
     DummyFileHeaderContext           _fileHeaderContext;
@@ -756,7 +752,7 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
 }
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
-    TmpDirectory testDir("flushtime");
+    DirectoryHandler testDir("flushtime");
     vespalib::system_time before(vespalib::system_clock::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;

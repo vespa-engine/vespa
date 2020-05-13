@@ -154,6 +154,7 @@ public:
 
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
+    uint32_t getNumLids() const { return _numLids; }
     size_t   getBloatCount() const { return _erasedCount; }
     size_t   getAddedBytes() const { return _addedBytes; }
     size_t   getErasedBytes() const { return _erasedBytes; }
@@ -245,9 +246,10 @@ protected:
     vespalib::string      _dataFileName;
     vespalib::string      _idxFileName;
     ChunkInfoVector       _chunkInfo;
+    uint64_t              _lastPersistedSerialNum;
     uint32_t              _dataHeaderLen;
     uint32_t              _idxHeaderLen;
-    uint64_t              _lastPersistedSerialNum;
+    uint32_t              _numLids;
     uint32_t              _docIdLimit; // Limit when the file was created. Stored in idx file header.
     vespalib::system_time  _modificationTime;
 };

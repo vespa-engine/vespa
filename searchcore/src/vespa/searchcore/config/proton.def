@@ -250,6 +250,9 @@ summary.log.chunk.skipcrconread bool default=false
 ## Max size per summary file.
 summary.log.maxfilesize long default=1000000000
 
+## Max number of lid entries per file
+summary.log.maxnumlids int default=40000000
+
 ## Max disk bloat factor. This will trigger compacting.
 summary.log.maxdiskbloatfactor double default=0.1
 

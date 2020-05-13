@@ -92,7 +92,7 @@ StoreByBucket::drain(IWrite & drainer)
     chunks.resize(_chunks.size());
     for (const auto & it : _chunks) {
         ConstBufferRef buf(it.second);
-        chunks[it.first].reset(new Chunk(it.first, buf.data(), buf.size()));
+        chunks[it.first] = std::make_unique<Chunk>(it.first, buf.data(), buf.size());
     }
     _chunks.clear();
     for (auto & it : _where) {

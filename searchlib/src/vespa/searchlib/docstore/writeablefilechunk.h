@@ -47,7 +47,7 @@ public:
                        uint32_t docIdLimit, const Config & config,
                        const TuneFileSummary &tune, const common::FileHeaderContext &fileHeaderContext,
                        const IBucketizer * bucketizer, bool crcOnReadDisabled);
-    ~WriteableFileChunk();
+    ~WriteableFileChunk() override;
 
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;
     void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const override;
@@ -128,8 +128,8 @@ private:
     bool              _writeTaskIsRunning;
     vespalib::Monitor _writeMonitor;
     ProcessedChunkQ   _writeQ;
-    vespalib::Executor & _executor;
-    ProcessedChunkMap _orderedChunks;
+    vespalib::Executor  & _executor;
+    ProcessedChunkMap     _orderedChunks;
     BucketDensityComputer _bucketMap;
 };
 

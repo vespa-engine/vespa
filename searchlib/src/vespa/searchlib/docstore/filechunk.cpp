@@ -78,9 +78,10 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _dataFileName(createDatFileName(_name)),
       _idxFileName(createIdxFileName(_name)),
       _chunkInfo(),
+      _lastPersistedSerialNum(0),
       _dataHeaderLen(0u),
       _idxHeaderLen(0u),
-      _lastPersistedSerialNum(0),
+      _numLids(0),
       _docIdLimit(std::numeric_limits<uint32_t>::max()),
       _modificationTime()
 {
@@ -228,6 +229,7 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
                                 globalBucketMap.recordLid(bucketId);
                             }
                             ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                            _numLids++;
                         } else {
                             remove(lidMeta.getLid(), lidMeta.size());
                         }

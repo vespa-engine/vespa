@@ -147,6 +147,7 @@ struct WriteFixture : public FixtureBase {
     void updateLidMap(uint32_t docIdLimit) {
         vespalib::LockGuard guard(updateLock);
         chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
+        serialNum = chunk.getSerialNum();
     }
 
 };
@@ -177,6 +178,30 @@ TEST("require that docIdLimit is written to and read from idx file header")
     {
         WriteFixture f("tmp", 0);
         EXPECT_EQUAL(1000u, f.chunk.getDocIdLimit());
+    }
+}
+
+TEST("require that numlids are updated") {
+    {
+        WriteFixture f("tmp", 1000, false);
+        f.updateLidMap(1000);
+        EXPECT_EQUAL(0u, f.chunk.getNumLids());
+        f.append(1);
+        EXPECT_EQUAL(1u, f.chunk.getNumLids());
+        f.append(2);
+        f.append(3);
+        EXPECT_EQUAL(3u, f.chunk.getNumLids());
+        f.append(3);
+        EXPECT_EQUAL(4u, f.chunk.getNumLids());
+        f.flush();
+    }
+    {
+        WriteFixture f("tmp", 1000, true);
+        EXPECT_EQUAL(0u, f.chunk.getNumLids());
+        f.updateLidMap(1000);
+        EXPECT_EQUAL(4u, f.chunk.getNumLids());
+        f.append(7);
+        EXPECT_EQUAL(5u, f.chunk.getNumLids());
     }
 }
 
