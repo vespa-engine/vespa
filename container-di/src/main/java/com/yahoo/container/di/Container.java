@@ -140,7 +140,7 @@ public class Container {
             snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
 
             log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
-                    graph.configKeys(), graph.generation(), snapshot));
+                                        graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
@@ -182,7 +182,7 @@ public class Container {
     }
 
     private ComponentGraph createAndConfigureComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> componentsConfigs,
-            Injector fallbackInjector) {
+                                                             Injector fallbackInjector) {
         ComponentGraph componentGraph = createComponentsGraph(componentsConfigs, getComponentsGeneration(), fallbackInjector);
         componentGraph.setAvailableConfigs(componentsConfigs);
         return componentGraph;

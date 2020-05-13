@@ -4,7 +4,9 @@ package com.yahoo.vespaxmlparser;
 import com.yahoo.document.TestAndSetCondition;
 
 public class ConditionalFeedOperation extends FeedOperation {
+
     private final TestAndSetCondition condition;
+
     protected ConditionalFeedOperation(Type type) {
         super(type);
         this.condition = TestAndSetCondition.NOT_PRESENT_CONDITION;
@@ -18,4 +20,5 @@ public class ConditionalFeedOperation extends FeedOperation {
     public TestAndSetCondition getCondition() {
         return condition;
     }
+
 }

@@ -142,8 +142,7 @@ public class ComponentGraph {
     }
 
     public void setAvailableConfigs(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
-        Map<ConfigKey<ConfigInstance>, ConfigInstance> invariantMap = Keys.invariantCopy(configs);
-        componentNodes().forEach(node -> node.setAvailableConfigs(invariantMap));
+        componentNodes().forEach(node -> node.setAvailableConfigs(Keys.invariantCopy(configs)));
     }
 
     public void reuseNodes(ComponentGraph old) {

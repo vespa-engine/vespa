@@ -5,7 +5,9 @@ import com.yahoo.document.Document;
 import com.yahoo.document.TestAndSetCondition;
 
 public class DocumentFeedOperation extends ConditionalFeedOperation {
+
     private final Document document;
+
     public DocumentFeedOperation(Document document) {
         super(Type.DOCUMENT);
         this.document = document;
@@ -20,4 +22,6 @@ public class DocumentFeedOperation extends ConditionalFeedOperation {
     public Document getDocument() {
         return document;
     }
+
 }
+
