@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -48,14 +49,16 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
     public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
+    public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
+    public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
     private final Metric metric;
     private final Clock clock;
 
-    // Tracks hosts and versions for which we have reported change duration metrics
-    private final ConcurrentHashMap<HostName, Map<String, Set<Version>>> reportedVersions = new ConcurrentHashMap<>();
+    // Keep track of reported node counts for each version
+    private final ConcurrentHashMap<NodeCountKey, Map<String, Long>> nodeCounts = new ConcurrentHashMap<>();
 
     public MetricsReporter(Controller controller, Metric metric) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
@@ -68,8 +71,16 @@ public class MetricsReporter extends ControllerMaintainer {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
-        reportChangeDurations(osChangeDurations(), OS_CHANGE_DURATION);
-        reportChangeDurations(platformChangeDurations(), PLATFORM_CHANGE_DURATION);
+        reportInfrastructureUpgradeMetrics();
+    }
+
+    private void reportInfrastructureUpgradeMetrics() {
+        Map<NodeVersion, Duration> osChangeDurations = osChangeDurations();
+        Map<NodeVersion, Duration> platformChangeDurations = platformChangeDurations();
+        reportChangeDurations(osChangeDurations, OS_CHANGE_DURATION);
+        reportChangeDurations(platformChangeDurations, PLATFORM_CHANGE_DURATION);
+        reportNodeCount(osChangeDurations.keySet(), OS_NODE_COUNT);
+        reportNodeCount(platformChangeDurations.keySet(), PLATFORM_NODE_COUNT);
     }
 
     private void reportRemainingRotations() {
@@ -111,26 +122,34 @@ public class MetricsReporter extends ControllerMaintainer {
                    metric.createContext(Map.of()));
     }
 
-    private void reportChangeDurations(Map<NodeVersion, Duration> changeDurations, String metricName) {
-        changeDurations.forEach((nodeVersion, duration) -> {
-            // Zero the metric for past versions because our metrics framework remembers the last value for each unique
-            // dimension set for each metric.
-            reportVersion(metricName, nodeVersion.hostname(), nodeVersion.currentVersion());
-            for (var reportedVersion : reportedVersions.getOrDefault(nodeVersion.hostname(), Map.of()).get(metricName)) {
-                if (reportedVersion.equals(nodeVersion.currentVersion())) continue;
-                metric.set(metricName, 0, metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone(), reportedVersion)));
+    private void reportNodeCount(Set<NodeVersion> nodeVersions, String metricName) {
+        Map<NodeCountKey, Long> nodeCountByVersion = new HashMap<>();
+        Set<Version> knownVersions = new HashSet<>();
+        for (var nodeVersion : nodeVersions) {
+            NodeCountKey key = new NodeCountKey(nodeVersion.currentVersion(), nodeVersion.zone());
+            long count = nodeCountByVersion.getOrDefault(key, 0L);
+            nodeCountByVersion.put(key, ++count);
+            knownVersions.add(key.version);
+        }
+        nodeCountByVersion.forEach((nodeCountKey, count) -> {
+            nodeCounts.compute(nodeCountKey, (ignored, values) -> {
+                if (values == null) values = new HashMap<>();
+                values.put(metricName, count);
+                return values;
+            });
+        });
+        nodeCounts.forEach((nodeCountKey, value) -> {
+            long nodeCount = 0;
+            if (knownVersions.contains(nodeCountKey.version)) {
+                nodeCount = value.get(metricName);
             }
-            metric.set(metricName, duration.toSeconds(), metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone(), nodeVersion.currentVersion())));
+            metric.set(metricName, nodeCount, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
         });
     }
 
-    private void reportVersion(String metricName, HostName hostname, Version version) {
-        reportedVersions.compute(hostname, (ignored, values) -> {
-            if (values == null) {
-                values = new HashMap<>();
-            }
-            values.computeIfAbsent(metricName, k -> new HashSet<>()).add(version);
-            return values;
+    private void reportChangeDurations(Map<NodeVersion, Duration> changeDurations, String metricName) {
+        changeDurations.forEach((nodeVersion, duration) -> {
+            metric.set(metricName, duration.toSeconds(), metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone())));
         });
     }
 
@@ -207,10 +226,40 @@ public class MetricsReporter extends ControllerMaintainer {
                       "app",application.application().value() + "." + application.instance().value());
     }
 
-    private static Map<String, String> dimensions(HostName hostname, ZoneId zone, Version currentVersion) {
+    private static Map<String, String> dimensions(HostName hostname, ZoneId zone) {
         return Map.of("host", hostname.value(),
-                      "zone", zone.value(),
+                      "zone", zone.value());
+    }
+
+    private static Map<String, String> dimensions(ZoneId zone, Version currentVersion) {
+        return Map.of("zone", zone.value(),
                       "currentVersion", currentVersion.toFullString());
+    }
+
+    private static class NodeCountKey {
+
+        private final Version version;
+        private final ZoneId zone;
+
+        public NodeCountKey(Version version, ZoneId zone) {
+            this.version = version;
+            this.zone = zone;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            NodeCountKey that = (NodeCountKey) o;
+            return version.equals(that.version) &&
+                   zone.equals(that.zone);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(version, zone);
+        }
+
     }
 
 }
