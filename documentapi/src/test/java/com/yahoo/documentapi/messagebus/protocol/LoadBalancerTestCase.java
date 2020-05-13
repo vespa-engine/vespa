@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.documentapi.messagebus.protocol.test;
+package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.documentapi.messagebus.protocol.LoadBalancer;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import org.junit.Test;
 
@@ -54,13 +53,13 @@ public class LoadBalancerTestCase {
                 assertEquals("foo/" + (i % 3) + "/default" , node.entry.getName());
             }
 
-            assertEquals(33, weights.get(0).sent.intValue());
-            assertEquals(33, weights.get(1).sent.intValue());
-            assertEquals(33, weights.get(2).sent.intValue());
+            assertEquals(33, weights.get(0).sent);
+            assertEquals(33, weights.get(1).sent);
+            assertEquals(33, weights.get(2).sent);
 
-            weights.get(0).sent.set(0);
-            weights.get(1).sent.set(0);
-            weights.get(2).sent.set(0);
+            weights.get(0).sent = 0;
+            weights.get(1).sent = 0;
+            weights.get(2).sent = 0;
         }
 
         {

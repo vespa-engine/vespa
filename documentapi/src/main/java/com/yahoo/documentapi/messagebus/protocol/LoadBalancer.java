@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.yahoo.jrt.slobrok.api.Mirror;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 
 /**
  * Load balances over a set of nodes based on statistics gathered from those nodes.
@@ -15,24 +15,25 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LoadBalancer {
 
-    public static class NodeMetrics {
-        public AtomicLong sent = new AtomicLong();
-        public AtomicLong busy = new AtomicLong();
-        public double weight = 1.0;
+    static class NodeMetrics {
+        long sent = 0;
+        long busy = 0;
+        double weight = 1.0;
     }
 
-    public static class Node {
-        public Node(Mirror.Entry e, NodeMetrics m) { entry = e; metrics = m; }
+    static class Node {
+        Node(Mirror.Entry e, NodeMetrics m) { entry = e; metrics = m; }
 
-        public Mirror.Entry entry;
-        public NodeMetrics metrics;
+        Mirror.Entry entry;
+        NodeMetrics metrics;
     }
 
     /** Statistics on each node we are load balancing over. Populated lazily. */
-    private final List<NodeMetrics> nodeWeights = new CopyOnWriteArrayList<>();
+    private final List<NodeMetrics> nodeWeights = new ArrayList<>();
+    private final Map<String, Integer> cachedIndex = new HashMap<>();
 
     private final String cluster;
-    private final AtomicDouble safePosition = new AtomicDouble(0.0);
+    private double position = 0.0;
 
     public LoadBalancer(String cluster) {
         this.cluster = cluster;
@@ -43,7 +44,7 @@ public class LoadBalancer {
     }
 
     /** Returns the index from a node name string */
-    public int getIndex(String nodeName) {
+    int getIndex(String nodeName) {
         try {
             String s = nodeName.substring(cluster.length() + 1);
             s = s.substring(0, s.indexOf("/"));
@@ -53,6 +54,9 @@ public class LoadBalancer {
             String err = "Expected recipient on the form '" + cluster + "/x/[y.]number/z', got '" + nodeName + "'.";
             throw new IllegalArgumentException(err, e);
         }
+    }
+    private int getCachedIndex(String nodeName) {
+        return cachedIndex.computeIfAbsent(nodeName, key -> getIndex(key));
     }
 
     /**
@@ -68,24 +72,24 @@ public class LoadBalancer {
 
         double weightSum = 0.0;
         Node selectedNode = null;
-        double position = safePosition.get();
-        for (Mirror.Entry entry : choices) {
-            NodeMetrics nodeMetrics = getNodeMetrics(entry);
+        synchronized (this) {
+            for (Mirror.Entry entry : choices) {
+                NodeMetrics nodeMetrics = getNodeMetrics(entry);
 
-            weightSum += nodeMetrics.weight;
+                weightSum += nodeMetrics.weight;
 
-            if (weightSum > position) {
-                selectedNode = new Node(entry, nodeMetrics);
-                break;
+                if (weightSum > position) {
+                    selectedNode = new Node(entry, nodeMetrics);
+                    break;
+                }
             }
+            if (selectedNode == null) { // Position>sum of all weights: Wrap around (but keep the remainder for some reason)
+                position -= weightSum;
+                selectedNode = new Node(choices.get(0), getNodeMetrics(choices.get(0)));
+            }
+            position += 1.0;
+            selectedNode.metrics.sent++;
         }
-        if (selectedNode == null) { // Position>sum of all weights: Wrap around (but keep the remainder for some reason)
-            position -= weightSum;
-            selectedNode = new Node(choices.get(0), getNodeMetrics(choices.get(0)));
-        }
-        position += 1.0;
-        safePosition.set(position);
-        selectedNode.metrics.sent.incrementAndGet();
         return selectedNode;
     }
 
@@ -94,7 +98,7 @@ public class LoadBalancer {
      * If there is no entry at the given index it is created by this call.
      */
     private NodeMetrics getNodeMetrics(Mirror.Entry entry) {
-        int index = getIndex(entry.getName());
+        int index = getCachedIndex(entry.getName());
         // expand node array as needed
         while (nodeWeights.size() < (index + 1))
             nodeWeights.add(null);
@@ -122,14 +126,16 @@ public class LoadBalancer {
 
     public void received(Node node, boolean busy) {
         if (busy) {
-            double wantWeight = node.metrics.weight - 0.01;
-            if (wantWeight < 1.0) {
-                increaseWeights();
-                node.metrics.weight = 1.0;
-            } else {
-                node.metrics.weight = wantWeight;
+            synchronized (this) {
+                double wantWeight = node.metrics.weight - 0.01;
+                if (wantWeight < 1.0) {
+                    increaseWeights();
+                    node.metrics.weight = 1.0;
+                } else {
+                    node.metrics.weight = wantWeight;
+                }
+                node.metrics.busy++;
             }
-            node.metrics.busy.incrementAndGet();
         }
     }
 

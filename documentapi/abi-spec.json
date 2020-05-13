@@ -2082,35 +2082,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jrt.slobrok.api.Mirror$Entry, com.yahoo.documentapi.messagebus.protocol.LoadBalancer$NodeMetrics)"
-    ],
-    "fields": [
-      "public com.yahoo.jrt.slobrok.api.Mirror$Entry entry",
-      "public com.yahoo.documentapi.messagebus.protocol.LoadBalancer$NodeMetrics metrics"
-    ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.LoadBalancer$NodeMetrics": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()"
-    ],
-    "fields": [
-      "public java.util.concurrent.atomic.AtomicLong sent",
-      "public java.util.concurrent.atomic.AtomicLong busy",
-      "public double weight"
-    ]
-  },
   "com.yahoo.documentapi.messagebus.protocol.LoadBalancer": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -2120,7 +2091,6 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public java.util.List getNodeWeights()",
-      "public int getIndex(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node getRecipient(java.util.List)",
       "public void received(com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node, boolean)"
     ],
