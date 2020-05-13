@@ -276,6 +276,12 @@ public class Flags {
             "Whether the application package should be distributed to other config servers during a deployment",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag PROVISION_APPLICATION_ROLES = defineFeatureFlag(
+            "provision-application-roles", false,
+            "Whether application roles should be provisioned",
+            "Takes effect on next deployment (controller)",
+            ZONE_ID);
+
     public static final UnboundBooleanFlag CONFIGSERVER_UNSET_ENDPOINTS = defineFeatureFlag(
             "configserver-unset-endpoints", false,
             "Whether the configserver allows removal of existing endpoints when an empty list of container endpoints is request",

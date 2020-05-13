@@ -18,6 +18,7 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -30,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -51,11 +53,11 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
+import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateManager;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
-import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateManager;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -113,6 +115,7 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificateManager endpointCertificateManager;
     private final StringFlag dockerImageRepoFlag;
+    private final BooleanFlag provisionApplicationRoles;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           SecretStore secretStore, FlagSource flagSource) {
@@ -125,6 +128,7 @@ public class ApplicationController {
         this.artifactRepository = controller.serviceRegistry().artifactRepository();
         this.applicationStore = controller.serviceRegistry().applicationStore();
         this.dockerImageRepoFlag = Flags.DOCKER_IMAGE_REPO.bindTo(flagSource);
+        this.provisionApplicationRoles = Flags.PROVISION_APPLICATION_ROLES.bindTo(flagSource);
 
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
@@ -298,6 +302,7 @@ public class ApplicationController {
         try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
             Set<ContainerEndpoint> endpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+            Optional<ApplicationRoles> applicationRoles = Optional.empty();
 
             Run run = controller.jobController().last(job)
                                 .orElseThrow(() -> new IllegalStateException("No known run of '" + job + "'"));
@@ -328,10 +333,19 @@ public class ApplicationController {
                 endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone);
 
                 endpoints = controller.routing().registerEndpointsInDns(application.get(), job.application().instance(), zone);
+
+                // Provision application roles if enabled for the zone
+                if (provisionApplicationRoles.with(FetchVector.Dimension.ZONE_ID, zone.value()).value()) {
+                    try {
+                        applicationRoles = controller.serviceRegistry().applicationRoleService().createApplicationRoles(instance.id());
+                    } catch (Exception e) {
+                        log.log(Level.SEVERE, "Exception creating application roles for application: " + instance.id(), e);
+                    }
+                }
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata);
+            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata, applicationRoles);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
@@ -405,7 +419,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion,
-                                           endpoints, endpointCertificateMetadata);
+                                           endpoints, endpointCertificateMetadata, Optional.empty());
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
@@ -477,7 +491,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -485,12 +499,13 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty());
+        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
-                                  Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
+                                  Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
+                                  Optional<ApplicationRoles> applicationRoles) {
         try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
@@ -506,7 +521,7 @@ public class ApplicationController {
 
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
-                                                           endpoints, endpointCertificateMetadata, dockerImageRepo, domain));
+                                                           endpoints, endpointCertificateMetadata, dockerImageRepo, domain, applicationRoles));
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {

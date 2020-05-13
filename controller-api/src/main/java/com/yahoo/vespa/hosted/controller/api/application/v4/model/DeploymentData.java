@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 
@@ -28,12 +29,14 @@ public class DeploymentData {
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
+    private final Optional<ApplicationRoles> applicationRoles;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
-                          Optional<AthenzDomain> athenzDomain) {
+                          Optional<AthenzDomain> athenzDomain,
+                          Optional<ApplicationRoles> applicationRoles) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -42,6 +45,7 @@ public class DeploymentData {
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
+        this.applicationRoles = applicationRoles;
     }
 
     public ApplicationId instance() {
@@ -74,5 +78,9 @@ public class DeploymentData {
 
     public Optional<AthenzDomain> athenzDomain() {
         return athenzDomain;
+    }
+
+    public Optional<ApplicationRoles> applicationRoles() {
+        return applicationRoles;
     }
 }
