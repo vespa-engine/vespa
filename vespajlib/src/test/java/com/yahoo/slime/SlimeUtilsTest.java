@@ -5,6 +5,8 @@ import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
@@ -95,6 +97,17 @@ public class SlimeUtilsTest {
         } catch (RuntimeException e) {
             assertEquals("Unexpected character 'o'", e.getMessage());
         }
+    }
+
+    @Test
+    public void test_stream() {
+        String json = "{\"constant\":0,\"list\":[1,2,4,3,0],\"object\":{\"a\":1,\"c\":3,\"b\":2}}";
+        Inspector inspector = SlimeUtils.jsonToSlimeOrThrow(json).get();
+        assertEquals(0, SlimeUtils.entriesStream(inspector.field("constant")).count());
+        assertEquals(0, SlimeUtils.entriesStream(inspector.field("object")).count());
+
+        assertEquals(List.of(1L, 2L, 4L, 3L, 0L),
+                SlimeUtils.entriesStream(inspector.field("list")).map(Inspector::asLong).collect(Collectors.toList()));
     }
 
 }
