@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -25,11 +24,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -53,9 +49,6 @@ public class MetricsReporter extends ControllerMaintainer {
 
     private final Metric metric;
     private final Clock clock;
-
-    // Tracks hosts and versions for which we have reported change duration metrics
-    private final ConcurrentHashMap<HostName, Map<String, Set<Version>>> reportedVersions = new ConcurrentHashMap<>();
 
     public MetricsReporter(Controller controller, Metric metric) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
@@ -113,24 +106,7 @@ public class MetricsReporter extends ControllerMaintainer {
 
     private void reportChangeDurations(Map<NodeVersion, Duration> changeDurations, String metricName) {
         changeDurations.forEach((nodeVersion, duration) -> {
-            // Zero the metric for past versions because our metrics framework remembers the last value for each unique
-            // dimension set for each metric.
-            reportVersion(metricName, nodeVersion.hostname(), nodeVersion.currentVersion());
-            for (var reportedVersion : reportedVersions.getOrDefault(nodeVersion.hostname(), Map.of()).get(metricName)) {
-                if (reportedVersion.equals(nodeVersion.currentVersion())) continue;
-                metric.set(metricName, 0, metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone(), reportedVersion)));
-            }
-            metric.set(metricName, duration.toSeconds(), metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone(), nodeVersion.currentVersion())));
-        });
-    }
-
-    private void reportVersion(String metricName, HostName hostname, Version version) {
-        reportedVersions.compute(hostname, (ignored, values) -> {
-            if (values == null) {
-                values = new HashMap<>();
-            }
-            values.computeIfAbsent(metricName, k -> new HashSet<>()).add(version);
-            return values;
+            metric.set(metricName, duration.toSeconds(), metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone())));
         });
     }
 
@@ -207,10 +183,9 @@ public class MetricsReporter extends ControllerMaintainer {
                       "app",application.application().value() + "." + application.instance().value());
     }
 
-    private static Map<String, String> dimensions(HostName hostname, ZoneId zone, Version currentVersion) {
+    private static Map<String, String> dimensions(HostName hostname, ZoneId zone) {
         return Map.of("host", hostname.value(),
-                      "zone", zone.value(),
-                      "currentVersion", currentVersion.toFullString());
+                      "zone", zone.value());
     }
 
 }
