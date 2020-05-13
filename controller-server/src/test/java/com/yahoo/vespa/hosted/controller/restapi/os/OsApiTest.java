@@ -52,6 +52,7 @@ public class OsApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(operator);
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
+                          .addCloud(cloud1, cloud2)
                           .setOsUpgradePolicy(cloud1.name(), UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
                           .setOsUpgradePolicy(cloud2.name(), UpgradePolicy.create().upgrade(zone3));
         osUpgraders = List.of(

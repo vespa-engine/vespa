@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -298,7 +299,7 @@ public class MetricsReporterTest {
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().upgradeOsIn(cloud, version0, Optional.empty(), false);
         osUpgrader.maintain();
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
@@ -312,7 +313,7 @@ public class MetricsReporterTest {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var version = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, version, false);
+            tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
             runAll(osUpgrader, statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts, currentVersion);
 

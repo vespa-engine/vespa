@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -39,10 +40,14 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target,
-                               zone.getId(), zone.getCloudName()));
+        Optional<Duration> zoneUpgradeBudget = target.upgradeBudget()
+                                                     .map(totalBudget -> zoneBudgetOf(totalBudget, zone));
+        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(), target,
+                               zone.getId(), zone.getCloudName(),
+                               zoneUpgradeBudget.map(d -> " with time budget " + d).orElse("")));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(),
-                                                                                 target.osVersion().version());
+                                                                                 target.osVersion().version(),
+                                                                                 zoneUpgradeBudget);
     }
 
     @Override
@@ -77,6 +82,16 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     private Version currentVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
+    }
+
+    /** Returns the available upgrade budget for given zone */
+    private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
+        if (!zone.getEnvironment().isProduction()) return Duration.ZERO;
+        long consecutiveProductionZones = upgradePolicy.asList().stream()
+                                                       .filter(parallelZones -> parallelZones.stream().map(ZoneApi::getEnvironment)
+                                                                                             .anyMatch(Environment::isProduction))
+                                                       .count();
+        return totalBudget.dividedBy(consecutiveProductionZones);
     }
 
     /** Returns whether node is in a state where it can be upgraded */
