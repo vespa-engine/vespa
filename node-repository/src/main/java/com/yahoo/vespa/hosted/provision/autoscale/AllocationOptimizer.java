@@ -128,36 +128,28 @@ public class AllocationOptimizer {
          * For the observed load this instance is initialized with, returns the resources needed per node to be at
          * ideal load given a target node count
          */
-        private NodeResources nodeResourcesWith(int nodeCount) {
+        private NodeResources nodeResourcesWith(int nodes) {
+            int groups = singleGroupMode ? 1 : nodes / current.groupSize();
+
             // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
             // Memory and disk: Scales with group size
-
             double cpu, memory, disk;
-            if (singleGroupMode) {
-                // The fixed cost portion of cpu does not scale with changes to the node count
-                // TODO: Only for the portion of cpu consumed by queries
-                cpu = fixedCpuCostFraction * target.clusterCpu() / current.groupSize() +
-                      (1 - fixedCpuCostFraction) * target.clusterCpu() / nodeCount;
 
-                if (current.clusterType().isContent()) { // load scales with node share of content
-                    memory = target.groupMemory() / nodeCount;
-                    disk = target.groupDisk() / nodeCount;
-                }
-                else {
-                    memory = target.nodeMemory();
-                    disk = target.nodeDisk();
-                }
+            int groupSize = nodes / groups;
+
+            // The fixed cost portion of cpu does not scale with changes to the node count
+            // TODO: Only for the portion of cpu consumed by queries
+            double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
+                                 (1 - fixedCpuCostFraction) * target.groupCpu() / groupSize;
+            cpu = cpuPerGroup * current.groups() / groups;
+
+            if (current.clusterType().isContent()) { // load scales with node share of content
+                memory = target.groupMemory() / groupSize;
+                disk = target.groupDisk() / groupSize;
             }
             else {
-                cpu = target.clusterCpu() / nodeCount;
-                if (current.clusterType().isContent()) { // load scales with node share of content
-                    memory = target.groupMemory() / current.groupSize();
-                    disk = target.groupDisk() / current.groupSize();
-                }
-                else {
-                    memory = target.nodeMemory();
-                    disk = target.nodeDisk();
-                }
+                memory = target.nodeMemory();
+                disk = target.nodeDisk();
             }
 
             // Combine the scaled resource values computed here

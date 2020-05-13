@@ -30,8 +30,8 @@ public class ResourceTarget {
     /** Are the target resources given by this including redundancy or not */
     public boolean adjustForRedundancy() { return adjustForRedundancy; }
     
-    /** Returns the target total cpu to allocate to the entire cluster */
-    public double clusterCpu() { return nodeCpu() * current.nodes(); }
+    /** Returns the target total cpu to allocate to each group */
+    public double groupCpu() { return nodeCpu() * current.groupSize(); }
 
     /** Returns the target total memory to allocate to each group */
     public double groupMemory() { return nodeMemory() * current.groupSize(); }
