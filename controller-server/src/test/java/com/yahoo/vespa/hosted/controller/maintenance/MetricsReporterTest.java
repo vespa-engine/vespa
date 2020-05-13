@@ -308,11 +308,12 @@ public class MetricsReporterTest {
         var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
         for (int i = 0; i < targets.size(); i++) {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
-            var version = targets.get(i);
+            var nextVersion = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
+            tester.controller().upgradeOsIn(cloud, nextVersion, Optional.empty(), false);
             runAll(osUpgrader, statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsNodeCount(hosts.size(), currentVersion);
 
             // Over 30 minutes pass and nothing happens
             tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
@@ -320,7 +321,7 @@ public class MetricsReporterTest {
             assertOsChangeDuration(Duration.ZERO, hosts);
 
             // Nodes are told to upgrade, but do not suspend yet
-            assertEquals("Wanted OS version is raised for all nodes", version,
+            assertEquals("Wanted OS version is raised for all nodes", nextVersion,
                          tester.configServer().nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream()
                                .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
             assertTrue("No nodes are suspended", tester.controller().serviceRegistry().configServer()
@@ -343,9 +344,10 @@ public class MetricsReporterTest {
             tester.clock().advance(Duration.ofMinutes(20));
             runAll(statusUpdater, reporter);
             assertOsChangeDuration(Duration.ofMinutes(20), hostsUpgraded);
-            upgradeOsTo(version, hostsUpgraded, zone, tester);
+            upgradeOsTo(nextVersion, hostsUpgraded, zone, tester);
             runAll(statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hostsUpgraded);
+            assertOsNodeCount(hostsUpgraded.size(), nextVersion);
 
             // One host consumes budget without upgrading
             var brokenHost = suspendedHosts.get(2);
@@ -354,17 +356,29 @@ public class MetricsReporterTest {
             assertOsChangeDuration(Duration.ofMinutes(35), List.of(brokenHost));
 
             // Host eventually upgrades and is no longer reported
-            upgradeOsTo(version, List.of(brokenHost), zone, tester);
+            upgradeOsTo(nextVersion, List.of(brokenHost), zone, tester);
             runAll(statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, List.of(brokenHost));
+            assertOsNodeCount(hostsUpgraded.size() + 1, nextVersion);
 
             // Remaining hosts suspend and upgrade successfully
             var remainingHosts = hosts.subList(3, hosts.size());
             suspend(remainingHosts, zone, tester);
-            upgradeOsTo(version, remainingHosts, zone, tester);
+            upgradeOsTo(nextVersion, remainingHosts, zone, tester);
             runAll(statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsNodeCount(hosts.size(), nextVersion);
+            assertOsNodeCount(0, currentVersion);
         }
+    }
+
+    private void assertOsNodeCount(int n, Version version) {
+        long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), MetricsReporter.OS_NODE_COUNT)
+                                .stream()
+                                .map(Number::longValue)
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for version " + version));
+        assertEquals("Expected number of nodes are on " + version.toFullString(), n, nodeCount);
     }
 
     private void runAll(Runnable... runnables) {
@@ -393,9 +407,9 @@ public class MetricsReporterTest {
     }
 
     private List<Node> getNodes(ZoneId zone, List<Node> nodes, ControllerTester tester) {
-       return tester.configServer().nodeRepository().list(zone, nodes.stream()
-                                                                     .map(Node::hostname)
-                                                                     .collect(Collectors.toList()));
+        return tester.configServer().nodeRepository().list(zone, nodes.stream()
+                                                                      .map(Node::hostname)
+                                                                      .collect(Collectors.toList()));
     }
 
     private void updateNodes(List<Node> nodes, UnaryOperator<Node.Builder> builderOps, ZoneId zone,

@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -24,8 +25,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,11 +49,16 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
     public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
+    public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
+    public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
     private final Metric metric;
     private final Clock clock;
+
+    // Keep track of reported node counts for each version
+    private final ConcurrentHashMap<NodeCountKey, Map<String, Long>> nodeCounts = new ConcurrentHashMap<>();
 
     public MetricsReporter(Controller controller, Metric metric) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
@@ -61,8 +71,16 @@ public class MetricsReporter extends ControllerMaintainer {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
-        reportChangeDurations(osChangeDurations(), OS_CHANGE_DURATION);
-        reportChangeDurations(platformChangeDurations(), PLATFORM_CHANGE_DURATION);
+        reportInfrastructureUpgradeMetrics();
+    }
+
+    private void reportInfrastructureUpgradeMetrics() {
+        Map<NodeVersion, Duration> osChangeDurations = osChangeDurations();
+        Map<NodeVersion, Duration> platformChangeDurations = platformChangeDurations();
+        reportChangeDurations(osChangeDurations, OS_CHANGE_DURATION);
+        reportChangeDurations(platformChangeDurations, PLATFORM_CHANGE_DURATION);
+        reportNodeCount(osChangeDurations.keySet(), OS_NODE_COUNT);
+        reportNodeCount(platformChangeDurations.keySet(), PLATFORM_NODE_COUNT);
     }
 
     private void reportRemainingRotations() {
@@ -102,6 +120,31 @@ public class MetricsReporter extends ControllerMaintainer {
     private void reportQueuedNameServiceRequests() {
         metric.set(NAME_SERVICE_REQUESTS_QUEUED, controller().curator().readNameServiceQueue().requests().size(),
                    metric.createContext(Map.of()));
+    }
+
+    private void reportNodeCount(Set<NodeVersion> nodeVersions, String metricName) {
+        Map<NodeCountKey, Long> nodeCountByVersion = new HashMap<>();
+        Set<Version> knownVersions = new HashSet<>();
+        for (var nodeVersion : nodeVersions) {
+            NodeCountKey key = new NodeCountKey(nodeVersion.currentVersion(), nodeVersion.zone());
+            long count = nodeCountByVersion.getOrDefault(key, 0L);
+            nodeCountByVersion.put(key, ++count);
+            knownVersions.add(key.version);
+        }
+        nodeCountByVersion.forEach((nodeCountKey, count) -> {
+            nodeCounts.compute(nodeCountKey, (ignored, values) -> {
+                if (values == null) values = new HashMap<>();
+                values.put(metricName, count);
+                return values;
+            });
+        });
+        nodeCounts.forEach((nodeCountKey, value) -> {
+            long nodeCount = 0;
+            if (knownVersions.contains(nodeCountKey.version)) {
+                nodeCount = value.get(metricName);
+            }
+            metric.set(metricName, nodeCount, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
+        });
     }
 
     private void reportChangeDurations(Map<NodeVersion, Duration> changeDurations, String metricName) {
@@ -186,6 +229,37 @@ public class MetricsReporter extends ControllerMaintainer {
     private static Map<String, String> dimensions(HostName hostname, ZoneId zone) {
         return Map.of("host", hostname.value(),
                       "zone", zone.value());
+    }
+
+    private static Map<String, String> dimensions(ZoneId zone, Version currentVersion) {
+        return Map.of("zone", zone.value(),
+                      "currentVersion", currentVersion.toFullString());
+    }
+
+    private static class NodeCountKey {
+
+        private final Version version;
+        private final ZoneId zone;
+
+        public NodeCountKey(Version version, ZoneId zone) {
+            this.version = version;
+            this.zone = zone;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            NodeCountKey that = (NodeCountKey) o;
+            return version.equals(that.version) &&
+                   zone.equals(that.zone);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(version, zone);
+        }
+
     }
 
 }
