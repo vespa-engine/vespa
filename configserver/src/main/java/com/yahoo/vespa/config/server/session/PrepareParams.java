@@ -80,7 +80,7 @@ public final class PrepareParams {
         private ApplicationId applicationId = ApplicationId.defaultId();
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
-        private List<ContainerEndpoint> containerEndpoints = List.of();
+        private List<ContainerEndpoint> containerEndpoints = null;
         private Optional<String> tlsSecretsKeyName = Optional.empty();
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
         private Optional<DockerImage> dockerImageRepository = Optional.empty();

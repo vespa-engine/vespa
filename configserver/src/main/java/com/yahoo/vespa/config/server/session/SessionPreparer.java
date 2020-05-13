@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -14,9 +13,9 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -25,8 +24,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
-
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -58,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -156,8 +154,8 @@ public class SessionPreparer {
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final Version vespaVersion;
 
-        final ContainerEndpointsCache containerEndpoints;
-        final Set<ContainerEndpoint> endpointsSet;
+        final ContainerEndpointsCache containerEndpointsCache;
+        final List<ContainerEndpoint> containerEndpoints;
         final ModelContext.Properties properties;
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
         private final EndpointCertificateRetriever endpointCertificateRetriever;
@@ -182,7 +180,7 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
-            this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
+            this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
             this.endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
             this.endpointCertificateMetadata = params.endpointCertificateMetadata()
@@ -190,7 +188,7 @@ public class SessionPreparer {
             endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-            this.endpointsSet = getEndpoints(params.containerEndpoints());
+            this.containerEndpoints = getEndpoints(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
@@ -200,7 +198,7 @@ public class SessionPreparer {
                                                               configserverConfig.athenzDnsSuffix(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              endpointsSet,
+                                                              Set.copyOf(containerEndpoints),
                                                               params.isBootstrap(),
                                                               currentActiveApplicationSet.isEmpty(),
                                                               context.getFlagSource(),
@@ -282,8 +280,8 @@ public class SessionPreparer {
         }
 
         void writeContainerEndpointsZK() {
-            if (!params.containerEndpoints().isEmpty()) { // Use endpoints from parameter when explicitly given
-                containerEndpoints.write(applicationId, params.containerEndpoints());
+            if (!containerEndpoints.isEmpty()) {
+                containerEndpointsCache.write(applicationId, containerEndpoints);
             }
             checkTimeout("write container endpoints to zookeeper");
         }
@@ -298,11 +296,11 @@ public class SessionPreparer {
             return prepareResult.getConfigChangeActions();
         }
 
-        private Set<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
+        private List<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
             if (endpoints == null || endpoints.isEmpty()) {
-                endpoints = this.containerEndpoints.read(applicationId);
+                endpoints = this.containerEndpointsCache.read(applicationId);
             }
-            return ImmutableSet.copyOf(endpoints);
+            return List.copyOf(endpoints);
         }
 
     }

@@ -41,10 +41,7 @@ public class ContainerEndpointsCache {
     }
 
     public void write(ApplicationId applicationId, List<ContainerEndpoint> endpoints) {
-        if (endpoints.isEmpty()) return;
-
         var slime = ContainerEndpointSerializer.endpointListToSlime(endpoints);
-
         try {
             var bytes = SlimeUtils.toJsonBytes(slime);
             curator.set(containerEndpointsPath(applicationId), bytes);
