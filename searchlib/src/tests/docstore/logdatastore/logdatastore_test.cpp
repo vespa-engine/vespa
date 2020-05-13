@@ -22,6 +22,7 @@ using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
 using search::index::DummyFileHeaderContext;
+using search::test::DirectoryHandler;
 
 class MyTlSyncer : public transactionlog::SyncProxy {
     SerialNum _syncedTo;
@@ -202,23 +203,8 @@ TEST("test that DirectIOPadding works accordng to spec") {
 }
 #endif
 
-class TmpDirectory {
-public:
-    TmpDirectory(const vespalib::string & dir) : _dir(dir)
-    {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-        ASSERT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
-    }
-    ~TmpDirectory() {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-    }
-    const vespalib::string & getDir() const { return _dir; }
-private:
-    vespalib::string _dir;
-};
-
 void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
-    TmpDirectory tmpDir("growing");
+    DirectoryHandler tmpDir("growing");
     vespalib::ThreadStackExecutor executor(4, 128*1024);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
@@ -360,7 +346,7 @@ public:
     ~VisitStore();
     IDataStore & getStore() { return _datastore; }
 private:
-    TmpDirectory                  _myDir;
+    DirectoryHandler              _myDir;
     LogDataStore::Config          _config;
     DummyFileHeaderContext        _fileHeaderContext;
     vespalib::ThreadStackExecutor _executor;
@@ -510,7 +496,7 @@ private:
         vespalib::hash_set<uint32_t>  _actual;
         bool                          _allowVisitCaching;
     };
-    TmpDirectory                     _myDir;    
+    DirectoryHandler                 _myDir;
     document::DocumentTypeRepo       _repo;
     LogDocumentStore::Config         _config;
     DummyFileHeaderContext           _fileHeaderContext;
@@ -766,7 +752,7 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
 }
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
-    TmpDirectory testDir("flushtime");
+    DirectoryHandler testDir("flushtime");
     vespalib::system_time before(vespalib::system_clock::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
