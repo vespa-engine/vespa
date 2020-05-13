@@ -96,7 +96,7 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials == null) {
             throw missingFieldException("required-credentials");
         }
-        return new PeerPolicy(authorizedPeer.name, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+        return new PeerPolicy(authorizedPeer.name, authorizedPeer.description, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
 
     private static Set<Role> toRoles(List<String> roles) {
@@ -144,6 +144,7 @@ public class TransportSecurityOptionsJsonSerializer {
                             AuthorizedPeer authorizedPeer = new AuthorizedPeer();
                             authorizedPeer.name = peerPolicy.policyName();
                             authorizedPeer.requiredCredentials = new ArrayList<>();
+                            authorizedPeer.description = peerPolicy.description().orElse(null);
                             for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                                 RequiredCredential requiredCredential = new RequiredCredential();
                                 requiredCredential.field = toField(requiredPeerCredential.field());

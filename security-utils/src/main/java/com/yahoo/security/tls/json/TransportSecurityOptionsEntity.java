@@ -32,6 +32,7 @@ class TransportSecurityOptionsEntity {
     static class AuthorizedPeer {
         @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials;
         @JsonProperty("name") String name;
+        @JsonProperty("description") @JsonInclude(NON_NULL) String description;
         @JsonProperty("roles") @JsonInclude(NON_EMPTY) List<String> roles;
     }
 

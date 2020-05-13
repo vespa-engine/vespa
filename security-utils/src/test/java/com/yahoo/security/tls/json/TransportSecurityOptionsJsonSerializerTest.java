@@ -47,7 +47,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
                                 new HashSet<>(Arrays.asList(
-                                        new PeerPolicy("cfgserver", singleton(new Role("myrole")), Arrays.asList(
+                                        new PeerPolicy("cfgserver", "cfgserver policy description", singleton(new Role("myrole")), Arrays.asList(
                                                 new RequiredPeerCredential(CN, new HostGlobPattern("mycfgserver")),
                                                 new RequiredPeerCredential(SAN_DNS, new HostGlobPattern("*.suffix.com")))),
                                         new PeerPolicy("node", singleton(new Role("anotherrole")), Collections.singletonList(new RequiredPeerCredential(CN, new HostGlobPattern("hostname"))))))))
