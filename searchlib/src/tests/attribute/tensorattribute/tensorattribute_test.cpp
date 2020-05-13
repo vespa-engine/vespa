@@ -7,6 +7,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/tensor/default_nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
@@ -73,6 +74,14 @@ Tensor::UP createTensor(const TensorSpec &spec) {
     ASSERT_TRUE(tensor != nullptr);
     value.release();
     return Tensor::UP(tensor);
+}
+
+std::unique_ptr<DenseTensor<double>> createDenseTensor(const TensorSpec &spec) {
+    auto value = DefaultTensorEngine::ref().from_spec(spec);
+    DenseTensor<double> *tensor = dynamic_cast<DenseTensor<double> *>(value.get());
+    ASSERT_TRUE(tensor != nullptr);
+    value.release();
+    return std::unique_ptr<DenseTensor<double>>(tensor);
 }
 
 TensorSpec
@@ -657,6 +666,69 @@ class DenseTensorAttributeMockIndex : public Fixture {
 public:
     DenseTensorAttributeMockIndex() : Fixture(vec_2d_spec, true, true, true) {}
 };
+
+TEST_F("blueprint takes global filter into account", DenseTensorAttributeMockIndex)
+{
+    using vespalib::tensor::DenseTensorView;
+    using search::queryeval::NearestNeighborBlueprint;
+    using search::queryeval::GlobalFilter;
+
+    f.set_tensor(1, vec_2d(1, 1));
+    f.set_tensor(2, vec_2d(2, 2));
+    f.set_tensor(3, vec_2d(3, 3));
+    f.set_tensor(4, vec_2d(4, 4));
+    f.set_tensor(5, vec_2d(5, 5));
+    f.set_tensor(6, vec_2d(6, 6));
+    f.set_tensor(7, vec_2d(7, 7));
+    f.set_tensor(8, vec_2d(8, 8));
+    f.set_tensor(9, vec_2d(9, 9));
+    f.set_tensor(10, vec_2d(0, 0));
+
+    search::queryeval::FieldSpec field("foo", 0, 0);
+    auto bp = std::make_unique<NearestNeighborBlueprint>(field,
+            f.as_dense_tensor(),
+            createDenseTensor(vec_2d(17, 42)),
+            3, true, 5);
+    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
+    auto empty_filter = GlobalFilter::create();
+    bp->set_global_filter(*empty_filter);
+    EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
+
+    bp = std::make_unique<NearestNeighborBlueprint>(field,
+            f.as_dense_tensor(),
+            createDenseTensor(vec_2d(17, 42)),
+            3, true, 5);
+    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
+    auto filter = search::BitVector::create(11);
+    filter->setBit(3);
+    filter->invalidateCachedCount();
+    auto strong_filter = GlobalFilter::create(std::move(filter));
+    bp->set_global_filter(*strong_filter);
+    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
+    EXPECT_FALSE(bp->may_approximate());
+
+    bp = std::make_unique<NearestNeighborBlueprint>(field,
+            f.as_dense_tensor(),
+            createDenseTensor(vec_2d(17, 42)),
+            3, true, 5);
+    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
+    filter = search::BitVector::create(11);
+    filter->setBit(1);
+    filter->setBit(3);
+    filter->setBit(5);
+    filter->setBit(7);
+    filter->setBit(9);
+    filter->setBit(11);
+    filter->invalidateCachedCount();
+    auto weak_filter = GlobalFilter::create(std::move(filter));
+    bp->set_global_filter(*weak_filter);
+    EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
+}
 
 TEST_F("setTensor() updates nearest neighbor index", DenseTensorAttributeMockIndex)
 {
