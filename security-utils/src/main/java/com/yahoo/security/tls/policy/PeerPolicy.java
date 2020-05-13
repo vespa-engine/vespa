@@ -4,6 +4,7 @@ package com.yahoo.security.tls.policy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -12,11 +13,18 @@ import java.util.Set;
 public class PeerPolicy {
 
     private final String policyName;
+    private final String description;
     private final Set<Role> assumedRoles;
     private final List<RequiredPeerCredential> requiredCredentials;
 
     public PeerPolicy(String policyName, Set<Role> assumedRoles, List<RequiredPeerCredential> requiredCredentials) {
+        this(policyName, null, assumedRoles, requiredCredentials);
+    }
+
+    public PeerPolicy(
+            String policyName, String description, Set<Role> assumedRoles, List<RequiredPeerCredential> requiredCredentials) {
         this.policyName = policyName;
+        this.description = description;
         this.assumedRoles = assumedRoles;
         this.requiredCredentials = Collections.unmodifiableList(requiredCredentials);
     }
@@ -24,6 +32,8 @@ public class PeerPolicy {
     public String policyName() {
         return policyName;
     }
+
+    public Optional<String> description() { return Optional.ofNullable(description); }
 
     public Set<Role> assumedRoles() {
         return assumedRoles;
@@ -37,6 +47,7 @@ public class PeerPolicy {
     public String toString() {
         return "PeerPolicy{" +
                 "policyName='" + policyName + '\'' +
+                ", description='" + description + '\'' +
                 ", assumedRoles=" + assumedRoles +
                 ", requiredCredentials=" + requiredCredentials +
                 '}';
@@ -48,12 +59,13 @@ public class PeerPolicy {
         if (o == null || getClass() != o.getClass()) return false;
         PeerPolicy that = (PeerPolicy) o;
         return Objects.equals(policyName, that.policyName) &&
+                Objects.equals(description, that.description) &&
                 Objects.equals(assumedRoles, that.assumedRoles) &&
                 Objects.equals(requiredCredentials, that.requiredCredentials);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(policyName, assumedRoles, requiredCredentials);
+        return Objects.hash(policyName, description, assumedRoles, requiredCredentials);
     }
 }
