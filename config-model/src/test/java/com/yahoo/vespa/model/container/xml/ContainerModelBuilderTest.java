@@ -667,7 +667,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml =
                 "<services>" +
                         "<admin version='3.0'>" +
-                        "    <nodes count='1'/>" +
+                        "    <nodes count='2'/>" +
                         "</admin>" +
                         "<container id ='default' version='1.0'>" +
                         "  <nodes>" +

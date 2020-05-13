@@ -9,6 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -216,8 +217,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
-        Subscriber subscriber = subscriberFactory.getSubscriber(
-                Collections.singleton(new ConfigKey<>(configClass, configId)));
+        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)));
         try {
             subscriber.waitNextGeneration();
             return configClass.cast(first(subscriber.config().values()));

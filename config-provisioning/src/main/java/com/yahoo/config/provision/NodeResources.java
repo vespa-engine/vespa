@@ -12,9 +12,9 @@ import java.util.Objects;
 public class NodeResources {
 
     // Standard unit cost in dollars per hour
-    private static final double cpuUnitCost = 12.0;
-    private static final double memoryUnitCost = 1.2;
-    private static final double diskUnitCost = 0.045;
+    private static final double cpuUnitCost =    0.12;
+    private static final double memoryUnitCost = 0.012;
+    private static final double diskUnitCost =   0.0004;
 
     public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 

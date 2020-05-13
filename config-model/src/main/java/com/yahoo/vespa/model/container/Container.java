@@ -46,7 +46,7 @@ import static com.yahoo.container.QrConfig.Rpc;
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
  */
-//qr is restart because it is handled by ConfiguredApplication.start
+// qr is restart because it is handled by ConfiguredApplication.start
 @RestartConfigs({QrStartConfig.class, QrConfig.class})
 public abstract class Container extends AbstractService implements
         QrConfig.Producer,
