@@ -70,7 +70,7 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
-        std::shared_ptr<GlobalFilter> empty_global_filter = GlobalFilter::create();
+        auto empty_global_filter = GlobalFilter::create();
         EXPECT_FALSE(empty_global_filter->has_filter());
         a.set_global_filter(*empty_global_filter);
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
@@ -146,7 +146,7 @@ TEST("test And Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
-        std::shared_ptr<GlobalFilter> empty_global_filter = GlobalFilter::create();
+        auto empty_global_filter = GlobalFilter::create();
         a.set_global_filter(*empty_global_filter);
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
@@ -226,7 +226,7 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(false, o.getState().want_global_filter());
         o.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, o.getState().want_global_filter());
-        std::shared_ptr<GlobalFilter> empty_global_filter = GlobalFilter::create();
+        auto empty_global_filter = GlobalFilter::create();
         o.set_global_filter(*empty_global_filter);
         EXPECT_EQUAL(false, got_global_filter(o.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(o.getChild(o.childCnt() - 1)));
@@ -381,7 +381,7 @@ TEST("test Rank Blueprint") {
         EXPECT_EQUAL(false, a.getState().want_global_filter());
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
-        std::shared_ptr<GlobalFilter> empty_global_filter = GlobalFilter::create();
+        auto empty_global_filter = GlobalFilter::create();
         a.set_global_filter(*empty_global_filter);
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
