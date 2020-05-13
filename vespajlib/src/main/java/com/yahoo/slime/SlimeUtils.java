@@ -4,7 +4,12 @@ package com.yahoo.slime;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Extra utilities/operations on slime trees.
@@ -117,5 +122,21 @@ public class SlimeUtils {
 
     public static Optional<String> optionalString(Inspector inspector) {
         return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
+    }
+
+    public static Iterator<Inspector> entriesIterator(Inspector inspector) {
+        return new Iterator<>() {
+            private int current = 0;
+            @Override public boolean hasNext() { return current < inspector.entries(); }
+            @Override public Inspector next() { return inspector.entry(current++); }
+        };
+    }
+
+    /** Returns stream of entries for given inspector. If the inspector is not an array, empty stream is returned */
+    public static Stream<Inspector> entriesStream(Inspector inspector) {
+        int characteristics = Spliterator.NONNULL | Spliterator.SIZED | Spliterator.ORDERED;
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(entriesIterator(inspector), characteristics),
+                false);
     }
 }
