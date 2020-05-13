@@ -38,7 +38,7 @@ public class OsApiTest extends ControllerContainerTest {
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/os/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
     private static final Cloud cloud1 = new Cloud(CloudName.from("cloud1"), false, true, false, false);
-    private static final Cloud cloud2 = new Cloud(CloudName.from("cloud2"), false, true, false, false);
+    private static final Cloud cloud2 = new Cloud(CloudName.from("cloud2"), true, false, true, true);
     private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1.name()).build();
     private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1.name()).build();
     private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2.name()).build();
@@ -72,8 +72,8 @@ public class OsApiTest extends ControllerContainerTest {
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\", \"upgradeBudget\": \"PT24H\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();
