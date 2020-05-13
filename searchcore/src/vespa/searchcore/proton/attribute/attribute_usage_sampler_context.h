@@ -12,8 +12,9 @@ class AttributeConfigInspector;
 class TransientMemoryUsageProvider;
 
 /*
- * Context for sampling attribute usage stats.  When instance is
- * destroyed, the aggregated stats is passed on to attribute usage filter.
+ * Context for sampling attribute usage stats and transient memory usage.
+ * When instance is destroyed, the aggregated stats is passed on to
+ * attribute usage filter and the transient memory usage provider.
  */
 class AttributeUsageSamplerContext
 {

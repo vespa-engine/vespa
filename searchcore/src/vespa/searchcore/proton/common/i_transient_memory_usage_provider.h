@@ -8,7 +8,8 @@ namespace proton {
 
 /*
  * Interface class providing transient memory usage, e.g. extra memory needed
- * for loading or saving an attribute vector.
+ * for loading or saving an attribute vector. It provides an aggregated view
+ * over several components (e.g. all attribute vectors for a document type).
  */
 class ITransientMemoryUsageProvider {
 public:
