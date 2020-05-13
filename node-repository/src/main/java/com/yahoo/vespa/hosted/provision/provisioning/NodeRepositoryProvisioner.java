@@ -56,6 +56,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Preparer preparer;
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
+    private final NodeResourceLimits nodeResourceLimits;
 
     int getSpareCapacityProd() {
         return SPARE_CAPACITY_PROD;
@@ -69,6 +70,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
+        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                                      provisionServiceProvider.getHostProvisioner(),
@@ -94,6 +96,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if ( ! hasQuota(application, requested.maxResources().nodes()))
             throw new IllegalArgumentException(requested + " requested for " + cluster +
                                                ". Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
+
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
 
         int groups;
         NodeResources resources;
