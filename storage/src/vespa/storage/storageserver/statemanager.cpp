@@ -480,10 +480,9 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
                         : cmd->getExpectedState()->toString().c_str(),
                 _nodeState->toString().c_str());
             reply = std::make_shared<api::GetNodeStateReply>(*cmd, *_nodeState);
+            mark_controller_as_having_observed_explicit_node_state(lock, cmd->getSourceIndex());
             lock.unlock();
-            std::string nodeInfo(getNodeInfo());
-            reply->setNodeInfo(nodeInfo);
-            mark_controller_as_having_observed_explicit_node_state(cmd->getSourceIndex());
+            reply->setNodeInfo(getNodeInfo());
         }
     }
     if (reply) {
@@ -492,7 +491,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
     return true;
 }
 
-void StateManager::mark_controller_as_having_observed_explicit_node_state(uint16_t controller_index) {
+void StateManager::mark_controller_as_having_observed_explicit_node_state(const vespalib::LockGuard &, uint16_t controller_index) {
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
@@ -557,7 +556,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
 {
     std::vector<std::shared_ptr<api::GetNodeStateReply>> replies;
     {
-        vespalib::MonitorGuard guard(_stateLock);
+        vespalib::LockGuard guard(_stateLock);
         for (auto it = _queuedStateRequests.begin(); it != _queuedStateRequests.end();) {
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
@@ -567,7 +566,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
 
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));
                 auto eraseIt = it++;
-                mark_controller_as_having_observed_explicit_node_state(eraseIt->second->getSourceIndex());
+                mark_controller_as_having_observed_explicit_node_state(guard, eraseIt->second->getSourceIndex());
                 _queuedStateRequests.erase(eraseIt);
             } else {
                 ++it;
