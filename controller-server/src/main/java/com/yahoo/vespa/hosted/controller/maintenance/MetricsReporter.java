@@ -138,12 +138,15 @@ public class MetricsReporter extends ControllerMaintainer {
                 return values;
             });
         });
-        nodeCounts.forEach((nodeCountKey, value) -> {
-            long nodeCount = 0;
+        nodeCounts.forEach((nodeCountKey, metricValues) -> {
             if (knownVersions.contains(nodeCountKey.version)) {
-                nodeCount = value.get(metricName);
+                // Version is still present: Update the metric.
+                long nodeCount = metricValues.get(metricName);
+                metric.set(metricName, nodeCount, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
+            } else if (metricValues.containsKey(metricName)) {
+                // Version is no longer present, but has been previously reported: Set it to zero.
+                metric.set(metricName, 0, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
             }
-            metric.set(metricName, nodeCount, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
         });
     }
 
