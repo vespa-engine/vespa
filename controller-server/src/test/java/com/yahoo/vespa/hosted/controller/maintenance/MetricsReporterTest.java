@@ -24,8 +24,10 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
@@ -280,6 +282,7 @@ public class MetricsReporterTest {
             runAll(tester::computeVersionStatus, reporter);
             assertPlatformChangeDuration(Duration.ZERO, hosts);
             assertEquals(version, tester.controller().systemVersion());
+            assertPlatformNodeCount(hosts.size(), version);
         }
     }
 
@@ -306,6 +309,7 @@ public class MetricsReporterTest {
         assertOsChangeDuration(Duration.ZERO, hosts);
 
         var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
+        var allVersions = Stream.concat(Stream.of(version0), targets.stream()).collect(Collectors.toSet());
         for (int i = 0; i < targets.size(); i++) {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var nextVersion = targets.get(i);
@@ -369,16 +373,35 @@ public class MetricsReporterTest {
             assertOsChangeDuration(Duration.ZERO, hosts);
             assertOsNodeCount(hosts.size(), nextVersion);
             assertOsNodeCount(0, currentVersion);
+
+            // Dimensions used for node count metric are only known OS versions
+            Set<Version> versionDimensions = metrics.getMetrics((dimensions) -> true)
+                                                    .entrySet()
+                                                    .stream()
+                                                    .filter(kv -> kv.getValue().containsKey(MetricsReporter.OS_NODE_COUNT))
+                                                    .map(kv -> kv.getKey().getDimensions())
+                                                    .map(dimensions -> dimensions.get("currentVersion"))
+                                                    .map(Version::fromString)
+                                                    .collect(Collectors.toSet());
+            assertTrue("Reports only OS versions", allVersions.containsAll(versionDimensions));
         }
     }
 
-    private void assertOsNodeCount(int n, Version version) {
-        long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), MetricsReporter.OS_NODE_COUNT)
+    private void assertNodeCount(String metric, int n, Version version) {
+        long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), metric)
                                 .stream()
                                 .map(Number::longValue)
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for version " + version));
         assertEquals("Expected number of nodes are on " + version.toFullString(), n, nodeCount);
+    }
+
+    private void assertPlatformNodeCount(int n, Version version) {
+        assertNodeCount(MetricsReporter.PLATFORM_NODE_COUNT, n, version);
+    }
+
+    private void assertOsNodeCount(int n, Version version) {
+        assertNodeCount(MetricsReporter.OS_NODE_COUNT, n, version);
     }
 
     private void runAll(Runnable... runnables) {
