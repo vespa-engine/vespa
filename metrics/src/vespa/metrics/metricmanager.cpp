@@ -74,7 +74,6 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
                 false)),
       _timer(std::move(timer)),
       _lastProcessedTime(0),
-      _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
       _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks"),
@@ -719,7 +718,6 @@ MetricManager::forceEventLogging()
     LOG(debug, "Forcing event logging to happen.");
         // Ensure background thread is not in a current cycle during change.
     vespalib::MonitorGuard sync(_waiter);
-    _forceEventLogging = true;
     sync.signal();
 }
 
@@ -788,7 +786,7 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
         // Set next work time to the time we want to take next snapshot.
     time_t nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
     time_t nextUpdateHookTime;
-    if (nextWorkTime <= currentTime || _forceEventLogging) {
+    if (nextWorkTime <= currentTime) {
         // If taking a new snapshot or logging, force calls to all
         // update hooks.
         LOG(debug, "%s. Calling update hooks.", nextWorkTime <= currentTime

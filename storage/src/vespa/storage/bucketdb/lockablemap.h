@@ -19,6 +19,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/time.h>
 #include <mutex>
 #include <condition_variable>
 #include <cassert>
@@ -162,7 +163,7 @@ public:
              const key_type& first = key_type(),
              const key_type& last = key_type() - 1 );
 
-    static constexpr uint32_t DEFAULT_CHUNK_SIZE = 10000;
+    static constexpr uint32_t DEFAULT_CHUNK_SIZE = 1000;
 
     /**
      * Iterate over the entire database contents, holding the global database
@@ -173,6 +174,7 @@ public:
     template <typename Functor>
     void chunkedAll(Functor& functor,
                     const char* clientId,
+                    vespalib::duration yieldTime = 10us,
                     uint32_t chunkSize = DEFAULT_CHUNK_SIZE);
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

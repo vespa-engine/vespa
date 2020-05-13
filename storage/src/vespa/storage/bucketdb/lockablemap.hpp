@@ -405,6 +405,7 @@ template <typename Functor>
 void
 LockableMap<Map>::chunkedAll(Functor& functor,
                              const char* clientId,
+                             vespalib::duration yieldTime,
                              uint32_t chunkSize)
 {
     key_type key{};
@@ -416,7 +417,7 @@ LockableMap<Map>::chunkedAll(Functor& functor,
         // This is a pragmatic stop-gap solution; a more robust change requires
         // the redesign of bucket DB locking and signalling semantics in the
         // face of blocked point lookups.
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(yieldTime);
     }
 }
 

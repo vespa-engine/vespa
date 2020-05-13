@@ -241,12 +241,12 @@ TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes) {
     map.insert(14, A(42, 0, 0), "foo", preExisted);
     NonConstProcessor ncproc; // Increments 2nd value in all entries.
     // chunkedAll with chunk size of 1
-    map.chunkedAll(ncproc, "foo", 1);
+    map.chunkedAll(ncproc, "foo", 1us, 1);
     EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
     EXPECT_EQ(A(42, 1, 0), *map.get(14, "foo"));
     EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
     // chunkedAll with chunk size larger than db size
-    map.chunkedAll(ncproc, "foo", 100);
+    map.chunkedAll(ncproc, "foo", 1us, 100);
     EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
     EXPECT_EQ(A(42, 2, 0), *map.get(14, "foo"));
     EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
@@ -263,7 +263,7 @@ TEST(LockableMapTest, can_abort_during_chunked_iteration) {
     decisions.push_back(Map::CONTINUE);
     decisions.push_back(Map::ABORT);
     EntryProcessor proc(decisions);
-    map.chunkedAll(proc, "foo", 100);
+    map.chunkedAll(proc, "foo", 1us, 100);
     std::string expected("11 - A(4, 6, 0)\n"
             "14 - A(42, 0, 0)\n");
     EXPECT_EQ(expected, proc.toString());
