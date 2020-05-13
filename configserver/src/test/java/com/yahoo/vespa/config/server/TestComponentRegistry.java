@@ -50,7 +50,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final TenantListener tenantListener;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
-    private final FileDistributionFactory fileDistributionFactory;
+    private final FileDistributionFactory fileDistributionProvider;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
@@ -63,7 +63,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
-                                  FileDistributionFactory fileDistributionFactory,
+                                  FileDistributionFactory fileDistributionProvider,
                                   HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
@@ -83,7 +83,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
-        this.fileDistributionFactory = fileDistributionFactory;
+        this.fileDistributionProvider = fileDistributionProvider;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
         this.sessionPreparer = sessionPreparer;
@@ -158,17 +158,17 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
-            FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
+            FileDistributionFactory fileDistributionProvider = this.fileDistributionFactory
                     .orElse(new MockFileDistributionFactory(configserverConfig));
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.
                     map(HostProvisionerProvider::withProvisioner).orElseGet(HostProvisionerProvider::empty);
             SecretStore secretStore = new MockSecretStore();
-            SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
+            SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionProvider,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
                                                                   zone, new InMemoryFlagSource(), secretStore);
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
-                                             permApp, fileDistributionFactory, hostRegistries, configserverConfig,
+                                             permApp, fileDistributionProvider, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
                                              zone, clock, secretStore);
         }
@@ -227,6 +227,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         return secretStore;
     }
 
-    public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
+    public FileDistributionFactory getFileDistributionProvider() { return fileDistributionProvider; }
 
 }

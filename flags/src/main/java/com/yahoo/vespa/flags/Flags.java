@@ -276,6 +276,11 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE = defineFeatureFlag(
+            "configserver-distribute-application-package", false,
+            "Whether the application package should be distributed to other config servers during a deployment",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionProvider;
 
 import java.io.File;
@@ -20,7 +19,7 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
     }
 
     @Override
-    public FileDistributionProvider createProvider(File applicationFile) {
+    public com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider createProvider(File applicationFile) {
         return mockFileDistributionProvider;
     }
 }

@@ -104,7 +104,7 @@ public class SessionPreparerTest {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionFactory();
+        fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionProvider();
         preparer = createPreparer();
     }
 
@@ -122,7 +122,7 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                componentRegistry.getFileDistributionFactory(),
+                componentRegistry.getFileDistributionProvider(),
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(componentRegistry.getConfigserverConfig()),
                 componentRegistry.getConfigserverConfig(),
