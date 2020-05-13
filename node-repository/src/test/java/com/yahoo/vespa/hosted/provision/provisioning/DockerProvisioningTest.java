@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
  */
 public class DockerProvisioningTest {
 
-    private static final NodeResources dockerFlavor = new NodeResources(1, 4, 10, 1,
+    private static final NodeResources dockerFlavor = new NodeResources(1, 4, 100, 1,
                                                                         NodeResources.DiskSpeed.fast, NodeResources.StorageType.local);
 
     @Test
@@ -78,7 +78,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 4, 2, 2), NodeType.host, 1);
+        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 4, 20, 2), NodeType.host, 1);
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 
@@ -111,7 +111,7 @@ public class DockerProvisioningTest {
 
     @Test
     public void reservations_are_respected() {
-        NodeResources resources = new NodeResources(10, 10, 10, 10);
+        NodeResources resources = new NodeResources(10, 10, 100, 10);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         TenantName tenant1 = TenantName.from("tenant1");
         TenantName tenant2 = TenantName.from("tenant2");
@@ -247,7 +247,7 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: local] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
@@ -270,7 +270,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals("[vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: local]", nodes.asList().get(0).flavor().name());
+        assertEquals("[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local]", nodes.asList().get(0).flavor().name());
     }
 
     @Test
@@ -288,7 +288,7 @@ public class DockerProvisioningTest {
                                                   dockerFlavor.with(NodeResources.StorageType.remote));
         }
         catch (OutOfCapacityException e) {
-            assertTrue(e.getMessage().startsWith("Could not satisfy request for 2 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: remote]"));
+            assertTrue(e.getMessage().startsWith("Could not satisfy request for 2 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote]"));
         }
     }
 

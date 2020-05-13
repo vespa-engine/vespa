@@ -6,11 +6,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -18,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -61,10 +58,12 @@ class NodeAllocation {
     private int acceptedWithoutResizingRetired = 0;
 
     /** The number of nodes rejected because of clashing parentHostname */
-    private int rejectedWithClashingParentHost = 0;
+    private int rejectedDueToClashingParentHost = 0;
 
     /** The number of nodes rejected due to exclusivity constraints */
     private int rejectedDueToExclusivity = 0;
+
+    private int rejectedDueToInsufficientRealResources = 0;
 
     /** The number of nodes that just now was changed to retired */
     private int wasRetiredJustNow = 0;
@@ -103,7 +102,6 @@ class NodeAllocation {
         List<Node> accepted = new ArrayList<>();
         for (PrioritizableNode node : nodesPrioritized) {
             Node offered = node.node;
-            if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) continue;
 
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
@@ -115,6 +113,7 @@ class NodeAllocation {
 
                 if (requestedNodes.considerRetiring()) {
                     boolean wantToRetireNode = false;
+                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetireNode = true;
                     if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
                     if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
@@ -128,8 +127,12 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(node)) {
+                if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
+                    ++rejectedDueToInsufficientRealResources;
+                    continue;
+                }
                 if ( violatesParentHostPolicy(this.nodes, offered)) {
-                    ++rejectedWithClashingParentHost;
+                    ++rejectedDueToClashingParentHost;
                     continue;
                 }
                 if ( ! exclusiveTo(application.tenant(), application.application(), offered.parentHostname())) {
@@ -298,11 +301,15 @@ class NodeAllocation {
     }
 
     boolean wouldBeFulfilledWithClashingParentHost() {
-        return requestedNodes.fulfilledBy(accepted + rejectedWithClashingParentHost);
+        return requestedNodes.fulfilledBy(accepted + rejectedDueToClashingParentHost);
     }
 
     boolean wouldBeFulfilledWithoutExclusivity() {
         return requestedNodes.fulfilledBy(accepted + rejectedDueToExclusivity);
+    }
+
+    boolean wouldBeFulfilledWithSufficientRealResources() {
+        return requestedNodes.fulfilledBy(accepted + rejectedDueToInsufficientRealResources);
     }
 
     /**

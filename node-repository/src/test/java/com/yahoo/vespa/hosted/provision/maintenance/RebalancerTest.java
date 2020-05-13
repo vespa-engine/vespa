@@ -41,8 +41,8 @@ public class RebalancerTest {
         // --- Setup
         ApplicationId cpuApp = makeApplicationId("t1", "a1");
         ApplicationId memApp = makeApplicationId("t2", "a2");
-        NodeResources cpuResources = new NodeResources(8, 4, 1, 0.1);
-        NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
+        NodeResources cpuResources = new NodeResources(8, 4, 10, 0.1);
+        NodeResources memResources = new NodeResources(4, 9, 10, 0.1);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         TestMetric metric = new TestMetric();
@@ -141,9 +141,9 @@ public class RebalancerTest {
 
     private FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("flt", 30, 30, 40, 3, Flavor.Type.BARE_METAL);
-        b.addFlavor("cpu", 40, 20, 40, 3, Flavor.Type.BARE_METAL);
-        b.addFlavor("mem", 20, 40, 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("flt", 30, 30, 400, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("cpu", 40, 20, 400, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("mem", 20, 40, 400, 3, Flavor.Type.BARE_METAL);
         return b.build();
     }
 

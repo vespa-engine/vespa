@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeFailTester {
 
-    public static final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
+    public static final NodeResources nodeResources = new NodeResources(2, 8, 500, 1);
 
     // Immutable components
     public static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
@@ -122,7 +122,7 @@ public class NodeFailTester {
         List<Node> hosts = tester.createHostNodes(numberOfHosts);
         for (int i = 0; i < hosts.size(); i++) {
             tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
-                                   new NodeResources(1, 4, 10, 0.3), NodeType.tenant);
+                                   new NodeResources(1, 4, 100, 0.3), NodeType.tenant);
         }
 
         // Create applications
@@ -130,8 +130,8 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.from(new ClusterResources(3, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
-        Capacity capacity2 = Capacity.from(new ClusterResources(5, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
+        Capacity capacity1 = Capacity.from(new ClusterResources(3, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
+        Capacity capacity2 = Capacity.from(new ClusterResources(5, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
         tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
