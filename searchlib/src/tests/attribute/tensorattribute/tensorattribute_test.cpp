@@ -248,6 +248,7 @@ struct Fixture {
           _useDenseTensorAttribute(useDenseTensorAttribute)
     {
         if (enable_hnsw_index) {
+            _cfg.set_distance_metric(DistanceMetric::Euclidean);
             _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
         }
         setup();

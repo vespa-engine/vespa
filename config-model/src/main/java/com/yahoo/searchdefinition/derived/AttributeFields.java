@@ -241,6 +241,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         aaB.imported(imported);
         var dma = attribute.distanceMetric();
+        aaB.distancemetric(AttributesConfig.Attribute.Distancemetric.Enum.valueOf(dma.toString()));
         if (attribute.hnswIndexParams().isPresent()) {
             var ib = new AttributesConfig.Attribute.Index.Builder();
             var params = attribute.hnswIndexParams().get();

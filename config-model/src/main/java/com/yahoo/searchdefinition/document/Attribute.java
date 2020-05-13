@@ -24,7 +24,6 @@ import com.yahoo.document.datatypes.Float16FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
-import static com.yahoo.searchdefinition.Index.DistanceMetric;
 
 import java.io.Serializable;
 import java.util.LinkedHashSet;
@@ -39,6 +38,8 @@ import java.util.Set;
  * @author  bratseth
  */
 public final class Attribute implements Cloneable, Serializable {
+
+    public enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES }
 
     // Remember to change hashCode and equals when you add new fields
 
@@ -228,7 +229,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setUpperBound(long upperBound)                   { this.upperBound = upperBound; }
     public void setDensePostingListThreshold(double threshold)   { this.densePostingListThreshold = threshold; }
     public void setTensorType(TensorType tensorType)             { this.tensorType = Optional.of(tensorType); }
-    public void setDistanceMetric(Optional<DistanceMetric> dm)   { this.distanceMetric = dm; }
+    public void setDistanceMetric(DistanceMetric metric)         { this.distanceMetric = Optional.of(metric); }
     public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
 
     public String         getName()                     { return name; }
@@ -348,7 +349,7 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, hnswIndexParams);
+                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
     @Override

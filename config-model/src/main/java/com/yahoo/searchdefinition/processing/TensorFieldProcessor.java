@@ -83,7 +83,6 @@ public class TensorFieldProcessor extends Processor {
             var params = new HnswIndexParams();
             if (index != null) {
                 params = params.overrideFrom(index.getHnswIndexParams());
-                field.getAttribute().setDistanceMetric(index.getDistanceMetric());
             }
             field.getAttribute().setHnswIndexParams(params);
         }
