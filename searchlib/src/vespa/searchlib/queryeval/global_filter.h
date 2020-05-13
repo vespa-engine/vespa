@@ -27,13 +27,12 @@ public:
 
     template<typename ... Params>
     static std::shared_ptr<GlobalFilter> create(Params&& ... params) {
-        ctor_tag x;
-        return std::make_shared<GlobalFilter>(x, std::forward<Params>(params)...);
+        return std::make_shared<GlobalFilter>(ctor_tag(), std::forward<Params>(params)...);
     }
 
     const search::BitVector *filter() const { return bit_vector.get(); }
 
-    bool has_filter() const { return (bool)bit_vector; }
+    bool has_filter() const { return bool(bit_vector); }
 };
 
 } // namespace

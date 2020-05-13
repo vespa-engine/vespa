@@ -132,7 +132,7 @@ public:
         set_cost_tier(value);
         return *this;
     }
-    void set_global_filter(GlobalFilter &) override {
+    void set_global_filter(const GlobalFilter &) override {
         _got_global_filter = true;
     }
     bool got_global_filter() const { return _got_global_filter; }

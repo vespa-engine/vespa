@@ -187,7 +187,7 @@ public:
 
     virtual bool supports_termwise_children() const { return false; }
     virtual bool always_needs_unpack() const { return false; }
-    virtual void set_global_filter(GlobalFilter &global_filter);
+    virtual void set_global_filter(const GlobalFilter &global_filter);
 
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
@@ -274,7 +274,7 @@ public:
     void setDocIdLimit(uint32_t limit) override final;
 
     void optimize(Blueprint* &self) override final;
-    void set_global_filter(GlobalFilter &global_filter) override;
+    void set_global_filter(const GlobalFilter &global_filter) override;
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }

@@ -105,7 +105,7 @@ Blueprint::get_replacement()
 }
 
 void
-Blueprint::set_global_filter(GlobalFilter &)
+Blueprint::set_global_filter(const GlobalFilter &)
 {
 }
 
@@ -371,7 +371,7 @@ IntermediateBlueprint::optimize(Blueprint* &self)
 }
 
 void
-IntermediateBlueprint::set_global_filter(GlobalFilter &global_filter)
+IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter)
 {
     for (auto & child : _children) {
         if (child->getState().want_global_filter()) {

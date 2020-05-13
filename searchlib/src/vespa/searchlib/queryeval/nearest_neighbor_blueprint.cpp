@@ -81,7 +81,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
 
 void
-NearestNeighborBlueprint::set_global_filter(GlobalFilter &global_filter)
+NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
 {
     _global_filter = global_filter.shared_from_this();
     auto nns_index = _attr_tensor.nearest_neighbor_index();
