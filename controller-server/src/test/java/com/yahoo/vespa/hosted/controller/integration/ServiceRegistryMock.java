@@ -7,8 +7,10 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.NoopApplicationRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
@@ -55,6 +57,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
+    private final ApplicationRoleService applicationRoleService = new NoopApplicationRoleService();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -174,6 +177,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ResourceTagger resourceTagger() {
         return mockResourceTagger;
+    }
+
+    @Override
+    public ApplicationRoleService applicationRoleService() {
+        return applicationRoleService;
     }
 
     public ConfigServerMock configServerMock() {
