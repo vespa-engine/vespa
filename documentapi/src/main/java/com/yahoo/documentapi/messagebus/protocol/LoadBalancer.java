@@ -56,12 +56,7 @@ public class LoadBalancer {
         }
     }
     private int getCachedIndex(String nodeName) {
-        Integer index = cachedIndex.get(nodeName);
-        if (index == null) {
-            index = getIndex(nodeName);
-            cachedIndex.put(nodeName, index);
-        }
-        return index;
+        return cachedIndex.computeIfAbsent(nodeName, key -> getIndex(key));
     }
 
     /**
