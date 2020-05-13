@@ -133,6 +133,8 @@ public class GroupPreparer {
             return ": Not enough nodes available on separate physical hosts.";
         else if (allocation.wouldBeFulfilledWithRetiredNodes())
             return ": Not enough nodes available due to retirement.";
+        else if (allocation.wouldBeFulfilledWithSufficientRealResources())
+            return ": Not enough real resources on hosts";
         else
             return ".";
     }

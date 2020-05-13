@@ -193,13 +193,13 @@ public class MetricsReporterTest {
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
         assertEquals(2, metric.values.get("hostedVespa.reservedHosts"));
 
-        assertEquals( 12.0, metric.values.get("hostedVespa.docker.totalCapacityDisk"));
+        assertEquals(120.0, metric.values.get("hostedVespa.docker.totalCapacityDisk"));
         assertEquals(100.0, metric.values.get("hostedVespa.docker.totalCapacityMem"));
         assertEquals(  7.0, metric.values.get("hostedVespa.docker.totalCapacityCpu"));
 
-        assertEquals( 6.0, metric.values.get("hostedVespa.docker.freeCapacityDisk"));
-        assertEquals(93.0, metric.values.get("hostedVespa.docker.freeCapacityMem"));
-        assertEquals( 4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
+        assertEquals(114.0, metric.values.get("hostedVespa.docker.freeCapacityDisk"));
+        assertEquals( 93.0, metric.values.get("hostedVespa.docker.freeCapacityMem"));
+        assertEquals(  4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
 
         Metric.Context app1context = metric.createContext(Map.of("app", "test.default", "tenantName", "app1", "applicationId", "app1.test.default"));
         assertEquals(2.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityDisk", app1context), 0.01d);

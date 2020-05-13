@@ -23,13 +23,19 @@ public class NodeResourceLimits {
         this.nodeRepository = nodeRepository;
     }
 
-    /** Validates the resources applications ask for */
-    public void ensureWithinAdvertisedLimits(NodeResources advertisedResources, ClusterSpec cluster) {
+    /** Validates the resources applications ask for (which are in "advertised" resource space) */
+    public void ensureWithinAdvertisedLimits(NodeResources requestedResources, ClusterSpec cluster) {
         double minMemoryGb = minAdvertisedMemoryGb(cluster.type());
-        if (advertisedResources.memoryGb() >= minMemoryGb) return;
-        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
-                                                         "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
-                                                         minMemoryGb, cluster.type().name(), cluster.id().value(), advertisedResources.memoryGb()));
+        if (requestedResources.memoryGb() < minMemoryGb)
+            throw new IllegalArgumentException(String.format(Locale.ENGLISH,
+                                                             "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
+                                                             minMemoryGb, cluster.type().name(), cluster.id().value(), requestedResources.memoryGb()));
+
+        double minDiskGb = minAdvertisedDiskGb(requestedResources);
+        if (requestedResources.diskGb() < minDiskGb)
+            throw new IllegalArgumentException(String.format(Locale.ENGLISH,
+                                                             "Must specify at least %.2f Gb of disk for %s cluster '%s', was: %.2f Gb",
+                                                             minDiskGb, cluster.type().name(), cluster.id().value(), requestedResources.diskGb()));
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
@@ -37,6 +43,7 @@ public class NodeResourceLimits {
         NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(candidateTenantNode, nodeRepository);
 
         if (realResources.memoryGb() < minRealMemoryGb(cluster.type())) return false;
+        if (realResources.diskGb() < minRealDiskGb()) return false;
 
         return true;
     }
@@ -53,6 +60,21 @@ public class NodeResourceLimits {
 
     private double minRealMemoryGb(ClusterSpec.Type clusterType) {
         return minAdvertisedMemoryGb(clusterType) - 0.7;
+    }
+
+    private double minAdvertisedDiskGb(NodeResources requested) {
+        if (requested.storageType() == NodeResources.StorageType.local
+            && nodeRepository.zone().getCloud().dynamicProvisioning()) {
+            if (nodeRepository.zone().system() == SystemName.Public)
+                return 10 + minRealDiskGb();
+            else
+                return 55 + minRealDiskGb();
+        }
+        return minRealDiskGb();
+    }
+
+    private double minRealDiskGb() {
+        return 10;
     }
 
 }
