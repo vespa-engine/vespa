@@ -10,8 +10,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.util.Locale;
-
 /**
  * Defines the policies for assigning cluster capacity in various environments
  *
@@ -21,14 +19,11 @@ public class CapacityPolicies {
 
     private final Zone zone;
 
-    private final NodeResourceLimits nodeResourceLimits;
-
     /* Deployments must match 1-to-1 the advertised resources of a physical host */
     private final boolean isUsingAdvertisedResources;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
         this.zone = nodeRepository.zone();
-        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.isUsingAdvertisedResources = zone.getCloud().dynamicProvisioning();
     }
 
@@ -49,7 +44,6 @@ public class CapacityPolicies {
     public NodeResources decideNodeResources(NodeResources target, Capacity capacity, ClusterSpec cluster) {
         if (target.isUnspecified())
             target = defaultNodeResources(cluster.type());
-        nodeResourceLimits.ensureWithinAdvertisedLimits(target, cluster);
 
         if (capacity.isRequired()) return target;
 

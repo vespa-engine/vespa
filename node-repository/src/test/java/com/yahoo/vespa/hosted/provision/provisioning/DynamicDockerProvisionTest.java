@@ -262,7 +262,7 @@ public class DynamicDockerProvisionTest {
                            app1, cluster1);
 
         // Changing group size
-        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 0.5,  5,  5),
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 0.5,  5,  10),
                                                       resources(9, 3,   5, 20, 15)));
         tester.assertNodes("Groups changed",
                            6, 3, 1, 10, 15,

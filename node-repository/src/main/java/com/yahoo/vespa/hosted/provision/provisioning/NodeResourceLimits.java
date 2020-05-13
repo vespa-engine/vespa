@@ -24,18 +24,13 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(NodeResources requestedResources, ClusterSpec cluster) {
-        double minMemoryGb = minAdvertisedMemoryGb(cluster.type());
-        if (requestedResources.memoryGb() < minMemoryGb)
-            throw new IllegalArgumentException(String.format(Locale.ENGLISH,
-                                                             "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
-                                                             minMemoryGb, cluster.type().name(), cluster.id().value(), requestedResources.memoryGb()));
+    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
+        if (requested.isUnspecified()) return;
 
-        double minDiskGb = minAdvertisedDiskGb(requestedResources);
-        if (requestedResources.diskGb() < minDiskGb)
-            throw new IllegalArgumentException(String.format(Locale.ENGLISH,
-                                                             "Must specify at least %.2f Gb of disk for %s cluster '%s', was: %.2f Gb",
-                                                             minDiskGb, cluster.type().name(), cluster.id().value(), requestedResources.diskGb()));
+        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
+            illegal(type, "memory", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
+        if (requested.diskGb() < minAdvertisedDiskGb(requested))
+            illegal(type, "disk", cluster, requested.diskGb(), minAdvertisedDiskGb(requested));
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
@@ -75,6 +70,14 @@ public class NodeResourceLimits {
 
     private double minRealDiskGb() {
         return 10;
+    }
+
+    private void illegal(String type, String resource, ClusterSpec cluster, double requested, double minAllowed) {
+        String message = String.format(Locale.ENGLISH,
+                                       "%s cluster '%s': " + type + " " + resource +
+                                       " size is %.2f Gb but must be at least %.2f Gb",
+                                       cluster.type().name(), cluster.id().value(), requested, minAllowed);
+        throw new IllegalArgumentException(message);
     }
 
 }
