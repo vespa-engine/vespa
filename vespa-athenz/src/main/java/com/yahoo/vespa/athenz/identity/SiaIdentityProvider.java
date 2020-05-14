@@ -5,13 +5,13 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.security.tls.AutoReloadingX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -26,34 +26,38 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private final AutoReloadingX509KeyManager keyManager;
     private final SSLContext sslContext;
     private final AthenzIdentity service;
+    private final Path certificateFile;
+    private final Path privateKeyFile;
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
         this(new AthenzService(config.athenzDomain(), config.athenzService()),
-             SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
-             SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
-             new File(config.trustStorePath()),
+             SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
+             SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
+             Paths.get(config.trustStorePath()),
              config.trustStoreType());
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
                                Path siaPath,
-                               File trustStoreFile) {
+                               Path trustStoreFile) {
         this(service,
-             SiaUtils.getPrivateKeyFile(siaPath, service).toFile(),
-             SiaUtils.getCertificateFile(siaPath, service).toFile(),
+             SiaUtils.getPrivateKeyFile(siaPath, service),
+             SiaUtils.getCertificateFile(siaPath, service),
              trustStoreFile,
              SiaProviderConfig.TrustStoreType.Enum.jks);
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
-                               File privateKeyFile,
-                               File certificateFile,
-                               File trustStoreFile,
+                               Path privateKeyFile,
+                               Path certificateFile,
+                               Path trustStoreFile,
                                SiaProviderConfig.TrustStoreType.Enum trustStoreType) {
         this.service = service;
-        this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile.toPath(), certificateFile.toPath());
-        this.sslContext = createIdentitySslContext(keyManager, trustStoreFile.toPath(), trustStoreType);
+        this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile, certificateFile);
+        this.sslContext = createIdentitySslContext(keyManager, trustStoreFile, trustStoreType);
+        this.certificateFile = certificateFile;
+        this.privateKeyFile = privateKeyFile;
     }
 
     @Override
@@ -65,6 +69,10 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     public SSLContext getIdentitySslContext() {
         return sslContext;
     }
+
+    @Override public X509CertificateWithKey getIdentityCertificateWithKey() { return keyManager.getCurrentCertificateWithKey(); }
+    @Override public Path certificatePath() { return certificateFile; }
+    @Override public Path privateKeyPath() { return privateKeyFile; }
 
     private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile,
                                                        SiaProviderConfig.TrustStoreType.Enum trustStoreType) {

@@ -10,11 +10,11 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.security.tls.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -44,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.security.KeyStoreType.JKS;
@@ -55,6 +56,8 @@ import static com.yahoo.security.KeyStoreType.PKCS12;
  * @author mortent
  * @author bjorncs
  */
+// This class should probably not implement ServiceIdentityProvider,
+// as that interface is intended for providing the node's identity, not the tenant's application identity.
 public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider, ServiceIdentityProvider {
 
     private static final Logger log = Logger.getLogger(AthenzIdentityProviderImpl.class.getName());
@@ -176,6 +179,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
+    public X509CertificateWithKey getIdentityCertificateWithKey() {
+        AthenzCredentials copy = this.credentials;
+        return new X509CertificateWithKey(copy.getCertificate(), copy.getKeyPair().getPrivate());
+    }
+
+    // The files should ideally not be used directly, must be implemented later if necessary
+    @Override public Path certificatePath() { throw new UnsupportedOperationException(); }
+    @Override public Path privateKeyPath() { throw new UnsupportedOperationException(); }
+
+    @Override
     public SSLContext getRoleSslContext(String domain, String role) {
         // This ssl context should ideally be cached as it is quite expensive to create.
         try {
@@ -288,7 +301,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config, Path trustStore) {
         return new SiaIdentityProvider(
-                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, trustStore.toFile());
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, trustStore);
     }
 
     private boolean isExpired(AthenzCredentials credentials) {

@@ -52,9 +52,9 @@ public class SiaIdentityProviderTest {
         SiaIdentityProvider provider =
                 new SiaIdentityProvider(
                         new AthenzService("domain", "service-name"),
-                        keyFile,
-                        certificateFile,
-                        trustStoreFile,
+                        keyFile.toPath(),
+                        certificateFile.toPath(),
+                        trustStoreFile.toPath(),
                         SiaProviderConfig.TrustStoreType.Enum.jks);
 
         assertNotNull(provider.getIdentitySslContext());
@@ -76,9 +76,9 @@ public class SiaIdentityProviderTest {
         SiaIdentityProvider provider =
                 new SiaIdentityProvider(
                         new AthenzService("domain", "service-name"),
-                        keyFile,
-                        certificateFile,
-                        trustStoreFile,
+                        keyFile.toPath(),
+                        certificateFile.toPath(),
+                        trustStoreFile.toPath(),
                         SiaProviderConfig.TrustStoreType.Enum.pem);
 
         assertNotNull(provider.getIdentitySslContext());
