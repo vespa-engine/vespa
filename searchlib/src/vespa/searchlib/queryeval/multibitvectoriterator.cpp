@@ -177,7 +177,7 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
         MultiSearch::doUnpack(docid);
     } else {
         auto &children = getChildren();
-        _unpackInfo.each([&children,docid](size_t i){children[i]->doUnpack(docid);}, children.size());
+        _unpackInfo.each([&children,docid](size_t i){children[i]->unpack(docid);}, children.size());
     }
 }
 
