@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +57,7 @@ public class MetricsReporter extends ControllerMaintainer {
     private final Clock clock;
 
     // Keep track of reported node counts for each version
-    private final ConcurrentHashMap<NodeCountKey, Map<String, Long>> nodeCounts = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<NodeCountKey, Long> nodeCounts = new ConcurrentHashMap<>();
 
     public MetricsReporter(Controller controller, Metric metric) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
@@ -123,29 +122,20 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private void reportNodeCount(Set<NodeVersion> nodeVersions, String metricName) {
-        Map<NodeCountKey, Long> nodeCountByVersion = new HashMap<>();
-        Set<Version> knownVersions = new HashSet<>();
-        for (var nodeVersion : nodeVersions) {
-            NodeCountKey key = new NodeCountKey(nodeVersion.currentVersion(), nodeVersion.zone());
-            long count = nodeCountByVersion.getOrDefault(key, 0L);
-            nodeCountByVersion.put(key, ++count);
-            knownVersions.add(key.version);
-        }
-        nodeCountByVersion.forEach((nodeCountKey, count) -> {
-            nodeCounts.compute(nodeCountKey, (ignored, values) -> {
-                if (values == null) values = new HashMap<>();
-                values.put(metricName, count);
-                return values;
-            });
-        });
-        nodeCounts.forEach((nodeCountKey, metricValues) -> {
-            if (knownVersions.contains(nodeCountKey.version)) {
+        Map<NodeCountKey, Long> newNodeCounts = nodeVersions.stream()
+                                                            .collect(Collectors.groupingBy(nodeVersion -> {
+                                                                return new NodeCountKey(metricName,
+                                                                                        nodeVersion.currentVersion(),
+                                                                                        nodeVersion.zone());
+                                                            }, Collectors.counting()));
+        nodeCounts.putAll(newNodeCounts);
+        nodeCounts.forEach((key, count) -> {
+            if (newNodeCounts.containsKey(key)) {
                 // Version is still present: Update the metric.
-                long nodeCount = metricValues.get(metricName);
-                metric.set(metricName, nodeCount, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
-            } else if (metricValues.containsKey(metricName)) {
+                metric.set(metricName, count, metric.createContext(dimensions(key.zone, key.version)));
+            } else if (key.metricName.equals(metricName)) {
                 // Version is no longer present, but has been previously reported: Set it to zero.
-                metric.set(metricName, 0, metric.createContext(dimensions(nodeCountKey.zone, nodeCountKey.version)));
+                metric.set(metricName, 0, metric.createContext(dimensions(key.zone, key.version)));
             }
         });
     }
@@ -241,10 +231,12 @@ public class MetricsReporter extends ControllerMaintainer {
 
     private static class NodeCountKey {
 
+        private final String metricName;
         private final Version version;
         private final ZoneId zone;
 
-        public NodeCountKey(Version version, ZoneId zone) {
+        public NodeCountKey(String metricName, Version version, ZoneId zone) {
+            this.metricName = metricName;
             this.version = version;
             this.zone = zone;
         }
@@ -254,15 +246,15 @@ public class MetricsReporter extends ControllerMaintainer {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             NodeCountKey that = (NodeCountKey) o;
-            return version.equals(that.version) &&
+            return metricName.equals(that.metricName) &&
+                   version.equals(that.version) &&
                    zone.equals(that.zone);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(version, zone);
+            return Objects.hash(metricName, version, zone);
         }
-
     }
 
 }

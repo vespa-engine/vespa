@@ -66,24 +66,6 @@ public class NodeVersion {
         return suspendedAt;
     }
 
-    /** Returns a copy of this with current version set to given version */
-    public NodeVersion withCurrentVersion(Version version) {
-        if (currentVersion.equals(version)) return this;
-        return new NodeVersion(hostname, zone, version, wantedVersion, suspendedAt);
-    }
-
-    /** Returns a copy of this with wanted version set to given version */
-    public NodeVersion withWantedVersion(Version version) {
-        if (wantedVersion.equals(version)) return this;
-        return new NodeVersion(hostname, zone, currentVersion, version, suspendedAt);
-    }
-
-    /** Returns a copy of this with wanted version set to given version */
-    public NodeVersion withSuspendedAt(Optional<Instant> suspendedAt) {
-        if (suspendedAt.equals(this.suspendedAt)) return this;
-        return new NodeVersion(hostname, zone, currentVersion, wantedVersion, suspendedAt);
-    }
-
     @Override
     public String toString() {
         return hostname + ": " + currentVersion + " -> " + wantedVersion + " [zone=" + zone + ", suspendedAt=" + suspendedAt.map(Instant::toString).orElse("<not suspended>") + "]";
