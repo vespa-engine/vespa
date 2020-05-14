@@ -77,7 +77,6 @@ public class SessionPreparer {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
     private final Zone zone;
-    private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final BooleanFlag distributeApplicationPackage;
     private final BooleanFlag unsetEndpoints;
@@ -101,7 +100,6 @@ public class SessionPreparer {
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
         this.zone = zone;
-        this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.unsetEndpoints = Flags.CONFIGSERVER_UNSET_ENDPOINTS.bindTo(flagSource);
@@ -124,7 +122,7 @@ public class SessionPreparer {
                                                         .value();
         Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath,
                                                   allowUnsettingEndpoints);
-        preparation.distributeApplicationPackage();
+        preparation.distributeApplicationPackage(); // Note: Done before pre-processing, requires that to be done for users of this
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -244,7 +242,7 @@ public class SessionPreparer {
             if ( ! distributeApplicationPackage.value()) return;
 
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
-            FileReference fileReference = fileRegistry.addFile("");
+            FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
             log.log(Level.INFO, "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
             properties.configServerSpecs().stream()
