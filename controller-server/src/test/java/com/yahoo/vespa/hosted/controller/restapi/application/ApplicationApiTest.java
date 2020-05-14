@@ -40,9 +40,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
@@ -175,14 +173,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
-
-        // GET list of months for a tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1/cost", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"months\":[]}");
-
-        // GET cost for a month for a tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1/cost/2018-01", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"month\":\"2018-01\",\"items\":[]}");
 
         // Add another Athens domain, so we can try to create more tenants
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN_2, USER_ID); // New domain to test tenant w/property ID
@@ -985,44 +975,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testTenantCostResponse() {
-        ApplicationId applicationId = createTenantAndApplication();
-        MockTenantCost mockTenantCost = deploymentTester.controllerTester().serviceRegistry().tenantCost();
-
-        mockTenantCost.setMonthsWithMetering(
-                new TreeSet<>(Set.of(
-                        YearMonth.of(2019, 10),
-                        YearMonth.of(2019, 9)
-                ))
-        );
-
-        tester.assertResponse(request("/application/v4/tenant/" + applicationId.tenant().value() + "/cost", GET)
-                        .userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"months\":[\"2019-09\",\"2019-10\"]}");
-
-        CostInfo costInfo1 = new CostInfo(applicationId, ZoneId.from("prod", "us-south-1"),
-                new BigDecimal("7.0"),
-                new BigDecimal("600.0"),
-                new BigDecimal("1000.0"),
-                35, 23, 10);
-        CostInfo costInfo2 = new CostInfo(applicationId, ZoneId.from("prod", "us-north-1"),
-                new BigDecimal("2.0"),
-                new BigDecimal("3.0"),
-                new BigDecimal("4.0"),
-                10, 20, 30);
-
-        mockTenantCost.setCostInfoList(
-                List.of(costInfo1, costInfo2)
-        );
-
-        tester.assertResponse(request("/application/v4/tenant/" + applicationId.tenant().value() + "/cost/2019-09", GET)
-                        .userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                new File("cost-report.json"));
-    }
-
-    @Test
     public void testErrorResponses() throws Exception {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
@@ -1178,17 +1130,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete instance 'tenant1.application1.instance1': Instance not found\"}",
                               404);
-
-        // GET cost of unknown tenant
-        tester.assertResponse(request("/application/v4/tenant/no-such-tenant/cost", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'no-such-tenant' does not exist\"}", 404);
-
-        tester.assertResponse(request("/application/v4/tenant/no-such-tenant/cost/2018-01-01", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'no-such-tenant' does not exist\"}", 404);
-
-        // GET cost with invalid date string
-        tester.assertResponse(request("/application/v4/tenant/tenant1/cost/not-a-valid-date", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not parse year-month 'not-a-valid-date'\"}", 400);
 
         // DELETE tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)

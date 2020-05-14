@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBillin
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
@@ -55,7 +54,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockTesterCloud mockTesterCloud;
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
-    private final MockTenantCost mockTenantCost = new MockTenantCost();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
 
     public ServiceRegistryMock(SystemName system) {
@@ -167,9 +165,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public MemoryNameService nameService() {
         return memoryNameService;
     }
-
-    @Override
-    public MockTenantCost tenantCost() { return mockTenantCost;}
 
     @Override
     public ZoneRegistryMock zoneRegistry() {
