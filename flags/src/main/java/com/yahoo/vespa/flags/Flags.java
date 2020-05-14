@@ -39,7 +39,8 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundIntFlag DROP_CACHES = defineIntFlag("drop-caches", 3,
+    public static final UnboundIntFlag DROP_CACHES = defineIntFlag(
+            "drop-caches", 3,
             "The int value to write into /proc/sys/vm/drop_caches for each tick. " +
             "1 is page cache, 2 is dentries inodes, 3 is both page cache and dentries inodes, etc.",
             "Takes effect on next tick.",
