@@ -4,7 +4,6 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Timer;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -14,12 +13,12 @@ import com.yahoo.vespa.orchestrator.status.json.WireHostInfo;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Handles all ZooKeeper data structures related to each active application, including HostInfo.
@@ -42,18 +41,32 @@ public class HostInfosServiceImpl implements HostInfosService {
     public HostInfos getHostInfos(ApplicationInstanceReference reference) {
         ApplicationId application = OrchestratorUtil.toApplicationId(reference);
         String hostsRootPath = hostsPath(application);
-        if (uncheck(() -> curator.framework().checkExists().forPath(hostsRootPath)) == null) {
+
+        List<String> hostnames;
+        try {
+            hostnames = curator.framework().getChildren().forPath(hostsRootPath);
+        } catch (NoNodeException e) {
             return new HostInfos();
-        } else {
-            List<String> hostnames = uncheck(() -> curator.framework().getChildren().forPath(hostsRootPath));
-            Map<HostName, HostInfo> hostInfos = hostnames.stream().collect(Collectors.toMap(
-                    hostname -> new HostName(hostname),
-                    hostname -> {
-                        byte[] bytes = uncheck(() -> curator.framework().getData().forPath(hostsRootPath + "/" + hostname));
-                        return WireHostInfo.deserialize(bytes);
-                    }));
-            return new HostInfos(hostInfos);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
+        var hostInfos = new HashMap<HostName, HostInfo>();
+        for (var hostname : hostnames) {
+            byte[] bytes;
+            try {
+                bytes = curator.framework().getData().forPath(hostsRootPath + "/" + hostname);
+            } catch (NoNodeException e) {
+                // OK, node has been removed since getChildren()
+                continue;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            hostInfos.put(new HostName(hostname), WireHostInfo.deserialize(bytes));
+        }
+
+        return new HostInfos(hostInfos);
     }
 
     @Override
