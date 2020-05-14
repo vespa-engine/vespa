@@ -44,10 +44,13 @@ namespace search {
 namespace vespa::config::search::core::internal { class InternalProtonType; }
 
 namespace proton {
+class AttributeConfigInspector;
 class IDocumentDBOwner;
+class ITransientMemoryUsageProvider;
 struct MetricsWireService;
 class StatusReport;
 class ExecutorThreadingServiceStats;
+class TransientMemoryUsageProvider;
 
 namespace matching { class SessionManager; }
 
@@ -132,6 +135,7 @@ private:
     DDBState                      _state;
     DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
+    std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
     FeedHandler                   _feedHandler;
 
     DocumentSubDBCollection       _subDBs;
@@ -412,7 +416,7 @@ public:
     /**
      * Implements IFeedHandlerOwner
      **/
-    void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config);
+    void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector);
     void performStartMaintenance();
     void stopMaintenance();
     void forwardMaintenanceConfig();
@@ -435,6 +439,7 @@ public:
     void enterOnlineState();
     void waitForOnlineState();
     IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
+    std::shared_ptr<const ITransientMemoryUsageProvider> transient_memory_usage_provider();
 };
 
 } // namespace proton

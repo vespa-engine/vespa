@@ -47,6 +47,8 @@ ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool
         memory.setDouble("utilization", usageState.memoryState().utilization());
         memory.setLong("physicalMemory", _usageFilter.getHwInfo().memory().sizeBytes());
         convertMemoryStatsToSlime(_usageFilter.getMemoryStats(), memory.setObject("stats"));
+        size_t transient_memory = _usageFilter.get_transient_memory_usage();
+        memory.setLong("transient", transient_memory);
     } else {
         object.setDouble("disk", usageState.diskState().usage());
         object.setDouble("memory", usageState.memoryState().usage());
