@@ -127,6 +127,13 @@ TensorSpec make_dense(const vespalib::string &type,
 } // namespace vespalib::eval::test
 
 ParamRepo &
+ParamRepo::add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in) {
+    ASSERT_TRUE(map.find(name) == map.end());
+    map.insert_or_assign(name, Param(std::move(value_in), is_mutable_in));
+    return *this;
+}
+
+ParamRepo &
 EvalFixture::ParamRepo::add_vector(const char *d1, size_t s1, gen_fun_t gen)
 {
     return add_dense({{d1, s1}}, gen);
@@ -159,8 +166,15 @@ EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, 
         type += fmt("%s[%zu]", dim.first.c_str(), dim.second);
         prev = dim.first;
     }
-    add(name, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
-    add(name + "f", make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
+    int cpy = 1;
+    vespalib::string suffix = "";
+    while (map.find(name + suffix) != map.end()) {
+        suffix = fmt("$%d", ++cpy);
+    }
+    add(name + suffix, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
+    add(name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
+    add_mutable("@" + name + suffix, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
+    add_mutable("@" + name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
     return *this;
 }
 
