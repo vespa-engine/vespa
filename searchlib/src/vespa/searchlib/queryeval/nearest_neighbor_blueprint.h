@@ -28,6 +28,7 @@ private:
     const search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
+    std::shared_ptr<const GlobalFilter> _global_filter;
 
     void perform_top_k();
 public:
@@ -41,7 +42,8 @@ public:
     const tensor::DenseTensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::tensor::DenseTensorView& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
-    void set_global_filter(std::shared_ptr<BitVector> global_filter) override;
+    void set_global_filter(const GlobalFilter &global_filter) override;
+    bool may_approximate() const { return _approximate; }
 
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;

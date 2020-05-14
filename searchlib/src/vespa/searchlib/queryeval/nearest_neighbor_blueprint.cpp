@@ -59,7 +59,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _explore_additional_hits(explore_additional_hits),
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
-      _found_hits()
+      _found_hits(),
+      _global_filter(GlobalFilter::create())
 {
     auto lct = _query_tensor->cellsRef().type;
     auto rct = _attr_tensor.getTensorType().cell_type();
@@ -72,9 +73,6 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
         _dist_fun = nns_index->distance_function();
     }
     uint32_t est_hits = _attr_tensor.getNumDocs();
-    if (_approximate && nns_index) {
-        est_hits = std::min(target_num_hits, est_hits);
-    }
     setEstimate(HitEstimate(est_hits, false));
     set_want_global_filter(true);
 }
@@ -82,10 +80,24 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
 
 void
-NearestNeighborBlueprint::set_global_filter(std::shared_ptr<BitVector> global_filter)
+NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
 {
-    // XXX do something with global_filter here
-    (void) global_filter;
+    _global_filter = global_filter.shared_from_this();
+    auto nns_index = _attr_tensor.nearest_neighbor_index();
+    if (_approximate && nns_index) {
+        uint32_t est_hits = _attr_tensor.getNumDocs();
+        if (_global_filter->has_filter()) {
+            uint32_t max_hits = _global_filter->filter()->countTrueBits();
+            if (max_hits * 10 < est_hits) {
+                // too many hits filtered out, use brute force implementation:
+                _approximate = false;
+                return;
+            }
+            est_hits = std::min(est_hits, max_hits);
+        }
+        est_hits = std::min(est_hits, _target_num_hits);
+        setEstimate(HitEstimate(est_hits, false));
+    }
 }
 
 void
@@ -95,11 +107,16 @@ NearestNeighborBlueprint::perform_top_k()
     if (_approximate && nns_index) {
         auto lhs_type = _query_tensor->fast_type();
         auto rhs_type = _attr_tensor.getTensorType();
-        // XXX deal with different cell types later
+        // different cell types should have be converted already
         if (lhs_type == rhs_type) {
             auto lhs = _query_tensor->cellsRef();
             uint32_t k = _target_num_hits;
-            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
+            if (_global_filter->has_filter()) {
+                auto filter = _global_filter->filter();
+                _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits);
+            } else {
+                _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
+            }
         }
     }
 }
@@ -121,7 +138,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     }
     const vespalib::tensor::DenseTensorView &qT = *_query_tensor;
     return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor,
-                                           _distance_heap, nullptr, _dist_fun);
+                                           _distance_heap, _global_filter->filter(), _dist_fun);
 }
 
 void
