@@ -245,19 +245,30 @@ TEST(TermMatchDataMergerTest, merge_max_element_length)
     EXPECT_EQ(1000u, out.getIterator().getFieldLength());
 }
 
-TEST(TermMatchDataMergerTest, merge_no_normal_features)
+class TermMatchDataMergerTest2 : public ::testing::Test
 {
+protected:
     TermFieldMatchData a;
     TermFieldMatchData b;
     MDMIs input;
-    input.push_back(MDMI(&a, 0.5));
-    input.push_back(MDMI(&b, 1.5));
-
     TermFieldMatchData out;
     TermFieldMatchDataArray output;
-    output.add(&out);
+    TermMatchDataMerger merger;
+
+    TermMatchDataMergerTest2()
+        : a(),
+          b(),
+          input({{&a, 0.5},{&b, 1.5}}),
+          out(),
+          output(),
+          merger(input, output.add(&out))
+    {
+    }
+};
+
+TEST_F(TermMatchDataMergerTest2, merge_no_normal_features)
+{
     out.setNeedNormalFeatures(false);
-    TermMatchDataMerger merger(input, output);
 
     uint32_t docid = 5;
 
@@ -272,20 +283,10 @@ TEST(TermMatchDataMergerTest, merge_no_normal_features)
     EXPECT_EQ(0u, out.size());
 }
 
-TEST(TermMatchDataMergerTest, merge_interleaved_features)
+TEST_F(TermMatchDataMergerTest2, merge_interleaved_features)
 {
-    TermFieldMatchData a;
-    TermFieldMatchData b;
-    MDMIs input;
-    input.push_back(MDMI(&a, 0.5));
-    input.push_back(MDMI(&b, 1.5));
-
-    TermFieldMatchData out;
-    TermFieldMatchDataArray output;
-    output.add(&out);
     out.setNeedNormalFeatures(false);
     out.setNeedInterleavedFeatures(true);
-    TermMatchDataMerger merger(input, output);
 
     uint32_t docid = 5;
 
@@ -295,28 +296,18 @@ TEST(TermMatchDataMergerTest, merge_interleaved_features)
 
     b.reset(docid);
     b.setNumOccs(1);
-    b.setFieldLength(30);
+    b.setFieldLength(35);
 
     merger.merge(docid);
     EXPECT_EQ(docid, out.getDocId());
     EXPECT_EQ(2u, out.getNumOccs());
-    EXPECT_EQ(30u, out.getFieldLength());
+    EXPECT_EQ(35u, out.getFieldLength());
 }
 
-TEST(TermMatchDataMergerTest, merge_interleaved_features_with_dected_duplicate)
+TEST_F(TermMatchDataMergerTest2, merge_interleaved_features_with_detected_duplicate)
 {
-    TermFieldMatchData a;
-    TermFieldMatchData b;
-    MDMIs input;
-    input.push_back(MDMI(&a, 0.5));
-    input.push_back(MDMI(&b, 1.5));
-
-    TermFieldMatchData out;
-    TermFieldMatchDataArray output;
-    output.add(&out);
     out.setNeedNormalFeatures(true);
     out.setNeedInterleavedFeatures(true);
-    TermMatchDataMerger merger(input, output);
 
     uint32_t docid = 5;
 
