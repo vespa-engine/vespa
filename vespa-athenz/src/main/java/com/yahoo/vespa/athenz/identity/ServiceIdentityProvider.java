@@ -15,9 +15,43 @@ import java.nio.file.Path;
  * @author bjorncs
  */
 public interface ServiceIdentityProvider {
+    /**
+     *
+     * @return The Athenz identity of the environment
+     */
     AthenzIdentity identity();
+
+    /**
+     * @return {@link SSLContext} that is automatically updated.
+     */
     SSLContext getIdentitySslContext();
+
+    /**
+     * @return Current certificate and private key. Unlike {@link #getIdentitySslContext()} underlying credentials are not automatically updated.
+     */
     X509CertificateWithKey getIdentityCertificateWithKey();
+
+    /**
+     * @return Path to X.509 certificate in PEM format
+     */
     Path certificatePath();
+
+    /**
+     * @return Path to private key in PEM format
+     */
     Path privateKeyPath();
+
+    /**
+     * @return Path to Athenz truststore in PEM format
+     */
+    Path athenzTruststorePath();
+
+    /**
+     * The client truststore contains the Athenz certificates from {@link #athenzTruststorePath()}
+     * and additional certificate authorities that issues trusted server certificates.
+     *
+     * @return Path to client truststore in PEM format
+     */
+    Path clientTruststorePath();
+
 }
