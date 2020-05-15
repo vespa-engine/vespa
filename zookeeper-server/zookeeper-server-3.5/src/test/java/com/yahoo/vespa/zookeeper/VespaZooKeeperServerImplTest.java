@@ -181,7 +181,8 @@ public class VespaZooKeeperServerImplTest {
                "autopurge.snapRetainCount=15\n" +
                "4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
                "admin.enableServer=false\n" +
-               "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n";
+               "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
+               "quorumListenOnAllIPs=true\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
