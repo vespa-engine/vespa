@@ -12,6 +12,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -61,7 +63,15 @@ public class UserApiOnPremTest extends ControllerContainerTest {
 
     private Request createUserRequest(User user, AthenzIdentity identity) {
         Request request = new Request("http://localhost:8080/api/user/v1/user");
-        request.getAttributes().put(User.ATTRIBUTE_NAME, user);
+        Map<String, String> userAttributes = new HashMap<>();
+        userAttributes.put("email", user.email());
+        if (user.name() != null)
+            userAttributes.put("name", user.name());
+        if (user.nickname() != null)
+            userAttributes.put("nickname", user.nickname());
+        if (user.picture() != null)
+            userAttributes.put("picture", user.picture());
+        request.getAttributes().put(User.ATTRIBUTE_NAME, Map.copyOf(userAttributes));
         return addIdentityToRequest(request, identity);
     }
 }
