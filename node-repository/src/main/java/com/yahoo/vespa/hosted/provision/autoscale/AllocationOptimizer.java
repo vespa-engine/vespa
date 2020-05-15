@@ -43,25 +43,22 @@ public class AllocationOptimizer {
         // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
         // and we decide the number of groups.
         // The exception is when we only have one group, where we can add and remove single nodes in it.
-        boolean singleGroupMode = current.groups() == 1;
+        boolean singleGroupMode = current.groups() == 1 && ( limits.isEmpty() || limits.min().groups() == 1 );
         int nodeIncrement = singleGroupMode ? 1 : current.groupSize();
 
-        // Step to the right starting point
-        int nodes = current.nodes();
-        if (nodes < minNodes(limits, singleGroupMode, current)) { // step up
-            while (nodes < minNodes(limits, singleGroupMode, current)
-                   && (singleGroupMode || nodes + nodeIncrement > current.groupSize())) // group level redundancy
-                nodes += nodeIncrement;
-        }
-        else { // step down
-            while (nodes - nodeIncrement >= minNodes(limits, singleGroupMode, current)
-                   && (singleGroupMode || nodes - nodeIncrement > current.groupSize())) // group level redundancy
-                nodes -= nodeIncrement;
-        }
-
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (; nodes <= maxNodes(limits, singleGroupMode, current); nodes += nodeIncrement) {
-            ClusterResources next = resourcesWith(nodes, singleGroupMode, limits, current, target);
+        for (int nodes = minNodes(limits, singleGroupMode, current); nodes <= maxNodes(limits, singleGroupMode, current); nodes += nodeIncrement) {
+            int nodesAdjustedForRedundancy = nodes;
+            if (target.adjustForRedundancy())
+                nodesAdjustedForRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
+            if (nodesAdjustedForRedundancy < 1) continue;
+            int groups = singleGroupMode ? 1 : nodesAdjustedForRedundancy / current.groupSize();
+            System.out.println("nodes: " + nodesAdjustedForRedundancy + " singleGrouopMode: " + singleGroupMode + " current.groupSize " + current.groupSize() + " groups: " + groups);
+            if ( ! limits.isEmpty() && ( groups < limits.min().groups() || groups > limits.max().groups())) continue;
+            ClusterResources next = new ClusterResources(nodes,
+                                                         singleGroupMode ? 1 : nodes / current.groupSize(),
+                                                         nodeResourcesWith(nodesAdjustedForRedundancy, groups, limits, current, target));
+
             var allocatableResources = AllocatableClusterResources.from(next, current.clusterType(), limits, nodeRepository);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
@@ -82,22 +79,11 @@ public class AllocationOptimizer {
         return Math.min(limits.max().nodes(), limits.max().groups() * current.groupSize() );
     }
 
-    private ClusterResources resourcesWith(int nodes, boolean singleGroupMode, Limits limits, AllocatableClusterResources current, ResourceTarget target) {
-            int nodesAdjustedForRedundancy = nodes;
-            if (target.adjustForRedundancy())
-                nodesAdjustedForRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
-            return new ClusterResources(nodes,
-                                        singleGroupMode ? 1 : nodes / current.groupSize(),
-                                        nodeResourcesWith(nodesAdjustedForRedundancy, singleGroupMode, limits, current, target));
-        }
-
     /**
      * For the observed load this instance is initialized with, returns the resources needed per node to be at
      * ideal load given a target node count
      */
-    private NodeResources nodeResourcesWith(int nodes, boolean singleGroupMode, Limits limits, AllocatableClusterResources current, ResourceTarget target) {
-        int groups = singleGroupMode ? 1 : nodes / current.groupSize();
-
+    private NodeResources nodeResourcesWith(int nodes, int groups, Limits limits, AllocatableClusterResources current, ResourceTarget target) {
         // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
         // Memory and disk: Scales with group size
         double cpu, memory, disk;

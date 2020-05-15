@@ -440,7 +440,7 @@ public class ProvisioningTest {
                            app1, cluster1);
 
         // Widening window does not change allocation
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 1, 5, 15),
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 15),
                                                       resources(8, 4, 4, 20, 30)));
         tester.assertNodes("Same allocation",
                            6, 3, 3, 15, 25,
@@ -450,7 +450,7 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 10, 30,  10),
                                                       resources(4, 2, 14, 40, 13)));
         tester.assertNodes("A mix of min and max",
-                           4, 2, 10, 30, 13,
+                           2, 1, 10, 30, 13.0,
                            app1, cluster1);
 
         // Changing group size
