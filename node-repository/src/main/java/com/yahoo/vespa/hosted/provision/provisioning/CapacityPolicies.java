@@ -52,8 +52,7 @@ public class CapacityPolicies {
             target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
-        // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
-        if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
+        if (zone.environment() == Environment.dev && zone.getCloud().allowHostSharing())
             target = target.withVcpu(0.1);
 
         return target;

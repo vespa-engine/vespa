@@ -43,8 +43,11 @@ public class NodeResourceLimits {
         return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources advertisedResources, ClusterSpec.Type clusterType) {
-        return advertisedResources.withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), advertisedResources.memoryGb()));
+    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType) {
+        if (requested.isUnspecified()) return requested;
+
+        return requested.withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
+                                  .withDiskGb(Math.max(minAdvertisedDiskGb(requested), requested.diskGb()));
     }
 
     private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
@@ -58,6 +61,7 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedDiskGb(NodeResources requested) {
+
         if (requested.storageType() == NodeResources.StorageType.local
             && nodeRepository.zone().getCloud().dynamicProvisioning()) {
             if (nodeRepository.zone().system() == SystemName.Public)
@@ -65,11 +69,11 @@ public class NodeResourceLimits {
             else
                 return 55 + minRealDiskGb();
         }
-        return minRealDiskGb();
+        return 4 + minRealDiskGb();
     }
 
     private double minRealDiskGb() {
-        return 10;
+        return 6;
     }
 
     private void illegal(String type, String resource, ClusterSpec cluster, double requested, double minAllowed) {
