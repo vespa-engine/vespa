@@ -2,21 +2,30 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
@@ -1061,6 +1070,49 @@ public class UpgraderTest {
         for (int i = 0, now = 0; i < 30; i++, now += 40_000)
             upgrades += Upgrader.numberOfApplicationsToUpgrade(40_000, now, 8.7);
         assertEquals(174, upgrades);
+    }
+
+    @Test
+    public void testUpgradeShuffling() {
+        // Deploy applications on initial version
+        var default0 = createAndDeploy("default0", "default");
+        var default1 = createAndDeploy("default1", "default");
+        var default2 = createAndDeploy("default2", "default");
+        var applications = Map.of(default0.instanceId(), default0,
+                                  default1.instanceId(), default1,
+                                  default2.instanceId(), default2);
+
+        // Throttle upgrades per run
+        ((ManualClock) tester.controller().clock()).setInstant(Instant.ofEpochMilli(1589787109000L)); // Fixed random seed
+        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10),
+                                         tester.controllerTester().curator());
+        upgrader.setUpgradesPerMinute(0.1);
+
+        // Trigger some upgrades
+        List<Version> versions = List.of(Version.fromString("6.2"), Version.fromString("6.3"));
+        Set<List<ApplicationId>> upgradeOrders = new HashSet<>(versions.size());
+        for (var version : versions) {
+            // Upgrade system
+            tester.controllerTester().upgradeSystem(version);
+            List<ApplicationId> upgraderOrder = new ArrayList<>(applications.size());
+
+            // Upgrade all applications
+            for (int i = 0; i < applications.size(); i++) {
+                upgrader.maintain();
+                tester.triggerJobs();
+                Set<ApplicationId> triggered = tester.jobs().active().stream()
+                                                     .map(Run::id)
+                                                     .map(RunId::application)
+                                                     .collect(Collectors.toSet());
+                assertEquals("Expected number of applications is triggered", 1, triggered.size());
+                ApplicationId application = triggered.iterator().next();
+                upgraderOrder.add(application);
+                applications.get(application).completeRollout();
+                tester.clock().advance(Duration.ofMinutes(1));
+            }
+            upgradeOrders.add(upgraderOrder);
+        }
+        assertEquals("Upgrade orders are distinct", versions.size(), upgradeOrders.size());
     }
 
     private ApplicationPackage applicationPackage(String upgradePolicy) {

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
@@ -20,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -39,10 +39,12 @@ public class Upgrader extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;
+    private final Random random;
 
     public Upgrader(Controller controller, Duration interval, CuratorDb curator) {
         super(controller, interval);
         this.curator = Objects.requireNonNull(curator, "curator cannot be null");
+        this.random = new Random(controller.clock().instant().toEpochMilli()); // Seed with clock for test determinism
     }
 
     /**
@@ -115,6 +117,7 @@ public class Upgrader extends ControllerMaintainer {
                  .not().deploying()
                  .onLowerVersionThan(version)
                  .canUpgradeAt(version, controller().clock().instant())
+                 .shuffle(random) // Shuffle so we do not always upgrade instances in the same order
                  .byIncreasingDeployedVersion()
                  .first(numberToUpgrade).asList()
                  .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, Change.of(version)));

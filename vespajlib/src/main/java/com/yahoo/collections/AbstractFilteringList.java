@@ -1,12 +1,15 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -86,6 +89,13 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     @Override
     public Iterator<Type> iterator() {
         return items.iterator();
+    }
+
+    /** Returns the items in this shuffled using random as source of randomness */
+    public final ListType shuffle(Random random) {
+        ArrayList<Type> shuffled = new ArrayList<>(items);
+        Collections.shuffle(shuffled, random);
+        return constructor.apply(shuffled, false);
     }
 
 }
