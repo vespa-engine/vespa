@@ -398,7 +398,7 @@ public final class Node {
 
     public enum State {
 
-        /** This host has been requested (from OpenStack) but is not yet ready for use */
+        /** This node has been requested, but is not yet ready for use */
         provisioned,
 
         /** This node is free and ready for use */
