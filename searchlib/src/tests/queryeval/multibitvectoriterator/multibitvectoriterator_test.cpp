@@ -34,6 +34,7 @@ public:
     void testAndWith(bool invert);
     void testEndGuard(bool invert);
     void testIteratorConformance();
+    void testUnpackOfOr();
     template<typename T>
     void testThatOptimizePreservesUnpack();
     template <typename T>
@@ -44,6 +45,7 @@ public:
     void testSearch(bool strict, bool invert);
     int Main() override;
 private:
+    void verifyUnpackOfOr(const UnpackInfo & unpackInfo);
     void verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd);
     void searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit);
     void setup();
@@ -58,6 +60,8 @@ private:
         for (int i = 0; i < 3; ++i) {
             if (_bvs_inverted[i]->testBit(1)) {
                 _bvs[i]->clearBit(1);
+            } else {
+                _bvs[i]->setBit(1);
             }
         }
     }
@@ -251,6 +255,63 @@ Test::testThatOptimizePreservesUnpack()
     EXPECT_EQUAL(2u, ms->getChildren().size());
     verifySelectiveUnpack(*s, tfmd);
     fixup_bitvectors();
+}
+
+void verifyOrUnpack(SearchIterator & s, TermFieldMatchData tfmd[3]) {
+    s.initFullRange();
+    s.seek(1);
+    for (size_t i = 0; i < 3; i++) {
+        EXPECT_EQUAL(0u, tfmd[i].getDocId());
+    }
+    s.unpack(1);
+    EXPECT_EQUAL(0u, tfmd[0].getDocId());
+    EXPECT_EQUAL(1u, tfmd[1].getDocId());
+    EXPECT_EQUAL(0u, tfmd[2].getDocId());
+}
+
+void
+Test::testUnpackOfOr() {
+    _bvs[0]->clearBit(1);
+    _bvs[1]->setBit(1);
+    _bvs[2]->clearBit(1);
+    UnpackInfo all;
+    all.forceAll();
+    verifyUnpackOfOr(all);
+
+    UnpackInfo unpackInfo;
+    unpackInfo.add(1);
+    unpackInfo.add(2);
+    verifyUnpackOfOr(unpackInfo);
+
+    fixup_bitvectors();
+}
+
+void
+Test::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
+{
+    TermFieldMatchData tfmdA[3];
+    MultiSearch::Children children;
+    children.push_back(createIter(0, false, tfmdA[0], false).release());
+    children.push_back(createIter(1, false, tfmdA[1], false).release());
+    children.push_back(createIter(2, false, tfmdA[2], false).release());
+    SearchIterator::UP s(OrSearch::create(children, false, unpackInfo));
+    verifyOrUnpack(*s, tfmdA);
+
+    for (auto & tfmd : tfmdA) {
+        tfmd.resetOnlyDocId(0);
+    }
+
+    const MultiSearch * ms = dynamic_cast<const MultiSearch *>(s.get());
+    EXPECT_TRUE(ms != nullptr);
+    EXPECT_EQUAL(3u, ms->getChildren().size());
+
+    s = MultiBitVectorIteratorBase::optimize(std::move(s));
+    s->initFullRange();
+    ms = dynamic_cast<const MultiBitVectorIteratorBase *>(s.get());
+    EXPECT_TRUE(ms != nullptr);
+    EXPECT_EQUAL(3u, ms->getChildren().size());
+    verifyOrUnpack(*s, tfmdA);
+
 }
 
 void
@@ -583,6 +644,8 @@ Test::Main()
     testBug7163266();
     testThatOptimizePreservesUnpack<OrSearch>();
     testThatOptimizePreservesUnpack<AndSearch>();
+    TEST_FLUSH();
+    testUnpackOfOr();
     TEST_FLUSH();
     testEndGuard(false);
     testEndGuard(true);
