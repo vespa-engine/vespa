@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 /**
  * A resource target to hit for the allocation optimizer.
  * The target is measured in cpu, memory and disk per node in the allocation given by current.
- * 
+ *
  * @author bratseth
  */
 public class ResourceTarget {
