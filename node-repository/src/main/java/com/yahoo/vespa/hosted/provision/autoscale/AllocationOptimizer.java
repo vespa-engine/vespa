@@ -137,17 +137,17 @@ public class AllocationOptimizer {
 
             int groupSize = nodes / groups;
 
-            // The fixed cost portion of cpu does not scale with changes to the node count
-            // TODO: Only for the portion of cpu consumed by queries
-            double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
-                                 (1 - fixedCpuCostFraction) * target.groupCpu() / groupSize;
-            cpu = cpuPerGroup * current.groups() / groups;
-
             if (current.clusterType().isContent()) { // load scales with node share of content
+                // The fixed cost portion of cpu does not scale with changes to the node count
+                // TODO: Only for the portion of cpu consumed by queries
+                double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
+                                     (1 - fixedCpuCostFraction) * target.groupCpu() / groupSize;
+                cpu = cpuPerGroup * current.groups() / groups;
                 memory = target.groupMemory() / groupSize;
                 disk = target.groupDisk() / groupSize;
             }
             else {
+                cpu = target.nodeCpu() * current.nodes() / nodes;
                 memory = target.nodeMemory();
                 disk = target.nodeDisk();
             }

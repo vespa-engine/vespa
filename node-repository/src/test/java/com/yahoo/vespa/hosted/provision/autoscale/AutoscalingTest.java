@@ -112,7 +112,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 120, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
-                                                                  7, 1, 2.6,  80.0, 80.0,
+                                                                  7, 1, 2.5,  80.0, 80.0,
                                                                   tester.autoscale(application1, cluster1.id(), min, max));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -120,7 +120,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements(Resource.cpu,  0.1f, 1f, 120, application1);
         tester.assertResources("Scaling down since cpu usage has gone down",
-                               4, 1, 2.4, 68.6, 68.6,
+                               4, 1, 2.5, 68.6, 68.6,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
@@ -213,7 +213,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, resources);
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               7, 1, 2.6,  80.0, 80.0,
+                               7, 1, 2.5,  80.0, 80.0,
                                tester.suggest(application1, cluster1.id(), min, max));
     }
 
