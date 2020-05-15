@@ -113,7 +113,7 @@ class NodeAllocation {
 
                 if (requestedNodes.considerRetiring()) {
                     boolean wantToRetireNode = false;
-                    // if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetireNode = true;
+                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetireNode = true;
                     if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
                     if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
@@ -127,12 +127,10 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(node)) {
-                /*
                 if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
-                */
                 if ( violatesParentHostPolicy(this.nodes, offered)) {
                     ++rejectedDueToClashingParentHost;
                     continue;

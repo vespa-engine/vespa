@@ -163,11 +163,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
         AllocatableClusterResources currentResources =
                 nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type()) // new deployment: Use min
                                 : new AllocatableClusterResources(nodes, nodeRepository);
-        return ensureWithin(Limits.of(requested), currentResources);
+        return within(Limits.of(requested), currentResources);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources ensureWithin(Limits limits, AllocatableClusterResources current) {
+    private ClusterResources within(Limits limits, AllocatableClusterResources current) {
         if (limits.isEmpty()) return current.toAdvertisedClusterResources();
         if (limits.min().equals(limits.max())) return limits.min();
 
@@ -202,7 +202,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
-                                   requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources),
+                                   requestedResources.isUnspecified() ? Optional.empty() : Optional.of(requestedResources),
                                    node.status().dockerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");
