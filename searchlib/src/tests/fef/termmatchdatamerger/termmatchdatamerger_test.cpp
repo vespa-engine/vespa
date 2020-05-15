@@ -245,5 +245,98 @@ TEST(TermMatchDataMergerTest, merge_max_element_length)
     EXPECT_EQ(1000u, out.getIterator().getFieldLength());
 }
 
+TEST(TermMatchDataMergerTest, merge_no_normal_features)
+{
+    TermFieldMatchData a;
+    TermFieldMatchData b;
+    MDMIs input;
+    input.push_back(MDMI(&a, 0.5));
+    input.push_back(MDMI(&b, 1.5));
+
+    TermFieldMatchData out;
+    TermFieldMatchDataArray output;
+    output.add(&out);
+    out.setNeedNormalFeatures(false);
+    TermMatchDataMerger merger(input, output);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.appendPosition(make_pos(5));
+
+    b.reset(docid);
+    b.appendPosition(make_pos(3));
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(0u, out.size());
+}
+
+TEST(TermMatchDataMergerTest, merge_interleaved_features)
+{
+    TermFieldMatchData a;
+    TermFieldMatchData b;
+    MDMIs input;
+    input.push_back(MDMI(&a, 0.5));
+    input.push_back(MDMI(&b, 1.5));
+
+    TermFieldMatchData out;
+    TermFieldMatchDataArray output;
+    output.add(&out);
+    out.setNeedNormalFeatures(false);
+    out.setNeedInterleavedFeatures(true);
+    TermMatchDataMerger merger(input, output);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.setNumOccs(1);
+    a.setFieldLength(30);
+
+    b.reset(docid);
+    b.setNumOccs(1);
+    b.setFieldLength(30);
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(2u, out.getNumOccs());
+    EXPECT_EQ(30u, out.getFieldLength());
+}
+
+TEST(TermMatchDataMergerTest, merge_interleaved_features_with_dected_duplicate)
+{
+    TermFieldMatchData a;
+    TermFieldMatchData b;
+    MDMIs input;
+    input.push_back(MDMI(&a, 0.5));
+    input.push_back(MDMI(&b, 1.5));
+
+    TermFieldMatchData out;
+    TermFieldMatchDataArray output;
+    output.add(&out);
+    out.setNeedNormalFeatures(true);
+    out.setNeedInterleavedFeatures(true);
+    TermMatchDataMerger merger(input, output);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.setNumOccs(1);
+    a.setFieldLength(30);
+    a.appendPosition(make_pos(5));
+
+    b.reset(docid);
+    b.setNumOccs(1);
+    b.setFieldLength(30);
+    b.appendPosition(make_pos(5));
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(1u, out.end() - out.begin());
+    EXPECT_EQ( 5u, out.begin()[0].getPosition());
+    EXPECT_EQ(1.5, out.begin()[0].getMatchExactness());
+    EXPECT_EQ(1u, out.getNumOccs());
+    EXPECT_EQ(30u, out.getFieldLength());
+}
 
 GTEST_MAIN_RUN_ALL_TESTS()
