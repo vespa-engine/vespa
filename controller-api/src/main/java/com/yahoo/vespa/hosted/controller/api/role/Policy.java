@@ -22,12 +22,12 @@ enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
-                      .on(PathGroup.all())
+                      .on(PathGroup.allExcept(PathGroup.hostedAccountant))
                       .in(SystemName.all())),
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)
-                       .on(PathGroup.all())
+                       .on(PathGroup.allExcept(PathGroup.hostedAccountant))
                        .in(SystemName.all())),
 
     /** Full access to user management for a tenant in select systems. */
@@ -167,6 +167,11 @@ enum Policy {
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
                                     .on(PathGroup.billingList)
+                                    .in(SystemName.PublicCd)),
+
+    /** Invoice management */
+    hostedAccountant(Privilege.grant(Action.all())
+                                    .on(PathGroup.hostedAccountant)
                                     .in(SystemName.PublicCd));
 
     private final Set<Privilege> privileges;
