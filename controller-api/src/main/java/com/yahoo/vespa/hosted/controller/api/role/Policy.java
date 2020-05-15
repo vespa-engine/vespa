@@ -23,11 +23,14 @@ enum Policy {
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
                       .on(PathGroup.allExcept(PathGroup.hostedAccountant))
-                      .in(SystemName.all())),
+                      .in(SystemName.all()),
+            Privilege.grant(Action.read)
+                    .on(PathGroup.hostedAccountant)
+                    .in(SystemName.PublicCd)),
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)
-                       .on(PathGroup.allExcept(PathGroup.hostedAccountant))
+                       .on(PathGroup.all())
                        .in(SystemName.all())),
 
     /** Full access to user management for a tenant in select systems. */
