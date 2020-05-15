@@ -2,6 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -49,6 +50,7 @@ public class TestProperties implements ModelContext.Properties {
     private int defaultNumResponseThreads = 0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
+    private ApplicationRoles applicationRoles;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -90,6 +92,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
+    @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
@@ -171,6 +174,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setAthenzDomain(AthenzDomain domain) {
         this.athenzDomain = domain;
+        return this;
+    }
+
+    public TestProperties setApplicationRoles(ApplicationRoles applicationRoles) {
+        this.applicationRoles = applicationRoles;
         return this;
     }
 

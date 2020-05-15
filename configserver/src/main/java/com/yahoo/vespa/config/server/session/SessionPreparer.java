@@ -10,6 +10,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -36,6 +37,7 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
@@ -135,6 +137,7 @@ public class SessionPreparer {
                 } else {
                     preparation.legacyWriteContainerEndpointsZK();
                 }
+                preparation.writeApplicationRoles();
                 preparation.distribute();
             }
             log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() +
@@ -170,6 +173,8 @@ public class SessionPreparer {
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
+        private final ApplicationRolesStore applicationRolesStore;
+        private final Optional<ApplicationRoles> applicationRoles;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -203,6 +208,9 @@ public class SessionPreparer {
                 this.containerEndpoints = getEndpoints(params.containerEndpoints());
             }
             this.athenzDomain = params.athenzDomain();
+            this.applicationRolesStore = new ApplicationRolesStore(curator, tenantPath);
+            this.applicationRoles = params.applicationRoles()
+                    .or(() -> applicationRolesStore.readApplicationRoles(applicationId));
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
@@ -216,7 +224,7 @@ public class SessionPreparer {
                                                               currentActiveApplicationSet.isEmpty(),
                                                               context.getFlagSource(),
                                                               endpointCertificateSecrets,
-                                                              athenzDomain);
+                                                              athenzDomain, applicationRoles);
             this.fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
@@ -303,6 +311,12 @@ public class SessionPreparer {
             }
         }
 
+        void writeApplicationRoles() {
+            applicationRoles.ifPresent(roles ->
+                    applicationRolesStore.writeApplicationRoles(applicationId, roles));
+            checkTimeout("write application roles to zookeeper");
+        }
+
         void distribute() {
             prepareResult.asList().forEach(modelResult -> modelResult.model
                                            .distributeFiles(modelResult.fileDistributionProvider.getFileDistribution()));
@@ -326,7 +340,6 @@ public class SessionPreparer {
             }
             return List.copyOf(endpoints);
         }
-
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,

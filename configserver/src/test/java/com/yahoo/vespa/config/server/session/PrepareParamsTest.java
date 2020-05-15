@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -68,6 +69,19 @@ public class PrepareParamsTest {
         var prepareParams = createParams(request + "&" + PrepareParams.CONTAINER_ENDPOINTS_PARAM_NAME +
                                                    "=" + encoded, TenantName.from("foo"));
         assertEquals(endpoints, prepareParams.containerEndpoints());
+    }
+
+    @Test
+    public void testCorrectParsingWithApplicationRoles() {
+        String req = request + "&" +
+                     PrepareParams.APPLICATION_HOST_ROLE + "=hostRole&" +
+                     PrepareParams.APPLICATION_CONTAINER_ROLE + "=containerRole";
+        var prepareParams = createParams(req, TenantName.from("foo"));
+
+        Optional<ApplicationRoles> applicationRoles = prepareParams.applicationRoles();
+        assertTrue(applicationRoles.isPresent());
+        assertEquals("hostRole", applicationRoles.get().applicationHostRole());
+        assertEquals("containerRole", applicationRoles.get().applicationContainerRole());
     }
 
     // Create PrepareParams from a request (based on uri and tenant name)

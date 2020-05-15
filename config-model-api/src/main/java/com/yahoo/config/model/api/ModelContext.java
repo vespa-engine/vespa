@@ -93,6 +93,8 @@ public interface ModelContext {
 
         // TODO(mpolden): Remove after May 2020
         default boolean useDedicatedNodesWhenUnspecified() { return true; }
+
+        Optional<ApplicationRoles> applicationRoles();
     }
 
 }
