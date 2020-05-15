@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -150,7 +151,12 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
         var clock = (ManualClock) tester.nodeRepository().clock();
         int hostCount = 10;
-        provisionInfraApplication(hostCount);
+        // Provision hosts and children
+        List<Node> hosts = provisionInfraApplication(hostCount);
+        NodeResources resources = new NodeResources(2, 4, 8, 1);
+        for (var host : hosts) {
+            tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
+        }
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
                                                    .nodeType(NodeType.host)
                                                    .not().state(Node.State.deprovisioned);
@@ -167,7 +173,9 @@ public class OsVersionsTest {
 
         // Nothing happens on next resume as first host has not spent its budget
         versions.resumeUpgradeOf(NodeType.host, true);
-        assertEquals(1, hostNodes.get().deprovisioning().size());
+        NodeList nodesDeprovisioning = hostNodes.get().deprovisioning();
+        assertEquals(1, nodesDeprovisioning.size());
+        assertEquals(2, retiringChildrenOf(nodesDeprovisioning.asList().get(0)).size());
 
         // Budget has been spent and another host is retired
         clock.advance(nodeBudget);
@@ -181,8 +189,9 @@ public class OsVersionsTest {
         for (int i = 0; i < hostCount - 2; i++) {
             clock.advance(nodeBudget);
             versions.resumeUpgradeOf(NodeType.host, true);
-            NodeList nodesDeprovisioning = hostNodes.get().deprovisioning();
+            nodesDeprovisioning = hostNodes.get().deprovisioning();
             assertEquals(1, nodesDeprovisioning.size());
+            assertEquals(2, retiringChildrenOf(nodesDeprovisioning.asList().get(0)).size());
             completeUpgradeOf(nodesDeprovisioning.asList());
         }
 
@@ -224,6 +233,10 @@ public class OsVersionsTest {
         // Nodes complete their upgrade by being reprovisioned
         completeUpgradeOf(hostNodes.get().deprovisioning().asList(), NodeType.confighost);
         assertEquals(hostCount, hostNodes.get().onOsVersion(version1).size());
+    }
+
+    private NodeList retiringChildrenOf(Node parent) {
+        return tester.nodeRepository().list().childrenOf(parent).filter(child -> child.status().wantToRetire());
     }
 
     private List<Node> provisionInfraApplication(int nodeCount) {
