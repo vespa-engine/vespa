@@ -60,6 +60,8 @@ private:
         for (int i = 0; i < 3; ++i) {
             if (_bvs_inverted[i]->testBit(1)) {
                 _bvs[i]->clearBit(1);
+            } else {
+                _bvs[i]->setBit(1);
             }
         }
     }
@@ -255,11 +257,11 @@ Test::testThatOptimizePreservesUnpack()
     fixup_bitvectors();
 }
 
-void verifyOrUnpack(SearchIterator & s, const TermFieldMatchData * tfmd) {
+void verifyOrUnpack(SearchIterator & s, TermFieldMatchData tfmd[3]) {
     s.initFullRange();
     s.seek(1);
     for (size_t i = 0; i < 3; i++) {
-        EXPECT_EQUAL(0u, tfmd[0].getDocId());
+        EXPECT_EQUAL(0u, tfmd[i].getDocId());
     }
     s.unpack(1);
     EXPECT_EQUAL(0u, tfmd[0].getDocId());
@@ -305,7 +307,7 @@ Test::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
 
     s = MultiBitVectorIteratorBase::optimize(std::move(s));
     s->initFullRange();
-    ms = dynamic_cast<const MultiSearch *>(s.get());
+    ms = dynamic_cast<const MultiBitVectorIteratorBase *>(s.get());
     EXPECT_TRUE(ms != nullptr);
     EXPECT_EQUAL(3u, ms->getChildren().size());
     verifyOrUnpack(*s, tfmdA);
