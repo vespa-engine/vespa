@@ -5,8 +5,7 @@
 #include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 
@@ -88,7 +87,6 @@ OrSearch::create(const MultiSearch::Children &children, bool strict) {
 
 SearchIterator *
 OrSearch::create(const MultiSearch::Children &children, bool strict, const UnpackInfo & unpackInfo) {
-    (void) unpackInfo;
     if (strict) {
         if (unpackInfo.unpackAll()) {
             return new OrLikeSearch<true, FullUnpack>(children, FullUnpack());
@@ -108,5 +106,4 @@ OrSearch::create(const MultiSearch::Children &children, bool strict, const Unpac
     }
 }
 
-}  // namespace queryeval
-}  // namespace search
+}

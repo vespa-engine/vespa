@@ -2,7 +2,6 @@
 
 #include "bitvectoriterator.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.h>
 
@@ -37,12 +36,6 @@ BitVectorIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "docIdLimit", _docIdLimit);
     visit(visitor, "termfieldmatchdata.fieldId", _tfmd.getFieldId());
     visit(visitor, "termfieldmatchdata.docid", _tfmd.getDocId());
-}
-
-void
-BitVectorIterator::doUnpack(uint32_t docId)
-{
-    _tfmd.resetOnlyDocId(docId);
 }
 
 template<bool inverse>
