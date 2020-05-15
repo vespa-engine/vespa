@@ -184,9 +184,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return new X509CertificateWithKey(copy.getCertificate(), copy.getKeyPair().getPrivate());
     }
 
-    // The files should ideally not be used directly, must be implemented later if necessary
-    @Override public Path certificatePath() { throw new UnsupportedOperationException(); }
-    @Override public Path privateKeyPath() { throw new UnsupportedOperationException(); }
+    @Override public Path certificatePath() { return athenzCredentialsService.certificatePath(); }
+
+    @Override public Path privateKeyPath() { return athenzCredentialsService.privateKeyPath(); }
 
     @Override
     public SSLContext getRoleSslContext(String domain, String role) {
