@@ -60,7 +60,6 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
     _valueCount(0),
     _md(nullptr)
 {
-    _buffer.allocate(_params.attribute->getMaxValueCount());
     QueryTermHelper queryTerms(env);
     for (const QueryTerm & qt : queryTerms.terms()) {
         _totalTermWeight += qt.termData()->getWeight().percent();
