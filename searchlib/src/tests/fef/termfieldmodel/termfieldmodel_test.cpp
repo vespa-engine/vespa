@@ -215,11 +215,11 @@ TEST("append positions") {
     tfmd.appendPosition(pos);
     tfmd.appendPosition(pos2);
     EXPECT_EQUAL(2u, tfmd.size());
-    EXPECT_EQUAL(2u, tfmd.capacity());
+    EXPECT_EQUAL(42u, tfmd.capacity());
     TermFieldMatchDataPosition pos3(0x31020304, 0x30203040, 0x31223344, 0x32345678);
     tfmd.appendPosition(pos3);
     EXPECT_EQUAL(3u, tfmd.size());
-    EXPECT_EQUAL(4u, tfmd.capacity());
+    EXPECT_EQUAL(42u, tfmd.capacity());
     EXPECT_EQUAL(0x01020304u, tfmd.begin()->getElementId());
     EXPECT_EQUAL(0x10203040u, tfmd.begin()->getPosition());
     EXPECT_EQUAL(0x11223344, tfmd.begin()->getElementWeight());
