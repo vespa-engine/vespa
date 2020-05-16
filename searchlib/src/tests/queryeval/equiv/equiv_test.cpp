@@ -19,7 +19,7 @@ protected:
     EquivTest();
     ~EquivTest();
 
-    void test_equiv(bool strict);
+    void test_equiv(bool strict, bool unpack_normal_features, bool unpack_interleaved_features);
 };
 
 EquivTest::EquivTest() = default;
@@ -27,15 +27,15 @@ EquivTest::EquivTest() = default;
 EquivTest::~EquivTest() = default;
 
 void
-EquivTest::test_equiv(bool strict)
+EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_interleaved_features)
 {
     FakeResult a;
     FakeResult b;
     FakeResult c;
 
-    a.doc(5).pos(1);
-    b.doc(5).pos(2);
-    c.doc(5).pos(3).doc(10).pos(4);
+    a.doc(5).pos(1).len(30).field_length(30).num_occs(1);
+    b.doc(5).pos(2).len(30).field_length(30).num_occs(1);
+    c.doc(5).pos(3).len(30).field_length(30).num_occs(1).doc(10).pos(4).len(35).field_length(35).num_occs(1);
 
     MatchDataLayout subLayout;
     TermFieldHandle fbh11 = subLayout.allocTermField(1);
@@ -52,6 +52,11 @@ EquivTest::test_equiv(bool strict)
     bp->addTerm(std::make_unique<FakeBlueprint>(FieldSpec("bar", 2, fbh22), c), 1.0);
 
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
+    for (uint32_t field_id = 1; field_id <= 2; ++field_id) {
+        TermFieldMatchData &data = *md->resolveTermField(field_id);
+        data.setNeedNormalFeatures(unpack_normal_features);
+        data.setNeedInterleavedFeatures(unpack_interleaved_features);
+    }
     bp->fetchPostings(ExecuteInfo::create(strict));
     SearchIterator::UP search = bp->createSearch(*md, strict);
     search->initFullRange();
@@ -69,25 +74,43 @@ EquivTest::test_equiv(bool strict)
             EXPECT_EQ(1u, data.getFieldId());
             EXPECT_EQ(5u, data.getDocId());
             FieldPositionsIterator itr = data.getIterator();
-            EXPECT_EQ(1u, itr.size());
-            ASSERT_TRUE(itr.valid());
-            EXPECT_EQ(1u, itr.getPosition());
-            itr.next();
+            if (unpack_normal_features) {
+                EXPECT_EQ(1u, itr.size());
+                ASSERT_TRUE(itr.valid());
+                EXPECT_EQ(1u, itr.getPosition());
+                itr.next();
+            }
             EXPECT_TRUE(!itr.valid());
+            if (unpack_interleaved_features) {
+                EXPECT_EQ(1u, data.getNumOccs());
+                EXPECT_EQ(30u, data.getFieldLength());
+            } else {
+                EXPECT_EQ(0u, data.getNumOccs());
+                EXPECT_EQ(0u, data.getFieldLength());
+            }
         }
         {
             TermFieldMatchData &data = *md->resolveTermField(2);
             EXPECT_EQ(2u, data.getFieldId());
             EXPECT_EQ(5u, data.getDocId());
             FieldPositionsIterator itr = data.getIterator();
-            EXPECT_EQ(2u, itr.size());
-            ASSERT_TRUE(itr.valid());
-            EXPECT_EQ(2u, itr.getPosition());
-            itr.next();
-            ASSERT_TRUE(itr.valid());
-            EXPECT_EQ(3u, itr.getPosition());
-            itr.next();
+            if (unpack_normal_features) {
+                EXPECT_EQ(2u, itr.size());
+                ASSERT_TRUE(itr.valid());
+                EXPECT_EQ(2u, itr.getPosition());
+                itr.next();
+                ASSERT_TRUE(itr.valid());
+                EXPECT_EQ(3u, itr.getPosition());
+                itr.next();
+            }
             EXPECT_TRUE(!itr.valid());
+            if (unpack_interleaved_features) {
+                EXPECT_EQ(2u, data.getNumOccs());
+                EXPECT_EQ(30u, data.getFieldLength());
+            } else {
+                EXPECT_EQ(0u, data.getNumOccs());
+                EXPECT_EQ(0u, data.getFieldLength());
+            }
         }
     }
     EXPECT_TRUE(!search->seek(7));
@@ -104,11 +127,20 @@ EquivTest::test_equiv(bool strict)
             EXPECT_EQ(2u, data.getFieldId());
             EXPECT_EQ(10u, data.getDocId());
             FieldPositionsIterator itr = data.getIterator();
-            EXPECT_EQ(1u, itr.size());
-            ASSERT_TRUE(itr.valid());
-            EXPECT_EQ(4u, itr.getPosition());
-            itr.next();
+            if (unpack_normal_features) {
+                EXPECT_EQ(1u, itr.size());
+                ASSERT_TRUE(itr.valid());
+                EXPECT_EQ(4u, itr.getPosition());
+                itr.next();
+            }
             EXPECT_TRUE(!itr.valid());
+            if (unpack_interleaved_features) {
+                EXPECT_EQ(1u, data.getNumOccs());
+                EXPECT_EQ(35u, data.getFieldLength());
+            } else {
+                EXPECT_EQ(0u, data.getNumOccs());
+                EXPECT_EQ(0u, data.getFieldLength());
+            }
         }
     }
     EXPECT_TRUE(!search->seek(13));
@@ -122,12 +154,42 @@ EquivTest::test_equiv(bool strict)
 
 TEST_F(EquivTest, nonstrict)
 {
-    test_equiv(false);
+    test_equiv(false, true, false);
 }
 
 TEST_F(EquivTest, strict)
 {
-    test_equiv(true);
+    test_equiv(true, true, false);
+}
+
+TEST_F(EquivTest, nonstrict_no_normal_no_interleaved)
+{
+    test_equiv(false, false, false);
+}
+
+TEST_F(EquivTest, strict_no_normal_no_interleaved)
+{
+    test_equiv(true, false, false);
+}
+
+TEST_F(EquivTest, nonstrict_no_normal_interleaved)
+{
+    test_equiv(false, false, true);
+}
+
+TEST_F(EquivTest, strict_no_normal_interleaved)
+{
+    test_equiv(true, false, true);
+}
+
+TEST_F(EquivTest, nonstrict_normal_interleaved)
+{
+    test_equiv(false, true, true);
+}
+
+TEST_F(EquivTest, strict_normal_interleaved)
+{
+    test_equiv(true, true, true);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

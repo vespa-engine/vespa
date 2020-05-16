@@ -1291,7 +1291,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     }
 }
 
-TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
+TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     FieldSpecBaseList fields;
     fields.add(FieldSpecBase(1, 1));
     fields.add(FieldSpecBase(2, 2));
@@ -1322,7 +1322,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
+        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
                      e.getChildren()[0]->getClassName());
     }
 
@@ -1332,7 +1332,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
+        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::NoUnpack>",
                      e.getChildren()[0]->getClassName());
     }
 }
