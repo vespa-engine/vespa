@@ -219,8 +219,8 @@ enum PathGroup {
     /** Paths used for receiving payment callbacks */
     paymentProcessor(PathPrefix.none, "/payment/notification"),
 
-    /** Invoice management */
-    invoiceManagement(PathPrefix.none, "/billing/v1/invoice/{*}");
+    /** Paths used for invoice management */
+    hostedAccountant(PathPrefix.api, "/billing/v1/invoice/{*}");
 
 
     final List<String> pathSpecs;
