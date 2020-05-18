@@ -31,13 +31,14 @@ public final class ClusterSpec {
         this.groupId = groupId;
         this.vespaVersion = Objects.requireNonNull(vespaVersion);
         this.exclusive = exclusive;
-        // TODO(mpolden): Require combinedId to always be present for type combined after April 2020
-        if (type != Type.combined && combinedId.isPresent()) {
-            throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
+        if (type == Type.combined) {
+            if (combinedId.isEmpty()) throw new IllegalArgumentException("combinedId must be set for cluster of type " + type);
+        } else {
+            if (combinedId.isPresent()) throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
         }
         this.combinedId = combinedId;
         if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
-            throw new IllegalArgumentException("dockerimageRepo is not allowed to have a tag");
+            throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
         this.dockerImageRepo = dockerImageRepo;
     }
 
