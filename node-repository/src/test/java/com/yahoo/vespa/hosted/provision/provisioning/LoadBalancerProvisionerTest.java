@@ -200,19 +200,6 @@ public class LoadBalancerProvisionerTest {
         assertEquals(List.of(), tester.nodeRepository().loadBalancers(app1).asList());
     }
 
-    // TODO(mpolden): Remove when ClusterSpec with combined type rejects empty combinedId
-    @Test
-    public void provision_load_balancer_combined_cluster_without_id() {
-        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(app1).asList();
-        ClusterSpec.Id cluster = ClusterSpec.Id.from("foo");
-
-        var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, cluster));
-        assertEquals(1, lbs.get().size());
-        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
-        tester.activate(app1, nodes);
-        assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
-    }
-
     @Test
     public void provision_load_balancer_combined_cluster() {
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(app1).asList();

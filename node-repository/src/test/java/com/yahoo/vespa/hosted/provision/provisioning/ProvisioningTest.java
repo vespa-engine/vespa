@@ -829,7 +829,10 @@ public class ProvisioningTest {
                                                                        Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
 
         // Application is redeployed with cluster type combined
-        cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music"))
+                             .vespaVersion("1.2.3")
+                             .combinedId(Optional.of(ClusterSpec.Id.from("qrs")))
+                             .build();
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                    Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
 
