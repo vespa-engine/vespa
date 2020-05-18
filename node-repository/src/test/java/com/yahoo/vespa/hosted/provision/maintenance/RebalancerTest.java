@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
@@ -19,14 +18,15 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.provision.maintenance.Rebalancer.waitTimeAfterPreviousDeployment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -35,36 +35,45 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class RebalancerTest {
+    ApplicationId cpuApp;
+    ApplicationId memApp;
+    NodeResources cpuResources;
+    NodeResources memResources;
+    TestMetric metric = new TestMetric();
+    ProvisioningTester tester;
+    MockDeployer deployer;
+    private Rebalancer rebalancer;
 
-    @Test
-    public void testRebalancing() {
+    @Before
+    public void setup() {
         // --- Setup
-        ApplicationId cpuApp = makeApplicationId("t1", "a1");
-        ApplicationId memApp = makeApplicationId("t2", "a2");
-        NodeResources cpuResources = new NodeResources(8, 4, 10, 0.1);
-        NodeResources memResources = new NodeResources(4, 9, 10, 0.1);
+        cpuApp = makeApplicationId("t1", "a1");
+        memApp = makeApplicationId("t2", "a2");
+        cpuResources = new NodeResources(8, 4, 10, 0.1);
+        memResources = new NodeResources(4, 9, 10, 0.1);
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        TestMetric metric = new TestMetric();
+        tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
                 memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources))));
-        MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
+        deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
 
-        Rebalancer rebalancer = new Rebalancer(deployer,
-                                               tester.nodeRepository(),
-                                               Optional.empty(),
-                                               metric,
-                                               tester.clock(),
-                                               Duration.ofMinutes(1));
-
+        rebalancer = new Rebalancer(deployer,
+                                    tester.nodeRepository(),
+                                    Optional.empty(),
+                                    metric,
+                                    tester.clock(),
+                                    Duration.ofMinutes(1));
 
         tester.makeReadyNodes(3, "flt", NodeType.host, 8);
         tester.deployZoneApp();
+    }
 
+    @Test
+    public void testRebalancing() {
         // --- Deploying a cpu heavy application - causing 1 of these nodes to be skewed
-        deployApp(cpuApp, clusterSpec("c"), cpuResources, tester, 1);
+        deployApp(cpuApp);
         Node cpuSkewedNode = tester.nodeRepository().getNodes(cpuApp).get(0);
 
         rebalancer.maintain();
@@ -85,7 +94,7 @@ public class RebalancerTest {
                      0.00244, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
         // --- Deploying a mem heavy application - allocated to the best option and causing increased skew
-        deployApp(memApp, clusterSpec("c"), memResources, tester, 1);
+        deployApp(memApp);
         assertEquals("Assigned to a flat node as that causes least skew", "flt",
                      tester.nodeRepository().list().parentOf(tester.nodeRepository().getNodes(memApp).get(0)).get().flavor().name());
         rebalancer.maintain();
@@ -126,6 +135,33 @@ public class RebalancerTest {
                      0.00587, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
     }
 
+
+    @Test
+    public void testNoRebalancingIfRecentlyDeployed() {
+        // --- Deploying a cpu heavy application - causing 1 of these nodes to be skewed
+        deployApp(cpuApp);
+        Node cpuSkewedNode = tester.nodeRepository().getNodes(cpuApp).get(0);
+        rebalancer.maintain();
+        assertFalse("No better place to move the skewed node, so no action is taken",
+                    tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().status().wantToRetire());
+
+        // --- Making a more suitable node configuration available causes rebalancing
+        Node newCpuHost = tester.makeReadyNodes(1, "cpu", NodeType.host, 8).get(0);
+        tester.deployZoneApp();
+
+        deployApp(cpuApp, false /* skip advancing clock after deployment */);
+        rebalancer.maintain();
+        assertFalse("No action, since app was recently deployed",
+                   tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().allocation().get().membership().retired());
+
+        tester.clock().advance(waitTimeAfterPreviousDeployment);
+        rebalancer.maintain();
+        assertTrue("Rebalancer retired the node we wanted to move away from",
+                   tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().allocation().get().membership().retired());
+        assertTrue("... and added a node on the new host instead",
+                   tester.nodeRepository().getNodes(cpuApp, Node.State.active).stream().anyMatch(node -> node.hasParent(newCpuHost.hostname())));
+    }
+
     private ClusterSpec clusterSpec(String clusterId) {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
@@ -134,9 +170,11 @@ public class RebalancerTest {
         return ApplicationId.from(tenant, appName, "default");
     }
 
-    private void deployApp(ApplicationId id, ClusterSpec spec, NodeResources flavor, ProvisioningTester tester, int nodeCount) {
-        List<HostSpec> hostSpec = tester.prepare(id, spec, nodeCount, 1, flavor);
-        tester.activate(id, new HashSet<>(hostSpec));
+    private void deployApp(ApplicationId id) { deployApp(id, true); }
+
+    private void deployApp(ApplicationId id, boolean advanceClock) {
+        deployer.deployFromLocalActive(id).get().activate();
+        if (advanceClock) tester.clock().advance(waitTimeAfterPreviousDeployment);
     }
 
     private FlavorsConfig flavorsConfig() {
