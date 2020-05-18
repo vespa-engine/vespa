@@ -222,7 +222,7 @@ public class FileServer {
         public Connection getCurrent() { return null; }
 
         @Override
-        public Connection switchConnection() { return null; }
+        public Connection setNewCurrentConnection() { return null; }
 
         @Override
         public int getSize() { return 0; }
