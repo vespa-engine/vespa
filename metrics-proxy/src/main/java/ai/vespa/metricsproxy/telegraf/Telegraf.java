@@ -3,6 +3,8 @@ package ai.vespa.metricsproxy.telegraf;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+
+import java.io.File;
 import java.util.logging.Level;
 import com.yahoo.system.execution.ProcessExecutor;
 import com.yahoo.system.execution.ProcessResult;
@@ -40,7 +42,7 @@ public class Telegraf extends AbstractComponent {
     public Telegraf(TelegrafRegistry telegrafRegistry, TelegrafConfig telegrafConfig) {
         this.telegrafRegistry = telegrafRegistry;
         telegrafRegistry.addInstance(this);
-        writeConfig(telegrafConfig, uncheck(() -> new FileWriter(TELEGRAF_CONFIG_PATH)), TELEGRAF_LOG_FILE_PATH);
+        writeConfig(telegrafConfig, getConfigWriter(), TELEGRAF_LOG_FILE_PATH);
         restartTelegraf();
     }
 
@@ -91,6 +93,12 @@ public class Telegraf extends AbstractComponent {
                                         .getResourceAsStream(TELEGRAF_CONFIG_TEMPLATE_PATH)
         );
 
+    }
+
+    private static Writer getConfigWriter() {
+        File configFile = new File(TELEGRAF_CONFIG_PATH);
+        configFile.getParentFile().mkdirs();
+        return uncheck(() -> new FileWriter(configFile));
     }
 
     @Override
