@@ -59,6 +59,7 @@ import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Lock;
@@ -397,6 +398,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), tenant.getCurator()).delete(applicationId)); // TODO: Not unit tested
             // Delete any application roles
             transaction.add(new ApplicationRolesStore(tenant.getCurator(), tenant.getPath()).delete(applicationId));
+            // Delete endpoint certificates
+            transaction.add(new EndpointCertificateMetadataStore(tenant.getCurator(), tenant.getPath()).delete(applicationId));
             // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
             // this is done asynchronously in application maintenance by the node repository)
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
