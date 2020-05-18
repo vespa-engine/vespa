@@ -43,18 +43,21 @@ public class AllocationOptimizer {
         // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
         // and we decide the number of groups.
         // The exception is when we only have one group, where we can add and remove single nodes in it.
-        boolean singleGroupMode = current.groups() == 1 && ( limits.isEmpty() || limits.min().groups() == 1 );
-        int nodeIncrement = singleGroupMode ? 1 : current.groupSize();
 
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-
-        for (int nodes = minNodes(limits, singleGroupMode, current); nodes <= maxNodes(limits, singleGroupMode, current); nodes += nodeIncrement) {
+        for (int nodes = minNodes(limits); nodes <= maxNodes(limits); nodes++) {
+            boolean singleGroupMode = current.groups() == 1 && ( limits.isEmpty() || limits.min().groups() == 1 );
             int groups = singleGroupMode ? 1 : nodes / current.groupSize();
             if ( ! limits.isEmpty() && ( groups < limits.min().groups() || groups > limits.max().groups())) continue;
 
+            if (nodes % groups != 0) continue;
+            int groupSize = nodes / groups;
+            if (groups != 1 && groupSize != current.groupSize()) continue; // TODO: Remove this line
+
+
             // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
             // TODO: Make the best choice based on size and redundancy setting instead
-            int nodesAdjustedForRedundancy = target.adjustForRedundancy() ? nodes - nodeIncrement : nodes;
+            int nodesAdjustedForRedundancy = target.adjustForRedundancy() ? ( groups == 1 ? nodes - 1 : nodes - groupSize ) : nodes;
             if (nodesAdjustedForRedundancy < 1) continue;
             int groupsAdjustedForRedundancy = target.adjustForRedundancy() ? ( groups == 1 ? 1 : groups - 1 ) : groups;
 
@@ -71,16 +74,14 @@ public class AllocationOptimizer {
         return bestAllocation;
     }
 
-    private int minNodes(Limits limits, boolean singleGroupMode, AllocatableClusterResources current) {
+    private int minNodes(Limits limits) {
         if (limits.isEmpty()) return minimumNodes;
-        if (singleGroupMode) return limits.min().nodes();
-        return Math.max(limits.min().nodes(), limits.min().groups() * current.groupSize() );
+        return limits.min().nodes();
     }
 
-    private int maxNodes(Limits limits, boolean singleGroupMode, AllocatableClusterResources current) {
+    private int maxNodes(Limits limits) {
         if (limits.isEmpty()) return maximumNodes;
-        if (singleGroupMode) return limits.max().nodes();
-        return Math.min(limits.max().nodes(), limits.max().groups() * current.groupSize() );
+        return limits.max().nodes();
     }
 
     /**

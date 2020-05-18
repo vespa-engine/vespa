@@ -450,21 +450,21 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 10, 30,  10),
                                                       resources(4, 2, 14, 40, 13)));
         tester.assertNodes("A mix of min and max",
-                           2, 1, 10, 30, 13.0,
+                           3, 1, 10, 30, 13.0,
                            app1, cluster1);
 
         // Changing group size
         tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  10),
                                                       resources(9, 3, 12, 35, 15)));
         tester.assertNodes("Groups changed",
-                           6, 3, 8, 30, 13,
+                           9, 3, 8, 30, 13,
                            app1, cluster1);
 
         // Stop specifying node resources
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified),
                                                       new ClusterResources(9, 3, NodeResources.unspecified)));
         tester.assertNodes("No change",
-                           6, 3, 8, 30, 13,
+                           9, 3, 8, 30, 13,
                            app1, cluster1);
     }
 
