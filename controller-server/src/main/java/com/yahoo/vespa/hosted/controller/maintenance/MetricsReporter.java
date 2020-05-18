@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -52,6 +53,7 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
+    public static final String OPERATION_PREFIX = "operation.";
 
     private final Metric metric;
     private final Clock clock;
@@ -71,6 +73,24 @@ public class MetricsReporter extends ControllerMaintainer {
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
         reportInfrastructureUpgradeMetrics();
+        reportAuditLog();
+    }
+
+    private void reportAuditLog() {
+        final String OPERATOR = "operator";
+
+        AuditLog log = controller().auditLogger().readLog();
+        for (AuditLog.Entry entry : log.entries()) {
+            String[] resource = entry.resource().split("/");
+            String operationMetric;
+            if(resource[1] != null) {
+                String api = resource[1];
+                operationMetric = OPERATION_PREFIX + api;
+                Metric.Context context = metric.createContext(Map.of(OPERATOR, entry.principal()));
+
+                metric.add(operationMetric, 1, context);
+            }
+        }
     }
 
     private void reportInfrastructureUpgradeMetrics() {

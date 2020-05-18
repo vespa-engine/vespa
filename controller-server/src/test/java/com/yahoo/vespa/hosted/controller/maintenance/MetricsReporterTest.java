@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -42,6 +43,34 @@ import static org.junit.Assert.assertTrue;
 public class MetricsReporterTest {
 
     private final MetricsMock metrics = new MetricsMock();
+
+    @Test
+    public void audit_log() {
+        var tester = new ControllerTester();
+        // Data to audit log
+
+        MetricsReporter metricsReporter = createReporter(tester.controller());
+        // Log some operator actions
+        HttpRequest req1 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.gq1.yahoo.com",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req1.getJDiscRequest().setUserPrincipal(() -> "user.bjormel");
+        tester.controller().auditLogger().log((req1));
+        HttpRequest req2 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/partner_publishing/application/contentindexing/instance/default/environment/prod/region/us-west-1",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req2.getJDiscRequest().setUserPrincipal(() -> "user.bjormel");
+        tester.controller().auditLogger().log((req2));
+
+        // End data to audit log
+        metricsReporter.maintain();
+        getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.bjormel");
+        getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.bjormel");
+
+
+    }
 
     @Test
     public void deployment_fail_ratio() {
@@ -481,6 +510,12 @@ public class MetricsReporterTest {
                                                  appDimension(id).equals(dimensions.get("app")),
                                  name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));
+    }
+
+    private Number getMetric(String name, String operator) {
+        return metrics.getMetric((dimensions) -> operator.equals(dimensions.get("operator")),
+                name)
+                .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + operator));
     }
 
     private MetricsReporter createReporter(Controller controller) {
