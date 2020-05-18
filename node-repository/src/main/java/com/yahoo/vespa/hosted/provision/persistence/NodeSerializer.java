@@ -19,17 +19,17 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.node.OsVersion;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -394,6 +394,7 @@ public class NodeSerializer {
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
             case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
+            case "RetiringUpgrader" : return Agent.RetiringUpgrader;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -410,6 +411,7 @@ public class NodeSerializer {
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case ReservationExpirer : return "ReservationExpirer";
             case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
+            case RetiringUpgrader: return "RetiringUpgrader";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

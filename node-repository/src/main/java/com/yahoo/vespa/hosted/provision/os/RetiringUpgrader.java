@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -66,15 +67,15 @@ public class RetiringUpgrader implements Upgrader {
             host = currentNode.get();
             NodeType nodeType = host.type();
             List<Node> nodesToRetire = nodeRepository.list().childrenOf(host).stream()
-                                                     .map(child -> child.with(child.status().withWantToRetire(true)))
+                                                     .map(child -> child.withWantToRetire(true, Agent.RetiringUpgrader, now))
                                                      .collect(Collectors.toList());
             LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +
                      host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                      ", want " + target);
             nodesToRetire.add(host.with(host.status()
-                                            .withWantToRetire(true)
                                             .withWantToDeprovision(true)
-                                            .withOsVersion(host.status().osVersion().withWanted(Optional.of(target)))));
+                                            .withOsVersion(host.status().osVersion().withWanted(Optional.of(target))))
+                                  .withWantToRetire(true, Agent.RetiringUpgrader, now));
             nodeRepository.write(nodesToRetire, lock);
             nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, nodeType));
         }
