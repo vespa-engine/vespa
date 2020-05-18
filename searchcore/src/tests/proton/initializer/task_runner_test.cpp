@@ -36,14 +36,17 @@ class NamedTask : public InitializerTask
 protected:
     vespalib::string  _name;
     TestLog          &_log;
+    size_t            _transient_memory_usage;
 public:
-    NamedTask(const vespalib::string &name, TestLog &log)
+    NamedTask(const vespalib::string &name, TestLog &log, size_t transient_memory_usage = 0)
         : _name(name),
-          _log(log)
+          _log(log),
+          _transient_memory_usage(transient_memory_usage)
     {
     }
 
     virtual void run() override { _log.append(_name); }
+    size_t get_transient_memory_usage() const override { return _transient_memory_usage; }
 };
 
 
@@ -79,6 +82,22 @@ struct TestJob {
         B->addDependency(D);
         return TestJob(std::move(log), std::move(C));
     }
+
+    static TestJob setupResourceUsingTasks()
+    {
+        auto log = std::make_unique<TestLog>();
+        auto task_a = std::make_shared<NamedTask>("A", *log, 0);
+        auto task_b = std::make_shared<NamedTask>("B", *log, 10);
+        auto task_c = std::make_shared<NamedTask>("C", *log, 2);
+        auto task_d = std::make_shared<NamedTask>("D", *log, 5);
+        auto task_e = std::make_shared<NamedTask>("E", *log, 0);
+        task_e->addDependency(task_a);
+        task_e->addDependency(task_b);
+        task_e->addDependency(task_c);
+        task_e->addDependency(task_d);
+        return TestJob(std::move(log), std::move(task_e));
+    }
+
 };
 
 TestJob::TestJob(TestLog::UP log, InitializerTask::SP root)
@@ -136,6 +155,13 @@ TEST_F("multiple threads, dag graph", Fixture(10))
         }
     }
     LOG(info, "dabc=%d, dbac=%d", dabc_count, dbac_count);
+}
+
+TEST_F("single thread with resource using tasks", Fixture(1))
+{
+    auto job = TestJob::setupResourceUsingTasks();
+    f.run(job._root);
+    EXPECT_EQUAL("BDCAE", job._log->result());
 }
 
 TEST_MAIN()
