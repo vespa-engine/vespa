@@ -47,23 +47,27 @@ public class AllocationOptimizer {
         int nodeIncrement = singleGroupMode ? 1 : current.groupSize();
 
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
+
         for (int nodes = minNodes(limits, singleGroupMode, current); nodes <= maxNodes(limits, singleGroupMode, current); nodes += nodeIncrement) {
-            int nodesAdjustedForRedundancy = nodes;
-            if (target.adjustForRedundancy())
-                nodesAdjustedForRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
-            if (nodesAdjustedForRedundancy < 1) continue;
-            int groups = singleGroupMode ? 1 : nodesAdjustedForRedundancy / current.groupSize();
-            System.out.println("nodes: " + nodesAdjustedForRedundancy + " singleGrouopMode: " + singleGroupMode + " current.groupSize " + current.groupSize() + " groups: " + groups);
+            int groups = singleGroupMode ? 1 : nodes / current.groupSize();
             if ( ! limits.isEmpty() && ( groups < limits.min().groups() || groups > limits.max().groups())) continue;
+
+            // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
+            // TODO: Make the best choice based on size and redundancy setting instead
+            int nodesAdjustedForRedundancy = target.adjustForRedundancy() ? nodes - nodeIncrement : nodes;
+            if (nodesAdjustedForRedundancy < 1) continue;
+            int groupsAdjustedForRedundancy = target.adjustForRedundancy() ? ( groups == 1 ? 1 : groups - 1 ) : groups;
+
             ClusterResources next = new ClusterResources(nodes,
-                                                         singleGroupMode ? 1 : nodes / current.groupSize(),
-                                                         nodeResourcesWith(nodesAdjustedForRedundancy, groups, limits, current, target));
+                                                         groups,
+                                                         nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
 
             var allocatableResources = AllocatableClusterResources.from(next, current.clusterType(), limits, nodeRepository);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;
         }
+
         return bestAllocation;
     }
 

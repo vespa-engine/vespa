@@ -254,6 +254,24 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void testAutoscalingGroupSize() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 3, 2, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(30, 10, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 6, 2, resources);
+        tester.addMeasurements(Resource.memory,  0.9f, 1f, 120, application1);
+        tester.assertResources("Should increase cluster size to reduce memory usage",
+                               9, 3, 2.7,  83.3, 83.3,
+                               tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    @Test
     public void testAutoscalingAvoidsIllegalConfigurations() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
