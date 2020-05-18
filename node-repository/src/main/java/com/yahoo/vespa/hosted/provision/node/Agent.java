@@ -7,9 +7,11 @@ package com.yahoo.vespa.hosted.provision.node;
  * @author bratseth
  */
 public enum Agent {
+
     operator, // A hosted Vespa operator. Some logic recognizes these events.
     application, // An application package change deployment
     system, // An unspecified system agent
+
     // Specific system agents:
     NodeFailer,
     Rebalancer,
@@ -18,5 +20,7 @@ public enum Agent {
     InactiveExpirer,
     ProvisionedExpirer,
     ReservationExpirer,
-    DynamicProvisioningMaintainer
+    DynamicProvisioningMaintainer,
+    RetiringUpgrader;
+
 }
