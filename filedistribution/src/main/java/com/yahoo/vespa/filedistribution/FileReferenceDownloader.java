@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -124,7 +125,7 @@ public class FileReferenceDownloader {
                 return true;
             } else {
                 log.log(logLevel, "File reference '" + fileReference + "' not found for " + connection.getAddress());
-                connectionPool.switchConnection();
+                connectionPool.setNewCurrentConnection();
                 return false;
             }
         } else {
