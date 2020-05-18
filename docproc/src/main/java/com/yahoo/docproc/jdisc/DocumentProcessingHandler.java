@@ -121,7 +121,8 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
     @Override
     protected void destroy() {
-        //threadPoolMap.values().forEach( pool -> pool.shutdown());  //calling shutdownNow() seems like a bit of an overkill
+        laterExecutor.shutdown();
+        docprocServiceRegistry.allComponents().forEach(docprocService -> docprocService.deconstruct());
     }
 
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {
