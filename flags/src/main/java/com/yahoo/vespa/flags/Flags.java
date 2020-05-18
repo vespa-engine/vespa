@@ -156,7 +156,7 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
     public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
-            "default-top-k-probability", 0.999999,
+            "default-top-k-probability", 0.99999,
             "Default probability that you will get the globally top K documents when merging many partitions.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
