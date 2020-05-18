@@ -16,6 +16,7 @@ vespa_add_library(searchcore_documentmetastore STATIC
     lidreusedelayer.cpp
     lidstatevector.cpp
     lid_hold_list.cpp
+    white_list_provider.cpp
     DEPENDS
     searchcore_attribute
     searchcore_bucketdb

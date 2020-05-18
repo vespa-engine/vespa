@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_allocator.h"
+#include "white_list_provider.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -191,13 +192,17 @@ LidAllocator::constructFreeList(DocId lidLimit)
 
 namespace {
 
-class WhiteListBlueprint : public SimpleLeafBlueprint
+class WhiteListBlueprint : public SimpleLeafBlueprint, public WhiteListProvider
 {
 private:
     const search::GrowableBitVector &_activeLids;
     const uint32_t _docIdLimit;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
+
+    search::BitVector::UP get_white_list_filter() const override {
+        return search::BitVector::create(_activeLids);
+    }
 
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda,
