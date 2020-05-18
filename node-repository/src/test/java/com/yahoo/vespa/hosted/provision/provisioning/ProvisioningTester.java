@@ -496,12 +496,16 @@ public class ProvisioningTester {
         activate(applicationId, Set.copyOf(list));
     }
 
-    public ClusterSpec clusterSpec() {
+    public ClusterSpec containerClusterSpec() {
         return ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
     }
 
+    public ClusterSpec contentClusterSpec() {
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+    }
+
     public List<Node> deploy(ApplicationId application, Capacity capacity) {
-        return deploy(application, clusterSpec(), capacity);
+        return deploy(application, containerClusterSpec(), capacity);
     }
 
     public List<Node> deploy(ApplicationId application, ClusterSpec cluster, Capacity capacity) {

@@ -14,6 +14,15 @@ import java.util.Optional;
  */
 public class AllocationOptimizer {
 
+    // The min and max nodes to consider when not using application supplied limits
+    private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
+    private static final int maximumNodes = 150;
+
+    // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
+    // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
+    // TODO: Measure this, and only take it into account with queries
+    private static final double fixedCpuCostFraction = 0.1;
+
     private final NodeRepository nodeRepository;
 
     public AllocationOptimizer(NodeRepository nodeRepository) {
@@ -30,143 +39,66 @@ public class AllocationOptimizer {
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
                                                                     Limits limits) {
+        if (limits.isEmpty())
+            limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified),
+                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (ResourceIterator i = new ResourceIterator(target, current, limits); i.hasNext(); ) {
-            var allocatableResources = AllocatableClusterResources.from(i.next(), current.clusterType(), limits, nodeRepository);
-            if (allocatableResources.isEmpty()) continue;
-            if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
-                bestAllocation = allocatableResources;
+        for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
+            for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
+                if (nodes % groups != 0) continue;
+                int groupSize = nodes / groups;
+
+                // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
+                // TODO: Make the best choice based on size and redundancy setting instead
+                int nodesAdjustedForRedundancy = target.adjustForRedundancy() ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
+                int groupsAdjustedForRedundancy = target.adjustForRedundancy() ? (groups == 1 ? 1 : groups - 1) : groups;
+
+                ClusterResources next = new ClusterResources(nodes,
+                                                             groups,
+                                                             nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
+
+                var allocatableResources = AllocatableClusterResources.from(next, current.clusterType(), limits, nodeRepository);
+                if (allocatableResources.isEmpty()) continue;
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
+                    bestAllocation = allocatableResources;
+            }
         }
+
         return bestAllocation;
     }
 
     /**
-     * Provides iteration over possible cluster resource allocations given a target total load
-     * and current groups/nodes allocation.
+     * For the observed load this instance is initialized with, returns the resources needed per node to be at
+     * ideal load given a target node count
      */
-    private static class ResourceIterator {
+    private NodeResources nodeResourcesWith(int nodes, int groups, Limits limits, AllocatableClusterResources current, ResourceTarget target) {
+        // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
+        // Memory and disk: Scales with group size
+        double cpu, memory, disk;
 
-        // The min and max nodes to consider when not using application supplied limits
-        private static final int minimumNodes = 3; // Since this number includes redundancy it cannot be lower than 2
-        private static final int maximumNodes = 150;
+        int groupSize = nodes / groups;
 
-        // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
-        // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
-        // TODO: Measure this, and only take it into account with queries
-        private static final double fixedCpuCostFraction = 0.1;
-
-        // Given state
-        private final Limits limits;
-        private final AllocatableClusterResources current;
-        private final ResourceTarget target;
-
-        // Derived from the observed state
-        private final int nodeIncrement;
-        private final boolean singleGroupMode;
-
-        // Iterator state
-        private int currentNodes;
-
-        public ResourceIterator(ResourceTarget target, AllocatableClusterResources current, Limits limits) {
-            this.target = target;
-            this.current = current;
-            this.limits = limits;
-
-            // What number of nodes is it effective to add or remove at the time from this cluster?
-            // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
-            // and we decide the number of groups.
-            // The exception is when we only have one group, where we can add and remove single nodes in it.
-            singleGroupMode = current.groups() == 1;
-            nodeIncrement = singleGroupMode ? 1 : current.groupSize();
-
-            // Step to the right starting point
-            currentNodes = current.nodes();
-            if (currentNodes < minNodes()) { // step up
-                while (currentNodes < minNodes()
-                       && (singleGroupMode || currentNodes + nodeIncrement > current.groupSize())) // group level redundancy
-                    currentNodes += nodeIncrement;
-            }
-            else { // step down
-                while (currentNodes - nodeIncrement >= minNodes()
-                       && (singleGroupMode || currentNodes - nodeIncrement > current.groupSize())) // group level redundancy
-                    currentNodes -= nodeIncrement;
-            }
+        if (current.clusterType().isContent()) { // load scales with node share of content
+            // The fixed cost portion of cpu does not scale with changes to the node count
+            // TODO: Only for the portion of cpu consumed by queries
+            double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
+                                 (1 - fixedCpuCostFraction) * target.nodeCpu() * current.groupSize() / groupSize;
+            cpu = cpuPerGroup * current.groups() / groups;
+            memory = target.nodeMemory() * current.groupSize() / groupSize;
+            disk = target.nodeDisk() * current.groupSize() / groupSize;
+        }
+        else {
+            cpu = target.nodeCpu() * current.nodes() / nodes;
+            memory = target.nodeMemory();
+            disk = target.nodeDisk();
         }
 
-        public ClusterResources next() {
-            ClusterResources next = resourcesWith(currentNodes);
-            currentNodes += nodeIncrement;
-            return next;
-        }
-
-        public boolean hasNext() {
-            return currentNodes <= maxNodes();
-        }
-
-        private int minNodes() {
-            if (limits.isEmpty()) return minimumNodes;
-            if (singleGroupMode) return limits.min().nodes();
-            return Math.max(limits.min().nodes(), limits.min().groups() * current.groupSize() );
-        }
-
-        private int maxNodes() {
-            if (limits.isEmpty()) return maximumNodes;
-            if (singleGroupMode) return limits.max().nodes();
-            return Math.min(limits.max().nodes(), limits.max().groups() * current.groupSize() );
-        }
-
-        private ClusterResources resourcesWith(int nodes) {
-            int nodesAdjustedForRedundancy = nodes;
-            if (target.adjustForRedundancy())
-                nodesAdjustedForRedundancy = nodes - (singleGroupMode ? 1 : current.groupSize());
-            return new ClusterResources(nodes,
-                                        singleGroupMode ? 1 : nodes / current.groupSize(),
-                                        nodeResourcesWith(nodesAdjustedForRedundancy));
-        }
-
-        /**
-         * For the observed load this instance is initialized with, returns the resources needed per node to be at
-         * ideal load given a target node count
-         */
-        private NodeResources nodeResourcesWith(int nodeCount) {
-            // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
-            // Memory and disk: Scales with group size
-
-            double cpu, memory, disk;
-            if (singleGroupMode) {
-                // The fixed cost portion of cpu does not scale with changes to the node count
-                // TODO: Only for the portion of cpu consumed by queries
-                cpu = fixedCpuCostFraction * target.clusterCpu() / current.groupSize() +
-                      (1 - fixedCpuCostFraction) * target.clusterCpu() / nodeCount;
-
-                if (current.clusterType().isContent()) { // load scales with node share of content
-                    memory = target.groupMemory() / nodeCount;
-                    disk = target.groupDisk() / nodeCount;
-                }
-                else {
-                    memory = target.nodeMemory();
-                    disk = target.nodeDisk();
-                }
-            }
-            else {
-                cpu = target.clusterCpu() / nodeCount;
-                if (current.clusterType().isContent()) { // load scales with node share of content
-                    memory = target.groupMemory() / current.groupSize();
-                    disk = target.groupDisk() / current.groupSize();
-                }
-                else {
-                    memory = target.nodeMemory();
-                    disk = target.nodeDisk();
-                }
-            }
-
-            // Combine the scaled resource values computed here
-            // with the currently configured non-scaled values, given in the limits, if any
-            NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
-                                      ? current.toAdvertisedClusterResources().nodeResources()
-                                      : limits.min().nodeResources(); // min=max for non-scaled
-            return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
-        }
-
+        // Combine the scaled resource values computed here
+        // with the currently configured non-scaled values, given in the limits, if any
+        NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
+                                  ? current.toAdvertisedClusterResources().nodeResources()
+                                  : limits.min().nodeResources(); // min=max for non-scaled
+        return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
+
 }

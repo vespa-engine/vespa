@@ -19,12 +19,10 @@ import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
-import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -42,10 +40,10 @@ public class ScalingSuggestionsMaintainerTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
-        ClusterSpec cluster1 = tester.clusterSpec();
+        ClusterSpec cluster1 = tester.containerClusterSpec();
 
         ApplicationId app2 = tester.makeApplicationId("app2");
-        ClusterSpec cluster2 = tester.clusterSpec();
+        ClusterSpec cluster2 = tester.contentClusterSpec();
 
         NodeMetricsDb nodeMetricsDb = new NodeMetricsDb();
 
@@ -71,9 +69,9 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    Duration.ofMinutes(1));
         maintainer.maintain();
 
-        assertEquals("7 nodes with [vcpu: 15.3, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+        assertEquals("14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
                      tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().toString());
-        assertEquals("7 nodes with [vcpu: 16.8, memory: 5.7 Gb, disk 16.5 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+        assertEquals("8 nodes with [vcpu: 14.7, memory: 4.0 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
                      tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().toString());
     }
 

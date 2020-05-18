@@ -41,10 +41,10 @@ public class AutoscalingMaintainerTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
-        ClusterSpec cluster1 = tester.clusterSpec();
+        ClusterSpec cluster1 = tester.containerClusterSpec();
 
         ApplicationId app2 = tester.makeApplicationId("app2");
-        ClusterSpec cluster2 = tester.clusterSpec();
+        ClusterSpec cluster2 = tester.containerClusterSpec();
 
         NodeResources lowResources = new NodeResources(4, 4, 10, 0.1);
         NodeResources highResources = new NodeResources(6.5, 9, 20, 0.1);
