@@ -11,26 +11,6 @@ using TFMD = search::fef::TermFieldMatchData;
 
 namespace search::queryeval {
 
-namespace {
-
-template <typename It>
-int32_t try_match(const fef::TermFieldMatchDataArray &match, std::vector<It> &iterators, uint32_t cand) {
-    for (size_t i = 0; i < iterators.size(); ++i) {
-        while ((iterators[i] != match[i]->end()) && (iterators[i]->getElementId() < cand)) {
-            ++iterators[i];
-        }
-        if (iterators[i] == match[i]->end()) {
-            return -1;
-        }
-        if (iterators[i]->getElementId() != cand) {
-            return iterators[i]->getElementId();
-        }
-    }
-    return cand;
-}
-
-}
-
 bool
 SameElementSearch::check_docid_match(uint32_t docid)
 {
@@ -43,41 +23,30 @@ SameElementSearch::check_docid_match(uint32_t docid)
 }
 
 void
-SameElementSearch::unpack_children(uint32_t docid)
+SameElementSearch::fetch_matching_elements(uint32_t docid, std::vector<uint32_t> & elems)
 {
-    for (const auto &child: _children) {
-        child->doUnpack(docid);
-    }
-    for (size_t i = 0; i < _childMatch.size(); ++i) {
-        _iterators[i] = _childMatch[i]->begin();
+    _children.front()->getElementIds(docid, elems);
+    for (auto it(_children.begin() + 1); it != _children.end();  it++) {
+        (*it)->mergeElementIds(docid, elems);
     }
 }
 
 bool
 SameElementSearch::check_element_match(uint32_t docid)
 {
-    unpack_children(docid);
-    int32_t cand = 0;
-    int32_t next = try_match(_childMatch, _iterators, cand);
-    while (next > cand) {
-        cand = next;
-        next = try_match(_childMatch, _iterators, cand);
-    }
-    return (cand == next);
+    _matchingElements.clear();
+    fetch_matching_elements(docid, _matchingElements);
+    return !_matchingElements.empty();
 }
 
 SameElementSearch::SameElementSearch(fef::MatchData::UP md,
-                                     std::vector<SearchIterator::UP> children,
-                                     const fef::TermFieldMatchDataArray &childMatch,
+                                     std::vector<ElementIterator::UP> children,
                                      bool strict)
     : _md(std::move(md)),
       _children(std::move(children)),
-      _childMatch(childMatch),
-      _iterators(childMatch.size()),
       _strict(strict)
 {
     assert(!_children.empty());
-    assert(_childMatch.valid());
 }
 
 void
@@ -118,17 +87,7 @@ void
 SameElementSearch::find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst)
 {
     if (check_docid_match(docid)) {
-        unpack_children(docid);
-        int32_t cand = 0;
-        while (cand >= 0) {
-            int32_t next = try_match(_childMatch, _iterators, cand);
-            if (next == cand) {
-                dst.push_back(cand);
-                ++cand;
-            } else {
-                cand = next;
-            }
-        }
+        fetch_matching_elements(docid, dst);
     }
 }
 

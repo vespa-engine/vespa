@@ -4,7 +4,7 @@
 #include "same_element_search.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/attribute/elementiterator.h>
+#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <map>
@@ -48,8 +48,7 @@ void
 SameElementBlueprint::optimize_self()
 {
     std::sort(_terms.begin(), _terms.end(),
-              [](const auto &a, const auto &b)
-              {
+              [](const auto &a, const auto &b) {
                   return (a->getState().estimate() < b->getState().estimate());
               });
 }
@@ -66,34 +65,23 @@ std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(bool strict) const
 {
     fef::MatchDataLayout my_layout = _layout;
-    std::vector<fef::TermFieldHandle> extra_handles;
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        const State &childState = _terms[i]->getState();
-        assert(childState.numFields() == 1);
-        extra_handles.push_back(my_layout.allocTermField(childState.field(0).getFieldId()));
-    }
     fef::MatchData::UP md = my_layout.createMatchData();
-    search::fef::TermFieldMatchDataArray childMatch;
-    std::vector<SearchIterator::UP> children(_terms.size());
+    std::vector<ElementIterator::UP> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         SearchIterator::UP child = _terms[i]->createSearch(*md, (strict && (i == 0)));
         const attribute::ISearchContext *context = _terms[i]->get_attribute_search_context();
         if (context == nullptr) {
-            children[i] = std::move(child);
-            childMatch.add(childState.field(0).resolve(*md));
+            children[i] = std::make_unique<ElementIteratorWrapper>(std::move(child), *childState.field(0).resolve(*md));
         } else {
-            fef::TermFieldMatchData *child_tfmd = md->resolveTermField(extra_handles[i]);
-            children[i] = std::make_unique<attribute::ElementIterator>(std::move(child), *context, *child_tfmd);
-            childMatch.add(child_tfmd);
+            children[i] = std::make_unique<attribute::SearchContextElementIterator>(std::move(child), *context);
         }
     }
-    return std::make_unique<SameElementSearch>(std::move(md), std::move(children), childMatch, strict);
+    return std::make_unique<SameElementSearch>(std::move(md), std::move(children), strict);
 }
 
 SearchIterator::UP
-SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                                       bool strict) const
+SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {
     (void) tfmda;
     assert(!tfmda.valid());

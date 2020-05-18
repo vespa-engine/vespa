@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "searchiterator.h"
+#include "elementiterator.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -21,26 +21,24 @@ class SameElementSearch : public SearchIterator
 private:
     using It = fef::TermFieldMatchData::PositionsIterator;
 
-    fef::MatchData::UP              _md;
-    std::vector<SearchIterator::UP> _children;
-    fef::TermFieldMatchDataArray    _childMatch;
-    std::vector<It>                 _iterators;
-    bool                            _strict;
+    fef::MatchData::UP               _md;
+    std::vector<ElementIterator::UP> _children;
+    std::vector<uint32_t>            _matchingElements;
+    bool                             _strict;
 
-    void unpack_children(uint32_t docid);
+    void fetch_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
     bool check_docid_match(uint32_t docid);
     bool check_element_match(uint32_t docid);
 
 public:
     SameElementSearch(fef::MatchData::UP md,
-                      std::vector<SearchIterator::UP> children,
-                      const fef::TermFieldMatchDataArray &childMatch,
+                      std::vector<ElementIterator::UP> children,
                       bool strict);
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t) override {}
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::vector<SearchIterator::UP> &children() const { return _children; }
+    const std::vector<ElementIterator::UP> &children() const { return _children; }
 
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.
