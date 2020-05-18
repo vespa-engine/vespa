@@ -340,6 +340,7 @@ public class ApplicationController {
                         applicationRoles = controller.serviceRegistry().applicationRoleService().createApplicationRoles(instance.id());
                     } catch (Exception e) {
                         log.log(Level.SEVERE, "Exception creating application roles for application: " + instance.id(), e);
+                        throw new RuntimeException("Unable to provision iam roles for application");
                     }
                 }
             } // Release application lock while doing the deployment, which is a lengthy task.
