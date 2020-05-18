@@ -81,8 +81,6 @@ verifyMergeElementIds(queryeval::ElementIterator & elemIt, std::vector<uint32_t>
     for (uint32_t docId : {1,2,3,4,5}) {
         const auto & expected = expectedALL[docId];
         elems = initial;
-        EXPECT_EQ(expected.empty(), !elemIt.seek(docId));
-        assert(expected.empty() != elemIt.seek(docId));
         if (elemIt.seek(docId)) {
             elemIt.mergeElementIds(docId, elems);
             EXPECT_EQ(expected.size(), elems.size());
@@ -96,9 +94,11 @@ verifyElementIterator(queryeval::ElementIterator & elemIt) {
     verifySeek(elemIt);
     std::vector<std::vector<uint32_t>> expectedALL = {{}, {}, {0, 3}, {}, {0, 5}, {}};
     std::vector<std::vector<uint32_t>> expectedNONE = {{}, {}, {}, {}, {}, {}};
+    std::vector<std::vector<uint32_t>> expectedSOME = {{}, {}, {3}, {}, {5}, {}};
     verifyGetElementIds(elemIt, expectedALL);
     verifyMergeElementIds(elemIt, {0,1,2,3,4,5}, expectedALL);
-    //verifyMergeElementIds(elemIt, {}, expectedNONE);
+    verifyMergeElementIds(elemIt, {}, expectedNONE);
+    verifyMergeElementIds(elemIt, {1,3,4,5}, expectedSOME);
 }
 
 }
