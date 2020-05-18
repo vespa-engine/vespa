@@ -39,8 +39,7 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
-            if (node.status().wantToRetire() &&
-                node.history().event(History.Event.Type.wantToRetire).get().agent() == Agent.operator) {
+            if (retiredByOperator(node)) {
                 nodeRepository.park(node.hostname(), false, Agent.InactiveExpirer, "Expired by InactiveExpirer");
             } else {
                 nodeRepository.setDirty(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
@@ -52,6 +51,13 @@ public class InactiveExpirer extends Expirer {
     protected boolean isExpired(Node node) {
         return    super.isExpired(node)
                || node.allocation().get().owner().instance().isTester();
+    }
+
+    private static boolean retiredByOperator(Node node) {
+        return node.status().wantToRetire() && node.history().event(History.Event.Type.wantToRetire)
+                                                   .map(History.Event::agent)
+                                                   .map(agent -> agent == Agent.operator)
+                                                   .orElse(false);
     }
 
 }
