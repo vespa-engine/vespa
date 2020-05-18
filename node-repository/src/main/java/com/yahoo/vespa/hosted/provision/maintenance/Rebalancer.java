@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -23,6 +22,7 @@ import java.util.Optional;
  * @author bratseth
  */
 public class Rebalancer extends NodeRepositoryMaintainer {
+    static final Duration waitTimeAfterPreviousDeployment = Duration.ofMinutes(30);
 
     private final Deployer deployer;
     private final Optional<HostProvisioner> hostProvisioner;
@@ -87,7 +87,9 @@ public class Rebalancer extends NodeRepositoryMaintainer {
         Move bestMove = Move.none;
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
-            if (node.allocation().get().owner().instance().isTester()) continue;
+            ApplicationId applicationId = node.allocation().get().owner();
+            if (applicationId.instance().isTester()) continue;
+            if (deployedRecently(applicationId)) continue;
             for (Node toHost : allNodes.filter(nodeRepository()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
@@ -167,6 +169,14 @@ public class Rebalancer extends NodeRepositoryMaintainer {
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
+    }
+
+    protected boolean deployedRecently(ApplicationId application) {
+        return deployer.lastDeployTime(application)
+                .map(lastDeployTime -> lastDeployTime.isAfter(clock.instant().minus(waitTimeAfterPreviousDeployment)))
+                // We only know last deploy time for applications that were deployed on this config server,
+                // the rest will be deployed on another config server
+                .orElse(true);
     }
 
     private static class Move {
