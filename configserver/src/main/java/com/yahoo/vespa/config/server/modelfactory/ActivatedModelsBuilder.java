@@ -16,7 +16,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
@@ -28,10 +27,11 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -39,6 +39,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -147,7 +148,9 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readEndpointCertificateMetadata(applicationId)
                                                        .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets),
-                                               zkClient.readAthenzDomain());
+                                               zkClient.readAthenzDomain(),
+                                               new ApplicationRolesStore(curator, TenantRepository.getTenantPath(tenant))
+                                                       .readApplicationRoles(applicationId));
 
     }
 

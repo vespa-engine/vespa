@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -156,6 +157,7 @@ public class ModelContextImpl implements ModelContext {
         private final double queueSizefactor;
         private final int defaultNumResponseThreads;
         private final Optional<AthenzDomain> athenzDomain;
+        private final Optional<ApplicationRoles> applicationRoles;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -170,7 +172,8 @@ public class ModelContextImpl implements ModelContext {
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource,
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
-                          Optional<AthenzDomain> athenzDomain) {
+                          Optional<AthenzDomain> athenzDomain,
+                          Optional<ApplicationRoles> applicationRoles) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -202,6 +205,7 @@ public class ModelContextImpl implements ModelContext {
             defaultNumResponseThreads = Flags.DEFAULT_NUM_RESPONSE_THREADS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
+            this.applicationRoles = applicationRoles;
         }
 
         @Override
@@ -287,6 +291,10 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
+        @Override
+        public Optional<ApplicationRoles> applicationRoles() {
+            return applicationRoles;
+        }
     }
 
 }

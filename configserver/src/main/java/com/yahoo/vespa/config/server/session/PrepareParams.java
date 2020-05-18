@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.provision.ApplicationId;
@@ -38,6 +39,8 @@ public final class PrepareParams {
     static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
     static final String DOCKER_IMAGE_REPOSITORY = "dockerImageRepository";
     static final String ATHENZ_DOMAIN = "athenzDomain";
+    static final String APPLICATION_HOST_ROLE = "applicationHostRole";
+    static final String APPLICATION_CONTAINER_ROLE = "applicationContainerRole";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -51,12 +54,14 @@ public final class PrepareParams {
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepository;
     private final Optional<AthenzDomain> athenzDomain;
+    private final Optional<ApplicationRoles> applicationRoles;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain) {
+                          Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
+                          Optional<ApplicationRoles> applicationRoles) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -69,6 +74,7 @@ public final class PrepareParams {
         this.endpointCertificateMetadata = endpointCertificateMetadata;
         this.dockerImageRepository = dockerImageRepository;
         this.athenzDomain = athenzDomain;
+        this.applicationRoles = applicationRoles;
     }
 
     public static class Builder {
@@ -85,6 +91,7 @@ public final class PrepareParams {
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
         private Optional<DockerImage> dockerImageRepository = Optional.empty();
         private Optional<AthenzDomain> athenzDomain = Optional.empty();
+        private Optional<ApplicationRoles> applicationRoles = Optional.empty();
 
         public Builder() { }
 
@@ -174,12 +181,17 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder applicationRoles(ApplicationRoles applicationRoles) {
+            this.applicationRoles = Optional.ofNullable(applicationRoles);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,
-                                     endpointCertificateMetadata, dockerImageRepository, athenzDomain);
+                                     endpointCertificateMetadata, dockerImageRepository, athenzDomain,
+                                     applicationRoles);
         }
-
     }
 
     public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, Duration barrierTimeout) {
@@ -194,6 +206,7 @@ public final class PrepareParams {
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
                             .dockerImageRepository(request.getProperty(DOCKER_IMAGE_REPOSITORY))
                             .athenzDomain(request.getProperty(ATHENZ_DOMAIN))
+                            .applicationRoles(ApplicationRoles.fromString(request.getProperty(APPLICATION_HOST_ROLE), request.getProperty(APPLICATION_CONTAINER_ROLE)))
                             .build();
     }
 
@@ -261,4 +274,7 @@ public final class PrepareParams {
 
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
+    public Optional<ApplicationRoles> applicationRoles() {
+        return applicationRoles;
+    }
 }
