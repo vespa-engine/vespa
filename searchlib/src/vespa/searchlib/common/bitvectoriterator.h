@@ -4,11 +4,11 @@
 
 #include "bitvector.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search {
 
 namespace fef { class TermFieldMatchDataArray; }
-namespace fef { class TermFieldMatchData; }
 
 class BitVectorIterator : public queryeval::SearchIterator
 {
@@ -20,7 +20,9 @@ protected:
     const BitVector & _bv;
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void doUnpack(uint32_t docId) override;
+    void doUnpack(uint32_t docId) override final {
+        _tfmd.resetOnlyDocId(docId);
+    }
     bool isBitVector() const override { return true; }
     fef::TermFieldMatchData  &_tfmd;
 public:

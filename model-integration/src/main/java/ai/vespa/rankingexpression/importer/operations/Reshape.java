@@ -166,7 +166,7 @@ public class Reshape extends IntermediateOperation {
                 ExpressionNode previousSize = new ConstantNode(new DoubleValue(previousInnerSize));
                 ExpressionNode mod = new ArithmeticNode(unrolled, ArithmeticOperator.MODULO, previousSize);
                 ExpressionNode div = new ArithmeticNode(new EmbracedNode(mod), ArithmeticOperator.DIVIDE, size);
-                inputDimensionExpression = new EmbracedNode(new FunctionNode(Function.floor, div));
+                inputDimensionExpression = new EmbracedNode(div);
             }
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(inputDimensionExpression)));
         }

@@ -120,8 +120,14 @@ public class UserApiHandler extends LoggingRequestHandler {
         return response;
     }
 
+
     private HttpResponse userMetadata(HttpRequest request) {
-        User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+        @SuppressWarnings("unchecked")
+        Map<String, String> userAttributes = (Map<String, String>) getAttribute(request, User.ATTRIBUTE_NAME, Map.class);
+        User user = new User(userAttributes.get("email"),
+                             userAttributes.get("name"),
+                             userAttributes.get("nickname"),
+                             userAttributes.get("picture"));
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()

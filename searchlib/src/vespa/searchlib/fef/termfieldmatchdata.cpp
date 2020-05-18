@@ -104,7 +104,8 @@ TermFieldMatchData::swap(TermFieldMatchData &rhs)
 
 namespace {
 
-constexpr size_t MAX_ELEMS =  std::numeric_limits<uint16_t>::max();
+constexpr size_t MAX_ELEMS = std::numeric_limits<uint16_t>::max();
+constexpr size_t INITIAL_ELEMS = 1024/sizeof(TermFieldMatchDataPosition);
 
 }
 
@@ -128,7 +129,7 @@ TermFieldMatchData::allocateVector()
 {
     assert(_sz < 2);
     assert(!allocated());
-    size_t newSize = 2;
+    size_t newSize = INITIAL_ELEMS;
     TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
     if (_sz > 0) {
         n[0] = *getFixed();

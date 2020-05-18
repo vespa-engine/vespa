@@ -39,7 +39,8 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundIntFlag DROP_CACHES = defineIntFlag("drop-caches", 3,
+    public static final UnboundIntFlag DROP_CACHES = defineIntFlag(
+            "drop-caches", 3,
             "The int value to write into /proc/sys/vm/drop_caches for each tick. " +
             "1 is page cache, 2 is dentries inodes, 3 is both page cache and dentries inodes, etc.",
             "Takes effect on next tick.",
@@ -195,12 +196,6 @@ public class Flags {
             "The version of ZooKeeper server to use (major.minor, not full version)",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
-    public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-quorum-communication", "TLS_WITH_PORT_UNIFICATION",
-            "How to setup TLS for ZooKeeper quorum communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
-            "Takes effect on restart of config server",
-            NODE_TYPE, HOSTNAME);
 
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
             "tls-for-zookeeper-client-server-communication", "OFF",

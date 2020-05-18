@@ -89,7 +89,9 @@ public enum RoleDefinition {
 
     systemFlagsDryrunner(Policy.systemFlagsDryrun),
 
-    paymentProcessor(Policy.paymentProcessor);
+    paymentProcessor(Policy.paymentProcessor),
+
+    hostedAccountant(Policy.hostedAccountant);
 
     private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;

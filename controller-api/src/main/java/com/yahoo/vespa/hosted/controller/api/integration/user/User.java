@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 public class User {
 
-    public static final String ATTRIBUTE_NAME = User.class.getName();
+    public static final String ATTRIBUTE_NAME = "vespa.user.attributes";
 
     private final String email;
     private final String name;

@@ -159,10 +159,13 @@ function(vespa_use_default_build_settings)
   endif()
   if(VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 6.10")
     setup_vespa_default_build_settings_rhel_6_10()
-  elseif(VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 7.7" OR 
-      VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 7.8")
+  elseif(VESPA_OS_DISTRO STREQUAL "rhel" AND
+      VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "7" AND
+      VESPA_OS_DISTRO_VERSION VERSION_LESS "8")
     setup_vespa_default_build_settings_rhel_7()
-  elseif(VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 8.1")
+  elseif(VESPA_OS_DISTRO STREQUAL "rhel" AND
+      VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "8" AND
+      VESPA_OS_DISTRO_VERSION VERSION_LESS "9")
     setup_vespa_default_build_settings_rhel_8()
   elseif(VESPA_OS_DISTRO_COMBINED STREQUAL "centos 7")
     setup_vespa_default_build_settings_centos_7()

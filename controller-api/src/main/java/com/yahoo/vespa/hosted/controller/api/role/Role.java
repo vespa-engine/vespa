@@ -76,6 +76,9 @@ public abstract class Role {
     /** Returns the role of the payment processor */
     public static UnboundRole paymentProcessor() { return new UnboundRole(RoleDefinition.paymentProcessor); }
 
+    /** Returns the role of the invoice manager */
+    public static UnboundRole hostedAccountant() { return new UnboundRole(RoleDefinition.hostedAccountant); }
+
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }
 

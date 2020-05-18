@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("termmatchdatamerger_test");
-#include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termmatchdatamerger.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 
@@ -21,19 +18,7 @@ TermFieldMatchDataPosition make_pos(uint32_t pos)
 
 } // namespace <unnamed>
 
-class Test : public vespalib::TestApp
-{
-public:
-    void testMergeEmptyInput();
-    void testMergeSimple();
-    void testMergeMultifield();
-    void testMergeDuplicates();
-    void testMergeFieldLength();
-    int Main() override;
-};
-
-void
-Test::testMergeEmptyInput()
+TEST(TermMatchDataMergerTest, merge_empty_input)
 {
     TermFieldMatchData out;
     TermFieldMatchDataArray output;
@@ -48,12 +33,11 @@ Test::testMergeEmptyInput()
     uint32_t docid = 5;
     in.reset(docid);
     merger.merge(docid);
-    EXPECT_EQUAL(docid, out.getDocId());
+    EXPECT_EQ(docid, out.getDocId());
     EXPECT_TRUE(out.begin() == out.end());
 }
 
-void
-Test::testMergeSimple()
+TEST(TermMatchDataMergerTest, merge_simple)
 {
     TermFieldMatchData a;
     TermFieldMatchData b;
@@ -86,26 +70,26 @@ Test::testMergeSimple()
 
     merger.merge(docid);
 
-    EXPECT_EQUAL(docid, out.getDocId());
-    EXPECT_EQUAL(8u, out.end() - out.begin());
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(8u, out.end() - out.begin());
 
-    EXPECT_EQUAL( 5u, out.begin()[0].getPosition());
-    EXPECT_EQUAL( 7u, out.begin()[1].getPosition());
-    EXPECT_EQUAL(10u, out.begin()[2].getPosition());
-    EXPECT_EQUAL(15u, out.begin()[3].getPosition());
-    EXPECT_EQUAL(20u, out.begin()[4].getPosition());
-    EXPECT_EQUAL(22u, out.begin()[5].getPosition());
-    EXPECT_EQUAL(27u, out.begin()[6].getPosition());
-    EXPECT_EQUAL(28u, out.begin()[7].getPosition());
+    EXPECT_EQ( 5u, out.begin()[0].getPosition());
+    EXPECT_EQ( 7u, out.begin()[1].getPosition());
+    EXPECT_EQ(10u, out.begin()[2].getPosition());
+    EXPECT_EQ(15u, out.begin()[3].getPosition());
+    EXPECT_EQ(20u, out.begin()[4].getPosition());
+    EXPECT_EQ(22u, out.begin()[5].getPosition());
+    EXPECT_EQ(27u, out.begin()[6].getPosition());
+    EXPECT_EQ(28u, out.begin()[7].getPosition());
 
-    EXPECT_EQUAL(0.25, out.begin()[0].getMatchExactness());
-    EXPECT_EQUAL( 0.5, out.begin()[1].getMatchExactness());
-    EXPECT_EQUAL( 1.5, out.begin()[2].getMatchExactness());
-    EXPECT_EQUAL( 1.0, out.begin()[3].getMatchExactness());
-    EXPECT_EQUAL( 4.0, out.begin()[4].getMatchExactness());
-    EXPECT_EQUAL(0.75, out.begin()[5].getMatchExactness());
-    EXPECT_EQUAL( 3.0, out.begin()[6].getMatchExactness());
-    EXPECT_EQUAL( 7.5, out.begin()[7].getMatchExactness());
+    EXPECT_EQ(0.25, out.begin()[0].getMatchExactness());
+    EXPECT_EQ( 0.5, out.begin()[1].getMatchExactness());
+    EXPECT_EQ( 1.5, out.begin()[2].getMatchExactness());
+    EXPECT_EQ( 1.0, out.begin()[3].getMatchExactness());
+    EXPECT_EQ( 4.0, out.begin()[4].getMatchExactness());
+    EXPECT_EQ(0.75, out.begin()[5].getMatchExactness());
+    EXPECT_EQ( 3.0, out.begin()[6].getMatchExactness());
+    EXPECT_EQ( 7.5, out.begin()[7].getMatchExactness());
 
     // one stale input
 
@@ -117,24 +101,22 @@ Test::testMergeSimple()
 
     merger.merge(docid);
 
-    EXPECT_EQUAL(docid, out.getDocId());
-    EXPECT_EQUAL(3u, out.end() - out.begin());
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(3u, out.end() - out.begin());
 
-    EXPECT_EQUAL( 5u, out.begin()[0].getPosition());
-    EXPECT_EQUAL(10u, out.begin()[1].getPosition());
-    EXPECT_EQUAL(15u, out.begin()[2].getPosition());
+    EXPECT_EQ( 5u, out.begin()[0].getPosition());
+    EXPECT_EQ(10u, out.begin()[1].getPosition());
+    EXPECT_EQ(15u, out.begin()[2].getPosition());
 
     // both inputs are stale
 
     docid = 15;
 
     merger.merge(docid);
-    EXPECT_NOT_EQUAL(docid, out.getDocId());
+    EXPECT_NE(docid, out.getDocId());
 }
 
-
-void
-Test::testMergeMultifield()
+TEST(TermMatchDataMergerTest, merge_multiple_fields)
 {
     TermFieldMatchData a;
     TermFieldMatchData b;
@@ -174,30 +156,29 @@ Test::testMergeMultifield()
 
     merger.merge(docid);
 
-    EXPECT_EQUAL(docid, out1.getDocId());
-    EXPECT_EQUAL(docid, out2.getDocId());
-    EXPECT_NOT_EQUAL(docid, out3.getDocId());
+    EXPECT_EQ(docid, out1.getDocId());
+    EXPECT_EQ(docid, out2.getDocId());
+    EXPECT_NE(docid, out3.getDocId());
 
-    EXPECT_EQUAL(2u, out1.end() - out1.begin());
-    EXPECT_EQUAL(3u, out2.end() - out2.begin());
+    EXPECT_EQ(2u, out1.end() - out1.begin());
+    EXPECT_EQ(3u, out2.end() - out2.begin());
 
-    EXPECT_EQUAL( 5u, out1.begin()[0].getPosition());
-    EXPECT_EQUAL(15u, out1.begin()[1].getPosition());
+    EXPECT_EQ( 5u, out1.begin()[0].getPosition());
+    EXPECT_EQ(15u, out1.begin()[1].getPosition());
 
-    EXPECT_EQUAL( 5u, out2.begin()[0].getPosition());
-    EXPECT_EQUAL( 7u, out2.begin()[1].getPosition());
-    EXPECT_EQUAL(20u, out2.begin()[2].getPosition());
+    EXPECT_EQ( 5u, out2.begin()[0].getPosition());
+    EXPECT_EQ( 7u, out2.begin()[1].getPosition());
+    EXPECT_EQ(20u, out2.begin()[2].getPosition());
 
-    EXPECT_EQUAL(1.0, out1.begin()[0].getMatchExactness());
-    EXPECT_EQUAL(1.0, out1.begin()[1].getMatchExactness());
+    EXPECT_EQ(1.0, out1.begin()[0].getMatchExactness());
+    EXPECT_EQ(1.0, out1.begin()[1].getMatchExactness());
 
-    EXPECT_EQUAL(1.5, out2.begin()[0].getMatchExactness());
-    EXPECT_EQUAL(0.5, out2.begin()[1].getMatchExactness());
-    EXPECT_EQUAL(1.5, out2.begin()[2].getMatchExactness());
+    EXPECT_EQ(1.5, out2.begin()[0].getMatchExactness());
+    EXPECT_EQ(0.5, out2.begin()[1].getMatchExactness());
+    EXPECT_EQ(1.5, out2.begin()[2].getMatchExactness());
 }
 
-void
-Test::testMergeDuplicates()
+TEST(TermMatchDataMergerTest, merge_duplicates)
 {
     TermFieldMatchData a;
     TermFieldMatchData b;
@@ -225,23 +206,22 @@ Test::testMergeDuplicates()
 
     merger.merge(docid);
 
-    EXPECT_EQUAL(docid, out.getDocId());
-    EXPECT_EQUAL(5u, out.end() - out.begin());
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(5u, out.end() - out.begin());
 
-    EXPECT_EQUAL( 3u, out.begin()[0].getPosition());
-    EXPECT_EQUAL(1.5, out.begin()[0].getMatchExactness());
-    EXPECT_EQUAL( 5u, out.begin()[1].getPosition());
-    EXPECT_EQUAL(0.5, out.begin()[1].getMatchExactness());
-    EXPECT_EQUAL(10u, out.begin()[2].getPosition());
-    EXPECT_EQUAL(1.5, out.begin()[2].getMatchExactness());
-    EXPECT_EQUAL(15u, out.begin()[3].getPosition());
-    EXPECT_EQUAL(1.5, out.begin()[3].getMatchExactness());
-    EXPECT_EQUAL(17u, out.begin()[4].getPosition());
-    EXPECT_EQUAL(1.5, out.begin()[4].getMatchExactness());
+    EXPECT_EQ( 3u, out.begin()[0].getPosition());
+    EXPECT_EQ(1.5, out.begin()[0].getMatchExactness());
+    EXPECT_EQ( 5u, out.begin()[1].getPosition());
+    EXPECT_EQ(0.5, out.begin()[1].getMatchExactness());
+    EXPECT_EQ(10u, out.begin()[2].getPosition());
+    EXPECT_EQ(1.5, out.begin()[2].getMatchExactness());
+    EXPECT_EQ(15u, out.begin()[3].getPosition());
+    EXPECT_EQ(1.5, out.begin()[3].getMatchExactness());
+    EXPECT_EQ(17u, out.begin()[4].getPosition());
+    EXPECT_EQ(1.5, out.begin()[4].getMatchExactness());
 }
 
-void
-Test::testMergeFieldLength()
+TEST(TermMatchDataMergerTest, merge_max_element_length)
 {
     TermFieldMatchData a;
     TermFieldMatchData b;
@@ -261,20 +241,93 @@ Test::testMergeFieldLength()
     b.appendPosition(make_pos(2));
     merger.merge(docid);
 
-    EXPECT_EQUAL(docid, out.getDocId());
-    EXPECT_EQUAL(1000u, out.getIterator().getFieldLength());
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(1000u, out.getIterator().getFieldLength());
 }
 
-int
-Test::Main()
+class TermMatchDataMergerTest2 : public ::testing::Test
 {
-    TEST_INIT("termmatchdatamerger_test");
-    testMergeEmptyInput();
-    testMergeSimple();
-    testMergeMultifield();
-    testMergeDuplicates();
-    testMergeFieldLength();
-    TEST_DONE();
+protected:
+    TermFieldMatchData a;
+    TermFieldMatchData b;
+    MDMIs input;
+    TermFieldMatchData out;
+    TermFieldMatchDataArray output;
+    TermMatchDataMerger merger;
+
+    TermMatchDataMergerTest2()
+        : a(),
+          b(),
+          input({{&a, 0.5},{&b, 1.5}}),
+          out(),
+          output(),
+          merger(input, output.add(&out))
+    {
+    }
+};
+
+TEST_F(TermMatchDataMergerTest2, merge_no_normal_features)
+{
+    out.setNeedNormalFeatures(false);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.appendPosition(make_pos(5));
+
+    b.reset(docid);
+    b.appendPosition(make_pos(3));
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(0u, out.size());
 }
 
-TEST_APPHOOK(Test);
+TEST_F(TermMatchDataMergerTest2, merge_interleaved_features)
+{
+    out.setNeedNormalFeatures(false);
+    out.setNeedInterleavedFeatures(true);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.setNumOccs(1);
+    a.setFieldLength(30);
+
+    b.reset(docid);
+    b.setNumOccs(1);
+    b.setFieldLength(35);
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(2u, out.getNumOccs());
+    EXPECT_EQ(35u, out.getFieldLength());
+}
+
+TEST_F(TermMatchDataMergerTest2, merge_interleaved_features_with_detected_duplicate)
+{
+    out.setNeedNormalFeatures(true);
+    out.setNeedInterleavedFeatures(true);
+
+    uint32_t docid = 5;
+
+    a.reset(docid);
+    a.setNumOccs(1);
+    a.setFieldLength(30);
+    a.appendPosition(make_pos(5));
+
+    b.reset(docid);
+    b.setNumOccs(1);
+    b.setFieldLength(30);
+    b.appendPosition(make_pos(5));
+
+    merger.merge(docid);
+    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_EQ(1u, out.end() - out.begin());
+    EXPECT_EQ( 5u, out.begin()[0].getPosition());
+    EXPECT_EQ(1.5, out.begin()[0].getMatchExactness());
+    EXPECT_EQ(1u, out.getNumOccs());
+    EXPECT_EQ(30u, out.getFieldLength());
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
