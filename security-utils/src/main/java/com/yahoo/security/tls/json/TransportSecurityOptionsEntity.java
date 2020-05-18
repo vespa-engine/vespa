@@ -23,12 +23,14 @@ class TransportSecurityOptionsEntity {
     @JsonProperty("accepted-ciphers") @JsonInclude(NON_EMPTY) List<String> acceptedCiphers;
     @JsonProperty("disable-hostname-validation") @JsonInclude(NON_NULL) Boolean isHostnameValidationDisabled;
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     static class Files {
         @JsonProperty("private-key") String privateKeyFile;
         @JsonProperty("certificates") String certificatesFile;
         @JsonProperty("ca-certificates") String caCertificatesFile;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     static class AuthorizedPeer {
         @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials;
         @JsonProperty("name") String name;
@@ -36,6 +38,7 @@ class TransportSecurityOptionsEntity {
         @JsonProperty("roles") @JsonInclude(NON_EMPTY) List<String> roles;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     static class RequiredCredential {
         @JsonProperty("field") CredentialField field;
         @JsonProperty("must-match") String matchExpression;
