@@ -22,7 +22,7 @@ import java.util.Optional;
  * @author bratseth
  */
 public class Rebalancer extends NodeRepositoryMaintainer {
-    static final Duration waitTimeAfterPreviousDeployment = Duration.ofMinutes(30);
+    static final Duration waitTimeAfterPreviousDeployment = Duration.ofMinutes(10);
 
     private final Deployer deployer;
     private final Optional<HostProvisioner> hostProvisioner;
