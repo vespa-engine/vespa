@@ -198,7 +198,7 @@ public class Flags {
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-client-server-communication", "OFF",
+            "tls-for-zookeeper-client-server-communication", "PORT_UNIFICATION",
             "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
