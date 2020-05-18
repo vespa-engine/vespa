@@ -17,7 +17,7 @@ public class Limits {
 
     private final ClusterResources min, max;
 
-    private Limits(ClusterResources min, ClusterResources max) {
+    public Limits(ClusterResources min, ClusterResources max) {
         this.min = min;
         this.max = max;
     }

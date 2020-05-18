@@ -15,7 +15,7 @@ import java.util.Optional;
 public class AllocationOptimizer {
 
     // The min and max nodes to consider when not using application supplied limits
-    private static final int minimumNodes = 3; // Since this number includes redundancy it cannot be lower than 2
+    private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
 
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
@@ -39,9 +39,12 @@ public class AllocationOptimizer {
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
                                                                     Limits limits) {
+        if (limits.isEmpty())
+            limits = new Limits(new ClusterResources(minimumNodes, 1, NodeResources.unspecified),
+                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (int groups = minGroups(limits); groups <= maxGroups(limits); groups++) {
-            for (int nodes = minNodes(limits); nodes <= maxNodes(limits); nodes++) {
+        for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
+            for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
                 int groupSize = nodes / groups;
 
@@ -62,26 +65,6 @@ public class AllocationOptimizer {
         }
 
         return bestAllocation;
-    }
-
-    private int minNodes(Limits limits) {
-        if (limits.isEmpty()) return minimumNodes;
-        return limits.min().nodes();
-    }
-
-    private int maxNodes(Limits limits) {
-        if (limits.isEmpty()) return maximumNodes;
-        return limits.max().nodes();
-    }
-
-    private int minGroups(Limits limits) {
-        if (limits.isEmpty()) return 1;
-        return limits.min().groups();
-    }
-
-    private int maxGroups(Limits limits) {
-        if (limits.isEmpty()) return maximumNodes;
-        return limits.max().groups();
     }
 
     /**
