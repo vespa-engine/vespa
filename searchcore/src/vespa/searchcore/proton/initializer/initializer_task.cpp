@@ -18,4 +18,10 @@ InitializerTask::addDependency(SP dependency)
     _dependencies.emplace_back(std::move(dependency));
 }
 
+size_t
+InitializerTask::get_transient_memory_usage() const
+{
+    return 0u;
+}
+
 }

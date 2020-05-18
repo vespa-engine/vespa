@@ -42,6 +42,9 @@ public:
             _result.add(result);
         }
     }
+    size_t get_transient_memory_usage() const override {
+        return _initializer->get_transient_memory_usage();
+    }
 };
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task

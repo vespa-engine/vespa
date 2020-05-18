@@ -110,6 +110,7 @@ TaskRunner::pollTask(Context::SP context)
     TaskList readyTasks;
     TaskSet checked;
     getReadyTasks(context->rootTask(), readyTasks, checked);
+    std::sort(readyTasks.begin(), readyTasks.end(), [](const auto &a, const auto &b) -> bool { return a->get_transient_memory_usage() > b->get_transient_memory_usage(); });
     internalRunTasks(readyTasks, context);
 }
 
