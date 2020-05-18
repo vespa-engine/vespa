@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -350,6 +352,27 @@ public class ApplicationRepositoryTest {
         expected.set("deployment.prepareMillis", 0L, expected.createContext(context));
         expected.set("deployment.activateMillis", 0L, expected.createContext(context));
         assertEquals(expected.values, actual.values);
+    }
+
+    @Test
+    public void deletesApplicationRoles() throws IOException {
+        var tenant = tenantRepository.getTenant(tenant1);
+        var applicationId = applicationId(tenant1);
+        var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
+                .applicationRoles(ApplicationRoles.fromString("hostRole","containerRole")).build();
+        deployApp(testApp, prepareParams);
+        var approlesStore = new ApplicationRolesStore(tenant.getCurator(), tenant.getPath());
+        var appRoles = approlesStore.readApplicationRoles(applicationId);
+
+        // App roles present after deploy
+        assertTrue(appRoles.isPresent());
+        assertEquals("hostRole", appRoles.get().applicationHostRole());
+        assertEquals("containerRole", appRoles.get().applicationContainerRole());
+
+        assertTrue(applicationRepository.delete(applicationId));
+
+        // App roles deleted on application delete
+        assertTrue(approlesStore.readApplicationRoles(applicationId).isEmpty());
     }
 
     private ApplicationRepository createApplicationRepository() {
