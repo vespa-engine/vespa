@@ -296,22 +296,6 @@ class NodeAllocation {
         return requestedNodes.fulfilledBy(accepted);
     }
 
-    boolean wouldBeFulfilledWithRetiredNodes() {
-        return requestedNodes.fulfilledBy(accepted + wasRetiredJustNow);
-    }
-
-    boolean wouldBeFulfilledWithClashingParentHost() {
-        return requestedNodes.fulfilledBy(accepted + rejectedDueToClashingParentHost);
-    }
-
-    boolean wouldBeFulfilledWithoutExclusivity() {
-        return requestedNodes.fulfilledBy(accepted + rejectedDueToExclusivity);
-    }
-
-    boolean wouldBeFulfilledWithSufficientRealResources() {
-        return requestedNodes.fulfilledBy(accepted + rejectedDueToInsufficientRealResources);
-    }
-
     /**
      * Returns {@link FlavorCount} describing the docker node deficit for the given {@link NodeSpec}.
      *
@@ -404,6 +388,21 @@ class NodeAllocation {
 
     private Comparator<PrioritizableNode> nodeIndexComparator() {
         return Comparator.comparing((PrioritizableNode n) -> n.node.allocation().get().membership().index());
+    }
+
+    public String outOfCapacityDetails() {
+        List<String> reasons = new ArrayList<>();
+        if (rejectedDueToExclusivity > 0)
+            reasons.add("host exclusivity constraints");
+        if (rejectedDueToClashingParentHost > 0)
+            reasons.add("insufficient nodes available on separate physical hosts");
+        if (wasRetiredJustNow > 0)
+            reasons.add("retirement of allocated nodes");
+        if (rejectedDueToInsufficientRealResources > 0)
+            reasons.add("insufficient real resources on hosts");
+
+        if (reasons.isEmpty()) return "";
+        return ": Not enough nodes available due to " + reasons.stream().collect(Collectors.joining(", "));
     }
 
     static class FlavorCount {

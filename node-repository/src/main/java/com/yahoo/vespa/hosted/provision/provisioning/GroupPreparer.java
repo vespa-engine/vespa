@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -115,7 +116,7 @@ public class GroupPreparer {
                 if (! allocation.fulfilled() && requestedNodes.canFail())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                      " in " + application.toShortString() +
-                                                     outOfCapacityDetails(allocation));
+                                                     allocation.outOfCapacityDetails());
 
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
@@ -124,19 +125,6 @@ public class GroupPreparer {
                 return allocation.finalNodes(surplusActiveNodes);
             }
         }
-    }
-
-    private static String outOfCapacityDetails(NodeAllocation allocation) {
-        if (allocation.wouldBeFulfilledWithoutExclusivity())
-            return ": Not enough nodes available due to host exclusivity constraints.";
-        else if (allocation.wouldBeFulfilledWithClashingParentHost())
-            return ": Not enough nodes available on separate physical hosts.";
-        else if (allocation.wouldBeFulfilledWithRetiredNodes())
-            return ": Not enough nodes available due to retirement.";
-        else if (allocation.wouldBeFulfilledWithSufficientRealResources())
-            return ": Not enough real resources on hosts";
-        else
-            return ".";
     }
 
 }

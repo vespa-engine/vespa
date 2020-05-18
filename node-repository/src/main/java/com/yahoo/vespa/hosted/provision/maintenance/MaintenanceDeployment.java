@@ -71,6 +71,11 @@ class MaintenanceDeployment implements Closeable {
         return doStep(() -> deployment.get().prepare());
     }
 
+    /**
+     * Attempts to activate this deployment
+     *
+     * @return whether it was successfully activated
+     */
     public boolean activate() {
         return doStep(() -> deployment.get().activate());
     }
