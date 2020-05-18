@@ -166,9 +166,9 @@ public class DynamicDockerProvisionTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -212,9 +212,9 @@ public class DynamicDockerProvisionTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -286,9 +286,9 @@ public class DynamicDockerProvisionTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax))
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -309,6 +309,33 @@ public class DynamicDockerProvisionTest {
                            app1, cluster1);
     }
 
+    @Test
+    public void test_any_disk_prefers_remote() {
+        int memoryTax = 3;
+        int localDiskTax = 55;
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200 - localDiskTax, 0.1, fast, local)),
+                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400 - localDiskTax, 0.1, fast, local)),
+                                       new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
+                                       new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, localDiskTax))
+                                                                    .nameResolver(nameResolver)
+                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, localDiskTax))
+                                                                    .build();
+
+        tester.deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, StorageType.any),
+                                                      resources(6, 3, 3, 25, 400, fast, StorageType.any)));
+        tester.assertNodes("'any' selects a flavor with remote storage since it produces higher fulfilment",
+                           4, 2, 2, 20, 200, fast, remote,
+                           app1, cluster1);
+    }
 
     private static ClusterSpec clusterSpec(String clusterId) {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
@@ -338,21 +365,27 @@ public class DynamicDockerProvisionTest {
     private static class MockResourcesCalculator implements HostResourcesCalculator {
 
         private final int memoryTaxGb;
+        private final int localDiskTax;
 
-        public MockResourcesCalculator(int memoryTaxGb) {
+        public MockResourcesCalculator(int memoryTaxGb, int localDiskTax) {
             this.memoryTaxGb = memoryTaxGb;
+            this.localDiskTax = localDiskTax;
         }
 
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            if (node.type() == NodeType.host) return node.flavor().resources();
-            return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - memoryTaxGb);
+            NodeResources resources = node.flavor().resources();
+            if (node.type() == NodeType.host) return resources;
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));
         }
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
-            if ( ! flavor.isConfigured()) return flavor.resources();
-            return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + memoryTaxGb);
+            NodeResources resources = flavor.resources();
+            if ( ! flavor.isConfigured()) return resources;
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
+                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0));
         }
 
     }
@@ -361,10 +394,12 @@ public class DynamicDockerProvisionTest {
 
         private final List<Flavor> hostFlavors;
         private final int memoryTaxGb;
+        private final int localDiskTaxGb;
 
-        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb) {
+        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb, int localDiskTaxGb) {
             this.hostFlavors = List.copyOf(hostFlavors);
             this.memoryTaxGb = memoryTaxGb;
+            this.localDiskTaxGb = localDiskTaxGb;
         }
 
         @Override
@@ -377,12 +412,14 @@ public class DynamicDockerProvisionTest {
                                    .collect(Collectors.toList());
         }
 
-        private boolean compatible(Flavor hostFlavor, NodeResources nodeResources) {
-            NodeResources resourcesToVerify = nodeResources.withMemoryGb(nodeResources.memoryGb() - memoryTaxGb);
+        private boolean compatible(Flavor hostFlavor, NodeResources resources) {
+            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                                                       .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTaxGb : 0));
+
             if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
-                && hostFlavor.resources().diskGb() >= nodeResources.diskGb())
+                && hostFlavor.resources().diskGb() >= resources.diskGb())
                 resourcesToVerify = resourcesToVerify.withDiskGb(hostFlavor.resources().diskGb());
-            if (hostFlavor.resources().bandwidthGbps() >= nodeResources.bandwidthGbps())
+            if (hostFlavor.resources().bandwidthGbps() >= resources.bandwidthGbps())
                 resourcesToVerify = resourcesToVerify.withBandwidthGbps(hostFlavor.resources().bandwidthGbps());
             return hostFlavor.resources().compatibleWith(resourcesToVerify);
         }
