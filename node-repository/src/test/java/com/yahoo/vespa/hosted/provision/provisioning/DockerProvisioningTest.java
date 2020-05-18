@@ -247,7 +247,11 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with " +
+                         "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local] " +
+                         "for container cluster 'myContainer' group 0 6.39 in tenant1.app1: " +
+                         "Not enough nodes available due to host exclusivity constraints, " +
+                         "insufficient nodes available on separate physical hosts",
                          e.getMessage());
         }
 

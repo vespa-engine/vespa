@@ -55,9 +55,10 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
      */
     @Override
     protected void deploy(ApplicationId application) {
-        deployWithLock(application);
-        log.info("Redeployed application " + application.toShortString() +
-                 " as a manual change was made to its nodes");
+        boolean deployed = deployWithLock(application);
+        if (deployed)
+            log.info("Redeployed application " + application.toShortString() +
+                     " as a manual change was made to its nodes");
     }
 
     private boolean hasNodesWithChanges(ApplicationId applicationId, List<Node> nodes) {

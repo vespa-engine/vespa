@@ -74,12 +74,16 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     /** Returns the applications that should be maintained by this now. */
     protected abstract Set<ApplicationId> applicationsNeedingMaintenance();
 
-    /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
-    protected final void deployWithLock(ApplicationId application) {
+    /**
+     * Redeploy this application. A lock will be taken for the duration of the deployment activation
+     *
+     * @return whether it was successfully deployed
+     */
+    protected final boolean deployWithLock(ApplicationId application) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return; // this will be done at another config server
-            if ( ! canDeployNow(application)) return; // redeployment is no longer needed
-            deployment.activate();
+            if ( ! deployment.isValid()) return false; // this will be done at another config server
+            if ( ! canDeployNow(application)) return false; // redeployment is no longer needed
+            return deployment.activate();
         } finally {
             pendingDeployments.remove(application);
         }
