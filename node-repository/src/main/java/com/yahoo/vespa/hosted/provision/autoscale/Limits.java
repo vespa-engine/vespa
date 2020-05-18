@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
+import java.util.Objects;
+
 /**
  * Optional allocation limits
  *
@@ -17,7 +19,7 @@ public class Limits {
 
     private final ClusterResources min, max;
 
-    public Limits(ClusterResources min, ClusterResources max) {
+    private Limits(ClusterResources min, ClusterResources max) {
         this.min = min;
         this.max = max;
     }
@@ -58,6 +60,10 @@ public class Limits {
 
     public static Limits of(Capacity capacity) {
         return new Limits(capacity.minResources(), capacity.maxResources());
+    }
+
+    public static Limits of(ClusterResources min, ClusterResources max) {
+        return new Limits(Objects.requireNonNull(min, "min"), Objects.requireNonNull(max, "max"));
     }
 
     @Override
