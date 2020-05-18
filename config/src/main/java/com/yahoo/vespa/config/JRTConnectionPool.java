@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
@@ -53,7 +54,7 @@ public class JRTConnectionPool implements ConnectionPool {
                 connections.put(address, new JRTConnection(address, supervisor));
             }
         }
-        setNewCurrentConnection();
+        initialize();
     }
 
     /**
@@ -65,14 +66,27 @@ public class JRTConnectionPool implements ConnectionPool {
         return currentConnection;
     }
 
-    /**
-     * Returns and set the current JRTConnection instance by randomly choosing
-     * from the available sources (this means that you might end up using
-     * the same connection).
-     *
-     * @return a JRTConnection
-     */
+    @Override
+    public synchronized JRTConnection switchConnection() {
+        List<JRTConnection> sources = getSources();
+        if (sources.size() > 1) {
+            Connection previousConnection = currentConnection;
+            List<JRTConnection> sourcesWithoutCurrent = new ArrayList<>();
+            sources.stream()
+                    .filter(source -> ! source.equals(currentConnection))
+                    .forEach(sourcesWithoutCurrent::add);
+            currentConnection = sourcesWithoutCurrent.get(ThreadLocalRandom.current().nextInt(0, sourcesWithoutCurrent.size()));
+            log.log(INFO, () -> "Switching from " + previousConnection + " to " + currentConnection);
+        }
+        return currentConnection;
+    }
+
+    @Deprecated
     public synchronized JRTConnection setNewCurrentConnection() {
+        return initialize();
+    }
+
+    public synchronized JRTConnection initialize() {
         List<JRTConnection> sources = getSources();
         currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
         log.log(FINE, () -> "Choosing new connection: " + currentConnection);
@@ -94,7 +108,7 @@ public class JRTConnectionPool implements ConnectionPool {
     @Override
     public void setError(Connection connection, int errorCode) {
         connection.setError(errorCode);
-        setNewCurrentConnection();
+        switchConnection();
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {

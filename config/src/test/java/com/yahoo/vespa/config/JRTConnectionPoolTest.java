@@ -29,7 +29,7 @@ public class JRTConnectionPoolTest {
 
         Map<String, Integer> sourceOccurrences = new HashMap<>();
         for (int i = 0; i < 1000; i++) {
-            final String address = sourcePool.setNewCurrentConnection().getAddress();
+            final String address = sourcePool.switchConnection().getAddress();
             if (sourceOccurrences.containsKey(address)) {
                 sourceOccurrences.put(address, sourceOccurrences.get(address) + 1);
             } else {
@@ -57,7 +57,7 @@ public class JRTConnectionPoolTest {
 
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            String address = sourcePool.setNewCurrentConnection().getAddress();
+            String address = sourcePool.switchConnection().getAddress();
             if (timesUsed.containsKey(address)) {
                 int times = timesUsed.get(address);
                 timesUsed.put(address, times + 1);
