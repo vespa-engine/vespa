@@ -151,13 +151,31 @@ public class DeploymentStatus {
                                                 ImmutableMap::copyOf));
     }
 
-    /** The set of jobs that need to run for the given change to be considered complete. */
+    /** The set of jobs that need to run for the given changes to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun(Map<InstanceName, Change> changes) {
         Map<JobId, Versions> productionJobs = new LinkedHashMap<>();
         changes.forEach((instance, change) -> productionJobs.putAll(productionJobs(instance, change)));
         Map<JobId, List<Versions>> testJobs = testJobs(productionJobs);
         Map<JobId, List<Versions>> jobs = new LinkedHashMap<>(testJobs);
         productionJobs.forEach((job, versions) -> jobs.put(job, List.of(versions)));
+        // Add runs for idle, declared test jobs if they have no successes on their instance's change's versions.
+        jobSteps.forEach((job, step) -> {
+            if ( ! step.isDeclared() || jobs.containsKey(job))
+                return;
+
+            Change change = changes.get(job.application().instance());
+            if (change == null || ! change.hasTargets())
+                return;
+
+            Optional<JobId> firstProductionJobWithDeployment = jobSteps.keySet().stream()
+                                                                       .filter(jobId -> jobId.type().isProduction() && jobId.type().isDeployment())
+                                                                       .filter(jobId -> deploymentFor(jobId).isPresent())
+                                                                       .findFirst();
+
+            Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
+            if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
+            jobs.merge(job, List.of(versions), DeploymentStatus::union);
+        });
         return ImmutableMap.copyOf(jobs);
     }
 
@@ -237,6 +255,7 @@ public class DeploymentStatus {
                                                   && testJobs.get(test).contains(versions)))
                     testJobs.merge(firstDeclaredOrElseImplicitTest(testType), List.of(versions), DeploymentStatus::union);
             });
+            // Add runs for declared tests in instances without production jobs, if no successes exist for given change.
         }
         return ImmutableMap.copyOf(testJobs);
     }
@@ -312,7 +331,7 @@ public class DeploymentStatus {
 
         if (step instanceof DeploymentInstanceSpec) {
             DeploymentInstanceSpec spec = ((DeploymentInstanceSpec) step);
-            StepStatus instanceStatus = new InstanceStatus(spec, previous, now, application.require(spec.name()));
+            StepStatus instanceStatus = new InstanceStatus(spec, previous, now, application.require(spec.name()), this);
             instance = spec.name();
             allSteps.add(instanceStatus);
             previous = List.of(instanceStatus);
@@ -458,20 +477,26 @@ public class DeploymentStatus {
         private final DeploymentInstanceSpec spec;
         private final Instant now;
         private final Instance instance;
+        private final DeploymentStatus status;
 
         private InstanceStatus(DeploymentInstanceSpec spec, List<StepStatus> dependencies, Instant now,
-                               Instance instance) {
+                               Instance instance, DeploymentStatus status) {
             super(StepType.instance, spec, dependencies, spec.name());
             this.spec = spec;
             this.now = now;
             this.instance = instance;
+            this.status = status;
         }
 
-        /** Time of completion of its dependencies, if all parts of the given change are contained in the change for this instance. */
+        /**
+         * Time of completion of its dependencies, if all parts of the given change are contained in the change
+         * for this instance, or if no more jobs should run for this instance for the given change.
+         */
         @Override
         public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
-            return    (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
-                   && (change.application().isEmpty() || change.application().equals(instance.change().application()))
+            return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
+                       && (change.application().isEmpty() || change.application().equals(instance.change().application()))
+                   || status.jobsToRun(Map.of(instance.name(), change)).isEmpty())
                       ? dependenciesCompletedAt(change, dependent)
                       : Optional.empty();
         }
