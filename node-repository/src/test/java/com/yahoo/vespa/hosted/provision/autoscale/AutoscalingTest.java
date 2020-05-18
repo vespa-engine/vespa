@@ -236,7 +236,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingGroupSize3() {
+    public void testAutoscalingGroupSizeByCpu() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
@@ -247,27 +247,28 @@ public class AutoscalingTest {
 
         // deploy
         tester.deploy(application1, cluster1, 6, 2, resources);
-        tester.addMeasurements(Resource.cpu,  0.22f, 1f, 120, application1);
-        tester.assertResources("Scaling up since resource usage is too high",
-                               9, 3, 2.7,  83.3, 83.3,
+        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        System.out.println("Autoscaling ... ");
+        tester.assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
+                               8, 1, 2.7,  83.3, 83.3,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
     @Test
     public void testAutoscalingGroupSize() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(100, 1000, 1000, 100);
         ClusterResources min = new ClusterResources( 3, 2, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(30, 10, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        ClusterResources max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
 
         ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 6, 2, resources);
-        tester.addMeasurements(Resource.memory,  0.9f, 1f, 120, application1);
-        tester.assertResources("Should increase cluster size to reduce memory usage",
-                               9, 3, 2.7,  83.3, 83.3,
+        tester.deploy(application1, cluster1, 6, 2, new NodeResources(10, 100, 100, 1));
+        tester.addMeasurements(Resource.memory,  1.0f, 1f, 1000, application1);
+        tester.assertResources("Increase group size to reduce memory load",
+                               8, 2, 12.9,  89.3, 62.5,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 

@@ -251,28 +251,29 @@ public class DynamicDockerProvisionTest {
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
                                                       resources(6, 3, 3, 25, 25)));
         tester.assertNodes("New allocation at new max",
-                           6, 3, 2, 20, 25,
+                           6, 2, 2, 20, 25,
                            app1, cluster1);
 
-        // Widening window lets us find a cheaper alternative
+        // Widening window does not change allocation
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 1, 5, 15),
                                                       resources(8, 4, 4, 20, 30)));
-        tester.assertNodes("Cheaper allocation",
-                           8, 4, 1, 10, 25,
+        tester.assertNodes("No change",
+                           6, 2, 2, 20, 25,
                            app1, cluster1);
 
-        // Changing group size
+        // Force 1 more groups: Reducing to 2 nodes per group to preserve node count is rejected
+        //                      since it will reduce total group memory from 60 to 40.
         tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 0.5,  5,  10),
                                                       resources(9, 3,   5, 20, 15)));
-        tester.assertNodes("Groups changed",
-                           6, 3, 1, 10, 15,
+        tester.assertNodes("Group size is preserved",
+                           9, 3, 2, 20, 15,
                            app1, cluster1);
 
         // Stop specifying node resources
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified),
                                                       new ClusterResources(9, 3, NodeResources.unspecified)));
-        tester.assertNodes("Minimal allocation",
-                           6, 3, 1, 10, 15,
+        tester.assertNodes("Existing allocation is preserved",
+                           9, 3, 2, 20, 15,
                            app1, cluster1);
     }
 

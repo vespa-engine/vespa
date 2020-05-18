@@ -242,10 +242,10 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same as or compatible with the given resources */
     public boolean compatibleWith(NodeResources other) {
-        if (this.vcpu != other.vcpu) return false;
-        if (this.memoryGb != other.memoryGb) return false;
-        if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthGbps != other.bandwidthGbps) return false;
+        if ( ! equal(this.vcpu, other.vcpu)) return false;
+        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.diskGb, other.diskGb)) return false;
+        if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if ( ! this.diskSpeed.compatibleWith(other.diskSpeed)) return false;
         if ( ! this.storageType.compatibleWith(other.storageType)) return false;
 
@@ -253,6 +253,10 @@ public class NodeResources {
     }
 
     public boolean isUnspecified() { return this == unspecified; }
+
+    private boolean equal(double a, double b) {
+        return Math.abs(a - b) < 0.00000001;
+    }
 
     /**
      * Create this from serial form.

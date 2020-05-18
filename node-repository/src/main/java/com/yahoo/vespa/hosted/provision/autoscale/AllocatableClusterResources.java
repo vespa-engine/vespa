@@ -118,13 +118,16 @@ public class AllocatableClusterResources {
     }
 
     public boolean preferableTo(AllocatableClusterResources other) {
-        if (this.fulfilment > other.fulfilment) return true; // we always want to fulfil as much as possible
+        if (this.fulfilment < 1 || other.fulfilment < 1)
+            return this.fulfilment > other.fulfilment;  // we always want to fulfil as much as possible
         return this.cost() < other.cost(); // otherwise, prefer lower cost
     }
 
     @Override
     public String toString() {
-        return nodes + " nodes with " + realResources() +
+        return nodes + " nodes " +
+               ( groups > 1 ? "(in " + groups + " groups) " : "" ) +
+               "with " + realResources() +
                " at cost $" + cost() +
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
