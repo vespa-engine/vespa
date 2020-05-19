@@ -22,12 +22,14 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
       _array_fields(),
       _array_attributes(),
       _has_map_key(false),
+      _has_map_value(false),
       _error(false)
 {
     std::vector<const search::attribute::IAttributeVector *> attrs;
     attr_ctx.getAttributeList(attrs);
     vespalib::string prefix = field_name + ".";
     _map_key_attribute = prefix + "key";
+    vespalib::string map_value_attribute_name = prefix + "value";
     vespalib::string value_prefix = prefix + "value.";
     for (const auto attr : attrs) {
         vespalib::string name = attr->getName();
@@ -45,6 +47,8 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
             _array_fields.emplace_back(name.substr(prefix.size()));
             if (name == _map_key_attribute) {
                 _has_map_key = true;
+            } else if (name == map_value_attribute_name) {
+                _has_map_value = true;
             }
         }
     }
