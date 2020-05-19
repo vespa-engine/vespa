@@ -52,22 +52,22 @@ public class MetricsReporterTest {
         MetricsReporter metricsReporter = createReporter(tester.controller());
         // Log some operator actions
         HttpRequest req1 = HttpRequest.createTestRequest(
-                "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.gq1.yahoo.com",
+                "http://localhost:8080/zone/v2/prod/us-northeast-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.ca1.yahoo.com",
                 com.yahoo.jdisc.http.HttpRequest.Method.PUT
         );
-        req1.getJDiscRequest().setUserPrincipal(() -> "user.bjormel");
+        req1.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
         tester.controller().auditLogger().log((req1));
         HttpRequest req2 = HttpRequest.createTestRequest(
-                "http://localhost:8080/routing/v1/inactive/tenant/partner_publishing/application/contentindexing/instance/default/environment/prod/region/us-west-1",
+                "http://localhost:8080/routing/v1/inactive/tenant/some_publishing/application/someindexing/instance/default/environment/prod/region/us-northeast-1",
                 com.yahoo.jdisc.http.HttpRequest.Method.POST
         );
-        req2.getJDiscRequest().setUserPrincipal(() -> "user.bjormel");
+        req2.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
         tester.controller().auditLogger().log((req2));
 
         // End data to audit log
         metricsReporter.maintain();
-        getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.bjormel");
-        getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.bjormel");
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.johndoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.johndoe"));
 
 
     }

@@ -77,16 +77,14 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private void reportAuditLog() {
-        final String OPERATOR = "operator";
-
         AuditLog log = controller().auditLogger().readLog();
         for (AuditLog.Entry entry : log.entries()) {
             String[] resource = entry.resource().split("/");
             String operationMetric;
-            if(resource[1] != null) {
+            if(resource.length > 1 && resource[1] != null) {
                 String api = resource[1];
                 operationMetric = OPERATION_PREFIX + api;
-                Metric.Context context = metric.createContext(Map.of(OPERATOR, entry.principal()));
+                Metric.Context context = metric.createContext(Map.of("operator", entry.principal()));
 
                 metric.add(operationMetric, 1, context);
             }
