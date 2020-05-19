@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.os.OsVersionChange;
@@ -43,11 +42,7 @@ public class OsVersionChangeSerializer {
             targetObject.setString(VERSION_FIELD, target.version().toFullString());
             target.upgradeBudget().ifPresent(duration -> targetObject.setLong(UPGRADE_BUDGET_FIELD, duration.toMillis()));
             target.lastRetiredAt().ifPresent(instant -> targetObject.setLong(LAST_RETIRED_AT_FIELD, instant.toEpochMilli()));
-            // TODO(mpolden): Stop writing old format after May 2020
-            var versionObject = object.setObject(NodeSerializer.toString(nodeType));
-            versionObject.setString(VERSION_FIELD, target.version().toFullString());
         });
-
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
@@ -58,15 +53,6 @@ public class OsVersionChangeSerializer {
     public static OsVersionChange fromJson(byte[] data) {
         var targets = new HashMap<NodeType, OsVersionTarget>();
         var inspector = SlimeUtils.jsonToSlime(data).get();
-        // TODO(mpolden): Remove handling of old format after May 2020
-        inspector.traverse((ObjectTraverser) (key, value) -> {
-            if (isNodeType(key)) {
-                Version version = Version.fromString(value.field(VERSION_FIELD).asString());
-                OsVersionTarget target = new OsVersionTarget(NodeType.valueOf(key), version, Optional.empty(),
-                                                             Optional.empty());
-                targets.put(NodeSerializer.nodeTypeFromString(key), target);
-            }
-        });
         inspector.field(TARGETS_FIELD).traverse((ArrayTraverser) (idx, arrayInspector) -> {
             var version = Version.fromString(arrayInspector.field(VERSION_FIELD).asString());
             var nodeType = NodeSerializer.nodeTypeFromString(arrayInspector.field(NODE_TYPE_FIELD).asString());
@@ -75,15 +61,6 @@ public class OsVersionChangeSerializer {
             targets.put(nodeType, new OsVersionTarget(nodeType, version, budget, lastRetiredAt));
         });
         return new OsVersionChange(targets);
-    }
-
-    private static boolean isNodeType(String name) {
-        try {
-            NodeType.valueOf(name);
-            return true;
-        } catch (IllegalArgumentException ignored) {
-            return false;
-        }
     }
 
     private static Optional<Long> optionalLong(Inspector field) {
