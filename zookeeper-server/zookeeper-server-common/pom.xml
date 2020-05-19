@@ -11,13 +11,6 @@
   <artifactId>zookeeper-server-common</artifactId>
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
       <plugin>
