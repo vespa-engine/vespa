@@ -78,15 +78,33 @@ public class MetricsReporter extends ControllerMaintainer {
 
     private void reportAuditLog() {
         AuditLog log = controller().auditLogger().readLog();
+        HashMap<String, HashMap<String, Integer>> metricCounts = new HashMap<>();
+
         for (AuditLog.Entry entry : log.entries()) {
             String[] resource = entry.resource().split("/");
-            String operationMetric;
-            if(resource.length > 1 && resource[1] != null) {
+            if((resource.length > 1) && (resource[1] != null)) {
                 String api = resource[1];
-                operationMetric = OPERATION_PREFIX + api;
-                Metric.Context context = metric.createContext(Map.of("operator", entry.principal()));
+                String operationMetric = OPERATION_PREFIX + api;
 
-                metric.add(operationMetric, 1, context);
+                if (metricCounts.containsKey(operationMetric)) {
+                    HashMap<String, Integer> dimension = metricCounts.get(operationMetric);
+                    if (dimension.containsKey(entry.principal())) {
+                        Integer count = dimension.get(entry.principal());
+                        dimension.replace(entry.principal(), ++count);
+                    } else {
+                        dimension.put(entry.principal(), 1);
+                    }
+
+                } else {
+                    HashMap<String, Integer> dimension = new HashMap<>();
+                    dimension.put(entry.principal(),1);
+                    metricCounts.put(operationMetric, dimension);
+                }
+            }
+        }
+        for (String operationMetric : metricCounts.keySet()) {
+            for (String userDimension : metricCounts.get(operationMetric).keySet()) {
+                metric.set(operationMetric, (metricCounts.get(operationMetric)).get(userDimension), metric.createContext(Map.of("operator", userDimension)));
             }
         }
     }
