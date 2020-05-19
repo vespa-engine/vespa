@@ -66,10 +66,17 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
         return matching(id -> instance(id).productionDeployments().size() > 0);
     }
 
-    /** Returns the subset of instances which have at least one deployment on a lower version than the given one */
+    /** Returns the subset of instances which contain declared jobs */
+    public InstanceList withDeclaredJobs() {
+        return matching(id -> instances.get(id).jobSteps().values().stream()
+                                       .anyMatch(job -> job.isDeclared() && job.job().get().application().equals(id)));
+    }
+
+    /** Returns the subset of instances which have at least one deployment on a lower version than the given one, or which have no production deployments */
     public InstanceList onLowerVersionThan(Version version) {
-        return matching(id -> instance(id).productionDeployments().values().stream()
-                                          .anyMatch(deployment -> deployment.version().isBefore(version)));
+        return matching(id ->    instance(id).productionDeployments().isEmpty()
+                              || instance(id).productionDeployments().values().stream()
+                                             .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
     /** Returns the subset of instances which have changes left to deploy; blocked, or deploying */

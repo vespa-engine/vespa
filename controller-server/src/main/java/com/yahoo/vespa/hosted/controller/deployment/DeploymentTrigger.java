@@ -420,8 +420,10 @@ public class DeploymentTrigger {
 
         @Override
         public String toString() {
-            return jobType + " for " + instanceId + " on (" + versions.targetPlatform() + ", " +
-                   versions.targetApplication().id() + "), ready since " + availableSince;
+            return jobType + " for " + instanceId +
+                   " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
+                   ", " + versions.targetApplication().id()  + versions.sourceApplication().map(version -> " <-- " + version.id()).orElse("") +
+                   "), ready since " + availableSince;
         }
 
     }

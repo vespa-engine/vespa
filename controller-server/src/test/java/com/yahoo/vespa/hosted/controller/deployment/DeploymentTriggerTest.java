@@ -1128,4 +1128,48 @@ public class DeploymentTriggerTest {
            .runJob(productionCdAwsUsEast1a);
     }
 
+    @Test
+    public void testsInSeparateInstance() {
+        String deploymentSpec =
+                "<deployment version='1.0'>\n" +
+                "    <instance id='canary'>\n" +
+                "        <upgrade policy='canary' />\n" +
+                "        <test />\n" +
+                "        <staging />\n" +
+                "    </instance>\n" +
+                "    <instance id='default'>\n" +
+                "        <prod>\n" +
+                "            <region active='true'>eu-west-1</region>\n" +
+                "            <test>eu-west-1</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "</deployment>\n";
+
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentSpec);
+        var canary = tester.newDeploymentContext("t", "a", "canary").submit(applicationPackage);
+        var conservative = tester.newDeploymentContext("t", "a", "default");
+
+        canary.runJob(systemTest)
+              .runJob(stagingTest);
+        conservative.runJob(productionEuWest1)
+                    .runJob(testEuWest1);
+
+        canary.submit(applicationPackage)
+              .runJob(systemTest)
+              .runJob(stagingTest);
+        tester.outstandingChangeDeployer().run();
+        conservative.runJob(productionEuWest1)
+                    .runJob(testEuWest1);
+
+        tester.controllerTester().upgradeSystem(new Version("7.7.7"));
+        tester.upgrader().maintain();
+
+        canary.runJob(systemTest)
+              .runJob(stagingTest);
+        tester.upgrader().maintain();
+        conservative.runJob(productionEuWest1)
+                    .runJob(testEuWest1);
+
+    }
+
 }
