@@ -78,7 +78,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                 docprocServiceRegistry.register(service.getId(), service);
             }
         }
-        docprocServiceRegistry.freeze();
     }
 
     private static int computeNumThreads(int maxThreads) {
@@ -116,6 +115,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setStatisticsManager(manager)
                      .setMetric(metric)
                      .setContainerDocumentConfig(containerDocConfig));
+        docprocServiceRegistry.freeze();
     }
 
     @Override
