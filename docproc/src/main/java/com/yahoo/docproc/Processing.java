@@ -26,7 +26,7 @@ public class Processing {
     private CallStack callStack = null;
 
     /** The collection of documents or document updates processed by this. This is never null */
-    private List<DocumentOperation> documentOperations;
+    private final List<DocumentOperation> documentOperations;
 
     /**
      * Documents or document updates which should be added to <code>documents</code> before

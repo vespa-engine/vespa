@@ -10,7 +10,6 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocprocService;
@@ -50,17 +49,17 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     private final ChainRegistry<DocumentProcessor> chainRegistry = new ChainRegistry<>();
     private final ScheduledThreadPoolExecutor laterExecutor =
             new ScheduledThreadPoolExecutor(2, new DaemonThreadFactory("docproc-later-"));
-    private ContainerDocumentConfig containerDocConfig;
+    private final ContainerDocumentConfig containerDocConfig;
     private final DocumentTypeManager documentTypeManager;
 
-    public DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
-                                     ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
-                                     ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
-                                     int numThreads,
-                                     DocumentTypeManager documentTypeManager,
-                                     ChainsModel chainsModel, SchemaMap schemaMap, Statistics statistics,
-                                     Metric metric,
-                                     ContainerDocumentConfig containerDocConfig) {
+    private DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
+                                      ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
+                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
+                                      int numThreads,
+                                      DocumentTypeManager documentTypeManager,
+                                      ChainsModel chainsModel, SchemaMap schemaMap, Statistics statistics,
+                                      Metric metric,
+                                      ContainerDocumentConfig containerDocConfig) {
         this.docprocServiceRegistry = docprocServiceRegistry;
         this.docFactoryRegistry = docFactoryRegistry;
         this.containerDocConfig = containerDocConfig;
@@ -79,17 +78,17 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                 docprocServiceRegistry.register(service.getId(), service);
             }
         }
-
+        docprocServiceRegistry.freeze();
     }
 
     private static int computeNumThreads(int maxThreads) {
         return (maxThreads > 0) ? maxThreads : Runtime.getRuntime().availableProcessors();
     }
 
-    public DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
-                                     ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
-                                     ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
-                                     DocumentProcessingHandlerParameters params) {
+    DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
+                              ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
+                              ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
+                              DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
              params.getMaxNumThreads(),
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
@@ -105,13 +104,13 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      SchemamappingConfig mappingConfig,
                                      DocumentmanagerConfig docManConfig,
                                      DocprocConfig docprocConfig,
-                                     ContainerMbusConfig containerMbusConfig,
                                      ContainerDocumentConfig containerDocConfig,
                                      Statistics manager,
                                      Metric metric) {
         this(new ComponentRegistry<>(),
-             documentProcessorComponentRegistry, docFactoryRegistry, new DocumentProcessingHandlerParameters().setMaxNumThreads
-                (docprocConfig.numthreads())
+             documentProcessorComponentRegistry, docFactoryRegistry,
+                new DocumentProcessingHandlerParameters()
+                     .setMaxNumThreads(docprocConfig.numthreads())
                      .setDocumentTypeManager(new DocumentTypeManager(docManConfig))
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setStatisticsManager(manager)
