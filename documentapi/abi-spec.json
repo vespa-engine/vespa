@@ -293,7 +293,7 @@
       "public void <init>(int)",
       "public void <init>(java.lang.String)",
       "public void <init>(byte[])",
-      "public byte[] serialize()",
+      "public synchronized byte[] serialize()",
       "public java.lang.String serializeToString()",
       "public static com.yahoo.documentapi.ProgressToken fromSerializedString(java.lang.String)",
       "public void addFailedBucket(com.yahoo.document.BucketId, com.yahoo.document.BucketId, java.lang.String)",

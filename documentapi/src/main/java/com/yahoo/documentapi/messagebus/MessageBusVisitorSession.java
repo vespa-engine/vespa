@@ -643,6 +643,9 @@ public class MessageBusVisitorSession implements VisitorSession {
             synchronized (progress.getToken()) {
                 try {
                     scheduledSendCreateVisitors = false;
+                    if (done) {
+                        return; // Session already closed; we must not touch anything else.
+                    }
                     while (progress.getIterator().hasNext()) {
                         VisitorIterator.BucketProgress bucket = progress.getIterator().getNext();
                         Result result = sender.send(createMessage(bucket));
