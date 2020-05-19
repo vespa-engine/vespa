@@ -226,7 +226,7 @@ public class ProgressToken {
         }
     }
 
-    public byte[] serialize() {
+    public synchronized byte[] serialize() {
         BufferSerializer out = new BufferSerializer(new GrowableByteBuffer());
         out.putInt(null, distributionBits);
         out.putLong(null, bucketCursor);
