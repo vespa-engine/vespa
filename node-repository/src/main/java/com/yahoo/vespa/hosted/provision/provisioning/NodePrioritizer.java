@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
@@ -42,7 +43,7 @@ public class NodePrioritizer {
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
-    private final NameResolver nameResolver;
+    private final NodeRepository nodeRepository;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final boolean isTopologyChange;
@@ -52,16 +53,15 @@ public class NodePrioritizer {
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator,
-                    boolean allocateFully) {
+                    int spares, int wantedGroups, boolean allocateFully, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
-        this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
+        this.capacity = new DockerHostCapacity(allNodes, nodeRepository.resourcesCalculator());
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
-        this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
         this.allocateFully = allocateFully;
+        this.nodeRepository = nodeRepository;
 
         NodeList nodesInCluster = allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -78,9 +78,8 @@ public class NodePrioritizer {
                 .filter(clusterSpec.group()::equals)
                 .count();
 
-        this.isAllocatingForReplacement = isReplacement(
-                nodesInCluster.size(),
-                nodesInCluster.state(Node.State.failed).size());
+        this.isAllocatingForReplacement = isReplacement(nodesInCluster.size(),
+                                                        nodesInCluster.state(Node.State.failed).size());
         this.isDocker = resources(requestedNodes) != null;
     }
 
@@ -119,11 +118,11 @@ public class NodePrioritizer {
     }
 
     /** Add a node on each docker host with enough capacity for the requested flavor  */
-    void addNewDockerNodes(Predicate<Node> canAllocateTenantNodeTo) {
+    void addNewDockerNodes() {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
-                .filter(node -> node.type() != NodeType.host || canAllocateTenantNodeTo.test(node))
+                .filter(node -> node.type() != NodeType.host || nodeRepository.canAllocateTenantNodeTo(node))
                 .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
 
         if (allocateFully) {
@@ -142,25 +141,20 @@ public class NodePrioritizer {
     }
 
     private void addNewDockerNodesOn(LockedNodeList candidates) {
-        NodeResources wantedResources = resources(requestedNodes);
-
         for (Node host : candidates) {
-            boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);
-            boolean conflictingCluster = allNodes.childrenOf(host).owner(application).asList().stream()
-                                                 .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
+            if ( ! capacity.hasCapacity(host, resources(requestedNodes))) continue;
+            if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
 
-            if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
-
-            log.log(Level.FINE, "Trying to add new Docker node on " + host);
             Optional<IP.Allocation> allocation;
             try {
-                allocation = host.ipConfig().pool().findAllocation(allNodes, nameResolver);
+                allocation = host.ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
                 if (allocation.isEmpty()) continue; // No free addresses in this pool
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname(), e);
                 continue;
             }
 
+            log.log(Level.FINE, "Creating new docker node on " + host);
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
                                                  allocation.get().hostname(),
                                                  host.hostname(),

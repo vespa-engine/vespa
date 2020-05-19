@@ -67,24 +67,22 @@ public class GroupPreparer {
             try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes
-                LockedNodeList nodeList = nodeRepository.list(allocationLock);
-                NodePrioritizer prioritizer = new NodePrioritizer(nodeList,
+                LockedNodeList allNodes = nodeRepository.list(allocationLock);
+                NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
+                                                               highestIndex,  nodeRepository);
+
+                NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                                   application,
                                                                   cluster,
                                                                   requestedNodes,
                                                                   spareCount,
                                                                   wantedGroups,
-                                                                  nodeRepository.nameResolver(),
-                                                                  nodeRepository.resourcesCalculator(),
-                                                                  allocateFully);
-
+                                                                  allocateFully,
+                                                                  nodeRepository);
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
-                // Allocate from the prioritized list
-                NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
-                                                               highestIndex,  nodeRepository);
+                prioritizer.addNewDockerNodes();
                 allocation.offer(prioritizer.prioritize());
 
                 if (dynamicProvisioningEnabled) {
