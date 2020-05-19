@@ -84,6 +84,7 @@ public:
     };
 
     static Token::UP compile(const Function &function, PassParams pass_params);
+    static void wait_pending();
     static ExecutorBinding::UP bind(Executor &executor) {
         return std::make_unique<ExecutorBinding>(executor, ExecutorBinding::ctor_tag());
     }
