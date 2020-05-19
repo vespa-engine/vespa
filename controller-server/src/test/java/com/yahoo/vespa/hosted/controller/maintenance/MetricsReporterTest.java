@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -42,6 +43,64 @@ import static org.junit.Assert.assertTrue;
 public class MetricsReporterTest {
 
     private final MetricsMock metrics = new MetricsMock();
+
+    @Test
+    public void audit_log_metric() {
+        var tester = new ControllerTester();
+
+        MetricsReporter metricsReporter = createReporter(tester.controller());
+        // Log some operator actions
+        HttpRequest req1 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/some_region/nodes/v2/state/dirty/hostname",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req1.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req1));
+        HttpRequest req2 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_tenant/application/some_app/instance/default/environment/prod/region/some-region",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req2.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req2));
+
+        // Report metrics
+        metricsReporter.maintain();
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.janedoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.johndoe"));
+
+        // Log some more operator actions
+        HttpRequest req3 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/us-northeast-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.ca1.yahoo.com",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req3.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req3));
+        HttpRequest req4 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_publishing/application/someindexing/instance/default/environment/prod/region/us-northeast-1",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req4.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req4));
+        HttpRequest req5 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/us-northeast-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.ca1.yahoo.com",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req5.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req5));
+        HttpRequest req6 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_publishing/application/someindexing/instance/default/environment/prod/region/us-northeast-1",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req6.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req6));
+
+        // Report metrics
+        metricsReporter.maintain();
+        assertEquals(2, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.janedoe"));
+        assertEquals(2, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.johndoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.johndoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.janedoe"));
+    }
 
     @Test
     public void deployment_fail_ratio() {
@@ -481,6 +540,12 @@ public class MetricsReporterTest {
                                                  appDimension(id).equals(dimensions.get("app")),
                                  name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));
+    }
+
+    private Number getMetric(String name, String operator) {
+        return metrics.getMetric((dimensions) -> operator.equals(dimensions.get("operator")),
+                name)
+                .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + operator));
     }
 
     private MetricsReporter createReporter(Controller controller) {

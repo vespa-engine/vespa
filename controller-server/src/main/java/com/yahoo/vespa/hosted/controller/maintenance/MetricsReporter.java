@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -52,6 +53,7 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
+    public static final String OPERATION_PREFIX = "operation.";
 
     private final Metric metric;
     private final Clock clock;
@@ -71,6 +73,39 @@ public class MetricsReporter extends ControllerMaintainer {
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
         reportInfrastructureUpgradeMetrics();
+        reportAuditLog();
+    }
+
+    private void reportAuditLog() {
+        AuditLog log = controller().auditLogger().readLog();
+        HashMap<String, HashMap<String, Integer>> metricCounts = new HashMap<>();
+
+        for (AuditLog.Entry entry : log.entries()) {
+            String[] resource = entry.resource().split("/");
+            if((resource.length > 1) && (resource[1] != null)) {
+                String api = resource[1];
+                String operationMetric = OPERATION_PREFIX + api;
+                HashMap<String, Integer> dimension = metricCounts.get(operationMetric);
+                if (dimension != null) {
+                    Integer count = dimension.get(entry.principal());
+                    if (count != null) {
+                        dimension.replace(entry.principal(), ++count);
+                    } else {
+                        dimension.put(entry.principal(), 1);
+                    }
+
+                } else {
+                    dimension = new HashMap<>();
+                    dimension.put(entry.principal(),1);
+                    metricCounts.put(operationMetric, dimension);
+                }
+            }
+        }
+        for (String operationMetric : metricCounts.keySet()) {
+            for (String userDimension : metricCounts.get(operationMetric).keySet()) {
+                metric.set(operationMetric, (metricCounts.get(operationMetric)).get(userDimension), metric.createContext(Map.of("operator", userDimension)));
+            }
+        }
     }
 
     private void reportInfrastructureUpgradeMetrics() {
