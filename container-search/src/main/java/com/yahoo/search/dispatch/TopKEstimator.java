@@ -31,12 +31,12 @@ public class TopKEstimator {
     }
     public int estimateK(int k, int n) {
         return (estimate && n > 1)
-                ? (int)Math.ceil(estimateExactK(k, n, defaultP))
+                ? Math.min(k, (int)Math.ceil(estimateExactK(k, n, defaultP)))
                 : k;
     }
     public int estimateK(int k, int n, double p) {
         return (needEstimate(p) && (n > 1))
-                ? (int)Math.ceil(estimateExactK(k, n, p))
+                ? Math.min(k, (int)Math.ceil(estimateExactK(k, n, p)))
                 : k;
     }
 }
