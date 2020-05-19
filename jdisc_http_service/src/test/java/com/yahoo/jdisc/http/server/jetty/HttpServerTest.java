@@ -758,12 +758,23 @@ public class HttpServerTest {
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
-                .tag(tag)
-                .send();
-        assertEquals(200, response.getStatus());
-        return response;
+            throws InterruptedException, TimeoutException {
+        int maxAttempts = 3;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
+                        .tag(tag)
+                        .send();
+                assertEquals(200, response.getStatus());
+                return response;
+            } catch (ExecutionException e) {
+                // Retry when the server closes the connection before the TLS handshake is completed. This have been observed in CI.
+                // We have been unable to reproduce this locally. The cause is therefor currently unknown.
+                log.log(Level.WARNING, String.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
+                Thread.sleep(10);
+            }
+        }
+        throw new AssertionError("Failed to send request, see log for details");
     }
 
     // Using Jetty's http client as Apache httpclient does not support the proxy-protocol v1/v2.
