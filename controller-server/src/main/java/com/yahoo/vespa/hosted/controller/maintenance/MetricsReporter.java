@@ -85,18 +85,17 @@ public class MetricsReporter extends ControllerMaintainer {
             if((resource.length > 1) && (resource[1] != null)) {
                 String api = resource[1];
                 String operationMetric = OPERATION_PREFIX + api;
-
-                if (metricCounts.containsKey(operationMetric)) {
-                    HashMap<String, Integer> dimension = metricCounts.get(operationMetric);
-                    if (dimension.containsKey(entry.principal())) {
-                        Integer count = dimension.get(entry.principal());
+                HashMap<String, Integer> dimension = metricCounts.get(operationMetric);
+                if (dimension != null) {
+                    Integer count = dimension.get(entry.principal());
+                    if (count != null) {
                         dimension.replace(entry.principal(), ++count);
                     } else {
                         dimension.put(entry.principal(), 1);
                     }
 
                 } else {
-                    HashMap<String, Integer> dimension = new HashMap<>();
+                    dimension = new HashMap<>();
                     dimension.put(entry.principal(),1);
                     metricCounts.put(operationMetric, dimension);
                 }
