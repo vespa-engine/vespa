@@ -5,7 +5,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -18,7 +17,7 @@ import org.w3c.dom.Element;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
-import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILES_REGISTRY_CLASS;
+import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
 import static org.hamcrest.CoreMatchers.is;
@@ -134,8 +133,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     public void query_profiles_registry_component_is_added() {
         createClusterWithOnlyDefaultChains();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        var queryProfilesRegistryId = ComponentId.fromString(QUERY_PROFILES_REGISTRY_CLASS);
-        assertTrue(cluster.getComponentsMap().containsKey(queryProfilesRegistryId));
+        var queryProfileRegistryId = ComponentId.fromString(QUERY_PROFILE_REGISTRY_CLASS);
+        assertTrue(cluster.getComponentsMap().containsKey(queryProfileRegistryId));
     }
 
     private void createClusterWithOnlyDefaultChains() {

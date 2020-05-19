@@ -36,7 +36,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
 
-    public static final String QUERY_PROFILES_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
+    public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
 
     private ApplicationContainerCluster owningCluster;
     private final List<AbstractSearchCluster> searchClusters = new LinkedList<>();
@@ -51,7 +51,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.owningCluster = cluster;
         this.options = options;
 
-        owningCluster.addComponent(new SimpleComponent(QUERY_PROFILES_REGISTRY_CLASS));
+        owningCluster.addComponent(new SimpleComponent(QUERY_PROFILE_REGISTRY_CLASS));
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
