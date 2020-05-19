@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
-import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -26,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -181,9 +181,9 @@ public class LoadBalancerProvisioner {
     private List<Node> allocatedContainers(ApplicationId application, ClusterSpec.Id clusterId) {
         return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, Node.State.reserved, Node.State.active))
                        .owner(application)
-                       .filter(node -> node.state().isAllocated())
+                       .matching(node -> node.state().isAllocated())
                        .container()
-                       .filter(node -> effectiveId(node.allocation().get().membership().cluster()).equals(clusterId))
+                       .matching(node -> effectiveId(node.allocation().get().membership().cluster()).equals(clusterId))
                        .asList();
     }
 

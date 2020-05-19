@@ -58,7 +58,7 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
         if (Autoscaler.unstable(applicationNodes.asList())) return Collections.emptyList();
 
         Optional<Node> metricsV2Container = applicationNodes.container()
-                                                            .filter(node -> expectedUp(node))
+                                                            .matching(node -> expectedUp(node))
                                                             .stream()
                                                             .findFirst();
         if (metricsV2Container.isEmpty()) return Collections.emptyList();
