@@ -26,6 +26,7 @@ import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunica
 import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForClientServerCommunication;
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
+import static com.yahoo.vespa.zookeeper.Configurator.ZOOKEEPER_JUTE_MAX_BUFFER;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.hamcrest.CoreMatchers.is;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the zookeeper server.
  */
-public class VespaZooKeeperServerImplTest {
+public class ConfiguratorTest {
 
     private File cfgFile;
     private File idFile;
@@ -55,7 +56,7 @@ public class VespaZooKeeperServerImplTest {
     @Test
     public void config_is_written_correctly_when_one_server() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        createServer(builder);
+        new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileSingleHost(cfgFile);
         validateIdFile(idFile, "");
     }
@@ -69,7 +70,7 @@ public class VespaZooKeeperServerImplTest {
         builder.server(newServer(2, "baz", 345, 543));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
-        createServer(builder);
+        new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileMultipleHosts(cfgFile);
         validateIdFile(idFile, "1\n");
     }
@@ -80,7 +81,7 @@ public class VespaZooKeeperServerImplTest {
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.PORT_UNIFICATION);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
-        createServer(builder, transportSecurityOptions);
+        new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFilePortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
         validateThatJksKeyStoreFileExists(jksKeyStoreFile);
     }
@@ -91,7 +92,7 @@ public class VespaZooKeeperServerImplTest {
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_WITH_PORT_UNIFICATION);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_WITH_PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
-        createServer(builder, transportSecurityOptions);
+        new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFileTlsWithPortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
         validateThatJksKeyStoreFileExists(jksKeyStoreFile);
     }
@@ -102,7 +103,7 @@ public class VespaZooKeeperServerImplTest {
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_ONLY);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_ONLY);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
-        createServer(builder, transportSecurityOptions);
+        new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFileTlsOnly(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
         validateThatJksKeyStoreFileExists(jksKeyStoreFile);
     }
@@ -117,21 +118,14 @@ public class VespaZooKeeperServerImplTest {
         return builder;
     }
 
-    private void createServer(ZookeeperServerConfig.Builder builder) {
-        createServer(builder, Optional.empty());
-    }
-
-    private void createServer(ZookeeperServerConfig.Builder builder, Optional<TransportSecurityOptions> options) {
-        new VespaZooKeeperServerImpl(new ZookeeperServerConfig(builder), false, options);
-    }
-
     @Test(expected = RuntimeException.class)
     public void require_that_this_id_must_be_present_amongst_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
+        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.server(newServer(1, "bar", 234, 432));
         builder.server(newServer(2, "baz", 345, 543));
         builder.myid(0);
-        createServer(builder);
+        new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
     }
 
     @Test
@@ -145,13 +139,13 @@ public class VespaZooKeeperServerImplTest {
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
 
-        createServer(builder);
-        assertThat(System.getProperty(VespaZooKeeperServerImpl.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
+        new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
+        assertThat(System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
 
         final int max_buffer = 1;
         builder.juteMaxBuffer(max_buffer);
-        createServer(builder);
-        assertThat(System.getProperty(VespaZooKeeperServerImpl.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + max_buffer));
+        new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
+        assertThat(System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER), is("" + max_buffer));
     }
 
     private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {
