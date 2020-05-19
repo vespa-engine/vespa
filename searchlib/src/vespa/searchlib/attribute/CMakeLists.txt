@@ -34,7 +34,7 @@ vespa_add_library(searchlib_attribute OBJECT
     defines.cpp
     diversity.cpp
     dociditerator.cpp
-    elementiterator.cpp
+    searchcontextelementiterator.cpp
     enumattribute.cpp
     enumattributesaver.cpp
     enumcomparator.cpp

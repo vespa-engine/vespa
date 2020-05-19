@@ -12,9 +12,7 @@
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 
 /**
@@ -275,7 +273,4 @@ public:
     void addDocIdBias(uint32_t docIdBias);
 };
 
-} // namespace fakedata
-
-} // namespace search
-
+}

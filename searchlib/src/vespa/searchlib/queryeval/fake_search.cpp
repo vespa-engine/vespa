@@ -6,8 +6,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 FakeSearch::doSeek(uint32_t docid)
@@ -61,5 +60,4 @@ FakeSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "term",  _term);
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

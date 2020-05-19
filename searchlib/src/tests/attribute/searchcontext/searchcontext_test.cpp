@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/elementiterator.h>
+#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
@@ -22,6 +19,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
@@ -628,29 +626,24 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
 template<typename T, typename A>
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString, const vespalib::string & name,
-             const Config & cfg, bool withElementId);
+    Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString,
+             const vespalib::string & name, const Config & cfg);
     ~Verifier() override;
     SearchIterator::UP
     create(bool strict) const override {
         _sc->fetchPostings(queryeval::ExecuteInfo::create(strict, 1.0));
-        auto search = _sc->createIterator(&_dummy, strict);
-        if (_withElementId) {
-            search = std::make_unique<attribute::ElementIterator>(std::move(search), *_sc, _dummy);
-        }
-        return search;
+        return _sc->createIterator(&_dummy, strict);
     }
 private:
     mutable TermFieldMatchData _dummy;
-    const bool       _withElementId;
     AttributePtr     _attribute;
     SearchContextPtr _sc;
 };
 
 template<typename T, typename A>
-Verifier<T, A>::Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString, const vespalib::string & name,
-                         const Config & cfg, bool withElementId)
-    : _withElementId(withElementId),
+Verifier<T, A>::Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString,
+                         const vespalib::string & name, const Config & cfg)
+    : _dummy(),
       _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
       _sc()
 {
@@ -670,22 +663,18 @@ Verifier<T, A>::~Verifier() = default;
 
 template<typename T, typename A>
 void SearchContextTest::testSearchIterator(const std::vector<T> & keys, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
-
-    for (bool withElementId : {false, true} ) {
-        for (const auto & cfg : cfgs) {
-            {
-                Verifier<T, A> verifier(keys, keyAsString, cfg.first, cfg.second, withElementId);
-                verifier.verify();
-            }
-            {
-                Config withFilter(cfg.second);
-                withFilter.setIsFilter(true);
-                Verifier<T, A> verifier(keys, keyAsString, cfg.first + "-filter", withFilter, withElementId);
-                verifier.verify();
-            }
+    for (const auto & cfg : cfgs) {
+        {
+            Verifier<T, A> verifier(keys, keyAsString, cfg.first, cfg.second);
+            verifier.verify();
+        }
+        {
+            Config withFilter(cfg.second);
+            withFilter.setIsFilter(true);
+            Verifier<T, A> verifier(keys, keyAsString, cfg.first + "-filter", withFilter);
+            verifier.verify();
         }
     }
-
 }
 
 void SearchContextTest::testSearchIteratorConformance() {
@@ -976,11 +965,13 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     pos.setElementWeight(100);
     md.appendPosition(pos);
 
-    SearchBasePtr sb = sc.createIterator(&md, strict);
+    SearchBasePtr sbp = sc.createIterator(&md, strict);
+    SearchIterator & search = *sbp;
+    queryeval::ElementIterator::UP elemIt;
     if (withElementId) {
-        sb = std::make_unique<attribute::ElementIterator>(std::move(sb), sc, md);
+        elemIt = std::make_unique<attribute::SearchContextElementIterator>(std::move(sbp), sc);
     }
-    sb->initFullRange();
+    search.initFullRange();
 
     std::vector<int32_t> weights(3);
     if (attr->getCollectionType() == CollectionType::SINGLE ||
@@ -1000,41 +991,40 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     }
 
     // unpack and check weights
-    sb->unpack(1);
-    EXPECT_EQUAL(sb->getDocId(), 1u);
+    search.unpack(1);
+    EXPECT_EQUAL(search.getDocId(), 1u);
     EXPECT_EQUAL(md.getDocId(), 1u);
     EXPECT_EQUAL(md.getWeight(), weights[0]);
 
-    sb->unpack(2);
-    EXPECT_EQUAL(sb->getDocId(), 2u);
+    search.unpack(2);
+    EXPECT_EQUAL(search.getDocId(), 2u);
     EXPECT_EQUAL(md.getDocId(), 2u);
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
-        EXPECT_EQUAL(2, md.end()- md.begin());
-        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
-        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
-        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
-        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
+        std::vector<uint32_t> elems;
+        elemIt->getElementIds(2, elems);
+        ASSERT_EQUAL(2u, elems.size());
+        EXPECT_EQUAL(0u,elems[0]);
+        EXPECT_EQUAL(1u,elems[1]);
     } else {
         EXPECT_EQUAL(md.getWeight(), weights[1]);
     }
 
-    sb->unpack(3);
-    EXPECT_EQUAL(sb->getDocId(), 3u);
+    search.unpack(3);
+    EXPECT_EQUAL(search.getDocId(), 3u);
     EXPECT_EQUAL(md.getDocId(), 3u);
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
-        EXPECT_EQUAL(3, md.end()- md.begin());
-        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
-        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
-        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
-        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
-        EXPECT_EQUAL(md.begin()[2].getElementId(), 2u);
-        EXPECT_EQUAL(md.begin()[2].getElementWeight(), 1);
+        std::vector<uint32_t> elems;
+        elemIt->getElementIds(3, elems);
+        ASSERT_EQUAL(3u, elems.size());
+        EXPECT_EQUAL(0u,elems[0]);
+        EXPECT_EQUAL(1u,elems[1]);
+        EXPECT_EQUAL(2u,elems[2]);
     } else {
         EXPECT_EQUAL(md.getWeight(), weights[2]);
     }
     if (extra) {
-        sb->unpack(4);
-        EXPECT_EQUAL(sb->getDocId(), 4u);
+        search.unpack(4);
+        EXPECT_EQUAL(search.getDocId(), 4u);
         EXPECT_EQUAL(md.getDocId(), 4u);
         EXPECT_EQUAL(md.getWeight(), 1);
     }

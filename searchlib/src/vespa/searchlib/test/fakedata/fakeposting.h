@@ -13,11 +13,7 @@ using search::fef::TermFieldMatchDataPosition;
 #include <vector>
 #include <string>
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 /*
  * Base class for faked posting list formats.
@@ -41,56 +37,36 @@ public:
     /*
      * Size of posting list, in bits.
      */
-    virtual size_t
-    bitSize() const = 0;
-
-    virtual size_t
-    skipBitSize() const;
-
-    virtual size_t
-    l1SkipBitSize() const;
-
-    virtual size_t
-    l2SkipBitSize() const;
-
-    virtual size_t
-    l3SkipBitSize() const;
-
-    virtual size_t
-    l4SkipBitSize() const;
-
-    virtual bool
-    hasWordPositions() const = 0;
-
+    virtual size_t bitSize() const = 0;
+    virtual size_t skipBitSize() const;
+    virtual size_t l1SkipBitSize() const;
+    virtual size_t l2SkipBitSize() const;
+    virtual size_t l3SkipBitSize() const;
+    virtual size_t l4SkipBitSize() const;
+    virtual bool hasWordPositions() const = 0;
     virtual bool has_interleaved_features() const;
-
     virtual bool enable_unpack_normal_features() const;
-
     virtual bool enable_unpack_interleaved_features() const;
 
     /*
      * Single posting list performance, without feature unpack.
      */
-    virtual int
-    lowLevelSinglePostingScan() const = 0;
+    virtual int lowLevelSinglePostingScan() const = 0;
 
     /*
      * Single posting list performance, with feature unpack.
      */
-    virtual int
-    lowLevelSinglePostingScanUnpack() const = 0;
+    virtual int lowLevelSinglePostingScanUnpack() const = 0;
 
     /*
      * Two posting lists performance (same format) without feature unpack.
      */
-    virtual int
-    lowLevelAndPairPostingScan(const FakePosting &rhs) const = 0;
+    virtual int lowLevelAndPairPostingScan(const FakePosting &rhs) const = 0;
 
     /*
      * Two posting lists performance (same format) with feature unpack.
      */
-    virtual int
-    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const = 0;
+    virtual int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const = 0;
 
 
     /*
@@ -105,7 +81,4 @@ public:
     }
 };
 
-} // namespace fakedata
-
-} // namespace search
-
+}
