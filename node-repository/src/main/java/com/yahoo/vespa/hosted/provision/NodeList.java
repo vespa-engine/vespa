@@ -142,6 +142,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                        .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
     }
 
+    public NodeList group(int index) {
+        return matching(n -> ( n.allocation().isPresent() &&
+                               n.allocation().get().membership().cluster().group().equals(Optional.of(ClusterSpec.Group.from(index)))));
+    }
+
     /** Returns the parent node of the given child node */
     public Optional<Node> parentOf(Node child) {
         return child.parentHostname()
