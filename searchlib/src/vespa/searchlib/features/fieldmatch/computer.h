@@ -121,15 +121,6 @@ public:
     int fieldIndexToSemanticDistance(int j, uint32_t zeroJ) const;
 
     /**
-     * Returns the query environment of this. This contains information about the query.
-     *
-     * @return The query environment.
-     */
-    const fef::IQueryEnvironment &getQueryEnvironment() const {
-        return _splitter;
-    }
-
-    /**
      * Returns the id of the searched field.
      *
      * @return The field id.
