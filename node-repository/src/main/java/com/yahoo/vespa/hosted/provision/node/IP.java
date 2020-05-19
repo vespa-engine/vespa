@@ -259,7 +259,7 @@ public class IP {
          */
         public Set<String> findUnused(NodeList nodes) {
             var unusedAddresses = new LinkedHashSet<>(asSet());
-            nodes.filter(node -> node.ipConfig().primary().stream().anyMatch(ip -> asSet().contains(ip)))
+            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> asSet().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
         }

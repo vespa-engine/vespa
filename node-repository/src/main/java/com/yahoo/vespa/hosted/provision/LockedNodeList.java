@@ -24,11 +24,10 @@ public class LockedNodeList extends NodeList {
     private final Mutex lock;
 
     public LockedNodeList(List<Node> nodes, Mutex lock) {
-        super(nodes);
+        super(nodes, false);
         this.lock = Objects.requireNonNull(lock, "lock must be non-null");
     }
 
-    @Override
     public LockedNodeList filter(Predicate<Node> predicate) {
         return asList().stream()
                        .filter(predicate)

@@ -259,7 +259,7 @@ public class InPlaceResizeProvisionTest {
 
     private NodeList listCluster(ClusterSpec cluster) {
         return tester.getNodes(app, Node.State.active)
-                .filter(node -> node.allocation().get().membership().cluster().satisfies(cluster));
+                     .matching(node -> node.allocation().get().membership().cluster().satisfies(cluster));
     }
 
     private static class PrepareHelper {
