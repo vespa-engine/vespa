@@ -21,11 +21,12 @@ SearchContextElementIterator::mergeElementIds(uint32_t docId, std::vector<uint32
     int32_t id(-1);
     int32_t weight(0);
     for (int32_t candidate : elementIds) {
-        if (candidate >= id) {
+        if (candidate > id) {
             id = _searchContext.find(docId, candidate, weight);
-            if (id == candidate) {
-                elementIds[toKeep++] = candidate;
-            }
+            if (id < 0) break;
+        }
+        if (id == candidate) {
+            elementIds[toKeep++] = candidate;
         }
     }
     elementIds.resize(toKeep);

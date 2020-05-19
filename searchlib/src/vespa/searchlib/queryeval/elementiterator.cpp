@@ -36,15 +36,15 @@ ElementIteratorWrapper::mergeElementIds(uint32_t docId, std::vector<uint32_t> & 
     int32_t id(-1);
     auto it = _tfmd.begin();
     for (int32_t candidate : elementIds) {
-        if (candidate >= id) {
+        if (candidate > id) {
             while ((it < _tfmd.end()) && (candidate > int(it->getElementId()))) {
                 it++;
             }
             if (it == _tfmd.end()) break;
             id = it->getElementId();
-            if (id == candidate) {
-                elementIds[toKeep++] = candidate;
-            }
+        }
+        if (id == candidate) {
+            elementIds[toKeep++] = candidate;
         }
     }
     elementIds.resize(toKeep);
