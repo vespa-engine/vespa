@@ -155,7 +155,6 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultSoftStartSeconds;
         private final double threadPoolSizeFactor;
         private final double queueSizefactor;
-        private final int defaultNumResponseThreads;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
 
@@ -201,8 +200,6 @@ public class ModelContextImpl implements ModelContext {
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            defaultNumResponseThreads = Flags.DEFAULT_NUM_RESPONSE_THREADS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
@@ -281,11 +278,6 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useThreePhaseUpdates() {
             return useThreePhaseUpdates;
-        }
-
-        @Override
-        public int defaultNumResponseThreads() {
-            return defaultNumResponseThreads;
         }
 
         @Override

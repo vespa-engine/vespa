@@ -69,8 +69,8 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double defaultTermwiseLimit();
 
-        // TODO Revisit in May or June 2020
-        int defaultNumResponseThreads();
+        // TODO Remove when 7.225 is last
+        default int defaultNumResponseThreads() { return 1; }
 
         // TODO Revisit in May or June 2020
         double threadPoolSizeFactor();

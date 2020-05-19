@@ -36,8 +36,6 @@ public class TestProperties implements ModelContext.Properties {
     private boolean hostedVespa = false;
     private Zone zone;
     private Set<ContainerEndpoint> endpoints = Collections.emptySet();
-    private boolean isBootstrap = false;
-    private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useAdaptiveDispatch = false;
     private double topKProbability = 1.0;
@@ -47,7 +45,6 @@ public class TestProperties implements ModelContext.Properties {
     private double softStartSeconds = 0.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
-    private int defaultNumResponseThreads = 0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -62,8 +59,8 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
 
-    @Override public boolean isBootstrap() { return isBootstrap; }
-    @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
+    @Override public boolean isBootstrap() { return false; }
+    @Override public boolean isFirstTimeDeployment() { return false; }
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
@@ -84,10 +81,6 @@ public class TestProperties implements ModelContext.Properties {
         return softStartSeconds;
     }
 
-    @Override public int defaultNumResponseThreads() {
-        return defaultNumResponseThreads;
-    }
-
     @Override public double defaultTopKProbability() { return topKProbability; }
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
@@ -106,11 +99,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseDistributorBtreeDB(boolean useBtreeDb) {
         useDistributorBtreeDb = useBtreeDb;
-        return this;
-    }
-
-    public TestProperties setDefaultNumResponseThreads(int numResponseThreads) {
-        defaultNumResponseThreads = numResponseThreads;
         return this;
     }
 
