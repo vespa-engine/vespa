@@ -4,9 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.fieldmatch.params");
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 Params::Params() :
     _proximityLimit(10),
@@ -39,6 +37,4 @@ Params::valid()
     return true;
 }
 
-}
-}
 }
