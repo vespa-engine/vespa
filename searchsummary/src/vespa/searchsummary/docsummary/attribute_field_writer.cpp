@@ -167,7 +167,7 @@ WriteIntField::print(uint32_t idx, Cursor &cursor)
 }
 
 std::unique_ptr<AttributeFieldWriter>
-AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector &attr, bool no_empty_strings)
+AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector &attr, bool keep_empty_strings)
 {
     switch (attr.getBasicType()) {
     case BasicType::INT8:
@@ -182,7 +182,7 @@ AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector 
     case BasicType::DOUBLE:
         return std::make_unique<WriteFloatField>(fieldName, attr);
     case BasicType::STRING:
-        if (no_empty_strings) {
+        if (keep_empty_strings) {
             return std::make_unique<WriteStringFieldNeverSkip>(fieldName, attr);
         } else {
             return std::make_unique<WriteStringField>(fieldName, attr);

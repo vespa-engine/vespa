@@ -27,7 +27,7 @@ public:
     virtual ~AttributeFieldWriter();
     virtual void fetch(uint32_t docId) = 0;
     virtual void print(uint32_t idx, vespalib::slime::Cursor &cursor) = 0;
-    static std::unique_ptr<AttributeFieldWriter> create(vespalib::Memory fieldName, const search::attribute::IAttributeVector &attr, bool no_empty_strings = false);
+    static std::unique_ptr<AttributeFieldWriter> create(vespalib::Memory fieldName, const search::attribute::IAttributeVector &attr, bool keep_empty_strings = false);
     uint32_t size() const { return _size; }
 };
 
