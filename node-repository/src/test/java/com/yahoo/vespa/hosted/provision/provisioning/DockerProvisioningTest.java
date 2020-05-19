@@ -249,7 +249,8 @@ public class DockerProvisioningTest {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
                          "Could not satisfy request for 3 nodes with " +
                          "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local] " +
-                         "for container cluster 'myContainer' group 0 6.39 in tenant1.app1: " +
+                         "in tenant1.app1 container cluster 'myContainer' 6.39: " +
+                         "Out of capacity on group 0: " +
                          "Not enough nodes available due to host exclusivity constraints, " +
                          "insufficient nodes available on separate physical hosts",
                          e.getMessage());
@@ -282,7 +283,7 @@ public class DockerProvisioningTest {
         try {
             ProvisioningTester tester = new ProvisioningTester.Builder()
                                                 .zone(new Zone(Environment.prod, RegionName.from("us-east-1"))).build();
-            ApplicationId application1 = tester.makeApplicationId();
+            ApplicationId application1 = tester.makeApplicationId("app1");
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost1");
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost2");
 
@@ -292,7 +293,11 @@ public class DockerProvisioningTest {
                                                   dockerFlavor.with(NodeResources.StorageType.remote));
         }
         catch (OutOfCapacityException e) {
-            assertTrue(e.getMessage().startsWith("Could not satisfy request for 2 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote]"));
+            assertEquals("Could not satisfy request for 2 nodes with " +
+                         "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote] " +
+                         "in tenant.app1 content cluster 'myContent'" +
+                         " 6.42: Out of capacity on group 0",
+                         e.getMessage());
         }
     }
 

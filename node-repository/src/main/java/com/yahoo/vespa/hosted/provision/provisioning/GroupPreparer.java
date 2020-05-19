@@ -112,8 +112,7 @@ public class GroupPreparer {
                 }
 
                 if (! allocation.fulfilled() && requestedNodes.canFail())
-                    throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
-                                                     " in " + application.toShortString() +
+                    throw new OutOfCapacityException((cluster.group().isPresent() ? "Out of capacity on " + cluster.group().get() :"") +
                                                      allocation.outOfCapacityDetails());
 
                 // Carry out and return allocation

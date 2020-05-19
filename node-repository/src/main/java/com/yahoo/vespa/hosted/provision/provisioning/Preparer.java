@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -38,9 +39,17 @@ class Preparer {
 
     /** Prepare all required resources for the given application and cluster */
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
-        prepareLoadBalancer(application, cluster, requestedNodes);
-        return nodes;
+        try {
+            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
+            prepareLoadBalancer(application, cluster, requestedNodes);
+            return nodes;
+        }
+        catch (OutOfCapacityException e) {
+            throw new OutOfCapacityException("Could not satisfy " + requestedNodes +
+                                             ( wantedGroups > 1 ? " ( in " + wantedGroups + " groups)" : "") +
+                                             " in " + application + " " + cluster +
+                                             ": " + e.getMessage());
+        }
     }
 
     /**
