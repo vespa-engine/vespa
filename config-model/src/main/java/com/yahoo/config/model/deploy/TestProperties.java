@@ -38,7 +38,6 @@ public class TestProperties implements ModelContext.Properties {
     private Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useAdaptiveDispatch = false;
-    private double topKProbability = 1.0;
     private boolean useDistributorBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
@@ -81,7 +80,6 @@ public class TestProperties implements ModelContext.Properties {
         return softStartSeconds;
     }
 
-    @Override public double defaultTopKProbability() { return topKProbability; }
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
@@ -89,11 +87,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
-        return this;
-    }
-
-    public TestProperties setTopKProbability(double probability) {
-        topKProbability = probability;
         return this;
     }
 

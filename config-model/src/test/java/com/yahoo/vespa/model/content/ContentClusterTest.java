@@ -933,15 +933,15 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(distributionBits, storDistributormanagerConfig.minsplitcount());
     }
 
-    private void verifyTopKProbabilityPropertiesControl(double topKProbability) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setTopKProbability(topKProbability));
+    private void verifyTopKProbabilityPropertiesControl() {
+        VespaModel model = createEnd2EndOneNode(new TestProperties());
 
         ContentCluster cc = model.getContentClusters().get("storage");
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cc.getSearch().getConfig(builder);
 
         DispatchConfig cfg = new DispatchConfig(builder);
-        assertEquals(topKProbability, cfg.topKProbability(), 0.0);
+        assertEquals(0.9999, cfg.topKProbability(), 0.0);
     }
 
     private void verifyRoundRobinPropertiesControl(boolean useAdaptiveDispatch) {
@@ -967,9 +967,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void default_topKprobability_controlled_by_properties() {
-        verifyTopKProbabilityPropertiesControl(1.0);
-        verifyTopKProbabilityPropertiesControl(0.999);
-        verifyTopKProbabilityPropertiesControl(0.77);
+        verifyTopKProbabilityPropertiesControl();
     }
 
     private boolean resolveDistributorBtreeDbConfigWithFeatureFlag(boolean flagEnabledBtreeDb) {
