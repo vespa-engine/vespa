@@ -30,7 +30,8 @@ public:
                                    const std::vector<vespalib::string> &attributeNames,
                                    IAttributeContext &context,
                                    const vespalib::string &field_name,
-                                   const MatchingElements* matching_elements);
+                                   const MatchingElements* matching_elements,
+                                   bool is_map_of_scalar);
     ~ArrayAttributeFieldWriterState() override;
     void insert_element(uint32_t element_index, Cursor &array);
     void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
@@ -40,10 +41,11 @@ ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector
                                                                const std::vector<vespalib::string> &attributeNames,
                                                                IAttributeContext &context,
                                                                const vespalib::string &field_name,
-                                                               const MatchingElements *matching_elements)
+                                                               const MatchingElements *matching_elements,
+                                                               bool is_map_of_scalar)
     : DocsumFieldWriterState(),
       _writers(),
-    _field_name(field_name),
+      _field_name(field_name),
       _matching_elements(matching_elements)
 {
     size_t fields = fieldNames.size();
@@ -51,7 +53,7 @@ ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector
     for (uint32_t field = 0; field < fields; ++field) {
         const IAttributeVector *attr = context.getAttribute(attributeNames[field]);
         if (attr != nullptr) {
-            _writers.emplace_back(AttributeFieldWriter::create(fieldNames[field], *attr));
+            _writers.emplace_back(AttributeFieldWriter::create(fieldNames[field], *attr, is_map_of_scalar));
         }
     }
 }
@@ -106,7 +108,8 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fie
                                                      std::shared_ptr<StructFieldMapper> struct_field_mapper)
     : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
       _fields(fields_resolver.get_array_fields()),
-      _attributeNames(fields_resolver.get_array_attributes())
+      _attributeNames(fields_resolver.get_array_attributes()),
+      _is_map_of_scalar(fields_resolver.is_map_of_scalar())
 {
     if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
         fields_resolver.apply_to(*_struct_field_mapper);
@@ -118,7 +121,8 @@ ArrayAttributeCombinerDFW::~ArrayAttributeCombinerDFW() = default;
 std::unique_ptr<DocsumFieldWriterState>
 ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, const MatchingElements* matching_elements)
 {
-    return std::make_unique<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, _fieldName, matching_elements);
+    return std::make_unique<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context,
+                                                            _fieldName, matching_elements, _is_map_of_scalar);
 }
 
 }
