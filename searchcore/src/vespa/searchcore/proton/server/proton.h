@@ -26,6 +26,7 @@
 #include <vespa/vespalib/net/json_handler_repo.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 #include <mutex>
 #include <shared_mutex>
 
@@ -112,6 +113,7 @@ private:
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
+    vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;

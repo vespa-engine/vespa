@@ -275,6 +275,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
         auto t0 = steady_clock::now();
         f1.each_case(test);
         auto t1 = steady_clock::now();
+        CompileCache::wait_pending();
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
@@ -295,7 +296,7 @@ TEST_F("compile concurrently (8 threads), then run all conformance tests", test:
         auto t0 = steady_clock::now();
         f1.each_case(test);
         auto t1 = steady_clock::now();
-        executor.sync();
+        CompileCache::wait_pending();
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
