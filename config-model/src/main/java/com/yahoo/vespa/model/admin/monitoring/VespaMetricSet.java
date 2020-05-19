@@ -396,6 +396,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.resource_usage.disk_utilization.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory_utilization.average"));
+        metrics.add(new Metric("content.proton.resource_usage.transient_memory.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
