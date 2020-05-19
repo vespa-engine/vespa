@@ -143,7 +143,7 @@ public class StorageClusterTest {
 
             assertEquals(7, config.num_threads());
             assertFalse(config.enable_multibit_split_optimalization());
-            assertEquals(0, config.num_response_threads());
+            assertEquals(1, config.num_response_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());
@@ -168,13 +168,13 @@ public class StorageClusterTest {
                         "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                         "  </group>" +
                         "</cluster>",
-                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()),
-                new TestProperties().setDefaultNumResponseThreads(3)
+                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         stc.getConfig(builder);
         StorFilestorConfig config = new StorFilestorConfig(builder);
-        assertEquals(3, config.num_response_threads());
+        assertEquals(1, config.num_response_threads());
+        assertEquals(7, config.num_threads());
     }
 
     @Test
