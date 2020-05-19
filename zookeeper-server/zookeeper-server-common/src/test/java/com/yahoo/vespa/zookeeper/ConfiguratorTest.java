@@ -121,6 +121,7 @@ public class ConfiguratorTest {
     @Test(expected = RuntimeException.class)
     public void require_that_this_id_must_be_present_amongst_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
+        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.server(newServer(1, "bar", 234, 432));
         builder.server(newServer(2, "baz", 345, 543));
         builder.myid(0);
