@@ -40,9 +40,9 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = tester.makeApplicationId();
+        ApplicationId application1 = tester.makeApplicationId("app1");
 
-        tester.makeReadyNodes(21, small);
+        tester.makeReadyNodes(31, small);
 
         deploy(application1, 6, 1, small, tester);
         deploy(application1, 6, 2, small, tester);
@@ -86,10 +86,10 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups_after_flavor_migration() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = tester.makeApplicationId();
+        ApplicationId application1 = tester.makeApplicationId("app1");
 
         tester.makeReadyNodes(10, small);
-        tester.makeReadyNodes(10, large);
+        tester.makeReadyNodes(16, large);
 
         deploy(application1, 8, 1, small, tester);
         deploy(application1, 8, 1, large, tester);
@@ -125,10 +125,10 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups_after_flavor_migration_and_exiration() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = tester.makeApplicationId();
+        ApplicationId application1 = tester.makeApplicationId("app1");
 
         tester.makeReadyNodes(10, small);
-        tester.makeReadyNodes(10, large);
+        tester.makeReadyNodes(16, large);
 
         deploy(application1, 8, 1, small, tester);
         deploy(application1, 8, 1, large, tester);
@@ -164,13 +164,8 @@ public class MultigroupProvisioningTest {
         int nodeCount = capacity.minResources().nodes();
         NodeResources nodeResources = capacity.minResources().nodeResources();
 
-        int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
-
         tester.activate(application, prepare(application, capacity, tester));
-        assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
-                     Math.max(0, previousActiveNodeCount - capacity.minResources().nodes()),
-                     tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
-        assertEquals("Other flavors are retired",
+        assertEquals("Nodes of wrong size are retired",
                      0, tester.getNodes(application, Node.State.active).not().retired().not().resources(nodeResources).size());
 
         // Check invariants for all nodes

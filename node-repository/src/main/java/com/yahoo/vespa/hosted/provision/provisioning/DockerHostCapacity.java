@@ -11,8 +11,8 @@ import java.util.Objects;
 /**
  * Capacity calculation for docker hosts.
  * <p>
- * The calculations is based on an immutable copy of nodes that represents
- * all capacities in the system - i.e. all nodes in the node repo give or take.
+ * The calculations are based on an immutable copy of nodes that represents
+ * all capacities in the system - i.e. all nodes in the node repo.
  *
  * @author smorgrav
  */
@@ -30,7 +30,7 @@ public class DockerHostCapacity {
         int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
 
-        // If resources are equal we want to assign to the one with the most IPaddresses free
+        // If resources are equal we want to assign to the one with the most IP addresses free
         return freeIPs(hostB) - freeIPs(hostA);
     }
 
@@ -65,9 +65,9 @@ public class DockerHostCapacity {
 
     NodeResources freeCapacityOf(Node host, boolean excludeInactive) {
         // Only hosts have free capacity
-        if (!host.type().canRun(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
-        NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
+        if ( ! host.type().canRun(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
 
+        NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
         return allNodes.childrenOf(host).asList().stream()
                 .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
                 .map(node -> node.flavor().resources().justNumbers())

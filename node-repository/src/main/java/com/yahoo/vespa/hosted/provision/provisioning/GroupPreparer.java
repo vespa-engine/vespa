@@ -67,24 +67,22 @@ public class GroupPreparer {
             try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes
-                LockedNodeList nodeList = nodeRepository.list(allocationLock);
-                NodePrioritizer prioritizer = new NodePrioritizer(nodeList,
+                LockedNodeList allNodes = nodeRepository.list(allocationLock);
+                NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
+                                                               highestIndex,  nodeRepository);
+
+                NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                                   application,
                                                                   cluster,
                                                                   requestedNodes,
                                                                   spareCount,
                                                                   wantedGroups,
-                                                                  nodeRepository.nameResolver(),
-                                                                  nodeRepository.resourcesCalculator(),
-                                                                  allocateFully);
-
+                                                                  allocateFully,
+                                                                  nodeRepository);
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
-                // Allocate from the prioritized list
-                NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
-                                                               highestIndex,  nodeRepository);
+                prioritizer.addNewDockerNodes();
                 allocation.offer(prioritizer.prioritize());
 
                 if (dynamicProvisioningEnabled) {
@@ -114,15 +112,15 @@ public class GroupPreparer {
                 }
 
                 if (! allocation.fulfilled() && requestedNodes.canFail())
-                    throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
-                                                     " in " + application.toShortString() +
+                    throw new OutOfCapacityException((cluster.group().isPresent() ? "Out of capacity on " + cluster.group().get() :"") +
                                                      allocation.outOfCapacityDetails());
 
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
                 nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-                surplusActiveNodes.removeAll(allocation.surplusNodes());
-                return allocation.finalNodes(surplusActiveNodes);
+                List<Node> acceptedNodes = allocation.finalNodes();
+                surplusActiveNodes.removeAll(acceptedNodes);
+                return acceptedNodes;
             }
         }
     }
