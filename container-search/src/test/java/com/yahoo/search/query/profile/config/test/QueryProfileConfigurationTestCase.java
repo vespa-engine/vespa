@@ -1,26 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.config.test;
 
-import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.io.IOUtils;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.search.query.profile.config.QueryProfilesConfig.Queryprofile;
 import com.yahoo.search.test.QueryTestCase;
-import com.yahoo.vespa.config.ConfigPayload;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author bratseth

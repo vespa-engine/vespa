@@ -6063,8 +6063,9 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig)",
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
-      "public void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
+      "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)"
     ],
