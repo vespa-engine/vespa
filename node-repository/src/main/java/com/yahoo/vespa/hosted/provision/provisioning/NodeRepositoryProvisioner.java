@@ -74,7 +74,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.preparer = new Preparer(nodeRepository,
                                      zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                                      provisionServiceProvider.getHostProvisioner(),
-                                     provisionServiceProvider.getHostResourcesCalculator(),
                                      flagSource,
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);

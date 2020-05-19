@@ -316,10 +316,9 @@ class NodeAllocation {
      * Prefer to retire nodes of the wrong flavor.
      * Make as few changes to the retired set as possible.
      *
-     * @param surplusNodes this will add nodes not any longer needed by this group to this list
      * @return the final list of nodes
      */
-    List<Node> finalNodes(List<Node> surplusNodes) {
+    List<Node> finalNodes() {
         int currentRetiredCount = (int) nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
@@ -327,7 +326,6 @@ class NodeAllocation {
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
                     node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
-                    surplusNodes.add(node.node); // offer this node to other groups
                     if (--deltaRetiredCount == 0) break;
                 }
             }

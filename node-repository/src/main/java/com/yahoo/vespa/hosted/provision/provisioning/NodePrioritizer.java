@@ -198,9 +198,8 @@ public class NodePrioritizer {
      * parameters to the priority sorting procedure.
      */
     private PrioritizableNode toPrioritizable(Node node, boolean isSurplusNode, boolean isNewNode) {
-        PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
-                .surplusNode(isSurplusNode)
-                .newNode(isNewNode);
+        PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node).surplusNode(isSurplusNode)
+                                                                               .newNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
             NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);

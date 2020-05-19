@@ -29,7 +29,7 @@ class Preparer {
     private final int spareCount;
 
     public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource,
+                    FlagSource flagSource,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.spareCount = spareCount;
@@ -46,7 +46,7 @@ class Preparer {
         }
         catch (OutOfCapacityException e) {
             throw new OutOfCapacityException("Could not satisfy " + requestedNodes +
-                                             ( wantedGroups > 1 ? " ( in " + wantedGroups + " groups)" : "") +
+                                             ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
                                              " in " + application + " " + cluster +
                                              ": " + e.getMessage());
         }

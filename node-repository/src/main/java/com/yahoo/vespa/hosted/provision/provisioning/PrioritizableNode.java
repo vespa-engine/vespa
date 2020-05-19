@@ -33,7 +33,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** True if the node is allocated to a host that should be dedicated as a spare */
     final boolean violatesSpares;
 
-    /** True if this is a node that has been retired earlier in the allocation process */
+    /** True if this node belongs to a group which will not be needed after this deployment */
     final boolean isSurplusNode;
 
     /** This node does not exist in the node repository yet */

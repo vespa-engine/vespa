@@ -118,8 +118,9 @@ public class GroupPreparer {
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
                 nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-                surplusActiveNodes.removeAll(allocation.surplusNodes());
-                return allocation.finalNodes(surplusActiveNodes);
+                List<Node> acceptedNodes = allocation.finalNodes();
+                surplusActiveNodes.removeAll(acceptedNodes);
+                return acceptedNodes;
             }
         }
     }
