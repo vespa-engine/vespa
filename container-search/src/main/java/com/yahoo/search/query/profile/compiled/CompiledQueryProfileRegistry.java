@@ -1,14 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.compiled;
 
-import com.google.inject.Inject;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.search.query.profile.QueryProfile;
-import com.yahoo.search.query.profile.QueryProfileCompiler;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
-import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 
 /**
@@ -23,15 +18,6 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
     
     private final QueryProfileTypeRegistry typeRegistry;
 
-    @Inject
-    public CompiledQueryProfileRegistry(QueryProfilesConfig config) {
-        QueryProfileRegistry registry = QueryProfileConfigurer.createFromConfig(config);
-        typeRegistry = registry.getTypeRegistry();
-        for (QueryProfile inputProfile : registry.allComponents()) {
-            register(QueryProfileCompiler.compile(inputProfile, this));
-        }
-    }
-
     /** Creates a compiled query profile registry with no types */
     public CompiledQueryProfileRegistry() {
         this(QueryProfileTypeRegistry.emptyFrozen());
@@ -42,7 +28,7 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
     }
 
     /** Registers a type by its id */
-    public final void register(CompiledQueryProfile profile) {
+    public void register(CompiledQueryProfile profile) {
         super.register(profile.getId(), profile);
     }
 

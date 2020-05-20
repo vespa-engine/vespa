@@ -5,12 +5,10 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -36,8 +34,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
 
-    public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
-
     private ApplicationContainerCluster owningCluster;
     private final List<AbstractSearchCluster> searchClusters = new LinkedList<>();
     private final Options options;
@@ -50,8 +46,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         super(chains);
         this.owningCluster = cluster;
         this.options = options;
-
-        owningCluster.addComponent(new SimpleComponent(QUERY_PROFILE_REGISTRY_CLASS));
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
