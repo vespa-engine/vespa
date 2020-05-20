@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
+#include <vespa/searchlib/fef/phrase_splitter_query_env.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <iomanip>
 #include <iostream>
@@ -42,7 +43,8 @@ Benchmark::run(size_t numRuns, size_t numPositions)
         tmd->appendPosition(TermFieldMatchDataPosition(0, i, 0, numPositions));
     }
 
-    PhraseSplitter ps(qe, 0);
+    PhraseSplitterQueryEnv ps_query_env(qe, 0);
+    PhraseSplitter ps(ps_query_env);
 
     std::cout << "Start benchmark with numRuns(" << numRuns << ") and numPositions(" << numPositions << ")" << std::endl;
 

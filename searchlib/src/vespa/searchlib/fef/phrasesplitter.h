@@ -2,59 +2,34 @@
 
 #pragma once
 
-#include "iqueryenvironment.h"
 #include "matchdata.h"
-#include "simpletermdata.h"
 #include "termfieldmatchdata.h"
-#include "fieldinfo.h"
 
 namespace search::fef {
 
+class PhraseSplitterQueryEnv;
+
 /**
- * This class is used to split all phrase terms in a query environment
- * into separate terms. New TermData and TermFieldMatchData objects
- * are created for each splitted phrase term and managed by this
- * class.  Unmodified single terms are served from the query
- * environment and match data.
+ * This class is used together with PhraseSplitterQueryEnv to split
+ * all phrase terms in a query environment into separate terms. New
+ * TermFieldMatchData objects are created for each splitted phrase
+ * term and managed by this class.  Unmodified single terms are served
+ * from the query environment and match data.
  *
  * The TermFieldMatchData objects managed by this class are updated
  * based on the TermFieldMatchData objects associated with the
  * original phrase terms. Positions are adjusted with +1 for each term
  * after the first one.
  *
- * Use this class if you want to handle a phrase term the same way as
- * single terms.
+ * Use this class and PhraseSplitterQueryEnv if you want to handle a
+ * phrase term the same way as single terms.
  **/
-class PhraseSplitter : public IQueryEnvironment
+class PhraseSplitter
 {
-private:
-    struct TermIdx {
-        uint32_t idx;      // index into either query environment or vector of TermData objects
-        bool     splitted; // whether this term has been splitted or not
-        TermIdx(uint32_t i, bool s) : idx(i), splitted(s) {}
-    };
-    struct PhraseTerm {
-        const ITermData & term; // for original phrase
-        uint32_t idx; // index into vector of our TermData objects
-        TermFieldHandle orig_handle;
-        PhraseTerm(const ITermData & t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
-    };
-    struct HowToCopy {
-        TermFieldHandle orig_handle;
-        TermFieldHandle split_handle;
-        uint32_t offsetInPhrase;
-    };
-
-    const IQueryEnvironment        &_queryEnv;
+    const PhraseSplitterQueryEnv&   _phrase_splitter_query_env;
+    TermFieldHandle                 _skipHandles;
     const MatchData                *_matchData;
-    std::vector<SimpleTermData>     _terms;       // splitted terms
     std::vector<TermFieldMatchData> _termMatches; // match objects associated with splitted terms
-    std::vector<HowToCopy>          _copyInfo;
-    std::vector<TermIdx>            _termIdxMap;  // renumbering of terms
-    TermFieldHandle                 _maxHandle;   // the largest among original term field handles
-    TermFieldHandle                 _skipHandles;   // how many handles to skip
-
-    void considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
 
     TermFieldMatchData *resolveSplittedTermField(TermFieldHandle handle) {
         return &_termMatches[handle - _skipHandles];
@@ -71,7 +46,7 @@ public:
      * @param queryEnv the query environment to wrap.
      * @param field the field where we need to split phrases
      **/
-    PhraseSplitter(const IQueryEnvironment & queryEnv, uint32_t fieldId);
+    PhraseSplitter(const PhraseSplitterQueryEnv &phrase_splitter_query_env);
     ~PhraseSplitter();
 
     /**
@@ -88,15 +63,6 @@ public:
      * Update the underlying TermFieldMatchData objects based on the bound MatchData object.
      **/
     void update();
-    uint32_t getNumTerms() const override { return _termIdxMap.size(); }
-
-    const ITermData * getTerm(uint32_t idx) const override {
-        if (idx >= _termIdxMap.size()) {
-            return nullptr;
-        }
-        const TermIdx & ti = _termIdxMap[idx];
-        return ti.splitted ? &_terms[ti.idx] : _queryEnv.getTerm(ti.idx);
-    }
 
     /**
      * Inherit doc from MatchData.
@@ -108,12 +74,8 @@ public:
         return handle < _skipHandles ? _matchData->resolveTermField(handle) : resolveSplittedTermField(handle);
     }
 
-    const Properties & getProperties() const override { return _queryEnv.getProperties(); }
-    const Location & getLocation() const override { return _queryEnv.getLocation(); }
-    const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
-    double get_average_field_length(const vespalib::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
-    const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
+    const PhraseSplitterQueryEnv& get_query_env() const { return _phrase_splitter_query_env; }
 };
 
 }

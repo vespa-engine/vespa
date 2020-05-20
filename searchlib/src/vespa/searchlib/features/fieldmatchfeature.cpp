@@ -5,6 +5,7 @@
 #include <vespa/searchlib/features/fieldmatch/computer.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/phrase_splitter_query_env.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
@@ -20,6 +21,7 @@ namespace search::features {
  */
 class FieldMatchExecutor : public fef::FeatureExecutor {
 private:
+    PhraseSplitterQueryEnv _splitter_env;
     fef::PhraseSplitter    _splitter;
     const fef::FieldInfo & _field;
     fieldmatch::Computer   _cmp;
@@ -37,7 +39,8 @@ FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
                                        const FieldInfo & field,
                                        [[maybe_unused]] const fieldmatch::Params & params) :
     FeatureExecutor(),
-    _splitter(queryEnv, field.id()),
+    _splitter_env(queryEnv, field.id()),
+    _splitter(_splitter_env),
     _field(field),
     _cmp(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()),
          _splitter, field, params)

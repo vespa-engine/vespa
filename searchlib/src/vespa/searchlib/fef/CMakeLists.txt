@@ -23,6 +23,7 @@ vespa_add_library(searchlib_fef OBJECT
     parameter.cpp
     parameterdescriptions.cpp
     parametervalidator.cpp
+    phrase_splitter_query_env.cpp
     phrasesplitter.cpp
     properties.cpp
     queryproperties.cpp
