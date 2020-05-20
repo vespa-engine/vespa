@@ -119,37 +119,6 @@ public class RetiredExpirerTest {
     }
 
     @Test
-    public void ensure_retired_groups_time_out() {
-        createReadyNodes(8, nodeResources, nodeRepository);
-        createHostNodes(4, nodeRepository, nodeFlavors);
-
-        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        activate(applicationId, cluster, 8, 8, provisioner);
-        activate(applicationId, cluster, 2, 2, provisioner);
-        assertEquals(8, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
-
-        // Cause inactivation of retired nodes
-        clock.advance(Duration.ofHours(30)); // Retire period spent
-        MockDeployer deployer =
-            new MockDeployer(provisioner,
-                             clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
-                                                                                                         cluster,
-                                                                                                         Capacity.from(new ClusterResources(2, 1, nodeResources)))));
-        createRetiredExpirer(deployer).run();
-        assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
-        assertEquals(1, deployer.redeployments);
-
-        // inactivated nodes are not retired
-        for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))
-            assertFalse(node.allocation().get().membership().retired());
-    }
-
-    @Test
     public void ensure_early_inactivation() throws OrchestrationException {
         createReadyNodes(7, nodeResources, nodeRepository);
         createHostNodes(4, nodeRepository, nodeFlavors);
