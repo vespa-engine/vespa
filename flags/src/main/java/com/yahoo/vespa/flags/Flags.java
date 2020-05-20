@@ -277,6 +277,12 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag APPLICATION_IAM_ROLE = defineFeatureFlag(
+            "application-iam-roles", false,
+            "Allow separate iam roles when provisioning/assigning hosts",
+            "Takes effect immediately on new hosts, on next redeploy for applications",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
