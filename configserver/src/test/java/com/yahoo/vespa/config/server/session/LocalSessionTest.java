@@ -9,8 +9,6 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
@@ -23,24 +21,20 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +42,8 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  */
 public class LocalSessionTest {
+
+    private static final File testApp = new File("src/test/apps/app");
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private Path tenantPath = Path.createRoot();
@@ -93,26 +89,6 @@ public class LocalSessionTest {
     }
 
     @Test
-    public void require_that_preparer_is_run() throws Exception {
-        SessionTest.MockSessionPreparer preparer = new SessionTest.MockSessionPreparer();
-        LocalSession session = createSession(TenantName.defaultName(), 3, preparer);
-        assertFalse(preparer.isPrepared);
-        doPrepare(session);
-        assertTrue(preparer.isPrepared);
-        assertThat(session.getStatus(), is(Session.Status.PREPARE));
-    }
-
-    @Test
-    public void require_that_session_status_can_be_deactivated() throws Exception {
-        SessionTest.MockSessionPreparer preparer = new SessionTest.MockSessionPreparer();
-        LocalSession session = createSession(TenantName.defaultName(), 3, preparer);
-        session.createDeactivateTransaction().commit();
-        assertThat(session.getStatus(), is(Session.Status.DEACTIVATE));
-    }
-
-    private File testApp = new File("src/test/apps/app");
-
-    @Test
     public void require_that_application_file_can_be_fetched() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
         ApplicationFile f1 = session.getApplicationFile(Path.fromString("services.xml"), LocalSession.Mode.READ);
@@ -138,39 +114,6 @@ public class LocalSessionTest {
     @Test(expected = IllegalStateException.class)
     public void require_that_no_provision_info_throws_exception() throws Exception {
         createSession(TenantName.defaultName(), 3).getAllocatedHosts();
-    }
-
-    @Test
-    public void require_that_provision_info_can_be_read() throws Exception {
-        List<NetworkPorts.Allocation> list = new ArrayList<>();
-        list.add(new NetworkPorts.Allocation(8080, "container", "default/0", "http"));
-        list.add(new NetworkPorts.Allocation(19101, "searchnode", "other/1", "rpc"));
-        NetworkPorts ports = new NetworkPorts(list);
-
-        AllocatedHosts input = AllocatedHosts.withHosts(Collections.singleton(
-                new HostSpec("myhost", Collections.emptyList(),
-                             Optional.empty(), Optional.empty(), Optional.empty(),
-                             Optional.of(ports))));
-
-        LocalSession session = createSession(TenantName.defaultName(), 3, new SessionTest.MockSessionPreparer(), Optional.of(input));
-        ApplicationId origId = new ApplicationId.Builder()
-                               .tenant("tenant")
-                               .applicationName("foo").instanceName("quux").build();
-        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build());
-        AllocatedHosts info = session.getAllocatedHosts();
-        assertNotNull(info);
-        assertThat(info.getHosts().size(), is(1));
-        assertTrue(info.getHosts().contains(new HostSpec("myhost", Collections.emptyList())));
-        Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
-        assertTrue(portsCopy.isPresent());
-        assertThat(portsCopy.get().allocations(), is(list));
-    }
-
-    @Test
-    public void require_that_application_metadata_is_correct() throws Exception {
-        LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session, new PrepareParams.Builder().build());
-        assertThat(session.getMetaData().toString(), is("n/a, n/a, 0, 0, , 0"));
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId) throws Exception {
