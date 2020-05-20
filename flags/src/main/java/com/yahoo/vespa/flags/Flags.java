@@ -277,6 +277,12 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundIntFlag JDISC_HEALTH_CHECK_PROXY_CLIENT_TIMEOUT = defineIntFlag(
+            "jdisc-health-check-proxy-client-timeout", 1000,
+            "Temporary flag to rollout reduced timeout for JDisc's health check proxy client. Timeout in milliseconds",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

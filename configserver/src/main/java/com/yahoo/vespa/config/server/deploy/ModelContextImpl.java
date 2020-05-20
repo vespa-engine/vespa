@@ -25,6 +25,7 @@ import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -156,6 +157,7 @@ public class ModelContextImpl implements ModelContext {
         private final double queueSizefactor;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
+        private final int jdiscHealthCheckProxyClientTimeout;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -200,6 +202,8 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
+            jdiscHealthCheckProxyClientTimeout = Flags.JDISC_HEALTH_CHECK_PROXY_CLIENT_TIMEOUT.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -281,6 +285,8 @@ public class ModelContextImpl implements ModelContext {
         public Optional<ApplicationRoles> applicationRoles() {
             return applicationRoles;
         }
+
+        @Override public Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(jdiscHealthCheckProxyClientTimeout); }
     }
 
 }

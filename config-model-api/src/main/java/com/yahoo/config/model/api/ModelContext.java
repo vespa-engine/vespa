@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Zone;
 
 import java.io.File;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -95,6 +96,9 @@ public interface ModelContext {
         default boolean useDedicatedNodesWhenUnspecified() { return true; }
 
         Optional<ApplicationRoles> applicationRoles();
+
+        // TODO(bjorncs): Temporary feature flag, revisit July 2020
+        default Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofSeconds(1); }
     }
 
 }
