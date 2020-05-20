@@ -101,6 +101,9 @@ healthCheckProxy.enable        bool    default=false
 # Which port to proxy
 healthCheckProxy.port          int     default=8080
 
+# Low-level timeout for proxy client (socket connect, socket read, connection pool). Aggregate timeout will be longer.
+healthCheckProxy.clientTimeout double  default=1.0
+
 # Enable PROXY protocol V1/V2 support (only for https connectors).
 proxyProtocol.enabled          bool    default=false
 

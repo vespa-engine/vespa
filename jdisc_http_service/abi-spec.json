@@ -73,6 +73,7 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy)",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder enable(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder port(int)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder clientTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy build()"
     ],
     "fields": []
@@ -87,7 +88,8 @@
     "methods": [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder)",
       "public boolean enable()",
-      "public int port()"
+      "public int port()",
+      "public double clientTimeout()"
     ],
     "fields": []
   },
