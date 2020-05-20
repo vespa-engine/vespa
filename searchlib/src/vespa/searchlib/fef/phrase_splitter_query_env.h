@@ -24,7 +24,7 @@ namespace search::fef {
  **/
 class PhraseSplitterQueryEnv : public IQueryEnvironment
 {
-protected:
+private:
     struct TermIdx {
         uint32_t idx;      // index into either query environment or vector of TermData objects
         bool     splitted; // whether this term has been splitted or not
@@ -36,18 +36,20 @@ protected:
         TermFieldHandle orig_handle;
         PhraseTerm(const ITermData & t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
     };
+public:
     struct HowToCopy {
         TermFieldHandle orig_handle;
         TermFieldHandle split_handle;
         uint32_t offsetInPhrase;
     };
-
+private:
     const IQueryEnvironment        &_queryEnv;
     std::vector<SimpleTermData>     _terms;       // splitted terms
     std::vector<HowToCopy>          _copyInfo;
     std::vector<TermIdx>            _termIdxMap;  // renumbering of terms
     TermFieldHandle                 _maxHandle;   // the largest among original term field handles
     TermFieldHandle                 _skipHandles;   // how many handles to skip
+    uint32_t                        _field_id;
 
     void considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
 
@@ -79,6 +81,12 @@ public:
     const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
     double get_average_field_length(const vespalib::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
     const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
+
+    // Accessor methods used by PhraseSplitter
+    TermFieldHandle get_skip_handles() const { return _skipHandles; }
+    uint32_t get_num_phrase_split_terms() const { return _terms.size(); }
+    uint32_t get_field_id() const { return _field_id; }
+    const std::vector<HowToCopy>& get_copy_info() const { return _copyInfo; }
 };
 
 

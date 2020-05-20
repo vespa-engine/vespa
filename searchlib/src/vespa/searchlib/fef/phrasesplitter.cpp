@@ -1,18 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "phrasesplitter.h"
+#include "phrase_splitter_query_env.h"
 
 namespace search::fef {
 
-PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv, uint32_t fieldId)
-    : PhraseSplitterQueryEnv(queryEnv, fieldId),
+PhraseSplitter::PhraseSplitter(const PhraseSplitterQueryEnv& phrase_splitter_query_env)
+    : _phrase_splitter_query_env(phrase_splitter_query_env),
+      _skipHandles(_phrase_splitter_query_env.get_skip_handles()),
       _matchData(nullptr),
-      _termMatches()
+      _termMatches(_phrase_splitter_query_env.get_num_phrase_split_terms())
 {
-    _termMatches.reserve(_terms.size());
-    for ([[maybe_unused]] auto & term : _terms) {
-        _termMatches.emplace_back();
-        _termMatches.back().setFieldId(fieldId);
+    uint32_t field_id = _phrase_splitter_query_env.get_field_id();
+    for (auto & term_match : _termMatches) {
+        term_match.setFieldId(field_id);
     }
 }
 
@@ -33,11 +34,11 @@ PhraseSplitter::copyTermFieldMatchData(TermFieldMatchData & dst, const TermField
 void
 PhraseSplitter::update()
 {
-    for (uint32_t i = 0; i < _copyInfo.size(); ++i) {
-        const TermFieldMatchData *src = _matchData->resolveTermField(_copyInfo[i].orig_handle);
-        TermFieldMatchData *dst = resolveSplittedTermField(_copyInfo[i].split_handle);
+    for (const auto &copy_info : _phrase_splitter_query_env.get_copy_info()) {
+        const TermFieldMatchData *src = _matchData->resolveTermField(copy_info.orig_handle);
+        TermFieldMatchData *dst = resolveSplittedTermField(copy_info.split_handle);
         assert(src != nullptr && dst != nullptr);
-        copyTermFieldMatchData(*dst, *src, _copyInfo[i].offsetInPhrase);
+        copyTermFieldMatchData(*dst, *src, copy_info.offsetInPhrase);
     }
 
 }

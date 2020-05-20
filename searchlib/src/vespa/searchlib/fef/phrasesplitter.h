@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include "phrase_splitter_query_env.h"
 #include "matchdata.h"
 #include "termfieldmatchdata.h"
 
 namespace search::fef {
+
+class PhraseSplitterQueryEnv;
 
 /**
  * This class is used to split all phrase terms in a query environment
@@ -23,8 +24,10 @@ namespace search::fef {
  * Use this class if you want to handle a phrase term the same way as
  * single terms.
  **/
-class PhraseSplitter : public PhraseSplitterQueryEnv
+class PhraseSplitter
 {
+    const PhraseSplitterQueryEnv&   _phrase_splitter_query_env;
+    TermFieldHandle                 _skipHandles;
     const MatchData                *_matchData;
     std::vector<TermFieldMatchData> _termMatches; // match objects associated with splitted terms
 
@@ -43,7 +46,7 @@ public:
      * @param queryEnv the query environment to wrap.
      * @param field the field where we need to split phrases
      **/
-    PhraseSplitter(const IQueryEnvironment & queryEnv, uint32_t fieldId);
+    PhraseSplitter(const PhraseSplitterQueryEnv &phrase_splitter_query_env);
     ~PhraseSplitter();
 
     /**
@@ -72,6 +75,7 @@ public:
     }
 
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
+    const PhraseSplitterQueryEnv& get_phrase_splitter_query_env() const { return _phrase_splitter_query_env; }
 };
 
 }

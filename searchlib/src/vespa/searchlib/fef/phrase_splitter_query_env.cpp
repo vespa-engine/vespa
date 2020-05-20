@@ -31,12 +31,13 @@ PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, st
     _termIdxMap.push_back(TermIdx(termIdx, false));
 }
 
-PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEnv, uint32_t fieldId) :
-    _queryEnv(queryEnv),
-    _terms(),
-    _termIdxMap(),
-    _maxHandle(0),
-    _skipHandles(0)
+PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEnv, uint32_t fieldId)
+    : _queryEnv(queryEnv),
+      _terms(),
+      _termIdxMap(),
+      _maxHandle(0),
+      _skipHandles(0),
+      _field_id(fieldId)
 {
     TermFieldHandle numHandles = 0; // how many handles existed in underlying data
     std::vector<PhraseTerm> phraseTerms; // data about original phrase terms

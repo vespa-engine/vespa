@@ -2,6 +2,7 @@
 
 #include "computer.h"
 #include <vespa/searchlib/features/utils.h>
+#include <vespa/searchlib/fef/phrase_splitter_query_env.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
@@ -35,10 +36,11 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
     _cachedHits()
 {
     // Store term data for all terms searching in this field
-    _queryTermFieldMatch.reserve(splitter.getNumTerms());
-    _cachedHits.reserve(splitter.getNumTerms());
-    for (uint32_t i = 0; i < splitter.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(splitter, i, true);
+    const auto& splitter_query_env = splitter.get_phrase_splitter_query_env();
+    _queryTermFieldMatch.reserve(splitter_query_env.getNumTerms());
+    _cachedHits.reserve(splitter_query_env.getNumTerms());
+    for (uint32_t i = 0; i < splitter_query_env.getNumTerms(); ++i) {
+        QueryTerm qt = QueryTermFactory::create(splitter_query_env, i, true);
         _totalTermWeight += qt.termData()->getWeight().percent();
         _totalTermSignificance += qt.significance();
         _simpleMetrics.addQueryTerm(qt.termData()->getWeight().percent());
@@ -52,11 +54,11 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
         }
     }
 
-    _totalTermWeight = atoi(splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").
+    _totalTermWeight = atoi(splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermWeight").
                             get(vespalib::make_string("%d", _totalTermWeight)).c_str());
-    _totalTermSignificance = vespalib::locale::c::atof(splitter.getProperties().lookup(propertyNamespace, "totalTermSignificance").
+    _totalTermSignificance = vespalib::locale::c::atof(splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermSignificance").
                                   get(vespalib::make_string("%f", _totalTermSignificance)).c_str());
-    if (splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").found()) {
+    if (splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermWeight").found()) {
         _simpleMetrics.setTotalWeightInQuery(_totalTermWeight);
     }
 
@@ -139,7 +141,7 @@ Computer::handleError(uint32_t fieldPos, uint32_t docId) const
     static int errcnt;
     if (errcnt < 1000) {
         errcnt++;
-        const FieldInfo * finfo = _splitter.getIndexEnvironment().getField(getFieldId());
+        const FieldInfo * finfo = _splitter.get_phrase_splitter_query_env().getIndexEnvironment().getField(getFieldId());
         LOG(debug, "Bad field position %u >= fieldLength %u for field '%s' document %u. "
                    "Document was probably refed during query (Ticket 7104969)",
                    fieldPos, _fieldLength,
