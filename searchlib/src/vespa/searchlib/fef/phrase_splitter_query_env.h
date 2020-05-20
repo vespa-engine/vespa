@@ -53,7 +53,7 @@ public:
      * Create a phrase splitter based on the given query environment.
      *
      * @param queryEnv the query environment to wrap.
-     * @param field the field where we need to split phrases
+     * @param fieldId the field where we need to split phrases
      **/
     PhraseSplitterQueryEnv(const IQueryEnvironment & queryEnv, uint32_t fieldId);
     ~PhraseSplitterQueryEnv();
