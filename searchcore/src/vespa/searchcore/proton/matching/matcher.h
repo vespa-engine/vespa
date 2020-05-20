@@ -12,7 +12,7 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -54,8 +54,8 @@ private:
     using SearchRequest = search::engine::SearchRequest;
     using Properties = search::fef::Properties;
     using my_clock = std::chrono::steady_clock;
-    using StructFieldMapper = search::StructFieldMapper;
     using MatchingElements = search::MatchingElements;
+    using MatchingElementsFields = search::MatchingElementsFields;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
     std::shared_ptr<search::fef::RankSetup>  _rankSetup;
@@ -162,13 +162,13 @@ public:
      * @param search_ctx abstract view of searchable data
      * @param attr_ctx abstract view of attribute data
      * @param session_manager multilevel grouping session and query cache
-     * @param field_mapper knows which fields to collect information
-     *                     about and how they relate to each other
+     * @param fields knows which fields to collect information
+     *               about and how they relate to each other
      * @return matching elements
      **/
     MatchingElements::UP get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                                IAttributeContext &attr_ctx, SessionManager &session_manager,
-                                               const StructFieldMapper &field_mapper);
+                                               const MatchingElementsFields &fields);
 
     DocsumMatcher::UP create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
                                             IAttributeContext &attr_ctx, SessionManager &session_manager);

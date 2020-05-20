@@ -3,11 +3,11 @@
 #include <vespa/vsm/vsm/docsumconfig.h>
 #include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vsm/config/config-vsmfields.h>
 #include <vespa/vsm/config/config-vsmsummary.h>
 
-using search::StructFieldMapper;
+using search::MatchingElementsFields;
 using search::docsummary::IDocsumFieldWriter;
 using search::docsummary::EmptyDFW;
 using search::docsummary::MatchedElementsFilterDFW;
@@ -19,12 +19,12 @@ namespace vsm {
 
 namespace {
 
-void populate_mapper(StructFieldMapper& mapper, VsmfieldsConfig& fields_config, const vespalib::string& field_name)
+void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_config, const vespalib::string& field_name)
 {
     vespalib::string prefix = field_name + ".";
     for (const auto& spec : fields_config.fieldspec) {
         if (spec.name.substr(0, prefix.size()) == prefix) {
-            mapper.add_mapping(field_name, spec.name);
+            fields.add_mapping(field_name, spec.name);
         }
     }
 }
@@ -38,7 +38,7 @@ DynamicDocsumConfig::DynamicDocsumConfig(search::docsummary::IDocsumEnvironment*
 }
 
 IDocsumFieldWriter::UP
-DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<search::StructFieldMapper> struct_field_mapper)
+DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<search::MatchingElementsFields> matching_elems_fields)
 {
     IDocsumFieldWriter::UP fieldWriter;
     if ((overrideName == "staticrank") ||
@@ -60,11 +60,11 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         string source_field = argument.empty() ? fieldName : argument;
         const ResultConfig& resultConfig = getResultConfig();
         int source_field_enum = resultConfig.GetFieldNameEnum().Lookup(source_field.c_str());
-        populate_mapper(*struct_field_mapper, *_vsm_fields_config, source_field);
-        fieldWriter = MatchedElementsFilterDFW::create(source_field, source_field_enum, struct_field_mapper);
+        populate_fields(*matching_elems_fields, *_vsm_fields_config, source_field);
+        fieldWriter = MatchedElementsFilterDFW::create(source_field, source_field_enum, matching_elems_fields);
         rc = static_cast<bool>(fieldWriter);
     } else {
-        fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc, struct_field_mapper);
+        fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc, matching_elems_fields);
     }
     return fieldWriter;
 }

@@ -214,10 +214,10 @@ DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
 }
 
 std::unique_ptr<MatchingElements>
-DocsumContext::fill_matching_elements(const StructFieldMapper &struct_field_mapper)
+DocsumContext::fill_matching_elements(const MatchingElementsFields &fields)
 {
     if (_matcher) {
-        return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, struct_field_mapper);
+        return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, fields);
     }
     return std::make_unique<MatchingElements>();
 }

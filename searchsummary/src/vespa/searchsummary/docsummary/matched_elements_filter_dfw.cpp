@@ -8,7 +8,7 @@
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/smart_buffer.h>
@@ -29,35 +29,35 @@ namespace search::docsummary {
 const std::vector<uint32_t>&
 MatchedElementsFilterDFW::get_matching_elements(uint32_t docid, GetDocsumsState& state) const
 {
-    return state.get_matching_elements(*_struct_field_mapper).get_matching_elements(docid, _input_field_name);
+    return state.get_matching_elements(*_matching_elems_fields).get_matching_elements(docid, _input_field_name);
 }
 
 MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
-                                                   std::shared_ptr<StructFieldMapper> struct_field_mapper)
+                                                   std::shared_ptr<MatchingElementsFields> matching_elems_fields)
     : _input_field_name(input_field_name),
       _input_field_enum(input_field_enum),
-      _struct_field_mapper(std::move(struct_field_mapper))
+      _matching_elems_fields(std::move(matching_elems_fields))
 {
 }
 
 std::unique_ptr<IDocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
-                                 std::shared_ptr<StructFieldMapper> struct_field_mapper)
+                                 std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
-    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(struct_field_mapper));
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(matching_elems_fields));
 }
 
 std::unique_ptr<IDocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
                                  search::attribute::IAttributeContext& attr_ctx,
-                                 std::shared_ptr<StructFieldMapper> struct_field_mapper)
+                                 std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
         return std::unique_ptr<IDocsumFieldWriter>();
     }
-    resolver.apply_to(*struct_field_mapper);
-    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(struct_field_mapper));
+    resolver.apply_to(*matching_elems_fields);
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(matching_elems_fields));
 }
 
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;

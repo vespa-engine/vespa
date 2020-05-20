@@ -7,7 +7,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <cassert>
 
@@ -105,14 +105,14 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
                                                      const StructFieldsResolver& fields_resolver,
                                                      bool filter_elements,
-                                                     std::shared_ptr<StructFieldMapper> struct_field_mapper)
-    : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
+                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+    : AttributeCombinerDFW(fieldName, filter_elements, std::move(matching_elems_fields)),
       _fields(fields_resolver.get_array_fields()),
       _attributeNames(fields_resolver.get_array_attributes()),
       _is_map_of_scalar(fields_resolver.is_map_of_scalar())
 {
-    if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
-        fields_resolver.apply_to(*_struct_field_mapper);
+    if (filter_elements && _matching_elems_fields && !_matching_elems_fields->has_field(fieldName)) {
+        fields_resolver.apply_to(*_matching_elems_fields);
     }
 }
 

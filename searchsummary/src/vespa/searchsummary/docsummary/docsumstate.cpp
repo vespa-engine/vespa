@@ -50,10 +50,10 @@ GetDocsumsState::~GetDocsumsState()
 }
 
 const MatchingElements &
-GetDocsumsState::get_matching_elements(const StructFieldMapper &struct_field_mapper)
+GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_elems_fields)
 {
     if (!_matching_elements) {
-        _matching_elements = _callback.fill_matching_elements(struct_field_mapper);
+        _matching_elements = _callback.fill_matching_elements(matching_elems_fields);
     }
     return *_matching_elements;
 }

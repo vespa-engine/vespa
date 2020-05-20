@@ -17,10 +17,10 @@ private:
     HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
     std::vector<Blueprint::UP> _terms;
-    vespalib::string           _struct_field_name;
+    vespalib::string           _field_name;
 
 public:
-    SameElementBlueprint(const vespalib::string &struct_field_name_in, bool expensive);
+    SameElementBlueprint(const vespalib::string &field_name_in, bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint();
@@ -42,7 +42,7 @@ public:
                                       bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<Blueprint::UP> &terms() const { return _terms; }
-    const vespalib::string &struct_field_name() const { return _struct_field_name; }
+    const vespalib::string &field_name() const { return _field_name; }
 };
 
 }

@@ -2,7 +2,7 @@
 
 #include "struct_fields_resolver.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -78,18 +78,18 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
 StructFieldsResolver::~StructFieldsResolver() = default;
 
 void
-StructFieldsResolver::apply_to(StructFieldMapper& mapper) const
+StructFieldsResolver::apply_to(MatchingElementsFields& fields) const
 {
     if (is_map_of_struct()) {
         if (_has_map_key) {
-            mapper.add_mapping(_field_name, _map_key_attribute);
+            fields.add_mapping(_field_name, _map_key_attribute);
         }
         for (const auto& sub_field : _map_value_attributes) {
-            mapper.add_mapping(_field_name, sub_field);
+            fields.add_mapping(_field_name, sub_field);
         }
     } else {
         for (const auto& sub_field : _array_attributes) {
-            mapper.add_mapping(_field_name, sub_field);
+            fields.add_mapping(_field_name, sub_field);
         }
     }
 }

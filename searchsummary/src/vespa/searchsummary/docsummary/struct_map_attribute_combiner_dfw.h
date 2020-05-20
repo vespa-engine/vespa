@@ -26,7 +26,7 @@ public:
     StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
                                   const StructFieldsResolver& fields_resolver,
                                   bool filter_elements,
-                                  std::shared_ptr<StructFieldMapper> struct_field_mapper);
+                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields);
     ~StructMapAttributeCombinerDFW() override;
 };
 

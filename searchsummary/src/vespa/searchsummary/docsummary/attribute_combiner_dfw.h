@@ -6,7 +6,7 @@
 
 namespace search {
 class MatchingElements;
-class StructFieldMapper;
+class MatchingElementsFields;
 }
 namespace search::attribute { class IAttributeContext; }
 
@@ -25,15 +25,17 @@ protected:
     uint32_t _stateIndex;
     const bool _filter_elements;
     vespalib::string _fieldName;
-    std::shared_ptr<StructFieldMapper> _struct_field_mapper;
-    AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
+    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
+    AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements,
+                         std::shared_ptr<MatchingElementsFields> matching_elems_fields);
 protected:
     virtual std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) = 0;
 public:
     ~AttributeCombinerDFW() override;
     bool IsGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, search::attribute::IAttributeContext &attrCtx, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
+    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, search::attribute::IAttributeContext &attrCtx,
+                                                      bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields);
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 

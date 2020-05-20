@@ -363,10 +363,10 @@ struct MyWorld {
         return docsum_matcher->get_rank_features();
     }
 
-    MatchingElements::UP get_matching_elements(const DocsumRequest &req, const StructFieldMapper &mapper) {
+    MatchingElements::UP get_matching_elements(const DocsumRequest &req, const MatchingElementsFields &fields) {
         Matcher::SP matcher = createMatcher();
         auto docsum_matcher = matcher->create_docsum_matcher(req, searchContext, attributeContext, *sessionManager);
-        return docsum_matcher->get_matching_elements(mapper);
+        return docsum_matcher->get_matching_elements(fields);
     }
 };
 
@@ -922,10 +922,10 @@ TEST("require that docsum matcher can extract matching elements from same elemen
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
     auto request = world.create_docsum_request(make_same_element_stack_dump("foo", "bar"), {20});
-    StructFieldMapper mapper;
-    mapper.add_mapping("my", "my.a1");
-    mapper.add_mapping("my", "my.f1");
-    auto result = world.get_matching_elements(*request, mapper);
+    MatchingElementsFields fields;
+    fields.add_mapping("my", "my.a1");
+    fields.add_mapping("my", "my.f1");
+    auto result = world.get_matching_elements(*request, fields);
     const auto &list = result->get_matching_elements(20, "my");
     ASSERT_EQUAL(list.size(), 1u);
     EXPECT_EQUAL(list[0], 2u);
@@ -936,10 +936,10 @@ TEST("require that docsum matcher can extract matching elements from single attr
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
     auto request = world.create_docsum_request(make_simple_stack_dump("my.a1", "foo"), {20});
-    StructFieldMapper mapper;
-    mapper.add_mapping("my", "my.a1");
-    mapper.add_mapping("my", "my.f1");
-    auto result = world.get_matching_elements(*request, mapper);
+    MatchingElementsFields fields;
+    fields.add_mapping("my", "my.a1");
+    fields.add_mapping("my", "my.f1");
+    auto result = world.get_matching_elements(*request, fields);
     const auto &list = result->get_matching_elements(20, "my");
     ASSERT_EQUAL(list.size(), 2u);
     EXPECT_EQUAL(list[0], 2u);

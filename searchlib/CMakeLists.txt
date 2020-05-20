@@ -104,8 +104,8 @@ vespa_define_module(
     src/tests/common/bitvector
     src/tests/common/location
     src/tests/common/matching_elements
+    src/tests/common/matching_elements_fields
     src/tests/common/resultset
-    src/tests/common/struct_field_mapper
     src/tests/common/summaryfeatures
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex

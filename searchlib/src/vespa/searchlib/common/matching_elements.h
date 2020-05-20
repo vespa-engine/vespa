@@ -9,8 +9,8 @@
 namespace search {
 
 /**
- * Keeps track of which elements matched the query for a set of struct
- * fields across multiple documents.
+ * Keeps track of which elements matched the query for a set of fields
+ * across multiple documents.
  **/
 class MatchingElements
 {
@@ -26,8 +26,8 @@ public:
 
     using UP = std::unique_ptr<MatchingElements>;
 
-    void add_matching_elements(uint32_t docid, const vespalib::string &struct_field_name, const std::vector<uint32_t> &elements);
-    const std::vector<uint32_t> &get_matching_elements(uint32_t docid, const vespalib::string &struct_field_name) const;
+    void add_matching_elements(uint32_t docid, const vespalib::string &field_name, const std::vector<uint32_t> &elements);
+    const std::vector<uint32_t> &get_matching_elements(uint32_t docid, const vespalib::string &field_name) const;
 };
 
 } // namespace search

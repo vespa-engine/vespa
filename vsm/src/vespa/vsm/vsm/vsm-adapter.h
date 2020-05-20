@@ -42,7 +42,7 @@ public:
     void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
     void ParseLocation(GetDocsumsState * state) override;
     virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
-    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::StructFieldMapper& struct_field_mapper) override;
+    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
     void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }
     void set_matching_elements_filler(std::unique_ptr<IMatchingElementsFiller> matching_elements_filler);
