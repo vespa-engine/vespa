@@ -72,6 +72,7 @@ public class OperationHandlerImpl implements OperationHandler {
 
     public static final int VISIT_TIMEOUT_MS = 120000;
     public static final int WANTED_DOCUMENT_COUNT_UPPER_BOUND = 1000; // Approximates the max default size of a bucket
+    public static final int CONCURRENCY_UPPER_BOUND = 200;
     private final DocumentAccess documentAccess;
     private final DocumentApiMetrics metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
@@ -109,14 +110,14 @@ public class OperationHandlerImpl implements OperationHandler {
 
     private static final int HTTP_STATUS_BAD_REQUEST = 400;
     private static final int HTTP_STATUS_INSUFFICIENT_STORAGE = 507;
-    private static final int HTTP_PRE_CONDIDTION_FAILED = 412;
+    private static final int HTTP_PRECONDITION_FAILED = 412;
 
     public static int getHTTPStatusCode(Set<Integer> errorCodes) {
         if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return HTTP_STATUS_INSUFFICIENT_STORAGE;
         }
         if (errorCodes.contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED)) {
-            return HTTP_PRE_CONDIDTION_FAILED;
+            return HTTP_PRECONDITION_FAILED;
         }
         return HTTP_STATUS_BAD_REQUEST;
     }
@@ -399,6 +400,11 @@ public class OperationHandlerImpl implements OperationHandler {
         return selection.toString();
     }
 
+    private static int computeEffectiveConcurrency(Optional<Integer> requestConcurrency) {
+        int wantedConcurrency = requestConcurrency.orElse(1);
+        return Math.min(Math.max(wantedConcurrency, 1), CONCURRENCY_UPPER_BOUND);
+    }
+
     private VisitorParameters createVisitorParameters(
             RestUri restUri,
             String documentSelection,
@@ -425,7 +431,7 @@ public class OperationHandlerImpl implements OperationHandler {
         params.setMaxTotalHits(options.wantedDocumentCount
                 .map(n -> Math.min(Math.max(n, 1), WANTED_DOCUMENT_COUNT_UPPER_BOUND))
                 .orElse(1));
-        params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(options.concurrency.orElse(1)));
+        params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(computeEffectiveConcurrency(options.concurrency)));
         params.setToTimestamp(0L);
         params.setFromTimestamp(0L);
         params.setSessionTimeoutMs(VISIT_TIMEOUT_MS);

@@ -290,18 +290,34 @@ public class OperationHandlerImplTest {
         assertThat(params.fieldSet(), equalTo("document-type:bjarne"));
     }
 
+    private void assertConcurrencyPropagated(VisitorParameters params, int expectedConcurrency) {
+        assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
+        assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is(expectedConcurrency));
+    }
+
     @Test
     public void visit_concurrency_is_1_by_default() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
-        assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
-        assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)1));
+        assertConcurrencyPropagated(params, 1);
     }
 
     @Test
     public void visit_concurrency_is_propagated_to_visitor_parameters() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().concurrency(3).build());
-        assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
-        assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)3));
+        assertConcurrencyPropagated(params, 3);
+    }
+
+    @Test
+    public void too_low_visit_concurrency_is_capped_to_1() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().concurrency(0).build());
+        assertConcurrencyPropagated(params, 1);
+    }
+
+    @Test
+    public void too_high_visit_concurrency_is_capped_to_max() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(
+                optionsBuilder().concurrency(OperationHandlerImpl.CONCURRENCY_UPPER_BOUND + 1).build());
+        assertConcurrencyPropagated(params, OperationHandlerImpl.CONCURRENCY_UPPER_BOUND);
     }
 
     @Test
