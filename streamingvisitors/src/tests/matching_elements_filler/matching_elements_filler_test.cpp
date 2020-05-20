@@ -1,27 +1,27 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/datatype/datatypes.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/searchlib/query/streaming/queryterm.h>
-#include <vespa/searchlib/query/streaming/query.h>
-#include <vespa/vsm/searcher/fieldsearcher.h>
-#include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
-#include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/searchvisitor/matching_elements_filler.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vsm/searcher/fieldsearcher.h>
+#include <vespa/vsm/searcher/intfieldsearcher.h>
+#include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <iostream>
 
 using document::ArrayDataType;
@@ -38,7 +38,7 @@ using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
 using search::MatchingElements;
-using search::StructFieldMapper;
+using search::MatchingElementsFields;
 using search::fef::MatchData;
 using search::query::StackDumpCreator;
 using search::query::Weight;
@@ -256,24 +256,23 @@ vsm::DocumentTypeIndexFieldMapT make_index_to_field_ids() {
     return ret;
 }
 
-StructFieldMapper make_struct_field_mapper() {
-    StructFieldMapper mapper;
-    mapper.add_mapping("elem_array", "elem_array.name");
-    mapper.add_mapping("elem_array", "elem_array.weight");
-    mapper.add_mapping("elem_map", "elem_map.key");
-    mapper.add_mapping("elem_map", "elem_map.value.name");
-    mapper.add_mapping("elem_map", "elem_map.value.weight");
-    mapper.add_mapping("str_int_map", "str_int_map.key");
-    mapper.add_mapping("str_int_map", "str_int_map.value");
-    return mapper;
-
+MatchingElementsFields make_matching_elements_fields() {
+    MatchingElementsFields fields;
+    fields.add_mapping("elem_array", "elem_array.name");
+    fields.add_mapping("elem_array", "elem_array.weight");
+    fields.add_mapping("elem_map", "elem_map.key");
+    fields.add_mapping("elem_map", "elem_map.value.name");
+    fields.add_mapping("elem_map", "elem_map.value.weight");
+    fields.add_mapping("str_int_map", "str_int_map.key");
+    fields.add_mapping("str_int_map", "str_int_map.value");
+    return fields;
 }
 
 }
 
 class MatchingElementsFillerTest : public ::testing::Test {
     const MyDocType                         _doc_type;
-    StructFieldMapper                       _struct_field_mapper;
+    MatchingElementsFields                  _matching_elems_fields;
     vsm::SharedFieldPathMap                 _field_path_map;
     vsm::FieldIdTSearcherMap                _field_searcher_map;
     vsm::DocumentTypeIndexFieldMapT         _index_to_field_ids;
@@ -296,7 +295,7 @@ public:
 MatchingElementsFillerTest::MatchingElementsFillerTest()
     : ::testing::Test(),
       _doc_type(),
-      _struct_field_mapper(make_struct_field_mapper()),
+      _matching_elems_fields(make_matching_elements_fields()),
       _field_path_map(make_field_path_map(_doc_type)),
       _field_searcher_map(make_field_searcher_map()),
       _index_to_field_ids(make_index_to_field_ids()),
@@ -325,7 +324,7 @@ MatchingElementsFillerTest::fill_matching_elements(Query &&query)
     _query = std::move(query);
     _field_searcher_map.prepare(_index_to_field_ids, _shared_searcher_buf, _query);
     _matching_elements_filler = std::make_unique<MatchingElementsFiller>(_field_searcher_map, _query, _hit_collector, _search_result);
-    _matching_elements = _matching_elements_filler->fill_matching_elements(_struct_field_mapper);
+    _matching_elements = _matching_elements_filler->fill_matching_elements(_matching_elems_fields);
 }
 
 void

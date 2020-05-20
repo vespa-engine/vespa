@@ -11,12 +11,12 @@
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const vespalib::string &struct_field_name_in, bool expensive)
+SameElementBlueprint::SameElementBlueprint(const vespalib::string &field_name_in, bool expensive)
     : ComplexLeafBlueprint(FieldSpecBaseList()),
       _estimate(),
       _layout(),
       _terms(),
-      _struct_field_name(struct_field_name_in)
+      _field_name(field_name_in)
 {
     if (expensive) {
         set_cost_tier(State::COST_TIER_EXPENSIVE);

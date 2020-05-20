@@ -10,7 +10,7 @@
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "textextractordfw.h"
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -25,7 +25,7 @@ DynamicDocsumConfig::getResultConfig() const {
 }
 
 IDocsumFieldWriter::UP
-DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<StructFieldMapper> struct_field_mapper)
+DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     const ResultConfig & resultConfig = getResultConfig();
     rc = false;
@@ -97,14 +97,14 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
-            fieldWriter = AttributeCombinerDFW::create(fieldName, *attr_ctx, false, std::shared_ptr<StructFieldMapper>());
+            fieldWriter = AttributeCombinerDFW::create(fieldName, *attr_ctx, false, std::shared_ptr<MatchingElementsFields>());
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedattributeelementsfilter") {
         string source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
-            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, struct_field_mapper);
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, matching_elems_fields);
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedelementsfilter") {
@@ -112,7 +112,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
             fieldWriter = MatchedElementsFilterDFW::create(source_field, resultConfig.GetFieldNameEnum().Lookup(source_field.c_str()),
-                                                           *attr_ctx, struct_field_mapper);
+                                                           *attr_ctx, matching_elems_fields);
             rc = static_cast<bool>(fieldWriter);
         }
     } else {
@@ -125,14 +125,14 @@ void
 DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cfg)
 {
     std::vector<string> strCfg;
-    auto struct_field_mapper = std::make_shared<StructFieldMapper>();
+    auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
     if ((cfg.defaultoutputclass != -1) && !_writer->SetDefaultOutputClass(cfg.defaultoutputclass)) {
         throw IllegalArgumentException(make_string("could not set default output class to %d", cfg.defaultoutputclass));
     }
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
         bool rc(false);
-        IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, struct_field_mapper);
+        IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
         if (rc && fieldWriter.get() != NULL) {
             rc = _writer->Override(o.field.c_str(), fieldWriter.release()); // OBJECT HAND-OVER
         }
