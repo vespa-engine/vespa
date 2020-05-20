@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -294,7 +295,7 @@ public class ApplicationRepositoryTest {
 
             // No active session or remote session (deleted in step above), but an exception was thrown above
             // A new delete should cleanup and be successful
-            LocalSession activeSession = applicationRepository.getActiveSession(applicationId());
+            RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
             Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
             assertNull(tenant.getRemoteSessionRepo().getSession(prepareResult.sessionId()));
@@ -468,7 +469,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        return applicationRepository.getMetadataFromSession(tenant, sessionId);
+        return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
     }
 
 

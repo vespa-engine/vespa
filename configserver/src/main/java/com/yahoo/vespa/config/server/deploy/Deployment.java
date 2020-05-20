@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -132,7 +133,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
             ApplicationId applicationId = session.getApplicationId();
-            LocalSession previousActiveSession;
+            RemoteSession previousActiveSession;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 validateSessionStatus(session);
                 NestedTransaction transaction = new NestedTransaction();
@@ -181,7 +182,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
     }
 
-    private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+    private Transaction deactivateCurrentActivateNew(RemoteSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
         Transaction transaction = prepared.createActivateTransaction();
         if (isValidSession(active)) {
             checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
@@ -191,11 +192,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         return transaction;
     }
 
-    private boolean isValidSession(LocalSession session) {
+    private boolean isValidSession(RemoteSession session) {
         return session != null;
     }
 
-    private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
+    private void checkIfActiveHasChanged(LocalSession session, RemoteSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
