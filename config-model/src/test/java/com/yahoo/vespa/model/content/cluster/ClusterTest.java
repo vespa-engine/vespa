@@ -65,7 +65,7 @@ public class ClusterTest {
         assertEquals(0.23, config.minWaitAfterCoverageFactor(), DELTA);
         assertEquals(0.58, config.maxWaitAfterCoverageFactor(), DELTA);
         assertEquals(2, config.searchableCopies());
-        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+        assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
     }
 
     @Test
@@ -74,7 +74,7 @@ public class ClusterTest {
                                                    "",
                                                    joinLines(
                                                            "<max-hits-per-partition>77</max-hits-per-partition>",
-                                                           "<dispatch-policy>adaptive</dispatch-policy>",
+                                                           "<dispatch-policy>round-robin</dispatch-policy>",
                                                            "<min-group-coverage>13</min-group-coverage>",
                                                            "<min-active-docs-coverage>93</min-active-docs-coverage>"),
                                                    false);
@@ -84,7 +84,7 @@ public class ClusterTest {
         assertEquals(2, config.searchableCopies());
         assertEquals(93.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(13.0, config.minGroupCoverage(), DELTA);
-        assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
+        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
         assertEquals(77, config.maxHitsPerNode());
     }
 
@@ -96,7 +96,7 @@ public class ClusterTest {
         cluster.getSearch().getConfig(builder);
         DispatchConfig config = new DispatchConfig(builder);
         assertEquals(2, config.searchableCopies());
-        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+        assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(0, config.maxNodesDownPerGroup());
         assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
         assertEquals(0, config.minWaitAfterCoverageFactor(), DELTA);

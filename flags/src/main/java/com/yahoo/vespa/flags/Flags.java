@@ -109,12 +109,6 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_ADAPTIVE_DISPATCH = defineFeatureFlag(
-            "use-adaptive-dispatch", false,
-            "Should adaptive dispatch be used over round robin",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 30,
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +

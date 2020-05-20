@@ -52,7 +52,6 @@ public class IndexedSearchCluster extends SearchCluster
 
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
-    private final boolean useAdaptiveDispatch;
     private final double defaultTopKProbability;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
@@ -70,7 +69,6 @@ public class IndexedSearchCluster extends SearchCluster
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
-        useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
         defaultTopKProbability = deployState.getProperties().defaultTopKProbability();
     }
 
@@ -307,8 +305,6 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.port(node.getRpcPort());
             builder.node(nodeBuilder);
         }
-        if (useAdaptiveDispatch)
-            builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
         if (tuning.dispatch.getTopkProbability() != null) {
             builder.topKProbability(tuning.dispatch.getTopkProbability());
         } else {
