@@ -120,6 +120,7 @@ public class MockSearchCluster extends SearchCluster {
         builder.minGroupCoverage(99.0);
         builder.maxNodesDownPerGroup(0);
         builder.minSearchCoverage(minSearchCoverage);
+        builder.distributionPolicy(DispatchConfig.DistributionPolicy.Enum.ROUNDROBIN);
         if (minSearchCoverage < 100.0) {
             builder.minWaitAfterCoverageFactor(0);
             builder.maxWaitAfterCoverageFactor(0.5);
