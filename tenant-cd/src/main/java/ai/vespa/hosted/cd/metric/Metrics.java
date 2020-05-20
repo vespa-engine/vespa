@@ -13,7 +13,7 @@ import static java.util.Map.copyOf;
 /**
  * Metrics from a Vespa application {@link Endpoint}, indexed by their names, and optionally by a set of custom dimensions.
  *
- * Metrics are collected from the <a href="https://docs.vespa.ai/documentation/reference/metrics-health-format.html">metrics</a>
+ * Metrics are collected from the <a href="https://docs.vespa.ai/documentation/reference/metrics.html">metrics</a>
  * API of a Vespa endpoint, and contain the current health status of the endpoint, values for all configured metrics in
  * that endpoint, and the time interval from which these metrics were sampled.
  *

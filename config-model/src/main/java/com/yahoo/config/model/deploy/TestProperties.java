@@ -37,7 +37,6 @@ public class TestProperties implements ModelContext.Properties {
     private Zone zone;
     private Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useAdaptiveDispatch = false;
     private boolean useDistributorBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
@@ -60,7 +59,6 @@ public class TestProperties implements ModelContext.Properties {
 
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return false; }
-    @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -120,11 +118,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
-        return this;
-    }
-
-    public TestProperties setUseAdaptiveDispatch(boolean useAdaptiveDispatch) {
-        this.useAdaptiveDispatch = useAdaptiveDispatch;
         return this;
     }
 

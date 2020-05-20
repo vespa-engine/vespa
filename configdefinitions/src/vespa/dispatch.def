@@ -14,7 +14,7 @@ minGroupCoverage double default=100
 maxNodesDownPerGroup int default=0
 
 # Distribution policy for group selection
-distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
+distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ADAPTIVE
 
 ## Maximum number of hits that will be requested from a single node
 ## in this dataset. If not set, there is no limit. Using this option

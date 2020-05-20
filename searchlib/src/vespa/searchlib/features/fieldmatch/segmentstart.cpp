@@ -5,9 +5,7 @@
 #include "metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 SegmentStart::SegmentStart(Computer *owner, const Metrics & metrics, uint32_t previousJ, uint32_t i, uint32_t j) :
     _owner(owner),
@@ -95,6 +93,4 @@ SegmentStart::toString() {
     }
 }
 
-} // fieldmatch
-} // features
-} // search
+}

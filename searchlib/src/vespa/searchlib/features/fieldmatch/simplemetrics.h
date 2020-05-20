@@ -5,9 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "params.h"
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 /**
  * The collection of simple metrics calculated when traversing the query terms of the query environment.
@@ -180,7 +178,4 @@ public:
     vespalib::string toString() const;
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}

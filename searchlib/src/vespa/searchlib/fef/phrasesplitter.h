@@ -55,7 +55,6 @@ private:
     TermFieldHandle                 _skipHandles;   // how many handles to skip
 
     void considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
-    void splitPhrase(const ITermData &phrase, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
 
     TermFieldMatchData *resolveSplittedTermField(TermFieldHandle handle) {
         return &_termMatches[handle - _skipHandles];

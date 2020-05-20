@@ -4191,6 +4191,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.search.searchchain.ExecutionFactory, java.util.Optional)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.statistics.Statistics, com.yahoo.language.Linguistics, com.yahoo.jdisc.Metric, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.container.core.ContainerHttpConfig)",
@@ -6063,8 +6064,9 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig)",
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
-      "public void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
+      "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)"
     ],

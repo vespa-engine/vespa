@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 
 using namespace vespa::config::search;
 using namespace config;
@@ -87,6 +88,9 @@ void
 SearchableDocSubDBConfigurer::reconfigureSearchView(MatchView::SP matchView)
 {
     SearchView::SP curr = _searchView.get();
+    // make sure the initial search does not spend time waiting for
+    // expression compilation completion during rank program setup.
+    vespalib::eval::CompileCache::wait_pending();
     _searchView.set(SearchView::create(curr->getSummarySetup(), std::move(matchView)));
 }
 

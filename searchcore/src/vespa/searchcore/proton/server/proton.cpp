@@ -212,6 +212,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
       _sharedExecutor(),
+      _compile_cache_executor_binding(),
       _queryLimiter(),
       _clock(0.001),
       _threadPool(128 * 1024),
@@ -302,6 +303,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
     _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
+    _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(*_sharedExecutor);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024, initialize_executor);
@@ -454,6 +456,7 @@ Proton::~Proton()
     _persistenceEngine.reset();
     _tls.reset();
     _warmupExecutor.reset();
+    _compile_cache_executor_binding.reset();
     _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");

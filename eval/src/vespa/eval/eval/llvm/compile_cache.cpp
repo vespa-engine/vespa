@@ -77,6 +77,27 @@ CompileCache::compile(const Function &function, PassParams pass_params)
     return token;
 }
 
+void
+CompileCache::wait_pending()
+{
+    std::vector<Token::UP> pending;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        for (auto entry = _cached.begin(); entry != _cached.end(); ++entry) {
+            if (entry->second.compiled_function.get() == nullptr) {
+                ++(entry->second.num_refs);
+                pending.push_back(std::make_unique<Token>(entry, Token::ctor_tag()));
+            }
+        }
+    }
+    {
+        for (const auto &token: pending) {
+            const CompiledFunction &fun = token->get();
+            (void) fun;
+        }
+    }
+}
+
 size_t
 CompileCache::num_cached()
 {

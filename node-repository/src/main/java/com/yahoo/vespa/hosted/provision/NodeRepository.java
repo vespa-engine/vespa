@@ -792,13 +792,13 @@ public class NodeRepository extends AbstractComponent {
 
     public boolean canAllocateTenantNodeTo(Node host) {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
+        if (host.status().wantToRetire()) return false;
+        if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
-        // Do not allocate to hosts we want to retire or are currently retiring
-        if (host.status().wantToRetire() || host.allocation().map(alloc -> alloc.membership().retired()).orElse(false))
-            return false;
-
-        if ( ! zone.getCloud().dynamicProvisioning()) return host.state() == State.active;
-        else return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
+        if ( zone.getCloud().dynamicProvisioning())
+            return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
+        else
+            return host.state() == State.active;
     }
 
     /** Returns the time keeper of this system */

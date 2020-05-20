@@ -61,8 +61,8 @@ public interface ModelContext {
         // TODO: Only needed for LbServicesProducerTest
         default boolean useDedicatedNodeForLogserver() { return true; }
 
-        // TODO Revisit in May or June 2020
-        boolean useAdaptiveDispatch();
+        // TODO Remove when 7.225 is last
+        default boolean useAdaptiveDispatch() { return true; }
 
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
 
