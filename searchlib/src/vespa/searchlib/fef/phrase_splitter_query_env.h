@@ -8,19 +8,14 @@
 namespace search::fef {
 
 /**
- * This class is used to split all phrase terms in a query environment
- * into separate terms. New TermData and TermFieldMatchData objects
- * are created for each splitted phrase term and managed by this
- * class.  Unmodified single terms are served from the query
+ * This class is used together with PhraseSplitter to split all phrase
+ * terms in a query environment into separate terms. New TermData
+ * objects are created for each splitted phrase term and managed by
+ * this class.  Unmodified single terms are served from the query
  * environment and match data.
  *
- * The TermFieldMatchData objects managed by this class are updated
- * based on the TermFieldMatchData objects associated with the
- * original phrase terms. Positions are adjusted with +1 for each term
- * after the first one.
- *
- * Use this class if you want to handle a phrase term the same way as
- * single terms.
+ * Use this class and PhraseSplitter class if you want to handle a
+ * phrase term the same way as single terms.
  **/
 class PhraseSplitterQueryEnv : public IQueryEnvironment
 {
