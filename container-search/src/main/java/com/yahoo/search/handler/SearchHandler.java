@@ -121,28 +121,6 @@ public class SearchHandler extends LoggingRequestHandler {
                          Metric metric,
                          Executor executor,
                          AccessLog accessLog,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ContainerHttpConfig containerHttpConfig,
-                         ExecutionFactory executionFactory) {
-        this(statistics,
-             metric,
-             executor,
-             accessLog,
-             queryProfileRegistry,
-             executionFactory,
-             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
-             containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                     Optional.empty() : Optional.of(containerHttpConfig.hostResponseHeaderKey()));
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         Executor executor,
-                         AccessLog accessLog,
                          QueryProfilesConfig queryProfileConfig,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
@@ -154,7 +132,7 @@ public class SearchHandler extends LoggingRequestHandler {
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
+             Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
 
     public SearchHandler(Statistics statistics,
