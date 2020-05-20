@@ -63,7 +63,7 @@ public class SessionCreateHandler extends SessionHandler {
         return createResponse(request, tenantName, deployLog, sessionId);
     }
 
-    private static ApplicationId getFromApplicationId(HttpRequest request) {
+    static ApplicationId getFromApplicationId(HttpRequest request) {
         String from = request.getProperty("from");
         if (from == null || "".equals(from)) {
             throw new BadRequestException("Parameter 'from' has illegal value '" + from + "'");
