@@ -30,7 +30,6 @@ import com.yahoo.vespa.config.server.session.DummyTransaction;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -148,6 +147,11 @@ public class SessionHandlerTest {
         }
 
         @Override
+        public Transaction createDeactivateTransaction() {
+            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.DEACTIVATE);
+        }
+
+        @Override
         public Transaction createActivateTransaction() {
             return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.ACTIVATE);
         }
@@ -215,7 +219,7 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public LocalSession createSessionFromExisting(RemoteSession existingSession, DeployLogger logger,
+        public LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,
                                                       boolean internalRedeploy, TimeoutBudget timeoutBudget) {
             if (doThrow) {
                 throw new RuntimeException("foo");

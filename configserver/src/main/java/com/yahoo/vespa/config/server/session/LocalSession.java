@@ -98,12 +98,21 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return transaction;
     }
 
+    public Transaction createDeactivateTransaction() {
+        return createSetStatusTransaction(Status.DEACTIVATE);
+    }
+
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);
     }
 
     public long getActiveSessionAtCreate() {
         return applicationPackage.getMetaData().getPreviousActiveGeneration();
+    }
+
+    // Note: Assumes monotonically increasing session ids
+    public boolean isNewerThan(long sessionId) {
+        return getSessionId() > sessionId;
     }
 
     /** Add transactions to delete this session to the given nested transaction */
