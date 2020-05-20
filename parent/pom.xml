@@ -220,6 +220,7 @@
                     <configuration>
                         <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                         <systemPropertyVariables>
+                            <jdisc.logger.level>INFO</jdisc.logger.level>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
