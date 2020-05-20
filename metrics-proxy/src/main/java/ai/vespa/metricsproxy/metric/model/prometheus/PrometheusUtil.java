@@ -28,8 +28,8 @@ public class PrometheusUtil {
 
         List<MetricFamilySamples> metricFamilySamples = new ArrayList<>(packetsByService.size());
 
+        Map<String, List<Sample>> samples = new HashMap<>();
         packetsByService.forEach(((serviceId, packets) -> {
-            Map<String, List<Sample>> samples = new HashMap<>();
 
             var serviceName = Collector.sanitizeMetricName(serviceId.id);
             for (var packet : packets) {
