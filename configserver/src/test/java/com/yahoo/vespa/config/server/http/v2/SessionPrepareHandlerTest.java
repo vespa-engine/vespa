@@ -404,6 +404,11 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         }
 
         @Override
+        public Transaction createDeactivateTransaction() {
+            return null;
+        }
+
+        @Override
         public Transaction createActivateTransaction() {
             return null;
         }

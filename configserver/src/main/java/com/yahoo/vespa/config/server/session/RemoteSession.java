@@ -1,15 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.component.Version;
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
+import java.util.logging.Level;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
@@ -20,8 +16,8 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -103,11 +99,11 @@ public class RemoteSession extends Session {
     
     @Override
     public String logPre() {
-        if (getApplicationId().equals(ApplicationId.defaultId())) {
-            return TenantRepository.logPre(getTenant());
-        } else {
-            return TenantRepository.logPre(getApplicationId());
+        if (applicationSet != null) {
+            return TenantRepository.logPre(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId());
         }
+
+        return TenantRepository.logPre(getTenant());
     }
 
     void confirmUpload() {
@@ -138,35 +134,5 @@ public class RemoteSession extends Session {
         transaction.commit();
         transaction.close();
     }
-
-    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
-
-    public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
-
-    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
-
-    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
-
-    public AllocatedHosts getAllocatedHosts() {
-        return zooKeeperClient.getAllocatedHosts();
-    }
-
-    // Note: Assumes monotonically increasing session ids
-    public boolean isNewerThan(long sessionId) {
-        return getSessionId() > sessionId;
-    }
-
-    public Transaction createDeactivateTransaction() {
-        return createSetStatusTransaction(Status.DEACTIVATE);
-    }
-
-    private Transaction createSetStatusTransaction(Status status) {
-        return zooKeeperClient.createWriteStatusTransaction(status);
-    }
-
-    public ApplicationMetaData getMetaData() {
-        return zooKeeperClient.loadApplicationPackage().getMetaData();
-    }
-
 
 }
