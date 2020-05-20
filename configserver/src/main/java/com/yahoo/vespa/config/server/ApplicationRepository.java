@@ -308,7 +308,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
-        RemoteSession activeSession = getActiveSession(tenant, application);
+        LocalSession activeSession = getActiveLocalSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
@@ -805,6 +805,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             return tenant.getRemoteSessionRepo().getSession(applicationRepo.requireActiveSessionOf(applicationId));
+        }
+        return null;
+    }
+
+    private LocalSession getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        if (applicationRepo.activeApplications().contains(applicationId)) {
+            return tenant.getLocalSessionRepo().getSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }

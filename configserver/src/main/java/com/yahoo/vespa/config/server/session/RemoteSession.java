@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.transaction.Transaction;
@@ -138,14 +135,6 @@ public class RemoteSession extends Session {
         transaction.commit();
         transaction.close();
     }
-
-    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
-
-    public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
-
-    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
-
-    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
 
     public AllocatedHosts getAllocatedHosts() {
         return zooKeeperClient.getAllocatedHosts();
