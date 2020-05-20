@@ -20,7 +20,6 @@ import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -60,7 +59,8 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         for (JDiscServerConnector connector : connectors) {
             ConnectorConfig.HealthCheckProxy proxyConfig = connector.connectorConfig().healthCheckProxy();
             if (proxyConfig.enable()) {
-                mapping.put(connector.listenPort(), createProxyTarget(proxyConfig.port(), connectors));
+                Duration targetTimeout = Duration.ofMillis((int) (proxyConfig.clientTimeout() * 1000));
+                mapping.put(connector.listenPort(), createProxyTarget(proxyConfig.port(), targetTimeout, connectors));
                 log.info(String.format("Port %1$d is configured as a health check proxy for port %2$d. " +
                                                "HTTP requests to '%3$s' on %1$d are proxied as HTTPS to %2$d.",
                                        connector.listenPort(), proxyConfig.port(), HEALTH_CHECK_PATH));
@@ -69,7 +69,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         return mapping;
     }
 
-    private static ProxyTarget createProxyTarget(int targetPort, List<JDiscServerConnector> connectors) {
+    private static ProxyTarget createProxyTarget(int targetPort, Duration targetTimeout, List<JDiscServerConnector> connectors) {
         JDiscServerConnector targetConnector = connectors.stream()
                 .filter(connector -> connector.listenPort() == targetPort)
                 .findAny()
@@ -80,12 +80,13 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                                 .map(detectorConnFactory -> detectorConnFactory.getBean(SslConnectionFactory.class)))
                         .map(connFactory -> (SslContextFactory.Server) connFactory.getSslContextFactory())
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
-        return new ProxyTarget(targetPort, sslContextFactory);
+        return new ProxyTarget(targetPort, targetTimeout, sslContextFactory);
     }
 
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
-        ProxyTarget proxyTarget = portToProxyTargetMapping.get(getConnectorLocalPort(servletRequest));
+        int localPort = getConnectorLocalPort(servletRequest);
+        ProxyTarget proxyTarget = portToProxyTargetMapping.get(localPort);
         if (proxyTarget != null) {
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
                 try (CloseableHttpResponse proxyResponse = proxyTarget.requestStatusHtml()) {
@@ -101,10 +102,14 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                             entity.getContent().transferTo(output);
                         }
                     }
-                } catch (Exception e) {
-                    String message = "Unable to proxy health check request: " + e.getMessage();
-                    log.log(Level.WARNING, e, () -> message);
+                } catch (Exception e) { // Typically timeouts which are reported as SSLHandshakeException
+                    String message = String.format("Health check request from port %d to %d failed: %s", localPort, proxyTarget.port, e.getMessage());
+                    log.log(Level.WARNING, message);
+                    log.log(Level.FINE, e.toString(), e);
                     servletResponse.sendError(Response.Status.INTERNAL_SERVER_ERROR, message);
+                    if (Duration.ofSeconds(1).compareTo(proxyTarget.timeout) >= 0) { // TODO bjorncs: remove call to close() if client is correctly pruning bad connections (VESPA-17628)
+                        proxyTarget.close();
+                    }
                 }
             } else {
                 servletResponse.sendError(NOT_FOUND);
@@ -124,23 +129,19 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static class ProxyTarget implements AutoCloseable {
         final int port;
+        final Duration timeout;
         final SslContextFactory.Server sslContextFactory;
         volatile CloseableHttpClient client;
 
-        ProxyTarget(int port, SslContextFactory.Server sslContextFactory) {
+        ProxyTarget(int port, Duration timeout, SslContextFactory.Server sslContextFactory) {
             this.port = port;
+            this.timeout = timeout;
             this.sslContextFactory = sslContextFactory;
         }
 
         CloseableHttpResponse requestStatusHtml() throws IOException {
-            try {
-                HttpGet request = new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH);
-                return client().execute(request);
-            } catch (SSLException e) {
-                log.log(Level.SEVERE, "SSL connection failed. Closing existing client, a new client will be created on next request", e);
-                close();
-                throw e;
-            }
+            return client()
+                    .execute(new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH));
         }
 
         // Client construction must be delayed to ensure that the SslContextFactory is started before calling getSslContext().
@@ -148,18 +149,19 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             if (client == null) {
                 synchronized (this) {
                     if (client == null) {
+                        int timeoutMillis = (int) timeout.toMillis();
                         client = HttpClientBuilder.create()
                                 .disableAutomaticRetries()
                                 .setMaxConnPerRoute(4)
                                 .setSSLContext(getSslContext(sslContextFactory))
-                                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE) // Certificate may not match "localhost"
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
                                 .setUserAgent("health-check-proxy-client")
                                 .setDefaultRequestConfig(
                                         RequestConfig.custom()
-                                                .setConnectTimeout((int) Duration.ofSeconds(4).toMillis())
-                                                .setConnectionRequestTimeout((int) Duration.ofSeconds(4).toMillis())
-                                                .setSocketTimeout((int) Duration.ofSeconds(8).toMillis())
+                                                .setConnectTimeout(timeoutMillis)
+                                                .setConnectionRequestTimeout(timeoutMillis)
+                                                .setSocketTimeout(timeoutMillis)
                                                 .build())
                                 .build();
                     }
