@@ -6,10 +6,13 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -45,15 +48,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -105,6 +111,12 @@ public class ApplicationRepositoryTest {
         PrepareResult result = prepareAndActivateApp(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        TenantName tenantName = applicationId().tenant();
+        Tenant tenant = tenantRepository.getTenant(tenantName);
+        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
+                                                                               .requireActiveSessionOf(applicationId()));
+        AllocatedHosts a = session.getAllocatedHosts();
     }
 
     @Test
@@ -373,6 +385,46 @@ public class ApplicationRepositoryTest {
 
         // App roles deleted on application delete
         assertTrue(approlesStore.readApplicationRoles(applicationId).isEmpty());
+    }
+
+    @Test
+    public void require_that_provision_info_can_be_read() throws Exception {
+        prepareAndActivateApp(testAppJdiscOnly);
+
+        TenantName tenantName = applicationId().tenant();
+        Tenant tenant = tenantRepository.getTenant(tenantName);
+        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+
+        List<NetworkPorts.Allocation> list = new ArrayList<>();
+        list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));
+        list.add(new NetworkPorts.Allocation(19070, "configserver", "admin/configservers/configserver.0", "rpc"));
+        list.add(new NetworkPorts.Allocation(19071, "configserver", "admin/configservers/configserver.0", "http"));
+        list.add(new NetworkPorts.Allocation(19080, "logserver", "admin/logserver", "rpc"));
+        list.add(new NetworkPorts.Allocation(19081, "logserver", "admin/logserver", "unused/1"));
+        list.add(new NetworkPorts.Allocation(19082, "logserver", "admin/logserver", "unused/2"));
+        list.add(new NetworkPorts.Allocation(19083, "logserver", "admin/logserver", "unused/3"));
+        list.add(new NetworkPorts.Allocation(19089, "logd", "hosts/mytesthost/logd", "http"));
+        list.add(new NetworkPorts.Allocation(19090, "configproxy", "hosts/mytesthost/configproxy", "rpc"));
+        list.add(new NetworkPorts.Allocation(19092, "metricsproxy-container", "admin/metrics/mytesthost", "http"));
+        list.add(new NetworkPorts.Allocation(19093, "metricsproxy-container", "admin/metrics/mytesthost", "http/1"));
+        list.add(new NetworkPorts.Allocation(19094, "metricsproxy-container", "admin/metrics/mytesthost", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19095, "metricsproxy-container", "admin/metrics/mytesthost", "rpc/metrics"));
+        list.add(new NetworkPorts.Allocation(19097, "config-sentinel", "hosts/mytesthost/sentinel", "rpc"));
+        list.add(new NetworkPorts.Allocation(19098, "config-sentinel", "hosts/mytesthost/sentinel", "http"));
+        list.add(new NetworkPorts.Allocation(19099, "slobrok", "admin/slobrok.0", "rpc"));
+        list.add(new NetworkPorts.Allocation(19100, "container", "container/container.0", "http/1"));
+        list.add(new NetworkPorts.Allocation(19101, "container", "container/container.0", "messaging"));
+        list.add(new NetworkPorts.Allocation(19102, "container", "container/container.0", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19103, "slobrok", "admin/slobrok.0", "http"));
+
+        AllocatedHosts info = session.getAllocatedHosts();
+        assertNotNull(info);
+        assertThat(info.getHosts().size(), is(1));
+        System.out.println(info.getHosts());
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost", Collections.emptyList())));
+        Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
+        assertTrue(portsCopy.isPresent());
+        assertThat(portsCopy.get().allocations(), is(list));
     }
 
     private ApplicationRepository createApplicationRepository() {
