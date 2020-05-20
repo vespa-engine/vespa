@@ -33,7 +33,7 @@ public interface SessionFactory {
      * @param timeoutBudget timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,
+    LocalSession createSessionFromExisting(RemoteSession existingSession, DeployLogger logger,
                                            boolean internalRedeploy, TimeoutBudget timeoutBudget);
 
 }

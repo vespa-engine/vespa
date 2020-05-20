@@ -48,7 +48,7 @@ public class SessionActiveHandler extends SessionHandler {
         final Long sessionId = getSessionIdV2(request);
         ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
                                                                      shouldIgnoreSessionStaleFailure(request));
-        ApplicationMetaData metaData = applicationRepository.getMetadataFromSession(tenant, sessionId);
+        ApplicationMetaData metaData = applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
         return new SessionActiveResponse(metaData.getSlime(), request, applicationId, sessionId, zone);
     }
 

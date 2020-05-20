@@ -119,7 +119,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     }
 
     @Override
-    public LocalSession createSessionFromExisting(LocalSession existingSession,
+    public LocalSession createSessionFromExisting(RemoteSession existingSession,
                                                   DeployLogger logger,
                                                   boolean internalRedeploy,
                                                   TimeoutBudget timeoutBudget) {
