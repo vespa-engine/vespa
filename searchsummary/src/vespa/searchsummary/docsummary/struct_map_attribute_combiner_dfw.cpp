@@ -55,7 +55,7 @@ StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const ves
 {
     const IAttributeVector *attr = context.getAttribute(keyAttributeName);
     if (attr != nullptr) {
-        _keyWriter = AttributeFieldWriter::create(keyName, *attr);
+        _keyWriter = AttributeFieldWriter::create(keyName, *attr, true);
     }
     size_t fields = valueFieldNames.size();
     _valueWriters.reserve(fields);

@@ -26,12 +26,18 @@ private:
     StringVector _array_fields;
     StringVector _array_attributes;
     bool _has_map_key;
+    bool _has_map_value;
     bool _error;
 
 public:
     StructFieldsResolver(const vespalib::string& field_name, const search::attribute::IAttributeContext& attr_ctx,
                          bool require_all_struct_fields_as_attributes);
     ~StructFieldsResolver();
+    bool is_map_of_scalar() const { return (_has_map_key &&
+                                            _has_map_value &&
+                                            (_array_fields.size() == 2u) &&
+                                            _map_value_fields.empty());
+    }
     bool is_map_of_struct() const { return !_map_value_fields.empty(); }
     const vespalib::string& get_map_key_attribute() const { return _map_key_attribute; }
     const StringVector& get_map_value_fields() const { return _map_value_fields; }
