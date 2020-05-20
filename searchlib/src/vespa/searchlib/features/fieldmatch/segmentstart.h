@@ -5,9 +5,7 @@
 #include <limits>
 #include "metrics.h"
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 /**
  * <p>Information on segment start points stored temporarily during string match metric calculation.</p>
@@ -179,7 +177,4 @@ private:
     bool        _open;                     // There are possibly more j's to try at this starting point.
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}

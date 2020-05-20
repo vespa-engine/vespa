@@ -5,9 +5,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 /**
  * The parameters to a string match metric calculator.
@@ -256,7 +254,4 @@ private:
     std::vector<feature_t> _proximityTable;
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}
