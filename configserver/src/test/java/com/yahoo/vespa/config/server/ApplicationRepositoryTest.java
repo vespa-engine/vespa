@@ -355,7 +355,7 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deletesApplicationRoles() throws IOException {
+    public void deletesApplicationRoles() {
         var tenant = tenantRepository.getTenant(tenant1);
         var applicationId = applicationId(tenant1);
         var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
