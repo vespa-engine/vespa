@@ -74,13 +74,13 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (!this.isSurplusNode && other.isSurplusNode) return -1;
         if (!other.isSurplusNode && this.isSurplusNode) return 1;
 
-        // Choose inactive nodes
-        if (this.node.state() == Node.State.inactive && other.node.state() != Node.State.inactive) return -1;
-        if (other.node.state() == Node.State.inactive && this.node.state() != Node.State.inactive) return 1;
-
         // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
         if (this.isInNodeRepoAndReserved() && ! other.isInNodeRepoAndReserved()) return -1;
         if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
+
+        // Choose inactive nodes
+        if (this.node.state() == Node.State.inactive && other.node.state() != Node.State.inactive) return -1;
+        if (other.node.state() == Node.State.inactive && this.node.state() != Node.State.inactive) return 1;
 
         // Choose ready nodes
         if (this.node.state() == Node.State.ready && other.node.state() != Node.State.ready) return -1;

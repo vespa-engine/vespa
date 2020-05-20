@@ -161,4 +161,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return new NodeList(nodes, false);
     }
 
+    @Override
+    public String toString() {
+        return asList().toString();
+    }
+
 }

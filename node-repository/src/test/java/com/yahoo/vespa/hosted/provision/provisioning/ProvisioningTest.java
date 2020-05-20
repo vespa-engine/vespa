@@ -486,40 +486,6 @@ public class ProvisioningTest {
                            app1, cluster1);
     }
 
-    /**
-     * When increasing the number of groups without changing node count, we need to provison new nodes for
-     * the new groups since although we can remove nodes from existing groups without losing data we
-     * cannot do so without losing coverage.
-     */
-    @Test
-    public void test_change_group_layout() {
-        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
-                                                                    .flavors(List.of(hostFlavor))
-                                                                    .build();
-        tester.makeReadyHosts(6, hostFlavor.resources()).deployZoneApp();
-
-        ApplicationId app1 = tester.makeApplicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
-
-        // Deploy with 1 group
-        System.out.println("--- Deploying 1 group");
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 1, 10, 30,  10)));
-        assertEquals(4, tester.getNodes(app1, Node.State.active).size());
-        assertEquals(4, tester.getNodes(app1, Node.State.active).group(0).size());
-        assertEquals(0, tester.getNodes(app1, Node.State.active).group(0).retired().size());
-
-        // Split into 2 groups
-        System.out.println("--- Deploying 2 groups");
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 10, 30,  10)));
-        assertEquals(6, tester.getNodes(app1, Node.State.active).size());
-        assertEquals(4, tester.getNodes(app1, Node.State.active).group(0).size());
-        assertEquals(2, tester.getNodes(app1, Node.State.active).group(0).retired().size());
-        assertEquals(2, tester.getNodes(app1, Node.State.active).group(1).size());
-        assertEquals(0, tester.getNodes(app1, Node.State.active).group(1).retired().size());
-    }
-
-
     @Test(expected = IllegalArgumentException.class)
     public void prod_deployment_requires_redundancy() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();

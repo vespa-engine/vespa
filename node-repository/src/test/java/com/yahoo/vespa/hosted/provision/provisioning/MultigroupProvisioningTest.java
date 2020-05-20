@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
@@ -21,6 +22,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -121,6 +123,99 @@ public class MultigroupProvisioningTest {
         deploy(application1, Capacity.from(new ClusterResources(2, 2, large), true, true), tester);
     }
 
+    /**
+     * When increasing the number of groups without changing node count, we need to provison new nodes for
+     * the new groups since although we can remove nodes from existing groups without losing data we
+     * cannot do so without losing coverage.
+     */
+    @Test
+    public void test_split_to_groups() {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(6, hostFlavor.resources()).deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Deploy with 1 group
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 1, 10, 30,  10)));
+        assertEquals(4, tester.getNodes(app1, Node.State.active).size());
+        assertEquals(4, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals(0, tester.getNodes(app1, Node.State.active).group(0).retired().size());
+
+        // Split into 2 groups
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 10, 30,  10)));
+        assertEquals(6, tester.getNodes(app1, Node.State.active).size());
+        assertEquals(4, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(0).retired().size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(1).size());
+        assertEquals(0, tester.getNodes(app1, Node.State.active).group(1).retired().size());
+    }
+
+    @Test
+    public void test_remove_group() {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(6, hostFlavor.resources()).deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Deploy with 3 groups
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 10, 30,  10)));
+        assertEquals(6, tester.getNodes(app1, Node.State.active).size());
+        assertEquals(0, tester.getNodes(app1, Node.State.active).retired().size());
+        assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(1).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(2).size());
+
+        // Remove a group
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 10, 30,  10)));
+        assertEquals(4, tester.getNodes(app1, Node.State.active).size());
+        assertEquals(0, tester.getNodes(app1, Node.State.active).retired().size());
+        assertEquals(2, tester.getNodes(app1, Node.State.inactive).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals(2, tester.getNodes(app1, Node.State.active).group(1).size());
+        assertEquals(0, tester.getNodes(app1, Node.State.active).group(2).size());
+    }
+
+    @Test
+    public void test_layout_change_to_fewer_groups() {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(12, hostFlavor.resources()).deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        // Deploy with 3 groups
+        tester.activate(app1, cluster1, Capacity.from(resources(12, 4, 10, 30,  10)));
+        assertEquals(12, tester.getNodes(app1, Node.State.active).size());
+        assertEquals( 0, tester.getNodes(app1, Node.State.active).retired().size());
+        assertEquals( 0, tester.getNodes(app1, Node.State.inactive).size());
+        assertEquals( 3, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals( 3, tester.getNodes(app1, Node.State.active).group(1).size());
+        assertEquals( 3, tester.getNodes(app1, Node.State.active).group(2).size());
+        assertEquals( 3, tester.getNodes(app1, Node.State.active).group(3).size());
+
+        // Remove a group
+        tester.activate(app1, cluster1, Capacity.from(resources(12, 3, 10, 30,  10)));
+        assertEquals(12, tester.getNodes(app1, Node.State.active).size());
+        assertEquals( 0, tester.getNodes(app1, Node.State.active).retired().size());
+        assertEquals( 0, tester.getNodes(app1, Node.State.inactive).size());
+        assertEquals( 4, tester.getNodes(app1, Node.State.active).group(0).size());
+        assertEquals( 4, tester.getNodes(app1, Node.State.active).group(1).size());
+        assertEquals( 4, tester.getNodes(app1, Node.State.active).group(2).size());
+        assertEquals( 0, tester.getNodes(app1, Node.State.active).group(3).size());
+    }
+
     @Test
     public void test_provisioning_of_multiple_groups_after_flavor_migration_and_exiration() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -209,6 +304,10 @@ public class MultigroupProvisioningTest {
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity));
+    }
+
+    private ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk) {
+        return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1));
     }
 
 }

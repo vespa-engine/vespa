@@ -29,8 +29,8 @@ public class PrioritizableNodeTest {
         List<PrioritizableNode> expected = List.of(
                 new PrioritizableNode(node("01", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), false, true, false, false),
                 new PrioritizableNode(node("02", Node.State.active), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
-                new PrioritizableNode(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
                 new PrioritizableNode(node("04", Node.State.reserved), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new PrioritizableNode(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
                 new PrioritizableNode(node("05", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.active)), true, false, true, false),
                 new PrioritizableNode(node("06", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.ready)), true, false, true, false),
                 new PrioritizableNode(node("07", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.provisioned)), true, false, true, false),

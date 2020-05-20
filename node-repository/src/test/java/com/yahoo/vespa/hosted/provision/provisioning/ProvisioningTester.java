@@ -256,7 +256,7 @@ public class ProvisioningTester {
                             double vcpu, double memory, double disk, double bandwidth,
                             DiskSpeed diskSpeed, StorageType storageType,
                             ApplicationId app, ClusterSpec cluster) {
-        List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).not().retired().asList();
+        List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).state(Node.State.active).not().retired().asList();
         assertEquals(explanation + ": Node count",
                      nodes,
                      nodeList.size());

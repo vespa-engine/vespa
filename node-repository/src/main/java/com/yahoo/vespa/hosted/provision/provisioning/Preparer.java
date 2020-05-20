@@ -73,7 +73,7 @@ class Preparer {
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
-        replace(acceptedNodes, retire(surplusNodes));
+        acceptedNodes.removeAll(surplusNodes);
         return acceptedNodes;
     }
 
@@ -140,13 +140,4 @@ class Preparer {
         return highestIndex;
     }
 
-    /** Returns retired copies of the given nodes, unless they are removable */
-    private List<Node> retire(List<Node> nodes) {
-        List<Node> retired = new ArrayList<>(nodes.size());
-        for (Node node : nodes) {
-            if ( ! node.allocation().get().isRemovable())
-                retired.add(node.retire(Agent.application, nodeRepository.clock().instant()));
-        }
-        return retired;
-    }
 }

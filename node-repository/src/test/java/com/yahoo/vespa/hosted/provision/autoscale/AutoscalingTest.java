@@ -248,7 +248,6 @@ public class AutoscalingTest {
         // deploy
         tester.deploy(application1, cluster1, 6, 2, resources);
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
-        System.out.println("Autoscaling ... ");
         tester.assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
                                8, 1, 2.7,  83.3, 83.3,
                                tester.autoscale(application1, cluster1.id(), min, max));
