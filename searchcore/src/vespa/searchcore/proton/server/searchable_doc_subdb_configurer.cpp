@@ -88,6 +88,8 @@ void
 SearchableDocSubDBConfigurer::reconfigureSearchView(MatchView::SP matchView)
 {
     SearchView::SP curr = _searchView.get();
+    // make sure the initial search does not spend time waiting for
+    // expression compilation completion during rank program setup.
     vespalib::eval::CompileCache::wait_pending();
     _searchView.set(SearchView::create(curr->getSummarySetup(), std::move(matchView)));
 }
