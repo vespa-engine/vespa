@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include "iqueryenvironment.h"
+#include "phrase_splitter_query_env.h"
 #include "matchdata.h"
-#include "simpletermdata.h"
 #include "termfieldmatchdata.h"
-#include "fieldinfo.h"
 
 namespace search::fef {
 
@@ -25,36 +23,10 @@ namespace search::fef {
  * Use this class if you want to handle a phrase term the same way as
  * single terms.
  **/
-class PhraseSplitter : public IQueryEnvironment
+class PhraseSplitter : public PhraseSplitterQueryEnv
 {
-private:
-    struct TermIdx {
-        uint32_t idx;      // index into either query environment or vector of TermData objects
-        bool     splitted; // whether this term has been splitted or not
-        TermIdx(uint32_t i, bool s) : idx(i), splitted(s) {}
-    };
-    struct PhraseTerm {
-        const ITermData & term; // for original phrase
-        uint32_t idx; // index into vector of our TermData objects
-        TermFieldHandle orig_handle;
-        PhraseTerm(const ITermData & t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
-    };
-    struct HowToCopy {
-        TermFieldHandle orig_handle;
-        TermFieldHandle split_handle;
-        uint32_t offsetInPhrase;
-    };
-
-    const IQueryEnvironment        &_queryEnv;
     const MatchData                *_matchData;
-    std::vector<SimpleTermData>     _terms;       // splitted terms
     std::vector<TermFieldMatchData> _termMatches; // match objects associated with splitted terms
-    std::vector<HowToCopy>          _copyInfo;
-    std::vector<TermIdx>            _termIdxMap;  // renumbering of terms
-    TermFieldHandle                 _maxHandle;   // the largest among original term field handles
-    TermFieldHandle                 _skipHandles;   // how many handles to skip
-
-    void considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
 
     TermFieldMatchData *resolveSplittedTermField(TermFieldHandle handle) {
         return &_termMatches[handle - _skipHandles];
@@ -88,15 +60,6 @@ public:
      * Update the underlying TermFieldMatchData objects based on the bound MatchData object.
      **/
     void update();
-    uint32_t getNumTerms() const override { return _termIdxMap.size(); }
-
-    const ITermData * getTerm(uint32_t idx) const override {
-        if (idx >= _termIdxMap.size()) {
-            return nullptr;
-        }
-        const TermIdx & ti = _termIdxMap[idx];
-        return ti.splitted ? &_terms[ti.idx] : _queryEnv.getTerm(ti.idx);
-    }
 
     /**
      * Inherit doc from MatchData.
@@ -108,11 +71,6 @@ public:
         return handle < _skipHandles ? _matchData->resolveTermField(handle) : resolveSplittedTermField(handle);
     }
 
-    const Properties & getProperties() const override { return _queryEnv.getProperties(); }
-    const Location & getLocation() const override { return _queryEnv.getLocation(); }
-    const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
-    double get_average_field_length(const vespalib::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
-    const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
 };
 
