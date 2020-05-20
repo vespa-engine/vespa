@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
@@ -16,6 +17,7 @@ import org.w3c.dom.Element;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
+import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
 import static org.hamcrest.CoreMatchers.is;
@@ -125,6 +127,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespaPhases", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("native", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespa", "id"));
+    }
+
+    @Test
+    public void query_profiles_registry_component_is_added() {
+        createClusterWithOnlyDefaultChains();
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        var queryProfileRegistryId = ComponentId.fromString(QUERY_PROFILE_REGISTRY_CLASS);
+        assertTrue(cluster.getComponentsMap().containsKey(queryProfileRegistryId));
     }
 
     private void createClusterWithOnlyDefaultChains() {
