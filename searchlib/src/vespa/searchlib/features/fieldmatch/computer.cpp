@@ -36,7 +36,7 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
     _cachedHits()
 {
     // Store term data for all terms searching in this field
-    const auto& splitter_query_env = splitter.get_phrase_splitter_query_env();
+    const auto& splitter_query_env = splitter.get_query_env();
     _queryTermFieldMatch.reserve(splitter_query_env.getNumTerms());
     _cachedHits.reserve(splitter_query_env.getNumTerms());
     for (uint32_t i = 0; i < splitter_query_env.getNumTerms(); ++i) {
@@ -141,7 +141,7 @@ Computer::handleError(uint32_t fieldPos, uint32_t docId) const
     static int errcnt;
     if (errcnt < 1000) {
         errcnt++;
-        const FieldInfo * finfo = _splitter.get_phrase_splitter_query_env().getIndexEnvironment().getField(getFieldId());
+        const FieldInfo * finfo = _splitter.get_query_env().getIndexEnvironment().getField(getFieldId());
         LOG(debug, "Bad field position %u >= fieldLength %u for field '%s' document %u. "
                    "Document was probably refed during query (Ticket 7104969)",
                    fieldPos, _fieldLength,

@@ -75,7 +75,7 @@ public:
     }
 
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
-    const PhraseSplitterQueryEnv& get_phrase_splitter_query_env() const { return _phrase_splitter_query_env; }
+    const PhraseSplitterQueryEnv& get_query_env() const { return _phrase_splitter_query_env; }
 };
 
 }
