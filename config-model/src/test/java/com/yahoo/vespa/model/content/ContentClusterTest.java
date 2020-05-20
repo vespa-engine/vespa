@@ -310,14 +310,14 @@ public class ContentClusterTest extends ContentBaseTest {
             StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
             model.getConfig(builder, "bar/distributor/0");
             StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
-            assertEquals(false, config.inlinebucketsplitting());
+            assertFalse(config.inlinebucketsplitting());
         }
 
         {
             StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
             model.getConfig(builder, "bar/storage/0");
             StorFilestorConfig config = new StorFilestorConfig(builder);
-            assertEquals(false, config.enable_multibit_split_optimalization());
+            assertFalse(config.enable_multibit_split_optimalization());
         }
     }
 
@@ -343,7 +343,7 @@ public class ContentClusterTest extends ContentBaseTest {
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
         try{
             new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
-            assertTrue("Deploying without redundancy should fail", false);
+            fail("Deploying without redundancy should fail");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("missing required element \"redundancy\""));
         }
@@ -773,7 +773,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 "  <documents/>" +
                 "  <engine>" +
                 "    <proton>" +
-                "      <flush-on-shutdown>" + Boolean.toString(flushOnShutdown) + "</flush-on-shutdown>" +
+                "      <flush-on-shutdown>" + flushOnShutdown + "</flush-on-shutdown>" +
                 "    </proton>" +
                 "  </engine>" +
                 "  <group>" +
@@ -942,27 +942,6 @@ public class ContentClusterTest extends ContentBaseTest {
 
         DispatchConfig cfg = new DispatchConfig(builder);
         assertEquals(topKProbability, cfg.topKProbability(), 0.0);
-    }
-
-    private void verifyRoundRobinPropertiesControl(boolean useAdaptiveDispatch) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseAdaptiveDispatch(useAdaptiveDispatch));
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cc.getSearch().getConfig(builder);
-
-        DispatchConfig cfg = new DispatchConfig(builder);
-        if (useAdaptiveDispatch) {
-            assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, cfg.distributionPolicy());
-        } else {
-            assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, cfg.distributionPolicy());
-        }
-    }
-
-    @Test
-    public void default_dispatch_controlled_by_properties() {
-        verifyRoundRobinPropertiesControl(false);
-        verifyRoundRobinPropertiesControl(true);
     }
 
     @Test
