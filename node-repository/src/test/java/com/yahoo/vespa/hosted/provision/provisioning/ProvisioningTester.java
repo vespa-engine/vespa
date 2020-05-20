@@ -145,17 +145,12 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        return prepare(application, cluster, capacity, true);
-    }
-
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, boolean idempotentPrepare) {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
-        if (idempotentPrepare) { // prepare twice to ensure idempotence
-            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
-            assertEquals(hosts1, hosts2);
-        }
+        // prepare twice to ensure idempotence
+        List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
+        assertEquals(hosts1, hosts2);
         Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         newlyActivated.removeAll(reservedBefore);
         newlyActivated.removeAll(inactiveBefore);
@@ -163,7 +158,7 @@ public class ProvisioningTester {
     }
 
     public Collection<HostSpec> activate(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        List<HostSpec> preparedNodes = prepare(application, cluster, capacity, true);
+        List<HostSpec> preparedNodes = prepare(application, cluster, capacity);
 
         // Add ip addresses and activate parent host if necessary
         for (HostSpec prepared : preparedNodes) {
@@ -197,7 +192,7 @@ public class ProvisioningTester {
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
-        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, true);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity);
         activate(application, hostSpecs);
     }
 

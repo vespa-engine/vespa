@@ -228,7 +228,7 @@ public class LoadBalancerProvisionerTest {
         }
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
-            allNodes.addAll(tester.prepare(application, spec, capacity, false));
+            allNodes.addAll(tester.prepare(application, spec, capacity));
         }
         return allNodes;
     }
