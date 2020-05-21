@@ -126,6 +126,8 @@ public class Flavor {
     public double getBandwidthGbps() { return resources.bandwidthGbps(); }
 
     /** Returns the number of cores available in this flavor, not scaled for speed. */
+    // TODO: Remove after June 2020
+    @Deprecated
     public double getMinCpuCores() { return minCpuCores; }
 
     public Type getType() { return type; }

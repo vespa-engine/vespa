@@ -64,7 +64,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
 
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.shared(nodeFlavor.getType().equals(Flavor.Type.DOCKER_CONTAINER));
-        builder.hwinfo.cpu.cores((int)nodeFlavor.getMinCpuCores());
+        builder.hwinfo.cpu.cores((int)nodeFlavor.resources().vcpu());
         builder.hwinfo.memory.size((long)nodeFlavor.resources().memoryGb() * GB);
         builder.hwinfo.disk.size((long)nodeFlavor.resources().diskGb() * GB);
     }
@@ -113,7 +113,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     }
 
     private void tuneRequestThreads(ProtonConfig.Builder builder) {
-        int numCores = (int)Math.ceil(nodeFlavor.getMinCpuCores());
+        int numCores = (int)Math.ceil(nodeFlavor.resources().vcpu());
         builder.numsearcherthreads(numCores*threadsPerSearch);
         builder.numsummarythreads(numCores);
         builder.numthreadspersearch(threadsPerSearch);

@@ -36,13 +36,13 @@ public class NodeFlavorTuning implements
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.getMinCpuCores())));
+        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.resources().vcpu())));
     }
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         // Controls max number of concurrent requests per container
-        int workerThreads = Math.max(2, (int)Math.ceil(flavor.getMinCpuCores() * threadPoolSizeFactor));
+        int workerThreads = Math.max(2, (int)Math.ceil(flavor.resources().vcpu() * threadPoolSizeFactor));
         builder.maxthreads(workerThreads);
 
         // This controls your burst handling capability.
