@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import static java.lang.Long.min;
@@ -13,8 +14,8 @@ import static java.lang.Long.min;
  */
 public class NodeFlavorTuning implements ProtonConfig.Producer {
 
-    static long MB = 1024 * 1024;
-    static long GB = MB * 1024;
+    final static long MB = 1024 * 1024;
+    final static long GB = MB * 1024;
     private final Flavor nodeFlavor;
     private final int redundancy;
     private final int searchableCopies;
@@ -51,13 +52,13 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     private void getConfig(ProtonConfig.Documentdb.Builder builder) {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
-            long numDocs = (long)nodeFlavor.getMinMainMemoryAvailableGb()*GB/64L;
+            long numDocs = (long)nodeFlavor.resources().memoryGb() * GB / 64L;
             builder.allocation.initialnumdocs(numDocs/Math.max(searchableCopies, redundancy));
         }
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
-        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() * 0.05) * GB);
+        long memoryLimitBytes = (long) ((nodeFlavor.resources().memoryGb() * 0.05) * GB);
         builder.maxbytes(memoryLimitBytes);
     }
 
@@ -69,13 +70,13 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
-        if (!nodeFlavor.hasFastDisk()) {
+        if (nodeFlavor.resources().diskSpeed() != NodeResources.DiskSpeed.fast) {
             builder.hwinfo.disk.writespeed(40);
         }
     }
 
     private void tuneDocumentStoreMaxFileSize(ProtonConfig.Summary.Log.Builder builder) {
-        double memoryGb = nodeFlavor.getMinMainMemoryAvailableGb();
+        double memoryGb = nodeFlavor.resources().memoryGb();
         long fileSizeBytes = 4 * GB;
         if (memoryGb <= 12.0) {
             fileSizeBytes = 256 * MB;
@@ -88,25 +89,25 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
-        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
+        long memoryLimitBytes = (long) ((nodeFlavor.resources().memoryGb() / 8) * GB);
         builder.maxmemory(memoryLimitBytes);
         builder.each.maxmemory(memoryLimitBytes);
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
-        long tlsSizeBytes = (long) ((nodeFlavor.getMinDiskAvailableGb() * 0.07) * GB);
+        long tlsSizeBytes = (long) ((nodeFlavor.resources().diskGb() * 0.07) * GB);
         tlsSizeBytes = min(tlsSizeBytes, 100 * GB);
         builder.maxtlssize(tlsSizeBytes);
     }
 
     private void tuneSummaryReadIo(ProtonConfig.Summary.Read.Builder builder) {
-        if (nodeFlavor.hasFastDisk()) {
+        if (nodeFlavor.resources().diskSpeed() == NodeResources.DiskSpeed.fast) {
             builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
         }
     }
 
     private void tuneSearchReadIo(ProtonConfig.Search.Mmap.Builder builder) {
-        if (nodeFlavor.hasFastDisk()) {
+        if (nodeFlavor.resources().diskSpeed() == NodeResources.DiskSpeed.fast) {
             builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
         }
     }
@@ -122,7 +123,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         // "Reserve" 1GB of memory for other processes running on the content node (config-proxy, cluster-controller, metrics-proxy)
         double reservedMemoryGb = 1;
         double defaultMemoryLimit = new ProtonConfig.Writefilter(new ProtonConfig.Writefilter.Builder()).memorylimit();
-        double scaledMemoryLimit = ((nodeFlavor.getMinMainMemoryAvailableGb() - reservedMemoryGb) * defaultMemoryLimit) / nodeFlavor.getMinMainMemoryAvailableGb();
+        double scaledMemoryLimit = ((nodeFlavor.resources().memoryGb() - reservedMemoryGb) * defaultMemoryLimit) / nodeFlavor.resources().memoryGb();
         builder.memorylimit(scaledMemoryLimit);
     }
 
