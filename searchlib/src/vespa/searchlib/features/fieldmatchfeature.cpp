@@ -55,7 +55,6 @@ FieldMatchExecutor::execute(uint32_t docId)
 
     _splitter.update();
     _cmp.reset(docId);
-    //_cmp.setTracing(true);
 
     const fieldmatch::SimpleMetrics & simple = _cmp.getSimpleMetrics();
 

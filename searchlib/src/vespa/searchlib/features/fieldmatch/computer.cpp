@@ -20,8 +20,6 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
     _splitter(splitter),
     _fieldId(fieldInfo.id()),
     _params(params),
-    _tracing(false),
-    _trace(),
     _useCachedHits(true),
     _queryTerms(),
     _queryTermFieldMatch(),
@@ -250,27 +248,6 @@ Computer::fieldIndexToSemanticDistance(int j, uint32_t zeroJ) const
     }
 }
 
-Computer &
-Computer::trace(const vespalib::string &str)
-{
-    if (_tracing) {
-        _trace.push_back(str);
-        //LOG(info, "%s", str.c_str());
-    }
-    return *this;
-}
-
-vespalib::string
-Computer::getTrace() const
-{
-    vespalib::string ret = "";
-    for (std::vector<vespalib::string>::const_iterator it = _trace.begin();
-         it != _trace.end(); ++it) {
-        ret += *it;
-    }
-    return ret;
-}
-
 vespalib::string
 Computer::toString() const
 {
@@ -282,41 +259,13 @@ Computer::toString() const
 void
 Computer::exploreSegments()
 {
-    if (isTracing()) {
-        trace(vespalib::make_string("Calculating matches for %d query terms, %d field terms.",
-                                    getNumQueryTerms(), _fieldLength));
-    }
-
     _segments[0].segment->reset(_currentMetrics);
     _segments[0].valid = true;
     SegmentStart *segment = _segments[0].segment.get();
     while (segment != nullptr) {
-        if (isTracing()) {
-            trace(vespalib::make_string("Looking for segment from %s...",
-                                        segment->toString().c_str()));
-        }
-
         _currentMetrics = segment->getMetrics(); // take a copy of the segment returned from the current segment.
         bool found = findAlternativeSegmentFrom(segment);
-        if (found) {
-            if (isTracing()) {
-                vespalib::string segments = "[ ";
-                const std::vector<uint32_t> &lst = _currentMetrics.getSegmentStarts();
-                for (uint32_t i = 0; i < lst.size(); ++i) {
-                    segments += vespalib::make_string("%d", lst[i]);
-                    if (i < lst.size() - 1) {
-                        segments += ", ";
-                    }
-                }
-                segments += " ]";
-                trace(vespalib::make_string("...found segments: %s, score %f.",
-                                            segments.c_str(),
-                                            _currentMetrics.getSegmentationScore()));
-            }
-        } else {
-            if (isTracing()) {
-                trace("...no complete and improved segment existed.");
-            }
+        if (!found) {
             segment->setOpen(false);
         }
         segment = findOpenSegment(segment->getI());
@@ -404,9 +353,6 @@ Computer::inSegment(int i, int j, int previousJ, int previousI)
     }
     else {
         _currentMetrics.onInSegmentGap(i, j, previousJ);
-        if (isTracing()) {
-            trace(vespalib::make_string("      in segment gap: %d -> %d", i, j));
-        }
     }
 }
 
@@ -417,18 +363,12 @@ Computer::segmentStart(int i, int j, int previousJ)
     if (previousJ >= 0) {
         _currentMetrics.onPair(i, j, previousJ);
     }
-    if (isTracing()) {
-        trace(vespalib::make_string("    new segment at: %d -> %d", i, j));
-    }
     return true;
 }
 
 void
 Computer::segmentEnd(int i, int j)
 {
-    if (isTracing()) {
-        trace(vespalib::make_string("    segment ended at: %d -> %d", i, j));
-    }
     SegmentStart *startOfNext = _segments[i + 1].segment.get();
     if (!_segments[i + 1].valid) {
         startOfNext->reset(_currentMetrics, j, i + 1);
