@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
@@ -9,8 +11,8 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -22,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static com.yahoo.vespa.model.container.xml.BundleMapper.searchAndDocprocBundle;
 
 /**
  * @author gjoranv
@@ -51,13 +55,17 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.owningCluster = cluster;
         this.options = options;
 
-        owningCluster.addComponent(new SimpleComponent(QUERY_PROFILE_REGISTRY_CLASS));
+        owningCluster.addComponent(queryProfileRegistryComponent());
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
         this.searchClusters.addAll(searchClusters.values());
         initializeDispatchers(searchClusters.values());
         initializeSearchChains(searchClusters);
+    }
+
+    private static Component<AbstractConfigProducer<?>, ComponentModel> queryProfileRegistryComponent() {
+        return new Component<>(new ComponentModel(QUERY_PROFILE_REGISTRY_CLASS, null, searchAndDocprocBundle));
     }
 
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
