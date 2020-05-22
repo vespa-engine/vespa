@@ -3,9 +3,11 @@
 #include "fieldmatchfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/features/fieldmatch/computer.h>
+#include <vespa/searchlib/features/fieldmatch/computer_shared_state.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/phrase_splitter_query_env.h>
+#include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
@@ -24,6 +26,7 @@ private:
     PhraseSplitterQueryEnv _splitter_env;
     fef::PhraseSplitter    _splitter;
     const fef::FieldInfo & _field;
+    fieldmatch::ComputerSharedState _cmp_shared_state;
     fieldmatch::Computer   _cmp;
 
     void handle_bind_match_data(const fef::MatchData &md) override;
@@ -42,8 +45,8 @@ FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
     _splitter_env(queryEnv, field.id()),
     _splitter(_splitter_env),
     _field(field),
-    _cmp(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()),
-         _splitter, field, params)
+    _cmp_shared_state(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()), _splitter_env, field, params),
+    _cmp(_cmp_shared_state, _splitter)
 {
     // empty
 }
