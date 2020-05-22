@@ -147,11 +147,6 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public Transaction createDeactivateTransaction() {
-            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.DEACTIVATE);
-        }
-
-        @Override
         public Transaction createActivateTransaction() {
             return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.ACTIVATE);
         }
@@ -219,8 +214,7 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,
-                                                      boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+        public LocalSession createSessionFromExisting(Session existingSession, DeployLogger logger, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
             if (doThrow) {
                 throw new RuntimeException("foo");
             }

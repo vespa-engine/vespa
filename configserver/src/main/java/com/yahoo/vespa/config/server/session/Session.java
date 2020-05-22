@@ -1,8 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+
+import java.util.Optional;
 
 /**
  * A session represents an instance of an application that can be edited, prepared and activated. This
@@ -70,6 +77,35 @@ public abstract class Session {
     // in seconds
     public long getCreateTime() {
         return zooKeeperClient.readCreateTime();
+    }
+
+
+    public void setApplicationId(ApplicationId applicationId) {
+        zooKeeperClient.writeApplicationId(applicationId);
+    }
+
+    public void setVespaVersion(Version version) {
+        zooKeeperClient.writeVespaVersion(version);
+    }
+
+    public void setDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
+        zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+    }
+
+    public void setAthenzDomain(Optional<AthenzDomain> athenzDomain) {
+        zooKeeperClient.writeAthenzDomain(athenzDomain);
+    }
+
+    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
+
+    public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
+
+    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
+
+    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
+
+    public AllocatedHosts getAllocatedHosts() {
+        return zooKeeperClient.getAllocatedHosts();
     }
 
 }

@@ -1,22 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.*;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -98,21 +95,12 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return transaction;
     }
 
-    public Transaction createDeactivateTransaction() {
-        return createSetStatusTransaction(Status.DEACTIVATE);
-    }
-
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);
     }
 
     public long getActiveSessionAtCreate() {
         return applicationPackage.getMetaData().getPreviousActiveGeneration();
-    }
-
-    // Note: Assumes monotonically increasing session ids
-    public boolean isNewerThan(long sessionId) {
-        return getSessionId() > sessionId;
     }
 
     /** Add transactions to delete this session to the given nested transaction */
@@ -132,22 +120,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         zooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }
 
-    public void setApplicationId(ApplicationId applicationId) {
-        zooKeeperClient.writeApplicationId(applicationId);
-    }
-
-    public void setVespaVersion(Version version) {
-        zooKeeperClient.writeVespaVersion(version);
-    }
-
-    public void setDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
-        zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
-    }
-
-    public void setAthenzDomain(Optional<AthenzDomain> athenzDomain) {
-        zooKeeperClient.writeAthenzDomain(athenzDomain);
-    }
-
     public enum Mode {
         READ, WRITE
     }
@@ -155,14 +127,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     public ApplicationMetaData getMetaData() {
         return applicationPackage.getMetaData();
     }
-
-    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
-
-    public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
-
-    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
-
-    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
 
     public AllocatedHosts getAllocatedHosts() {
         return zooKeeperClient.getAllocatedHosts();
