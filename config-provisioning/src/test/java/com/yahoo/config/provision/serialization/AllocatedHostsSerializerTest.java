@@ -32,17 +32,16 @@ public class AllocatedHostsSerializerTest {
     public void testAllocatedHostsSerialization() throws IOException {
         NodeFlavors configuredFlavors = configuredFlavorsFrom("C/12/45/100", 12, 45, 100, 50, Flavor.Type.BARE_METAL);
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        hosts.add(new HostSpec("empty",
-                               List.of()));
-        hosts.add(new HostSpec("with-aliases",
-                               List.of("alias1", "alias2")));
+        hosts.add(new HostSpec("empty", List.of(), Optional.empty()));
+        hosts.add(new HostSpec("with-aliases", List.of("alias1", "alias2"), Optional.empty()));
         hosts.add(new HostSpec("allocated",
                                NodeResources.unspecified(),
                                NodeResources.unspecified(),
                                NodeResources.unspecified(),
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
-                               Optional.empty(), Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty(),
                                Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-2",
                                new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow),
