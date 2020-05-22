@@ -37,12 +37,6 @@ public class SingleNodeProvisioner implements HostProvisioner {
 
     public SingleNodeProvisioner(Flavor flavor) {
         host = new Host(HostName.getLocalhost());
-        /*
-        this.hostSpec = new HostSpec(host.hostname(),
-                                     List.of(),
-                                     flavor.resources(), flavor.resources(),
-                                     Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-         */
         this.hostSpec = new HostSpec(host.hostname(),
                                      flavor.resources(), flavor.resources(), flavor.resources(),
                                      ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).group(ClusterSpec.Group.from(0)).vespaVersion("1").build(), 0),
