@@ -48,7 +48,7 @@ public class AllocatedHostsSerializerTest {
                                new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow),
                                new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any),
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+                                                      Optional.empty()),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty()));
@@ -57,7 +57,7 @@ public class AllocatedHostsSerializerTest {
                                NodeResources.unspecified(),
                                NodeResources.unspecified(),
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+                                                      Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty()));
         hosts.add(new HostSpec("with-ports",
@@ -65,7 +65,7 @@ public class AllocatedHostsSerializerTest {
                                NodeResources.unspecified(),
                                NodeResources.unspecified(),
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+                                                      Optional.empty()),
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                                     new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
