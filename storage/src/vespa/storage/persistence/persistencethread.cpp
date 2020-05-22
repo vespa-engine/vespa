@@ -906,7 +906,9 @@ PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage lock) {
     LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
     api::StorageMessage & msg(*lock.second);
 
-    auto tracker = std::make_unique<MessageTracker>(_env, _env._fileStorHandler, std::move(lock.first), std::move(lock.second));
+    // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
+    // valid even if the tracker is destroyed by an exception in processMessage().
+    auto tracker = std::make_unique<MessageTracker>(_env, _env._fileStorHandler, std::move(lock.first), lock.second);
     tracker = processMessage(msg, std::move(tracker));
     if (tracker) {
         tracker->sendReply();
