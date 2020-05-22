@@ -82,11 +82,12 @@ public class AllocatedHostsSerializerTest {
             HostSpec deserializedHost = requireHost(expectedHost.hostname(), deserializedHosts);
             assertEquals(expectedHost.hostname(), deserializedHost.hostname());
             assertEquals(expectedHost.membership(), deserializedHost.membership());
-            assertEquals(expectedHost.flavor(), deserializedHost.flavor());
+            assertEquals(expectedHost.realResources(), deserializedHost.realResources());
+            assertEquals(expectedHost.advertisedResources(), deserializedHost.advertisedResources());
+            assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
             assertEquals(expectedHost.version(), deserializedHost.version());
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.aliases(), deserializedHost.aliases());
-            assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
             assertEquals(expectedHost.dockerImageRepo(), deserializedHost.dockerImageRepo());
         }
     }

@@ -242,12 +242,12 @@ public class ContainerClusterTest {
     @Test
     public void requireThatPoolAndQueueCanBeControlledByPropertiesAndFlavor() {
         FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder().name("my_flavor").minCpuCores(3);
-        NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)))
+        NodeResourcesTuning nodeResourcesTuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources())
                 .setThreadPoolSizeFactor(13.3)
                 .setQueueSizeFactor(17.5);
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        nodeFlavorTuning.getConfig(tpBuilder);
+        nodeResourcesTuning.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(40, threadpoolConfig.maxthreads());
         assertEquals(700, threadpoolConfig.queueSize());

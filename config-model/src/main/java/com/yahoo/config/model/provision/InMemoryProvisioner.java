@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -188,11 +187,11 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         // Check if the current allocations are compatible with the new request
         for (int i = allocation.size() - 1; i >= 0; i--) {
-            Optional<NodeResources> currentResources = allocation.get(0).flavor().map(Flavor::resources);
-            if (currentResources.isEmpty() || requestedResources.isUnspecified()) continue;
-            if (!currentResources.get().compatibleWith(requestedResources)) {
+            NodeResources currentResources = allocation.get(0).advertisedResources();
+            if (currentResources.isUnspecified() || requestedResources.isUnspecified()) continue;
+            if ( ! currentResources.compatibleWith(requestedResources)) {
                 HostSpec removed = allocation.remove(i);
-                freeNodes.put(currentResources.get(), new Host(removed.hostname())); // Return the node back to free pool
+                freeNodes.put(currentResources, new Host(removed.hostname())); // Return the node back to free pool
             }
         }
 

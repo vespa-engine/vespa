@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -98,7 +99,15 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
+    // TODO: Remove after June 2020
+    @Deprecated
     public Optional<Flavor> getFlavor() { return spec.flavor(); }
+
+    /** The real resources available for Vespa processes on this node, after subtracting infrastructure overhead. */
+    public NodeResources realResources() { return spec.realResources(); }
+
+    /** The total advertised resources of this node, typically matching what's requested. */
+    public NodeResources advertisedResources() { return spec.advertisedResources(); }
 
     @Override
     public String toString() {

@@ -1,28 +1,25 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 
 /**
- * Tuning of qr-start config for a container service based on the node flavor of that node.
+ * Tuning of qr-start config for a container service based on node resources.
  *
  * @author balder
  */
-public class NodeFlavorTuning implements
-        QrStartConfig.Producer,
-        ThreadpoolConfig.Producer
-{
+public class NodeResourcesTuning implements QrStartConfig.Producer, ThreadpoolConfig.Producer {
 
-    private final Flavor flavor;
+    private final NodeResources resources;
 
-    public NodeFlavorTuning setThreadPoolSizeFactor(double threadPoolSizeFactor) {
+    public NodeResourcesTuning setThreadPoolSizeFactor(double threadPoolSizeFactor) {
         this.threadPoolSizeFactor = threadPoolSizeFactor;
         return this;
     }
 
-    public NodeFlavorTuning setQueueSizeFactor(double queueSizeFactor) {
+    public NodeResourcesTuning setQueueSizeFactor(double queueSizeFactor) {
         this.queueSizeFactor = queueSizeFactor;
         return this;
     }
@@ -30,19 +27,19 @@ public class NodeFlavorTuning implements
     private double threadPoolSizeFactor = 8.0;
     private double queueSizeFactor = 8.0;
 
-    NodeFlavorTuning(Flavor flavor) {
-        this.flavor = flavor;
+    NodeResourcesTuning(NodeResources resources) {
+        this.resources = resources;
     }
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.resources().vcpu())));
+        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(resources.vcpu())));
     }
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         // Controls max number of concurrent requests per container
-        int workerThreads = Math.max(2, (int)Math.ceil(flavor.resources().vcpu() * threadPoolSizeFactor));
+        int workerThreads = Math.max(2, (int)Math.ceil(resources.vcpu() * threadPoolSizeFactor));
         builder.maxthreads(workerThreads);
 
         // This controls your burst handling capability.

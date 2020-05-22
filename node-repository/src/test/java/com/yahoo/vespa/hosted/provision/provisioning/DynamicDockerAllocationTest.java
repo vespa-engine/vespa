@@ -346,8 +346,8 @@ public class DynamicDockerAllocationTest {
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
         assertEquals(2, hosts.size());
-        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
-        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(1).flavor().get().resources().diskSpeed());
+        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(0).advertisedResources().diskSpeed());
+        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(1).advertisedResources().diskSpeed());
         tester.activate(application, hosts);
     }
 
@@ -386,9 +386,9 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
         assertEquals(1, hosts.size());
         tester.activate(application, hosts);
-        assertEquals(0.1, hosts.get(0).flavor().get().resources().vcpu(), 0.000001);
+        assertEquals(0.1, hosts.get(0).advertisedResources().vcpu(), 0.000001);
         assertEquals("Slow nodes are allowed in dev and preferred because they are cheaper",
-                     NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
+                     NodeResources.DiskSpeed.slow, hosts.get(0).advertisedResources().diskSpeed());
     }
 
     @Test

@@ -142,7 +142,7 @@ public class AllocatedHostsSerializer {
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
                                 nodeResourcesFromSlime(object.field(realResourcesKey), object, nodeFlavors),
                                 nodeResourcesFromSlime(object.field(advertisedResourcesKey), object, nodeFlavors),
-                                nodeResourcesFromSlime(object.field(requestedResourcesKey)),
+                                optionalNodeResourcesFromSlime(object.field(requestedResourcesKey)), // TODO: Make non-optional after June 2020
                                 membershipFromSlime(object),
                                 optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
@@ -176,6 +176,11 @@ public class AllocatedHostsSerializer {
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
                                  storageTypeFromSlime(resources.field(storageTypeKey)));
+    }
+
+    private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
+        if ( ! resources.valid()) return NodeResources.unspecified();
+        return nodeResourcesFromSlime(resources);
     }
 
     private static NodeResources nodeResourcesFromSlime(Inspector resources, Inspector parent,
