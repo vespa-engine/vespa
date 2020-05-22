@@ -229,7 +229,6 @@ public class OsVersionsTest {
 
         // All hosts are deprovisioning
         assertEquals(hostCount, hostNodes.get().deprovisioning().size());
-
         // Nodes complete their upgrade by being reprovisioned
         completeUpgradeOf(hostNodes.get().deprovisioning().asList(), NodeType.confighost);
         assertEquals(hostCount, hostNodes.get().onOsVersion(version1).size());

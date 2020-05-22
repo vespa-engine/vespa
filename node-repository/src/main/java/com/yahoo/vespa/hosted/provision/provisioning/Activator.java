@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.transaction.Mutex;
@@ -183,8 +184,8 @@ class Activator {
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
-            if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
-                node = node.with(hostSpec.flavor().get());
+            if (! hostSpec.advertisedResources().equals(node.flavor().resources())) // A resized node
+                node = node.with(new Flavor(hostSpec.advertisedResources()));
             Allocation allocation = node.allocation().get()
                                         .with(hostSpec.membership().get())
                                         .withRequestedResources(hostSpec.requestedResources()

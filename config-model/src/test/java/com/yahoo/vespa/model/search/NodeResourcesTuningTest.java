@@ -11,13 +11,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
-import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 
 /**
  * @author geirst
  */
-public class NodeFlavorTuningTest {
+public class NodeResourcesTuningTest {
 
     private static double delta = 0.00001;
 
@@ -152,7 +152,6 @@ public class NodeFlavorTuningTest {
     @Test
     public void require_that_docker_node_is_tagged_with_shared_disk() {
         assertSharedDisk(true, true);
-        assertSharedDisk(false, false);
     }
 
     @Test
@@ -232,13 +231,13 @@ public class NodeFlavorTuningTest {
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies) {
         flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies, int numThreadsPerSearch) {
         flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies, numThreadsPerSearch);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies, numThreadsPerSearch);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

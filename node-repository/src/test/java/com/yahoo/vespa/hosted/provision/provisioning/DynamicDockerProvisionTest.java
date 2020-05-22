@@ -270,8 +270,8 @@ public class DynamicDockerProvisionTest {
                            app1, cluster1);
 
         // Stop specifying node resources
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified),
-                                                      new ClusterResources(9, 3, NodeResources.unspecified)));
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified()),
+                                                      new ClusterResources(9, 3, NodeResources.unspecified())));
         tester.assertNodes("Existing allocation is preserved",
                            9, 3, 2, 20, 15,
                            app1, cluster1);

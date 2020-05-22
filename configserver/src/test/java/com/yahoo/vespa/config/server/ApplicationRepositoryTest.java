@@ -422,7 +422,9 @@ public class ApplicationRepositoryTest {
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
         System.out.println(info.getHosts());
-        assertTrue(info.getHosts().contains(new HostSpec("mytesthost", Collections.emptyList())));
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost",
+                                                         Collections.emptyList(),
+                                                         Optional.empty())));
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
         assertTrue(portsCopy.isPresent());
         assertThat(portsCopy.get().allocations(), is(list));

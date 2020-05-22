@@ -90,7 +90,7 @@ public final class Capacity {
 
     /** Creates this from a node type */
     public static Capacity fromRequiredNodeType(NodeType type) {
-        return from(new ClusterResources(0, 0, NodeResources.unspecified), true, false, type);
+        return from(new ClusterResources(0, 0, NodeResources.unspecified()), true, false, type);
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
