@@ -183,7 +183,7 @@ class Activator {
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
-            if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
+            if (hostSpec.flavor().isPresent() && ! hostSpec.flavor().get().resources().equals(node.flavor().resources())) // A resized node
                 node = node.with(hostSpec.flavor().get());
             Allocation allocation = node.allocation().get()
                                         .with(hostSpec.membership().get())

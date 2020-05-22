@@ -1,23 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeResources;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +37,7 @@ public class HostResource implements Comparable<HostResource> {
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, new HostSpec(host.getHostname(), Optional.empty()));
+        this(host, new HostSpec(host.getHostname(), List.of()));
     }
 
     public HostResource(Host host, HostSpec spec) {

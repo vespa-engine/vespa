@@ -39,7 +39,10 @@ public class ZKApplicationPackageTest {
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
-            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
+            Collections.singleton(new HostSpec("foo.yahoo.com",
+                                               TEST_FLAVOR.get().resources(),
+                                               TEST_FLAVOR.get().resources(),
+                                               Optional.empty(),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),
                                                Optional.empty(), Optional.of(DockerImage.fromString("docker repo")))));
 

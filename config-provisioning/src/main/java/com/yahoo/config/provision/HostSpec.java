@@ -22,10 +22,12 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Aliases of this host */
     private final List<String> aliases;
 
+    private final NodeResources realResources;
+
+    private final NodeResources advertisedResources;
+
     /** The current membership role of this host in the cluster it belongs to */
     private final Optional<ClusterMembership> membership;
-
-    private final Optional<Flavor> flavor;
 
     private final Optional<Version> version;
 
@@ -35,55 +37,130 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<NodeResources> requestedResources;
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
-        this(hostname, new ArrayList<>(), Optional.empty(), membership);
+        this(hostname, new ArrayList<>(),
+             NodeResources.unspecified(), NodeResources.unspecified(),
+             membership,
+             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<Version> version) {
-        this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership), version);
+        this(hostname, new ArrayList<>(),
+             flavor.resources(), flavor.resources(),
+             Optional.of(membership), version, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    /** Create a host in a non-cloud system, where hosts are specified in config */
     public HostSpec(String hostname, List<String> aliases) {
-        this(hostname, aliases, Optional.empty(), Optional.empty());
+        this(hostname, aliases,
+             NodeResources.unspecified(), NodeResources.unspecified(),
+             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
-        this(hostname, aliases, Optional.of(flavor), Optional.empty());
+        this(hostname, aliases,
+             flavor.resources(), flavor.resources(),
+             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, ClusterMembership membership) {
-        this(hostname, aliases, Optional.empty(), Optional.of(membership));
+        this(hostname, aliases,
+             NodeResources.unspecified(), NodeResources.unspecified(),
+             Optional.of(membership),
+             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
-        this(hostname, aliases, flavor, membership, Optional.empty());
+        this(hostname, aliases,
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             membership, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version) {
-        this(hostname, aliases, flavor, membership, version, Optional.empty());
+        this(hostname, aliases,
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             membership, version,
+             Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts) {
-        this(hostname, aliases, flavor, membership, version, networkPorts, Optional.empty());
+        this(hostname, aliases,
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             membership, version, networkPorts,
+             Optional.empty(),
+             Optional.empty());
     }
 
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+    // TODO: Remove after June 2020
+    @Deprecated
+    public HostSpec(String hostname, List<String> aliases,
+                    Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
-        this(hostname, aliases, flavor, membership, version, networkPorts, requestedResources, Optional.empty());
+        this(hostname, aliases,
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             membership, version, networkPorts, requestedResources, Optional.empty());
     }
 
+    // TODO: Remove after June 2020
+    @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+                    Optional<ClusterMembership> membership, Optional<Version> version,
+                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
+                    Optional<DockerImage> dockerImageRepo) {
+        this(hostname, aliases,
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
+             membership, version, networkPorts, requestedResources, dockerImageRepo);
+    }
+
+    /** Create a host in a hosted system */
+    public HostSpec(String hostname,
+                    NodeResources realResources,
+                    NodeResources advertisedResurces,
+                    NodeResources requestedResources,
+                    ClusterMembership membership,
+                    Optional<Version> version,
+                    Optional<NetworkPorts> networkPorts,
+                    Optional<DockerImage> dockerImageRepo) {
+        this(hostname, List.of(),
+             realResources, advertisedResurces,
+             Optional.of(membership),
+             version, networkPorts, requestedResources.asOptional(), dockerImageRepo);
+    }
+
+    /** Create a fully specified host for any system */
+    public HostSpec(String hostname, List<String> aliases,
+                    NodeResources realResources, NodeResources advertisedResurces,
                     Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
                     Optional<DockerImage> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
-        this.flavor = flavor;
+        this.realResources = realResources;
+        this.advertisedResources = advertisedResurces;
         this.membership = membership;
         this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");
         this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
@@ -97,7 +174,17 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the aliases of this host as an immutable list. This may be empty but never null. */
     public List<String> aliases() { return aliases; }
 
-    public Optional<Flavor> flavor() { return flavor; }
+    /** The real resources available for Vespa processes on this node, after subtracting infrastructure overhead. */
+    public NodeResources realResources() { return realResources; }
+
+    /** The total advertised resources of this node, typically matching what's requested. */
+    public NodeResources advertisedResources() { return advertisedResources; }
+
+    /** A flavor contained the advertised resources of this host */
+    // TODO: Remove after June 2020
+    public Optional<Flavor> flavor() {
+        return advertisedResources.asOptional().map(resources -> new Flavor(resources));
+    }
 
     /** Returns the current version of Vespa running on this node, or empty if not known */
     public Optional<com.yahoo.component.Version> version() { return version; }
@@ -108,13 +195,13 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the network port allocations on this host, or empty if not present */
     public Optional<NetworkPorts> networkPorts() { return networkPorts; }
 
-    /** Returns the requested resources leading to this host being provisioned, or empty if not known */
+    /** Returns the requested resources leading to this host being provisioned, or empty if unspecified */
     public Optional<NodeResources> requestedResources() { return requestedResources; }
 
     public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
-        return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources, dockerImageRepo);
+        return new HostSpec(hostname, aliases, realResources, advertisedResources, membership, version, ports, requestedResources, dockerImageRepo);
     }
 
     @Override
