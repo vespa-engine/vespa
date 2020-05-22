@@ -6,7 +6,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 /**
- * A component that only needs a simple ComponentModel.
+ * A component that uses the class name as id, and resides in the container-disc bundle.
  *
  * @author gjoranv
  */
@@ -16,7 +16,6 @@ public class SimpleComponent extends Component<AbstractConfigProducer<?>, Compon
         super(model);
     }
 
-    // For a component that uses the class name as id, and resides in the container-disc bundle.
     public SimpleComponent(String className) {
         this(new ComponentModel(BundleInstantiationSpecification.getFromStrings(className, null, null)));
     }
