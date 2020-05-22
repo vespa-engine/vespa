@@ -148,39 +148,6 @@ public:
     }
 
     /**
-     * Adds the given string to the trace of this, if tracing is enabled.
-     *
-     * @param str The string to trace.
-     * @return This, to allow chaining.
-     */
-    Computer &trace(const vespalib::string &str);
-
-    /**
-     * Returns a textual trace of the last execution of this algorithm, if tracing is on.
-     *
-     * @return The trace string.
-     */
-    vespalib::string getTrace() const;
-
-    /**
-     * Set to true to collect a textual trace from the computation, which can be retrieved using {@link #getTrace}.
-     *
-     * @param tracing Whether or not to trace.
-     * @return This, to allow chaining.
-     */
-    Computer &setTracing(bool tracing) {
-        _tracing = tracing;
-        return *this;
-    }
-
-    /**
-     * Returns whether tracing is on.
-     *
-     * @return True if tracing is on.
-     */
-    bool isTracing() const { return _tracing; }
-
-    /**
      * Returns the number of terms searching on this field.
      *
      * @return The number of terms.
@@ -332,8 +299,6 @@ private:
     const search::fef::PhraseSplitter        & _splitter;
     uint32_t                                   _fieldId;
     Params                                     _params;
-    bool                                       _tracing;
-    std::vector<vespalib::string>              _trace;
     bool                                       _useCachedHits;
 
     QueryTermVector                            _queryTerms;

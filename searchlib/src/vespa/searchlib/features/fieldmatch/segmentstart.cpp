@@ -46,12 +46,6 @@ bool
 SegmentStart::offerHistory(int previousJ, const Metrics & metrics)
 {
     if (metrics.getSegmentationScore() <= _metrics.getSegmentationScore()) {
-        if (_owner->isTracing()) {
-            _owner->trace(vespalib::make_string("    Rejected offered history [score %f, ending at %d] at %s.\n",
-                                                metrics.getSegmentationScore(),
-                                                previousJ,
-                                                toString().c_str()));
-        }
         return false; // reject
     }
 
@@ -64,12 +58,6 @@ SegmentStart::offerHistory(int previousJ, const Metrics & metrics)
     }
 #endif
 
-    if (_owner->isTracing()) {
-        _owner->trace(vespalib::make_string("    Accepted offered history [score %f, ending at %d] at %s.\n",
-                                            metrics.getSegmentationScore(),
-                                            previousJ,
-                                            toString().c_str()));
-    }
     _previousJ = previousJ;
     _metrics = metrics; // take a copy of the given metrics
     return true; // accept
