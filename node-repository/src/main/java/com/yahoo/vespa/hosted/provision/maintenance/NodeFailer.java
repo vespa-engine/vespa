@@ -386,6 +386,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
         List<Node> nodes = nodeRepository().getNodes();
         NodeList recentlyFailedNodes = nodes.stream()
+                                            .filter(n -> n.state() == Node.State.failed)
                                             .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
                                             .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
 
