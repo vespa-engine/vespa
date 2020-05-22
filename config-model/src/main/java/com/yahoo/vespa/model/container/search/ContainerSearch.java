@@ -55,17 +55,13 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.owningCluster = cluster;
         this.options = options;
 
-        owningCluster.addComponent(queryProfileRegistryComponent());
+        owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, searchAndDocprocBundle));
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
         this.searchClusters.addAll(searchClusters.values());
         initializeDispatchers(searchClusters.values());
         initializeSearchChains(searchClusters);
-    }
-
-    private static Component<AbstractConfigProducer<?>, ComponentModel> queryProfileRegistryComponent() {
-        return new Component<>(new ComponentModel(QUERY_PROFILE_REGISTRY_CLASS, null, searchAndDocprocBundle));
     }
 
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
