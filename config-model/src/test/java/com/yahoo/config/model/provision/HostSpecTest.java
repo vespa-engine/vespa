@@ -6,8 +6,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,10 +17,10 @@ public class HostSpecTest {
 
     @Test
     public void testEquals() {
-        HostSpec h1 = new HostSpec("foo", List.of(), Optional.empty());
-        HostSpec h2 = new HostSpec("foo", List.of(), Optional.empty());
-        HostSpec h3 = new HostSpec("foo", List.of("my", "alias"), Optional.empty());
-        HostSpec h4 = new HostSpec("bar", List.of(), Optional.empty());
+        HostSpec h1 = new HostSpec("foo", Collections.<String>emptyList());
+        HostSpec h2 = new HostSpec("foo", Collections.<String>emptyList());
+        HostSpec h3 = new HostSpec("foo", Arrays.asList("my", "alias"));
+        HostSpec h4 = new HostSpec("bar", Collections.<String>emptyList());
 
         assertTrue(h1.equals(h1));
         assertTrue(h1.equals(h2));

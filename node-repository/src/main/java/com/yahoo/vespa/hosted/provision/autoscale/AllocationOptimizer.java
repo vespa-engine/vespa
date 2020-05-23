@@ -40,8 +40,8 @@ public class AllocationOptimizer {
                                                                     AllocatableClusterResources current,
                                                                     Limits limits) {
         if (limits.isEmpty())
-            limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
-                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
+            limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified),
+                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {

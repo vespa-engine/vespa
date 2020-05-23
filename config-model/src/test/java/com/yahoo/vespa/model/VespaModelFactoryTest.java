@@ -17,9 +17,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -105,17 +103,17 @@ public class VespaModelFactoryTest {
             @Override
             public HostSpec allocateHost(String alias) {
                 return new HostSpec(hostName,
-                                    NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                                    Optional.empty(), Optional.empty(), Optional.empty());
+                                    List.of(),
+                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
+                                                           0));
             }
 
             @Override
             public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
                 return List.of(new HostSpec(hostName,
-                                            NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                                            Optional.empty(), Optional.empty(), Optional.empty()));
+                                            List.of(),
+                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
+                                                                   0)));
             }
         };
 

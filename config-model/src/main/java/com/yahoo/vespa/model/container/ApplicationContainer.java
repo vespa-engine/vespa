@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -44,8 +45,8 @@ public final class ApplicationContainer extends Container implements
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         if (getHostResource() != null) {
-            if ( ! getHostResource().advertisedResources().isUnspecified()) {
-                NodeResourcesTuning flavorTuning = new NodeResourcesTuning(getHostResource().advertisedResources());
+            if (getHostResource().getFlavor().isPresent()) {
+                NodeFlavorTuning flavorTuning = new NodeFlavorTuning(getHostResource().getFlavor().get());
                 flavorTuning.getConfig(builder);
             }
         }
@@ -79,11 +80,11 @@ public final class ApplicationContainer extends Container implements
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         if (! (parent instanceof ContainerCluster)) return;
-        if ((getHostResource() == null) || getHostResource().advertisedResources().isUnspecified()) return;
+        if ((getHostResource() == null) || getHostResource().getFlavor().isEmpty()) return;
         ContainerCluster containerCluster = (ContainerCluster) parent;
         if (containerCluster.getThreadPoolSizeFactor() <= 0.0) return;
 
-        NodeResourcesTuning flavorTuning = new NodeResourcesTuning(getHostResource().advertisedResources())
+        NodeFlavorTuning flavorTuning = new NodeFlavorTuning(getHostResource().getFlavor().get())
                 .setThreadPoolSizeFactor(containerCluster.getThreadPoolSizeFactor())
                 .setQueueSizeFactor(containerCluster.getQueueSizeFactor());
         flavorTuning.getConfig(builder);

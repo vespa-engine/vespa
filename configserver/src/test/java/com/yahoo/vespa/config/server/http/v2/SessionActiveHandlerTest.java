@@ -9,7 +9,9 @@ import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -56,7 +58,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
@@ -308,7 +309,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ActivateRequest invoke() throws Exception {
             SessionZooKeeperClient zkClient =
                     new MockSessionZKClient(curator, tenantName, sessionId,
-                                            Optional.of(AllocatedHosts.withHosts(Set.of(new HostSpec("bar", Collections.emptyList(), Optional.empty())))));
+                                            Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient);
             addLocalSession(sessionId, deployData, zkClient);
             tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());

@@ -766,7 +766,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("KMP_SETTING=1 KMP_AFFINITY=granularity=fine,verbose,compact,1,0 ", qrStartConfig.qrs().env());
     }
 
-    private void verifyAvailableprocessors(boolean isHosted, Flavor flavor, int expectProcessors) {
+    private void verifyAvailableprocessors(boolean isHosted, Flavor flavor, int expectProcessors) throws IOException, SAXException {
         DeployState deployState = new DeployState.Builder()
                 .modelHostProvisioner(flavor != null ? new SingleNodeProvisioner(flavor) : new SingleNodeProvisioner())
                 .properties(new TestProperties()
@@ -790,7 +790,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatAvailableProcessorsFollowFlavor() {
+    public void requireThatAvailableProcessorsFollowFlavor() throws IOException, SAXException {
         verifyAvailableprocessors(false, null,0);
         verifyAvailableprocessors(true, null,0);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()), 9);

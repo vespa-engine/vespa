@@ -6,10 +6,8 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeResources;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
@@ -55,10 +53,7 @@ public class HostResourceTest {
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {
         return new HostResource(Host.createHost(null, "hostname"),
-                                new HostSpec("hostname",
-                                             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                             membership,
-                                             Optional.empty(), Optional.empty(), Optional.empty()));
+                                new HostSpec("hostname", Optional.of(membership)));
     }
 
     private static int counter = 0;
