@@ -5,12 +5,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -41,14 +39,9 @@ public class ZKApplicationPackageTest {
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
-            Collections.singleton(new HostSpec("foo.yahoo.com",
-                                               TEST_FLAVOR.get().resources(),
-                                               TEST_FLAVOR.get().resources(),
-                                               NodeResources.unspecified(),
-                                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),
-                                               Optional.of(DockerImage.fromString("docker repo")))));
+                                               Optional.empty(), Optional.of(DockerImage.fromString("docker repo")))));
 
     private ConfigCurator configCurator;
 
@@ -86,8 +79,8 @@ public class ZKApplicationPackageTest {
         assertFalse(zkApp.getFileRegistries().containsKey(new Version(0, 0, 0)));
         assertThat(zkApp.getFileRegistries().get(goodVersion).fileSourceHost(), is("dummyfiles"));
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
-        assertEquals(Utf8.toString(toJson(ALLOCATED_HOSTS)), Utf8.toString(toJson(readInfo)));
-        assertEquals(TEST_FLAVOR.get().resources(), readInfo.getHosts().iterator().next().advertisedResources());
+        assertThat(Utf8.toString(toJson(readInfo)), is(Utf8.toString(toJson(ALLOCATED_HOSTS))));
+        assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
         // TODO: Enable when dockerImageRepo is written to zk
         //assertEquals("docker repo", readInfo.getHosts().iterator().next().dockerImageRepo().get());

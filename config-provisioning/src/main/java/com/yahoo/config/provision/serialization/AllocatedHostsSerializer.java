@@ -45,9 +45,6 @@ public class AllocatedHostsSerializer {
     private static final String aliasesKey = "aliases";
     private static final String hostSpecMembershipKey = "membership";
 
-    private static final String realResourcesKey = "realResources";
-    private static final String advertisedResourcesKey = "advertisedResources";
-
     // Flavor can be removed when all allocated nodes are docker nodes
     private static final String flavorKey = "flavor";
 
@@ -93,9 +90,7 @@ public class AllocatedHostsSerializer {
                 object.setString(hostSpecDockerImageRepoKey, repo.repository());
             });
         });
-        host.flavor().ifPresent(flavor -> toSlime(flavor, object)); // TODO: Remove this line after June 2020
-        toSlime(host.realResources(), object.setObject(realResourcesKey));
-        toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
+        host.flavor().ifPresent(flavor -> toSlime(flavor, object));
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
         host.version().ifPresent(version -> object.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
         host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(hostSpecNetworkPortsKey)));
@@ -138,25 +133,18 @@ public class AllocatedHostsSerializer {
     }
 
     private static HostSpec hostFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        if (object.field(hostSpecMembershipKey).valid()) { // Hosted
-            return new HostSpec(object.field(hostSpecHostNameKey).asString(),
-                                nodeResourcesFromSlime(object.field(realResourcesKey), object, nodeFlavors),
-                                nodeResourcesFromSlime(object.field(advertisedResourcesKey), object, nodeFlavors),
-                                optionalNodeResourcesFromSlime(object.field(requestedResourcesKey)), // TODO: Make non-optional after June 2020
-                                membershipFromSlime(object),
-                                optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
-                                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
-                                optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
-        }
-        else {
-            return new HostSpec(object.field(hostSpecHostNameKey).asString(),
-                                aliasesFromSlime(object),
-                                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)));
-        }
+        return new HostSpec(object.field(hostSpecHostNameKey).asString(),
+                            aliasesFromSlime(object),
+                            flavorFromSlime(object, nodeFlavors),
+                            object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty(),
+                            optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
+                            NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
+                            nodeResourcesFromSlime(object.field(requestedResourcesKey)),
+                            optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
     }
 
     private static List<String> aliasesFromSlime(Inspector object) {
-        if ( ! object.field(aliasesKey).valid()) return List.of();
+        if ( ! object.field(aliasesKey).valid()) return Collections.emptyList();
         List<String> aliases = new ArrayList<>();
         object.field(aliasesKey).traverse((ArrayTraverser)(index, alias) -> aliases.add(alias.asString()));
         return aliases;
@@ -166,28 +154,17 @@ public class AllocatedHostsSerializer {
         if (object.field(flavorKey).valid() && nodeFlavors.isPresent() && nodeFlavors.get().exists(object.field(flavorKey).asString()))
             return nodeFlavors.get().getFlavor(object.field(flavorKey).asString());
         else
-            return Optional.empty();
+            return nodeResourcesFromSlime(object.field(resourcesKey)).map(resources -> new Flavor(resources));
     }
 
-    private static NodeResources nodeResourcesFromSlime(Inspector resources) {
-        return new NodeResources(resources.field(vcpuKey).asDouble(),
-                                 resources.field(memoryKey).asDouble(),
-                                 resources.field(diskKey).asDouble(),
-                                 resources.field(bandwidthKey).asDouble(),
-                                 diskSpeedFromSlime(resources.field(diskSpeedKey)),
-                                 storageTypeFromSlime(resources.field(storageTypeKey)));
-    }
-
-    private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
-        if ( ! resources.valid()) return NodeResources.unspecified();
-        return nodeResourcesFromSlime(resources);
-    }
-
-    private static NodeResources nodeResourcesFromSlime(Inspector resources, Inspector parent,
-                                                        Optional<NodeFlavors> nodeFlavors) {
-        if ( ! resources.valid()) // TODO: Remove the fallback using nodeFlavors after June 2020
-            return flavorFromSlime(parent, nodeFlavors).map(f -> f.resources()).orElse(NodeResources.unspecified);
-        return nodeResourcesFromSlime(resources);
+    private static Optional<NodeResources> nodeResourcesFromSlime(Inspector resources) {
+        if ( ! resources.valid()) return Optional.empty();
+        return Optional.of(new NodeResources(resources.field(vcpuKey).asDouble(),
+                                             resources.field(memoryKey).asDouble(),
+                                             resources.field(diskKey).asDouble(),
+                                             resources.field(bandwidthKey).asDouble(),
+                                             diskSpeedFromSlime(resources.field(diskSpeedKey)),
+                                             storageTypeFromSlime(resources.field(storageTypeKey))));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {

@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -197,12 +196,12 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository),
-                                   node.flavor().resources(),
-                                   requestedResources,
-                                   nodeAllocation.membership(),
+                                   List.of(),
+                                   Optional.of(node.flavor()),
+                                   Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
+                                   requestedResources.isUnspecified() ? Optional.empty() : Optional.of(requestedResources),
                                    node.status().dockerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");

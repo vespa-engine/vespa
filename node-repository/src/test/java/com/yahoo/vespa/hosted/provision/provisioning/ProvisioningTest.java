@@ -418,8 +418,8 @@ public class ProvisioningTest {
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified()),
-                                                      new ClusterResources(4, 1, NodeResources.unspecified())));
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified),
+                                                      new ClusterResources(4, 1, NodeResources.unspecified)));
         tester.assertNodes("Initial allocation at min with default resources",
                            2, 1, 1.5, 8, 50, 0.3,
                            app1, cluster1);
@@ -479,8 +479,8 @@ public class ProvisioningTest {
                            app1, cluster1);
 
         // Stop specifying node resources
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified()),
-                                                      new ClusterResources(9, 3, NodeResources.unspecified())));
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified),
+                                                      new ClusterResources(9, 3, NodeResources.unspecified)));
         tester.assertNodes("No change",
                            9, 3, 8, 35, 15,
                            app1, cluster1);
@@ -622,7 +622,7 @@ public class ProvisioningTest {
         tester.makeReadyHosts(4, defaultResources).deployZoneApp();
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
-        tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified()), false, false));
+        tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified), false, false));
         // No exception; Success
     }
 
@@ -881,7 +881,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified()), required, true);
+        Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(container0Size, capacity.apply(container0Size), containerCluster0, application);
         int expectedContainer1Size = tester.capacityPolicies().decideSize(container1Size, capacity.apply(container1Size), containerCluster1, application);
         int expectedContent0Size = tester.capacityPolicies().decideSize(content0Size, capacity.apply(content0Size), contentCluster0, application);

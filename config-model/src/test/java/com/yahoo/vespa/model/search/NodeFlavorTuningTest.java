@@ -11,13 +11,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
+import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
+import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 
 /**
  * @author geirst
  */
-public class NodeResourcesTuningTest {
+public class NodeFlavorTuningTest {
 
     private static double delta = 0.00001;
 
@@ -152,6 +152,7 @@ public class NodeResourcesTuningTest {
     @Test
     public void require_that_docker_node_is_tagged_with_shared_disk() {
         assertSharedDisk(true, true);
+        assertSharedDisk(false, false);
     }
 
     @Test
@@ -231,13 +232,13 @@ public class NodeResourcesTuningTest {
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies);
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies, int numThreadsPerSearch) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies, numThreadsPerSearch);
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), redundancy, searchableCopies, numThreadsPerSearch);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

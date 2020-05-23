@@ -7,7 +7,6 @@ import com.yahoo.vespa.model.container.Container;
 
 import java.io.Reader;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A host provisioner based on a hosts.xml file.
@@ -39,7 +38,7 @@ public class HostsXmlProvisioner implements HostProvisioner {
         }
         for (Host host : hosts.asCollection()) {
             if (host.aliases().contains(alias)) {
-                return new HostSpec(host.hostname(), host.aliases(), Optional.empty());
+                return new HostSpec(host.hostname(), host.aliases());
             }
         }
         throw new IllegalArgumentException("Unable to find host for alias '" + alias + "'");
@@ -51,7 +50,7 @@ public class HostsXmlProvisioner implements HostProvisioner {
     }
 
     private HostSpec host2HostSpec(Host host) {
-        return new HostSpec(host.hostname(), host.aliases(), Optional.empty());
+        return new HostSpec(host.hostname(), host.aliases());
     }
 
     private Host getFirstHost() {

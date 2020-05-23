@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -117,7 +118,8 @@ public class InMemoryProvisioner implements HostProvisioner {
         List<Host> defaultHosts = freeNodes.get(defaultResources);
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts with default resources available");
         Host newHost = freeNodes.removeValue(defaultResources, 0);
-        return new HostSpec(newHost.hostname(), List.of(alias), Optional.empty());
+        // Note: Always returns HostSpec with empty dockerImageRepo, which is OK since this method is never used when docker image repo is set
+        return new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version(), Optional.empty());
     }
 
     @Override
@@ -171,11 +173,11 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private HostSpec retire(HostSpec host) {
         return new HostSpec(host.hostname(),
-                            host.realResources(),
-                            host.advertisedResources(),
-                            host.requestedResources().orElse(NodeResources.unspecified()),
-                            host.membership().get().retire(),
+                            host.aliases(),
+                            host.flavor(),
+                            Optional.of(host.membership().get().retire()),
                             host.version(),
+                            Optional.empty(),
                             Optional.empty(),
                             host.dockerImageRepo());
     }
@@ -187,11 +189,11 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         // Check if the current allocations are compatible with the new request
         for (int i = allocation.size() - 1; i >= 0; i--) {
-            NodeResources currentResources = allocation.get(0).advertisedResources();
-            if (currentResources.isUnspecified() || requestedResources.isUnspecified()) continue;
-            if ( ! currentResources.compatibleWith(requestedResources)) {
+            Optional<NodeResources> currentResources = allocation.get(0).flavor().map(Flavor::resources);
+            if (currentResources.isEmpty() || requestedResources == NodeResources.unspecified) continue;
+            if (!currentResources.get().compatibleWith(requestedResources)) {
                 HostSpec removed = allocation.remove(i);
-                freeNodes.put(currentResources, new Host(removed.hostname())); // Return the node back to free pool
+                freeNodes.put(currentResources.get(), new Host(removed.hostname())); // Return the node back to free pool
             }
         }
 
@@ -200,7 +202,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             // Find the smallest host that can fit the requested requested
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
                     .sorted(new MemoryDiskCpu())
-                    .filter(resources -> requestedResources.isUnspecified() || resources.satisfies(requestedResources))
+                    .filter(resources -> requestedResources == NodeResources.unspecified || resources.satisfies(requestedResources))
                     .findFirst();
             if (hostResources.isEmpty()) {
                 if (canFail)
@@ -212,11 +214,10 @@ public class InMemoryProvisioner implements HostProvisioner {
             Host newHost = freeNodes.removeValue(hostResources.get(), 0);
             if (freeNodes.get(hostResources.get()).isEmpty()) freeNodes.removeAll(hostResources.get());
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
-            allocation.add(new HostSpec(newHost.hostname(),
-                                        hostResources.get(), hostResources.get(), requestedResources,
-                                        membership,
+            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(),
+                                        hostResources.map(Flavor::new), Optional.of(membership),
                                         newHost.version(), Optional.empty(),
-                                        Optional.empty()));
+                                        requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources)));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

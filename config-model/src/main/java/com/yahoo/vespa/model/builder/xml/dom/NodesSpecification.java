@@ -159,8 +159,8 @@ public class NodesSpecification {
      * Returns a requirement from <code>count</code> non-dedicated nodes in one group
      */
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
-        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
-                                      new ClusterResources(count, 1, NodeResources.unspecified()),
+        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      new ClusterResources(count, 1, NodeResources.unspecified),
                                       false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -172,8 +172,8 @@ public class NodesSpecification {
 
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
     public static NodesSpecification dedicated(int count, ConfigModelContext context) {
-        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
-                                      new ClusterResources(count, 1, NodeResources.unspecified()),
+        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      new ClusterResources(count, 1, NodeResources.unspecified),
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -224,7 +224,7 @@ public class NodesSpecification {
             return new Pair<>(flavorResources, flavorResources);
         }
         else {
-            return new Pair<>(NodeResources.unspecified(), NodeResources.unspecified());
+            return new Pair<>(NodeResources.unspecified, NodeResources.unspecified);
         }
     }
 
