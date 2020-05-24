@@ -29,6 +29,7 @@ TEST("that caught silenced exception causes exitcode 0") {
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }
 
+#ifndef __SANITIZE_ADDRESS__
 TEST("that mmap within limits are fine cause exitcode 0") {
     SlaveProc proc("exec ./vespalib_mmap_app 150000000 10485760 1");
     proc.wait();
@@ -49,6 +50,7 @@ TEST("that mmap beyond limits with set VESPA_SILENCE_CORE_ON_OOM cause exitcode 
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 66);
 }
+#endif
 #endif
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
