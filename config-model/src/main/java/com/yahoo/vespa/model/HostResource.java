@@ -99,7 +99,7 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public Optional<Flavor> getFlavor() { return spec.flavor(); }
 

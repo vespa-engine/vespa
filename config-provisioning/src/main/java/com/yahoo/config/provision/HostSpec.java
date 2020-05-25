@@ -82,7 +82,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(),
@@ -91,7 +91,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<Version> version) {
         this(hostname, new ArrayList<>(),
@@ -99,7 +99,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.of(membership), version, Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases) {
         this(hostname, aliases,
@@ -107,7 +107,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
         this(hostname, aliases,
@@ -115,7 +115,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, ClusterMembership membership) {
         this(hostname, aliases,
@@ -124,7 +124,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
         this(hostname, aliases,
@@ -134,7 +134,7 @@ public class HostSpec implements Comparable<HostSpec> {
              membership, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version) {
@@ -146,7 +146,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
@@ -159,7 +159,7 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases,
                     Optional<Flavor> flavor,
@@ -172,7 +172,7 @@ public class HostSpec implements Comparable<HostSpec> {
              membership, version, networkPorts, Optional.empty());
     }
 
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     @Deprecated
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
@@ -198,7 +198,7 @@ public class HostSpec implements Comparable<HostSpec> {
     public NodeResources advertisedResources() { return advertisedResources; }
 
     /** A flavor contained the advertised resources of this host */
-    // TODO: Remove after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     public Optional<Flavor> flavor() {
         return advertisedResources.asOptional().map(resources -> new Flavor(resources));
     }

@@ -17,7 +17,7 @@ public class NodeResources {
     private static final double memoryUnitCost = 0.012;
     private static final double diskUnitCost =   0.0004;
 
-    // TODO: Make private after June 2020
+    // TODO: Remove when models older than 7.226 are gone
     public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
