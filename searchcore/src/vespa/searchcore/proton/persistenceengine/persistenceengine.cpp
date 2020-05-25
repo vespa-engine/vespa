@@ -434,7 +434,7 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
             search::DocumentMetaData meta = retriever.getDocumentMetaData(did);
             if (meta.timestamp != 0 && meta.bucketId == b.getBucketId()) {
                 if (meta.removed) {
-                    return GetResult();
+                    return GetResult::make_for_tombstone(meta.timestamp);
                 }
                 document::Document::UP doc = retriever.getDocument(meta.lid);
                 if (!doc || doc->getId().getGlobalId() != meta.gid) {

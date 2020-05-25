@@ -30,8 +30,17 @@ std::ostream & operator << (std::ostream & os, const Result::ErrorType &errorCod
 GetResult::GetResult(Document::UP doc, Timestamp timestamp)
     : Result(),
       _timestamp(timestamp),
-      _doc(std::move(doc))
-{ }
+      _doc(std::move(doc)),
+      _is_tombstone(false)
+{
+}
+
+GetResult::GetResult(Timestamp removed_at_ts)
+    : _timestamp(removed_at_ts),
+      _doc(),
+      _is_tombstone(true)
+{
+}
 
 GetResult::~GetResult() = default;
 BucketIdListResult::~BucketIdListResult() = default;

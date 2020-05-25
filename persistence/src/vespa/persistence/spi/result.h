@@ -156,13 +156,20 @@ public:
      */
     GetResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
-          _timestamp(0) { }
+          _timestamp(0),
+          _is_tombstone(false)
+    {
+    }
 
     /**
      * Constructor to use when we didn't find the document in question.
      */
     GetResult()
-        : _timestamp(0) { }
+        : _timestamp(0),
+          _doc(),
+          _is_tombstone(false)
+    {
+    }
 
     /**
      * Constructor to use when we found the document asked for.
@@ -172,12 +179,22 @@ public:
      */
     GetResult(DocumentUP doc, Timestamp timestamp);
 
-    ~GetResult();
+    static GetResult make_for_tombstone(Timestamp removed_at_ts) {
+        return GetResult(removed_at_ts);
+    }
 
-    Timestamp getTimestamp() const { return _timestamp; }
+    ~GetResult() override;
 
-    bool hasDocument() const {
-        return _doc.get() != NULL;
+    [[nodiscard]] Timestamp getTimestamp() const {
+        return _timestamp;
+    }
+
+    [[nodiscard]] bool hasDocument() const {
+        return (_doc.get() != nullptr);
+    }
+
+    [[nodiscard]] bool is_tombstone() const noexcept {
+        return _is_tombstone;
     }
 
     const Document& getDocument() const {
@@ -193,8 +210,12 @@ public:
     }
 
 private:
+    // Explicitly creates a tombstone (remove entry) GetResult with no document.
+    explicit GetResult(Timestamp removed_at_ts);
+
     Timestamp  _timestamp;
     DocumentSP _doc;
+    bool _is_tombstone;
 };
 
 class BucketIdListResult : public Result {

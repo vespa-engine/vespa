@@ -686,6 +686,7 @@ TEST_F("require that get returns the first document found", SimpleFixture) {
     EXPECT_EQUAL(tstamp1, result.getTimestamp());
     ASSERT_TRUE(result.hasDocument());
     EXPECT_EQUAL(*doc1, result.getDocument());
+    EXPECT_FALSE(result.is_tombstone());
 }
 
 TEST_F("require that createIterator does", SimpleFixture) {
