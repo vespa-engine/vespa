@@ -24,6 +24,7 @@ public:
      */
     ComputerSharedState(const vespalib::string& propertyNamespace, const fef::PhraseSplitterQueryEnv& splitter_query_env,
                         const fef::FieldInfo& fieldInfo, const Params& params);
+    ~ComputerSharedState();
 
     uint32_t get_field_id() const { return _field_id; }
     const Params& get_params() const { return _params; }
