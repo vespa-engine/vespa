@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -77,13 +79,18 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         }
     }
 
-    public void purgeOldSessions() {
+    public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, "Purging old sessions");
         try {
-            List<LocalSession> sessions = new ArrayList<>(listSessions());
-            for (LocalSession candidate : sessions) {
-                if (hasExpired(candidate) && !isActiveSession(candidate)) {
-                    deleteSession(candidate);
+            for (LocalSession candidate : listSessions()) {
+                log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + candidate.getCreateTime());
+                if (hasExpired(candidate)) {
+                    ApplicationId applicationId = candidate.getApplicationId();
+                    Long activeSession = activeSessions.get(applicationId);
+                    if (activeSession == null || activeSession != candidate.getSessionId()) {
+                        deleteSession(candidate);
+                        log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " for '" + applicationId + "'");
+                    }
                 }
             }
             // Make sure to catch here, to avoid executor just dying in case of issues ...

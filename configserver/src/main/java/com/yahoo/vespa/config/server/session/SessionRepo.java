@@ -2,8 +2,8 @@
 package com.yahoo.vespa.config.server.session;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * A generic session repository that can store any type of session that extends the abstract interface.
@@ -37,7 +37,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         return sessions.get(id);
     }
 
-    public synchronized Collection<SESSIONTYPE> listSessions() {
+    public synchronized List<SESSIONTYPE> listSessions() {
         return new ArrayList<>(sessions.values());
     }
     
