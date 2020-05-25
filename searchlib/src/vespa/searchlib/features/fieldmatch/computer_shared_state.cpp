@@ -46,4 +46,6 @@ ComputerSharedState::ComputerSharedState(const vespalib::string& propertyNamespa
     }
 }
 
+ComputerSharedState::~ComputerSharedState() = default;
+
 }
