@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "computer.h"
+#include "computer_shared_state.h"
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/phrase_splitter_query_env.h>
+#include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
@@ -15,55 +17,24 @@ using namespace search::fef;
 
 namespace search::features::fieldmatch {
 
-Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitter &splitter,
-                   const FieldInfo &fieldInfo, const Params &params) :
-    _splitter(splitter),
-    _fieldId(fieldInfo.id()),
-    _params(params),
-    _useCachedHits(true),
-    _queryTerms(),
-    _queryTermFieldMatch(),
-    _totalTermWeight(0),
-    _totalTermSignificance(0.0f),
-    _fieldLength(FieldPositionsIterator::UNKNOWN_LENGTH),
-    _currentMetrics(this),
-    _finalMetrics(this),
-    _simpleMetrics(params),
-    _segments(),
-    _alternativeSegmentationsTried(0),
-    _cachedHits()
+Computer::Computer(const ComputerSharedState& shared_state, const PhraseSplitter& splitter)
+    : _shared_state(shared_state),
+      _splitter(splitter),
+      _fieldId(_shared_state.get_field_id()),
+      _params(_shared_state.get_params()),
+      _useCachedHits(_shared_state.get_use_cached_hits()),
+      _queryTerms(_shared_state.get_query_terms()),
+      _queryTermFieldMatch(_queryTerms.size()),
+      _totalTermWeight(_shared_state.get_total_term_weight()),
+      _totalTermSignificance(_shared_state.get_total_term_significance()),
+      _fieldLength(FieldPositionsIterator::UNKNOWN_LENGTH),
+      _currentMetrics(this),
+      _finalMetrics(this),
+      _simpleMetrics(_shared_state.get_simple_metrics()),
+      _segments(),
+      _alternativeSegmentationsTried(0),
+      _cachedHits(_queryTerms.size())
 {
-    // Store term data for all terms searching in this field
-    const auto& splitter_query_env = splitter.get_query_env();
-    _queryTermFieldMatch.reserve(splitter_query_env.getNumTerms());
-    _cachedHits.reserve(splitter_query_env.getNumTerms());
-    for (uint32_t i = 0; i < splitter_query_env.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(splitter_query_env, i, true);
-        _totalTermWeight += qt.termData()->getWeight().percent();
-        _totalTermSignificance += qt.significance();
-        _simpleMetrics.addQueryTerm(qt.termData()->getWeight().percent());
-        const ITermFieldData *field = qt.termData()->lookupField(_fieldId);
-        if (field != nullptr) {
-            qt.fieldHandle(field->getHandle());
-            _queryTerms.push_back(qt);
-            _simpleMetrics.addSearchedTerm(qt.termData()->getWeight().percent());
-            _queryTermFieldMatch.emplace_back(nullptr);
-            _cachedHits.emplace_back();
-        }
-    }
-
-    _totalTermWeight = atoi(splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermWeight").
-                            get(vespalib::make_string("%d", _totalTermWeight)).c_str());
-    _totalTermSignificance = vespalib::locale::c::atof(splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermSignificance").
-                                  get(vespalib::make_string("%f", _totalTermSignificance)).c_str());
-    if (splitter_query_env.getProperties().lookup(propertyNamespace, "totalTermWeight").found()) {
-        _simpleMetrics.setTotalWeightInQuery(_totalTermWeight);
-    }
-
-    // update current and final metrics after initialization
-    _currentMetrics = Metrics(this);
-    _finalMetrics = Metrics(this);
-
     // num query terms searching in this field + 1
     _segments.reserve(getNumQueryTerms() + 1);
     for (uint32_t i = 0; i < (getNumQueryTerms() + 1); ++i) {

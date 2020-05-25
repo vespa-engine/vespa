@@ -5,14 +5,20 @@
 #include "params.h"
 #include "segmentstart.h"
 #include "simplemetrics.h"
-#include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/features/queryterm.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
+#include <vespa/vespalib/util/arrayref.h>
+
+namespace search::fef {
+
+class PhraseSplitter;
+class TermFieldMatchData;
+
+}
 
 namespace search::features::fieldmatch {
+
+class ComputerSharedState;
 
 /**
  * <p>Calculates a set of metrics capturing information about the degree of agreement between a query and a field
@@ -57,13 +63,10 @@ public:
     /**
      * Constructs a new computer object.
      *
-     * @param propertyNamespace The namespace used in query properties.
+     * @param shared_state      The shared state for this computer
      * @param splitter          The environment that holds all query information.
-     * @param fieldInfo         The info object of the matched field.
-     * @param params            The parameter object for this computer.
      */
-    Computer(const vespalib::string &propertyNamespace, const fef::PhraseSplitter &splitter,
-             const fef::FieldInfo &fieldInfo, const Params &params);
+    Computer(const ComputerSharedState& shared_state, const fef::PhraseSplitter& splitter);
 
     /**
      * Resets this object according to the given document id
@@ -296,12 +299,13 @@ private:
     };
 
     // per query
+    const ComputerSharedState&                 _shared_state;
     const search::fef::PhraseSplitter        & _splitter;
     uint32_t                                   _fieldId;
-    Params                                     _params;
+    const Params                               _params;
     bool                                       _useCachedHits;
 
-    QueryTermVector                            _queryTerms;
+    const vespalib::ConstArrayRef<QueryTerm>   _queryTerms;
     TermFieldMatchDataVector                   _queryTermFieldMatch;
     uint32_t                                   _totalTermWeight;
     feature_t                                  _totalTermSignificance;
