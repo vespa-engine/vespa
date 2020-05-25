@@ -76,7 +76,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -677,16 +676,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void deleteExpiredLocalSessions() {
-        Map<Tenant, List<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getLocalSessionRepo().listSessions()));
-
-        Set<ApplicationId> applicationIds = new HashSet<>();
-        sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));
-
-        Map<ApplicationId, Long> activeSessions = new HashMap<>();
-        applicationIds.forEach(applicationId -> activeSessions.put(applicationId, getActiveSession(applicationId).getSessionId()));
-
-        sessionsPerTenant.keySet().forEach(tenant -> tenant.getLocalSessionRepo().deleteExpiredSessions(activeSessions));
+        tenantRepository.getAllTenants().forEach(tenant -> tenant.getLocalSessionRepo().purgeOldSessions());
     }
 
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
