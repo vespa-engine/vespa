@@ -27,7 +27,11 @@ void setMaxStackSize(rlim_t maxStackSize)
 // a stack overflow if the stack usage increases.
 TEST("testveryLongQueryResultingInBug6850778") {
     const uint32_t NUMITEMS=20000;
+#ifdef __SANITIZE_ADDRESS__
+    setMaxStackSize(12 * 1024 * 1024);
+#else
     setMaxStackSize(4 * 1024 * 1024);
+#endif
     QueryBuilder<SimpleQueryNodeTypes> builder;
     for (uint32_t i=0; i <= NUMITEMS; i++) {
         builder.addAnd(2);
