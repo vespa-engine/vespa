@@ -291,6 +291,7 @@ TEST_P(StorageProtocolTest, get) {
     EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp());
+    EXPECT_FALSE(reply2->is_tombstone());
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
 }
 
@@ -314,6 +315,40 @@ TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
     cmd->set_internal_read_consistency(InternalReadConsistency::Strong);
     cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Strong);
+}
+
+TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
+    // Only supported on protocol version 7+.
+    if (GetParam().getMajor() < 7) {
+        return;
+    }
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
+    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
+    set_dummy_bucket_info_reply_fields(*reply);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_TRUE(reply2->getDocument().get() == nullptr);
+    EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
+    EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
+    EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp()); // In this case, the tombstone timestamp.
+    EXPECT_TRUE(reply2->is_tombstone());
+}
+
+// TODO remove this once pre-protobuf serialization is removed
+TEST_P(StorageProtocolTest, old_serialization_format_treats_tombstone_get_replies_as_not_found) {
+    if (GetParam().getMajor() >= 7) {
+        return;
+    }
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
+    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
+    set_dummy_bucket_info_reply_fields(*reply);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_TRUE(reply2->getDocument().get() == nullptr);
+    EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
+    EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
+    EXPECT_EQ(Timestamp(0), reply2->getLastModifiedTimestamp());
+    EXPECT_FALSE(reply2->is_tombstone()); // Protocol version doesn't understand explicit tombstones.
 }
 
 TEST_P(StorageProtocolTest, remove) {

@@ -73,6 +73,9 @@ message GetResponse {
     uint64     last_modified_timestamp = 2;
     BucketInfo bucket_info             = 3;
     BucketId   remapped_bucket_id      = 4;
+    // Note: last_modified_timestamp and tombstone_timestamp are mutually exclusive.
+    // Tracked separately (rather than being a flag bool) to avoid issues during rolling upgrades.
+    uint64     tombstone_timestamp     = 5;
 }
 
 message RevertRequest {
