@@ -130,6 +130,7 @@ class NodesResponse extends HttpResponse {
         toSlime(node, true, object);
     }
 
+    @SuppressWarnings("deprecation")
     private void toSlime(Node node, boolean allFields, Cursor object) {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
@@ -145,7 +146,7 @@ class NodesResponse extends HttpResponse {
         object.setString("flavor", node.flavor().name());
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         if (node.flavor().isConfigured())
-            object.setDouble("cpuCores", node.flavor().resources().vcpu());
+            object.setDouble("cpuCores", node.flavor().getMinCpuCores());
         NodeResourcesSerializer.toSlime(node.flavor().resources(), object.setObject("resources"));
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
