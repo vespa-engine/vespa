@@ -66,7 +66,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    void updateProvisioningNodes(NodeList nodes, Mutex lock) {
+    private void updateProvisioningNodes(NodeList nodes, Mutex lock) {
         Map<String, Set<Node>> nodesByProvisionedParentHostname = nodes.nodeType(NodeType.tenant).asList().stream()
                 .filter(node -> node.parentHostname().isPresent())
                 .collect(Collectors.groupingBy(
@@ -93,7 +93,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         });
     }
 
-    void convergeToCapacity(NodeList nodes) {
+    private void convergeToCapacity(NodeList nodes) {
         Collection<Node> removableHosts = getRemovableHosts(nodes);
         List<NodeResources> preProvisionCapacity = preprovisionCapacityFlag.value().stream()
                 .flatMap(cap -> {
@@ -158,4 +158,5 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
         return hostsByHostname.values();
     }
+
 }
