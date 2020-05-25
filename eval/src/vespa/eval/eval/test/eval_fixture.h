@@ -30,10 +30,7 @@ public:
         using gen_fun_t = std::function<double(size_t)>;
         static double gen_N(size_t seq) { return (seq + 1); }
         ParamRepo() : map() {}
-        ParamRepo &add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in) {
-            map.insert_or_assign(name, Param(std::move(value_in), is_mutable_in));
-            return *this;
-        }
+        ParamRepo &add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in);
         ParamRepo &add(const vespalib::string &name, const TensorSpec &value) {
             return add(name, value, false);
         }
