@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -11,17 +10,21 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.LongFlag;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -40,6 +43,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
+    private final LongFlag expiryTimeFlag;
 
     public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
         this(tenantName, componentRegistry);
@@ -53,6 +57,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         this.sessionLifetime = componentRegistry.getConfigserverConfig().sessionLifetime();
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
+        this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
     }
 
     @Override
@@ -83,13 +88,20 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         log.log(Level.FINE, "Purging old sessions");
         try {
             for (LocalSession candidate : listSessions()) {
-                log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + candidate.getCreateTime());
-                if (hasExpired(candidate)) {
+                Instant createTime = Instant.ofEpochSecond(candidate.getCreateTime());
+                log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
+
+                // Sessions with state other than ACTIVATED
+                if (hasExpired(candidate) && !isActiveSession(candidate)) {
+                    deleteSession(candidate);
+                } else if (createTime.plus(Duration.ofDays(expiryTimeFlag.value())).isBefore(clock.instant())) {
+                    //  Sessions with state ACTIVATE, but which are not actually active
                     ApplicationId applicationId = candidate.getApplicationId();
                     Long activeSession = activeSessions.get(applicationId);
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
                         deleteSession(candidate);
-                        log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " for '" + applicationId + "'");
+                        log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
+                                            createTime + " for '" + applicationId + "'");
                     }
                 }
             }
