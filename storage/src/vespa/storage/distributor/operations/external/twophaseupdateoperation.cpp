@@ -463,6 +463,9 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // Timestamps were not in sync, so we have to fetch the document from the highest
     // timestamped replica, apply the update to it and then explicitly Put the result
     // to all replicas.
+    // Note that this timestamp may be for a tombstone (remove) entry, in which case
+    // conditional create-if-missing behavior kicks in as usual.
+    // TODO avoid sending the Get at all if the newest replica is marked as a tombstone.
     _single_get_latency_timer.emplace(_manager.getClock());
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
