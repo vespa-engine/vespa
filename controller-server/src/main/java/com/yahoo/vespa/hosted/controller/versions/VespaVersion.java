@@ -46,9 +46,9 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
-        InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())))
-                                       .withProductionDeployment();
-        // 'production on this': All deployment jobs upgrading to this version have completed without failure
+        InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
+                                                                                                          .withProductionDeployment()));
+        // 'production on this': All production deployment jobs upgrading to this version have completed without failure
         InstanceList productionOnThis = all.matching(instance -> statistics.productionSuccesses().stream().anyMatch(run -> run.id().application().equals(instance)))
                                            .not().failingUpgrade()
                                            .not().upgradingTo(statistics.version());
@@ -63,12 +63,12 @@ public class VespaVersion implements Comparable<VespaVersion> {
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
-        if (productionOnThis.with(UpgradePolicy.canary).size() < all.with(UpgradePolicy.canary).size())
+        if (productionOnThis.with(UpgradePolicy.canary).size() < all.withProductionDeployment().with(UpgradePolicy.canary).size())
             return Confidence.low;
 
         // 'high' if 90% of all default upgrade applications upgraded
         if (productionOnThis.with(UpgradePolicy.defaultPolicy).size() >=
-            all.with(UpgradePolicy.defaultPolicy).size() * 0.9)
+            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).size() * 0.9)
             return Confidence.high;
 
         return Confidence.normal;
