@@ -54,7 +54,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
       _remove_batch_block_rate(0.5),
-      _remove_block_rate(100000),
+      _remove_block_rate(100),
       _disabled(false),
       _maxDocsToScan(10000)
 {
