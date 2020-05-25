@@ -62,13 +62,8 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
                 log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
                 break;
             }
-            // Then, if some are missing after 2 seconds, allow if the server this code is running on is one of the repondents
-            if (usedMoreTimeThan(Duration.ofSeconds(2), startTime) && respondents.contains(myId) && respondents.size() >= barrierMemberCount()) {
-                log.log(Level.INFO, barrierCompletedMessage(respondents, startTime));
-                break;
-            }
-            // If some are still missing after 4 seconds, quorum is enough
-            if (usedMoreTimeThan(Duration.ofSeconds(4), startTime) && respondents.size() >= barrierMemberCount()) {
+            // If some are missing, quorum is enough
+            if (respondents.size() >= barrierMemberCount()) {
                 log.log(Level.INFO, barrierCompletedMessage(respondents, startTime));
                 break;
             }
@@ -77,10 +72,6 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         } while (clock.instant().isBefore(endTime));
 
         return respondents;
-    }
-
-    private boolean usedMoreTimeThan(Duration waitTime, Instant startTime) {
-        return clock.instant().isAfter(startTime.plus(waitTime));
     }
 
     private String barrierCompletedMessage(List<String> respondents, Instant startTime) {
