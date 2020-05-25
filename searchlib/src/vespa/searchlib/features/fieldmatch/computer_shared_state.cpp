@@ -14,8 +14,7 @@ namespace search::features::fieldmatch {
 
 ComputerSharedState::ComputerSharedState(const vespalib::string& propertyNamespace, const PhraseSplitterQueryEnv& splitter_query_env,
                    const FieldInfo& fieldInfo, const Params& params)
-    : _splitter_query_env(splitter_query_env),
-      _field_id(fieldInfo.id()),
+    : _field_id(fieldInfo.id()),
       _params(params),
       _use_cached_hits(true),
       _query_terms(),

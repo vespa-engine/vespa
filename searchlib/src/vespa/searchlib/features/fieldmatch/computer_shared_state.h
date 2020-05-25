@@ -37,7 +37,6 @@ public:
 private:
 
     // per query
-    const search::fef::PhraseSplitterQueryEnv& _splitter_query_env;
     uint32_t                                   _field_id;
     Params                                     _params;
     bool                                       _use_cached_hits;
