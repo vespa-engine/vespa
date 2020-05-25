@@ -102,13 +102,13 @@ public class AllocationVisualizer extends JPanel {
 
         if (isHost) {
             g.setColor(Color.GRAY);
-            for (int i = 0; i < node.flavor().getMinMainMemoryAvailableGb(); i++) {
+            for (int i = 0; i < node.flavor().resources().memoryGb(); i++) {
                 g.fillRect(x, y - nodeHeight, nodeWidth, nodeHeight);
                 y = y - (nodeHeight + 2);
             }
         } else {
             g.setColor(Color.YELLOW);
-            int multi = (int) node.flavor().getMinMainMemoryAvailableGb();
+            int multi = (int) node.flavor().resources().memoryGb();
             int height = multi * nodeHeight + ((multi - 1) * 2);
             g.fillRect(x, y - height, nodeWidth, height);
 

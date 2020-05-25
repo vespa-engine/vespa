@@ -130,6 +130,7 @@ class NodesResponse extends HttpResponse {
         toSlime(node, true, object);
     }
 
+    @SuppressWarnings("deprecation")
     private void toSlime(Node node, boolean allFields, Cursor object) {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
