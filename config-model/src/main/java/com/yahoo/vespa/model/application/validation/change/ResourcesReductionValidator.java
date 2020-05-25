@@ -44,8 +44,8 @@ public class ResourcesReductionValidator implements ChangeValidator {
                           ClusterSpec.Id clusterId,
                           ValidationOverrides overrides,
                           Instant now) {
-        if (current.minResources().nodeResources() == NodeResources.unspecified) return;
-        if (next.minResources().nodeResources() == NodeResources.unspecified) return;
+        if (current.minResources().nodeResources().isUnspecified()) return;
+        if (next.minResources().nodeResources().isUnspecified()) return;
 
         List<String> illegalChanges = Stream.of(
                 validateResource("vCPU",

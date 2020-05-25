@@ -120,7 +120,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
         }
-        retAllocatedHosts.keySet().forEach(host -> log.log(FINE, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
+        retAllocatedHosts.keySet().forEach(host -> log.log(FINE, () -> "Allocated host " + host.getHostname() + " with resources " + host.advertisedResources()));
         return retAllocatedHosts;
     }
 
@@ -131,7 +131,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (hosts.isEmpty()) {
             return Optional.empty();
         } else {
-            log.log(FINE, () -> "Found existing host resource for " + key.hostname() + " with flavor " + hosts.get(0).getFlavor());
+            log.log(FINE, () -> "Found existing host resource for " + key.hostname() + " with resources" + hosts.get(0).advertisedResources());
             return Optional.of(hosts.get(0));
         }
     }

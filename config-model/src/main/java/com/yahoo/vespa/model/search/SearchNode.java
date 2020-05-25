@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -270,12 +269,11 @@ public class SearchNode extends AbstractService implements
             // to make sure the node failer has done its work
             builder.pruneremoveddocumentsage(4 * 24 * 3600 + 3600 + 60);
         }
-        if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
-            Flavor nodeFlavor = getHostResource().getFlavor().get();
-            NodeFlavorTuning nodeFlavorTuning = tuning.isPresent()
-                    ? new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies, tuning.get().getNumThreadsPerSearch())
-                    : new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies);
-            nodeFlavorTuning.getConfig(builder);
+        if (getHostResource() != null && ! getHostResource().advertisedResources().isUnspecified()) {
+            NodeResourcesTuning nodeResourcesTuning = tuning.isPresent()
+                    ? new NodeResourcesTuning(getHostResource().advertisedResources(), redundancy, searchableCopies, tuning.get().getNumThreadsPerSearch())
+                    : new NodeResourcesTuning(getHostResource().advertisedResources(), redundancy, searchableCopies);
+            nodeResourcesTuning.getConfig(builder);
 
             if (tuning.isPresent()) {
                 tuning.get().getConfig(builder);

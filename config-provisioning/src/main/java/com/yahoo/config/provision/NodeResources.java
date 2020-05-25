@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The node resources required by an application cluster
@@ -16,6 +17,7 @@ public class NodeResources {
     private static final double memoryUnitCost = 0.012;
     private static final double diskUnitCost =   0.0004;
 
+    // TODO: Make private after June 2020
     public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
@@ -252,7 +254,14 @@ public class NodeResources {
         return true;
     }
 
-    public boolean isUnspecified() { return this == unspecified; }
+    public static NodeResources unspecified() { return unspecified; }
+
+    public boolean isUnspecified() { return this.equals(unspecified); }
+
+    /** Returns this.isUnspecified() ? Optional.empty() : Optional.of(this) */
+    public Optional<NodeResources> asOptional() {
+        return this.isUnspecified() ? Optional.empty() : Optional.of(this);
+    }
 
     private boolean equal(double a, double b) {
         return Math.abs(a - b) < 0.00000001;
