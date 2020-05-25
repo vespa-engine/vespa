@@ -23,7 +23,7 @@ public:
     void deallocate(T * p, std::size_t n) {
         _allocator->free(p, n*sizeof(T));
     }
-    alloc::MemoryAllocator * allocator() const { return _allocator; }
+    const alloc::MemoryAllocator * allocator() const { return _allocator; }
 private:
     const alloc::MemoryAllocator * _allocator;
 };
