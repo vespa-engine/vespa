@@ -684,8 +684,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
-        applicationIds.forEach(applicationId -> activeSessions.put(applicationId, getActiveSession(applicationId).getSessionId()));
-
+        applicationIds.forEach(applicationId -> {
+            RemoteSession activeSession = getActiveSession(applicationId);
+            if (activeSession != null)
+                activeSessions.put(applicationId, activeSession.getSessionId());
+        });
         sessionsPerTenant.keySet().forEach(tenant -> tenant.getLocalSessionRepo().deleteExpiredSessions(activeSessions));
     }
 

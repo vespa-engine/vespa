@@ -21,12 +21,14 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
@@ -331,18 +333,33 @@ public class ApplicationRepositoryTest {
         assertNotEquals(activeSessionId, deployment3session);
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
-        assertEquals(3, tester.tenant().getLocalSessionRepo().listSessions().size());
+        LocalSessionRepo localSessionRepo = tester.tenant().getLocalSessionRepo();
+        assertEquals(3, localSessionRepo.listSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
+        Collection<LocalSession> sessions = localSessionRepo.listSessions();
         assertEquals(1, sessions.size());
-        assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
+        ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
+        LocalSession localSession = localSessions.get(0);
+        assertEquals(3, localSession.getSessionId());
 
         // There should be no expired remote sessions in the common case
         assertEquals(0, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
+
+        // Deploy, but do not activate
+        Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
+        assertTrue(deployment4.isPresent());
+        deployment4.get().prepare();  // session 5 (not activated)
+
+        assertEquals(2, localSessionRepo.listSessions().size());
+        localSessionRepo.deleteSession(localSession);
+        assertEquals(1, localSessionRepo.listSessions().size());
+
+        // Check that trying to expire when there are no active sessions works
+        tester.applicationRepository().deleteExpiredLocalSessions();
     }
 
     @Test

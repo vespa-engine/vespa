@@ -120,7 +120,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
-    void deleteSession(LocalSession session) {
+    public void deleteSession(LocalSession session) {
         long sessionId = session.getSessionId();
         log.log(Level.FINE, "Deleting local session " + sessionId);
         LocalSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
