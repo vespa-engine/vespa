@@ -18,7 +18,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
+import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -101,7 +101,7 @@ public class DynamicProvisioningMaintainerTest {
     @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(1, 3, 2, 1)), PreprovisionCapacity.class);
+        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new HostCapacity(1, 3, 2, 1)), HostCapacity.class);
         Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
         assertTrue(failedHost.isPresent());
 
@@ -114,9 +114,9 @@ public class DynamicProvisioningMaintainerTest {
     public void provision_deficit_and_deprovision_excess() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
-                                       List.of(new PreprovisionCapacity(2, 4, 8, 1),
-                                               new PreprovisionCapacity(2, 3, 2, 2)),
-                                       PreprovisionCapacity.class);
+                                       List.of(new HostCapacity(2, 4, 8, 1),
+                                               new HostCapacity(2, 3, 2, 2)),
+                                       HostCapacity.class);
         assertTrue(tester.nodeRepository.getNode("host2").isPresent());
         assertEquals(0 ,tester.hostProvisioner.provisionedHosts.size());
 
@@ -151,7 +151,7 @@ public class DynamicProvisioningMaintainerTest {
 
         private final ManualClock clock = new ManualClock();
         private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
+                .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), HostCapacity.class);
 
         private final Zone zone;
         private final NodeRepository nodeRepository;

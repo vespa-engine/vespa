@@ -11,13 +11,12 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
-import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
+import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,7 +30,7 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
-    private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
+    private final ListFlag<HostCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository,
                          Optional<HostProvisioner> hostProvisioner,

@@ -3,7 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
+import com.yahoo.vespa.flags.custom.HostCapacity;
 
 import java.util.List;
 import java.util.Optional;
@@ -122,11 +122,11 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
-    public static final UnboundListFlag<PreprovisionCapacity> PREPROVISION_CAPACITY = defineListFlag(
-            "preprovision-capacity", List.of(), PreprovisionCapacity.class,
-            "List of node resources and their count that should be present in zone to receive new deployments. When a " +
-            "preprovisioned is taken, new will be provisioned within next iteration of maintainer.",
-            "Takes effect on next iteration of HostProvisionMaintainer.");
+    public static final UnboundListFlag<HostCapacity> PREPROVISION_CAPACITY = defineListFlag(
+            "preprovision-capacity", List.of(), HostCapacity.class,
+            "List of node resources and their count that should be unallocated in zone to receive new deployments. When a " +
+            "preprovisioned host is taken, another one will be provisioned within next iteration of maintainer.",
+            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
