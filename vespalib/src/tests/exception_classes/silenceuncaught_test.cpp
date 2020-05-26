@@ -5,6 +5,14 @@
 
 using namespace vespalib;
 
+#ifndef __SANITIZE_ADDRESS__
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__
+#endif
+#endif
+#endif
+
 TEST("that uncaught exception causes negative exitcode.") {
     SlaveProc proc("ulimit -c 0 && exec ./vespalib_caught_uncaught_app uncaught");
     proc.wait();
