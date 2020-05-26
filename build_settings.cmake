@@ -167,8 +167,11 @@ endif()
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
 else()
-# Don't allow unresolved symbols in executables or shared libraries
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+if(NOT VESPA_USE_SANITIZER OR NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  # Don't allow unresolved symbols in shared libraries
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+endif()
+# Don't allow unresolved symbols in executables
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-undefined")
 
 # Enable GTest unit tests in shared libraries
