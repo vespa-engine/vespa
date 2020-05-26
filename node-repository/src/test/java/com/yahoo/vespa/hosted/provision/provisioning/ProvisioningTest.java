@@ -600,7 +600,7 @@ public class ProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42. Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
+            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42. Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/pricing",
                          e.getMessage());
         }
     }

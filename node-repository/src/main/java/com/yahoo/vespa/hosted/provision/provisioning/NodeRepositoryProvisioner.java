@@ -95,7 +95,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         if ( ! hasQuota(application, requested.maxResources().nodes()))
             throw new IllegalArgumentException(requested + " requested for " + cluster +
-                                               ". Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
+                                               ". Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/pricing");
 
         nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
         nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
