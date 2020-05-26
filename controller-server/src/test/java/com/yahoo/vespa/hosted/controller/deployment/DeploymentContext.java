@@ -447,7 +447,7 @@ public class DeploymentContext {
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             Versions versions = currentRun(job).versions();
-            tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), versions.sourcePlatform().orElse(versions.targetPlatform()));
+            tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
             runner.advance(currentRun(job));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
@@ -471,7 +471,7 @@ public class DeploymentContext {
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
-        configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), currentRun(job).versions().targetPlatform());
+        configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
         runner.advance(currentRun(job));
     }
 
@@ -507,7 +507,7 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.controller().systemVersion());
+        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.configServer().application(id.tester().id(), zone).get().version().get());
         runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
