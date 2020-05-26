@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
@@ -180,6 +182,28 @@ public class EndpointCertificateManagerTest {
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
+        assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans().orElseThrow()));
+    }
+
+    @Test
+    public void includes_zones_in_deployment_spec_when_deploying_to_staging() {
+
+        DeploymentSpec deploymentSpec = new DeploymentSpecXmlReader(true).read(
+                "<deployment version=\"1.0\">\n" +
+                        "  <instance id=\"default\">\n" +
+                        "    <prod>\n" +
+                        "      <region active=\"true\">aws-us-east-1a</region>\n" +
+                        "      <region active=\"true\">ap-northeast-1</region>\n" +
+                        "    </prod>\n" +
+                        "  </instance>\n" +
+                        "</deployment>\n");
+
+        ZoneId testZone = zoneRegistryMock.zones().controllerUpgraded().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.of(deploymentSpec.requireInstance("default")));
+        assertTrue(endpointCertificateMetadata.isPresent());
+        assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
+        assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
+        assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans().orElseThrow()));
     }
 }
