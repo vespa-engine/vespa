@@ -35,12 +35,18 @@ Computer::Computer(const ComputerSharedState& shared_state, const PhraseSplitter
       _alternativeSegmentationsTried(0),
       _cachedHits(_queryTerms.size())
 {
+    for (const auto &qt : _queryTerms) {
+        // Record that we need normal term field match data
+        (void) qt.termData()->lookupField(_fieldId)->getHandle(MatchDataDetails::Normal);
+    }
     // num query terms searching in this field + 1
     _segments.reserve(getNumQueryTerms() + 1);
     for (uint32_t i = 0; i < (getNumQueryTerms() + 1); ++i) {
         _segments.emplace_back(std::make_shared<SegmentStart>(this, _currentMetrics));
     }
 }
+
+Computer::~Computer() = default;
 
 void
 Computer::reset(uint32_t docId)

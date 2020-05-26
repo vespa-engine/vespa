@@ -68,6 +68,8 @@ public:
      */
     Computer(const ComputerSharedState& shared_state, const fef::PhraseSplitter& splitter);
 
+    ~Computer();
+
     /**
      * Resets this object according to the given document id
      *
