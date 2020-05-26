@@ -1,15 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import static org.junit.Assert.*;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.ArrayList;
-import org.junit.Test;
-import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.config.AppConfig;
 import com.yahoo.config.Md5testConfig;
+import com.yahoo.vespa.config.util.ConfigUtils;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests that does not yet have a specific home due to removed classes, obsolete features etc.
@@ -25,8 +31,7 @@ public class MiscTestCase {
      */
     @Test
     public void testGetDefMd5() throws IOException {
-        System.out.println("\nStarting testGetDefMd5");
-        final String defDir = "src/test/resources/configdefinitions/";
+        String defDir = "src/test/resources/configdefinitions/";
         assertEquals(AppConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "app.def"))));
         assertEquals(Md5testConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "md5test.def"))));
     }

@@ -355,7 +355,6 @@ public class TenantRequestHandlerTest {
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
 
         configNames = server.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
-        System.out.println(configNames);
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document")));

@@ -176,7 +176,6 @@ public class SessionPreparerTest {
         ((HostRegistry<ApplicationId>)ctx.getHostValidator()).update(applicationId("default"), Collections.singletonList("mytesthost"));
         final StringBuilder logged = new StringBuilder();
         DeployLogger logger = (level, message) -> {
-            System.out.println(level + ": "+message);
             if (level.equals(Level.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
         preparer.prepare(ctx, logger, new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
