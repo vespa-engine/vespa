@@ -194,7 +194,12 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
-        Version platform = controller.systemVersion();
+        Version targetPlatform = controller.jobController().run(id).get().versions().targetPlatform();
+        // TODO: Hack to make sure some pinned applications get this version for tester deployments
+        //       Remove when no applications are pinned to this version anymore
+        final Version platform = targetPlatform.equals(Version.fromString("7.220.14"))
+                ? targetPlatform
+                : controller.systemVersion();
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(id.tester().id(),
                       id.type(),
