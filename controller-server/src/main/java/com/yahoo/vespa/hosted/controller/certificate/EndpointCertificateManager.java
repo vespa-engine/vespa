@@ -230,7 +230,7 @@ public class EndpointCertificateManager {
 
         var requiredNames = requiredZones.stream()
                 .flatMap(zone -> dnsNamesOf(instance.id(), List.of(zone)).stream())
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
 
         // Make sure all currently present names will remain present.
         // Instead of just adding "currently present names", we regenerate them in case the names for a zone have changed.
