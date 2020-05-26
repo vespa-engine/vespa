@@ -9,7 +9,7 @@ export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
 source /etc/profile.d/enable-devtoolset-9.sh
 source /etc/profile.d/enable-rh-maven35.sh
 
-ccache --max-size=1250M
+ccache --max-size=1600M
 ccache --set-config=compression=true
 ccache -p
 
