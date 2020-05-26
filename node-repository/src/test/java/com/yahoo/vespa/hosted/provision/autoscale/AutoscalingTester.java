@@ -221,7 +221,10 @@ class AutoscalingTester {
 
         @Override
         public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0).withMemoryGb(zone.getCloud().dynamicProvisioning() ? 3 : 0).withDiskGb(0);
+            return resources.withVcpu(0)
+                            .withMemoryGb(zone.getCloud().dynamicProvisioning() ? 3 : 0)
+                            .withDiskGb(0)
+                            .withBandwidthGbps(0);
         }
 
     }

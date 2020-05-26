@@ -141,9 +141,9 @@ public class AllocatableClusterResources {
             NodeResources advertisedResources = cappedNodeResources.add(nodeRepository.resourcesCalculator().overheadAllocating(cappedNodeResources, exclusive));
             NodeResources realResources = cappedNodeResources;
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                if (flavor.resources().satisfies(cappedNodeResources)) // TODO: advertisedResources
+                if (flavor.resources().satisfies(advertisedResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(realResources),
-                                                                       cappedNodeResources, // TODO: advertisedResources
+                                                                       advertisedResources,
                                                                        resources.nodeResources(),
                                                                        clusterType));
             }

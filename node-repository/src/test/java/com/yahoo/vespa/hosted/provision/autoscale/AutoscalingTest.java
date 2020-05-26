@@ -300,34 +300,32 @@ public class AutoscalingTest {
         ClusterResources max = new ClusterResources(4, 1, new NodeResources(60, 100, 1000, 1));
 
         { // No memory tax
-            System.out.println("------- No memory tax");
             AutoscalingTester tester = new AutoscalingTester(hostResources, new OnlySubtractingWhenForecastingCalculator(0));
 
             ApplicationId application1 = tester.applicationId("app1");
             ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
             tester.deploy(application1, cluster1, min);
-            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1); // Need more memory, which can be achieved in two way
-            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1); // Pushes towards more nodes due to fixed cpu cost per node
+            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1);
             tester.addMeasurements(Resource.disk, 0.7f, 1000, application1);
             tester.assertResources("Scaling up",
-                                   4, 1, 7.0, 20.0, 200.0,
+                                   4, 1, 7.0, 20, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max));
         }
 
         { // 15 Gb memory tax
-            System.out.println("------- With 15 Gb memory tax");
             AutoscalingTester tester = new AutoscalingTester(hostResources, new OnlySubtractingWhenForecastingCalculator(15));
 
             ApplicationId application1 = tester.applicationId("app1");
             ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
             tester.deploy(application1, cluster1, min);
-            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1); // Need more memory, which can be achieved in two way
-            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1); // Pushes towards more nodes due to fixed cpu cost per node
+            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1);
             tester.addMeasurements(Resource.disk, 0.7f, 1000, application1);
             tester.assertResources("Scaling up",
-                                   4, 1, 7.0, 20.0, 200.0,
+                                   4, 1, 7.0, 35, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max));
         }
     }
@@ -394,7 +392,7 @@ public class AutoscalingTest {
 
         @Override
         public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0).withMemoryGb(memoryTaxGb).withDiskGb(0);
+            return resources.withVcpu(0).withMemoryGb(memoryTaxGb).withDiskGb(0).withBandwidthGbps(0);
         }
 
     }

@@ -44,7 +44,6 @@ public class AllocationOptimizer {
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        System.out.println("Optimizing for " + target);
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -61,11 +60,8 @@ public class AllocationOptimizer {
 
                 var allocatableResources = AllocatableClusterResources.from(next, exclusive, current.clusterType(), limits, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                System.out.println("Considering " + allocatableResources.get());
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get())) {
-                    System.out.println("    ... better");
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
-                }
             }
         }
 

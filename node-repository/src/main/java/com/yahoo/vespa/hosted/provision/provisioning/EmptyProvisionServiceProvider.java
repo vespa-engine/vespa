@@ -45,7 +45,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
 
         @Override
         public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0).withMemoryGb(0).withDiskGb(0);
+            return resources.withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
         }
 
     }

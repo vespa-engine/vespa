@@ -394,7 +394,8 @@ public class DynamicDockerProvisionTest {
         public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
             return resources.withVcpu(0)
                             .withMemoryGb(memoryTaxGb)
-                            .withDiskGb(resources.storageType() == local ? localDiskTax : 0);
+                            .withDiskGb(resources.storageType() == local ? localDiskTax : 0)
+                            .withBandwidthGbps(0);
         }
 
     }
