@@ -1,13 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_lambda_peek_function.h"
+#include "index_lookup_table.h"
 #include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace vespalib::tensor {
 
-using eval::CompileCache;
 using eval::Function;
 using eval::InterpretedFunction;
 using eval::PassParams;
@@ -22,35 +21,25 @@ namespace {
 
 struct Self {
     const ValueType &result_type;
-    CompileCache::Token::UP compile_token;
+    IndexLookupTable::Token::UP table_token;
     Self(const ValueType &result_type_in, const Function &function)
         : result_type(result_type_in),
-          compile_token(CompileCache::compile(function, PassParams::ARRAY)) {}
-};
-
-bool step_params(std::vector<double> &params, const ValueType &type) {
-    const auto &dims = type.dimensions();
-    for (size_t idx = params.size(); idx-- > 0; ) {
-        if (size_t(params[idx] += 1.0) < dims[idx].size) {
-            return true;
-        } else {
-            params[idx] = 0.0;
-        }
+          table_token(IndexLookupTable::create(function, result_type_in))
+    {
+        assert(table_token->get().size() == result_type.dense_subspace_size());
     }
-    return false;
-}
+};
 
 template <typename DST_CT, typename SRC_CT>
 void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
     const auto *self = (const Self *)(param);
+    const std::vector<uint32_t> &lookup_table = self->table_token->get();
     auto src_cells = DenseTensorView::typify_cells<SRC_CT>(state.peek(0));
-    ArrayRef<DST_CT> dst_cells = state.stash.create_array<DST_CT>(self->result_type.dense_subspace_size());
+    ArrayRef<DST_CT> dst_cells = state.stash.create_array<DST_CT>(lookup_table.size());
     DST_CT *dst = &dst_cells[0];
-    std::vector<double> params(self->result_type.dimensions().size(), 0.0);
-    auto idx_fun = self->compile_token->get().get_function();
-    do {
-        *dst++ = src_cells[size_t(idx_fun(&params[0]))];
-    } while(step_params(params, self->result_type));
+    for (uint32_t idx: lookup_table) {
+        *dst++ = src_cells[idx];
+    }
     state.pop_push(state.stash.create<DenseTensorView>(self->result_type, TypedCells(dst_cells)));
 }
 
