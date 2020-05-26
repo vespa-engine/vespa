@@ -678,7 +678,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void deleteExpiredLocalSessions() {
         Map<Tenant, List<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getLocalSessionRepo().listSessions()));
+        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getLocalSessionRepo().getSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));

@@ -103,9 +103,9 @@ public class RemoteSessionRepoTest {
                                      .build();
         curator.create(TenantRepository.getSessionsPath(mytenant));
         remoteSessionRepo = tenant.getRemoteSessionRepo();
-        assertThat(remoteSessionRepo.listSessions().size(), is(0));
+        assertThat(remoteSessionRepo.getSessions().size(), is(0));
         createSession(sessionId, true, mytenant);
-        assertThat(remoteSessionRepo.listSessions().size(), is(1));
+        assertThat(remoteSessionRepo.getSessions().size(), is(1));
     }
 
     private void assertStatusChange(long sessionId, Session.Status status) throws Exception {

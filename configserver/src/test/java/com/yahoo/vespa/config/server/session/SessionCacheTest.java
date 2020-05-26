@@ -13,21 +13,22 @@ import static org.junit.Assert.assertThat;
 /**
  * @author hmusum
  */
-public class SessionRepoTest {
+public class SessionCacheTest {
+
     @Test
     public void require_that_sessionrepo_is_initialized() {
-        SessionRepo<TestSession> sessionRepo = new SessionRepo<>();
-        assertNull(sessionRepo.getSession(1L));
-        sessionRepo.addSession(new TestSession(1));
-        assertThat(sessionRepo.getSession(1L).getSessionId(), is(1L));
+        SessionCache<TestSession> sessionCache = new SessionCache<>();
+        assertNull(sessionCache.getSession(1L));
+        sessionCache.addSession(new TestSession(1));
+        assertThat(sessionCache.getSession(1L).getSessionId(), is(1L));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void require_that_adding_existing_session_fails() {
-        SessionRepo<TestSession> sessionRepo = new SessionRepo<>();
+        SessionCache<TestSession> sessionCache = new SessionCache<>();
         final TestSession session = new TestSession(1);
-        sessionRepo.addSession(session);
-        sessionRepo.addSession(session);
+        sessionCache.addSession(session);
+        sessionCache.addSession(session);
     }
 
     private class TestSession extends Session {
