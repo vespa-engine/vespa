@@ -330,7 +330,7 @@ public class ApplicationController {
                     &&   run.testerCertificate().isPresent())
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
-                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone);
+                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone, applicationPackage.deploymentSpec().instance(instance.name()));
 
                 endpoints = controller.routing().registerEndpointsInDns(application.get(), job.application().instance(), zone);
 
@@ -413,7 +413,8 @@ public class ApplicationController {
                     validateRun(application.get().require(instance), zone, platformVersion, applicationVersion);
                 }
 
-                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(application.get().require(instance), zone);
+                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(
+                        application.get().require(instance), zone, applicationPackage.deploymentSpec().instance(instance));
 
                 endpoints = controller.routing().registerEndpointsInDns(application.get(), instance, zone);
             } // Release application lock while doing the deployment, which is a lengthy task.

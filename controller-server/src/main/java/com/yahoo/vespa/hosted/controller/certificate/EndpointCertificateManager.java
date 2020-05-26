@@ -3,15 +3,20 @@ package com.yahoo.vespa.hosted.controller.certificate;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+
+import java.util.LinkedHashSet;
 import java.util.logging.Level;
+
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -91,16 +96,16 @@ public class EndpointCertificateManager {
         }, 1, 10, TimeUnit.MINUTES);
     }
 
-    public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
+    public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
         var t0 = Instant.now();
-        Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone);
+        Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, instanceSpec);
         Duration duration = Duration.between(t0, Instant.now());
         if (duration.toSeconds() > 30) log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
     }
 
     @NotNull
-    private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone) {
+    private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
         boolean endpointCertInSharedRouting = this.endpointCertInSharedRouting.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value();
         if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting)
             return Optional.empty();
@@ -108,7 +113,7 @@ public class EndpointCertificateManager {
         final var currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
 
         if (currentCertificateMetadata.isEmpty()) {
-            var provisionedCertificateMetadata = provisionEndpointCertificate(instance, Optional.empty());
+            var provisionedCertificateMetadata = provisionEndpointCertificate(instance, Optional.empty(), zone, instanceSpec);
             // We do not verify the certificate if one has never existed before - because we do not want to
             // wait for it to be available before we deploy. This allows the config server to start
             // provisioning nodes ASAP, and the risk is small for a new deployment.
@@ -120,7 +125,7 @@ public class EndpointCertificateManager {
         var sansInCertificate = currentCertificateMetadata.get().requestedDnsSans();
         var requiredSansForZone = dnsNamesOf(instance.id(), List.of(zone));
         if (sansInCertificate.isPresent() && !sansInCertificate.get().containsAll(requiredSansForZone)) {
-            var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata);
+            var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec);
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
             validateEndpointCertificate(reprovisionedCertificateMetadata, instance, zone);
@@ -206,9 +211,40 @@ public class EndpointCertificateManager {
         }
     }
 
-    private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata) {
-        List<ZoneId> zones = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
-        return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones), currentMetadata);
+    private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata, ZoneId deploymentZone, Optional<DeploymentInstanceSpec> instanceSpec) {
+
+        List<String> currentlyPresentNames = currentMetadata.isPresent() ?
+                currentMetadata.get().requestedDnsSans().orElseThrow(() -> new RuntimeException("Certificate metadata exists but SANs are not present!"))
+                : Collections.emptyList();
+
+        var requiredZones = new LinkedHashSet<>(Set.of(deploymentZone));
+
+        var zoneCandidateList = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
+
+        // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
+        if (!deploymentZone.environment().isManuallyDeployed() && instanceSpec.isPresent()) {
+            zoneCandidateList.stream()
+                    .filter(z -> instanceSpec.get().deploysTo(Environment.prod, z.region()) || z.environment().isTest())
+                    .forEach(requiredZones::add);
+        }
+
+        var requiredNames = requiredZones.stream()
+                .flatMap(zone -> dnsNamesOf(instance.id(), List.of(zone)).stream())
+                .collect(Collectors.toList());
+
+        // Make sure all currently present names will remain present.
+        // Instead of just adding "currently present names", we regenerate them in case the names for a zone have changed.
+        zoneCandidateList.stream()
+                .map(zone -> dnsNamesOf(instance.id(), List.of(zone)))
+                .filter(zoneNames -> !currentlyPresentNames.containsAll(zoneNames))
+                .forEach(requiredNames::addAll);
+
+        // This check must be relaxed if we ever remove from the set of names generated.
+        if (!requiredNames.containsAll(currentlyPresentNames))
+            throw new RuntimeException("SANs to be requested do not cover all existing names! Missing names:"
+                    + currentlyPresentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining()));
+
+        return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), requiredNames, currentMetadata);
     }
 
     private void validateEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone) {
