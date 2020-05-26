@@ -53,12 +53,12 @@ public class Application {
      * Returns an application with the given cluster having the min and max resource limits of the given cluster.
      * If the cluster has a target which is not inside the new limits, the target is removed.
      */
-    public Application withClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max) {
+    public Application withCluster(ClusterSpec.Id id, boolean exclusive, ClusterResources min, ClusterResources max) {
         Cluster cluster = clusters.get(id);
         if (cluster == null)
-            cluster = new Cluster(id, min, max, Optional.empty(), Optional.empty());
+            cluster = new Cluster(id, exclusive, min, max, Optional.empty(), Optional.empty());
         else
-            cluster = cluster.withLimits(min, max);
+            cluster = cluster.withConfiguration(exclusive, min, max);
         return with(cluster);
     }
 

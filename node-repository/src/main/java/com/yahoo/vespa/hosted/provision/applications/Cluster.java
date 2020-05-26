@@ -19,16 +19,19 @@ import java.util.Optional;
 public class Cluster {
 
     private final ClusterSpec.Id id;
+    private final boolean exclusive;
     private final ClusterResources min, max;
     private final Optional<ClusterResources> suggested;
     private final Optional<ClusterResources> target;
 
     public Cluster(ClusterSpec.Id id,
+                   boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
                    Optional<ClusterResources> suggestedResources,
                    Optional<ClusterResources> targetResources) {
         this.id = Objects.requireNonNull(id);
+        this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
         this.suggested = Objects.requireNonNull(suggestedResources);
@@ -47,6 +50,9 @@ public class Cluster {
     /** Returns the configured maximal resources in this cluster */
     public ClusterResources maxResources() { return max; }
 
+    /** Returns whether the nodes allocated to this cluster must be on host exclusively dedicated to this application */
+    public boolean exclusive() { return exclusive; }
+
     /**
      * Returns the computed resources (between min and max, inclusive) this cluster should
      * have allocated at the moment (whether or not it actually has it),
@@ -60,16 +66,16 @@ public class Cluster {
      */
     public Optional<ClusterResources> suggestedResources() { return suggested; }
 
-    public Cluster withLimits(ClusterResources min, ClusterResources max) {
-        return new Cluster(id, min, max, suggested, target);
+    public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
+        return new Cluster(id, exclusive, min, max, suggested, target);
     }
 
     public Cluster withSuggested(Optional<ClusterResources> suggested) {
-        return new Cluster(id, min, max, suggested, target);
+        return new Cluster(id, exclusive, min, max, suggested, target);
     }
 
     public Cluster withTarget(Optional<ClusterResources> target) {
-        return new Cluster(id, min, max, suggested, target);
+        return new Cluster(id, exclusive, min, max, suggested, target);
     }
 
     @Override

@@ -53,7 +53,7 @@ public class Autoscaler {
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(clusterNodes, Limits.empty())
+        return autoscale(clusterNodes, Limits.empty(), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
 
     }
@@ -66,11 +66,11 @@ public class Autoscaler {
      */
     public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(clusterNodes, Limits.of(cluster))
+        return autoscale(clusterNodes, Limits.of(cluster), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
     }
 
-    private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits) {
+    private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits, boolean exclusive) {
         if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
@@ -82,7 +82,7 @@ public class Autoscaler {
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
-                allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
+                allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
         if (bestAllocation.isEmpty()) return Optional.empty();
         if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
         return bestAllocation;

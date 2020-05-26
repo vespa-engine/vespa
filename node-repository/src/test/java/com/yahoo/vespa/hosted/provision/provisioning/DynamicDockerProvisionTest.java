@@ -314,8 +314,9 @@ public class DynamicDockerProvisionTest {
     public void test_any_disk_prefers_remote() {
         int memoryTax = 3;
         int localDiskTax = 55;
-        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200 - localDiskTax, 0.1, fast, local)),
-                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400 - localDiskTax, 0.1, fast, local)),
+        // Disk tax is not included in flavor resources but memory tax is
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
+                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)),
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
@@ -382,11 +383,16 @@ public class DynamicDockerProvisionTest {
         }
 
         @Override
+        public NodeResources lowestRealResourcesAllocating(NodeResources resources, boolean exclusive) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));
+        }
+
+        @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             NodeResources resources = flavor.resources();
             if ( ! flavor.isConfigured()) return resources;
-            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
-                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0));
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
         }
 
     }
@@ -414,8 +420,7 @@ public class DynamicDockerProvisionTest {
         }
 
         private boolean compatible(Flavor hostFlavor, NodeResources resources) {
-            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
-                                                       .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTaxGb : 0));
+            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
 
             if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
                 && hostFlavor.resources().diskGb() >= resources.diskGb())

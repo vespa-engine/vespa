@@ -56,7 +56,7 @@ public class AutoscalingIntegrationTest {
         ClusterResources max = new ClusterResources(2, 1, nodes);
 
         Application application = tester.nodeRepository().applications().get(application1).orElse(new Application(application1))
-                                        .withClusterLimits(cluster1.id(), min, max);
+                                        .withCluster(cluster1.id(), false, min, max);
         tester.nodeRepository().applications().put(application, tester.nodeRepository().lock(application1));
         var scaledResources = autoscaler.suggest(application.clusters().get(cluster1.id()),
                                                  tester.nodeRepository().getNodes(application1));

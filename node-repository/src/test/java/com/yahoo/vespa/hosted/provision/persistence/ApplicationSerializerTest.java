@@ -26,11 +26,13 @@ public class ApplicationSerializerTest {
     public void testApplicationSerialization() {
         List<Cluster> clusters = new ArrayList<>();
         clusters.add(new Cluster(ClusterSpec.Id.from("c1"),
+                                 false,
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
                                  Optional.empty(),
                                  Optional.empty()));
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
+                                 true,
                                  new ClusterResources( 8, 4, new NodeResources(1, 2, 3, 4)),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
                                  Optional.of(new ClusterResources(20, 10, new NodeResources(0.5, 4, 14, 16))),
@@ -49,6 +51,7 @@ public class ApplicationSerializerTest {
             assertNotSame(originalCluster, serializedCluster);
             assertEquals(originalCluster, serializedCluster);
             assertEquals(originalCluster.id(), serializedCluster.id());
+            assertEquals(originalCluster.exclusive(), serializedCluster.exclusive());
             assertEquals(originalCluster.minResources(), serializedCluster.minResources());
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
             assertEquals(originalCluster.suggestedResources(), serializedCluster.suggestedResources());

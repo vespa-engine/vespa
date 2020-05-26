@@ -147,7 +147,7 @@ class AutoscalingTester {
     public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
-                                                  .withClusterLimits(clusterId, min, max);
+                                                  .withCluster(clusterId, false, min, max);
         nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
         return autoscaler.autoscale(application.clusters().get(clusterId),
                                     nodeRepository().getNodes(applicationId, Node.State.active));
@@ -156,7 +156,7 @@ class AutoscalingTester {
     public Optional<ClusterResources> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
-                                                  .withClusterLimits(clusterId, min, max);
+                                                  .withCluster(clusterId, false, min, max);
         nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
         return autoscaler.suggest(application.clusters().get(clusterId),
                                   nodeRepository().getNodes(applicationId, Node.State.active));
@@ -200,6 +200,14 @@ class AutoscalingTester {
                 return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
             else
                 return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources lowestRealResourcesAllocating(NodeResources resources, boolean exclusive) {
+            if (zone.getCloud().dynamicProvisioning())
+                return resources.withMemoryGb(resources.memoryGb() - 3);
+            else
+                return resources;
         }
 
         @Override

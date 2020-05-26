@@ -19,6 +19,9 @@ public interface HostResourcesCalculator {
     /** Nodes use advertised resources. This returns the real resources for the node. */
     NodeResources realResourcesOf(Node node, NodeRepository nodeRepository);
 
+    /** Returns the lowest possible real resources we may get if we request the given resources */
+    NodeResources lowestRealResourcesAllocating(NodeResources advertisedResources, boolean exclusive);
+
     /** Flavors use real resources. This returns the advertised resources of the flavor. */
     NodeResources advertisedResourcesOf(Flavor flavor);
 
