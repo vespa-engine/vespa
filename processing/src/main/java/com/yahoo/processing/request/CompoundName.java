@@ -20,6 +20,12 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public final class CompoundName {
 
+    /**
+     * The string name of this compound.
+     */
+    private final String name;
+    private final String lowerCasedName;
+
     private final ImmutableList<String> compounds;
 
     /** A hashcode which is always derived from the compounds (NEVER the string) */
@@ -37,7 +43,7 @@ public final class CompoundName {
      * @throws NullPointerException if name is null
      */
     public CompoundName(String name) {
-        this(parse(name));
+        this(name, parse(name));
     }
 
     /** Constructs this from an array of name components which are assumed not to contain dots */
@@ -47,6 +53,21 @@ public final class CompoundName {
 
     /** Constructs this from a list of compounds. */
     public CompoundName(List<String> compounds) {
+        this(toCompoundString(compounds), compounds);
+    }
+
+    /**
+     * Constructs this from a name with already parsed compounds.
+     * Private to avoid creating names with inconsistencies.
+     *
+     * @param name the string representation of the compounds
+     * @param compounds the compounds of this name
+     */
+    private CompoundName(String name, List<String> compounds) {
+        if (name == null) throw new NullPointerException("Name can not be null");
+
+        this.name = name;
+        this.lowerCasedName = toLowerCase(name);
         if (compounds.size()==1 && compounds.get(0).isEmpty())
             this.compounds = ImmutableList.of();
         else
@@ -90,7 +111,7 @@ public final class CompoundName {
         if (isEmpty()) return new CompoundName(name);
         List<String> newCompounds = new ArrayList<>(compounds);
         newCompounds.addAll(parse(name));
-        return new CompoundName(newCompounds);
+        return new CompoundName(concat(this.name, name), newCompounds);
     }
 
     /**
@@ -103,7 +124,11 @@ public final class CompoundName {
         if (isEmpty()) return name;
         List<String> newCompounds = new ArrayList<>(compounds);
         newCompounds.addAll(name.compounds);
-        return new CompoundName(newCompounds);
+        return new CompoundName(concat(this.name, name.name), newCompounds);
+    }
+
+    private String concat(String name1, String name2) {
+        return name1 + "." + name2;
     }
 
     /**
@@ -217,11 +242,14 @@ public final class CompoundName {
     public boolean hasPrefix(CompoundName prefix) {
         if (prefix.size() > this.size()) return false;
 
-        for (int i = 0; i < prefix.size(); i++) {
-            if ( ! this.compounds.get(i).equals(prefix.get(i)))
-                return false;
-        }
-        return true;
+        int prefixLength = prefix.name.length();
+        if (prefixLength == 0)
+            return true;
+
+        if (name.length() > prefixLength && name.charAt(prefixLength) != '.')
+            return false;
+
+        return name.startsWith(prefix.name);
     }
 
     /**
@@ -239,22 +267,24 @@ public final class CompoundName {
         if (o == this) return true;
         if ( ! (o instanceof CompoundName)) return false;
         CompoundName other = (CompoundName)o;
-        return this.compounds.equals(other.compounds);
+        return this.name.equals(other.name);
     }
 
     /**
      * Returns the string representation of this - all the name components in order separated by dots.
      */
     @Override
-    public String toString() {
+    public String toString() { return name; }
+
+    public String getLowerCasedName() {
+        return lowerCasedName;
+    }
+
+    private static String toCompoundString(List<String> compounds) {
         StringBuilder b = new StringBuilder();
         for (String compound : compounds)
             b.append(compound).append(".");
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
-    }
-
-    public String getLowerCasedName() {
-        return toString().toLowerCase();
     }
 
 }
