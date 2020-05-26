@@ -39,14 +39,15 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         }
 
         @Override
-        public NodeResources lowestRealResourcesAllocating(NodeResources advertisedResources, boolean exclusive) {
-            return advertisedResources;
-        }
-
-        @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             return flavor.resources();
         }
 
+        @Override
+        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
+            return resources.withVcpu(0).withMemoryGb(0).withDiskGb(0);
+        }
+
     }
+
 }

@@ -122,6 +122,11 @@ public class AllocatableClusterResources {
     /**
      * Returns the best matching allocatable node resources given ideal node resources,
      * or empty if none available within the limits.
+     *
+     * @param resources the real resources that should ideally be allocated
+     * @param exclusive whether resources should be allocated on entire hosts
+     *        (in which case the allocated resources will be all the real resources of the host
+     *         and limits are required to encompass the full resources of candidate host flavors)
      */
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
                                                              boolean exclusive,
@@ -131,26 +136,25 @@ public class AllocatableClusterResources {
         NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
         cappedNodeResources = new NodeResourceLimits(nodeRepository).enlargeToLegal(cappedNodeResources, clusterType);
 
-        if (nodeRepository.zone().getCloud().allowHostSharing()) {
-            // return the requested resources, or empty if they cannot fit on existing hosts
+        if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
+            // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
+            NodeResources advertisedResources = cappedNodeResources.add(nodeRepository.resourcesCalculator().overheadAllocating(cappedNodeResources, exclusive));
+            NodeResources realResources = cappedNodeResources;
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                NodeResources realNodeResources = nodeRepository.resourcesCalculator().lowestRealResourcesAllocating(cappedNodeResources,
-                                                                                                                     exclusive);
-                if (flavor.resources().satisfies(cappedNodeResources))
-                    return Optional.of(new AllocatableClusterResources(resources.with(realNodeResources),
-                                                                       cappedNodeResources,
+                if (flavor.resources().satisfies(cappedNodeResources)) // TODO: advertisedResources
+                    return Optional.of(new AllocatableClusterResources(resources.with(realResources),
+                                                                       cappedNodeResources, // TODO: advertisedResources
                                                                        resources.nodeResources(),
                                                                        clusterType));
             }
             return Optional.empty();
         }
-        else {
-            // return the cheapest flavor satisfying the target resources, if any
+        else { // Return the cheapest flavor satisfying the requested resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
+                // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-
-                NodeResources realResources = nodeRepository.resourcesCalculator().lowestRealResourcesAllocating(advertisedResources, exclusive);
+                NodeResources realResources = advertisedResources.subtract(nodeRepository.resourcesCalculator().overheadAllocating(advertisedResources, exclusive));
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {

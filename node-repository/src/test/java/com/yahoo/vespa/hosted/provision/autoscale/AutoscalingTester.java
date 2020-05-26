@@ -44,15 +44,24 @@ class AutoscalingTester {
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
-        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)));
+        this(hostResources, null);
+    }
+
+    public AutoscalingTester(NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.deployZoneApp();
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
+        this(zone, flavors, new MockHostResourcesCalculator(zone));
+    }
+
+    private AutoscalingTester(Zone zone, List<Flavor> flavors,
+                              HostResourcesCalculator resourcesCalculator) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
-                                                             .resourcesCalculator(new MockHostResourcesCalculator(zone))
+                                                             .resourcesCalculator(resourcesCalculator)
                                                              .hostProvisioner(new MockHostProvisioner(flavors))
                                                              .build();
 
@@ -203,19 +212,16 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources lowestRealResourcesAllocating(NodeResources resources, boolean exclusive) {
-            if (zone.getCloud().dynamicProvisioning())
-                return resources.withMemoryGb(resources.memoryGb() - 3);
-            else
-                return resources;
-        }
-
-        @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             if (zone.getCloud().dynamicProvisioning())
                 return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
             else
                 return flavor.resources();
+        }
+
+        @Override
+        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
+            return resources.withVcpu(0).withMemoryGb(zone.getCloud().dynamicProvisioning() ? 3 : 0).withDiskGb(0);
         }
 
     }

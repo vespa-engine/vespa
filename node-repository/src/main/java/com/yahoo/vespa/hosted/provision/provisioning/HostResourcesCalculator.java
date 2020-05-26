@@ -16,13 +16,20 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
  */
 public interface HostResourcesCalculator {
 
-    /** Nodes use advertised resources. This returns the real resources for the node. */
+    /** Returns the real resources available on a node */
     NodeResources realResourcesOf(Node node, NodeRepository nodeRepository);
 
-    /** Returns the lowest possible real resources we may get if we request the given resources */
-    NodeResources lowestRealResourcesAllocating(NodeResources advertisedResources, boolean exclusive);
-
-    /** Flavors use real resources. This returns the advertised resources of the flavor. */
+    /** Returns the advertised resources of a flavor */
     NodeResources advertisedResourcesOf(Flavor flavor);
+
+    /**
+     * Returns the highest possible overhead (difference between advertised and real) which may result
+     * from requesting the given advertised resources
+     *
+     * @return a NodeResources containing the *difference* between the given advertised resources
+     *         and the (worst case) real resources we'll observe. This is always compatible with the
+     *         given resources.
+     */
+    NodeResources overheadAllocating(NodeResources resources, boolean exclusive);
 
 }

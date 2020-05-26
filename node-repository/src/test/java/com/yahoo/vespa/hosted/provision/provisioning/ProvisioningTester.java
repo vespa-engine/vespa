@@ -556,7 +556,8 @@ public class ProvisioningTester {
         }
 
         public Builder resourcesCalculator(HostResourcesCalculator resourcesCalculator) {
-            this.resourcesCalculator = resourcesCalculator;
+            if (resourcesCalculator != null)
+                this.resourcesCalculator = resourcesCalculator;
             return this;
         }
 
