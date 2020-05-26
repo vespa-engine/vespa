@@ -73,6 +73,8 @@
     do_equality_test((lhs), (rhs),  #lhs, __FILE__, __LINE__)
 #define _fail(str) do_fail((str), __FILE__, __LINE__)
 
+namespace fast::testsuite {
+
 class Test
 {
 public:
@@ -143,3 +145,7 @@ bool Test::do_equality_test(const t1& lhs, const t2& rhs, const char* lbl,
     }
     return false;
 }
+
+}
+
+using fast::testsuite::Test;
