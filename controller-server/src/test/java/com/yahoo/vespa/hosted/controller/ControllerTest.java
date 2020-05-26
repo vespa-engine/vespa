@@ -700,6 +700,8 @@ public class ControllerTest {
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodZone = ZoneId.from("prod", "us-west-1");
+        var stagingZone = ZoneId.from("staging", "us-east-3");
+        var testZone = ZoneId.from("test", "us-east-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                                                                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
@@ -713,7 +715,7 @@ public class ControllerTest {
         assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
                                              "app1.tenant1.global.vespa.oath.cloud",
                                              "*.app1.tenant1.global.vespa.oath.cloud"),
-                                   tester.controller().zoneRegistry().zones().controllerUpgraded().ids().stream()
+                                   Stream.of(prodZone, testZone, stagingZone)
                                          .flatMap(zone -> Stream.of("", "*.")
                                                                 .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
