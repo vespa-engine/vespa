@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -10,16 +10,21 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.LongFlag;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +43,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
+    private final LongFlag expiryTimeFlag;
 
     public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
         this(tenantName, componentRegistry);
@@ -51,6 +57,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         this.sessionLifetime = componentRegistry.getConfigserverConfig().sessionLifetime();
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
+        this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
     }
 
     @Override
@@ -77,13 +84,25 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         }
     }
 
-    public void purgeOldSessions() {
+    public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, "Purging old sessions");
         try {
-            List<LocalSession> sessions = new ArrayList<>(listSessions());
-            for (LocalSession candidate : sessions) {
+            for (LocalSession candidate : listSessions()) {
+                Instant createTime = Instant.ofEpochSecond(candidate.getCreateTime());
+                log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
+
+                // Sessions with state other than ACTIVATED
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
                     deleteSession(candidate);
+                } else if (createTime.plus(Duration.ofDays(expiryTimeFlag.value())).isBefore(clock.instant())) {
+                    //  Sessions with state ACTIVATE, but which are not actually active
+                    ApplicationId applicationId = candidate.getApplicationId();
+                    Long activeSession = activeSessions.get(applicationId);
+                    if (activeSession == null || activeSession != candidate.getSessionId()) {
+                        deleteSession(candidate);
+                        log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
+                                            createTime + " for '" + applicationId + "'");
+                    }
                 }
             }
             // Make sure to catch here, to avoid executor just dying in case of issues ...
@@ -101,7 +120,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
-    void deleteSession(LocalSession session) {
+    public void deleteSession(LocalSession session) {
         long sessionId = session.getSessionId();
         log.log(Level.FINE, "Deleting local session " + sessionId);
         LocalSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
