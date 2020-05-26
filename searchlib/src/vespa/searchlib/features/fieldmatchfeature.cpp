@@ -28,7 +28,7 @@ public:
                                   const fieldmatch::Params& params);
     ~FieldMatchExecutorSharedState() override;
     const PhraseSplitterQueryEnv& get_phrase_splitter_query_env() const { return _splitter_env; }
-    const fieldmatch::ComputerSharedState &get_field_match_computer_shared_state() const { return _cmp_shared_state; }
+    const fieldmatch::ComputerSharedState &get_computer_shared_state() const { return _cmp_shared_state; }
 };
 
 FieldMatchExecutorSharedState::FieldMatchExecutorSharedState(const IQueryEnvironment& query_env,
@@ -61,7 +61,7 @@ public:
 FieldMatchExecutor::FieldMatchExecutor(const FieldMatchExecutorSharedState& shared_state)
     : FeatureExecutor(),
       _splitter(shared_state.get_phrase_splitter_query_env()),
-      _cmp(shared_state.get_field_match_computer_shared_state(), _splitter)
+      _cmp(shared_state.get_computer_shared_state(), _splitter)
 {
     // empty
 }
