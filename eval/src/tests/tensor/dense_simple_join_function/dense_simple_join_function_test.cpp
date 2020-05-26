@@ -22,6 +22,8 @@ using vespalib::make_string_short::fmt;
 using Primary = DenseSimpleJoinFunction::Primary;
 using Overlap = DenseSimpleJoinFunction::Overlap;
 
+namespace vespalib::tensor {
+
 std::ostream &operator<<(std::ostream &os, Primary primary)
 {
     switch(primary) {
@@ -39,6 +41,8 @@ std::ostream &operator<<(std::ostream &os, Overlap overlap)
     case Overlap::OUTER: return os << "OUTER";
     }
     abort();
+}
+
 }
 
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
