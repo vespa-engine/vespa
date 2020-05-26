@@ -8,6 +8,7 @@
 namespace search {
 namespace queryeval {
 
+/** Search iterator that never yields any hits. */
 class EmptySearch : public SearchIterator
 {
 protected:

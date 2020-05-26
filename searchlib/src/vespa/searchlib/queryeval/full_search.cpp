@@ -13,7 +13,6 @@ FullSearch::doSeek(uint32_t docid)
 void
 FullSearch::doUnpack(uint32_t)
 {
-    abort();
 }
 
 void
@@ -33,7 +32,6 @@ FullSearch::get_hits(uint32_t begin_id)
 {
     auto result = BitVector::create(begin_id, getEndId());
     result->setInterval(begin_id, getEndId());
-    result->invalidateCachedCount();
     return result;
 }
 

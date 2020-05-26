@@ -7,6 +7,10 @@
 
 namespace search::queryeval {
 
+/**
+ * Search iterator for testing, yielding a hit on all documents.
+ * Unpacks (sets docid) to the given TermFieldMatchData.
+ **/
 class TrueSearch : public SearchIterator
 {
 private:

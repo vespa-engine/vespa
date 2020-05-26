@@ -122,12 +122,12 @@ Blueprint::root() const
 }
 
 SearchIterator::UP
-Blueprint::createFilterSearch(bool /*strict*/, FilterBound bound) const
+Blueprint::createFilterSearch(bool /*strict*/, FilterConstraint constraint) const
 {
-    if (bound == FilterBound::UPPER) {
+    if (constraint == FilterConstraint::UPPER_BOUND) {
         return std::make_unique<FullSearch>();
     } else {
-        LOG_ASSERT(bound == FilterBound::LOWER);
+        LOG_ASSERT(constraint == FilterConstraint::LOWER_BOUND);
         return std::make_unique<EmptySearch>();
     }
 }

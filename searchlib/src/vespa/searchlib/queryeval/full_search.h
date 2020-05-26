@@ -7,6 +7,11 @@
 
 namespace search::queryeval {
 
+/**
+ * Search iterator that hits all documents.
+ * Note that it does not search any field, and
+ * does not unpack any ranking information.
+ **/
 class FullSearch : public SearchIterator
 {
 private:
