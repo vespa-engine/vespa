@@ -176,7 +176,6 @@ public class SessionPreparerTest {
         ((HostRegistry<ApplicationId>)ctx.getHostValidator()).update(applicationId("default"), Collections.singletonList("mytesthost"));
         final StringBuilder logged = new StringBuilder();
         DeployLogger logger = (level, message) -> {
-            System.out.println(level + ": "+message);
             if (level.equals(Level.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
         preparer.prepare(ctx, logger, new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
@@ -241,16 +240,19 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
         assertEquals(expected, readContainerEndpoints(applicationId));
 
-        // Preparing with empty container endpoints keeps old value
-        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
-        prepare(new File("src/test/resources/deploy/hosted-app"), params);
-        assertEquals(expected, readContainerEndpoints(applicationId));
-
-        // Preparing with empty container endpoints clears endpoints with feature flag set
-        flagSource.withBooleanFlag(Flags.CONFIGSERVER_UNSET_ENDPOINTS.id(), true);
+        // Preparing with empty container endpoints clears endpoints
         params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
         assertEquals(List.of(), readContainerEndpoints(applicationId));
+
+        // Preparing with empty container endpoints keeps old value with feature flag turned off
+        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints(endpoints).build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+        assertEquals(expected, readContainerEndpoints(applicationId));
+        flagSource.withBooleanFlag(Flags.CONFIGSERVER_UNSET_ENDPOINTS.id(), false);
+        params = new PrepareParams.Builder().applicationId(applicationId).containerEndpoints("[]").build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+        assertEquals(expected, readContainerEndpoints(applicationId));
     }
 
     @Test

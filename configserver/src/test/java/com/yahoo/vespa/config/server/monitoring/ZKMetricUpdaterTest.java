@@ -15,11 +15,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class ZKMetricUpdaterTest {
+
+    private static final Logger LOG = Logger.getLogger(ZKMetricUpdaterTest.class.getName());
+
     private Thread serverThread;
     private int serverPort;
 
@@ -81,13 +85,13 @@ public class ZKMetricUpdaterTest {
                         output.close();
                     }
                 } catch (IOException e) {
-                    System.out.println("Error in fake ZK server: " + e.toString());
+                    LOG.severe("Error in fake ZK server: " + e.toString());
                 }
             }
             try {
                 serverSocket.close();
             } catch (IOException e) {
-                System.out.println("Error closing server socket in fake ZK server: " + e.toString());
+                LOG.severe("Error closing server socket in fake ZK server: " + e.toString());
             }
         });
         serverThread.start();

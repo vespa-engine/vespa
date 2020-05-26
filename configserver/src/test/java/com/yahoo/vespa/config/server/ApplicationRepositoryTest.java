@@ -21,7 +21,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -438,7 +437,6 @@ public class ApplicationRepositoryTest {
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
-        System.out.println(info.getHosts());
         assertTrue(info.getHosts().contains(new HostSpec("mytesthost",
                                                          Collections.emptyList(),
                                                          Optional.empty())));
