@@ -150,24 +150,34 @@ public class DynamicProvisioningMaintainerTest {
         private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default", "docker");
 
         private final ManualClock clock = new ManualClock();
-        private final Zone zone = new Zone(Cloud.defaultCloud().withDynamicProvisioning(true), SystemName.defaultSystem(),
-                                           Environment.defaultEnvironment(), RegionName.defaultName());
-        private final NodeRepository nodeRepository = new NodeRepository(flavors,
-                                                                         new HostResourcesCalculatorMock(),
-                                                                         new MockCurator(),
-                                                                         clock,
-                                                                         zone,
-                                                                         new MockNameResolver().mockAnyLookup(),
-                                                                         DockerImage.fromString("docker-image"), true);
-
-
         private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
                 .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
-        private final HostProvisionerMock hostProvisioner = new HostProvisionerMock(nodeRepository);
-        private final DynamicProvisioningMaintainer maintainer = new DynamicProvisioningMaintainer(nodeRepository,
-                                                                                                   Duration.ofDays(1),
-                                                                                                   hostProvisioner,
-                                                                                                   flagSource);
+
+        private final Zone zone;
+        private final NodeRepository nodeRepository;
+        private final HostProvisionerMock hostProvisioner;
+        private final DynamicProvisioningMaintainer maintainer;
+
+        public DynamicProvisioningTester() {
+            this(Cloud.builder().dynamicProvisioning(true).build());
+        }
+
+        public DynamicProvisioningTester(Cloud cloud) {
+            this.zone = new Zone(cloud, SystemName.defaultSystem(), Environment.defaultEnvironment(),
+                                 RegionName.defaultName());
+            this.nodeRepository = new NodeRepository(flavors,
+                                                     new HostResourcesCalculatorMock(),
+                                                     new MockCurator(),
+                                                     clock,
+                                                     zone,
+                                                     new MockNameResolver().mockAnyLookup(),
+                                                     DockerImage.fromString("docker-image"), true);
+            this.hostProvisioner = new HostProvisionerMock(nodeRepository);
+            this.maintainer = new DynamicProvisioningMaintainer(nodeRepository,
+                                                                Duration.ofDays(1),
+                                                                hostProvisioner,
+                                                                flagSource);
+        }
 
         private DynamicProvisioningTester addInitialNodes() {
             List.of(createNode("host1", Optional.empty(), NodeType.host, Node.State.active, Optional.of(tenantHostApp)),

@@ -298,9 +298,10 @@ public class AutoscalingTest {
         flavors.add(new Flavor("aws-large",  new NodeResources(3, 150, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         flavors.add(new Flavor("aws-medium", new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         flavors.add(new Flavor("aws-small",  new NodeResources(3,  80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        AutoscalingTester tester = new AutoscalingTester(new Zone(Cloud.defaultCloud()
-                                                                       .withDynamicProvisioning(true)
-                                                                       .withAllowHostSharing(false),
+        AutoscalingTester tester = new AutoscalingTester(new Zone(Cloud.builder()
+                                                                       .dynamicProvisioning(true)
+                                                                       .allowHostSharing(false)
+                                                                       .build(),
                                                                   SystemName.main,
                                                                   Environment.prod, RegionName.from("us-east")),
                                                          flavors);

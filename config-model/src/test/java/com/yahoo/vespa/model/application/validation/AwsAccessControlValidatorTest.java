@@ -16,7 +16,8 @@ public class AwsAccessControlValidatorTest extends AccessControlValidatorTestBas
     @Before
     public void setup() {
         validator = new AwsAccessControlValidator();
-        zone = new Zone(Cloud.defaultCloud().withRequireAccessControl(true), SystemName.main, Environment.prod, RegionName.from("foo"));
+        zone = new Zone(Cloud.builder().requireAccessControl(true).build(),
+                        SystemName.main, Environment.prod, RegionName.from("foo"));
     }
 
 }

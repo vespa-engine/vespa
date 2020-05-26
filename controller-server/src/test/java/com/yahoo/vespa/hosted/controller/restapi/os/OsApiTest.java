@@ -37,8 +37,13 @@ public class OsApiTest extends ControllerContainerTest {
 
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/os/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
-    private static final Cloud cloud1 = new Cloud(CloudName.from("cloud1"), false, true, false, false);
-    private static final Cloud cloud2 = new Cloud(CloudName.from("cloud2"), true, false, true, true);
+    private static final Cloud cloud1 = Cloud.builder().name(CloudName.from("cloud1")).build();
+    private static final Cloud cloud2 = Cloud.builder().name(CloudName.from("cloud2"))
+                                             .dynamicProvisioning(true)
+                                             .allowHostSharing(false)
+                                             .reprovisionToUpgradeOs(true)
+                                             .requireAccessControl(true)
+                                             .build();
     private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1.name()).build();
     private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1.name()).build();
     private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2.name()).build();
