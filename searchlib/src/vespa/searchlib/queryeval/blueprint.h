@@ -164,6 +164,8 @@ public:
         virtual bool check(const Blueprint & bp) const = 0;
     };
 
+    enum class FilterBound { UPPER, LOWER };
+
     Blueprint();
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;
@@ -199,6 +201,7 @@ public:
     bool frozen() const { return _frozen; }
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
+    virtual SearchIteratorUP createFilterSearch(bool strict, FilterBound bound) const;
 
     // for debug dumping
     vespalib::string asString() const;

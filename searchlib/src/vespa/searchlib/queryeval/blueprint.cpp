@@ -3,6 +3,8 @@
 #include "blueprint.h"
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
+#include "emptysearch.h"
+#include "full_search.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -117,6 +119,17 @@ Blueprint::root() const
         bp = bp->_parent;
     }
     return *bp;
+}
+
+SearchIterator::UP
+Blueprint::createFilterSearch(bool /*strict*/, FilterBound bound) const
+{
+    if (bound == FilterBound::UPPER) {
+        return std::make_unique<FullSearch>();
+    } else {
+        LOG_ASSERT(bound == FilterBound::LOWER);
+        return std::make_unique<EmptySearch>();
+    }
 }
 
 vespalib::string

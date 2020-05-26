@@ -2,8 +2,7 @@
 
 #include "emptysearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 EmptySearch::doSeek(uint32_t)
@@ -13,6 +12,27 @@ EmptySearch::doSeek(uint32_t)
 void
 EmptySearch::doUnpack(uint32_t)
 {
+}
+
+void
+EmptySearch::or_hits_into(BitVector &, uint32_t)
+{
+    // nop
+}
+
+void
+EmptySearch::and_hits_into(BitVector &result, uint32_t begin_id)
+{
+    result.clearInterval(begin_id, getEndId());
+}
+
+BitVector::UP
+EmptySearch::get_hits(uint32_t begin_id)
+{
+    auto result = BitVector::create(begin_id, getEndId());
+    result->clearInterval(begin_id, getEndId());
+    result->invalidateCachedCount();
+    return result;
 }
 
 EmptySearch::Trinary
@@ -30,5 +50,4 @@ EmptySearch::~EmptySearch()
 {
 }
 
-} // namespace queryeval
-} // namespace search
+} // namespace

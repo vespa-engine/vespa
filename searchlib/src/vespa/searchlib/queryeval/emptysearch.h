@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
 namespace queryeval {
@@ -12,6 +13,9 @@ class EmptySearch : public SearchIterator
 protected:
     void doSeek(uint32_t) override;
     void doUnpack(uint32_t) override;
+    void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void and_hits_into(BitVector &result, uint32_t begin_id) override;
+    BitVector::UP get_hits(uint32_t begin_id) override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         setAtEnd();
@@ -25,4 +29,3 @@ public:
 
 } // namespace queryeval
 } // namespace search
-
