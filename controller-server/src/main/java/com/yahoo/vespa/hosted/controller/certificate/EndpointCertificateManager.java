@@ -123,7 +123,7 @@ public class EndpointCertificateManager {
 
         // Reprovision certificate if it is missing SANs for the zone we are deploying to
         var sansInCertificate = currentCertificateMetadata.get().requestedDnsSans();
-        var requiredSansForZone = dnsNamesOf(instance.id(), List.of(zone));
+        var requiredSansForZone = dnsNamesOf(instance.id(), zone);
         if (sansInCertificate.isPresent() && !sansInCertificate.get().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec);
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
@@ -222,29 +222,30 @@ public class EndpointCertificateManager {
         var zoneCandidateList = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
 
         // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
-        if (!deploymentZone.environment().isManuallyDeployed() && instanceSpec.isPresent()) {
+        if (!deploymentZone.environment().isManuallyDeployed()) {
             zoneCandidateList.stream()
-                    .filter(z -> instanceSpec.get().deploysTo(Environment.prod, z.region()) || z.environment().isTest())
+                    .filter(z -> z.environment().isTest() || instanceSpec.isPresent() && instanceSpec.get().deploysTo(Environment.prod, z.region()))
                     .forEach(requiredZones::add);
         }
 
         var requiredNames = requiredZones.stream()
-                .flatMap(zone -> dnsNamesOf(instance.id(), List.of(zone)).stream())
-                .collect(Collectors.toCollection(ArrayList::new));
+                .flatMap(zone -> dnsNamesOf(instance.id(), zone).stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Make sure all currently present names will remain present.
         // Instead of just adding "currently present names", we regenerate them in case the names for a zone have changed.
         zoneCandidateList.stream()
-                .map(zone -> dnsNamesOf(instance.id(), List.of(zone)))
-                .filter(zoneNames -> !currentlyPresentNames.containsAll(zoneNames))
+                .map(zone -> dnsNamesOf(instance.id(), zone))
+                .filter(zoneNames -> zoneNames.stream().anyMatch(currentlyPresentNames::contains))
+                .filter(currentlyPresentNames::containsAll)
                 .forEach(requiredNames::addAll);
 
         // This check must be relaxed if we ever remove from the set of names generated.
         if (!requiredNames.containsAll(currentlyPresentNames))
-            throw new RuntimeException("SANs to be requested do not cover all existing names! Missing names:"
-                    + currentlyPresentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining()));
+            throw new RuntimeException("SANs to be requested do not cover all existing names! Missing names: "
+                    + currentlyPresentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining(", ")));
 
-        return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), requiredNames, currentMetadata);
+        return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), List.copyOf(requiredNames), currentMetadata);
     }
 
     private void validateEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone) {
@@ -279,7 +280,7 @@ public class EndpointCertificateManager {
                         .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
                         .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
-                var dnsNamesOfZone = dnsNamesOf(instance.id(), List.of(zone));
+                var dnsNamesOfZone = dnsNamesOf(instance.id(), zone);
                 if (!subjectAlternativeNames.containsAll(dnsNamesOfZone))
                     throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is missing required SANs for zone " + zone.value());
 
@@ -295,22 +296,24 @@ public class EndpointCertificateManager {
             }
     }
 
-    private List<String> dnsNamesOf(ApplicationId applicationId, List<ZoneId> zones) {
+    private List<String> dnsNamesOf(ApplicationId applicationId, ZoneId zone) {
         List<String> endpointDnsNames = new ArrayList<>();
 
         // We add first an endpoint name based on a hash of the applicationId,
         // as the certificate provider requires the first CN to be < 64 characters long.
         endpointDnsNames.add(commonNameHashOf(applicationId, zoneRegistry.system()));
 
-        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.defaultId());
-        var rotationEndpoints = Endpoint.of(applicationId).wildcard();
+        List<Endpoint.EndpointBuilder> endpoints = new ArrayList<>();
 
-        var zoneLocalEndpoints = zones.stream().flatMap(zone -> Stream.of(
-                Endpoint.of(applicationId).target(ClusterSpec.Id.from("default"), zone),
-                Endpoint.of(applicationId).wildcard(zone)
-        ));
+        if(zone.environment().isProduction()) {
+            endpoints.add(Endpoint.of(applicationId).named(EndpointId.defaultId()));
+            endpoints.add(Endpoint.of(applicationId).wildcard());
+        }
 
-        Stream.concat(Stream.of(globalDefaultEndpoint, rotationEndpoints), zoneLocalEndpoints)
+        endpoints.add(Endpoint.of(applicationId).target(ClusterSpec.Id.from("default"), zone));
+        endpoints.add(Endpoint.of(applicationId).wildcard(zone));
+
+        endpoints.stream()
                 .map(endpoint -> endpoint.routingMethod(RoutingMethod.exclusive))
                 .map(endpoint -> endpoint.on(Endpoint.Port.tls()))
                 .map(endpointBuilder -> endpointBuilder.in(zoneRegistry.system()))
