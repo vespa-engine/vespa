@@ -76,7 +76,8 @@ public class ClusterTest {
                                                            "<max-hits-per-partition>77</max-hits-per-partition>",
                                                            "<dispatch-policy>round-robin</dispatch-policy>",
                                                            "<min-group-coverage>13</min-group-coverage>",
-                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>"),
+                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>",
+                                                           "<top-k-probability>0.777</top-k-probability>"),
                                                    false);
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
@@ -86,6 +87,7 @@ public class ClusterTest {
         assertEquals(13.0, config.minGroupCoverage(), DELTA);
         assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
         assertEquals(77, config.maxHitsPerNode());
+        assertEquals(0.777, config.topKProbability(), DELTA);
     }
 
     @Test
@@ -105,6 +107,7 @@ public class ClusterTest {
         assertEquals(100.0, config.minSearchCoverage(), DELTA);
         assertEquals(97.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(100.0, config.minGroupCoverage(), DELTA);
+        assertEquals(0.9999, config.topKProbability(), DELTA);
         assertEquals(3, config.node().size());
         assertEquals(0, config.node(0).key());
         assertEquals(1, config.node(1).key());

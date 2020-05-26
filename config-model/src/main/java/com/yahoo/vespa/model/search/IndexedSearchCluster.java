@@ -52,7 +52,6 @@ public class IndexedSearchCluster extends SearchCluster
 
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
-    private final double defaultTopKProbability;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
@@ -69,7 +68,6 @@ public class IndexedSearchCluster extends SearchCluster
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
-        defaultTopKProbability = deployState.getProperties().defaultTopKProbability();
     }
 
     @Override
@@ -307,8 +305,6 @@ public class IndexedSearchCluster extends SearchCluster
         }
         if (tuning.dispatch.getTopkProbability() != null) {
             builder.topKProbability(tuning.dispatch.getTopkProbability());
-        } else {
-            builder.topKProbability(defaultTopKProbability);
         }
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());

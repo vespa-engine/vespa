@@ -29,8 +29,8 @@ maxHitsPerNode int default=2147483647
 ## will give you the globally K best hits according to this formula with the desired probability.
 ## q = k/n + qT (p',30) x √(k × (1/n) × (1 − 1/n))
 ## With a probability of 0.999 and K=200 and N=10 will give a Q of 38, meaning that you only need to fetch 19% compared to
-## default setting of 1.0. This is a significant optimisation with with very little loss in presicion.
-topKProbability double default=1.0
+## a setting of 1.0. This is a significant optimisation with with very little loss in presicion.
+topKProbability double default=0.9999
 
 # Is multi-level dispatch configured for this cluster
 # Deprecated, will go away soon, NOOP

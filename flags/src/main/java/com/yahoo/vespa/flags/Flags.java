@@ -149,11 +149,6 @@ public class Flags {
             "Default multiplication factor when computing queuesize for burst handling",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-    public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
-            "default-top-k-probability", 1.0,
-            "Default probability that you will get the globally top K documents when merging many partitions.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
             "use-distributor-btree-db", false,

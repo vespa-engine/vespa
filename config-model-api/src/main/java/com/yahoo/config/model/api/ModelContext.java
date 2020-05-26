@@ -82,8 +82,10 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double defaultSoftStartSeconds();
 
-        // TODO Revisit in May or June 2020
-        double defaultTopKProbability();
+        // TODO Remove when 7.225 is last
+        default double defaultTopKProbability() {
+            return 0.9999;
+        }
 
         boolean useDistributorBtreeDb();
 
