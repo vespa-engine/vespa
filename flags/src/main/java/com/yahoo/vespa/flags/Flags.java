@@ -276,7 +276,7 @@ public class Flags {
             ZONE_ID);
 
     public static final UnboundBooleanFlag CONFIGSERVER_UNSET_ENDPOINTS = defineFeatureFlag(
-            "configserver-unset-endpoints", false,
+            "configserver-unset-endpoints", true,
             "Whether the configserver allows removal of existing endpoints when an empty list of container endpoints is request",
             "Takes effect on next external deployment",
             APPLICATION_ID
