@@ -83,4 +83,43 @@ public class TopKEstimatorTest {
         assertEquals(10, estimator.estimateK(10, 2));
     }
 
+    @Test
+    public void requireThatLargeKAreSane() {
+        TopKEstimator estimator = new TopKEstimator(30, 0.9999);
+        assertEquals(6, estimator.estimateK(10, 10));
+        assertEquals(9, estimator.estimateK(20, 10));
+        assertEquals(14, estimator.estimateK(40, 10));
+        assertEquals(22, estimator.estimateK(80, 10));
+        assertEquals(26, estimator.estimateK(100, 10));
+        assertEquals(42, estimator.estimateK(200, 10));
+        assertEquals(71, estimator.estimateK(400, 10));
+        assertEquals(123, estimator.estimateK(800, 10));
+        assertEquals(148, estimator.estimateK(1000, 10));
+        assertEquals(268, estimator.estimateK(2000, 10));
+        assertEquals(496, estimator.estimateK(4000, 10));
+        assertEquals(936, estimator.estimateK(8000, 10));
+        assertEquals(1152, estimator.estimateK(10000, 10));
+        assertEquals(2215, estimator.estimateK(20000, 10));
+        assertEquals(4304, estimator.estimateK(40000, 10));
+        assertEquals(8429, estimator.estimateK(80000, 10));
+        assertEquals(10480, estimator.estimateK(100000, 10));
+        int [] K = {10, 20, 40, 80, 100, 200, 400, 800, 1000, 2000, 4000, 8000, 10000, 20000, 40000, 80000, 100000};
+        double [] P = {1.0, 0.9999, 0.99999, 0.999999, 0.9999999, 0.99999999, 0.999999999, 0.9999999999};
+        int n = 10;
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Prob/Hits:"));
+        for (double p : P) {
+            sb.append(String.format(" %1.10f", p));
+        }
+        System.out.println(sb.toString());
+        for (int k : K) {
+            sb = new StringBuilder();
+            sb.append(String.format("%11d:", k));
+            for (double p : P) {
+                sb.append(String.format("    %2.3f    ", (double)(estimator.estimateK(k, n, p)*n) / k));
+            }
+            System.out.println(sb.toString());
+        }
+    }
+
 }
