@@ -38,7 +38,8 @@ public class AllocationOptimizer {
      */
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
-                                                                    Limits limits) {
+                                                                    Limits limits,
+                                                                    boolean exclusive) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
@@ -57,7 +58,7 @@ public class AllocationOptimizer {
                                                              groups,
                                                              nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
 
-                var allocatableResources = AllocatableClusterResources.from(next, current.clusterType(), limits, nodeRepository);
+                var allocatableResources = AllocatableClusterResources.from(next, exclusive, current.clusterType(), limits, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;

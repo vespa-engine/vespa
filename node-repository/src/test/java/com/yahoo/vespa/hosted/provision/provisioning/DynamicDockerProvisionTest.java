@@ -47,6 +47,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author freva
+ * @author bratseth
  */
 public class DynamicDockerProvisionTest {
 
@@ -159,14 +160,14 @@ public class DynamicDockerProvisionTest {
     }
 
     @Test
-    public void test_capacity_is_in_advertised_amounts_on_aws() {
+    public void test_capacity_is_in_advertised_amounts() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
@@ -204,7 +205,7 @@ public class DynamicDockerProvisionTest {
     }
 
     @Test
-    public void test_changing_limits_on_aws() {
+    public void test_changing_limits() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("1x", new NodeResources(1, 10 - memoryTax, 100, 0.1, fast, remote)),
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
@@ -212,7 +213,7 @@ public class DynamicDockerProvisionTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
@@ -278,7 +279,7 @@ public class DynamicDockerProvisionTest {
     }
 
     @Test
-    public void test_changing_storage_type_on_aws() {
+    public void test_changing_storage_type() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
@@ -287,7 +288,7 @@ public class DynamicDockerProvisionTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, 0))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
@@ -314,14 +315,15 @@ public class DynamicDockerProvisionTest {
     public void test_any_disk_prefers_remote() {
         int memoryTax = 3;
         int localDiskTax = 55;
-        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200 - localDiskTax, 0.1, fast, local)),
-                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400 - localDiskTax, 0.1, fast, local)),
+        // Disk tax is not included in flavor resources but memory tax is
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
+                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)),
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, localDiskTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(new MockResourcesCalculator(memoryTax, localDiskTax))
                                                                     .build();
@@ -385,8 +387,19 @@ public class DynamicDockerProvisionTest {
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             NodeResources resources = flavor.resources();
             if ( ! flavor.isConfigured()) return resources;
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
+        }
+
+        @Override
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
-                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0));
+                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
     }
@@ -395,12 +408,10 @@ public class DynamicDockerProvisionTest {
 
         private final List<Flavor> hostFlavors;
         private final int memoryTaxGb;
-        private final int localDiskTaxGb;
 
-        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb, int localDiskTaxGb) {
+        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb) {
             this.hostFlavors = List.copyOf(hostFlavors);
             this.memoryTaxGb = memoryTaxGb;
-            this.localDiskTaxGb = localDiskTaxGb;
         }
 
         @Override
@@ -414,8 +425,7 @@ public class DynamicDockerProvisionTest {
         }
 
         private boolean compatible(Flavor hostFlavor, NodeResources resources) {
-            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
-                                                       .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTaxGb : 0));
+            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
 
             if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
                 && hostFlavor.resources().diskGb() >= resources.diskGb())

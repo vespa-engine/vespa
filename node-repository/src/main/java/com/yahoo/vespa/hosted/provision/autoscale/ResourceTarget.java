@@ -11,7 +11,7 @@ public class ResourceTarget {
 
     private final boolean adjustForRedundancy;
 
-    /** The target resources per node, assuming the node assignment in current */
+    /** The target resources per node, assuming the node assignment where this was decided */
     private final double cpu, memory, disk;
 
     private ResourceTarget(double cpu, double memory, double disk, boolean adjustForRedundancy) {
@@ -32,6 +32,13 @@ public class ResourceTarget {
 
     /** Returns the target disk per node, in terms of the current allocation */
     public double nodeDisk() { return disk; }
+
+    @Override
+    public String toString() {
+        return "target " +
+               (adjustForRedundancy ? "(with redundancy adjustment) " : "") +
+               "[vcpu " + cpu + ", memoryGb " + memory + ", diskGb " + disk + "]";
+    }
 
     private static double nodeUsage(Resource resource, double load, AllocatableClusterResources current) {
         return load * resource.valueFrom(current.realResources());

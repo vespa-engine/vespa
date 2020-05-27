@@ -16,10 +16,22 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
  */
 public interface HostResourcesCalculator {
 
-    /** Nodes use advertised resources. This returns the real resources for the node. */
+    /** Returns the real resources available on a node */
     NodeResources realResourcesOf(Node node, NodeRepository nodeRepository);
 
-    /** Flavors use real resources. This returns the advertised resources of the flavor. */
+    /** Returns the advertised resources of a flavor */
     NodeResources advertisedResourcesOf(Flavor flavor);
+
+    /**
+     * Used with exclusive hosts:
+     * Returns the lowest possible real resources we'll get if requesting the given advertised resources
+     */
+    NodeResources requestToReal(NodeResources advertisedResources);
+
+    /**
+     * Used with shared hosts:
+     * Returns the advertised resources we need to request to be sure to get at least the given real resources.
+     */
+    NodeResources realToRequest(NodeResources realResources);
 
 }

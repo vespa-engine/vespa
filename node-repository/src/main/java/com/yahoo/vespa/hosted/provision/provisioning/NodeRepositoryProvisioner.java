@@ -144,7 +144,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
         try (Mutex lock = nodeRepository.lock(applicationId)) {
             Application application = nodeRepository.applications().get(applicationId).orElse(new Application(applicationId));
-            application = application.withClusterLimits(clusterSpec.id(), requested.minResources(), requested.maxResources());
+            application = application.withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
             return application.clusters().get(clusterSpec.id()).targetResources()
                     .orElseGet(() -> currentResources(applicationId, clusterSpec, requested));
@@ -163,15 +163,15 @@ public class NodeRepositoryProvisioner implements Provisioner {
         AllocatableClusterResources currentResources =
                 nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type()) // new deployment: Use min
                                 : new AllocatableClusterResources(nodes, nodeRepository);
-        return within(Limits.of(requested), currentResources);
+        return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources within(Limits limits, AllocatableClusterResources current) {
+    private ClusterResources within(Limits limits, boolean exclusive, AllocatableClusterResources current) {
         if (limits.isEmpty()) return current.toAdvertisedClusterResources();
         if (limits.min().equals(limits.max())) return limits.min();
 
-        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits, exclusive)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
                                   .toAdvertisedClusterResources();
     }

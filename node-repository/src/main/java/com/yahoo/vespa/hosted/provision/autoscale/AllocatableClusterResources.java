@@ -33,19 +33,19 @@ public class AllocatableClusterResources {
 
     /** Fake allocatable resources from requested capacity */
     public AllocatableClusterResources(ClusterResources requested, ClusterSpec.Type clusterType) {
-        this.advertisedResources = requested.nodeResources();
-        this.realResources = requested.nodeResources(); // we don't know
         this.nodes = requested.nodes();
         this.groups = requested.groups();
+        this.realResources = requested.nodeResources(); // we don't know
+        this.advertisedResources = requested.nodeResources();
         this.clusterType = clusterType;
         this.fulfilment = 1;
     }
 
     public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
-        this.advertisedResources = nodes.get(0).flavor().resources();
-        this.realResources = nodeRepository.resourcesCalculator().realResourcesOf(nodes.get(0), nodeRepository);
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        this.realResources = nodeRepository.resourcesCalculator().realResourcesOf(nodes.get(0), nodeRepository);
+        this.advertisedResources = nodes.get(0).flavor().resources();
         this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();
         this.fulfilment = 1;
     }
@@ -54,23 +54,10 @@ public class AllocatableClusterResources {
                                        NodeResources advertisedResources,
                                        NodeResources idealResources,
                                        ClusterSpec.Type clusterType) {
+        this.nodes = realResources.nodes();
+        this.groups = realResources.groups();
         this.realResources = realResources.nodeResources();
         this.advertisedResources = advertisedResources;
-        this.nodes = realResources.nodes();
-        this.groups = realResources.groups();
-        this.clusterType = clusterType;
-        this.fulfilment = fulfilment(realResources.nodeResources(), idealResources);
-    }
-
-    public AllocatableClusterResources(ClusterResources realResources,
-                                       Flavor flavor,
-                                       NodeResources idealResources,
-                                       ClusterSpec.Type clusterType,
-                                       HostResourcesCalculator calculator) {
-        this.realResources = realResources.nodeResources();
-        this.advertisedResources = calculator.advertisedResourcesOf(flavor);
-        this.nodes = realResources.nodes();
-        this.groups = realResources.groups();
         this.clusterType = clusterType;
         this.fulfilment = fulfilment(realResources.nodeResources(), idealResources);
     }
@@ -127,7 +114,7 @@ public class AllocatableClusterResources {
     public String toString() {
         return nodes + " nodes " +
                ( groups > 1 ? "(in " + groups + " groups) " : "" ) +
-               "with " + realResources() +
+               "with " + advertisedResources() +
                " at cost $" + cost() +
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
@@ -135,31 +122,39 @@ public class AllocatableClusterResources {
     /**
      * Returns the best matching allocatable node resources given ideal node resources,
      * or empty if none available within the limits.
+     *
+     * @param resources the real resources that should ideally be allocated
+     * @param exclusive whether resources should be allocated on entire hosts
+     *        (in which case the allocated resources will be all the real resources of the host
+     *         and limits are required to encompass the full resources of candidate host flavors)
      */
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
+                                                             boolean exclusive,
                                                              ClusterSpec.Type clusterType,
                                                              Limits limits,
                                                              NodeRepository nodeRepository) {
         NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
         cappedNodeResources = new NodeResourceLimits(nodeRepository).enlargeToLegal(cappedNodeResources, clusterType);
 
-        if (nodeRepository.zone().getCloud().allowHostSharing()) {
-            // return the requested resources, or empty if they cannot fit on existing hosts
+        if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
+            // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
+            NodeResources realResources = cappedNodeResources;
+            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(realResources);
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                if (flavor.resources().satisfies(cappedNodeResources))
-                    return Optional.of(new AllocatableClusterResources(resources.with(cappedNodeResources),
-                                                                       cappedNodeResources,
+                if (flavor.resources().satisfies(advertisedResources))
+                    return Optional.of(new AllocatableClusterResources(resources.with(realResources),
+                                                                       advertisedResources,
                                                                        resources.nodeResources(),
                                                                        clusterType));
             }
             return Optional.empty();
         }
-        else {
-            // return the cheapest flavor satisfying the target resources, if any
+        else { // Return the cheapest flavor satisfying the requested resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
+                // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                NodeResources realResources = flavor.resources();
+                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources);
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
@@ -172,7 +167,6 @@ public class AllocatableClusterResources {
                 }
 
                 if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), advertisedResources)) continue;
-
                 var candidate = new AllocatableClusterResources(resources.with(realResources),
                                                                 advertisedResources,
                                                                 resources.nodeResources(),

@@ -35,6 +35,7 @@ public class ApplicationSerializer {
 
     private static final String idKey = "id";
     private static final String clustersKey = "clusters";
+    private static final String exclusiveKey = "exclusive";
     private static final String minResourcesKey = "min";
     private static final String maxResourcesKey = "max";
     private static final String suggestedResourcesKey = "suggested";
@@ -80,6 +81,7 @@ public class ApplicationSerializer {
     }
 
     private static void toSlime(Cluster cluster, Cursor clusterObject) {
+        clusterObject.setBool(exclusiveKey, cluster.exclusive());
         toSlime(cluster.minResources(), clusterObject.setObject(minResourcesKey));
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedResourcesKey)));
@@ -88,6 +90,7 @@ public class ApplicationSerializer {
 
     private static Cluster clusterFromSlime(String id, Inspector clusterObject) {
         return new Cluster(ClusterSpec.Id.from(id),
+                           clusterObject.field(exclusiveKey).asBool(),
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(suggestedResourcesKey)),

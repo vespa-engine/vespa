@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -44,15 +45,24 @@ class AutoscalingTester {
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
-        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)));
+        this(hostResources, null);
+    }
+
+    public AutoscalingTester(NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.deployZoneApp();
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
+        this(zone, flavors, new MockHostResourcesCalculator(zone));
+    }
+
+    private AutoscalingTester(Zone zone, List<Flavor> flavors,
+                              HostResourcesCalculator resourcesCalculator) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
-                                                             .resourcesCalculator(new MockHostResourcesCalculator(zone))
+                                                             .resourcesCalculator(resourcesCalculator)
                                                              .hostProvisioner(new MockHostProvisioner(flavors))
                                                              .build();
 
@@ -147,7 +157,7 @@ class AutoscalingTester {
     public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
-                                                  .withClusterLimits(clusterId, min, max);
+                                                  .withCluster(clusterId, false, min, max);
         nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
         return autoscaler.autoscale(application.clusters().get(clusterId),
                                     nodeRepository().getNodes(applicationId, Node.State.active));
@@ -156,7 +166,7 @@ class AutoscalingTester {
     public Optional<ClusterResources> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
-                                                  .withClusterLimits(clusterId, min, max);
+                                                  .withCluster(clusterId, false, min, max);
         nodeRepository().applications().put(application, nodeRepository().lock(applicationId));
         return autoscaler.suggest(application.clusters().get(clusterId),
                                   nodeRepository().getNodes(applicationId, Node.State.active));
@@ -208,6 +218,16 @@ class AutoscalingTester {
                 return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
             else
                 return flavor.resources();
+        }
+
+        @Override
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - 3);
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + 3);
         }
 
     }

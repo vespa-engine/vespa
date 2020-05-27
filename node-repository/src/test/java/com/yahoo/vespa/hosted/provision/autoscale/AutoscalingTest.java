@@ -11,12 +11,16 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class AutoscalingTest {
 
     @Test
-    public void testAutoscalingSingleContentGroup() {
+    public void test_autoscaling_single_content_group() {
         NodeResources hostResources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1,
                                                      new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
@@ -68,7 +72,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingHandlesDiskSettingChanges() {
+    public void autoscaling_handles_disk_setting_changes() {
         NodeResources hostResources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
@@ -98,7 +102,7 @@ public class AutoscalingTest {
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
     @Test
-    public void testAutoscalingSingleContainerGroup() {
+    public void test_autoscaling_single_container_group() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
@@ -125,7 +129,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingRespectsUpperLimit() {
+    public void autoscaling_respects_upper_limit() {
         NodeResources hostResources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
@@ -146,7 +150,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingRespectsLowerLimit() {
+    public void autoscaling_respects_lower_limit() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
@@ -166,7 +170,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingRespectsGroupLimit() {
+    public void autoscaling_respects_group_limit() {
         NodeResources hostResources = new NodeResources(30.0, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
@@ -184,7 +188,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingLimitsWhenMinEqualsMax() {
+    public void test_autoscaling_limits_when_min_equals_xax() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = min;
@@ -200,7 +204,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testSuggestionsIgnoresLimits() {
+    public void suggestions_ignores_limits() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = min;
@@ -218,7 +222,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingGroupSize1() {
+    public void test_autoscaling_group_size_1() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 20, new NodeResources(100, 1000, 1000, 1));
@@ -236,7 +240,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingGroupSizeByCpu() {
+    public void test_autoscalinggroupsize_by_cpu() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
@@ -254,7 +258,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingGroupSize() {
+    public void test_autoscaling_group_size() {
         NodeResources hostResources = new NodeResources(100, 1000, 1000, 100);
         ClusterResources min = new ClusterResources( 3, 2, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
@@ -272,7 +276,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingAvoidsIllegalConfigurations() {
+    public void autoscaling_avoids_illegal_configurations() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
@@ -290,7 +294,44 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingAws() {
+    public void real_resources_are_taken_into_account() {
+        NodeResources hostResources = new NodeResources(60, 100, 1000, 10);
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources( 2,  20,  200, 1));
+        ClusterResources max = new ClusterResources(4, 1, new NodeResources(60, 100, 1000, 1));
+
+        { // No memory tax
+            AutoscalingTester tester = new AutoscalingTester(hostResources, new OnlySubtractingWhenForecastingCalculator(0));
+
+            ApplicationId application1 = tester.applicationId("app1");
+            ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+
+            tester.deploy(application1, cluster1, min);
+            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.disk, 0.7f, 1000, application1);
+            tester.assertResources("Scaling up",
+                                   4, 1, 7.0, 20, 200,
+                                   tester.autoscale(application1, cluster1.id(), min, max));
+        }
+
+        { // 15 Gb memory tax
+            AutoscalingTester tester = new AutoscalingTester(hostResources, new OnlySubtractingWhenForecastingCalculator(15));
+
+            ApplicationId application1 = tester.applicationId("app1");
+            ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+
+            tester.deploy(application1, cluster1, min);
+            tester.addMeasurements(Resource.cpu, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.memory, 1.0f, 1000, application1);
+            tester.addMeasurements(Resource.disk, 0.7f, 1000, application1);
+            tester.assertResources("Scaling up",
+                                   4, 1, 7.0, 35, 200,
+                                   tester.autoscale(application1, cluster1.id(), min, max));
+        }
+    }
+
+    @Test
+    public void test_autoscaling_without_host_sharing() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         List<Flavor> flavors = new ArrayList<>();
@@ -323,6 +364,42 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down since resource usage has gone down",
                                5, 1, 3, 83, 36,
                                tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    /**
+     * This calculator subtracts the memory tax when forecasting overhead, but not when actually
+     * returning information about nodes. This is allowed because the forecast is a *worst case*.
+     * It is useful here because it ensures that we end up with the same real (and therefore target)
+     * resources regardless of tax which makes it easier to compare behavior with different tax levels.
+     */
+    private static class OnlySubtractingWhenForecastingCalculator implements HostResourcesCalculator {
+
+        private final int memoryTaxGb;
+
+        public OnlySubtractingWhenForecastingCalculator(int memoryTaxGb) {
+            this.memoryTaxGb = memoryTaxGb;
+        }
+
+        @Override
+        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
+            return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            return flavor.resources();
+        }
+
+        @Override
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
+        }
+
     }
 
 }
