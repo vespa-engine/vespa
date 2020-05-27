@@ -58,8 +58,6 @@ public interface ServiceRegistry {
 
     CostReportConsumer costReportConsumer();
 
-    Billing billingService();
-
     AwsEventFetcher eventFetcherService();
 
     ArtifactRepository artifactRepository();
