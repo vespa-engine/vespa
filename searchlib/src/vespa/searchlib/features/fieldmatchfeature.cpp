@@ -38,7 +38,6 @@ FieldMatchExecutorSharedState::FieldMatchExecutorSharedState(const IQueryEnviron
       _splitter_env(query_env, field.id()),
       _cmp_shared_state(vespalib::make_string("fieldMatch(%s)", field.name().c_str()), _splitter_env, field, params)
 {
-    // empty
 }
 
 FieldMatchExecutorSharedState::~FieldMatchExecutorSharedState() = default;
@@ -63,7 +62,6 @@ FieldMatchExecutor::FieldMatchExecutor(const FieldMatchExecutorSharedState& shar
       _splitter(shared_state.get_phrase_splitter_query_env()),
       _cmp(shared_state.get_computer_shared_state(), _splitter)
 {
-    // empty
 }
 
 void
