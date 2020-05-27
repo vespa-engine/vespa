@@ -15,6 +15,11 @@ PhraseSplitter::PhraseSplitter(const PhraseSplitterQueryEnv& phrase_splitter_que
     for (auto & term_match : _termMatches) {
         term_match.setFieldId(field_id);
     }
+    auto &phrase_terms = _phrase_splitter_query_env.get_phrase_terms();
+    for (const auto &phrase_term : phrase_terms) {
+        // Record that we need normal term field match data
+        (void) phrase_term.term.lookupField(field_id)->getHandle(MatchDataDetails::Normal);
+    }
 }
 
 PhraseSplitter::~PhraseSplitter() = default;

@@ -5,7 +5,7 @@
 namespace search::fef {
 
 void
-PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId)
+PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, uint32_t fieldId)
 {
     typedef search::fef::ITermFieldRangeAdapter FRA;
 
@@ -19,7 +19,7 @@ PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, st
                 prototype.setPhraseLength(1);
                 prototype.setUniqueId(term.getUniqueId());
                 prototype.addField(fieldId);
-                phraseTerms.push_back(PhraseTerm(term, _terms.size(), h));
+                _phrase_terms.push_back(PhraseTerm(term, _terms.size(), h));
                 for (uint32_t i = 0; i < term.getPhraseLength(); ++i) {
                     _terms.push_back(prototype);
                     _termIdxMap.push_back(TermIdx(_terms.size() - 1, true));
@@ -37,15 +37,14 @@ PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEn
       _termIdxMap(),
       _maxHandle(0),
       _skipHandles(0),
-      _field_id(fieldId)
+      _field_id(fieldId),
+      _phrase_terms()
 {
     TermFieldHandle numHandles = 0; // how many handles existed in underlying data
-    std::vector<PhraseTerm> phraseTerms; // data about original phrase terms
-
     for (uint32_t i = 0; i < queryEnv.getNumTerms(); ++i) {
         const ITermData *td = queryEnv.getTerm(i);
         assert(td != nullptr);
-        considerTerm(i, *td, phraseTerms, fieldId);
+        considerTerm(i, *td, fieldId);
         numHandles += td->numFields();
     }
 
@@ -57,8 +56,8 @@ PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEn
         ++term_handle;
     }
 
-    for (uint32_t i = 0; i < phraseTerms.size(); ++i) {
-        const PhraseTerm &pterm = phraseTerms[i];
+    for (uint32_t i = 0; i < _phrase_terms.size(); ++i) {
+        const PhraseTerm &pterm = _phrase_terms[i];
 
         for (uint32_t j = 0; j < pterm.term.getPhraseLength(); ++j) {
             const ITermData &splitp_td = _terms[pterm.idx + j];

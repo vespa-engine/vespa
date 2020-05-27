@@ -25,13 +25,13 @@ private:
         bool     splitted; // whether this term has been splitted or not
         TermIdx(uint32_t i, bool s) : idx(i), splitted(s) {}
     };
+public:
     struct PhraseTerm {
         const ITermData & term; // for original phrase
         uint32_t idx; // index into vector of our TermData objects
         TermFieldHandle orig_handle;
         PhraseTerm(const ITermData & t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
     };
-public:
     struct HowToCopy {
         TermFieldHandle orig_handle;
         TermFieldHandle split_handle;
@@ -45,8 +45,9 @@ private:
     TermFieldHandle                 _maxHandle;   // the largest among original term field handles
     TermFieldHandle                 _skipHandles;   // how many handles to skip
     uint32_t                        _field_id;
+    std::vector<PhraseTerm>         _phrase_terms; // data about original phrase terms
 
-    void considerTerm(uint32_t termIdx, const ITermData &term, std::vector<PhraseTerm> &phraseTerms, uint32_t fieldId);
+    void considerTerm(uint32_t termIdx, const ITermData &term, uint32_t fieldId);
 
 public:
     /**
@@ -82,6 +83,7 @@ public:
     uint32_t get_num_phrase_split_terms() const { return _terms.size(); }
     uint32_t get_field_id() const { return _field_id; }
     const std::vector<HowToCopy>& get_copy_info() const { return _copyInfo; }
+    const std::vector<PhraseTerm>& get_phrase_terms() const { return _phrase_terms; }
 };
 
 
