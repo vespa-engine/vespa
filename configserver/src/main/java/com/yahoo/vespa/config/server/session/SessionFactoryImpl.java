@@ -106,7 +106,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                       TimeoutBudget timeoutBudget,
                                                       Clock clock) {
         log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
-        sessionZKClient.createNewSession(clock.instant().toEpochMilli(), TimeUnit.MILLISECONDS);
+        sessionZKClient.createNewSession(clock.instant());
         log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
         log.log(Level.FINE, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);

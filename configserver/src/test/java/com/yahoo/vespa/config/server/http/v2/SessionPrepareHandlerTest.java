@@ -419,8 +419,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         }
 
         @Override
-        public long getCreateTime() {
-            return 0;
+        public Instant getCreateTime() {
+            return Instant.EPOCH;
         }
 
         @Override

@@ -325,7 +325,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (tenant == null) return Optional.empty();
         RemoteSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
-        return Optional.of(Instant.ofEpochSecond(activeSession.getCreateTime()));
+        return Optional.of(activeSession.getCreateTime());
     }
 
     public ApplicationId activate(Tenant tenant,
