@@ -23,13 +23,15 @@ public interface HostResourcesCalculator {
     NodeResources advertisedResourcesOf(Flavor flavor);
 
     /**
-     * Returns the highest possible overhead (difference between advertised and real) which may result
-     * from requesting the given advertised resources
-     *
-     * @return a NodeResources containing the *difference* between the given advertised resources
-     *         and the (worst case) real resources we'll observe. This is always compatible with the
-     *         given resources.
+     * Used with exclusive hosts:
+     * Returns the lowest possible real resources we'll get if requesting the given advertised resources
      */
-    NodeResources overheadAllocating(NodeResources resources, boolean exclusive);
+    NodeResources requestToReal(NodeResources advertisedResources);
+
+    /**
+     * Used with shared hosts:
+     * Returns the advertised resources we need to request to be sure to get at least the given real resources.
+     */
+    NodeResources realToRequest(NodeResources realResources);
 
 }

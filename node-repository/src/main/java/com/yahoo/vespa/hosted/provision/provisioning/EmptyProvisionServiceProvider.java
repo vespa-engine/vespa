@@ -34,19 +34,16 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository repository) {
-            return node.flavor().resources();
-        }
+        public NodeResources realResourcesOf(Node node, NodeRepository repository) { return node.flavor().resources(); }
 
         @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            return flavor.resources();
-        }
+        public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
 
         @Override
-        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
-        }
+        public NodeResources requestToReal(NodeResources resources) { return resources; }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) { return resources; }
 
     }
 

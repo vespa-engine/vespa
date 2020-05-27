@@ -138,8 +138,8 @@ public class AllocatableClusterResources {
 
         if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            NodeResources advertisedResources = cappedNodeResources.add(nodeRepository.resourcesCalculator().overheadAllocating(cappedNodeResources, exclusive));
             NodeResources realResources = cappedNodeResources;
+            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(realResources);
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(advertisedResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(realResources),
@@ -154,7 +154,7 @@ public class AllocatableClusterResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                NodeResources realResources = advertisedResources.subtract(nodeRepository.resourcesCalculator().overheadAllocating(advertisedResources, exclusive));
+                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources);
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {

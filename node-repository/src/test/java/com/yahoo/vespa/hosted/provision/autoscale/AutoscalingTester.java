@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -220,11 +221,13 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0)
-                            .withMemoryGb(zone.getCloud().dynamicProvisioning() ? 3 : 0)
-                            .withDiskGb(0)
-                            .withBandwidthGbps(0);
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - 3);
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + 3);
         }
 
     }

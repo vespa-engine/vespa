@@ -391,8 +391,13 @@ public class AutoscalingTest {
         }
 
         @Override
-        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0).withMemoryGb(memoryTaxGb).withDiskGb(0).withBandwidthGbps(0);
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
         }
 
     }

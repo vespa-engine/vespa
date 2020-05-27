@@ -391,11 +391,15 @@ public class DynamicDockerProvisionTest {
         }
 
         @Override
-        public NodeResources overheadAllocating(NodeResources resources, boolean exclusive) {
-            return resources.withVcpu(0)
-                            .withMemoryGb(memoryTaxGb)
-                            .withDiskGb(resources.storageType() == local ? localDiskTax : 0)
-                            .withBandwidthGbps(0);
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
+                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
     }
