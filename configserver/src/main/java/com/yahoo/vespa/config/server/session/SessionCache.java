@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * A session cache that can store any type of session that extends the abstract interface.
+ * A session cache that can store any type of {@link Session}.
  *
  * @author Ulf Lilleengen
  * @author hmusum
