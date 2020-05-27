@@ -34,8 +34,14 @@ public class VersionStatusUpdater extends ControllerMaintainer {
             VersionStatus newStatus = VersionStatus.compute(controller());
             controller().updateVersionStatus(newStatus);
             newStatus.systemVersion().ifPresent(version -> {
-                controller().serviceRegistry().systemMonitor().reportSystemVersion(version.versionNumber(),
-                                                                                   convert(version.confidence()));
+                try {
+                    controller().serviceRegistry().systemMonitor().reportSystemVersion(version.versionNumber(),
+                                                                                       convert(version.confidence()));
+                }
+                // TODO jonmv: Remove try/catch when this is supposed to work.
+                catch (Exception e) {
+                    log.log(Level.INFO, "Failed reporting system version status to monitor: " + Exceptions.toMessageString(e));
+                }
             });
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
