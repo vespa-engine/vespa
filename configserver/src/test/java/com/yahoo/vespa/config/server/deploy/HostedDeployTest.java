@@ -96,14 +96,14 @@ public class HostedDeployTest {
         tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
                 .dockerImageRepository(dockerImageRepository)
-                .athenzDomain("foo"));
+                .athenzDomain("myDomain"));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals("4.5.6", ((Deployment) deployment.get()).session().getVespaVersion().toString());
         assertEquals(DockerImage.fromString(dockerImageRepository), ((Deployment) deployment.get()).session().getDockerImageRepository().get());
-        assertEquals("foo", ((Deployment) deployment.get()).session().getAthenzDomain().get().value());
+        assertEquals("myDomain", ((Deployment) deployment.get()).session().getAthenzDomain().get().value());
     }
 
     @Test
