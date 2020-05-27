@@ -367,7 +367,7 @@ public class AutoscalingTest {
     }
 
     /**
-     * This calculator subtracts the memory tac when forecasting overhead, but not when actually
+     * This calculator subtracts the memory tax when forecasting overhead, but not when actually
      * returning information about nodes. This is allowed because the forecast is a *worst case*.
      * It is useful here because it ensures that we end up with the same real (and therefore target)
      * resources regardless of tax which makes it easier to compare behavior with different tax levels.
