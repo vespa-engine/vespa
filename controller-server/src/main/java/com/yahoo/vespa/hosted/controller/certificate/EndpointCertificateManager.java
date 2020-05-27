@@ -224,7 +224,7 @@ public class EndpointCertificateManager {
         // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
         if (!deploymentZone.environment().isManuallyDeployed()) {
             zoneCandidateList.stream()
-                    .filter(z -> z.environment().isTest() || instanceSpec.isPresent() && instanceSpec.get().deploysTo(Environment.prod, z.region()))
+                    .filter(z -> z.environment().isTest() || instanceSpec.isPresent() && instanceSpec.get().deploysTo(z.environment(), z.region()))
                     .forEach(requiredZones::add);
         }
 
