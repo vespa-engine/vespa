@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
@@ -72,4 +73,7 @@ public interface ServiceRegistry {
     ResourceTagger resourceTagger();
 
     ApplicationRoleService applicationRoleService();
+
+    SystemMonitor systemMonitor();
+
 }

@@ -18,10 +18,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
@@ -48,6 +50,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
+    private final DummySystemMonitor systemMonitor = new DummySystemMonitor();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
@@ -175,6 +178,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ApplicationRoleService applicationRoleService() {
         return applicationRoleService;
+    }
+
+    @Override
+    public DummySystemMonitor systemMonitor() {
+        return systemMonitor;
     }
 
     public ConfigServerMock configServerMock() {
