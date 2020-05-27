@@ -118,13 +118,16 @@ public class SessionPreparer {
                                        Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
                                        Instant now) {
         Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
-        preparation.distributeApplicationPackage(); // Note: Done before pre-processing, requires that to be done for users of this
+
+        // Note: Done before pre-processing, requires that to be done by users of the distributed package
+        var distributedApplicationPackage = preparation.distributeApplicationPackage();
+
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                preparation.writeStateZK();
+                preparation.writeStateZK(distributedApplicationPackage);
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
                 preparation.writeApplicationRoles();
@@ -231,8 +234,8 @@ public class SessionPreparer {
             }
         }
 
-        void distributeApplicationPackage() {
-            if ( ! distributeApplicationPackage.value()) return;
+        FileReference distributeApplicationPackage() {
+            if ( ! distributeApplicationPackage.value()) return null;
 
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
@@ -241,6 +244,8 @@ public class SessionPreparer {
             properties.configServerSpecs().stream()
                     .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
+
+            return fileReference;
         }
 
         void preprocess() {
@@ -265,11 +270,12 @@ public class SessionPreparer {
             checkTimeout("making result from models");
         }
 
-        void writeStateZK() {
+        void writeStateZK(FileReference distributedApplicationPackage) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
                                   applicationPackage,
                                   applicationId,
+                                  distributedApplicationPackage,
                                   dockerImageRepository,
                                   vespaVersion,
                                   logger,
@@ -318,6 +324,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
+                                       FileReference distributedApplicationPackage,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
                                        DeployLogger deployLogger,
@@ -329,6 +336,7 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionFactoryImpl.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
+            if (distributeApplicationPackage.value()) zooKeeperClient.writeApplicationPackageReference(distributedApplicationPackage);
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -83,6 +84,12 @@ public abstract class Session {
         zooKeeperClient.writeApplicationId(applicationId);
     }
 
+    void setApplicationPackageReference(FileReference applicationPackageReference) {
+        if (applicationPackageReference == null) throw new IllegalArgumentException(String.format(
+                "Null application package FileReference for tenant: %s, session: %d", tenant, sessionId));
+        zooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
+    }
+
     public void setVespaVersion(Version version) {
         zooKeeperClient.writeVespaVersion(version);
     }
@@ -96,6 +103,8 @@ public abstract class Session {
     }
 
     public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
+
+    FileReference getApplicationPackageReference() {return zooKeeperClient.readApplicationPackageReference(); }
 
     public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
 

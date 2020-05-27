@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -97,6 +98,14 @@ public class SessionZooKeeperClientTest {
         zkc.createNewSession(now);
         // resolution is in seconds, so need to go back use that when comparing
         assertThat(zkc.readCreateTime(), is(Instant.ofEpochSecond(now.getEpochSecond())));
+    }
+
+    @Test
+    public void require_that_application_package_file_reference_can_be_written_and_read() {
+        final FileReference testRef = new FileReference("test-ref");
+        SessionZooKeeperClient zkc = createSessionZKClient("3");
+        zkc.writeApplicationPackageReference(testRef);
+        assertThat(zkc.readApplicationPackageReference(), is(testRef));
     }
 
     private void assertApplicationIdParse(String sessionId, String idString, String expectedIdString) {

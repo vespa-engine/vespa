@@ -45,6 +45,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -67,6 +68,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -192,6 +194,13 @@ public class SessionPreparerTest {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
         assertThat(zkc.readApplicationId(), is(origId));
+    }
+
+    @Test
+    public void require_that_file_reference_of_application_package_is_written_to_zk() throws Exception {
+        flagSource.withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
+        prepare(testApp);
+        assertTrue(configCurator.exists(sessionsPath.append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute()));
     }
 
     @Test
