@@ -171,7 +171,9 @@ public class DynamicProvisioningMaintainerTest {
                                                      clock,
                                                      zone,
                                                      new MockNameResolver().mockAnyLookup(),
-                                                     DockerImage.fromString("docker-image"), true);
+                                                     DockerImage.fromString("docker-image"),
+                                                     true,
+                                                     true);
             this.hostProvisioner = new HostProvisionerMock(nodeRepository);
             this.maintainer = new DynamicProvisioningMaintainer(nodeRepository,
                                                                 Duration.ofDays(1),

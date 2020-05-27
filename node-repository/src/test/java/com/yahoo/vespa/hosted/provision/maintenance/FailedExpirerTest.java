@@ -258,7 +258,7 @@ public class FailedExpirerTest {
                                                      zone,
                                                      new MockNameResolver().mockAnyLookup(),
                                                      DockerImage.fromString("docker-image"),
-                                                     true);
+                                                     true, false);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30));
         }

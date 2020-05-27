@@ -94,6 +94,7 @@ public class ProvisioningTester {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
+        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.nodeRepository = new NodeRepository(nodeFlavors,
                                                  resourcesCalculator,
                                                  curator,
@@ -101,9 +102,9 @@ public class ProvisioningTester {
                                                  zone,
                                                  nameResolver,
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                 true);
+                                                 true,
+                                                 provisionServiceProvider.getHostProvisioner().isPresent());
         this.orchestrator = orchestrator;
-        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new NullProvisionLogger();

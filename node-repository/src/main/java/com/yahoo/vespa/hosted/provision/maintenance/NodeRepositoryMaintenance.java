@@ -90,7 +90,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, defaults.capacityReportInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
-        rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
+        rebalancer = new Rebalancer(deployer, nodeRepository, metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
         autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
         scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval);
