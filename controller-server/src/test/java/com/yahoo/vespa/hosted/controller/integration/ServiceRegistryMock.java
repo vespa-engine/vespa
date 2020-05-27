@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
@@ -50,7 +49,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
-    private final MockBilling mockBilling = new MockBilling();
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
     private final MockTesterCloud mockTesterCloud;
@@ -132,11 +130,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public CostReportConsumerMock costReportConsumer() {
         return costReportConsumerMock;
-    }
-
-    @Override
-    public MockBilling billingService() {
-        return mockBilling;
     }
 
     @Override

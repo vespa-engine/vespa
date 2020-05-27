@@ -40,7 +40,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final CostReportMaintainer costReportMaintainer;
     private final ResourceMeterMaintainer resourceMeterMaintainer;
     private final NameServiceDispatcher nameServiceDispatcher;
-    private final BillingMaintainer billingMaintainer;
     private final CloudEventReporter cloudEventReporter;
     private final RotationStatusUpdater rotationStatusUpdater;
     private final ResourceTagMaintainer resourceTagMaintainer;
@@ -69,7 +68,6 @@ public class ControllerMaintenance extends AbstractComponent {
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10));
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), controller.serviceRegistry().costReportConsumer());
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(1), metric, controller.serviceRegistry().meteringService());
-        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3));
         cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1));
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval);
         resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), controller.serviceRegistry().resourceTagger());
@@ -96,7 +94,6 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer.close();
         resourceMeterMaintainer.close();
         nameServiceDispatcher.close();
-        billingMaintainer.close();
         cloudEventReporter.close();
         rotationStatusUpdater.close();
         resourceTagMaintainer.close();
