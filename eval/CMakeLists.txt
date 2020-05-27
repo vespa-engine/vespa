@@ -46,6 +46,7 @@ vespa_define_module(
     src/tests/tensor/dense_xw_product_function
     src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/direct_sparse_tensor_builder
+    src/tests/tensor/index_lookup_table
     src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
