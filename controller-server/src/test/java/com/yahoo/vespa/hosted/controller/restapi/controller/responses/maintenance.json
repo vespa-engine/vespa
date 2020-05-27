@@ -4,9 +4,6 @@
       "name": "ApplicationOwnershipConfirmer"
     },
     {
-      "name": "BillingMaintainer"
-    },
-    {
       "name": "CloudEventReporter"
     },
     {
