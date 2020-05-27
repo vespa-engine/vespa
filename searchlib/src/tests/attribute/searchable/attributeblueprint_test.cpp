@@ -67,10 +67,6 @@ public:
         _attribute_vector(std::move(rhs._attribute_vector))
     {
     }
-    MyAttributeManager(AttributeVector *attr)
-        : _attribute_vector(attr)
-    {
-    }
 
     MyAttributeManager(AttributeVector::SP attr)
         : _attribute_vector(std::move(attr))
@@ -141,54 +137,89 @@ search_for_term(const string &term, IAttributeManager &attribute_manager)
     return ret;
 }
 
-template <typename T>
-struct AttributeVectorTypeFinder {
-    using Type = SingleStringExtAttribute;
-    static void add(Type & a, const T & v) { a.add(v, weight); }
-};
-
-template <>
-struct AttributeVectorTypeFinder<int64_t> {
-    using Type = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> >;
-    static void add(Type & a, int64_t v) { a.set(a.getNumDocs()-1, v); a.commit(); }
-};
-
-struct FastSearchLongAttribute {
-    using Type = search::SingleValueNumericPostingAttribute< search::EnumAttribute<search::IntegerAttributeTemplate<int64_t> > >;
-    static void add(Type & a, int64_t v) { a.update(a.getNumDocs()-1, v); a.commit(); }
-};
-
-template <typename AT, typename T>
-MyAttributeManager
-fill(typename AT::Type * attr, T value)
+template <typename AttributeType>
+AttributeType&
+as_type(AttributeVector& attr)
 {
-    AttributeVector::DocId docid;
-    attr->addDoc(docid);
-    attr->addDoc(docid);
-    attr->addDoc(docid);
-    assert(DOCID_LIMIT-1 == docid);
-    AT::add(*attr, value);
-    return MyAttributeManager(attr);
+    auto* result = dynamic_cast<AttributeType*>(&attr);
+    assert(result != nullptr);
+    return *result;
 }
 
-template <typename T>
-MyAttributeManager
-makeAttributeManager(T value)
+struct StringAttributeFiller {
+    using ValueType = vespalib::string;
+    static void add(AttributeVector& attr, const vespalib::string& value) {
+        auto& real = as_type<StringAttribute>(attr);
+        real.update(attr.getNumDocs() - 1, value);
+        real.commit();
+    }
+};
+
+struct IntegerAttributeFiller {
+    using ValueType = int64_t;
+    static void add(AttributeVector& attr, int64_t value) {
+        auto& real = as_type<IntegerAttribute>(attr);
+        real.update(attr.getNumDocs() - 1, value);
+        real.commit();
+    }
+};
+
+template <typename FillerType>
+void
+fill(AttributeVector& attr, typename FillerType::ValueType value)
 {
-    using AT = AttributeVectorTypeFinder<T>;
-    using AttributeVectorType = typename AT::Type;
-    auto* attr = new AttributeVectorType(field);
-    return fill<AT, T>(attr, value);
+    AttributeVector::DocId docid;
+    attr.addDoc(docid);
+    attr.addDoc(docid);
+    attr.addDoc(docid);
+    assert(DOCID_LIMIT-1 == docid);
+    FillerType::add(attr, value);
+}
+
+AttributeVector::SP
+make_string_attribute(const std::string& value)
+{
+    Config cfg(BasicType::STRING, CollectionType::SINGLE);
+    auto attr = AttributeFactory::createAttribute(field, cfg);
+    fill<StringAttributeFiller>(*attr, value);
+    return attr;
+}
+
+AttributeVector::SP
+make_int_attribute(int64_t value)
+{
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    auto attr = AttributeFactory::createAttribute(field, cfg);
+    fill<IntegerAttributeFiller>(*attr, value);
+    return attr;
+}
+
+AttributeVector::SP
+make_fast_search_long_attribute(int64_t value)
+{
+    Config cfg(BasicType::fromType(int64_t()), CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    auto attr = AttributeFactory::createAttribute(field, cfg);
+    fill<IntegerAttributeFiller>(*attr, value);
+    return attr;
+}
+
+MyAttributeManager
+makeAttributeManager(const std::string& value)
+{
+    return MyAttributeManager(make_string_attribute(value));
+}
+
+MyAttributeManager
+makeAttributeManager(int64_t value)
+{
+    return MyAttributeManager(make_int_attribute(value));
 }
 
 MyAttributeManager
 makeFastSearchLongAttribute(int64_t value)
 {
-    using AttributeVectorType = FastSearchLongAttribute::Type;
-    Config cfg(BasicType::fromType(int64_t()), CollectionType::SINGLE);
-    cfg.setFastSearch(true);
-    auto* attr = new AttributeVectorType(field, cfg);
-    return fill<FastSearchLongAttribute, int64_t>(attr, value);
+    return MyAttributeManager(make_fast_search_long_attribute(value));
 }
 
 }  // namespace
