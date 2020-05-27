@@ -10,7 +10,6 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.Pkcs10Csr;
@@ -44,7 +43,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.security.KeyStoreType.JKS;
 import static com.yahoo.security.KeyStoreType.PKCS12;
@@ -205,12 +206,23 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public String getAccessToken(String domain) {
-        return null;
+        try {
+            return domainSpecificAccessTokenCache.get(new AthenzDomain(domain)).value();
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve access token: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String getAccessToken(String domain, List<String> roles) {
-        return null;
+        try {
+            List<AthenzRole> roleList = roles.stream()
+                    .map(roleName -> new AthenzRole(domain, roleName))
+                    .collect(Collectors.toList());
+            return roleSpecificAccessTokenCache.get(roleList).value();
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve access token: " + e.getMessage(), e);
+        }
     }
 
     @Override
