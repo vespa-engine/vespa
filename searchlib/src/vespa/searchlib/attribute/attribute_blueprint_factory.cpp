@@ -18,6 +18,8 @@
 #include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/queryeval/field_spec.hpp>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
@@ -28,7 +30,6 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -62,6 +63,7 @@ using search::queryeval::CreateBlueprintVisitorHelper;
 using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecBaseList;
+using search::queryeval::FilterWrapper;
 using search::queryeval::IRequestContext;
 using search::queryeval::NoUnpack;
 using search::queryeval::OrLikeSearch;
@@ -126,21 +128,25 @@ public:
                                       .diversityCutoffStrict(diversityCutoffStrict))
     {}
 
-    SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict);
     }
 
-    SearchIterator::UP
-    createSearch(fef::MatchData &md, bool strict) const override {
+    SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override {
         const State &state = getState();
         assert(state.numFields() == 1);
         return _search_context->createIterator(state.field(0).resolve(md), strict);
     }
 
-    void
-    fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        (void) constraint; // We provide an iterator with exact results, so no need to take constraint into consideration.
+        auto wrapper = std::make_unique<FilterWrapper>(getState());
+        wrapper->wrap(createLeafSearch(wrapper->tfmda(), strict));
+        return wrapper;
+    }
+
+    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
         _search_context->fetchPostings(execInfo);
     }
 
