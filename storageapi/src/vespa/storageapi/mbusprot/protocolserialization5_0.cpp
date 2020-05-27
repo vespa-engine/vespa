@@ -168,7 +168,8 @@ ProtocolSerialization5_0::onDecodeUpdateReply(const SCmd& cmd, BBuf& buf) const
 void ProtocolSerialization5_0::onEncode(GBBuf& buf, const api::GetReply& msg) const
 {
     SH::putDocument(msg.getDocument().get(), buf);
-    buf.putLong(msg.getLastModifiedTimestamp());
+    // Old protocol version doesn't understand tombstones. Make it appear as Not Found.
+    buf.putLong(msg.is_tombstone() ? api::Timestamp(0) : msg.getLastModifiedTimestamp());
     onEncodeBucketInfoReply(buf, msg);
 }
 

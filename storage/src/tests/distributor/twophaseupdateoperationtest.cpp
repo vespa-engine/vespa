@@ -90,6 +90,12 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorTestUtil {
             api::ReturnCode::Result result = api::ReturnCode::OK,
             const std::string& trace_msg = "");
 
+    void reply_to_get_with_tombstone(
+            Operation& callback,
+            DistributorMessageSenderStub& sender,
+            uint32_t index,
+            uint64_t old_timestamp);
+
     struct UpdateOptions {
         bool _makeInconsistentSplit;
         bool _createIfNonExistent;
@@ -250,6 +256,18 @@ TwoPhaseUpdateOperationTest::reply_to_metadata_get(
     if (!trace_msg.empty()) {
         MBUS_TRACE(reply->getTrace(), 1, trace_msg);
     }
+    callback.receive(sender, reply);
+}
+
+void
+TwoPhaseUpdateOperationTest::reply_to_get_with_tombstone(
+        Operation& callback,
+        DistributorMessageSenderStub& sender,
+        uint32_t index,
+        uint64_t old_timestamp)
+{
+    auto& get = dynamic_cast<const api::GetCommand&>(*sender.command(index));
+    auto reply = std::make_shared<api::GetReply>(get, std::shared_ptr<Document>(), old_timestamp, false, true);
     callback.receive(sender, reply);
 }
 
@@ -1315,6 +1333,45 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_reply_received_after_close_is_no_op
     // it gracefully anyway.
     replyToGet(*cb, _sender, 2, 2000U);
     ASSERT_EQ("", _sender.getCommands(true, false, 3)); // Nothing new sent.
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_create) {
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    getConfig().set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
+    getConfig().set_update_fast_path_restart_enabled(true);
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4");
+    cb->start(_sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 1000U);
+    reply_to_metadata_get(*cb, _sender, 1, 2000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    reply_to_get_with_tombstone(*cb, _sender, 2, 2000U);
+    // No puts should be sent, as Get returned a tombstone and no auto-create is set.
+    ASSERT_EQ("", _sender.getCommands(true, false, 3));
+    // Nothing was updated.
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply(true));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_create) {
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    getConfig().set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
+    getConfig().set_update_fast_path_restart_enabled(true);
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));
+    cb->start(_sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 1000U);
+    reply_to_metadata_get(*cb, _sender, 1, 2000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    reply_to_get_with_tombstone(*cb, _sender, 2, 2000U);
+    // Tombstone is treated as Not Found in this case, which auto-creates a new
+    // document version locally and pushes it out with Puts as expected.
+    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
 }
 
 // XXX currently differs in behavior from content nodes in that updates for

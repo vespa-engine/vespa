@@ -625,6 +625,7 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
 
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(4), gr.getTimestamp());
+    EXPECT_FALSE(gr.is_tombstone());
 
     if (!((*doc2)==gr.getDocument())) {
         std::cerr << "Document returned is not the expected one: \n"
@@ -676,6 +677,7 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(5), gr.getTimestamp());
     EXPECT_EQ(*doc1, gr.getDocument());
+    EXPECT_FALSE(gr.is_tombstone());
 }
 
 TEST_F(ConformanceTest, testPutDuplicate)
@@ -798,8 +800,9 @@ TEST_F(ConformanceTest, testRemove)
                                 context);
 
     EXPECT_EQ(Result::ErrorType::NONE, getResult.getErrorCode());
-    EXPECT_EQ(Timestamp(0), getResult.getTimestamp());
-    EXPECT_TRUE(!getResult.hasDocument());
+    EXPECT_EQ(Timestamp(9), getResult.getTimestamp());
+    EXPECT_TRUE(getResult.is_tombstone());
+    EXPECT_FALSE(getResult.hasDocument());
 }
 
 TEST_F(ConformanceTest, testRemoveMerge)
@@ -939,6 +942,7 @@ TEST_F(ConformanceTest, testUpdate)
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
         EXPECT_EQ(document::IntFieldValue(42),
                              static_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
@@ -953,8 +957,9 @@ TEST_F(ConformanceTest, testUpdate)
                                     context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
-        EXPECT_TRUE(!result.hasDocument());
+        EXPECT_EQ(Timestamp(5), result.getTimestamp());
+        EXPECT_FALSE(result.hasDocument());
+        EXPECT_TRUE(result.is_tombstone());
     }
 
     {
@@ -968,8 +973,9 @@ TEST_F(ConformanceTest, testUpdate)
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
-        EXPECT_TRUE(!result.hasDocument());
+        EXPECT_EQ(Timestamp(5), result.getTimestamp());
+        EXPECT_FALSE(result.hasDocument());
+        EXPECT_TRUE(result.is_tombstone());
     }
 
     update->setCreateIfNonExistent(true);
@@ -985,6 +991,7 @@ TEST_F(ConformanceTest, testUpdate)
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
         EXPECT_EQ(document::IntFieldValue(42),
                              reinterpret_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
@@ -1008,6 +1015,7 @@ TEST_F(ConformanceTest, testGet)
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
@@ -1017,6 +1025,7 @@ TEST_F(ConformanceTest, testGet)
                                     doc1->getId(), context);
         EXPECT_EQ(*doc1, result.getDocument());
         EXPECT_EQ(Timestamp(3), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
     }
 
     spi->remove(bucket, Timestamp(4), doc1->getId(), context);
@@ -1026,7 +1035,8 @@ TEST_F(ConformanceTest, testGet)
                                     doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_EQ(Timestamp(4), result.getTimestamp());
+        EXPECT_TRUE(result.is_tombstone());
     }
 }
 

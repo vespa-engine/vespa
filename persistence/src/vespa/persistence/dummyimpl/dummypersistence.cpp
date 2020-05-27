@@ -533,7 +533,10 @@ DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const
     if (!bc.get()) {
     } else {
         DocEntry::SP entry((*bc)->getEntry(did));
-        if (entry.get() == 0 || entry->isRemove()) {
+        if (!entry) {
+            return GetResult();
+        } else if (entry->isRemove()) {
+            return GetResult::make_for_tombstone(entry->getTimestamp());
         } else {
             Document::UP doc(entry->getDocument()->clone());
             if (fieldSet.getType() != document::FieldSet::ALL) {

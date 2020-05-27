@@ -567,7 +567,17 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetReply& msg) cons
         if (msg.getDocument()) {
             set_document(*res.mutable_document(), *msg.getDocument());
         }
-        res.set_last_modified_timestamp(msg.getLastModifiedTimestamp());
+        if (!msg.is_tombstone()) {
+            res.set_last_modified_timestamp(msg.getLastModifiedTimestamp());
+        } else {
+            // This field will be ignored by older versions, making the behavior as if
+            // a timestamp of zero was returned for tombstones, as it the legacy behavior.
+            res.set_tombstone_timestamp(msg.getLastModifiedTimestamp());
+            // Will not be encoded onto the wire, but we include it here to hammer down the
+            // point that it's intentional to have the last modified time appear as a not
+            // found document for older versions.
+            res.set_last_modified_timestamp(0);
+        }
     });
 }
 
@@ -585,8 +595,12 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeGetReply(const SCmd& cmd, 
     return decode_bucket_info_response<protobuf::GetResponse>(buf, [&](auto& res) {
         try {
             auto document = get_document(res.document(), type_repo());
+            const bool is_tombstone = (res.tombstone_timestamp() != 0);
+            const auto effective_timestamp = (is_tombstone ? res.tombstone_timestamp()
+                                                           : res.last_modified_timestamp());
             return std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
-                                                   std::move(document), res.last_modified_timestamp());
+                                                   std::move(document), effective_timestamp,
+                                                   false, is_tombstone);
         } catch (std::exception& e) {
             auto reply = std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
                                                          std::shared_ptr<document::Document>(), 0u);

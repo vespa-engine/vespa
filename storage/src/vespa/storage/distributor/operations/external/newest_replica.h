@@ -17,21 +17,24 @@ struct NewestReplica {
     api::Timestamp timestamp {0};
     document::BucketId bucket_id;
     uint16_t node {UINT16_MAX};
+    bool is_tombstone {false};
 
     static NewestReplica of(api::Timestamp timestamp,
                             const document::BucketId& bucket_id,
-                            uint16_t node) noexcept {
-        return {timestamp, bucket_id, node};
+                            uint16_t node,
+                            bool is_tombstone) noexcept {
+        return {timestamp, bucket_id, node, is_tombstone};
     }
 
     static NewestReplica make_empty() {
-        return {api::Timestamp(0), document::BucketId(), 0};
+        return {api::Timestamp(0), document::BucketId(), 0, false};
     }
 
     bool operator==(const NewestReplica& rhs) const noexcept {
         return ((timestamp == rhs.timestamp) &&
                 (bucket_id == rhs.bucket_id) &&
-                (node == rhs.node));
+                (node == rhs.node) &&
+                (is_tombstone == rhs.is_tombstone));
     }
     bool operator!=(const NewestReplica& rhs) const noexcept {
         return !(*this == rhs);

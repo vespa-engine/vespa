@@ -168,8 +168,9 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                     if (!_newest_replica.has_value() || getreply->getLastModifiedTimestamp() > _newest_replica->timestamp) {
                         _returnCode = getreply->getResult();
                         assert(response.second[i].to_node != UINT16_MAX);
-                        _newest_replica = NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id, send_state.to_node);
-                        _doc = getreply->getDocument();
+                        _newest_replica = NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id,
+                                                            send_state.to_node, getreply->is_tombstone());
+                        _doc = getreply->getDocument(); // May be empty (tombstones).
                     }
                 } else {
                     _any_replicas_failed = true;
@@ -228,7 +229,12 @@ void
 GetOperation::sendReply(DistributorMessageSender& sender)
 {
     if (_msg.get()) {
-        const auto timestamp = _newest_replica.value_or(NewestReplica::make_empty()).timestamp;
+        const auto newest = _newest_replica.value_or(NewestReplica::make_empty());
+        // If the newest entry is a tombstone (remove entry), the externally visible
+        // behavior is as if the document was not found. In this case _doc will also
+        // be empty. This means we also currently don't propagate tombstone status outside
+        // of this operation (except via the newest_replica() functionality).
+        const auto timestamp = (newest.is_tombstone ? api::Timestamp(0) : newest.timestamp);
         auto repl = std::make_shared<api::GetReply>(*_msg, _doc, timestamp, !_has_replica_inconsistency);
         repl->setResult(_returnCode);
         update_internal_metrics();

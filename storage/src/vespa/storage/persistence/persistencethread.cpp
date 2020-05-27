@@ -295,7 +295,8 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
         if (!result.hasDocument()) {
             _env._metrics.get[cmd.getLoadType()].notFound.inc();
         }
-        tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp()));
+        tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp(),
+                                                          false, result.is_tombstone()));
     }
 
     return tracker;
