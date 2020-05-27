@@ -2,12 +2,16 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -28,6 +32,15 @@ public class VersionStatusUpdaterTest {
         );
         updater.maintain();
         assertTrue(tester.controller().versionStatus().systemVersion().isPresent());
+    }
+
+    @Test
+    public void testConfidenceConversion() {
+        List.of(VespaVersion.Confidence.values()).forEach(VersionStatusUpdater::convert);
+        assertEquals(SystemMonitor.Confidence.broken, VersionStatusUpdater.convert(VespaVersion.Confidence.broken));
+        assertEquals(SystemMonitor.Confidence.low, VersionStatusUpdater.convert(VespaVersion.Confidence.low));
+        assertEquals(SystemMonitor.Confidence.normal, VersionStatusUpdater.convert(VespaVersion.Confidence.normal));
+        assertEquals(SystemMonitor.Confidence.high, VersionStatusUpdater.convert(VespaVersion.Confidence.high));
     }
     
 }

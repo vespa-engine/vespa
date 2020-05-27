@@ -49,7 +49,7 @@ public class VersionStatusUpdater extends ControllerMaintainer {
         }
     }
 
-    private static SystemMonitor.Confidence convert(VespaVersion.Confidence confidence) {
+    static SystemMonitor.Confidence convert(VespaVersion.Confidence confidence) {
         switch (confidence) {
             case broken: return broken;
             case low:    return low;
