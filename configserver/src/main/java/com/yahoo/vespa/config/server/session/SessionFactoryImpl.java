@@ -18,13 +18,14 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +52,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final Optional<NodeFlavors> nodeFlavors;
     private final Clock clock;
     private final FlagSource flagSource;
+    private final BooleanFlag distributeApplicationPackage;
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
                               TenantApplications applicationRepo,
@@ -69,6 +71,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
         this.clock = globalComponentRegistry.getClock();
         this.flagSource = globalComponentRegistry.getFlagSource();
+        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
     }
 
     /** Create a session for a true application package change */
@@ -131,6 +134,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
+        if (distributeApplicationPackage.value()) session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
