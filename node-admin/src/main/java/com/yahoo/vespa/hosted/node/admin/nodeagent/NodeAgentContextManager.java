@@ -22,7 +22,6 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     private boolean wantFrozen = false;
     private boolean isFrozen = true;
     private boolean pendingInterrupt = false;
-    private boolean waitingForContext = false;
 
     public NodeAgentContextManager(Clock clock, NodeAgentContext context) {
         this.clock = clock;
@@ -32,9 +31,6 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public void scheduleTickWith(NodeAgentContext context, Instant at) {
         synchronized (monitor) {
-            // Do not schedule a new context while NodeAgent is still converging
-            if (!waitingForContext) return;
-
             nextContext = Objects.requireNonNull(context);
             nextContextAt = Objects.requireNonNull(at);
             monitor.notifyAll(); // Notify of new context
@@ -65,14 +61,13 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public NodeAgentContext nextContext() throws InterruptedException {
         synchronized (monitor) {
-            waitingForContext = true;
+            nextContext = null; // Reset any previous context and wait for the next one
             Duration untilNextContext = Duration.ZERO;
             while (setAndGetIsFrozen(wantFrozen) ||
                     nextContext == null ||
                     (untilNextContext = Duration.between(Instant.now(), nextContextAt)).toMillis() > 0) {
                 if (pendingInterrupt) {
                     pendingInterrupt = false;
-                    waitingForContext = false;
                     throw new InterruptedException("interrupt() was called before next context was scheduled");
                 }
 
@@ -82,8 +77,6 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
             }
 
             currentContext = nextContext;
-            nextContext = null;
-            waitingForContext = false;
             return currentContext;
         }
     }
