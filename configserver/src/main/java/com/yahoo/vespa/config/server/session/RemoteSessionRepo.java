@@ -46,7 +46,6 @@ public class RemoteSessionRepo {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
 
-    private final GlobalComponentRegistry componentRegistry;
     private final Curator curator;
     private final Path sessionsPath;
     private final RemoteSessionFactory remoteSessionFactory;
@@ -65,7 +64,6 @@ public class RemoteSessionRepo {
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
         this.sessionCache = new SessionCache<>();
-        this.componentRegistry = componentRegistry;
         this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
@@ -152,19 +150,14 @@ public class RemoteSessionRepo {
      */
     private void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding session to RemoteSessionRepo: " + sessionId);
-        try {
-            RemoteSession session = remoteSessionFactory.createSession(sessionId);
-            Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
-            Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
-            fileCache.addListener(this::nodeChanged);
-            loadSessionIfActive(session);
-            sessionCache.addSession(session);
-            metrics.incAddedSessions();
-            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
-        } catch (Exception e) {
-            if (componentRegistry.getConfigserverConfig().throwIfActiveSessionCannotBeLoaded()) throw e;
-            log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
-        }
+        RemoteSession session = remoteSessionFactory.createSession(sessionId);
+        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
+        Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        fileCache.addListener(this::nodeChanged);
+        loadSessionIfActive(session);
+        addSession(session);
+        metrics.incAddedSessions();
+        sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
     }
 
     private void sessionRemoved(long sessionId) {
