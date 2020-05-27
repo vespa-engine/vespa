@@ -25,23 +25,32 @@ public class NodeAgentContextManagerTest {
     private final NodeAgentContextManager manager = new NodeAgentContextManager(clock, initialContext);
 
     @Test(timeout = TIMEOUT)
-    public void returns_immediately_if_next_context_is_ready() throws InterruptedException {
+    public void context_is_ignored_unless_scheduled_while_waiting() throws InterruptedException {
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
-
         assertSame(initialContext, manager.currentContext());
-        assertSame(context1, manager.nextContext());
-        assertSame(context1, manager.currentContext());
+
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        Thread.sleep(20);
+        assertFalse(async.isCompleted());
+
+        NodeAgentContext context2 = generateContext();
+        manager.scheduleTickWith(context2, clock.instant());
+
+        assertSame(context2, async.awaitResult().response.get());
+        assertSame(context2, manager.currentContext());
     }
 
     @Test(timeout = TIMEOUT)
     public void returns_no_earlier_than_at_given_time() throws InterruptedException {
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        Thread.sleep(20);
+
         NodeAgentContext context1 = generateContext();
         Instant returnAt = clock.instant().plusMillis(500);
         manager.scheduleTickWith(context1, returnAt);
 
-        assertSame(initialContext, manager.currentContext());
-        assertSame(context1, manager.nextContext());
+        assertSame(context1, async.awaitResult().response.get());
         assertSame(context1, manager.currentContext());
         // Is accurate to a millisecond
         assertFalse(clock.instant().plusMillis(1).isBefore(returnAt));
@@ -50,9 +59,9 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_one_is_scheduled() throws InterruptedException {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        assertFalse(async.response.isPresent());
+        assertFalse(async.isCompleted());
         Thread.sleep(10);
-        assertFalse(async.response.isPresent());
+        assertFalse(async.isCompleted());
 
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
@@ -65,9 +74,9 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_interrupt() throws InterruptedException {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        assertFalse(async.response.isPresent());
+        assertFalse(async.isCompleted());
         Thread.sleep(10);
-        assertFalse(async.response.isPresent());
+        assertFalse(async.isCompleted());
 
         manager.interrupt();
 
@@ -82,8 +91,10 @@ public class NodeAgentContextManagerTest {
 
         // Generate new context and get it from the supplier, this completes the unfreeze
         NodeAgentContext context1 = generateContext();
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        Thread.sleep(20);
         manager.scheduleTickWith(context1, clock.instant());
-        assertSame(context1, manager.nextContext());
+        assertSame(context1, async.awaitResult().response.get());
 
         assertTrue(manager.setFrozen(false, Duration.ZERO));
     }
@@ -100,17 +111,34 @@ public class NodeAgentContextManagerTest {
 
     @Test(timeout = TIMEOUT)
     public void setFrozen_is_successful_if_converged_in_time() throws InterruptedException {
-        AsyncExecutor<Boolean> async = new AsyncExecutor<>(() -> manager.setFrozen(false, Duration.ofMillis(500)));
-
-        assertFalse(async.response.isPresent());
+        AsyncExecutor<NodeAgentContext> asyncConsumer1 = new AsyncExecutor<>(() -> {
+            NodeAgentContext context = manager.nextContext();
+            Thread.sleep(200); // Simulate running NodeAgent::converge
+            return context;
+        });
+        Thread.sleep(20);
 
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
-        assertSame(context1, manager.nextContext());
+        Thread.sleep(10);
 
-        async.awaitResult();
-        assertEquals(Optional.of(true), async.response);
-        assertFalse(async.exception.isPresent());
+        // Scheduler wants to freeze
+        AsyncExecutor<Boolean> asyncScheduler = new AsyncExecutor<>(() -> manager.setFrozen(true, Duration.ofMillis(500)));
+        Thread.sleep(20);
+        assertFalse(asyncConsumer1.isCompleted()); // Still running NodeAgent::converge
+        assertSame(context1, asyncConsumer1.awaitResult().response.get());
+        assertFalse(asyncScheduler.isCompleted()); // Still waiting for consumer to converge to frozen
+
+        AsyncExecutor<NodeAgentContext> asyncConsumer2 = new AsyncExecutor<>(manager::nextContext);
+        Thread.sleep(20);
+        assertFalse(asyncConsumer2.isCompleted()); // Waiting for next context
+        assertTrue(asyncScheduler.isCompleted()); // While consumer is waiting, it has converged to frozen
+
+        // Interrupt manager to end asyncConsumer2
+        manager.interrupt();
+        asyncConsumer2.awaitResult();
+
+        assertEquals(Optional.of(true), asyncScheduler.response);
     }
 
     private static NodeAgentContext generateContext() {
@@ -139,13 +167,20 @@ public class NodeAgentContextManagerTest {
             this.thread.start();
         }
 
-        private void awaitResult() {
+        private AsyncExecutor<T> awaitResult() {
             synchronized (monitor) {
                 while (!completed) {
                     try {
                         monitor.wait();
                     } catch (InterruptedException ignored) { }
                 }
+            }
+            return this;
+        }
+
+        private boolean isCompleted() {
+            synchronized (monitor) {
+                return completed;
             }
         }
     }
