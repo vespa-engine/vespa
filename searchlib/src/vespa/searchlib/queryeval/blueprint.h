@@ -164,6 +164,12 @@ public:
         virtual bool check(const Blueprint & bp) const = 0;
     };
 
+    // Signal if createFilterSearch should ensure the returned
+    // iterator is an upper bound (yielding a hit on at least
+    // all matching documents) or a lower bound (never yielding a
+    // hit that isn't certain to be a match).
+    enum class FilterConstraint { UPPER_BOUND, LOWER_BOUND };
+
     Blueprint();
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;
@@ -199,6 +205,7 @@ public:
     bool frozen() const { return _frozen; }
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
+    virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
 
     // for debug dumping
     vespalib::string asString() const;
