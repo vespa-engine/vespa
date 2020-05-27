@@ -61,6 +61,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public NodeAgentContext nextContext() throws InterruptedException {
         synchronized (monitor) {
+            nextContext = null; // Reset any previous context and wait for the next one
             Duration untilNextContext = Duration.ZERO;
             while (setAndGetIsFrozen(wantFrozen) ||
                     nextContext == null ||
@@ -76,7 +77,6 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
             }
 
             currentContext = nextContext;
-            nextContext = null;
             return currentContext;
         }
     }
