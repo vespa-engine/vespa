@@ -16,7 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 import java.util.function.LongPredicate;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -56,7 +56,7 @@ public class RemoteSessionRepoTest {
     private void createSession(long sessionId, boolean wait, TenantName tenantName) {
         Path sessionsPath = TenantRepository.getSessionsPath(tenantName);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath.append(String.valueOf(sessionId)));
-        zkc.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        zkc.createNewSession(Instant.now());
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
             waiter.awaitCompletion(Duration.ofSeconds(120));

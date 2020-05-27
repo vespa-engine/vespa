@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.NestedTransaction;
@@ -25,8 +24,9 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
+import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * Zookeeper client for a specific session. Path for a session is /config/v2/tenants/&lt;tenant&gt;/sessions/&lt;sessionid&gt;
@@ -196,11 +196,10 @@ public class SessionZooKeeperClient {
         dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.repository()));
     }
 
-    // in seconds
-    public long readCreateTime() {
+    public Instant readCreateTime() {
         String path = getCreateTimePath();
-        if ( ! configCurator.exists(path)) return 0L;
-        return Long.parseLong(configCurator.getData(path));
+        if ( ! configCurator.exists(path)) return Instant.EPOCH;
+        return Instant.ofEpochSecond(Long.parseLong(configCurator.getData(path)));
     }
 
     private String getCreateTimePath() {
@@ -243,14 +242,13 @@ public class SessionZooKeeperClient {
      * Create necessary paths atomically for a new session.
      *
      * @param createTime Time of session creation.
-     * @param timeUnit Time unit of createTime.
      */
-    public void createNewSession(long createTime, TimeUnit timeUnit) {
+    public void createNewSession(Instant createTime) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
         transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));
         transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
-        transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(timeUnit.toSeconds(createTime)))));
+        transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
     }
 

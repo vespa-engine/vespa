@@ -9,6 +9,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -74,11 +75,9 @@ public abstract class Session {
         return TenantRepository.logPre(getTenant());
     }
 
-    // in seconds
-    public long getCreateTime() {
+    public Instant getCreateTime() {
         return zooKeeperClient.readCreateTime();
     }
-
 
     public void setApplicationId(ApplicationId applicationId) {
         zooKeeperClient.writeApplicationId(applicationId);

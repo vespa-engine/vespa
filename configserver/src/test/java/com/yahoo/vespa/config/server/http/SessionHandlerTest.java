@@ -100,7 +100,7 @@ public class SessionHandlerTest {
         public boolean doVerboseLogging = false;
         public Session.Status status;
         private ConfigChangeActions actions = new ConfigChangeActions();
-        private long createTime = System.currentTimeMillis() / 1000;
+        private Instant createTime = Instant.now();
         private ApplicationId applicationId;
         private Optional<DockerImage> dockerImageRepository;
 
@@ -112,7 +112,7 @@ public class SessionHandlerTest {
             super(TenantName.defaultName(), id, null, new SessionContext(app, new MockSessionZKClient(app), null, null, new HostRegistry<>(), flagSource));
         }
 
-        public MockSession(long sessionId, ApplicationPackage applicationPackage, long createTime) {
+        public MockSession(long sessionId, ApplicationPackage applicationPackage, Instant createTime) {
             this(sessionId, applicationPackage);
             this.createTime = createTime;
         }
@@ -162,7 +162,7 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public long getCreateTime() {
+        public Instant getCreateTime() {
             return createTime;
         }
 

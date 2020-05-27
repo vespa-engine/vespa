@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -10,7 +10,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -92,18 +92,11 @@ public class SessionZooKeeperClientTest {
     public void require_that_create_time_can_be_written_and_read() {
         SessionZooKeeperClient zkc = createSessionZKClient("3");
         curator.delete(Path.fromString("3"));
-        assertThat(zkc.readCreateTime(), is(0L));
-        zkc.createNewSession(123456L, TimeUnit.SECONDS);
-        assertThat(zkc.readCreateTime(), is(123456L));
-    }
-
-    @Test
-    public void require_that_create_time_has_correct_unit() {
-        SessionZooKeeperClient zkc = createSessionZKClient("3");
-        curator.delete(Path.fromString("3"));
-        assertThat(zkc.readCreateTime(), is(0L));
-        zkc.createNewSession(60, TimeUnit.MINUTES);
-        assertThat(zkc.readCreateTime(), is(3600L));
+        assertThat(zkc.readCreateTime(), is(Instant.EPOCH));
+        Instant now = Instant.now();
+        zkc.createNewSession(now);
+        // resolution is in seconds, so need to go back use that when comparing
+        assertThat(zkc.readCreateTime(), is(Instant.ofEpochSecond(now.getEpochSecond())));
     }
 
     private void assertApplicationIdParse(String sessionId, String idString, String expectedIdString) {
@@ -116,7 +109,7 @@ public class SessionZooKeeperClientTest {
 
     private SessionZooKeeperClient createSessionZKClient(String sessionId) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, Path.fromString(sessionId));
-        zkc.createNewSession(100, TimeUnit.MILLISECONDS);
+        zkc.createNewSession(Instant.now());
         return zkc;
     }
 

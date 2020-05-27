@@ -97,8 +97,7 @@ public class RemoteSessionRepo {
             RemoteSession session = sessionCache.getSession(sessionId);
             if (session == null) continue; // Internal sessions not in synch with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
-            Instant created = Instant.ofEpochSecond(session.getCreateTime());
-            if (sessionHasExpired(created, expiryTime, clock)) {
+            if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 session.delete();
                 deleted++;

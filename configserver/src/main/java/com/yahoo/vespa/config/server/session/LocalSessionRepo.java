@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +39,7 @@ public class LocalSessionRepo {
 
     private final SessionCache<LocalSession> sessionCache;
     private final Map<Long, LocalSessionStateWatcher> sessionStateWatchers = new HashMap<>();
-    private final long sessionLifetime; // in seconds
+    private final Duration sessionLifetime;
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
@@ -57,7 +56,7 @@ public class LocalSessionRepo {
         sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
-        this.sessionLifetime = componentRegistry.getConfigserverConfig().sessionLifetime();
+        this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
@@ -98,7 +97,7 @@ public class LocalSessionRepo {
         log.log(Level.FINE, "Purging old sessions");
         try {
             for (LocalSession candidate : sessionCache.getSessions()) {
-                Instant createTime = Instant.ofEpochSecond(candidate.getCreateTime());
+                Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
                 // Sessions with state other than ACTIVATED
@@ -123,7 +122,7 @@ public class LocalSessionRepo {
     }
 
     private boolean hasExpired(LocalSession candidate) {
-        return (candidate.getCreateTime() + sessionLifetime) <= TimeUnit.MILLISECONDS.toSeconds(clock.millis());
+        return (candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant()));
     }
 
     private boolean isActiveSession(LocalSession candidate) {
