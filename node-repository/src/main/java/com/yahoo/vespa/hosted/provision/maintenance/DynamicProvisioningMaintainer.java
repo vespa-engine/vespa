@@ -36,6 +36,7 @@ import java.util.stream.IntStream;
 
 /**
  * @author freva
+ * @author mpolden
  */
 public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
@@ -43,7 +44,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
-    private final ListFlag<HostCapacity> preprovisionCapacityFlag;
+    private final ListFlag<HostCapacity> targetCapacityFlag;
 
     DynamicProvisioningMaintainer(NodeRepository nodeRepository,
                                   Duration interval,
@@ -51,13 +52,11 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                   FlagSource flagSource) {
         super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
-        this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
+        this.targetCapacityFlag = Flags.TARGET_CAPACITY.bindTo(flagSource);
     }
 
     @Override
     protected void maintain() {
-        if (! nodeRepository().zone().getCloud().dynamicProvisioning()) return;
-
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
             resumeProvisioning(nodes, lock);
@@ -68,10 +67,10 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /** Resume provisioning of already provisioned hosts and their children */
     private void resumeProvisioning(NodeList nodes, Mutex lock) {
         Map<String, Set<Node>> nodesByProvisionedParentHostname = nodes.nodeType(NodeType.tenant).asList().stream()
-                .filter(node -> node.parentHostname().isPresent())
-                .collect(Collectors.groupingBy(
-                        node -> node.parentHostname().get(),
-                        Collectors.toSet()));
+                                                                       .filter(node -> node.parentHostname().isPresent())
+                                                                       .collect(Collectors.groupingBy(
+                                                                               node -> node.parentHostname().get(),
+                                                                               Collectors.toSet()));
 
         nodes.state(Node.State.provisioned).nodeType(NodeType.host).forEach(host -> {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
@@ -95,9 +94,15 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     /** Converge zone to wanted capacity */
     private void convergeToCapacity(NodeList nodes) {
-        List<Node> removableHosts = removableHostsOf(nodes);
-        List<Node> excessHosts = preprovisionCapacity(removableHosts);
-
+        List<NodeResources> capacity = targetCapacity();
+        List<Node> existingHosts;
+        if (nodeRepository().zone().getCloud().dynamicProvisioning()) {
+            existingHosts = removableHostsOf(nodes);
+        } else {
+            if (capacity.isEmpty()) return;
+            existingHosts = availableHostsOf(nodes);
+        }
+        List<Node> excessHosts = provision(capacity, existingHosts);
         excessHosts.forEach(host -> {
             try {
                 hostProvisioner.deprovision(host);
@@ -110,30 +115,27 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
 
     /**
-     * Provision spare capacity according to removable hosts.
+     * Provision the nodes necessary to satisfy given capacity.
      *
-     * @return Excess hosts eligible for deprovisioning.
+     * @return Excess hosts that can be deprovisioned, if any.
      */
-    private List<Node> preprovisionCapacity(List<Node> removableHosts) {
-        List<Node> excessHosts = new ArrayList<>(removableHosts);
-        List<NodeResources> spareCapacity = preprovisionedCapacity();
-
-        // Keep one removable host, if that host satisfies the capacity requirement. This results in one host being
-        // empty most of the time.
-        for (Iterator<NodeResources> it = spareCapacity.iterator(); it.hasNext() && !excessHosts.isEmpty(); ) {
+    private List<Node> provision(List<NodeResources> capacity, List<Node> existingHosts) {
+        List<Node> excessHosts = new ArrayList<>(existingHosts);
+        for (Iterator<NodeResources> it = capacity.iterator(); it.hasNext() && !excessHosts.isEmpty(); ) {
             NodeResources resources = it.next();
             excessHosts.stream()
                        .filter(nodeRepository()::canAllocateTenantNodeTo)
-                       .filter(host -> nodeRepository().resourcesCalculator().advertisedResourcesOf(host.flavor()).satisfies(resources))
+                       .filter(host -> nodeRepository().resourcesCalculator()
+                                                       .advertisedResourcesOf(host.flavor())
+                                                       .satisfies(resources))
                        .min(Comparator.comparingInt(n -> n.flavor().cost()))
                        .ifPresent(host -> {
                            excessHosts.remove(host);
                            it.remove();
                        });
         }
-
         // Pre-provisioning is best effort, do one host at a time
-        spareCapacity.forEach(resources -> {
+        capacity.forEach(resources -> {
             try {
                 Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
                 List<Node> hosts = hostProvisioner.provisionHosts(nodeRepository().database().getProvisionIndexes(1),
@@ -143,34 +145,39 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                                   .collect(Collectors.toList());
                 nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
-                log.log(Level.WARNING, "Failed to pre-provision " + resources + ":" + e.getMessage());
+                log.log(Level.WARNING, "Failed to pre-provision " + resources + ": " + e.getMessage());
             } catch (RuntimeException e) {
                 log.log(Level.WARNING, "Failed to pre-provision " + resources + ", will retry in " + interval(), e);
             }
         });
-
         return excessHosts;
     }
 
-    /** Returns the preprovisioned capacity that should be available in this zone, if any */
-    private List<NodeResources> preprovisionedCapacity() {
-        return preprovisionCapacityFlag.value().stream()
-                                       .flatMap(cap -> {
-                                           NodeResources resources = new NodeResources(cap.getVcpu(), cap.getMemoryGb(),
-                                                                                       cap.getDiskGb(), 1);
-                                           return IntStream.range(0, cap.getCount()).mapToObj(i -> resources);
-                                       })
-                                       .sorted(NodeResourceComparator.memoryDiskCpuOrder().reversed())
-                                       .collect(Collectors.toList());
+
+    /** Reads node resources declared by target capacity flag */
+    private List<NodeResources> targetCapacity() {
+        return targetCapacityFlag.value().stream()
+                                 .flatMap(cap -> {
+                                     NodeResources resources = new NodeResources(cap.getVcpu(), cap.getMemoryGb(),
+                                                                                 cap.getDiskGb(), 1);
+                                     return IntStream.range(0, cap.getCount()).mapToObj(i -> resources);
+                                 })
+                                 .sorted(NodeResourceComparator.memoryDiskCpuOrder().reversed())
+                                 .collect(Collectors.toList());
     }
 
-    /** Returns hosts that are candidates for removal, e.g. hosts that have no containers or are failed */
+    /** Returns hosts that are considered available, i.e. not parked or flagged for deprovisioning */
+    private static List<Node> availableHostsOf(NodeList nodes) {
+        return nodes.nodeType(NodeType.host)
+                    .matching(host -> host.state() != Node.State.parked || host.status().wantToDeprovision())
+                    .asList();
+    }
+
+    /** Returns hosts that have no containers and are thus removable */
     private static List<Node> removableHostsOf(NodeList nodes) {
-        Map<String, Node> hostsByHostname = nodes.nodeType(NodeType.host)
-                                                 .matching(host -> host.state() != Node.State.parked ||
-                                                                   host.status().wantToDeprovision())
-                                                 .stream()
-                                                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
+        Map<String, Node> hostsByHostname = availableHostsOf(nodes).stream()
+                                                                   .collect(Collectors.toMap(Node::hostname,
+                                                                                             Function.identity()));
 
         nodes.asList().stream()
              .filter(node -> node.allocation().isPresent())

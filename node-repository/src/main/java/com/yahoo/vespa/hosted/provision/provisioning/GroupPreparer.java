@@ -37,7 +37,7 @@ public class GroupPreparer {
                          FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
-        this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
+        this.preprovisionCapacityFlag = Flags.TARGET_CAPACITY.bindTo(flagSource);
     }
 
     /**

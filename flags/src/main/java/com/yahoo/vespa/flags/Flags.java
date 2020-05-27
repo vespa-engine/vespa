@@ -122,10 +122,11 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
-    public static final UnboundListFlag<HostCapacity> PREPROVISION_CAPACITY = defineListFlag(
+    public static final UnboundListFlag<HostCapacity> TARGET_CAPACITY = defineListFlag(
             "preprovision-capacity", List.of(), HostCapacity.class,
-            "List of node resources and their count that should be unallocated in zone to receive new deployments. When a " +
-            "preprovisioned host is taken, another one will be provisioned within next iteration of maintainer.",
+            "List of node resources and their count that should be provisioned." +
+            "In a dynamically provisioned zone this specifies the unallocated (i.e. pre-provisioned) capacity. " +
+            "Otherwise it specifies the total (unallocated or not) capacity.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(

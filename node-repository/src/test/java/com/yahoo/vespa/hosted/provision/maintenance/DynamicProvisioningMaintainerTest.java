@@ -3,9 +3,10 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -14,13 +15,12 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -30,26 +30,29 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMaintainerTest.HostProvisionerMock.Behaviour;
+import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMaintainerTest.MockHostProvisioner.Behaviour;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author freva
+ * @author mpolden
  */
 public class DynamicProvisioningMaintainerTest {
 
@@ -101,7 +104,7 @@ public class DynamicProvisioningMaintainerTest {
     @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new HostCapacity(1, 3, 2, 1)), HostCapacity.class);
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(new HostCapacity(1, 3, 2, 1)), HostCapacity.class);
         Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
         assertTrue(failedHost.isPresent());
 
@@ -113,22 +116,23 @@ public class DynamicProvisioningMaintainerTest {
     @Test
     public void provision_deficit_and_deprovision_excess() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
-                                       List.of(new HostCapacity(2, 4, 8, 1),
-                                               new HostCapacity(2, 3, 2, 2)),
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(),
+                                       List.of(new HostCapacity(24, 64, 100, 2),
+                                               new HostCapacity(16, 24, 100, 1)),
                                        HostCapacity.class);
         assertTrue(tester.nodeRepository.getNode("host2").isPresent());
         assertEquals(0 ,tester.hostProvisioner.provisionedHosts.size());
 
-        // excessive host2 is removed
+        // failed host2 is removed
+        Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
+        assertTrue(failedHost.isPresent());
         tester.maintainer.maintain();
-        assertTrue(tester.nodeRepository.getNode("host2").isEmpty());
-        assertTrue(tester.nodeRepository.getNode("host3").isPresent());
+        assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
+        assertTrue("Host with matching resources is kept", tester.nodeRepository.getNode("host3").isPresent());
 
         // Two more hosts are provisioned with expected resources
-        NodeResources resources = new NodeResources(2, 3, 2, 1);
-        assertEquals(2, tester.hostProvisioner.provisionedHosts.stream()
-                                                               .filter(h -> h.nodeResources().equals(resources)).count());
+        NodeResources resources = new NodeResources(24, 64, 100, 1);
+        assertEquals(2, tester.provisionedHostsMatching(resources));
     }
 
     @Test
@@ -141,40 +145,92 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue(tester.nodeRepository.getNode(host2.hostname()).isPresent());
     }
 
+    @Test
+    public void provision_exact_capacity() {
+        var tester = new DynamicProvisioningTester(Cloud.builder().dynamicProvisioning(false).build());
+        NodeResources resources1 = new NodeResources(24, 64, 100, 1);
+        NodeResources resources2 = new NodeResources(16, 24, 100, 1);
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(new HostCapacity(resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), 1),
+                                                                           new HostCapacity(resources2.vcpu(), resources2.memoryGb(), resources2.diskGb(), 2)),
+                                       HostCapacity.class);
+        tester.maintainer.maintain();
+
+        // Hosts are provisioned
+        assertEquals(1, tester.provisionedHostsMatching(resources1));
+        assertEquals(2, tester.provisionedHostsMatching(resources2));
+
+        // Next maintenance run does nothing
+        List<Node> nodes = tester.nodeRepository.getNodes();
+        tester.maintainer.maintain();
+        assertEquals(nodes, tester.nodeRepository.getNodes());
+
+        // Target capacity is changed
+        NodeResources resources3 = new NodeResources(48, 128, 1000, 1);
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(new HostCapacity(resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), 1),
+                                                                           new HostCapacity(resources3.vcpu(), resources3.memoryGb(), resources3.diskGb(), 1)),
+                                       HostCapacity.class);
+
+        // Excess hosts are deprovisioned
+        tester.maintainer.maintain();
+        assertEquals(1, tester.provisionedHostsMatching(resources1));
+        assertEquals(0, tester.provisionedHostsMatching(resources2));
+        assertEquals(1, tester.provisionedHostsMatching(resources3));
+        assertEquals(2, tester.nodeRepository.getNodes(Node.State.deprovisioned).size());
+
+        // Activate hosts
+        tester.maintainer.maintain(); // Resume provisioning of new hosts
+        List<Node> provisioned = tester.nodeRepository.list().state(Node.State.provisioned).asList();
+        tester.nodeRepository.setReady(provisioned, Agent.system, this.getClass().getSimpleName());
+        tester.provisioningTester.deployZoneApp();
+
+        // Allocating nodes to a host does not result in provisioning of additional capacity
+        ApplicationId application = tester.provisioningTester.makeApplicationId();
+        tester.provisioningTester.deploy(application,
+                                         Capacity.from(new ClusterResources(2, 1, new NodeResources(4, 8, 50, 0.1))));
+        assertEquals(2, tester.nodeRepository.list().owner(application).size());
+        nodes = tester.nodeRepository.getNodes();
+        tester.maintainer.maintain();
+        assertEquals(nodes, tester.nodeRepository.getNodes());
+
+        // Clearing flag does nothing
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(), HostCapacity.class);
+        nodes = tester.nodeRepository.getNodes();
+        tester.maintainer.maintain();
+        assertEquals(nodes, tester.nodeRepository.getNodes());
+    }
+
     private static class DynamicProvisioningTester {
 
         private static final ApplicationId tenantApp = ApplicationId.from("mytenant", "myapp", "default");
         private static final ApplicationId tenantHostApp = ApplicationId.from("vespa", "tenant-host", "default");
         private static final ApplicationId proxyHostApp = ApplicationId.from("vespa", "proxy-host", "default");
         private static final ApplicationId proxyApp = ApplicationId.from("vespa", "proxy", "default");
-        private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default", "docker");
+        private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default", "docker", "host2", "host3", "host4");
 
-        private final ManualClock clock = new ManualClock();
-        private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), HostCapacity.class);
+        private final InMemoryFlagSource flagSource = new InMemoryFlagSource().withListFlag(Flags.TARGET_CAPACITY.id(),
+                                                                                            List.of(),
+                                                                                            HostCapacity.class);
 
-        private final Zone zone;
         private final NodeRepository nodeRepository;
-        private final HostProvisionerMock hostProvisioner;
+        private final MockHostProvisioner hostProvisioner;
         private final DynamicProvisioningMaintainer maintainer;
+        private final ProvisioningTester provisioningTester;
 
         public DynamicProvisioningTester() {
             this(Cloud.builder().dynamicProvisioning(true).build());
         }
 
         public DynamicProvisioningTester(Cloud cloud) {
-            this.zone = new Zone(cloud, SystemName.defaultSystem(), Environment.defaultEnvironment(),
-                                 RegionName.defaultName());
-            this.nodeRepository = new NodeRepository(flavors,
-                                                     new HostResourcesCalculatorMock(),
-                                                     new MockCurator(),
-                                                     clock,
-                                                     zone,
-                                                     new MockNameResolver().mockAnyLookup(),
-                                                     DockerImage.fromString("docker-image"),
-                                                     true,
-                                                     true);
-            this.hostProvisioner = new HostProvisionerMock(nodeRepository);
+            MockNameResolver nameResolver = new MockNameResolver().mockAnyLookup();
+            this.hostProvisioner = new MockHostProvisioner(flavors, nameResolver);
+            this.provisioningTester = new ProvisioningTester.Builder().zone(new Zone(cloud, SystemName.defaultSystem(),
+                                                                                     Environment.defaultEnvironment(),
+                                                                                     RegionName.defaultName()))
+                                                                      .flavors(flavors.getFlavors())
+                                                                      .nameResolver(nameResolver)
+                                                                      .hostProvisioner(hostProvisioner)
+                                                                      .build();
+            this.nodeRepository = provisioningTester.nodeRepository();
             this.maintainer = new DynamicProvisioningMaintainer(nodeRepository,
                                                                 Duration.ofDays(1),
                                                                 hostProvisioner,
@@ -207,7 +263,7 @@ public class DynamicProvisioningMaintainerTest {
         }
 
         private Node createNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {
-            Flavor flavor = nodeRepository.flavors().getFlavor(parentHostname.isPresent() ? "docker" : "default").orElseThrow();
+            Flavor flavor = nodeRepository.flavors().getFlavor(parentHostname.isPresent() ? "docker" : "host2").orElseThrow();
             Optional<Allocation> allocation = application
                     .map(app -> new Allocation(
                             app,
@@ -220,22 +276,35 @@ public class DynamicProvisioningMaintainerTest {
                             state, allocation, History.empty(), nodeType, new Reports(), Optional.empty(), Optional.empty());
         }
 
+        private long provisionedHostsMatching(NodeResources resources) {
+            return hostProvisioner.provisionedHosts.stream()
+                                                   .filter(host -> host.nodeResources().equals(resources))
+                                                   .count();
+        }
+
     }
 
-    static class HostProvisionerMock implements HostProvisioner {
+    static class MockHostProvisioner implements HostProvisioner {
 
-        private final NodeRepository nodeRepository;
         private final List<ProvisionedHost> provisionedHosts = new ArrayList<>();
+        private final NodeFlavors flavors;
+        private final MockNameResolver nameResolver;
+
         private int deprovisionedHosts = 0;
         private EnumSet<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
 
-        public HostProvisionerMock(NodeRepository nodeRepository) {
-            this.nodeRepository = nodeRepository;
+        public MockHostProvisioner(NodeFlavors flavors, MockNameResolver nameResolver) {
+            this.flavors = flavors;
+            this.nameResolver = nameResolver;
         }
 
         @Override
         public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
-            Flavor hostFlavor = nodeRepository.flavors().getFlavorOrThrow("docker");
+            Flavor hostFlavor = flavors.getFlavors().stream()
+                                       .filter(f -> !f.isDocker())
+                                       .filter(f -> f.resources().compatibleWith(resources))
+                                       .findFirst()
+                                       .orElseThrow(() -> new IllegalArgumentException("No host flavor found satisfying " + resources));
             List<ProvisionedHost> hosts = new ArrayList<>();
             for (int index : provisionIndexes) {
                 hosts.add(new ProvisionedHost("host" + index,
@@ -252,15 +321,12 @@ public class DynamicProvisioningMaintainerTest {
         @Override
         public List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException {
             if (behaviours.contains(Behaviour.failProvisioning)) throw new FatalProvisioningException("Failed to provision node(s)");
-
-            Optional<Node> existingHost = nodeRepository.getNode(host.hostname(), Node.State.provisioned);
-            assertTrue(host + " is in " + Node.State.provisioned, existingHost.isPresent());
+            assertSame(Node.State.provisioned, host.state());
             List<Node> result = new ArrayList<>();
-            result.add(assignIp(existingHost.get()));
+            result.add(withIpAssigned(host));
             for (var child : children) {
-                Optional<Node> existingChild = nodeRepository.getNode(child.hostname(), Node.State.reserved);
-                assertTrue(child + " is in " + Node.State.reserved, existingChild.isPresent());
-                result.add(assignIp(existingChild.get()));
+                assertSame(Node.State.reserved, child.state());
+                result.add(withIpAssigned(child));
             }
             return result;
         }
@@ -268,45 +334,32 @@ public class DynamicProvisioningMaintainerTest {
         @Override
         public void deprovision(Node host) {
             if (behaviours.contains(Behaviour.failDeprovisioning)) throw new FatalProvisioningException("Failed to deprovision node");
+            provisionedHosts.removeIf(provisionedHost -> provisionedHost.hostHostname().equals(host.hostname()));
             deprovisionedHosts++;
         }
 
-        private HostProvisionerMock with(Behaviour first, Behaviour... rest) {
+        private MockHostProvisioner with(Behaviour first, Behaviour... rest) {
             this.behaviours = EnumSet.of(first, rest);
             return this;
         }
 
-        private Node assignIp(Node node) {
+        private Node withIpAssigned(Node node) {
+            if (node.parentHostname().isPresent()) return node;
             int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
-            Set<String> addresses;
-            if (node.parentHostname().isEmpty()) {
-                addresses = Set.of("::" + hostIndex + ":0");
-            } else {
-                addresses = Set.of("::" + hostIndex + ":1", "::" + hostIndex + ":2");
+            Set<String> addresses = Set.of("::" + hostIndex + ":0");
+            nameResolver.addRecord(node.hostname(), addresses.iterator().next());
+            Set<String> pool = new HashSet<>();
+            for (int i = 1; i <= 2; i++) {
+                String ip = "::" + hostIndex + ":" + i;
+                pool.add(ip);
+                nameResolver.addRecord(node.hostname() + "-" + i, ip);
             }
-            return node.with(node.ipConfig().with(addresses));
+            return node.with(node.ipConfig().with(addresses).with(IP.Pool.of(pool)));
         }
 
         enum Behaviour {
             failProvisioning,
             failDeprovisioning,
-        }
-
-    }
-
-    private static class HostResourcesCalculatorMock implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            return node.flavor().resources();
-        }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            if ("default".equals(flavor.name())) {
-                return new NodeResources(2, 4, 8, 1);
-            }
-            return flavor.resources();
         }
 
     }
