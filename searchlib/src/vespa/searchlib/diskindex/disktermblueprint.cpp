@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -96,4 +97,17 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
     return search;
 }
 
+SearchIterator::UP
+DiskTermBlueprint::createFilterSearch(bool strict, FilterConstraint) const
+{
+    auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState());
+    auto & tfmda = wrapper->tfmda();
+    if (_bitVector) {
+        wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict));
+    } else {
+        wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
+    }
+    return wrapper;
 }
+
+} // namespace

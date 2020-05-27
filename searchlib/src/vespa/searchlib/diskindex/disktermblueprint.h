@@ -41,6 +41,8 @@ public:
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
+
+    std::unique_ptr<queryeval::SearchIterator> createFilterSearch(bool strict, FilterConstraint) const override;
 };
 
 }
