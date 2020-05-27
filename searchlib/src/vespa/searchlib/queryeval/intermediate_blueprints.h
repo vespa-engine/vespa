@@ -24,6 +24,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
     bool isPositive(size_t index) const override { return index == 0; }
 };
@@ -48,6 +50,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -65,6 +69,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------

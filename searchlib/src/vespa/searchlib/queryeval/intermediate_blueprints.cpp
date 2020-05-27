@@ -168,6 +168,33 @@ AndNotBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearch
     return SearchIterator::UP(AndNotSearch::create(subSearches, strict));
 }
 
+namespace {
+Blueprint::FilterConstraint invert(Blueprint::FilterConstraint constraint) {
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        return Blueprint::FilterConstraint::LOWER_BOUND;
+    }
+    if (constraint == Blueprint::FilterConstraint::LOWER_BOUND) {
+        return Blueprint::FilterConstraint::UPPER_BOUND;
+    }
+    abort();
+}
+} // namespace <unnamed>
+
+SearchIterator::UP
+AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    MultiSearch::Children subSearches;
+    subSearches.reserve(childCnt());
+    for (size_t i = 0; i < childCnt(); ++i) {
+        bool child_strict = strict && inheritStrict(i);
+        auto search = (i == 0)
+                ? getChild(i).createFilterSearch(child_strict, constraint)
+                : getChild(i).createFilterSearch(child_strict, invert(constraint));
+        subSearches.push_back(search.release());
+    }
+    return SearchIterator::UP(AndNotSearch::create(subSearches, strict));
+}
+
 //-----------------------------------------------------------------------------
 
 Blueprint::HitEstimate
@@ -239,6 +266,22 @@ AndBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
     } else {
         search = AndSearch::create(subSearches, strict, unpackInfo);
     }
+    search->estimate(getState().estimate().estHits);
+    return SearchIterator::UP(search);
+}
+
+SearchIterator::UP
+AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    MultiSearch::Children subSearches;
+    subSearches.reserve(childCnt());
+    for (size_t i = 0; i < childCnt(); ++i) {
+        bool child_strict = strict && inheritStrict(i);
+        auto search = getChild(i).createFilterSearch(child_strict, constraint);
+        subSearches.push_back(search.release());
+    }
+    UnpackInfo unpackInfo;
+    AndSearch * search = AndSearch::create(subSearches, strict, unpackInfo);
     search->estimate(getState().estimate().estHits);
     return SearchIterator::UP(search);
 }
@@ -317,6 +360,19 @@ OrBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
         }
         return SearchIterator::UP(OrSearch::create(helper.children, strict, helper.termwise_unpack));
     }
+    return SearchIterator::UP(OrSearch::create(subSearches, strict, unpackInfo));
+}
+
+SearchIterator::UP
+OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    MultiSearch::Children subSearches;
+    subSearches.reserve(childCnt());
+    for (size_t i = 0; i < childCnt(); ++i) {
+        auto search = getChild(i).createFilterSearch(strict, constraint);
+        subSearches.push_back(search.release());
+    }
+    UnpackInfo unpackInfo;
     return SearchIterator::UP(OrSearch::create(subSearches, strict, unpackInfo));
 }
 
