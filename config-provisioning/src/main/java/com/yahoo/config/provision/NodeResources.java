@@ -201,10 +201,10 @@ public class NodeResources {
         if (o == this) return true;
         if ( ! (o instanceof NodeResources)) return false;
         NodeResources other = (NodeResources)o;
-        if (this.vcpu != other.vcpu) return false;
-        if (this.memoryGb != other.memoryGb) return false;
-        if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthGbps != other.bandwidthGbps) return false;
+        if ( ! equal(this.vcpu, other.vcpu)) return false;
+        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.diskGb, other.diskGb)) return false;
+        if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if (this.diskSpeed != other.diskSpeed) return false;
         if (this.storageType != other.storageType) return false;
         return true;
