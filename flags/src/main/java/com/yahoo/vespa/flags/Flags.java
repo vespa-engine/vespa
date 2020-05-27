@@ -270,13 +270,6 @@ public class Flags {
             "Takes effect on next deployment (controller)",
             ZONE_ID);
 
-    public static final UnboundBooleanFlag CONFIGSERVER_UNSET_ENDPOINTS = defineFeatureFlag(
-            "configserver-unset-endpoints", true,
-            "Whether the configserver allows removal of existing endpoints when an empty list of container endpoints is request",
-            "Takes effect on next external deployment",
-            APPLICATION_ID
-    );
-
     public static final UnboundIntFlag JDISC_HEALTH_CHECK_PROXY_CLIENT_TIMEOUT = defineIntFlag(
             "jdisc-health-check-proxy-client-timeout", 1000,
             "Temporary flag to rollout reduced timeout for JDisc's health check proxy client. Timeout in milliseconds",

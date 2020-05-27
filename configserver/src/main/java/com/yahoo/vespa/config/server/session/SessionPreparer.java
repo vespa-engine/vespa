@@ -44,7 +44,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import org.xml.sax.SAXException;
@@ -81,7 +80,6 @@ public class SessionPreparer {
     private final Zone zone;
     private final SecretStore secretStore;
     private final BooleanFlag distributeApplicationPackage;
-    private final BooleanFlag unsetEndpoints;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -104,7 +102,6 @@ public class SessionPreparer {
         this.zone = zone;
         this.secretStore = secretStore;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
-        this.unsetEndpoints = Flags.CONFIGSERVER_UNSET_ENDPOINTS.bindTo(flagSource);
     }
 
     /**
@@ -120,10 +117,7 @@ public class SessionPreparer {
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
                                        Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
                                        Instant now) {
-        boolean allowUnsettingEndpoints = unsetEndpoints.with(FetchVector.Dimension.APPLICATION_ID, params.getApplicationId().serializedForm())
-                                                        .value();
-        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath,
-                                                  allowUnsettingEndpoints);
+        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
         preparation.distributeApplicationPackage(); // Note: Done before pre-processing, requires that to be done for users of this
         preparation.preprocess();
         try {
@@ -132,11 +126,7 @@ public class SessionPreparer {
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
-                if (allowUnsettingEndpoints) {
-                    preparation.writeContainerEndpointsZK();
-                } else {
-                    preparation.legacyWriteContainerEndpointsZK();
-                }
+                preparation.writeContainerEndpointsZK();
                 preparation.writeApplicationRoles();
                 preparation.distribute();
             }
@@ -184,8 +174,7 @@ public class SessionPreparer {
         private final FileDistributionProvider fileDistributionProvider;
 
         Preparation(SessionContext context, DeployLogger logger, PrepareParams params,
-                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
-                    boolean allowUnsettingEndpoints) {
+                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
             this.context = context;
             this.logger = logger;
             this.params = params;
@@ -202,11 +191,7 @@ public class SessionPreparer {
             endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-            if (allowUnsettingEndpoints) {
-                this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
-            } else {
-                this.containerEndpoints = getEndpoints(params.containerEndpoints());
-            }
+            this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
             this.applicationRolesStore = new ApplicationRolesStore(curator, tenantPath);
             this.applicationRoles = params.applicationRoles()
@@ -305,12 +290,6 @@ public class SessionPreparer {
             checkTimeout("write container endpoints to zookeeper");
         }
 
-        void legacyWriteContainerEndpointsZK() {
-            if (!containerEndpoints.isEmpty()) {
-                writeContainerEndpointsZK();
-            }
-        }
-
         void writeApplicationRoles() {
             applicationRoles.ifPresent(roles ->
                     applicationRolesStore.writeApplicationRoles(applicationId, roles));
@@ -334,12 +313,6 @@ public class SessionPreparer {
             return List.copyOf(endpoints);
         }
 
-        private List<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
-            if (endpoints == null || endpoints.isEmpty()) {
-                endpoints = this.containerEndpointsCache.read(applicationId);
-            }
-            return List.copyOf(endpoints);
-        }
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
