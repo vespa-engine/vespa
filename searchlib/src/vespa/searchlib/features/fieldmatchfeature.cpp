@@ -349,7 +349,7 @@ FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
 }
 
 void FieldMatchBlueprint::prepareSharedState(const IQueryEnvironment &env, IObjectStore & store) const {
-    if (store.get(_shared_state_key) == nullptr) {
+    if (store.get(_shared_state_key) == nullptr && false) {
         store.add(_shared_state_key, std::make_unique<FieldMatchExecutorSharedState>(env, *_field, _params));
     }
 }
