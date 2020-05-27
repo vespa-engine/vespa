@@ -28,15 +28,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * File-based session repository for LocalSessions. Contains state for the local instance of the configserver.
+ *
+ * Contains state for the local instance of the configserver.
  *
  * @author Ulf Lilleengen
  */
-public class LocalSessionRepo extends SessionRepo<LocalSession> {
+public class LocalSessionRepo {
 
     private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
 
+    private final SessionCache<LocalSession> sessionCache;
     private final Map<Long, LocalSessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final long sessionLifetime; // in seconds
     private final Clock clock;
@@ -52,6 +54,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     // Constructor public only for testing
     public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry) {
+        sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
         this.sessionLifetime = componentRegistry.getConfigserverConfig().sessionLifetime();
@@ -60,13 +63,20 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
     }
 
-    @Override
     public synchronized void addSession(LocalSession session) {
-        super.addSession(session);
+        sessionCache.addSession(session);
         Path sessionsPath = TenantRepository.getSessionsPath(session.getTenantName());
         long sessionId = session.getSessionId();
         Curator.FileCache fileCache = curator.createFileCache(sessionsPath.append(String.valueOf(sessionId)).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
         sessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this, zkWatcherExecutor));
+    }
+
+    public LocalSession getSession(long sessionId) {
+        return sessionCache.getSession(sessionId);
+    }
+
+    public List<LocalSession> getSessions() {
+        return sessionCache.getSessions();
     }
 
     private void loadSessions(LocalSessionLoader loader) {
@@ -87,7 +97,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, "Purging old sessions");
         try {
-            for (LocalSession candidate : listSessions()) {
+            for (LocalSession candidate : sessionCache.getSessions()) {
                 Instant createTime = Instant.ofEpochSecond(candidate.getCreateTime());
                 log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
@@ -125,7 +135,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         log.log(Level.FINE, "Deleting local session " + sessionId);
         LocalSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null)  watcher.close();
-        removeSession(sessionId);
+        sessionCache.removeSession(sessionId);
         NestedTransaction transaction = new NestedTransaction();
         session.delete(transaction);
         transaction.commit();
@@ -137,7 +147,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     private void deleteAllSessions() {
-        List<LocalSession> sessions = new ArrayList<>(listSessions());
+        List<LocalSession> sessions = new ArrayList<>(sessionCache.getSessions());
         for (LocalSession session : sessions) {
             deleteSession(session);
         }

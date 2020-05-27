@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import java.util.ArrayList;
@@ -6,12 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * A generic session repository that can store any type of session that extends the abstract interface.
+ * A session cache that can store any type of {@link Session}.
  *
  * @author Ulf Lilleengen
+ * @author hmusum
  */
-// TODO: This is a ZK cache. We should probably remove it, or make that explicit
-public class SessionRepo<SESSIONTYPE extends Session> {
+public class SessionCache<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
@@ -37,7 +37,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         return sessions.get(id);
     }
 
-    public synchronized List<SESSIONTYPE> listSessions() {
+    public synchronized List<SESSIONTYPE> getSessions() {
         return new ArrayList<>(sessions.values());
     }
     

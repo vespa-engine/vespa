@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Session repository for RemoteSessions. There is one such repo per tenant.
  * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper. The zookeeper state watched in
  * this class is shared between all config servers, so it should not modify any global state, because the operation
  * will be performed on all servers. The repo can be regarded as read only from the POV of the configserver.
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  * @author Vegard Havdal
  * @author Ulf Lilleengen
  */
-public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
+public class RemoteSessionRepo {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
 
@@ -55,12 +56,14 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final Executor zkWatcherExecutor;
+    private final SessionCache<RemoteSession> sessionCache;
 
     public RemoteSessionRepo(GlobalComponentRegistry componentRegistry,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
+        this.sessionCache = new SessionCache<>();
         this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
@@ -76,14 +79,22 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.directoryCache.start();
     }
 
+    public RemoteSession getSession(long sessionId) {
+        return sessionCache.getSession(sessionId);
+    }
+
     public List<Long> getSessions() {
         return getSessionList(curator.getChildren(sessionsPath));
+    }
+
+    public void addSession(RemoteSession session) {
+        sessionCache.addSession(session);
     }
 
     public int deleteExpiredSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getSessions()) {
-            RemoteSession session = getSession(sessionId);
+            RemoteSession session = sessionCache.getSession(sessionId);
             if (session == null) continue; // Internal sessions not in synch with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             Instant created = Instant.ofEpochSecond(session.getCreateTime());
@@ -121,14 +132,14 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     }
 
     private void checkForRemovedSessions(List<Long> sessions) {
-        for (RemoteSession session : listSessions())
+        for (RemoteSession session : sessionCache.getSessions())
             if ( ! sessions.contains(session.getSessionId()))
                 sessionRemoved(session.getSessionId());
     }
     
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if (getSession(sessionId) == null)
+            if (sessionCache.getSession(sessionId) == null)
                 sessionAdded(sessionId);
     }
 
@@ -152,7 +163,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private void sessionRemoved(long sessionId) {
         RemoteSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null)  watcher.close();
-        removeSession(sessionId);
+        sessionCache.removeSession(sessionId);
         metrics.incRemovedSessions();
     }
 
@@ -182,7 +193,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-            for (RemoteSession session : listSessions()) {
+            for (RemoteSession session : sessionCache.getSessions()) {
                 sessionMetrics.add(session.getStatus());
             }
             metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
@@ -213,7 +224,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private void synchronizeOnNew(List<Long> sessionList) {
         for (long sessionId : sessionList) {
-            RemoteSession session = getSession(sessionId);
+            RemoteSession session = sessionCache.getSession(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();

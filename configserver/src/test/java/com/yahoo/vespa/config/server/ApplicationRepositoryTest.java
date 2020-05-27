@@ -333,13 +333,13 @@ public class ApplicationRepositoryTest {
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         LocalSessionRepo localSessionRepo = tester.tenant().getLocalSessionRepo();
-        assertEquals(3, localSessionRepo.listSessions().size());
+        assertEquals(3, localSessionRepo.getSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = localSessionRepo.listSessions();
+        Collection<LocalSession> sessions = localSessionRepo.getSessions();
         assertEquals(1, sessions.size());
         ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
         LocalSession localSession = localSessions.get(0);
@@ -353,9 +353,9 @@ public class ApplicationRepositoryTest {
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
-        assertEquals(2, localSessionRepo.listSessions().size());
+        assertEquals(2, localSessionRepo.getSessions().size());
         localSessionRepo.deleteSession(localSession);
-        assertEquals(1, localSessionRepo.listSessions().size());
+        assertEquals(1, localSessionRepo.getSessions().size());
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
