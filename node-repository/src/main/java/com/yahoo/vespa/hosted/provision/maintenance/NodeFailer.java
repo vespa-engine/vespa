@@ -7,7 +7,6 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -31,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -138,7 +138,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         // We do this here ("lazily") to avoid writing to zk for each config request.
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
             Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
-            if ( ! lastLocalRequest.isPresent()) continue;
+            if (lastLocalRequest.isEmpty()) continue;
 
             if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                 History updatedHistory = node.history()
@@ -189,11 +189,15 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 .forEach((hostName, serviceInstances) -> {
                     Node node = activeNodesByHostname.get(hostName.s());
                     if (node == null) return;
-
-                    if (badNode(serviceInstances)) {
-                        recordAsDown(node);
-                    } else {
-                        clearDownRecord(node);
+                    try (var lock = nodeRepository().lock(node.allocation().get().owner())) {
+                        Optional<Node> currentNode = nodeRepository().getNode(node.hostname(), Node.State.active); // re-get inside lock
+                        if (currentNode.isEmpty()) return; // Node disappeared since acquiring lock
+                        node = currentNode.get();
+                        if (badNode(serviceInstances)) {
+                            recordAsDown(node, lock);
+                        } else {
+                            clearDownRecord(node, lock);
+                        }
                     }
                 });
     }
@@ -311,27 +315,16 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
     }
 
-    /**
-     * Record a node as down if not already recorded and returns the node in the new state.
-     * This assumes the node is found in the node
-     * repo and that the node is allocated. If we get here otherwise something is truly odd.
-     */
-    private Node recordAsDown(Node node) {
-        if (node.history().event(History.Event.Type.down).isPresent()) return node; // already down: Don't change down timestamp
-
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant(), Agent.NodeFailer), lock);
-        }
+    /** Record a node as down if not already recorded */
+    private void recordAsDown(Node node, Mutex lock) {
+        if (node.history().event(History.Event.Type.down).isPresent()) return; // already down: Don't change down timestamp
+        nodeRepository().write(node.downAt(clock.instant(), Agent.NodeFailer), lock);
     }
 
-    private void clearDownRecord(Node node) {
-        if ( ! node.history().event(History.Event.Type.down).isPresent()) return;
-
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            nodeRepository().write(node.up(), lock);
-        }
+    /** Clear down record for node, if any */
+    private void clearDownRecord(Node node, Mutex lock) {
+        if (node.history().event(History.Event.Type.down).isEmpty()) return;
+        nodeRepository().write(node.up(), lock);
     }
 
     /**
@@ -344,7 +337,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean failActive(Node node, String reason) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
-        if ( ! deployment.isPresent()) return false; // this will be done at another config server
+        if (deployment.isEmpty()) return false; // this will be done at another config server
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all
@@ -394,7 +387,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
 
         // Always allow failing physical nodes up to minimum limit
-        if (!node.parentHostname().isPresent() &&
+        if (node.parentHostname().isEmpty() &&
             recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
 
         log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
