@@ -41,10 +41,10 @@ using search::query::SimpleStringTerm;
 using search::query::Weight;
 using search::queryeval::Blueprint;
 using search::queryeval::EmptyBlueprint;
+using search::queryeval::FakeRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::NearestNeighborBlueprint;
 using search::queryeval::SearchIterator;
-using search::queryeval::FakeRequestContext;
 using std::string;
 using std::vector;
 using vespalib::eval::TensorSpec;
@@ -143,18 +143,18 @@ search_for_term(const string &term, IAttributeManager &attribute_manager)
 
 template <typename T>
 struct AttributeVectorTypeFinder {
-    typedef SingleStringExtAttribute Type;
+    using Type = SingleStringExtAttribute;
     static void add(Type & a, const T & v) { a.add(v, weight); }
 };
 
 template <>
 struct AttributeVectorTypeFinder<int64_t> {
-    typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> > Type;
+    using Type = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> >;
     static void add(Type & a, int64_t v) { a.set(a.getNumDocs()-1, v); a.commit(); }
 };
 
 struct FastSearchLongAttribute {
-    typedef search::SingleValueNumericPostingAttribute< search::EnumAttribute<search::IntegerAttributeTemplate<int64_t> > > Type;
+    using Type = search::SingleValueNumericPostingAttribute< search::EnumAttribute<search::IntegerAttributeTemplate<int64_t> > >;
     static void add(Type & a, int64_t v) { a.update(a.getNumDocs()-1, v); a.commit(); }
 };
 
@@ -175,19 +175,19 @@ template <typename T>
 MyAttributeManager
 makeAttributeManager(T value)
 {
-    typedef AttributeVectorTypeFinder<T> AT;
-    typedef typename AT::Type AttributeVectorType;
-    AttributeVectorType *attr = new AttributeVectorType(field);
+    using AT = AttributeVectorTypeFinder<T>;
+    using AttributeVectorType = typename AT::Type;
+    auto* attr = new AttributeVectorType(field);
     return fill<AT, T>(attr, value);
 }
 
 MyAttributeManager
 makeFastSearchLongAttribute(int64_t value)
 {
-    typedef FastSearchLongAttribute::Type AttributeVectorType;
+    using AttributeVectorType = FastSearchLongAttribute::Type;
     Config cfg(BasicType::fromType(int64_t()), CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    AttributeVectorType *attr = new AttributeVectorType(field, cfg);
+    auto* attr = new AttributeVectorType(field, cfg);
     return fill<FastSearchLongAttribute, int64_t>(attr, value);
 }
 
