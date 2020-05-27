@@ -30,7 +30,6 @@ BitVector::UP
 EmptySearch::get_hits(uint32_t begin_id)
 {
     auto result = BitVector::create(begin_id, getEndId());
-    result->clearInterval(begin_id, getEndId());
     return result;
 }
 
