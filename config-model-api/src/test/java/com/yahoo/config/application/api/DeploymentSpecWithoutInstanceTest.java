@@ -326,6 +326,18 @@ public class DeploymentSpecWithoutInstanceTest {
     }
 
     @Test
+    public void testOnlyAthenzServiceDefined() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals(List.of(), spec.instances());
+    }
+
+    @Test
     public void productionSpecWithParallelDeployments() {
         StringReader r = new StringReader(
                 "<deployment>\n" +

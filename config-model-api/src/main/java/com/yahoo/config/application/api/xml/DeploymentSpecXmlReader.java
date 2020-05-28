@@ -133,6 +133,9 @@ public class DeploymentSpecXmlReader {
                                                              Element instanceTag,
                                                              MutableOptional<String> globalServiceId,
                                                              Element parentTag) {
+        if (isEmptySpec(instanceTag))
+            return List.of();
+
         if (validate)
             validateTagOrder(instanceTag);
 

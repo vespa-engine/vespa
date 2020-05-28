@@ -652,7 +652,7 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithIncreasinglyStrictUpgradePoliciesInParallel() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "  <instance />" +
+                "  <instance id='instance0'/>" +
                 "  <parallel>" +
                 "     <instance id='instance1'>" +
                 "        <upgrade policy='conservative'/>" +
@@ -678,7 +678,7 @@ public class DeploymentSpecTest {
                 "        <upgrade policy='canary'/>" +
                 "     </instance>" +
                 "  </parallel>" +
-                "  <instance />" +
+                "  <instance id='instance3'/>" +
                 "</deployment>"
         );
         DeploymentSpec.fromXml(r);
