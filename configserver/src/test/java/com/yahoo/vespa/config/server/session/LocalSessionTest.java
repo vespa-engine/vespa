@@ -23,7 +23,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +45,6 @@ public class LocalSessionTest {
 
     private static final File testApp = new File("src/test/apps/app");
 
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private Path tenantPath = Path.createRoot();
     private Curator curator;
     private ConfigCurator configCurator;
@@ -145,8 +143,7 @@ public class LocalSessionTest {
                         zkc,
                         sessionDir,
                         applications,
-                        new HostRegistry<>(),
-                        flagSource));
+                        new HostRegistry<>()));
     }
 
     private void doPrepare(LocalSession session) {

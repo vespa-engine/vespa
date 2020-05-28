@@ -22,18 +22,15 @@ public class SessionContext {
     private final File serverDBSessionDir;
     private final TenantApplications applicationRepo;
     private final HostValidator<ApplicationId> hostRegistry;
-    private final FlagSource flagSource;
 
     public SessionContext(ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient,
                           File serverDBSessionDir, TenantApplications applicationRepo,
-                          HostValidator<ApplicationId> hostRegistry,
-                          FlagSource flagSource) {
+                          HostValidator<ApplicationId> hostRegistry) {
         this.applicationPackage = applicationPackage;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationRepo = applicationRepo;
         this.hostRegistry = hostRegistry;
-        this.flagSource = flagSource;
     }
 
     public ApplicationPackage getApplicationPackage() {
@@ -54,7 +51,4 @@ public class SessionContext {
     
     public HostValidator<ApplicationId> getHostValidator() { return hostRegistry; }
 
-    public FlagSource getFlagSource() {
-        return flagSource;
-    }
 }

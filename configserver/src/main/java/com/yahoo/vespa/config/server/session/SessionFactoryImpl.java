@@ -8,9 +8,10 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.io.IOUtils;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostValidator;
@@ -42,10 +43,9 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final SessionPreparer sessionPreparer;
     private final Curator curator;
     private final ConfigCurator configCurator;
-    private final SessionCounter sessionCounter;
     private final TenantApplications applicationRepo;
     private final Path sessionsPath;
-    private final TenantFileSystemDirs tenantFileSystemDirs;
+    private final GlobalComponentRegistry componentRegistry;
     private final HostValidator<ApplicationId> hostRegistry;
     private final TenantName tenant;
     private final String serverId;
@@ -63,10 +63,9 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.sessionPreparer = globalComponentRegistry.getSessionPreparer();
         this.curator = globalComponentRegistry.getCurator();
         this.configCurator = globalComponentRegistry.getConfigCurator();
-        this.sessionCounter = new SessionCounter(globalComponentRegistry.getConfigCurator(), tenant);
         this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
-        this.tenantFileSystemDirs = new TenantFileSystemDirs(globalComponentRegistry.getConfigServerDB(), tenant);
+        this.componentRegistry = globalComponentRegistry;
         this.serverId = globalComponentRegistry.getConfigserverConfig().serverId();
         this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
         this.clock = globalComponentRegistry.getClock();
@@ -76,13 +75,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     /** Create a session for a true application package change */
     @Override
-    public LocalSession createSession(File applicationFile,
-                                      ApplicationId applicationId,
-                                      TimeoutBudget timeoutBudget) {
+    public LocalSession createSession(File applicationFile, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         return create(applicationFile, applicationId, nonExistingActiveSession, false, timeoutBudget);
     }
 
-    private void ensureZKPathDoesNotExist(Path sessionPath) {
+    private void ensureSessionPathDoesNotExist(long sessionId) {
+        Path sessionPath = getSessionPath(sessionId);
         if (configCurator.exists(sessionPath.getAbsolute())) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
@@ -110,14 +108,10 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                       Clock clock) {
         log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
         sessionZKClient.createNewSession(clock.instant());
-        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
-        SessionContext context = new SessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId), applicationRepo, hostRegistry, flagSource);
+        SessionContext context = createSessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId));
         LocalSession session = new LocalSession(tenant, sessionId, sessionPreparer, context);
-        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
-        log.log(Level.FINE, TenantRepository.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
         return session;
     }
 
@@ -145,16 +139,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSessionId,
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
-        long sessionId = sessionCounter.nextSessionId();
-        Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
+        long sessionId = getNextSessionId();
         try {
-            ensureZKPathDoesNotExist(sessionIdPath);
-            SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator,
-                                                                                       configCurator,
-                                                                                       sessionIdPath,
-                                                                                       serverId,
-                                                                                       nodeFlavors);
-            File userApplicationDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
+            ensureSessionPathDoesNotExist(sessionId);
+            SessionZooKeeperClient sessionZooKeeperClient =
+                    new SessionZooKeeperClient(curator, configCurator, getSessionPath(sessionId), serverId, nodeFlavors);
+            File userApplicationDir = getSessionAppDir(sessionId);
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile,
                                                                       userApplicationDir,
@@ -165,21 +155,25 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             applicationPackage.writeMetaData();
             return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget, clock);
         } catch (Exception e) {
-            throw new RuntimeException("Error creating session " + sessionIdPath, e);
+            throw new RuntimeException("Error creating session " + sessionId, e);
         }
     }
 
-    private File getSessionAppDir(long sessionId) {
-        File appDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
+    private File getAndValidateExistingSessionAppDir(long sessionId) {
+        File appDir = getSessionAppDir(sessionId);
         if (!appDir.exists() || !appDir.isDirectory()) {
             throw new IllegalArgumentException("Unable to find correct application directory for session " + sessionId);
         }
         return appDir;
     }
 
+    private File getSessionAppDir(long sessionId) {
+        return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant).getUserApplicationDir(sessionId);
+    }
+
     @Override
     public LocalSession loadSession(long sessionId) {
-        File sessionDir = getSessionAppDir(sessionId);
+        File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
         SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
@@ -187,8 +181,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                             sessionIdPath,
                                                                             serverId,
                                                                             nodeFlavors);
-        SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo,
-                                                    hostRegistry, flagSource);
+        SessionContext context = createSessionContext(applicationPackage, sessionZKClient, sessionDir);
         return new LocalSession(tenant, sessionId, sessionPreparer, context);
     }
 
@@ -198,6 +191,19 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             return applicationRepo.requireActiveSessionOf(applicationId);
         }
         return nonExistingActiveSession;
+    }
+
+    long getNextSessionId() {
+        return new SessionCounter(componentRegistry.getConfigCurator(), tenant).nextSessionId();
+    }
+
+    Path getSessionPath(long sessionId) {
+        return sessionsPath.append(String.valueOf(sessionId));
+    }
+
+    private SessionContext createSessionContext(ApplicationPackage applicationPackage,
+                                                SessionZooKeeperClient sessionZKClient, File sessionAppDir) {
+        return new SessionContext(applicationPackage, sessionZKClient, sessionAppDir, applicationRepo, hostRegistry);
     }
 
 }

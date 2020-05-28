@@ -384,8 +384,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                      new MockSessionZKClient(MockApplicationPackage.createEmpty()),
                                      null,
                                      null,
-                                     new HostRegistry<>(),
-                                     null));
+                                     new HostRegistry<>()));
             this.exception = exception;
         }
 

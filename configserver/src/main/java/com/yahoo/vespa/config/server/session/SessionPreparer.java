@@ -80,6 +80,7 @@ public class SessionPreparer {
     private final Zone zone;
     private final SecretStore secretStore;
     private final BooleanFlag distributeApplicationPackage;
+    private final FlagSource flagSource;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -102,6 +103,7 @@ public class SessionPreparer {
         this.zone = zone;
         this.secretStore = secretStore;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
+        this.flagSource = flagSource;
     }
 
     /**
@@ -210,7 +212,7 @@ public class SessionPreparer {
                                                               Set.copyOf(containerEndpoints),
                                                               params.isBootstrap(),
                                                               currentActiveApplicationSet.isEmpty(),
-                                                              context.getFlagSource(),
+                                                              flagSource,
                                                               endpointCertificateSecrets,
                                                               athenzDomain, applicationRoles);
             this.fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());

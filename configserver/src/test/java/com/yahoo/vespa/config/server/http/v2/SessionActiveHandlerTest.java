@@ -8,9 +8,9 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -42,7 +42,6 @@ import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
@@ -67,7 +66,10 @@ import static com.yahoo.jdisc.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class SessionActiveHandlerTest extends SessionHandlerTest {
 
@@ -76,7 +78,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private static final TenantName tenantName = TenantName.from("activatetest");
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
 
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private Curator curator;
     private LocalSessionRepo localRepo;
     private TenantApplications applicationRepo;
@@ -222,8 +223,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>(),
-                                                                 flagSource)));
+                                                                 applicationRepo, new HostRegistry<>())));
     }
 
     private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {
