@@ -159,7 +159,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    .not().removable()
                                    .asList();
         AllocatableClusterResources currentResources =
-                nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type()) // new deployment: Use min
+                nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(),
+                                                                  clusterSpec.type(),
+                                                                  nodeRepository) // new deployment: Use min
                                 : new AllocatableClusterResources(nodes, nodeRepository);
         return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources);
     }
