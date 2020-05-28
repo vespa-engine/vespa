@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.api.ApplicationRoles;
@@ -118,7 +117,7 @@ public class ApplicationRepositoryTest {
         Tenant tenant = tenantRepository.getTenant(tenantName);
         LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
-        AllocatedHosts a = session.getAllocatedHosts();
+        session.getAllocatedHosts();
     }
 
     @Test
@@ -306,12 +305,12 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void testDeletingInactiveSessions() {
+    public void testDeletingInactiveSessions() throws IOException {
         ManualClock clock = new ManualClock(Instant.now());
         ConfigserverConfig configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
+                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester(configserverConfig, clock);
         tester.deployApp("src/test/apps/app", clock.instant()); // session 2 (numbering starts at 2)

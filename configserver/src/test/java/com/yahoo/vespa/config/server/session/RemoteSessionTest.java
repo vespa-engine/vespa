@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -24,8 +23,11 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -52,6 +54,9 @@ public class RemoteSessionTest {
     private static final TenantName tenantName = TenantName.from("default");
 
     private Curator curator;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setupTest() {
@@ -172,9 +177,10 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_permanent_app_is_used() {
+    public void require_that_permanent_app_is_used() throws IOException {
         Optional<PermanentApplicationPackage> permanentApp = Optional.of(new PermanentApplicationPackage(
-                new ConfigserverConfig(new ConfigserverConfig.Builder().applicationDirectory(Files.createTempDir().getAbsolutePath()))));
+                new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                               .applicationDirectory(temporaryFolder.newFolder("appdir").getAbsolutePath()))));
         MockModelFactory mockModelFactory = new MockModelFactory();
         try {
             int sessionId = 3;

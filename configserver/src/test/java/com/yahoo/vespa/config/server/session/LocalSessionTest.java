@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.google.common.io.Files;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -29,10 +28,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -55,7 +56,8 @@ public class LocalSessionTest {
     public void setupTest() {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), TenantName.from("test_tenant"));
+        tenantFileSystemDirs = new TenantFileSystemDirs(uncheck(() -> Files.createTempDirectory("serverdb")).toFile(),
+                                                        TenantName.from("test_tenant"));
     }
 
     @Test

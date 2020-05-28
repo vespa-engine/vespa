@@ -2,7 +2,11 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Files;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -12,9 +16,10 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
-import java.io.*;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * A compressed application points to an application package that can be decompressed.
@@ -74,7 +79,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
     }
 
     File decompress() throws IOException {
-        return decompress(Files.createTempDir());
+        return decompress(uncheck(() -> java.nio.file.Files.createTempDirectory("decompress")).toFile());
     }
 
     public File decompress(File dir) throws IOException {

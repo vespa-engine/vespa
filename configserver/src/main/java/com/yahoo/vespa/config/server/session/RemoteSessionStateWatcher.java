@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 public class RemoteSessionStateWatcher {
 
     private static final Logger log = Logger.getLogger(RemoteSessionStateWatcher.class.getName());
-    // One thread pool for all instances of this class
 
     private final Curator.FileCache fileCache;
     private final ReloadHandler reloadHandler;

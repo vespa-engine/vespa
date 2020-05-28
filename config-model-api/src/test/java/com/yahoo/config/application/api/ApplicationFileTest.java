@@ -6,16 +6,25 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
  */
 public abstract class ApplicationFileTest {
+
     protected void writeAppTo(File destFolder) throws IOException {
         createFiles(destFolder, "vespa-services.xml", "vespa-hosts.xml");
         createFolders(destFolder, "searchdefinitions", "components", "files", "templates");
@@ -34,7 +43,7 @@ public abstract class ApplicationFileTest {
     private void createFiles(File destFolder, String ... names) throws IOException {
         for (String name : names) {
             File f = new File(destFolder, name);
-            f.createNewFile();
+            assertTrue(f.createNewFile());
             IOUtils.writeFile(f, "foo", false);
         }
     }
@@ -61,11 +70,11 @@ public abstract class ApplicationFileTest {
         ApplicationFile f1 = getApplicationFile(p1);
         ApplicationFile f2 = getApplicationFile(p2);
 
-        assertTrue(f1.equals(f1));
-        assertFalse(f1.equals(f2));
+        assertEquals(f1, f1);
+        assertNotEquals(f1, f2);
 
-        assertFalse(f2.equals(f1));
-        assertTrue(f2.equals(f2));
+        assertNotEquals(f2, f1);
+        assertEquals(f2, f2);
     }
 
     @Test
@@ -315,4 +324,5 @@ public abstract class ApplicationFileTest {
     }
     
     public abstract ApplicationFile getApplicationFile(Path path) throws Exception;
+
 }
