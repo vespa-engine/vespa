@@ -192,14 +192,14 @@ public class DynamicDockerProvisionTest {
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
                                                       resources(4, 1, 2, 20, 40)));
         tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           3, 1, 2, 20, 40,
+                           2, 1, 2, 20, 40,
                            app1, cluster1);
 
         // Redeploy the same
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
                                                       resources(4, 1, 2, 20, 40)));
         tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           3, 1, 2, 20, 40,
+                           2, 1, 2, 20, 40,
                            app1, cluster1);
     }
 
