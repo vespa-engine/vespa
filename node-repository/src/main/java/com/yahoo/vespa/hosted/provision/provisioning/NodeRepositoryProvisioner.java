@@ -59,10 +59,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
     private final NodeResourceLimits nodeResourceLimits;
 
-    int getSpareCapacityProd() {
-        return SPARE_CAPACITY_PROD;
-    }
-
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
@@ -136,6 +132,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         nodeRepository.deactivate(application, transaction);
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
     }
+
+    int getSpareCapacityProd() { return SPARE_CAPACITY_PROD; }
 
     /**
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
