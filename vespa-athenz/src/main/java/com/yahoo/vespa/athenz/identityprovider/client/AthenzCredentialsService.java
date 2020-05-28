@@ -64,6 +64,9 @@ class AthenzCredentialsService {
         this.clock = clock;
     }
 
+    Path certificatePath() { return SiaUtils.getCertificateFile(VESPA_SIA_DIRECTORY, tenantIdentity); }
+    Path privateKeyPath() { return SiaUtils.getPrivateKeyFile(VESPA_SIA_DIRECTORY, tenantIdentity); }
+
     AthenzCredentials registerInstance() {
         Optional<AthenzCredentials> athenzCredentialsFromDisk = tryReadCredentialsFromDisk();
         if (athenzCredentialsFromDisk.isPresent()) {

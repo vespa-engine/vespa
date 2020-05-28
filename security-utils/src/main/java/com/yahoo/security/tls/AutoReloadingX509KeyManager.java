@@ -5,19 +5,20 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.X509CertificateWithKey;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +58,13 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
 
     public static AutoReloadingX509KeyManager fromPemFiles(Path privateKeyFile, Path certificatesFile) {
         return new AutoReloadingX509KeyManager(privateKeyFile, certificatesFile);
+    }
+
+    public X509CertificateWithKey getCurrentCertificateWithKey() {
+        X509ExtendedKeyManager manager = mutableX509KeyManager.currentManager();
+        X509Certificate[] certificateChain = manager.getCertificateChain(CERTIFICATE_ALIAS);
+        PrivateKey privateKey = manager.getPrivateKey(CERTIFICATE_ALIAS);
+        return new X509CertificateWithKey(Arrays.asList(certificateChain), privateKey);
     }
 
     private static KeyStore createKeystore(Path privateKey, Path certificateChain) {
