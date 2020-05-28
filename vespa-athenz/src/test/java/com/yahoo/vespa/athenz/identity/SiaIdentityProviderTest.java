@@ -2,11 +2,15 @@
 package com.yahoo.vespa.athenz.identity;
 
 import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.KeyStoreUtils;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -17,11 +21,11 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.KeyPair;
+import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -48,10 +52,10 @@ public class SiaIdentityProviderTest {
         SiaIdentityProvider provider =
                 new SiaIdentityProvider(
                         new AthenzService("domain", "service-name"),
-                        keyFile.toPath(),
-                        certificateFile.toPath(),
-                        trustStoreFile.toPath(),
-                        trustStoreFile.toPath());
+                        keyFile,
+                        certificateFile,
+                        trustStoreFile,
+                        SiaProviderConfig.TrustStoreType.Enum.jks);
 
         assertNotNull(provider.getIdentitySslContext());
     }
@@ -72,10 +76,10 @@ public class SiaIdentityProviderTest {
         SiaIdentityProvider provider =
                 new SiaIdentityProvider(
                         new AthenzService("domain", "service-name"),
-                        keyFile.toPath(),
-                        certificateFile.toPath(),
-                        trustStoreFile.toPath(),
-                        trustStoreFile.toPath());
+                        keyFile,
+                        certificateFile,
+                        trustStoreFile,
+                        SiaProviderConfig.TrustStoreType.Enum.pem);
 
         assertNotNull(provider.getIdentitySslContext());
     }
@@ -105,11 +109,14 @@ public class SiaIdentityProviderTest {
 
     private void createPemTrustStoreFile(X509Certificate certificate, File trustStoreFile) {
         var pemEncoded = X509CertificateUtils.toPem(certificate);
-        uncheck(() -> Files.writeString(trustStoreFile.toPath(), pemEncoded));
+        Exceptions.uncheck(() -> Files.writeString(trustStoreFile.toPath(), pemEncoded));
     }
 
     private void createTrustStoreFile(X509Certificate certificate, File trustStoreFile) {
-        uncheck(() -> Files.writeString(trustStoreFile.toPath(), X509CertificateUtils.toPem(certificate)));
+        KeyStore keystore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .withCertificateEntry("dummy-cert", certificate)
+                .build();
+        KeyStoreUtils.writeKeyStoreToFile(keystore, trustStoreFile.toPath());
     }
 
 }
