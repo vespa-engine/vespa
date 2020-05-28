@@ -75,6 +75,17 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bo
     return SearchIterator::UP(EquivSearch::create(children, std::move(md), childMatch, outputs, strict));
 }
 
+SearchIterator::UP
+EquivBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    MultiSearch::Children children(_terms.size());
+    for (size_t i = 0; i < _terms.size(); ++i) {
+        children[i] = _terms[i]->createFilterSearch(strict, constraint).release();
+    }
+    UnpackInfo unpack_info;
+    return SearchIterator::UP(OrSearch::create(children, strict, unpack_info));
+}
+
 void
 EquivBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
