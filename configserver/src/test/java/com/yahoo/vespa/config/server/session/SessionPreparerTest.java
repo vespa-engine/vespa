@@ -333,8 +333,7 @@ public class SessionPreparerTest {
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
                                   TenantApplications.create(componentRegistry, new MockReloadHandler(), TenantName.from("tenant")),
-                                  new HostRegistry<>(),
-                                  flagSource);
+                                  new HostRegistry<>());
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

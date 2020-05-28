@@ -56,7 +56,7 @@ public class SessionZooKeeperClient {
 
     // Only for testing when cache loader does not need cache entries.
     public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, "", Optional.empty());
+        this(curator, ConfigCurator.create(curator), sessionPath, "1", Optional.empty());
     }
 
     public SessionZooKeeperClient(Curator curator,
