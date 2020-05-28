@@ -34,6 +34,8 @@ private:
 protected:
     SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
 public:
     SimpleBlueprint(const SimpleResult &result);
