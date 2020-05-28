@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 

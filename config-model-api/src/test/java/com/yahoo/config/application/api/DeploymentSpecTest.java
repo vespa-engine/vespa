@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -419,6 +420,23 @@ public class DeploymentSpecTest {
             // success
             assertEquals("The total delay specified is PT24H1S but max 24 hours is allowed", e.getMessage());
         }
+    }
+
+    @Test
+    public void testOnlyAthenzServiceDefinedInInstance() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain'>" +
+                "  <instance id='default' athenz-service='service' />" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals(1, spec.instances().size());
+
+        DeploymentInstanceSpec instance = spec.instances().get(0);
+        assertEquals("default", instance.name().value());
+        assertEquals("service", instance.athenzService(Environment.prod, RegionName.defaultName()).get().value());
     }
 
     @Test

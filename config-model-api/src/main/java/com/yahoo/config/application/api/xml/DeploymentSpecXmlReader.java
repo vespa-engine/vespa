@@ -45,6 +45,7 @@ import java.util.stream.Stream;
  */
 public class DeploymentSpecXmlReader {
 
+    private static final String deploymentTag = "deployment";
     private static final String instanceTag = "instance";
     private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
@@ -93,6 +94,9 @@ public class DeploymentSpecXmlReader {
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
         Element root = XML.getDocument(xmlForm).getDocumentElement();
+        if ( ! root.getTagName().equals(deploymentTag))
+            throw new IllegalArgumentException("The root tag must be <deployment>");
+
         if (isEmptySpec(root))
             return DeploymentSpec.empty;
 
@@ -133,7 +137,11 @@ public class DeploymentSpecXmlReader {
                                                              Element instanceTag,
                                                              MutableOptional<String> globalServiceId,
                                                              Element parentTag) {
-        if (isEmptySpec(instanceTag))
+        if (instanceNameString.isBlank())
+            throw new IllegalArgumentException("<instance> attribute 'id' must be specified, and not be blank");
+
+        // If this is an absolutely empty instance, or the implicit "default" instance but without content, ignore it
+        if (XML.getChildren(instanceTag).isEmpty() && (instanceTag.getAttributes().getLength() == 0 || instanceTag == parentTag))
             return List.of();
 
         if (validate)
