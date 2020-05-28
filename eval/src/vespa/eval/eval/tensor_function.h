@@ -183,7 +183,7 @@ class ConstValue : public Leaf
 private:
     const Value &_value;
 public:
-    ConstValue(const Value &value_in) : Leaf(value_in.type()), _value(value_in) {}
+    ConstValue(const Value &value_in) : Super(value_in.type()), _value(value_in) {}
     const Value &value() const { return _value; }
     bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
@@ -199,7 +199,7 @@ private:
     size_t _param_idx;
 public:
     Inject(const ValueType &result_type_in, size_t param_idx_in)
-        : Leaf(result_type_in), _param_idx(param_idx_in) {}
+        : Super(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
     bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
@@ -219,7 +219,7 @@ public:
            const TensorFunction &child_in,
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
-        : Op1(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
+        : Super(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     bool result_is_mutable() const override { return true; }
@@ -238,7 +238,7 @@ public:
     Map(const ValueType &result_type_in,
         const TensorFunction &child_in,
         map_fun_t function_in)
-        : Op1(result_type_in, child_in), _function(function_in) {}
+        : Super(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
@@ -257,7 +257,7 @@ public:
          const TensorFunction &lhs_in,
          const TensorFunction &rhs_in,
          join_fun_t function_in)
-        : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
+        : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
@@ -276,7 +276,7 @@ public:
           const TensorFunction &lhs_in,
           const TensorFunction &rhs_in,
           join_fun_t function_in)
-        : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
+        : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
@@ -295,7 +295,7 @@ public:
            const TensorFunction &lhs_in,
            const TensorFunction &rhs_in,
            const vespalib::string &dimension_in)
-        : Op2(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
+        : Super(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
@@ -311,7 +311,7 @@ private:
     std::map<TensorSpec::Address, Child> _spec;
 public:
     Create(const ValueType &result_type_in, const std::map<TensorSpec::Address, Node::CREF> &spec_in)
-        : Node(result_type_in), _spec()
+        : Super(result_type_in), _spec()
     {
         for (const auto &cell: spec_in) {
             _spec.emplace(cell.first, Child(cell.second));
@@ -326,23 +326,16 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class Lambda : public Node
+class Lambda : public Leaf
 {
-    using Super = Node;
-public:
-    struct Self {
-        const Lambda &parent;
-        InterpretedFunction fun;
-        Self(const Lambda &parent_in, InterpretedFunction fun_in)
-            : parent(parent_in), fun(std::move(fun_in)) {}
-    };
+    using Super = Leaf;
 private:
     std::vector<size_t> _bindings;
     std::shared_ptr<Function const> _lambda;
     NodeTypes _lambda_types;
 public:
     Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, const Function &lambda_in, NodeTypes lambda_types_in)
-        : Node(result_type_in), _bindings(bindings_in), _lambda(lambda_in.shared_from_this()), _lambda_types(std::move(lambda_types_in)) {}
+        : Super(result_type_in), _bindings(bindings_in), _lambda(lambda_in.shared_from_this()), _lambda_types(std::move(lambda_types_in)) {}
     const std::vector<size_t> &bindings() const { return _bindings; }
     const Function &lambda() const { return *_lambda; }
     const NodeTypes &types() const { return _lambda_types; }
@@ -352,7 +345,6 @@ public:
     }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
-    void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -369,7 +361,7 @@ private:
 public:
     Peek(const ValueType &result_type_in, const Node &param,
          const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec)
-        : Node(result_type_in), _param(param), _spec()
+        : Super(result_type_in), _param(param), _spec()
     {
         for (const auto &dim: spec) {
             std::visit(vespalib::overload
@@ -404,7 +396,7 @@ public:
            const TensorFunction &child_in,
            const std::vector<vespalib::string> &from_in,
            const std::vector<vespalib::string> &to_in)
-        : Op1(result_type_in, child_in), _from(from_in), _to(to_in) {}
+        : Super(result_type_in, child_in), _from(from_in), _to(to_in) {}
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
     bool result_is_mutable() const override { return true; }
