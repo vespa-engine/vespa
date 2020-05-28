@@ -228,7 +228,7 @@ public class InterleavedSearchInvokerTest {
     @Test
     public void requireThatTopKProbabilityOverrideTakesEffect() throws IOException {
         validateThatTopKProbabilityOverrideTakesEffect(null, 8);
-        validateThatTopKProbabilityOverrideTakesEffect(0.8, 6);
+        validateThatTopKProbabilityOverrideTakesEffect(0.8, 7);
     }
 
     @Test

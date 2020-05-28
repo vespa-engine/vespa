@@ -12,16 +12,23 @@ public class TopKEstimator {
     private final TDistribution studentT;
     private final double defaultP;
     private final boolean estimate;
+    private final double skewFactor;
 
     private static boolean needEstimate(double p) {
         return (0.0 < p) && (p < 1.0);
     }
-    public TopKEstimator(double freedom, double defaultProbability) {
+    TopKEstimator(double freedom, double defaultProbability) {
+        this(freedom, defaultProbability, 0.0);
+    }
+    public TopKEstimator(double freedom, double defaultProbability, double skewFactor) {
         this.studentT = new TDistribution(null, freedom);
         defaultP = defaultProbability;
         estimate = needEstimate(defaultP);
+        this.skewFactor = skewFactor;
     }
     double estimateExactK(double k, double n, double p) {
+        double p_max = (1 + skewFactor)/n;
+        n = Math.max(1, 1/p_max);
         double variance = k * 1/n * (1 - 1/n);
         double p_inverse = 1 - (1 - p)/n;
         return k/n + studentT.inverseCumulativeProbability(p_inverse) * Math.sqrt(variance);
