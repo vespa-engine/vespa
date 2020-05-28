@@ -219,12 +219,11 @@ TEST("test that non-strict andnot search does NOT forward to its greedy first ch
 
 void expect_match(std::string input, std::string regexp) {
     using vespalib::Regex;
-    Regex pattern = Regex::from_pattern(regexp, Regex::Options::MultiLine);
-    if (! pattern.partial_match(input)) {
+    Regex pattern = Regex::from_pattern(regexp, Regex::Options::DotMatchesNewline);
+    if (! EXPECT_TRUE(pattern.partial_match(input))) {
         fprintf(stderr, "no match for pattern: >>>%s<<< in input:\n>>>\n%s\n<<<\n",
                 regexp.c_str(), input.c_str());
     }
-    EXPECT_TRUE(pattern.partial_match(input));
 }
 
 TEST("testAnd") {
