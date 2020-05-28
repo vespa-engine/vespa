@@ -32,6 +32,7 @@ private:
 
 //-----------------------------------------------------------------------------
 
+/** normal AND operator */
 class AndBlueprint : public IntermediateBlueprint
 {
 public:
@@ -56,6 +57,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/** normal OR operator */
 class OrBlueprint : public IntermediateBlueprint
 {
 public:
@@ -103,7 +105,14 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class NearBlueprint : public IntermediateBlueprint
+/** shared implementation for operators that degrade to AND when creating filter for upper-bound case */
+class FilterUpperAndBlueprint : public IntermediateBlueprint
+{
+public:
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+};
+
+class NearBlueprint : public FilterUpperAndBlueprint
 {
 private:
     uint32_t _window;
@@ -124,7 +133,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class ONearBlueprint : public IntermediateBlueprint
+class ONearBlueprint : public FilterUpperAndBlueprint
 {
 private:
     uint32_t _window;
@@ -157,6 +166,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -181,6 +192,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;

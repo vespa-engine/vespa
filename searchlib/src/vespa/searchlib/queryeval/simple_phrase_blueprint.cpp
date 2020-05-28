@@ -2,6 +2,7 @@
 
 #include "simple_phrase_blueprint.h"
 #include "simple_phrase_search.h"
+#include "emptysearch.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -83,6 +84,21 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     return phrase;
 }
 
+SearchIterator::UP
+SimplePhraseBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    if (constraint == FilterConstraint::UPPER_BOUND) {
+        MultiSearch::Children children(_terms.size());
+        for (size_t i = 0; i < _terms.size(); ++i) {
+            bool child_strict = strict && (i == 0);
+            children[i] = _terms[i]->createFilterSearch(child_strict, constraint).release();
+        }
+        UnpackInfo unpack_info;
+        return SearchIterator::UP(AndSearch::create(children, strict, unpack_info));
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
+}
 
 void
 SimplePhraseBlueprint::fetchPostings(const ExecuteInfo &execInfo)
