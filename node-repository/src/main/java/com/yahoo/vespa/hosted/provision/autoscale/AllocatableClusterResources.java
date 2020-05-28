@@ -142,15 +142,19 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources resources,
                                                              boolean exclusive,
                                                              ClusterSpec.Type clusterType,
-                                                             Limits limits,
+                                                             Limits applicationLimits,
                                                              NodeRepository nodeRepository) {
-        NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
-        cappedNodeResources = new NodeResourceLimits(nodeRepository).enlargeToLegal(cappedNodeResources, clusterType);
+        var systemLimits = new NodeResourceLimits(nodeRepository);
+        NodeResources cappedNodeResources = applicationLimits.cap(resources.nodeResources());
+        cappedNodeResources = systemLimits.enlargeToLegal(cappedNodeResources, clusterType);
 
         if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             NodeResources realResources = cappedNodeResources;
             NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(realResources);
+
+            if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) return Optional.empty();
+
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(advertisedResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(realResources),
@@ -177,7 +181,8 @@ public class AllocatableClusterResources {
                     realResources = realResources.withBandwidthGbps(cappedNodeResources.bandwidthGbps());
                 }
 
-                if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), advertisedResources)) continue;
+                if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
+                if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) continue;
                 var candidate = new AllocatableClusterResources(resources.with(realResources),
                                                                 advertisedResources,
                                                                 resources.nodeResources(),
