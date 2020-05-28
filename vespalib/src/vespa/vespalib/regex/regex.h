@@ -44,7 +44,8 @@ public:
     // TODO consider using type-safe parameter instead.
     enum Options {
         None       = 0,
-        IgnoreCase = 1
+        IgnoreCase = 1,
+        MultiLine  = 2
     };
 
     ~Regex();
