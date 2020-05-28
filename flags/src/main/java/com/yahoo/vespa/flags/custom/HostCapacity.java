@@ -10,7 +10,7 @@ import java.util.Objects;
  * @author freva
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PreprovisionCapacity {
+public class HostCapacity {
     @JsonProperty("vcpu")
     private final double vcpu;
 
@@ -23,10 +23,10 @@ public class PreprovisionCapacity {
     @JsonProperty("count")
     private final int count;
 
-    public PreprovisionCapacity(@JsonProperty("vcpu") double vcpu,
-                                @JsonProperty("memoryGb") double memoryGb,
-                                @JsonProperty("diskGb") double diskGb,
-                                @JsonProperty("count") int count) {
+    public HostCapacity(@JsonProperty("vcpu") double vcpu,
+                        @JsonProperty("memoryGb") double memoryGb,
+                        @JsonProperty("diskGb") double diskGb,
+                        @JsonProperty("count") int count) {
         this.vcpu = requirePositive("vcpu", vcpu);
         this.memoryGb = requirePositive("memoryGb", memoryGb);
         this.diskGb = requirePositive("diskGb", diskGb);
@@ -59,7 +59,7 @@ public class PreprovisionCapacity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PreprovisionCapacity that = (PreprovisionCapacity) o;
+        HostCapacity that = (HostCapacity) o;
         return Double.compare(that.vcpu, vcpu) == 0 &&
                 Double.compare(that.memoryGb, memoryGb) == 0 &&
                 Double.compare(that.diskGb, diskGb) == 0 &&

@@ -25,9 +25,13 @@ public class Zone {
 
     @Inject
     public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors, CloudConfig cloudConfig) {
-        this(new Cloud(CloudName.from(configserverConfig.cloud()), cloudConfig.dynamicProvisioning(),
-                       cloudConfig.allowHostSharing(), cloudConfig.reprovisionToUpgradeOs(),
-                       cloudConfig.requireAccessControl()),
+        this(Cloud.builder()
+                  .name(CloudName.from(configserverConfig.cloud()))
+                  .dynamicProvisioning(cloudConfig.dynamicProvisioning())
+                  .allowHostSharing(cloudConfig.allowHostSharing())
+                  .reprovisionToUpgradeOs(cloudConfig.reprovisionToUpgradeOs())
+                  .requireAccessControl(cloudConfig.requireAccessControl())
+                  .build(),
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
              RegionName.from(configserverConfig.region()),

@@ -3,21 +3,17 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
 import java.time.Instant;
@@ -44,7 +40,7 @@ public class MaintenanceTester {
                                                                     zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                                    true);
+                                                                    true, false);
 
     public MaintenanceTester() {
         curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

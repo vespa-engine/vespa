@@ -102,6 +102,7 @@ public class NodeRepository extends AbstractComponent {
     private final DockerImages dockerImages;
     private final JobControl jobControl;
     private final Applications applications;
+    private final boolean canProvisionHostsWhenRequired;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -119,7 +120,8 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
+             DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(),
+             provisionServiceProvider.getHostProvisioner().isPresent());
     }
 
     /**
@@ -133,7 +135,8 @@ public class NodeRepository extends AbstractComponent {
                           Zone zone,
                           NameResolver nameResolver,
                           DockerImage dockerImage,
-                          boolean useCuratorClientCache) {
+                          boolean useCuratorClientCache,
+                          boolean canProvisionHostsWhenRequired) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -146,6 +149,7 @@ public class NodeRepository extends AbstractComponent {
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
         this.applications = new Applications(db);
+        this.canProvisionHostsWhenRequired = canProvisionHostsWhenRequired;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
@@ -795,10 +799,15 @@ public class NodeRepository extends AbstractComponent {
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
-        if ( zone.getCloud().dynamicProvisioning())
+        if ( canProvisionHostsWhenRequired())
             return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
         else
             return host.state() == State.active;
+    }
+
+    /** Returns whether this has the ability to conjure hosts when required */
+    public boolean canProvisionHostsWhenRequired() {
+        return canProvisionHostsWhenRequired;
     }
 
     /** Returns the time keeper of this system */

@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Objects;
+
 /**
  * Represents a cloud service and its supported features.
  *
@@ -15,9 +17,9 @@ public class Cloud {
     private final boolean reprovisionToUpgradeOs;
     private final boolean requireAccessControl;
 
-    public Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean reprovisionToUpgradeOs,
-                 boolean requireAccessControl) {
-        this.name = name;
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean reprovisionToUpgradeOs,
+                  boolean requireAccessControl) {
+        this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
         this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
@@ -49,25 +51,54 @@ public class Cloud {
         return requireAccessControl;
     }
 
-    public Cloud withDynamicProvisioning(boolean dynamicProvisioning) {
-        return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
-    }
-
-    public Cloud withAllowHostSharing(boolean allowHostSharing) {
-        return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
-    }
-
-    public Cloud withReprovisionToUpgradeOs(boolean reprovisionToUpgradeOs) {
-        return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
-    }
-
-    public Cloud withRequireAccessControl(boolean requireAccessControl) {
-        return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
-    }
-
     /** For testing purposes only */
     public static Cloud defaultCloud() {
-        return new Cloud(CloudName.defaultName(), false, true, false, false);
+        return new Builder().name(CloudName.defaultName()).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        private CloudName name = CloudName.defaultName();
+        private boolean dynamicProvisioning = false;
+        private boolean allowHostSharing = true;
+        private boolean reprovisionToUpgradeOs = false;
+        private boolean requireAccessControl = false;
+
+        private Builder() {}
+
+        public Builder name(CloudName name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder dynamicProvisioning(boolean dynamicProvisioning) {
+            this.dynamicProvisioning = dynamicProvisioning;
+            return this;
+        }
+
+        public Builder allowHostSharing(boolean allowHostSharing) {
+            this.allowHostSharing = allowHostSharing;
+            return this;
+        }
+
+        public Builder reprovisionToUpgradeOs(boolean reprovisionToUpgradeOs) {
+            this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
+            return this;
+        }
+
+        public Builder requireAccessControl(boolean requireAccessControl) {
+            this.requireAccessControl = requireAccessControl;
+            return this;
+        }
+
+        public Cloud build() {
+            return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
+        }
+
     }
 
     @Override

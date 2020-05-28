@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
-import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -22,29 +21,27 @@ import java.util.Optional;
  * @author bratseth
  */
 public class Rebalancer extends NodeRepositoryMaintainer {
+
     static final Duration waitTimeAfterPreviousDeployment = Duration.ofMinutes(10);
 
     private final Deployer deployer;
-    private final Optional<HostProvisioner> hostProvisioner;
     private final Metric metric;
     private final Clock clock;
 
     public Rebalancer(Deployer deployer,
                       NodeRepository nodeRepository,
-                      Optional<HostProvisioner> hostProvisioner,
                       Metric metric,
                       Clock clock,
                       Duration interval) {
         super(nodeRepository, interval);
         this.deployer = deployer;
-        this.hostProvisioner = hostProvisioner;
         this.metric = metric;
         this.clock = clock;
     }
 
     @Override
     protected void maintain() {
-        if (hostProvisioner.isPresent()) return; // All nodes will be allocated on new hosts, so rebalancing makes no sense
+        if (nodeRepository().canProvisionHostsWhenRequired()) return; // All nodes will be allocated on new hosts, so rebalancing makes no sense
         if (nodeRepository().zone().environment().isTest()) return; // Test zones have short lived deployments, no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed

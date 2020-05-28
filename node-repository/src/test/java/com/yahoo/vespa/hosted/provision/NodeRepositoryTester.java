@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvid
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
-import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +40,7 @@ public class NodeRepositoryTester {
                                             Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true);
+                                            true, false);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

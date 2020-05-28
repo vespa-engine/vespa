@@ -62,7 +62,7 @@ public class CapacityCheckerTester {
                                             zone,
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true);
+                                            true, false);
     }
 
     private void updateCapacityChecker() {

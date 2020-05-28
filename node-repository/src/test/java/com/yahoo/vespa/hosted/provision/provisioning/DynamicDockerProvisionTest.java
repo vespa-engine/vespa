@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -52,7 +51,7 @@ import static org.mockito.Mockito.verify;
 public class DynamicDockerProvisionTest {
 
     private static final Zone zone = new Zone(
-            Cloud.defaultCloud().withDynamicProvisioning(true).withAllowHostSharing(false),
+            Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
             SystemName.main,
             Environment.prod,
             RegionName.from("us-east"));

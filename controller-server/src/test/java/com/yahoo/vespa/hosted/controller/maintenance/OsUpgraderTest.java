@@ -37,8 +37,8 @@ public class OsUpgraderTest {
 
     @Test
     public void upgrade_os() {
-        Cloud cloud1 = new Cloud(CloudName.from("c1"), false, true, false, true);
-        Cloud cloud2 = new Cloud(CloudName.from("c2"), false, true, false, true);
+        Cloud cloud1 = Cloud.builder().name(CloudName.from("c1")).requireAccessControl(true).build();
+        Cloud cloud2 = Cloud.builder().name(CloudName.from("c2")).requireAccessControl(true).build();
         ZoneApi zone1 = zone("prod.eu-west-1", cloud1);
         ZoneApi zone2 = zone("prod.us-west-1", cloud1);
         ZoneApi zone3 = zone("prod.us-central-1", cloud1);
@@ -110,7 +110,7 @@ public class OsUpgraderTest {
 
     @Test
     public void upgrade_os_with_budget() {
-        Cloud cloud = new Cloud(CloudName.from("cloud"), false, true, true, true);
+        Cloud cloud = Cloud.builder().name(CloudName.from("cloud")).reprovisionToUpgradeOs(true).requireAccessControl(true).build();
         ZoneApi zone1 = zone("dev.us-east-1", cloud);
         ZoneApi zone2 = zone("prod.us-west-1", cloud);
         ZoneApi zone3 = zone("prod.us-central-1", cloud);
