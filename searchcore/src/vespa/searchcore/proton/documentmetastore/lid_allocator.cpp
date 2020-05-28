@@ -210,8 +210,11 @@ private:
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
-        search::fef::TermFieldMatchData *tfmd =
-            new search::fef::TermFieldMatchData;
+        return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
+    }
+
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+        auto tfmd = new search::fef::TermFieldMatchData;
         {
             std::lock_guard<std::mutex> lock(_lock);
             _matchDataVector.push_back(tfmd);
