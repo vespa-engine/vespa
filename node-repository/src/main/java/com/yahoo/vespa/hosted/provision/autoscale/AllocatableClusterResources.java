@@ -32,10 +32,12 @@ public class AllocatableClusterResources {
     private final double fulfilment;
 
     /** Fake allocatable resources from requested capacity */
-    public AllocatableClusterResources(ClusterResources requested, ClusterSpec.Type clusterType) {
+    public AllocatableClusterResources(ClusterResources requested,
+                                       ClusterSpec.Type clusterType,
+                                       NodeRepository nodeRepository) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = requested.nodeResources(); // we don't know
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources());
         this.advertisedResources = requested.nodeResources();
         this.clusterType = clusterType;
         this.fulfilment = 1;
