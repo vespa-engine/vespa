@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/regex/regex.h>
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
@@ -33,6 +34,9 @@ using search::fef::TermFieldMatchDataArray;
 using search::test::InitRangeVerifier;
 
 //-----------------------------------------------------------------------------
+
+constexpr auto lower_bound = Blueprint::FilterConstraint::LOWER_BOUND;
+constexpr auto upper_bound = Blueprint::FilterConstraint::UPPER_BOUND;
 
 template <typename T, typename V=std::vector<T> >
 class Collect
@@ -213,6 +217,15 @@ TEST("test that non-strict andnot search does NOT forward to its greedy first ch
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
 }
 
+void expect_match(std::string input, std::string regexp) {
+    using vespalib::Regex;
+    Regex pattern = Regex::from_pattern(regexp, Regex::Options::DotMatchesNewline);
+    if (! EXPECT_TRUE(pattern.partial_match(input))) {
+        fprintf(stderr, "no match for pattern: >>>%s<<< in input:\n>>>\n%s\n<<<\n",
+                regexp.c_str(), input.c_str());
+    }
+}
+
 TEST("testAnd") {
     SimpleResult a;
     SimpleResult b;
@@ -232,8 +245,19 @@ TEST("testAnd") {
     res.search(*and_ab);
     SimpleResult expect;
     expect.addHit(5).addHit(30);
-
     EXPECT_EQUAL(res, expect);
+
+    SearchIterator::UP filter_ab = and_b->createFilterSearch(true, upper_bound);
+    SimpleResult filter_res;
+    filter_res.search(*filter_ab);
+    EXPECT_EQUAL(res, expect);
+    std::string dump = filter_ab->asString();
+    expect_match(dump, "upper");
+    expect_match(dump, "AndSearchStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+    filter_ab = and_b->createFilterSearch(false, lower_bound);
+    dump = filter_ab->asString();
+    expect_match(dump, "lower");
+    expect_match(dump, "AndSearchNoStrict.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
 }
 
 TEST("mutisearch and initRange") {
@@ -257,8 +281,19 @@ TEST("testOr") {
         res.search(*or_ab);
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(17).addHit(30);
-
         EXPECT_EQUAL(res, expect);
+
+        SearchIterator::UP filter_ab = or_b->createFilterSearch(true, upper_bound);
+        SimpleResult filter_res;
+        filter_res.search(*filter_ab);
+        EXPECT_EQUAL(res, expect);
+        std::string dump = filter_ab->asString();
+        expect_match(dump, "upper");
+        expect_match(dump, "OrLikeSearch.true.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+        filter_ab = or_b->createFilterSearch(false, lower_bound);
+        dump = filter_ab->asString();
+        expect_match(dump, "lower");
+        expect_match(dump, "OrLikeSearch.false.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
     }
     {
         TermFieldMatchData tfmd;
@@ -371,8 +406,19 @@ TEST("testAndNot") {
         res.search(*andnot_ab);
         SimpleResult expect;
         expect.addHit(10);
-
         EXPECT_EQUAL(res, expect);
+
+        SearchIterator::UP filter_ab = andnot_b->createFilterSearch(true, upper_bound);
+        SimpleResult filter_res;
+        filter_res.search(*filter_ab);
+        EXPECT_EQUAL(res, expect);
+        std::string dump = filter_ab->asString();
+        expect_match(dump, "upper");
+        expect_match(dump, "AndNotSearch.*SimpleSearch.*<strict,upper>.*SimpleSearch.*<nostrict,lower>");
+        filter_ab = andnot_b->createFilterSearch(false, lower_bound);
+        dump = filter_ab->asString();
+        expect_match(dump, "lower");
+        expect_match(dump, "AndNotSearch.*SimpleSearch.*<nostrict,lower>.*SimpleSearch.*<nostrict,upper>");
     }
     {
         SimpleResult a;

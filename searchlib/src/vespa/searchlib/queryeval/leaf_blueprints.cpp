@@ -42,6 +42,17 @@ SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, 
     return search;
 }
 
+SearchIterator::UP
+SimpleBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    SimpleSearch *ss = new SimpleSearch(_result);
+    SearchIterator::UP search(ss);
+    ss->tag(_tag +
+            (strict ? "<strict," : "<nostrict,") +
+            (constraint == FilterConstraint::UPPER_BOUND ? "upper>" : "lower>"));
+    return search;
+}
+
 SimpleBlueprint::SimpleBlueprint(const SimpleResult &result)
     : SimpleLeafBlueprint(FieldSpecBaseList()),
       _tag(),

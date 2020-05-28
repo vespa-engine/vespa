@@ -43,8 +43,9 @@ class Regex {
 public:
     // TODO consider using type-safe parameter instead.
     enum Options {
-        None       = 0,
-        IgnoreCase = 1
+        None              = 0,
+        IgnoreCase        = 1,
+        DotMatchesNewline = 2
     };
 
     ~Regex();
