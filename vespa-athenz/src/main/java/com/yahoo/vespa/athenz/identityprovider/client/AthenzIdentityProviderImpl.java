@@ -11,9 +11,9 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.security.tls.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.security.KeyStoreType.JKS;
 import static com.yahoo.security.KeyStoreType.PKCS12;
 
 /**
@@ -55,8 +56,6 @@ import static com.yahoo.security.KeyStoreType.PKCS12;
  * @author mortent
  * @author bjorncs
  */
-// This class should probably not implement ServiceIdentityProvider,
-// as that interface is intended for providing the node's identity, not the tenant's application identity.
 public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider, ServiceIdentityProvider {
 
     private static final Logger log = Logger.getLogger(AthenzIdentityProviderImpl.class.getName());
@@ -68,9 +67,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(24);
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
-    // TODO Make path to trust store paths config
-    private static final Path CLIENT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.pem");
-    private static final Path ATHENZ_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+    // TODO Make path to trust store config
+    private static final Path DEFAULT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.jks");
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
@@ -96,9 +94,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
         this(config,
              metric,
-                CLIENT_TRUST_STORE,
+             DEFAULT_TRUST_STORE,
              new AthenzCredentialsService(config,
-                                          createNodeIdentityProvider(config),
+                                          createNodeIdentityProvider(config, DEFAULT_TRUST_STORE),
                                           Defaults.getDefaults().vespaHostname(),
                                           Clock.systemUTC()),
              new ScheduledThreadPoolExecutor(1),
@@ -144,7 +142,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private static SSLContext createIdentitySslContext(X509ExtendedKeyManager keyManager, Path trustStore) {
         return new SslContextBuilder()
                 .withKeyManager(keyManager)
-                .withTrustStore(trustStore)
+                .withTrustStore(trustStore, JKS)
                 .build();
     }
 
@@ -177,20 +175,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public SSLContext getIdentitySslContext() {
         return identitySslContext;
     }
-
-    @Override
-    public X509CertificateWithKey getIdentityCertificateWithKey() {
-        AthenzCredentials copy = this.credentials;
-        return new X509CertificateWithKey(copy.getCertificate(), copy.getKeyPair().getPrivate());
-    }
-
-    @Override public Path certificatePath() { return athenzCredentialsService.certificatePath(); }
-
-    @Override public Path privateKeyPath() { return athenzCredentialsService.privateKeyPath(); }
-
-    @Override public Path athenzTruststorePath() { return ATHENZ_TRUST_STORE; }
-
-    @Override public Path clientTruststorePath() { return CLIENT_TRUST_STORE; }
 
     @Override
     public SSLContext getRoleSslContext(String domain, String role) {
@@ -271,7 +255,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             return new SslContextBuilder()
                     .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
-                    .withTrustStore(trustStore)
+                    .withTrustStore(trustStore, KeyStoreType.JKS)
                     .build();
         }
     }
@@ -314,9 +298,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         }
     }
 
-    private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config) {
+    private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config, Path trustStore) {
         return new SiaIdentityProvider(
-                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, CLIENT_TRUST_STORE, ATHENZ_TRUST_STORE);
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, trustStore.toFile());
     }
 
     private boolean isExpired(AthenzCredentials credentials) {
