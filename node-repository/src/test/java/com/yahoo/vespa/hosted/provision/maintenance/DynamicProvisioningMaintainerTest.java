@@ -160,9 +160,7 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(2, tester.provisionedHostsMatching(resources2));
 
         // Next maintenance run does nothing
-        List<Node> nodes = tester.nodeRepository.getNodes();
-        tester.maintainer.maintain();
-        assertEquals(nodes, tester.nodeRepository.getNodes());
+        tester.assertNodesUnchanged();
 
         // Target capacity is changed
         NodeResources resources3 = new NodeResources(48, 128, 1000, 1);
@@ -188,15 +186,16 @@ public class DynamicProvisioningMaintainerTest {
         tester.provisioningTester.deploy(application,
                                          Capacity.from(new ClusterResources(2, 1, new NodeResources(4, 8, 50, 0.1))));
         assertEquals(2, tester.nodeRepository.list().owner(application).size());
-        nodes = tester.nodeRepository.getNodes();
-        tester.maintainer.maintain();
-        assertEquals(nodes, tester.nodeRepository.getNodes());
+        tester.assertNodesUnchanged();
 
         // Clearing flag does nothing
         tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(), HostCapacity.class);
-        nodes = tester.nodeRepository.getNodes();
-        tester.maintainer.maintain();
-        assertEquals(nodes, tester.nodeRepository.getNodes());
+        tester.assertNodesUnchanged();
+
+        // Capacity reduction does not remove host with children
+        tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(new HostCapacity(resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), 1)),
+                                       HostCapacity.class);
+        tester.assertNodesUnchanged();
     }
 
     private static class DynamicProvisioningTester {
@@ -280,6 +279,12 @@ public class DynamicProvisioningMaintainerTest {
             return hostProvisioner.provisionedHosts.stream()
                                                    .filter(host -> host.nodeResources().equals(resources))
                                                    .count();
+        }
+
+        private void assertNodesUnchanged() {
+            List<Node> nodes = nodeRepository.getNodes();
+            maintainer.maintain();
+            assertEquals("Nodes are unchanged after maintenance run", nodes, nodeRepository.getNodes());
         }
 
     }

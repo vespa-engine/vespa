@@ -95,14 +95,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /** Converge zone to wanted capacity */
     private void convergeToCapacity(NodeList nodes) {
         List<NodeResources> capacity = targetCapacity();
-        List<Node> existingHosts;
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) {
-            existingHosts = removableHostsOf(nodes);
-        } else {
-            if (capacity.isEmpty()) return;
-            existingHosts = availableHostsOf(nodes);
-        }
-        List<Node> excessHosts = provision(capacity, existingHosts);
+        List<Node> excessHosts = provision(capacity, nodes);
         excessHosts.forEach(host -> {
             try {
                 hostProvisioner.deprovision(host);
@@ -117,9 +110,15 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /**
      * Provision the nodes necessary to satisfy given capacity.
      *
-     * @return Excess hosts that can be deprovisioned, if any.
+     * @return Excess hosts that can safely be deprovisioned, if any.
      */
-    private List<Node> provision(List<NodeResources> capacity, List<Node> existingHosts) {
+    private List<Node> provision(List<NodeResources> capacity, NodeList nodes) {
+        List<Node> existingHosts = availableHostsOf(nodes);
+        if (nodeRepository().zone().getCloud().dynamicProvisioning()) {
+            existingHosts = removableHostsOf(existingHosts, nodes);
+        } else if (capacity.isEmpty()) {
+            return List.of();
+        }
         List<Node> excessHosts = new ArrayList<>(existingHosts);
         for (Iterator<NodeResources> it = capacity.iterator(); it.hasNext() && !excessHosts.isEmpty(); ) {
             NodeResources resources = it.next();
@@ -150,7 +149,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to pre-provision " + resources + ", will retry in " + interval(), e);
             }
         });
-        return excessHosts;
+        return removableHostsOf(excessHosts, nodes);
     }
 
 
@@ -173,17 +172,17 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                     .asList();
     }
 
-    /** Returns hosts that have no containers and are thus removable */
-    private static List<Node> removableHostsOf(NodeList nodes) {
-        Map<String, Node> hostsByHostname = availableHostsOf(nodes).stream()
-                                                                   .collect(Collectors.toMap(Node::hostname,
-                                                                                             Function.identity()));
+    /** Returns the subset of given hosts that have no containers and are thus removable */
+    private static List<Node> removableHostsOf(List<Node> hosts, NodeList allNodes) {
+        Map<String, Node> hostsByHostname = hosts.stream()
+                                                 .collect(Collectors.toMap(Node::hostname,
+                                                                           Function.identity()));
 
-        nodes.asList().stream()
-             .filter(node -> node.allocation().isPresent())
-             .flatMap(node -> node.parentHostname().stream())
-             .distinct()
-             .forEach(hostsByHostname::remove);
+        allNodes.asList().stream()
+                .filter(node -> node.allocation().isPresent())
+                .flatMap(node -> node.parentHostname().stream())
+                .distinct()
+                .forEach(hostsByHostname::remove);
 
         return List.copyOf(hostsByHostname.values());
     }
