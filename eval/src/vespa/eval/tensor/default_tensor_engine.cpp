@@ -18,7 +18,7 @@
 #include "dense/dense_remove_dimension_optimizer.h"
 #include "dense/dense_lambda_peek_optimizer.h"
 #include "dense/dense_simple_join_function.h"
-#include "dense/dense_inplace_map_function.h"
+#include "dense/dense_simple_map_function.h"
 #include "dense/vector_from_doubles_function.h"
 #include "dense/dense_tensor_create_function.h"
 #include "dense/dense_tensor_peek_function.h"
@@ -290,7 +290,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
             child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
             child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
             child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
-            child.set(DenseInplaceMapFunction::optimize(child.get(), stash));
+            child.set(DenseSimpleMapFunction::optimize(child.get(), stash));
             child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));
             child.set(DenseSingleReduceFunction::optimize(child.get(), stash));
             nodes.pop_back();
