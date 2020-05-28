@@ -28,8 +28,6 @@ public class NodeRepositoryNode {
     public String openStackId;
     @JsonProperty("flavor")
     public String flavor;
-    @JsonProperty("cpuCores")
-    public Double cpuCores;
     @JsonProperty("resources")
     public NodeResources resources;
     @JsonProperty("membership")
@@ -92,7 +90,6 @@ public class NodeRepositoryNode {
                 ", openStackId='" + openStackId + '\'' +
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
-                ", cpuCores=" + cpuCores +
                 ", resources=" + resources +
                 ", membership=" + membership +
                 ", owner=" + owner +
