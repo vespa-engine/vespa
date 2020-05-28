@@ -41,6 +41,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final PingFactory pingFactory;
     private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
+    private static final double SKEW_FACTOR = 0.05;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -78,7 +79,7 @@ public class SearchCluster implements NodeManager<Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
-        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability());
+        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
                                                                        size,
