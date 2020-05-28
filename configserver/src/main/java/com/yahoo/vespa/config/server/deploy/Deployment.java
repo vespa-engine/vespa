@@ -182,7 +182,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
     }
 
-    private Transaction deactivateCurrentActivateNew(RemoteSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+    private static Transaction deactivateCurrentActivateNew(RemoteSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
         Transaction transaction = prepared.createActivateTransaction();
         if (isValidSession(active)) {
             checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
@@ -192,11 +192,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         return transaction;
     }
 
-    private boolean isValidSession(RemoteSession session) {
+    private static boolean isValidSession(RemoteSession session) {
         return session != null;
     }
 
-    private void checkIfActiveHasChanged(LocalSession session, RemoteSession currentActiveSession, boolean ignoreStaleSessionFailure) {
+    private static void checkIfActiveHasChanged(LocalSession session, RemoteSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
@@ -221,7 +221,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     // As of now, config generation is based on session id, and config generation must be a monotonically
     // increasing number
-    private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
+    private static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
             throw new ActivationConflictException("It is not possible to activate session " + sessionId +
                                           ", because it is older than current active session (" +
