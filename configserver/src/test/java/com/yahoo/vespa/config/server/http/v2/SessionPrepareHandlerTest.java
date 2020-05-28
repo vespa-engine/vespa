@@ -379,12 +379,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         private final RuntimeException exception;
 
         SessionThrowingException(RuntimeException exception) {
-            super(TenantName.defaultName(), 1, null,
-                  new SessionContext(null,
-                                     new MockSessionZKClient(MockApplicationPackage.createEmpty()),
-                                     null,
-                                     null,
-                                     new HostRegistry<>()));
+            super(TenantName.defaultName(), 1, null, null,
+                  new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>());
             this.exception = exception;
         }
 

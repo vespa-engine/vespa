@@ -29,7 +29,6 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -106,7 +105,7 @@ public class SessionHandlerTest {
         private Optional<DockerImage> dockerImageRepository;
 
         public MockSession(long sessionId, ApplicationPackage app) {
-            super(TenantName.defaultName(), sessionId, null, new SessionContext(app, new MockSessionZKClient(app), null, null, new HostRegistry<>()));
+            super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
         }
 
         public MockSession(long sessionId, ApplicationPackage applicationPackage, ConfigChangeActions actions) {

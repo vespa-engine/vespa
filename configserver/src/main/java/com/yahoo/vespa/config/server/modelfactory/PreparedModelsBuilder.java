@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -16,27 +17,25 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
-import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.SessionContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final SessionContext context;
+    private final HostValidator<ApplicationId> hostValidator;
     private final DeployLogger logger;
     private final PrepareParams params;
     private final FileDistributionProvider fileDistributionProvider;
@@ -61,7 +60,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  ConfigDefinitionRepo configDefinitionRepo,
                                  FileDistributionProvider fileDistributionProvider,
                                  HostProvisionerProvider hostProvisionerProvider,
-                                 SessionContext context,
+                                 HostValidator<ApplicationId> hostValidator,
                                  DeployLogger logger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
@@ -71,7 +70,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileDistributionProvider = fileDistributionProvider;
-        this.context = context;
+        this.hostValidator = hostValidator;
         this.logger = logger;
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
@@ -110,7 +109,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, validationParameters);
-        validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
+        validateModelHosts(hostValidator, applicationId, result.getModel());
         log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }

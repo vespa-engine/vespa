@@ -28,12 +28,10 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -166,20 +164,24 @@ public class SessionPreparerTest {
 
     @Test(expected = InvalidApplicationException.class)
     public void require_exception_for_overlapping_host() throws IOException {
-        SessionContext ctx = getContext(getApplicationPackage(testApp));
-        ((HostRegistry<ApplicationId>)ctx.getHostValidator()).update(applicationId("foo"), Collections.singletonList("mytesthost"));
-        preparer.prepare(ctx, new BaseDeployLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        FilesApplicationPackage app = getApplicationPackage(testApp);
+        HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
+        hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
+        preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().build(),
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
     }
     
     @Test
     public void require_no_warning_for_overlapping_host_for_same_appid() throws IOException {
-        SessionContext ctx = getContext(getApplicationPackage(testApp));
-        ((HostRegistry<ApplicationId>)ctx.getHostValidator()).update(applicationId("default"), Collections.singletonList("mytesthost"));
         final StringBuilder logged = new StringBuilder();
         DeployLogger logger = (level, message) -> {
             if (level.equals(Level.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
-        preparer.prepare(ctx, logger, new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        FilesApplicationPackage app = getApplicationPackage(testApp);
+        HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
+        hostValidator.update(applicationId("default"), Collections.singletonList("mytesthost"));
+        preparer.prepare(hostValidator, logger, new PrepareParams.Builder().build(),
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
         assertEquals(logged.toString(), "");
     }
 
@@ -325,15 +327,10 @@ public class SessionPreparerTest {
     }
 
     private void prepare(File app, PrepareParams params) throws IOException {
-        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
-    }
-
-    private SessionContext getContext(FilesApplicationPackage app) throws IOException {
-        return new SessionContext(app,
-                                  new SessionZooKeeperClient(curator, sessionsPath),
-                                  app.getAppDir(),
-                                  TenantApplications.create(componentRegistry, new MockReloadHandler(), TenantName.from("tenant")),
-                                  new HostRegistry<>());
+        FilesApplicationPackage applicationPackage = getApplicationPackage(app);
+        preparer.prepare(new HostRegistry<>(), getLogger(), params,
+                         Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
+                         applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

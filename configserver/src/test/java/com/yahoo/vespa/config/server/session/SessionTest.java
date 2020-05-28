@@ -1,12 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -24,7 +28,10 @@ public class SessionTest {
         }
 
         @Override
-        public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params, Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, Instant now) {
+        public ConfigChangeActions prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                                           Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                                           Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
+                                           SessionZooKeeperClient sessionZooKeeperClient) {
             isPrepared = true;
             return new ConfigChangeActions(new ArrayList<>());
         }
