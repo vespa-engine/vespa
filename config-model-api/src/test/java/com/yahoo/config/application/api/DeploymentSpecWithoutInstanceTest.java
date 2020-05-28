@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -323,6 +324,18 @@ public class DeploymentSpecWithoutInstanceTest {
         assertTrue(DeploymentSpec.empty.athenzDomain().isEmpty());
         assertTrue(DeploymentSpec.empty.athenzService().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
+    }
+
+    @Test
+    public void testOnlyAthenzServiceDefined() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals(List.of(), spec.instances());
     }
 
     @Test
