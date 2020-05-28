@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -42,7 +41,6 @@ public class SessionZooKeeperClient {
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
 
     static final String APPLICATION_ID_PATH = "applicationId";
-    static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
     private static final String VERSION_PATH = "version";
     private static final String CREATE_TIME_PATH = "createTime";
     private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
@@ -165,19 +163,6 @@ public class SessionZooKeeperClient {
     public ApplicationId readApplicationId() {
         if ( ! configCurator.exists(applicationIdPath())) return ApplicationId.defaultId();
         return ApplicationId.fromSerializedForm(configCurator.getData(applicationIdPath()));
-    }
-
-    void writeApplicationPackageReference(FileReference applicationPackageReference) {
-        configCurator.putData(applicationPackageReferencePath(), applicationPackageReference.value());
-    }
-
-    FileReference readApplicationPackageReference() {
-        if ( ! configCurator.exists(applicationPackageReferencePath())) return null;  // This should not happen.
-        return new FileReference(configCurator.getData(applicationPackageReferencePath()));
-    }
-
-    private String applicationPackageReferencePath() {
-        return sessionPath.append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute();
     }
 
     private String versionPath() {
