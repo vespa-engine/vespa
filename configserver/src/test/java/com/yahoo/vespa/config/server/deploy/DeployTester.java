@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -48,6 +47,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -58,6 +58,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author bratseth
@@ -78,8 +80,8 @@ public class DeployTester {
     public DeployTester(List<ModelFactory> modelFactories) {
         this(modelFactories,
              new ConfigserverConfig(new ConfigserverConfig.Builder()
-                     .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                     .configDefinitionsDir(Files.createTempDir().getAbsolutePath())),
+                     .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
+                     .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())),
              Clock.systemUTC());
     }
 

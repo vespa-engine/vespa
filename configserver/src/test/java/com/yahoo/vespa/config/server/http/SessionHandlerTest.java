@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import com.google.common.io.Files;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -18,7 +17,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -40,11 +38,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Base class for session handler tests
@@ -110,11 +112,6 @@ public class SessionHandlerTest {
 
         private MockSession(long id, ApplicationPackage app, InMemoryFlagSource flagSource) {
             super(TenantName.defaultName(), id, null, new SessionContext(app, new MockSessionZKClient(app), null, null, new HostRegistry<>(), flagSource));
-        }
-
-        public MockSession(long sessionId, ApplicationPackage applicationPackage, Instant createTime) {
-            this(sessionId, applicationPackage);
-            this.createTime = createTime;
         }
 
         public MockSession(long sessionId, ApplicationPackage applicationPackage, ConfigChangeActions actions) {
@@ -203,7 +200,7 @@ public class SessionHandlerTest {
             if (doThrow) {
                 throw new RuntimeException("foo");
             }
-            final File tempDir = Files.createTempDir();
+            File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
             try {
                 IOUtils.copyDirectory(applicationDirectory, tempDir);
             } catch (IOException e) {

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
@@ -29,11 +28,13 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 
+import java.nio.file.Files;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author Ulf Lilleengen
@@ -101,9 +102,9 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Metrics metrics = Metrics.createTestMetrics();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
-                        .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                        .sessionLifetime(5)
-                        .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
+                        .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
+                        .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
+                        .sessionLifetime(5));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
         private MockTenantListener tenantListener = new MockTenantListener();

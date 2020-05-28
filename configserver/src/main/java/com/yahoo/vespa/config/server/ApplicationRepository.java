@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -70,6 +69,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
@@ -90,6 +90,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -235,7 +236,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreSessionStaleFailure, Instant now) {
-        File tempDir = Files.createTempDir();
+        File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
             prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, ignoreSessionStaleFailure, now);
@@ -656,7 +657,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
-        File tempDir = Files.createTempDir();
+        File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
             sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
