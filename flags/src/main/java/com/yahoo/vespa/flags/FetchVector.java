@@ -57,7 +57,10 @@ public class FetchVector {
          * <p>NOTE: There is seldom any need to set ZONE_ID, as all flags are set per zone anyways. The controller
          * could PERHAPS use this where it handles multiple zones.
          */
-        ZONE_ID
+        ZONE_ID,
+
+        /** Email address of user - provided by auth0 in console. */
+        CONSOLE_USER_EMAIL
     }
 
     private final Map<Dimension, String> map;

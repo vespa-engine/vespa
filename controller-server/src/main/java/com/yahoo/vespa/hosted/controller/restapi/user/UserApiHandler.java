@@ -18,6 +18,10 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -60,12 +64,14 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private final UserManagement users;
     private final Controller controller;
+    private final BooleanFlag enable_public_signup_flow;
 
     @Inject
-    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller) {
+    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource) {
         super(parentCtx);
         this.users = users;
         this.controller = controller;
+        this.enable_public_signup_flow = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
     }
 
     @Override
@@ -148,6 +154,10 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         root.setBool("isPublic", controller.system().isPublic());
         root.setBool("isCd", controller.system().isCd());
+
+        if(enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value()) {
+            root.setBool(enable_public_signup_flow.id().toString(), true);
+        }
 
         toSlime(root.setObject("user"), user);
 
