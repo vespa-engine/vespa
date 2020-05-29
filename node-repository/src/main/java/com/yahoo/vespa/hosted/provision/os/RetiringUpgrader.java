@@ -72,10 +72,10 @@ public class RetiringUpgrader implements Upgrader {
             LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +
                      host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                      ", want " + target);
-            nodesToRetire.add(host.with(host.status()
-                                            .withWantToDeprovision(true)
-                                            .withOsVersion(host.status().osVersion().withWanted(Optional.of(target))))
-                                  .withWantToRetire(true, Agent.RetiringUpgrader, now));
+
+            host = host.withWantToRetire(true, true, Agent.RetiringUpgrader, now);
+            host = host.with(host.status().withOsVersion(host.status().osVersion().withWanted(Optional.of(target))));
+            nodesToRetire.add(host);
             nodeRepository.write(nodesToRetire, lock);
             nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, nodeType));
         }

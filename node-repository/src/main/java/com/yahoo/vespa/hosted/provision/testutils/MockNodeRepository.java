@@ -117,7 +117,7 @@ public class MockNodeRepository extends NodeRepository {
 
         Node node55 = createNode("node55", "host55.yahoo.com", ipConfig(55), Optional.empty(),
                                  new Flavor(new NodeResources(2, 8, 50, 1, fast, local)), Optional.empty(), NodeType.tenant);
-        nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
+        nodes.add(node55.with(node55.status().withWantToRetire(true, true)));
 
         /* Setup docker hosts (two of these will be reserved for spares */
         nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipConfig(100, 1, 3), Optional.empty(),

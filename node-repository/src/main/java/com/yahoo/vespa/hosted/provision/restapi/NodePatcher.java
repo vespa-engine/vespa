@@ -6,13 +6,12 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.Type;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -48,6 +47,7 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 public class NodePatcher {
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
+    private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
 
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
@@ -77,13 +77,13 @@ public class NodePatcher {
         List<Node> patchedNodes = new ArrayList<>();
         inspector.traverse((String name, Inspector value) -> {
             try {
-                node = applyField(node, name, value);
+                node = applyField(node, name, value, inspector);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Could not set field '" + name + "'", e);
             }
 
             try {
-                patchedNodes.addAll(applyFieldRecursive(name, value));
+                patchedNodes.addAll(applyFieldRecursive(name, value, inspector));
             } catch (IllegalArgumentException e) {
                 // Non recursive field, ignore
             }
@@ -93,12 +93,12 @@ public class NodePatcher {
         return patchedNodes;
     }
 
-    private List<Node> applyFieldRecursive(String name, Inspector value) {
+    private List<Node> applyFieldRecursive(String name, Inspector value, Inspector root) {
         switch (name) {
             case WANT_TO_RETIRE:
                 List<Node> childNodes = node.type().isDockerHost() ? nodes.get().childrenOf(node).asList() : List.of();
                 return childNodes.stream()
-                        .map(child -> applyField(child, name, value))
+                        .map(child -> applyField(child, name, value, root))
                         .collect(Collectors.toList());
 
             default :
@@ -106,7 +106,7 @@ public class NodePatcher {
         }
     }
 
-    private Node applyField(Node node, String name, Inspector value) {
+    private Node applyField(Node node, String name, Inspector value, Inspector root) {
         switch (name) {
             case "currentRebootGeneration" :
                 return node.withCurrentRebootGeneration(asLong(value), clock.instant());
@@ -134,11 +134,10 @@ public class NodePatcher {
             case "additionalIpAddresses" :
                 return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes.get());
             case WANT_TO_RETIRE :
-                return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
-            case "wantToDeprovision" :
-                if (node.type() != NodeType.host && asBoolean(value))
-                    throw new IllegalArgumentException("wantToDeprovision can only be set for hosts");
-                return node.with(node.status().withWantToDeprovision(asBoolean(value)));
+            case WANT_TO_DEPROVISION :
+                boolean wantToRetire = asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElse(node.status().wantToRetire());
+                boolean wantToDeprovision = asOptionalBoolean(root.field(WANT_TO_DEPROVISION)).orElse(node.status().wantToDeprovision());
+                return node.withWantToRetire(wantToRetire, wantToDeprovision, Agent.operator, clock.instant());
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
@@ -202,7 +201,7 @@ public class NodePatcher {
             if ((hasHardFailReports && node.state() == Node.State.failed) || node.state() == Node.State.parked)
                 return patchedNode;
 
-            patchedNode = patchedNode.with(patchedNode.status().withWantToDeprovision(hasHardFailReports));
+            patchedNode = patchedNode.withWantToRetire(hasHardFailReports, hasHardFailReports, Agent.system, clock.instant());
         }
 
         return patchedNode;
@@ -252,19 +251,14 @@ public class NodePatcher {
         return field.asString();
     }
 
-    private Optional<String> asOptionalString(Inspector field) {
-        return field.type().equals(Type.NIX) ? Optional.empty() : Optional.of(asString(field));
-    }
-
-    // Allows us to clear optional flags by passing "null" as slime does not have an empty (but present) representation
-    private Optional<String> removeQuotedNulls(Optional<String> value) {
-        return value.filter(v -> !v.equals("null"));
-    }
-
     private boolean asBoolean(Inspector field) {
         if ( ! field.type().equals(Type.BOOL))
             throw new IllegalArgumentException("Expected a BOOL value, got a " + field.type());
         return field.asBool();
+    }
+
+    private Optional<Boolean> asOptionalBoolean(Inspector field) {
+        return Optional.of(field).filter(Inspector::valid).map(this::asBoolean);
     }
 
 }

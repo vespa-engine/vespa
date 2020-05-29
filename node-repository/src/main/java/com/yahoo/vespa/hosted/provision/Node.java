@@ -168,15 +168,23 @@ public final class Node {
     public Optional<TenantName> reservedTo() { return reservedTo; }
 
     /**
-     * Returns a copy of this node with wantToRetire set to the given value and updated history.
-     * If given wantToRetire is equal to the current, the method is no-op.
+     * Returns a copy of this node with wantToRetire and wantToDeprovision set to the given values and updated history.
+     *
+     * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
-    public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
-        if (wantToRetire == status.wantToRetire()) return this;
-        Node node = this.with(status.withWantToRetire(wantToRetire));
+    public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
+        if (!type.isDockerHost() && wantToDeprovision)
+            throw new IllegalArgumentException("wantToDeprovision can only be set for hosts");
+        if (wantToRetire == status.wantToRetire() &&
+            wantToDeprovision == status.wantToDeprovision()) return this;
+        Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision));
         if (wantToRetire)
             node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
         return node;
+    }
+
+    public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
+        return withWantToRetire(wantToRetire, status.wantToDeprovision(), agent, at);
     }
 
     /**

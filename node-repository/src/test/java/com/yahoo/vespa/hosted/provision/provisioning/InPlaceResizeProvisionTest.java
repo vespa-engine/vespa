@@ -205,7 +205,7 @@ public class InPlaceResizeProvisionTest {
 
         // ... same with setting a node to want to retire
         Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        tester.nodeRepository().write(nodeToWantoToRetire.with(nodeToWantoToRetire.status().withWantToRetire(true)),
+        tester.nodeRepository().write(nodeToWantoToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()),
                                       tester.nodeRepository().lock(nodeToWantoToRetire));
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
         assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));

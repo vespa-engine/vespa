@@ -113,7 +113,7 @@ public class NodeTypeProvisioningTest {
 
         Node nodeToRetire = tester.nodeRepository().getNodes(NodeType.proxy, Node.State.active).get(5);
         { // Pick out a node and retire it
-            tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)), () -> {});
+            tester.nodeRepository().write(nodeToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()), () -> {});
 
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(11, hosts.size());
@@ -186,7 +186,7 @@ public class NodeTypeProvisioningTest {
         String currentyRetiringHostname;
         {
             nodesToRetire.forEach(nodeToRetire ->
-                    tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)), () -> {}));
+                    tester.nodeRepository().write(nodeToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()), () -> {}));
 
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(11, hosts.size());

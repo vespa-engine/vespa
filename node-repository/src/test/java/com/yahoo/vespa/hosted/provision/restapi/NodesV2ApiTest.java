@@ -207,8 +207,17 @@ public class NodesV2ApiTest {
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
-                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
+                        Utf8.toBytes("{\"wantToRetire\": true}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToDeprovision\": false, \"wantToRetire\": false}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToDeprovision\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
@@ -379,7 +388,7 @@ public class NodesV2ApiTest {
     @Test
     public void fails_to_ready_node_with_hard_fail() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
+                        ("[" + asHostJson("host12.yahoo.com", "default", Optional.empty()) + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -563,7 +572,7 @@ public class NodesV2ApiTest {
     @Test
     public void test_reports_patching() throws IOException {
         // Add report
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                         Utf8.toBytes("{" +
                                 "  \"reports\": {" +
                                 "    \"actualCpuCores\": {" +
@@ -584,19 +593,19 @@ public class NodesV2ApiTest {
                                 "  }" +
                                 "}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports.json");
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
 
         // Patching with an empty reports is no-op
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                           Utf8.toBytes("{\"reports\": {}}"),
                                           Request.Method.PATCH),
                               200,
-                              "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports.json");
+                              "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
 
         // Patching existing report overwrites
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                           Utf8.toBytes("{" +
                                                        "  \"reports\": {" +
                                                        "    \"actualCpuCores\": {" +
@@ -606,22 +615,22 @@ public class NodesV2ApiTest {
                                                        "}"),
                                           Request.Method.PATCH),
                               200,
-                              "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports-2.json");
+                              "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-2.json");
 
         // Clearing one report
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                         Utf8.toBytes("{\"reports\": { \"diskSpace\": null } }"),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports-3.json");
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-3.json");
 
         // Clearing all reports
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                         Utf8.toBytes("{\"reports\": null }"),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-4.json");
     }
 
     @Test
