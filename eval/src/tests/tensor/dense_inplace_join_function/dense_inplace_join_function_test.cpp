@@ -118,7 +118,7 @@ TEST("require that non-mutable tensors are not optimized") {
     TEST_DO(verify_not_optimized("con_x5_A+con_x5_B"));
 }
 
-TEST("require that scalar values are optimized") {
+TEST("require that scalar values are not optimized") {
     TEST_DO(verify_not_optimized("mut_dbl_A+mut_dbl_B"));
     TEST_DO(verify_not_optimized("mut_dbl_A+5"));
     TEST_DO(verify_not_optimized("5+mut_dbl_B"));
