@@ -3,7 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
-#include "blueprint.h"
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
@@ -20,12 +20,12 @@ private:
     fef::TermFieldMatchDataArray _tfmda;
     std::unique_ptr<SearchIterator> _wrapped_search;
 public:
-    FilterWrapper(const Blueprint::State &state)
-      : _unused_md(state.numFields()),
+    FilterWrapper(size_t num_fields)
+      : _unused_md(num_fields),
         _tfmda(),
         _wrapped_search()
     {
-        for (size_t i = 0; i < state.numFields(); ++i) {
+        for (size_t i = 0; i < num_fields; ++i) {
             _tfmda.add(&_unused_md[i]);
         }
     }
