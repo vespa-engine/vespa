@@ -432,25 +432,34 @@ WeakAndBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_sear
 
 //-----------------------------------------------------------------------------
 
-SearchIterator::UP
-FilterUpperAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+namespace {
+
+/** shared implementation for operators that degrade to AND when creating filter for upper-bound case */
+SearchIterator::UP createAndFilterAsUpperBound(const IntermediateBlueprint &self,
+                                               bool strict, Blueprint::FilterConstraint constraint)
 {
-    if (constraint == FilterConstraint::UPPER_BOUND) {
+    std::vector<const Blueprint *> children;
+    children.reserve(self.childCnt());
+    for (size_t i = 0; i < self.childCnt(); ++i) {
+        children.push_back(&self.getChild(i));
+    }
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
         MultiSearch::Children sub_searches;
-        sub_searches.reserve(childCnt());
-        for (size_t i = 0; i < childCnt(); ++i) {
-            bool child_strict = strict && inheritStrict(i);
-            auto search = getChild(i).createFilterSearch(child_strict, constraint);
+        sub_searches.reserve(children.size());
+        for (size_t i = 0; i < children.size(); ++i) {
+            bool child_strict = strict && (i == 0);
+            auto search = children[i]->createFilterSearch(child_strict, constraint);
             sub_searches.push_back(search.release());
         }
         UnpackInfo unpack_info;
         AndSearch * search = AndSearch::create(sub_searches, strict, unpack_info);
-        search->estimate(getState().estimate().estHits);
         return SearchIterator::UP(search);
     } else {
         return std::make_unique<EmptySearch>();
     }
 }
+
+} // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -499,6 +508,12 @@ NearBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searche
     return SearchIterator::UP(new NearSearch(sub_searches, tfmda, _window, strict));
 }
 
+SearchIterator::UP
+NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return createAndFilterAsUpperBound(*this, strict, constraint);
+}
+
 //-----------------------------------------------------------------------------
 
 Blueprint::HitEstimate
@@ -531,6 +546,12 @@ ONearBlueprint::createSearch(fef::MatchData &md, bool strict) const
 {
     need_normal_features_for_children(*this, md);
     return IntermediateBlueprint::createSearch(md, strict);
+}
+
+SearchIterator::UP
+ONearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return createAndFilterAsUpperBound(*this, strict, constraint);
 }
 
 SearchIterator::UP

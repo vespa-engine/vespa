@@ -105,14 +105,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-/** shared implementation for operators that degrade to AND when creating filter for upper-bound case */
-class FilterUpperAndBlueprint : public IntermediateBlueprint
-{
-public:
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
-};
-
-class NearBlueprint : public FilterUpperAndBlueprint
+class NearBlueprint : public IntermediateBlueprint
 {
 private:
     uint32_t _window;
@@ -127,13 +120,14 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     NearBlueprint(uint32_t window) : _window(window) {}
 };
 
 //-----------------------------------------------------------------------------
 
-class ONearBlueprint : public FilterUpperAndBlueprint
+class ONearBlueprint  : public IntermediateBlueprint
 {
 private:
     uint32_t _window;
@@ -148,6 +142,7 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     ONearBlueprint(uint32_t window) : _window(window) {}
 };
