@@ -141,7 +141,7 @@ public:
 
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
         (void) constraint; // We provide an iterator with exact results, so no need to take constraint into consideration.
-        auto wrapper = std::make_unique<FilterWrapper>(getState());
+        auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
         wrapper->wrap(createLeafSearch(wrapper->tfmda(), strict));
         return wrapper;
     }

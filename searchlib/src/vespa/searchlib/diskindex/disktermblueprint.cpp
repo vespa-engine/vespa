@@ -100,7 +100,7 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
 SearchIterator::UP
 DiskTermBlueprint::createFilterSearch(bool strict, FilterConstraint) const
 {
-    auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState());
+    auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
     auto & tfmda = wrapper->tfmda();
     if (_bitVector) {
         wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict));
