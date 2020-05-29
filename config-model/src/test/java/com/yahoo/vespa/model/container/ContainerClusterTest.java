@@ -167,7 +167,6 @@ public class ContainerClusterTest {
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(10, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
-        assertEquals(0, threadpoolConfig.softStartSeconds(), 0);
     }
 
     @Test
@@ -220,7 +219,6 @@ public class ContainerClusterTest {
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(500, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
-        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 
     @Test
@@ -235,7 +233,6 @@ public class ContainerClusterTest {
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(40, threadpoolConfig.maxthreads());
         assertEquals(700, threadpoolConfig.queueSize());
-        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 
     @Test
@@ -249,7 +246,6 @@ public class ContainerClusterTest {
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(500, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
-        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 
     @Test

@@ -77,20 +77,6 @@ public class FeedTesterV3 {
         assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
     }
 
-    @Test
-    public void softRestart() throws Exception {
-        ThreadpoolConfig.Builder builder = new ThreadpoolConfig.Builder().softStartSeconds(5);
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(builder.build());
-        for (int i= 0; i < 100; i++) {
-            HttpResponse httpResponse = feedHandlerV3.handle(createRequest(100));
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            httpResponse.render(outStream);
-            assertThat(httpResponse.getContentType(), is("text/plain"));
-            String result = Utf8.toString(outStream.toByteArray());
-            assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
-        }
-    }
-
     private static DocumentTypeManager createDoctypeManager() {
         DocumentTypeManager docTypeManager = new DocumentTypeManager();
         DocumentType documentType = new DocumentType("testdocument");
