@@ -6,6 +6,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_dimension_combiner.cpp
     dense_dot_product_function.cpp
     dense_fast_rename_optimizer.cpp
+    dense_lambda_function.cpp
     dense_lambda_peek_function.cpp
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp

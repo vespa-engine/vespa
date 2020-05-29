@@ -134,9 +134,16 @@ void op_tensor_create(State &state, uint64_t param) {
     state.pop_n_push(i, result);
 }
 
+struct LambdaParams {
+    const Lambda &parent;
+    InterpretedFunction fun;
+    LambdaParams(const Lambda &parent_in, InterpretedFunction fun_in)
+        : parent(parent_in), fun(std::move(fun_in)) {}
+};
+
 void op_tensor_lambda(State &state, uint64_t param) {
-    const Lambda::Self &self = unwrap_param<Lambda::Self>(param);
-    TensorSpec spec = self.parent.create_spec(*state.params, self.fun);
+    const LambdaParams &params = unwrap_param<LambdaParams>(param);
+    TensorSpec spec = params.parent.create_spec(*state.params, params.fun);
     const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(spec));
     state.stack.emplace_back(result);
 }
@@ -439,13 +446,8 @@ InterpretedFunction::Instruction
 Lambda::compile_self(const TensorEngine &engine, Stash &stash) const
 {
     InterpretedFunction fun(engine, _lambda->root(), _lambda_types);
-    Self &self = stash.create<Self>(*this, std::move(fun));
-    return Instruction(op_tensor_lambda, wrap_param<Self>(self));
-}
-
-void
-Lambda::push_children(std::vector<Child::CREF> &) const
-{
+    LambdaParams &params = stash.create<LambdaParams>(*this, std::move(fun));
+    return Instruction(op_tensor_lambda, wrap_param<LambdaParams>(params));
 }
 
 void
