@@ -277,16 +277,16 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_avoids_illegal_configurations() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 6, 1, resources);
+        tester.deploy(application1, cluster1, 6, 1, hostResources);
         tester.addMeasurements(Resource.memory,  0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
                                6, 1, 2.8, 4.0, 95.0,
@@ -325,7 +325,7 @@ public class AutoscalingTest {
             tester.addMeasurements(Resource.memory, 1.0f, 1000, application1);
             tester.addMeasurements(Resource.disk, 0.7f, 1000, application1);
             tester.assertResources("Scaling up",
-                                   4, 1, 7.0, 35, 200,
+                                   4, 1, 7.0, 34, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max));
         }
     }

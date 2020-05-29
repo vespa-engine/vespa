@@ -178,11 +178,12 @@ class AutoscalingTester {
                                             Optional<ClusterResources> resources) {
         double delta = 0.0000000001;
         assertTrue(message, resources.isPresent());
-        assertEquals("Node count:  " + message, nodeCount, resources.get().nodes());
-        assertEquals("Group count: " + message, groupCount, resources.get().groups());
-        assertEquals("Cpu: "    + message, approxCpu, Math.round(resources.get().nodeResources().vcpu() * 10) / 10.0, delta);
-        assertEquals("Memory: " + message, approxMemory, Math.round(resources.get().nodeResources().memoryGb() * 10) / 10.0, delta);
-        assertEquals("Disk: "   + message, approxDisk, Math.round(resources.get().nodeResources().diskGb() * 10) / 10.0, delta);
+        NodeResources nodeResources = resources.get().nodeResources();
+        assertEquals("Node count in " + resources.get() + ": " + message, nodeCount, resources.get().nodes());
+        assertEquals("Group count in " + resources.get() + ": " + message, groupCount, resources.get().groups());
+        assertEquals("Cpu in " + resources.get() + ": " + message, approxCpu, Math.round(nodeResources.vcpu() * 10) / 10.0, delta);
+        assertEquals("Memory in " + resources.get() + ": " + message, approxMemory, Math.round(nodeResources.memoryGb() * 10) / 10.0, delta);
+        assertEquals("Disk in: " + resources.get() + ": "  + message, approxDisk, Math.round(nodeResources.diskGb() * 10) / 10.0, delta);
         return resources.get();
     }
 

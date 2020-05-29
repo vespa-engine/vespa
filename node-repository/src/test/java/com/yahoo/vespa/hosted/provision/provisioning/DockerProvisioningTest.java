@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
@@ -297,6 +298,50 @@ public class DockerProvisioningTest {
                          "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote] " +
                          "in tenant.app1 content cluster 'myContent'" +
                          " 6.42: Out of capacity on group 0",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void initial_allocation_is_within_limits() {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .resourcesCalculator(3, 0)
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(2, hostFlavor.resources()).deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        var resources = new NodeResources(1, 8, 10, 1);
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, resources),
+                                                      new ClusterResources(4, 1, resources)));
+        tester.assertNodes("Initial allocation at min with default resources",
+                           2, 1, 1, 8, 10, 1.0,
+                           app1, cluster1);
+    }
+
+    @Test
+    public void too_few_real_resources_causes_failure() {
+        try {
+            Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+            ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                        .resourcesCalculator(3, 0)
+                                                                        .flavors(List.of(hostFlavor))
+                                                                        .build();
+            tester.makeReadyHosts(2, hostFlavor.resources()).deployZoneApp();
+
+            ApplicationId app1 = tester.makeApplicationId("app1");
+            ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+            // 5 Gb requested memory becomes 5-3=2 Gb real memory, which is an illegally small amount
+            var resources = new NodeResources(1, 5, 10, 1);
+            tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, resources),
+                                                          new ClusterResources(4, 1, resources)));
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("No allocation possible within limits: from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps] to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps]",
                          e.getMessage());
         }
     }

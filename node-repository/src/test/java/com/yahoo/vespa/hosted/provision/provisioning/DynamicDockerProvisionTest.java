@@ -19,7 +19,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -168,7 +167,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -214,7 +213,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -289,7 +288,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -324,7 +323,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new MockResourcesCalculator(memoryTax, localDiskTax))
+                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, localDiskTax))
                                                                     .build();
 
         tester.deployZoneApp();
@@ -362,45 +361,6 @@ public class DynamicDockerProvisionTest {
                     .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources, Version.emptyVersion))
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any(), any(), any());
-    }
-
-    private static class MockResourcesCalculator implements HostResourcesCalculator {
-
-        private final int memoryTaxGb;
-        private final int localDiskTax;
-
-        public MockResourcesCalculator(int memoryTaxGb, int localDiskTax) {
-            this.memoryTaxGb = memoryTaxGb;
-            this.localDiskTax = localDiskTax;
-        }
-
-        @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            NodeResources resources = node.flavor().resources();
-            if (node.type() == NodeType.host) return resources;
-            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
-                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));
-        }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            NodeResources resources = flavor.resources();
-            if ( ! flavor.isConfigured()) return resources;
-            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
-        }
-
-        @Override
-        public NodeResources requestToReal(NodeResources resources) {
-            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
-                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
-        }
-
-        @Override
-        public NodeResources realToRequest(NodeResources resources) {
-            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
-                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
-        }
-
     }
 
     private static class MockHostProvisioner implements HostProvisioner {
