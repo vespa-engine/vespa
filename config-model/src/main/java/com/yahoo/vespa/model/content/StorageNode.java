@@ -86,8 +86,8 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
     @Override
     public void getConfig(StorFilestorConfig.Builder builder) {
-        if (getHostResource() != null && ! getHostResource().advertisedResources().isUnspecified()) {
-            builder.num_threads(Math.max(4, (int)getHostResource().advertisedResources().vcpu()));
+        if (getHostResource() != null && ! getHostResource().realResources().isUnspecified()) {
+            builder.num_threads(Math.max(4, (int)getHostResource().realResources().vcpu()));
         }
         cluster.getConfig(builder);
     }

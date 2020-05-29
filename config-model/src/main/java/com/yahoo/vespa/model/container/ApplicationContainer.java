@@ -44,8 +44,8 @@ public final class ApplicationContainer extends Container implements
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         if (getHostResource() != null) {
-            if ( ! getHostResource().advertisedResources().isUnspecified()) {
-                NodeResourcesTuning flavorTuning = new NodeResourcesTuning(getHostResource().advertisedResources());
+            if ( ! getHostResource().realResources().isUnspecified()) {
+                NodeResourcesTuning flavorTuning = new NodeResourcesTuning(getHostResource().realResources());
                 flavorTuning.getConfig(builder);
             }
         }
@@ -79,13 +79,13 @@ public final class ApplicationContainer extends Container implements
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         if (! (parent instanceof ContainerCluster)) return;
-        if ((getHostResource() == null) || getHostResource().advertisedResources().isUnspecified()) return;
+        if ((getHostResource() == null) || getHostResource().realResources().isUnspecified()) return;
         ContainerCluster containerCluster = (ContainerCluster) parent;
         if (containerCluster.getThreadPoolSizeFactor() <= 0.0) return;
 
-        NodeResourcesTuning flavorTuning = new NodeResourcesTuning(getHostResource().advertisedResources())
+        NodeResourcesTuning resourcesTuning = new NodeResourcesTuning(getHostResource().realResources())
                 .setThreadPoolSizeFactor(containerCluster.getThreadPoolSizeFactor())
                 .setQueueSizeFactor(containerCluster.getQueueSizeFactor());
-        flavorTuning.getConfig(builder);
+        resourcesTuning.getConfig(builder);
     }
 }
