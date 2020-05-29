@@ -39,7 +39,7 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
-            if (retiredByOperator(node)) {
+            if (node.status().wantToDeprovision() || retiredByOperator(node)) {
                 nodeRepository.park(node.hostname(), false, Agent.InactiveExpirer, "Expired by InactiveExpirer");
             } else {
                 nodeRepository.setDirty(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
