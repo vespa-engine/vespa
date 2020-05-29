@@ -1,5 +1,6 @@
 {
   "isPublic": (ignore),
+  "isCd": (ignore),
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
