@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import static java.lang.Long.min;
 
@@ -19,12 +20,18 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final int redundancy;
     private final int searchableCopies;
     private final int threadsPerSearch;
+    private final boolean combined;
 
-    public NodeResourcesTuning(NodeResources resources, int redundancy, int searchableCopies, int threadsPerSearch) {
+    public NodeResourcesTuning(NodeResources resources,
+                               int redundancy,
+                               int searchableCopies,
+                               int threadsPerSearch,
+                               boolean combined) {
         this.resources = resources;
         this.redundancy = redundancy;
         this.searchableCopies = searchableCopies;
         this.threadsPerSearch = threadsPerSearch;
+        this.combined = combined;
     }
 
     @Override
@@ -47,21 +54,21 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private void getConfig(ProtonConfig.Documentdb.Builder builder) {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
-            long numDocs = (long)resources.memoryGb() * GB / 64L;
+            long numDocs = (long)usableMemoryGb() * GB / 64L;
             builder.allocation.initialnumdocs(numDocs/Math.max(searchableCopies, redundancy));
         }
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
-        long memoryLimitBytes = (long) ((resources.memoryGb() * 0.05) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() * 0.05) * GB);
         builder.maxbytes(memoryLimitBytes);
     }
 
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.shared(true);
         builder.hwinfo.cpu.cores((int)resources.vcpu());
-        builder.hwinfo.memory.size((long)resources.memoryGb() * GB);
-        builder.hwinfo.disk.size((long)resources.diskGb() * GB);
+        builder.hwinfo.memory.size((long)(usableMemoryGb() * GB));
+        builder.hwinfo.disk.size((long)(resources.diskGb() * GB));
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
@@ -71,7 +78,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneDocumentStoreMaxFileSize(ProtonConfig.Summary.Log.Builder builder) {
-        double memoryGb = resources.memoryGb();
+        double memoryGb = usableMemoryGb();
         long fileSizeBytes = 4 * GB;
         if (memoryGb <= 12.0) {
             fileSizeBytes = 256 * MB;
@@ -84,7 +91,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
-        long memoryLimitBytes = (long) ((resources.memoryGb() / 8) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() / 8) * GB);
         builder.maxmemory(memoryLimitBytes);
         builder.each.maxmemory(memoryLimitBytes);
     }
@@ -118,8 +125,16 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
         // "Reserve" 1GB of memory for other processes running on the content node (config-proxy, cluster-controller, metrics-proxy)
         double reservedMemoryGb = 1;
         double defaultMemoryLimit = new ProtonConfig.Writefilter(new ProtonConfig.Writefilter.Builder()).memorylimit();
-        double scaledMemoryLimit = ((resources.memoryGb() - reservedMemoryGb) * defaultMemoryLimit) / resources.memoryGb();
+        double scaledMemoryLimit = ((usableMemoryGb() - reservedMemoryGb) * defaultMemoryLimit) / usableMemoryGb();
         builder.memorylimit(scaledMemoryLimit);
+    }
+
+    /** Returns the memory we can expect will be available for the content node processes */
+    private double usableMemoryGb() {
+        if ( ! combined ) return resources.memoryGb();
+
+        double fractionTakenByContainer = (double)ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster / 100;
+        return resources.memoryGb() * (1 - fractionTakenByContainer);
     }
 
 }

@@ -125,11 +125,14 @@ public class ContentCluster extends AbstractConfigProducer implements
             RedundancyBuilder redundancyBuilder = new RedundancyBuilder(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
-            ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
+            ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterId(contentElement), documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
-            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(deployState, c, contentElement.getXml());
-            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(deployState, c, contentElement.getXml());
+            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement), contentElement).build(deployState, c, contentElement.getXml());
+            c.search = new ContentSearchCluster.Builder(documentDefinitions,
+                                                        globallyDistributedDocuments,
+                                                        isCombined(getClusterId(contentElement), containers))
+                               .build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
@@ -235,6 +238,11 @@ public class ContentCluster extends AbstractConfigProducer implements
                     c.maxNodesPerMerge = attr;
                 }
             }
+        }
+
+        /** Returns whether this hosts one of the given container clusters */
+        private boolean isCombined(String clusterId, Collection<ContainerModel> containers) {
+            return containers.stream().map(model -> model.getCluster().getHostClusterId()).anyMatch(id -> id.equals(clusterId));
         }
 
         private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
@@ -496,9 +504,8 @@ public class ContentCluster extends AbstractConfigProducer implements
     public void prepare(DeployState deployState) {
         search.prepare();
 
-        if (clusterControllers != null) {
+        if (clusterControllers != null)
             clusterControllers.prepare(deployState);
-        }
     }
 
     /** Returns cluster controllers if this is multitenant, null otherwise */
@@ -509,13 +516,9 @@ public class ContentCluster extends AbstractConfigProducer implements
         return getPersistence().getDefaultDistributionMode();
     }
 
-    public static String getClusterName(ModelElement clusterElem) {
-        String clusterName = clusterElem.stringAttribute("id");
-        if (clusterName == null) {
-            clusterName = "content";
-        }
-
-        return clusterName;
+    public static String getClusterId(ModelElement clusterElem) {
+        String clusterId = clusterElem.stringAttribute("id");
+        return clusterId != null ? clusterId : "content";
     }
 
     public String getName() { return clusterName; }

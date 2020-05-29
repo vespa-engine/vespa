@@ -14,15 +14,15 @@ public class StorServerProducer implements StorServerConfig.Producer {
             ModelElement tuning = element.child("tuning");
 
             if (tuning == null) {
-                return new StorServerProducer(ContentCluster.getClusterName(element), null, null);
+                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
             }
 
             ModelElement merges = tuning.child("merges");
             if (merges == null) {
-                return new StorServerProducer(ContentCluster.getClusterName(element), null, null);
+                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
             }
 
-            return new StorServerProducer(ContentCluster.getClusterName(element),
+            return new StorServerProducer(ContentCluster.getClusterId(element),
                     merges.integerAttribute("max-per-node"),
                     merges.integerAttribute("max-queue-size"));
         }

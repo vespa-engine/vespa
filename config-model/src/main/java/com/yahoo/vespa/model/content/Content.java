@@ -39,7 +39,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * The config model from a content tag in services.
@@ -48,8 +47,6 @@ import java.util.logging.Logger;
  * @author baldersheim
  */
 public class Content extends ConfigModel {
-
-    private static final Logger log = Logger.getLogger(Content.class.getName());
 
     private ContentCluster cluster;
     private Optional<ApplicationContainerCluster> ownedIndexingCluster = Optional.empty();
@@ -207,6 +204,11 @@ public class Content extends ConfigModel {
             content.cluster = new ContentCluster.Builder(admin).build(content.containers, modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
+            markCombinedClusters();
+        }
+
+        private void markCombinedClusters() {
+
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */

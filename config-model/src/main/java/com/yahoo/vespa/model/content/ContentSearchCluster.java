@@ -60,32 +60,39 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
 
+    /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
+    private final boolean combined;
+
     public void prepare() {
-        List<SearchNode> allBackends = getSearchNodes();
-        for (AbstractSearchCluster cluster : clusters.values()) {
-            cluster.prepareToDistributeFiles(allBackends);
-        }
+        clusters.values().forEach(cluster -> cluster.prepareToDistributeFiles(getSearchNodes()));
     }
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
+        private final boolean combined;
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
-                       Set<NewDocumentType> globallyDistributedDocuments) {
+                       Set<NewDocumentType> globallyDistributedDocuments,
+                       boolean combined) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
+            this.combined = combined;
         }
 
         @Override
         protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
-            String clusterName = ContentCluster.getClusterName(clusterElem);
+            String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
 
-            ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
-                    getFlushOnShutdown(flushOnShutdownElem, deployState));
+            ContentSearchCluster search = new ContentSearchCluster(ancestor,
+                                                                   clusterName,
+                                                                   documentDefinitions,
+                                                                   globallyDistributedDocuments,
+                                                                   getFlushOnShutdown(flushOnShutdownElem, deployState),
+                                                                   combined);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -171,13 +178,15 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                                  String clusterName,
                                  Map<String, NewDocumentType> documentDefinitions,
                                  Set<NewDocumentType> globallyDistributedDocuments,
-                                 boolean flushOnShutdown)
+                                 boolean flushOnShutdown,
+                                 boolean combined)
     {
         super(parent, "search");
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
+        this.combined = combined;
     }
 
     public void setVisibilityDelay(double delay) {
@@ -236,27 +245,27 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         AbstractConfigProducer parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
-        SearchNode snode;
+        SearchNode searchNode;
         TransactionLogServer tls;
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
-            snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                      clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted());
-            snode.setHostResource(node.getHostResource());
-            snode.initService(deployState.getDeployLogger());
+            searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
+                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(), combined);
+            searchNode.setHostResource(node.getHostResource());
+            searchNode.initService(deployState.getDeployLogger());
 
-            tls = new TransactionLogServer(snode, clusterName);
-            tls.setHostResource(snode.getHostResource());
+            tls = new TransactionLogServer(searchNode, clusterName);
+            tls.setHostResource(searchNode.getHostResource());
             tls.initService(deployState.getDeployLogger());
         } else {
-            snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits).build(deployState, parent, element.getXml());
-            tls = new TransactionLogServer.Builder(clusterName).build(deployState, snode, element.getXml());
+            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits, combined).build(deployState, parent, element.getXml());
+            tls = new TransactionLogServer.Builder(clusterName).build(deployState, searchNode, element.getXml());
         }
-        snode.setTls(tls);
+        searchNode.setTls(tls);
         if (hasIndexedCluster()) {
-            getIndexed().addSearcher(snode);
+            getIndexed().addSearcher(searchNode);
         } else {
-            nonIndexed.add(snode);
+            nonIndexed.add(searchNode);
         }
     }
 

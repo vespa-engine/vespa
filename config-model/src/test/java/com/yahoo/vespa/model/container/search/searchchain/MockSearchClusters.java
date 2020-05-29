@@ -26,24 +26,27 @@ public class MockSearchClusters {
 
         @Override
         protected AbstractSearchCluster.IndexingMode getIndexingMode() { return streaming ? AbstractSearchCluster.IndexingMode.STREAMING : AbstractSearchCluster.IndexingMode.REALTIME; }
-        @Override
-        protected void assureSdConsistent() {}
 
         @Override
         public void getConfig(DocumentdbInfoConfig.Builder builder) {
         }
+
         @Override
         public void getConfig(IndexInfoConfig.Builder builder) {
         }
+
         @Override
         public void getConfig(IlscriptsConfig.Builder builder) {
         }
+
         @Override
         public void getConfig(AttributesConfig.Builder builder) {
         }
+
         @Override
         public void getConfig(RankProfilesConfig.Builder builder) {
         }
+
     }
 
     public static AbstractSearchCluster mockSearchCluster(AbstractConfigProducerRoot root, String clusterName, int clusterIndex, boolean isStreaming) {

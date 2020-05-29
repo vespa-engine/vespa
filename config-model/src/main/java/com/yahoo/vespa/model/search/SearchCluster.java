@@ -136,10 +136,5 @@ public abstract class SearchCluster extends AbstractSearchCluster
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();
-    protected abstract void exportSdFiles(File toDir) throws IOException;
-    protected final void writeSdFiles(File toDir) throws IOException {
-        assureSdConsistent();
-        exportSdFiles(toDir);
-    }
 
 }

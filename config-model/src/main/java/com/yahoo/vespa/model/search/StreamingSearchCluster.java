@@ -84,13 +84,6 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    protected void assureSdConsistent() {
-        if (sdConfig == null) {
-            throw new IllegalStateException("Search cluster '" + getClusterName() + "' does not have any search definitions");
-        }
-    }
-
-    @Override
     protected void deriveAllSchemas(List<SchemaSpec> local, DeployState deployState) {
         if (local.size() == 1) {
             deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), deployState);
@@ -112,12 +105,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     public DerivedConfiguration getSdConfig() {
         return sdConfig;
     }
-    @Override
-    protected void exportSdFiles(File toDir) throws IOException {
-        if (sdConfig!=null) {
-            sdConfig.export(toDir.getCanonicalPath());
-        }
-    }
+
     @Override
     public void defaultDocumentsConfig() { }
 

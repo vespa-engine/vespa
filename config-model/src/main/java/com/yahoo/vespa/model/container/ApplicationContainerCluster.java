@@ -58,6 +58,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public static final String METRICS_V2_HANDLER_BINDING_1 = "http://*" + MetricsV2Handler.V2_PATH;
     public static final String METRICS_V2_HANDLER_BINDING_2 = METRICS_V2_HANDLER_BINDING_1 + "/*";
 
+    public static final int heapSizePercentageOfTotalNodeMemory = 60;
+    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
+
+
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final ConfigProducerGroup<Servlet> servletGroup;
@@ -218,13 +222,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super.getConfig(builder);
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
-                .compressedClassSpaceSize(0)  //TODO Reduce, next step is 512m
+                .compressedClassSpaceSize(0)
                 .minHeapsize(1536)
                 .heapsize(1536);
         if (getMemoryPercentage().isPresent()) {
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
         } else if (isHostedVespa()) {
-            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
+            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ?
+                                                             heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster :
+                                                             heapSizePercentageOfTotalNodeMemory);
         }
     }
 

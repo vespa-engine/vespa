@@ -252,9 +252,6 @@ public class IndexedSearchCluster extends SearchCluster
         unionCfg.getConfig(builder);
     }
 
-    @Override
-    protected void exportSdFiles(File toDir) { }
-
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
             if (node.getNodeSpec().groupIndex() > 0) {
@@ -335,9 +332,6 @@ public class IndexedSearchCluster extends SearchCluster
         }
         builder.warmuptime(5.0);
     }
-
-    @Override
-    protected void assureSdConsistent() { }
 
     @Override
     public int getRowBits() { return 8; }

@@ -29,8 +29,9 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_hwinfo_memory_size_is_set() {
-        ProtonConfig cfg = configFromMemorySetting(24);
-        assertEquals(24 * GB, cfg.hwinfo().memory().size());
+        double combinedFactor = 1 - 17.0/100;
+        assertEquals(24 * GB, configFromMemorySetting(24, false).hwinfo().memory().size());
+        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24, true).hwinfo().memory().size(), 1000);
     }
 
     private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, int gb, int redundancy, int searchableCopies) {
@@ -43,6 +44,7 @@ public class NodeResourcesTuningTest {
         }
         return configFromMemorySetting(gb, builder, redundancy, searchableCopies);
     }
+
     private void verify_that_initial_numdocs_is_dependent_of_mode(int redundancy, int searchablecopies) {
         int divisor = Math.max(redundancy, searchablecopies);
         ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24, redundancy, searchablecopies);
@@ -54,6 +56,7 @@ public class NodeResourcesTuningTest {
         assertEquals(402653184/divisor, cfg.documentdb(2).allocation().initialnumdocs());
         assertEquals("c", cfg.documentdb(2).inputdoctypename());
     }
+
     @Test
     public void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
         verify_that_initial_numdocs_is_dependent_of_mode(2,0);
@@ -145,8 +148,15 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1*GB/20, configFromMemorySetting(1).summary().cache().maxbytes());
-        assertEquals(256*GB/20, configFromMemorySetting(256).summary().cache().maxbytes());
+        assertEquals(1*GB / 20, configFromMemorySetting(1, false).summary().cache().maxbytes());
+        assertEquals(256*GB / 20, configFromMemorySetting(256, false).summary().cache().maxbytes());
+    }
+
+    @Test
+    public void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
+        double combinedFactor = 1 - 17.0/100;
+        assertEquals(combinedFactor * 1*GB / 20, configFromMemorySetting(1, true).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 256*GB / 20, configFromMemorySetting(256, true).summary().cache().maxbytes(), 1000);
     }
 
     @Test
@@ -163,12 +173,12 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
-        assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
+        assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb, false).summary().log().maxfilesize());
     }
 
     private static void assertFlushStrategyMemory(long expMemoryBytes, int memoryGb) {
-        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().maxmemory());
-        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().each().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb, false).flush().memory().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb, false).flush().memory().each().maxmemory());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
@@ -188,56 +198,63 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertWriteFilter(double expMemoryLimit, int memoryGb) {
-        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb).writefilter().memorylimit(), delta);
+        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb, false).writefilter().memorylimit(), delta);
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().
-                fastDisk(fastDisk));
+        return getConfig(new FlavorsConfig.Flavor.Builder().fastDisk(fastDisk), false);
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().
-                minDiskAvailableGb(diskGb));
+        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), false);
     }
 
-    private static ProtonConfig configFromMemorySetting(int memoryGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().
-                minMainMemoryAvailableGb(memoryGb));
+    private static ProtonConfig configFromMemorySetting(int memoryGb, boolean combined) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), combined);
     }
+
     private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder, int redundancy, int searchableCopies) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().
-                minMainMemoryAvailableGb(memoryGb), builder, redundancy, searchableCopies);
+        return getConfig(new FlavorsConfig.Flavor.Builder()
+                                 .minMainMemoryAvailableGb(memoryGb), builder, redundancy, searchableCopies, false);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores), false);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores, int numThreadsPerSearch) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores), new ProtonConfig.Builder(), 1, 1, numThreadsPerSearch);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores),
+                         new ProtonConfig.Builder(), 1, 1, numThreadsPerSearch, false);
     }
 
     private static ProtonConfig configFromEnvironmentType(boolean docker) {
         String environment = (docker ? "DOCKER_CONTAINER" : "undefined");
-        return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment));
+        return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment), false);
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
-        return getConfig(flavorBuilder, new ProtonConfig.Builder());
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, boolean combined) {
+        return getConfig(flavorBuilder, new ProtonConfig.Builder(), combined);
     }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
-        return getConfig(flavorBuilder, protonBuilder, 1,1);
+
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder,
+                                          ProtonConfig.Builder protonBuilder, boolean combined) {
+        return getConfig(flavorBuilder, protonBuilder, 1, 1, combined);
     }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies) {
+
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
+                                          int redundancy, int searchableCopies, boolean combined) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies, 1);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
+                                                             redundancy, searchableCopies, 1, combined);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies, int numThreadsPerSearch) {
+
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
+                                          int redundancy, int searchableCopies, int numThreadsPerSearch, boolean combined) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies, numThreadsPerSearch);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
+                                                             redundancy, searchableCopies, numThreadsPerSearch, combined);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
