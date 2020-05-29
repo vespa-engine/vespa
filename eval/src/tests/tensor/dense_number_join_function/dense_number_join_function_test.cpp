@@ -77,14 +77,14 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_TRUE(info.empty());
 }
 
-TEST("require dense number join can be optimized") {
+TEST("require that dense number join can be optimized") {
     TEST_DO(verify_optimized("x3y5+a", Primary::LHS, false));
     TEST_DO(verify_optimized("a+x3y5", Primary::RHS, false));
     TEST_DO(verify_optimized("x3y5f*a", Primary::LHS, false));
     TEST_DO(verify_optimized("a*x3y5f", Primary::RHS, false));
 }
 
-TEST("require dense number join can be inplace") {
+TEST("require that dense number join can be inplace") {
     TEST_DO(verify_optimized("@x3y5*a", Primary::LHS, true));
     TEST_DO(verify_optimized("a*@x3y5", Primary::RHS, true));
     TEST_DO(verify_optimized("@x3y5f+a", Primary::LHS, true));
