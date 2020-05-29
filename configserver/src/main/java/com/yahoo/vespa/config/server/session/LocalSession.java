@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 
@@ -38,21 +39,26 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
-    private final SessionContext sessionContext;
-    private final File serverDB;
+    private final File serverDBSessionDir;
+    private final SessionZooKeeperClient sessionZooKeeperClient;
+    private final HostValidator<ApplicationId> hostValidator;
 
     /**
      * Create a session. This involves loading the application, validating it and distributing it.
      *
      * @param sessionId The session id for this session.
      */
-    public LocalSession(TenantName tenant, long sessionId, SessionPreparer sessionPreparer, SessionContext sessionContext) {
-        super(tenant, sessionId, sessionContext.getSessionZooKeeperClient());
-        this.serverDB = sessionContext.getServerDBSessionDir();
-        this.applicationPackage = sessionContext.getApplicationPackage();
-        this.applicationRepo = sessionContext.getApplicationRepo();
+    public LocalSession(TenantName tenant, long sessionId, SessionPreparer sessionPreparer,
+                        ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient,
+                        File serverDBSessionDir, TenantApplications applicationRepo,
+                        HostValidator<ApplicationId> hostValidator) {
+        super(tenant, sessionId, sessionZooKeeperClient);
+        this.serverDBSessionDir = serverDBSessionDir;
+        this.applicationPackage = applicationPackage;
+        this.sessionZooKeeperClient = sessionZooKeeperClient;
+        this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
-        this.sessionContext = sessionContext;
+        this.hostValidator = hostValidator;
     }
 
     public ConfigChangeActions prepare(DeployLogger logger, 
@@ -62,8 +68,9 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
                                        Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
-        ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params,
-                                                              currentActiveApplicationSet, tenantPath, now);
+        ConfigChangeActions actions = sessionPreparer.prepare(hostValidator, logger, params,
+                                                              currentActiveApplicationSet, tenantPath, now,
+                                                              serverDBSessionDir, applicationPackage, sessionZooKeeperClient);
         setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
@@ -106,7 +113,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     /** Add transactions to delete this session to the given nested transaction */
     public void delete(NestedTransaction transaction) {
         transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
-        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())));
+        transaction.add(FileTransaction.from(FileOperations.delete(serverDBSessionDir.getAbsolutePath())));
     }
 
     @Override

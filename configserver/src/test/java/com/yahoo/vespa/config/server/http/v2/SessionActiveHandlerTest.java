@@ -35,7 +35,6 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
@@ -222,8 +221,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
-                                              new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>())));
+                                              app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
+                                              applicationRepo, new HostRegistry<>()));
     }
 
     private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {

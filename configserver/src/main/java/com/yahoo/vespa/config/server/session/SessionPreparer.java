@@ -33,6 +33,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
@@ -50,6 +51,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -109,17 +111,19 @@ public class SessionPreparer {
     /**
      * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
      *
-     * @param context                     Contains classes needed to read/write session data.
+     * @param hostValidator               host validator
      * @param logger                      For storing logs returned in response to client.
      * @param params                      parameters controlling behaviour of prepare.
      * @param currentActiveApplicationSet Set of currently active applications.
      * @param tenantPath Zookeeper path for the tenant for this session
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
-    public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
-                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
-                                       Instant now) {
-        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
+    public ConfigChangeActions prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                                       Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
+                                       SessionZooKeeperClient sessionZooKeeperClient) {
+        Preparation preparation = new Preparation(hostValidator, logger, params, currentActiveApplicationSet,
+                                                  tenantPath, serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
 
         // Note: Done before pre-processing, requires that to be done by users of the distributed package
         var distributedApplicationPackage = preparation.distributeApplicationPackage();
@@ -146,7 +150,6 @@ public class SessionPreparer {
 
     private class Preparation {
 
-        final SessionContext context;
         final DeployLogger logger;
         final PrepareParams params;
 
@@ -164,36 +167,39 @@ public class SessionPreparer {
         final List<ContainerEndpoint> containerEndpoints;
         final ModelContext.Properties properties;
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
-        private final EndpointCertificateRetriever endpointCertificateRetriever;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
-        private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
         private final ApplicationRolesStore applicationRolesStore;
         private final Optional<ApplicationRoles> applicationRoles;
+        private final ApplicationPackage applicationPackage;
+        private final SessionZooKeeperClient sessionZooKeeperClient;
 
-        private ApplicationPackage applicationPackage;
+        private ApplicationPackage preprocessedApplicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
         private PrepareResult prepareResult;
 
         private final PreparedModelsBuilder preparedModelsBuilder;
         private final FileDistributionProvider fileDistributionProvider;
 
-        Preparation(SessionContext context, DeployLogger logger, PrepareParams params,
-                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
-            this.context = context;
+        Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                    File serverDbSessionDir, ApplicationPackage preprocessedApplicationPackage,
+                    SessionZooKeeperClient sessionZooKeeperClient) {
             this.logger = logger;
             this.params = params;
             this.currentActiveApplicationSet = currentActiveApplicationSet;
             this.tenantPath = tenantPath;
+            this.applicationPackage = preprocessedApplicationPackage;
+            this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
-            this.endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
+            EndpointCertificateRetriever endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
             this.endpointCertificateMetadata = params.endpointCertificateMetadata()
                     .or(() -> params.tlsSecretsKeyName().map(EndpointCertificateMetadataSerializer::fromString));
-            endpointCertificateSecrets = endpointCertificateMetadata
+            Optional<EndpointCertificateSecrets> endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
@@ -215,13 +221,13 @@ public class SessionPreparer {
                                                               flagSource,
                                                               endpointCertificateSecrets,
                                                               athenzDomain, applicationRoles);
-            this.fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
+            this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
                                                                    fileDistributionProvider,
                                                                    hostProvisionerProvider,
-                                                                   context,
+                                                                   hostValidator,
                                                                    logger,
                                                                    params,
                                                                    currentActiveApplicationSet,
@@ -252,7 +258,7 @@ public class SessionPreparer {
 
         void preprocess() {
             try {
-                this.applicationPackage = context.getApplicationPackage().preprocess(properties.zone(), logger);
+                this.preprocessedApplicationPackage = applicationPackage.preprocess(properties.zone(), logger);
             } catch (IOException | TransformerException | ParserConfigurationException | SAXException e) {
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId, e);
             }
@@ -262,7 +268,7 @@ public class SessionPreparer {
         AllocatedHosts buildModels(Instant now) {
             SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
             this.modelResultList = preparedModelsBuilder.buildModels(applicationId, dockerImageRepository, vespaVersion,
-                                                                     applicationPackage, allocatedHosts, now);
+                                                                     preprocessedApplicationPackage, allocatedHosts, now);
             checkTimeout("build models");
             return allocatedHosts.get();
         }
@@ -274,8 +280,8 @@ public class SessionPreparer {
 
         void writeStateZK(FileReference distributedApplicationPackage) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
-            writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
-                                  applicationPackage,
+            writeStateToZooKeeper(sessionZooKeeperClient,
+                                  preprocessedApplicationPackage,
                                   applicationId,
                                   distributedApplicationPackage,
                                   dockerImageRepository,

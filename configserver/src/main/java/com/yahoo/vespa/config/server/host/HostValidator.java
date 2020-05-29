@@ -8,7 +8,6 @@ import java.util.Collection;
  * strings.
  *
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public interface HostValidator<T> {
 

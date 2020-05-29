@@ -125,25 +125,23 @@ public class LocalSessionTest {
         return createSession(tenant, sessionId, preparer, Optional.empty());
     }
 
-    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
+    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer,
+                                       Optional<AllocatedHosts> allocatedHosts) throws Exception {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenant, sessionId, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false,
+                                                       TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
         }
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        TenantApplications applications = TenantApplications.create(new TestComponentRegistry.Builder().curator(curator).build(), new MockReloadHandler(), tenant);
+        TenantApplications applications = TenantApplications.create(
+                new TestComponentRegistry.Builder().curator(curator).build(), new MockReloadHandler(), tenant);
         applications.createApplication(zkc.readApplicationId());
-        return new LocalSession(tenant, sessionId, preparer,
-                new SessionContext(
-                        FilesApplicationPackage.fromFile(testApp),
-                        zkc,
-                        sessionDir,
-                        applications,
-                        new HostRegistry<>()));
+        return new LocalSession(tenant, sessionId, preparer, FilesApplicationPackage.fromFile(testApp),
+                                zkc, sessionDir, applications, new HostRegistry<>());
     }
 
     private void doPrepare(LocalSession session) {
