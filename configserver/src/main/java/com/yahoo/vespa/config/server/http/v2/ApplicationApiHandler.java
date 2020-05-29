@@ -7,6 +7,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -17,6 +18,10 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+
+import static com.yahoo.vespa.config.server.application.CompressedApplicationInputStream.createFromCompressedStream;
+import static com.yahoo.vespa.config.server.http.Utils.checkThatTenantExists;
+import static com.yahoo.vespa.config.server.http.v2.SessionCreateHandler.validateDataAndHeader;
 
 /**
  *  * The implementation of the /application/v2 API.
@@ -46,31 +51,16 @@ public class ApplicationApiHandler extends SessionHandler {
     }
 
     @Override
-    protected HttpResponse handlePUT(HttpRequest request) {
-        Tenant tenant = getExistingTenant(request);
-        TenantName tenantName = tenant.getName();
-        long sessionId = getSessionIdV2(request);
-        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
-
-        PrepareResult result = applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams,
-                                                                        shouldIgnoreSessionStaleFailure(request),
-                                                                        Instant.now());
-        return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);
-    }
-
-    @Override
     protected HttpResponse handlePOST(HttpRequest request) {
-        Tenant tenant = getExistingTenant(request);
-        TenantName tenantName = tenant.getName();
-        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
-        SessionCreateHandler.validateDataAndHeader(request);
-
-        PrepareResult result =
-                applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader)),
-                                             prepareParams,
-                                             shouldIgnoreSessionStaleFailure(request),
-                                             Instant.now());
-        return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);
+        validateDataAndHeader(request);
+        Tenant tenant = validateTenant(request);
+        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenant.getName(), zookeeperBarrierTimeout);
+        CompressedApplicationInputStream compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader));
+        PrepareResult result = applicationRepository.deploy(compressedStream,
+                                                            prepareParams,
+                                                            shouldIgnoreSessionStaleFailure(request),
+                                                            Instant.now());
+        return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
     }
 
     @Override
@@ -78,10 +68,15 @@ public class ApplicationApiHandler extends SessionHandler {
         return zookeeperBarrierTimeout.plus(Duration.ofSeconds(10));
     }
 
-    private Tenant getExistingTenant(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
-        Utils.checkThatTenantExists(tenantRepository, tenantName);
+    private Tenant validateTenant(HttpRequest request) {
+        TenantName tenantName = getTenantNameFromRequest(request);
+        checkThatTenantExists(tenantRepository, tenantName);
         return tenantRepository.getTenant(tenantName);
+    }
+
+    public static TenantName getTenantNameFromRequest(HttpRequest request) {
+        BindingMatch<?> bm = Utils.getBindingMatch(request, "http://*/application/v2/tenant/*/prepareandactivate*");
+        return TenantName.from(bm.group(2));
     }
 
 }

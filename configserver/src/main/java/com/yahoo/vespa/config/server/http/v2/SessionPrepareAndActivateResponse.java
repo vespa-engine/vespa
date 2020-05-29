@@ -5,8 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActionsSlimeConverter;
 import com.yahoo.vespa.config.server.http.SessionResponse;
 
@@ -17,17 +15,10 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  */
 class SessionPrepareAndActivateResponse extends SessionResponse {
 
-    SessionPrepareAndActivateResponse(PrepareResult result, TenantName tenantName, HttpRequest request,
-                                      ApplicationId applicationId, Zone zone) {
-        this(result.deployLog(), tenantName, request, result.sessionId(), result.configChangeActions(),
-             zone, applicationId);
-    }
-
-    private SessionPrepareAndActivateResponse(Slime deployLog, TenantName tenantName, HttpRequest request,
-                                              long sessionId, ConfigChangeActions actions, Zone zone,
-                                              ApplicationId applicationId) {
-        super(deployLog, deployLog.get());
-        String message = "Session " + sessionId + " for tenant '" + tenantName.value() + "' prepared and activated.";
+    SessionPrepareAndActivateResponse(PrepareResult result, HttpRequest request, ApplicationId applicationId, Zone zone) {
+        super(result.deployLog(), result.deployLog().get());
+        TenantName tenantName = applicationId.tenant();
+        String message = "Session " + result.sessionId() + " for tenant '" + tenantName.value() + "' prepared and activated.";
         this.root.setString("tenant", tenantName.value());
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName +
@@ -36,7 +27,7 @@ class SessionPrepareAndActivateResponse extends SessionResponse {
                 "/region/" + zone.region().value() +
                 "/instance/" + applicationId.instance().value());
         root.setString("message", message);
-        new ConfigChangeActionsSlimeConverter(actions).toSlime(root);
+        new ConfigChangeActionsSlimeConverter(result.configChangeActions()).toSlime(root);
     }
 
 }

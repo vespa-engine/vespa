@@ -106,7 +106,6 @@
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/prepareandactivate</binding>
-      <binding>http://*/application/v2/tenant/*/session/*/prepareandactivate</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionContentHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session/*/content/*</binding>

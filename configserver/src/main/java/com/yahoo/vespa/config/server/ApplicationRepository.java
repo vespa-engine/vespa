@@ -223,13 +223,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public PrepareResult prepareAndActivate(Tenant tenant, long sessionId, PrepareParams prepareParams,
-                                            boolean ignoreSessionStaleFailure, Instant now) {
-        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
-        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
-        return result;
-    }
-
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         return deploy(in, prepareParams, false, clock.instant());
     }
@@ -255,7 +248,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        return prepareAndActivate(tenant, sessionId, prepareParams, ignoreSessionStaleFailure, now);
+        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
+        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
+        return result;
     }
 
     /**
@@ -566,7 +561,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
         return logRetriever.getLogs(logServerURI);
     }
-
 
     // ---------------- Methods to do call against tester containers in hosted ------------------------------
 
