@@ -794,8 +794,7 @@ DocumentMetaStore::createWhiteListBlueprint() const
 AttributeVector::SearchContext::UP
 DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const SearchContextParams &) const
 {
-    return AttributeVector::SearchContext::UP
-            (new documentmetastore::SearchContext(std::move(qTerm), *this));
+    return std::make_unique<documentmetastore::SearchContext>(std::move(qTerm), *this);
 }
 
 DocumentMetaStore::ConstIterator
@@ -1006,7 +1005,7 @@ void
 DocumentMetaStore::holdUnblockShrinkLidSpace()
 {
     assert(_shrinkLidSpaceBlockers > 0);
-    GenerationHeldBase::UP hold(new ShrinkBlockHeld(*this));
+    auto hold = std::make_unique<ShrinkBlockHeld>(*this);
     getGenerationHolder().hold(std::move(hold));
     incGeneration();
 }

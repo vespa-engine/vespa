@@ -25,7 +25,7 @@ JobTrackedFlushTarget::initFlush(SerialNum currentSerial)
     FlushTask::UP targetTask = _target->initFlush(currentSerial);
     _tracker->end();
     if (targetTask.get() != nullptr) {
-        return FlushTask::UP(new JobTrackedFlushTask(_tracker, std::move(targetTask)));
+        return std::make_unique<JobTrackedFlushTask>(_tracker, std::move(targetTask));
     }
     return FlushTask::UP();
 }

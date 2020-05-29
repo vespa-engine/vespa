@@ -27,7 +27,7 @@ PruneRemovedDocumentsOperation(DocumentIdT docIdLimit, uint32_t subDbId)
     : RemoveDocumentsOperation(FeedOperation::PRUNE_REMOVED_DOCUMENTS),
       _subDbId(subDbId)
 {
-    LidVectorContext::SP lidsToRemove(new LidVectorContext(docIdLimit));
+    auto lidsToRemove = std::make_shared<LidVectorContext>(docIdLimit);
     setLidsToRemove(lidsToRemove);
 }
 

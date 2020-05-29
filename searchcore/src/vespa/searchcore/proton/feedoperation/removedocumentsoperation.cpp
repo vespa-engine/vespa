@@ -33,7 +33,7 @@ RemoveDocumentsOperation::deserializeLidsToRemove(vespalib::nbostream &is)
     for (i = 0; i < mapSize; ++i) {
         uint32_t subDbId;
         is >> subDbId;
-        LidVectorContext::SP lidsToRemove(new LidVectorContext());
+        auto lidsToRemove = std::make_shared<LidVectorContext>();
         lidsToRemove->deserialize(is);
         setLidsToRemove(subDbId, lidsToRemove);
     }

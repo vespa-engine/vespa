@@ -101,9 +101,8 @@ getFieldsToPopulate(const ARIConfig &newCfg,
             attrCfg.basicType().asString(),
             toStr(populateField));
         if (populateField) {
-            fieldsToPopulate.push_back(IReprocessingRewriter::SP
-                    (new DocumentFieldPopulator(name,
-                            guard.getSP(), subDbName)));
+            fieldsToPopulate.push_back(std::make_shared<DocumentFieldPopulator>
+                                               (name, guard.getSP(), subDbName));
         }
     }
     return fieldsToPopulate;

@@ -78,7 +78,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     if (snapshot.isChanged<ProtonConfig>(_configId, currentGen)) {
         LOG(spam, "Proton config is changed");
         std::unique_ptr<ProtonConfig> protonConfig = snapshot.getConfig<ProtonConfig>(_configId);
-        TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
+        auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
         TuneFileDocumentDB &tune = *tuneFileDocumentDB;
         ProtonConfig &conf = *protonConfig;
         tune._index._indexing._write.setFromConfig<ProtonConfig::Indexing::Write>(conf.indexing.write.io);

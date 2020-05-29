@@ -35,7 +35,7 @@ public:
     ~FakeSearchContext();
 
     FakeSearchContext &addIdx(uint32_t id) {
-        _indexes->append(id, IndexSearchable::SP(new FakeIndexSearchable()));
+        _indexes->append(id, std::make_shared<FakeIndexSearchable>());
         return *this;
     }
 

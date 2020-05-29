@@ -64,7 +64,7 @@ ClusterStateHandler::performSetClusterState(const ClusterState *calc,
         (calc->nodeInitializing() ? "true" : "false"),
         _changedHandlers.size());
     if (!_changedHandlers.empty()) {
-        IBucketStateCalculator::SP newCalc(new ClusterStateAdapter(*calc));
+        auto newCalc = std::make_shared<ClusterStateAdapter>(*calc);
         typedef std::vector<IClusterStateChangedHandler *> Chv;
         Chv &chs(_changedHandlers);
         for (Chv::const_iterator it = chs.begin(), ite = chs.end(); it != ite;
