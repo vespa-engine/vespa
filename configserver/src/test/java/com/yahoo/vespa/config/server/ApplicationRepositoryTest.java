@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.api.ApplicationRoles;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -108,8 +107,8 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void prepareAndActivate() throws IOException {
-        PrepareResult result = prepareAndActivateApp(testApp);
+    public void prepareAndActivate() {
+        PrepareResult result = prepareAndActivate(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
@@ -121,9 +120,9 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void prepareAndActivateWithRestart() throws IOException {
-        prepareAndActivateApp(testAppJdiscOnly);
-        PrepareResult result = prepareAndActivateApp(testAppJdiscOnlyRestart);
+    public void prepareAndActivateWithRestart() {
+        prepareAndActivate(testAppJdiscOnly);
+        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertFalse(result.configChangeActions().getRestartActions().isEmpty());
     }
@@ -404,8 +403,8 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void require_that_provision_info_can_be_read() throws Exception {
-        prepareAndActivateApp(testAppJdiscOnly);
+    public void require_that_provision_info_can_be_read() {
+        prepareAndActivate(testAppJdiscOnly);
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
@@ -455,12 +454,8 @@ public class ApplicationRepositoryTest {
                                          new NullMetric());
     }
 
-    private PrepareResult prepareAndActivateApp(File application) throws IOException {
-        FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
-        ApplicationId applicationId = applicationId();
-        long sessionId = applicationRepository.createSession(applicationId, timeoutBudget, appDir.getAppDir());
-        return applicationRepository.prepareAndActivate(tenantRepository.getTenant(applicationId.tenant()),
-                                                        sessionId, prepareParams(), false, Instant.now());
+    private PrepareResult prepareAndActivate(File application) {
+        return applicationRepository.deploy(application, prepareParams(), false, Instant.now());
     }
 
     private PrepareResult deployApp(File applicationPackage) {
