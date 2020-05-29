@@ -269,19 +269,14 @@ public class SearchNode extends AbstractService implements
             // to make sure the node failer has done its work
             builder.pruneremoveddocumentsage(4 * 24 * 3600 + 3600 + 60);
         }
-        if (getHostResource() != null && ! getHostResource().advertisedResources().isUnspecified()) {
-            NodeResourcesTuning nodeResourcesTuning = tuning.isPresent()
-                    ? new NodeResourcesTuning(getHostResource().advertisedResources(), redundancy, searchableCopies, tuning.get().getNumThreadsPerSearch())
-                    : new NodeResourcesTuning(getHostResource().advertisedResources(), redundancy, searchableCopies);
+        if (getHostResource() != null && ! getHostResource().realResources().isUnspecified()) {
+            var nodeResourcesTuning = tuning.isPresent()
+                    ? new NodeResourcesTuning(getHostResource().realResources(), redundancy, searchableCopies, tuning.get().getNumThreadsPerSearch())
+                    : new NodeResourcesTuning(getHostResource().realResources(), redundancy, searchableCopies);
             nodeResourcesTuning.getConfig(builder);
 
-            if (tuning.isPresent()) {
-                tuning.get().getConfig(builder);
-            }
-
-            if (resourceLimits.isPresent()) {
-                resourceLimits.get().getConfig(builder);
-            }
+            tuning.ifPresent(t -> t.getConfig(builder));
+            resourceLimits.ifPresent(l -> l.getConfig(builder));
         }
     }
 
