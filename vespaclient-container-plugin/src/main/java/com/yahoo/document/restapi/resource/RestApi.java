@@ -99,10 +99,7 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     // For testing and development
-    public RestApi(Executor executor,
-                   AccessLog accessLog,
-                   OperationHandler operationHandler,
-                   int threadsAvailable) {
+    RestApi(Executor executor, AccessLog accessLog, OperationHandler operationHandler, int threadsAvailable) {
         super(executor, accessLog, null);
         this.operationHandler = operationHandler;
         this.threadsAvailableForApi = new AtomicInteger(threadsAvailable);

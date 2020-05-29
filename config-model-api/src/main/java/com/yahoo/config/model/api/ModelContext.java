@@ -79,10 +79,10 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double queueSizeFactor();
 
-        // TODO Revisit in May or June 2020
-        double defaultSoftStartSeconds();
+        // TODO Remove when 7.229 is last
+        default double defaultSoftStartSeconds() { return 0; }
 
-        // TODO Remove when 7.225 is last
+        // TODO Remove when 7.226 is last
         default double defaultTopKProbability() {
             return 0.9999;
         }

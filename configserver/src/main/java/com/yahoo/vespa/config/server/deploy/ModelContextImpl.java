@@ -151,7 +151,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useThreePhaseUpdates;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
-        private final double defaultSoftStartSeconds;
         private final double threadPoolSizeFactor;
         private final double queueSizefactor;
         private final Optional<AthenzDomain> athenzDomain;
@@ -186,8 +185,6 @@ public class ModelContextImpl implements ModelContext {
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useDistributorBtreeDb = Flags.USE_DISTRIBUTOR_BTREE_DB.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -254,10 +251,6 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double queueSizeFactor() {
             return queueSizefactor;
-        }
-
-        public double defaultSoftStartSeconds() {
-            return defaultSoftStartSeconds;
         }
 
         @Override

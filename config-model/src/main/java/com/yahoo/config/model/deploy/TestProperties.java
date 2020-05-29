@@ -40,7 +40,6 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDistributorBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
-    private double softStartSeconds = 0.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
@@ -73,11 +72,6 @@ public class TestProperties implements ModelContext.Properties {
         return queueSizeFactor;
     }
 
-    @Override
-    public double defaultSoftStartSeconds() {
-        return softStartSeconds;
-    }
-
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
@@ -98,10 +92,6 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setSoftStartSeconds(double softStartSeconds) {
-        this.softStartSeconds = softStartSeconds;
-        return this;
-    }
     public TestProperties setThreadPoolSizeFactor(double threadPoolSizeFactor) {
         this.threadPoolSizeFactor = threadPoolSizeFactor;
         return this;
