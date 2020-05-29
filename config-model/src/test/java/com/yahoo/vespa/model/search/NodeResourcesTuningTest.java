@@ -231,7 +231,7 @@ public class NodeResourcesTuningTest {
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int redundancy, int searchableCopies) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), redundancy, searchableCopies, 1);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
