@@ -27,7 +27,7 @@ FieldCache::FieldCache(const ResultClass &resClass,
             const Field &field = docType.getField(fieldName);
             LOG(debug, "Caching Field instance for field '%s': %s.%u",
                 fieldName.c_str(), field.getName().data(), field.getId());
-            _cache.push_back(Field::CSP(new Field(field)));
+            _cache.push_back(std::make_shared<const Field>(field));
         } else {
             _cache.push_back(Field::CSP());
         }

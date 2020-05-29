@@ -19,7 +19,7 @@ struct AttributeWriterFactory : public IAttributeWriterFactory
         const AttributeWriter &oldAdapter = dynamic_cast<const AttributeWriter &>(*old.get());
         const proton::IAttributeManager::SP &oldMgr = oldAdapter.getAttributeManager();
         proton::IAttributeManager::SP newMgr = oldMgr->create(attrSpec);
-        return IAttributeWriter::SP(new AttributeWriter(newMgr));
+        return std::make_shared<AttributeWriter>(newMgr);
     }
 };
 

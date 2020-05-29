@@ -33,7 +33,7 @@ TransLogServerMetrics::considerAddDomains(const DomainStats &stats)
     for (const auto &elem : stats) {
         const vespalib::string &documentType = elem.first;
         if (_domainMetrics.find(documentType) == _domainMetrics.end()) {
-            _domainMetrics[documentType] = DomainMetrics::UP(new DomainMetrics(_parent, documentType));
+            _domainMetrics[documentType] = std::make_unique<DomainMetrics>(_parent, documentType);
         }
     }
 }

@@ -12,17 +12,17 @@ namespace proton {
 
 FieldCacheRepo::FieldCacheRepo() :
     _repo(),
-    _defaultCache(new FieldCache())
+    _defaultCache(std::make_shared<const FieldCache>())
 {
 }
 
 FieldCacheRepo::FieldCacheRepo(const ResultConfig &resConfig,
                                const DocumentType &docType) :
     _repo(),
-    _defaultCache(new FieldCache())
+    _defaultCache(std::make_shared<const FieldCache>())
 {
     for (ResultConfig::const_iterator it(resConfig.begin()), mt(resConfig.end()); it != mt; it++) {
-        FieldCache::CSP cache(new FieldCache(*it, docType));
+        auto cache = std::make_shared<const FieldCache>(*it, docType);
         vespalib::string className(it->GetClassName());
         LOG(debug, "Adding field cache for summary class '%s' to repo",
             className.c_str());

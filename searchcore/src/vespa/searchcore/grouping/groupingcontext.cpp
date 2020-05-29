@@ -20,7 +20,7 @@ GroupingContext::deserialize(const char *groupSpec, uint32_t groupSpecLen)
         uint32_t numGroupings = 0;
         nis >> numGroupings;
         for (size_t i = 0; i < numGroupings; i++) {
-            GroupingPtr grouping(new search::aggregation::Grouping);
+            auto grouping = std::make_shared<search::aggregation::Grouping>();
             grouping->deserialize(nis);
             grouping->setClock(&_clock);
             grouping->setTimeOfDoom(_timeOfDoom);

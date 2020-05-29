@@ -64,7 +64,7 @@ DocsumContext::initState()
 DocsumReply::UP
 DocsumContext::createReply()
 {
-    DocsumReply::UP reply(new DocsumReply());
+    auto reply = std::make_unique<DocsumReply>();
     search::RawBuf buf(4096);
     _docsumWriter.InitState(_attrMgr, &_docsumState);
     reply->docsums.resize(_docsumState._docsumcnt);
