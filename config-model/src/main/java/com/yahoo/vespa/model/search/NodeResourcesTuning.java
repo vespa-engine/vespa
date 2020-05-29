@@ -24,6 +24,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     public NodeResourcesTuning(NodeResources resources, int redundancy, int searchableCopies) {
         this(resources, redundancy, searchableCopies, 1);
     }
+
     public NodeResourcesTuning(NodeResources resources, int redundancy, int searchableCopies, int threadsPerSearch) {
         this.resources = resources;
         this.redundancy = redundancy;
