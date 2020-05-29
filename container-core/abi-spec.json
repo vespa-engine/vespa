@@ -173,7 +173,6 @@
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxthreads(int)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder queueSize(int)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxThreadExecutionTimeSeconds(int)",
-      "public com.yahoo.container.handler.ThreadpoolConfig$Builder softStartSeconds(double)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -212,8 +211,7 @@
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig$Builder)",
       "public int maxthreads()",
       "public int queueSize()",
-      "public int maxThreadExecutionTimeSeconds()",
-      "public double softStartSeconds()"
+      "public int maxThreadExecutionTimeSeconds()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",
