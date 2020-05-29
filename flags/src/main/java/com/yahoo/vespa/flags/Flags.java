@@ -135,11 +135,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag DEFAULT_SOFT_START_SECONDS = defineDoubleFlag(
-            "default-soft-start-seconds", 0.0,
-            "Default number of seconds that a soft start shall use",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
     public static final UnboundDoubleFlag DEFAULT_THREADPOOL_SIZE_FACTOR = defineDoubleFlag(
             "default-threadpool-size-factor", 0.0,
             "Default multiplication factor when computing maxthreads for main container threadpool based on available cores",

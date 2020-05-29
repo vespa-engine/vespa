@@ -69,7 +69,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
-    private final double softStartSeconds;
 
     private Integer memoryPercentage = null;
 
@@ -87,7 +86,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("ai.vespa.cloud.SystemInfo");
         addMetricsV2Handler();
         addTestrunnerComponentsIfTester(deployState);
-        softStartSeconds = deployState.getProperties().defaultSoftStartSeconds();
     }
 
     @Override
@@ -254,7 +252,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
-        builder.softStartSeconds(softStartSeconds);
     }
 
     public static class MbusParams {
