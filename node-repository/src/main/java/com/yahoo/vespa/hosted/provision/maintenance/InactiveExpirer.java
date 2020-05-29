@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -14,15 +15,19 @@ import java.util.List;
  * Maintenance job which moves inactive nodes to dirty or parked after timeout.
  *
  * The timeout is in place for two reasons:
- * <ul>
- * <li>To ensure that the new application configuration has time to
- * propagate before the node is used for something else
- * <li>To provide a grace period in which nodes can be brought back to active
- * if they were deactivated in error. As inactive nodes retain their state
- * they can be brought back to active and correct state faster than a new node.
- * </ul>
  *
- * Nodes with the retired flag should not be reused and will be moved to parked instead of dirty.
+ * - To ensure that the new application configuration has time to
+ *   propagate before the node is used for something else.
+ *
+ * - To provide a grace period in which nodes can be brought back to active
+ *   if they were deactivated in error. As inactive nodes retain their state
+ *   they can be brought back to active and correct state faster than a new node.
+ *
+ * Nodes with following flags set are not reusable and will be moved to parked
+ * instead of dirty:
+ *
+ * - {@link Status#wantToRetire()} (when set by an operator)
+ * - {@link Status#wantToDeprovision()}
  *
  * @author bratseth
  * @author mpolden
