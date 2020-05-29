@@ -35,12 +35,17 @@ public class NodeResourceLimits {
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(Node candidateTenantNode, ClusterSpec cluster) {
-        NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(candidateTenantNode, nodeRepository);
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateTenantNode, nodeRepository),
+                                  cluster.type());
+    }
 
-        if (realResources.memoryGb() < minRealMemoryGb(cluster.type())) return false;
+    /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
+    public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec.Type clusterType) {
+        if (realResources.isUnspecified()) return true;
+
+        if (realResources.memoryGb() < minRealMemoryGb(clusterType)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
-
-        return true;
+       return true;
     }
 
     public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType) {

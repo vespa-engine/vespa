@@ -132,37 +132,30 @@ public class AllocatableClusterResources {
                                                 .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
     }
 
-    /**
-     * Returns the best matching allocatable node resources given ideal node resources,
-     * or empty if none available within the limits.
-     *
-     * @param resources the real resources that should ideally be allocated
-     * @param exclusive whether resources should be allocated on entire hosts
-     *        (in which case the allocated resources will be all the real resources of the host
-     *         and limits are required to encompass the full resources of candidate host flavors)
-     */
-    public static Optional<AllocatableClusterResources> from(ClusterResources resources,
+    public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              boolean exclusive,
                                                              ClusterSpec.Type clusterType,
-                                                             Limits limits,
+                                                             Limits applicationLimits,
                                                              NodeRepository nodeRepository) {
-        NodeResources cappedNodeResources = limits.cap(resources.nodeResources());
-        cappedNodeResources = new NodeResourceLimits(nodeRepository).enlargeToLegal(cappedNodeResources, clusterType);
-
+        var systemLimits = new NodeResourceLimits(nodeRepository);
         if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            NodeResources realResources = cappedNodeResources;
-            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(realResources);
+            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources());
+            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterType); // Attempt to ask for something legal
+            advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
+            NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources); // ... thus, what we really get may change
+            if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) return Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 if (flavor.resources().satisfies(advertisedResources))
-                    return Optional.of(new AllocatableClusterResources(resources.with(realResources),
+                    return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
-                                                                       resources.nodeResources(),
+                                                                       wantedResources.nodeResources(),
                                                                        clusterType));
             }
             return Optional.empty();
         }
         else { // Return the cheapest flavor satisfying the requested resources, if any
+            NodeResources cappedWantedResources = applicationLimits.cap(wantedResources.nodeResources());
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
@@ -171,18 +164,19 @@ public class AllocatableClusterResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    advertisedResources = advertisedResources.withDiskGb(cappedNodeResources.diskGb());
-                    realResources = realResources.withDiskGb(cappedNodeResources.diskGb());
+                    advertisedResources = advertisedResources.withDiskGb(cappedWantedResources.diskGb());
+                    realResources = realResources.withDiskGb(cappedWantedResources.diskGb());
                 }
-                if (flavor.resources().bandwidthGbps() >= cappedNodeResources.bandwidthGbps()) {
-                    advertisedResources = advertisedResources.withBandwidthGbps(cappedNodeResources.bandwidthGbps());
-                    realResources = realResources.withBandwidthGbps(cappedNodeResources.bandwidthGbps());
+                if (flavor.resources().bandwidthGbps() >= advertisedResources.bandwidthGbps()) {
+                    advertisedResources = advertisedResources.withBandwidthGbps(cappedWantedResources.bandwidthGbps());
+                    realResources = realResources.withBandwidthGbps(cappedWantedResources.bandwidthGbps());
                 }
 
-                if ( ! between(limits.min().nodeResources(), limits.max().nodeResources(), advertisedResources)) continue;
-                var candidate = new AllocatableClusterResources(resources.with(realResources),
+                if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
+                if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) continue;
+                var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
-                                                                resources.nodeResources(),
+                                                                wantedResources.nodeResources(),
                                                                 clusterType);
                 if (best.isEmpty() || candidate.preferableTo(best.get()))
                     best = Optional.of(candidate);

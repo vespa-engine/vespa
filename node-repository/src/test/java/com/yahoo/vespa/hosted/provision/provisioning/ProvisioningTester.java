@@ -56,6 +56,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -562,6 +563,11 @@ public class ProvisioningTester {
             return this;
         }
 
+        public Builder resourcesCalculator(int memoryTax, int diskTax) {
+            this.resourcesCalculator = new MockResourcesCalculator(memoryTax, diskTax);
+            return this;
+        }
+
         public Builder zone(Zone zone) {
             this.zone = zone;
             return this;
@@ -638,6 +644,45 @@ public class ProvisioningTester {
 
     private static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
+    }
+
+    static class MockResourcesCalculator implements HostResourcesCalculator {
+
+        private final int memoryTaxGb;
+        private final int localDiskTax;
+
+        public MockResourcesCalculator(int memoryTaxGb, int localDiskTax) {
+            this.memoryTaxGb = memoryTaxGb;
+            this.localDiskTax = localDiskTax;
+        }
+
+        @Override
+        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
+            NodeResources resources = node.flavor().resources();
+            if (node.type() == NodeType.host) return resources;
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            NodeResources resources = flavor.resources();
+            if ( ! flavor.isConfigured()) return resources;
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
+        }
+
+        @Override
+        public NodeResources requestToReal(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+                            .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
+        }
+
+        @Override
+        public NodeResources realToRequest(NodeResources resources) {
+            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
+                            .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
+        }
+
     }
 
 }
