@@ -167,7 +167,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
         tester.deployZoneApp();
@@ -213,7 +213,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
         tester.deployZoneApp();
@@ -288,7 +288,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, 0))
+                                                                    .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
         tester.deployZoneApp();
@@ -323,7 +323,7 @@ public class DynamicDockerProvisionTest {
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
-                                                                    .resourcesCalculator(new ProvisioningTester.MockResourcesCalculator(memoryTax, localDiskTax))
+                                                                    .resourcesCalculator(memoryTax, localDiskTax)
                                                                     .build();
 
         tester.deployZoneApp();
