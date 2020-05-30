@@ -61,6 +61,10 @@ import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.createTestRequest;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.Cmd;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.FailingMockProvisioner;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -68,17 +72,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class SessionActiveHandlerTest extends SessionHandlerTest {
+public class SessionActiveHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
     private static final String appName = "default";
     private static final TenantName tenantName = TenantName.from("activatetest");
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
+    private static final String pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
 
     private Curator curator;
     private LocalSessionRepo localRepo;
     private TenantApplications applicationRepo;
-    private MockProvisioner hostProvisioner;
+    private SessionHandlerTest.MockProvisioner hostProvisioner;
     private VespaModelFactory modelFactory;
     private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
@@ -98,10 +103,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         tenantRepository = new TenantRepository(componentRegistry, false);
         applicationRepo = TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName);
         localRepo = new LocalSessionRepo(tenantName, componentRegistry);
-        pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
-        hostProvisioner = new MockProvisioner();
+        hostProvisioner = new SessionHandlerTest.MockProvisioner();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
                 .withApplicationRepo(applicationRepo);
         tenantRepository.addTenant(tenantBuilder);
@@ -123,7 +126,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Test
     public void testUnknownSession() {
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
+        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
         assertEquals(response.getStatus(), NOT_FOUND);
     }
 
@@ -146,7 +149,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Test
     public void testAlreadyActivatedSession() throws Exception {
         activateAndAssertOK(1, 0);
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
+        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
         String message = getRenderedString(response);
         assertThat(message, response.getStatus(), Is.is(BAD_REQUEST));
         assertThat(message, containsString("Session 1 is already active"));
@@ -167,9 +170,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_handler_gives_error_for_unsupported_methods() throws Exception {
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
     }
 
     @Test
@@ -286,7 +289,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
             addLocalSession(sessionId, deployData, zkClient);
             tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());
             metaData = localRepo.getSession(sessionId).getMetaData();
-            actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
+            actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             return this;
         }
     }
