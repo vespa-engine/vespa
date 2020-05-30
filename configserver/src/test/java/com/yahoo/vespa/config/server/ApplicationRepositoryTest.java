@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -37,6 +38,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -53,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -86,6 +89,9 @@ public class ApplicationRepositoryTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -441,6 +447,40 @@ public class ApplicationRepositoryTest {
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
         assertTrue(portsCopy.isPresent());
         assertThat(portsCopy.get().allocations(), is(list));
+    }
+
+    @Test
+    public void testActivationOfUnpreparedSession() {
+        // Needed so we can test that the original active session is still active after a failed activation
+        PrepareResult result = deployApp(testApp);
+        long firstSession = result.sessionId();
+
+        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
+        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, timeoutBudget, false);
+
+        RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
+        assertEquals(firstSession, activeSession.getSessionId());
+        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+    }
+
+    @Test
+    public void testActivationTimesOut() {
+        // Needed so we can test that the original active session is still active after a failed activation
+        PrepareResult result = deployApp(testAppJdiscOnly);
+        long firstSession = result.sessionId();
+
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
+        exceptionRule.expect(RuntimeException.class);
+        exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
+        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+
+        RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
+        assertEquals(firstSession, activeSession.getSessionId());
+        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }
 
     private ApplicationRepository createApplicationRepository() {

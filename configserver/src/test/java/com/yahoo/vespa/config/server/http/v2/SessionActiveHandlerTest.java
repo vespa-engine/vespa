@@ -58,13 +58,11 @@ import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -130,16 +128,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void testActivationWithBarrierTimeout() throws Exception {
-        // Needed so we can test that previous active session is still active after a failed activation
-        activateAndAssertOK(90, 0);
-        ((MockCurator) curator).timeoutBarrierOnEnter(true);
-        ActivateRequest activateRequest = new ActivateRequest(91, 90, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        assertThat(actResponse.getStatus(), Is.is(INTERNAL_SERVER_ERROR));
-    }
-
-    @Test
     public void require_that_session_created_from_active_that_is_no_longer_active_cannot_be_activated() throws Exception {
         long sessionId = 1;
         activateAndAssertOK(1, 0);
@@ -175,20 +163,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         activateAndAssertError(92, 89,
                                Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_CONFLICT,
                                "tenant:" + tenantName + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
-    }
-
-    @Test
-    public void testActivationOfUnpreparedSession() throws Exception {
-        // Needed so we can test that previous active session is still active after a failed activation
-        RemoteSession firstSession = activateAndAssertOK(90, 0);
-        long sessionId = 91L;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0, Session.Status.NEW, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        RemoteSession session = activateRequest.getSession();
-        assertThat(actResponse.getStatus(), is(Response.Status.BAD_REQUEST));
-        assertThat(getRenderedString(actResponse), is("{\"error-code\":\"BAD_REQUEST\",\"message\":\"tenant:"+ tenantName +" app:default:default Session " + sessionId + " is not prepared\"}"));
-        assertThat(session.getStatus(), is(not(Session.Status.ACTIVATE)));
-        assertThat(firstSession.getStatus(), is(Session.Status.ACTIVATE));
     }
 
     @Test
