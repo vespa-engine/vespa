@@ -60,6 +60,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -242,7 +243,10 @@ public class ContentCluster extends AbstractConfigProducer implements
 
         /** Returns whether this hosts one of the given container clusters */
         private boolean isCombined(String clusterId, Collection<ContainerModel> containers) {
-            return containers.stream().map(model -> model.getCluster().getHostClusterId()).anyMatch(id -> id.equals(clusterId));
+            return containers.stream()
+                             .map(model -> model.getCluster().getHostClusterId())
+                             .filter(Optional::isPresent)
+                             .anyMatch(id -> id.get().equals(clusterId));
         }
 
         private void setupExperimental(ContentCluster cluster, ModelElement experimental) {

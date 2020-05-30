@@ -368,9 +368,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
 
-        if (resourceLimits.isPresent()) {
-            resourceLimits.get().getConfig(builder);
-        }
+        resourceLimits.ifPresent(limits -> limits.getConfig(builder));
 
         if (tuning != null) {
             tuning.getConfig(builder);
