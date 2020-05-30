@@ -13,10 +13,11 @@ public class DiskSize {
     private static final char[] UNITS = "kMGTPE".toCharArray();
 
     public enum Unit {
-        kB(1000), kiB(1 << 10),
+        kB(1_000), kiB(1 << 10),
         MB(1_000_000), MiB(1 << 20),
         GB(1_000_000_000), GiB(1 << 30),
-        PB(1_000_000_000_000L), PiB(1L << 40);
+        TB(1_000_000_000_000L), TiB(1L << 40),
+        PB(1_000_000_000_000_000L), PiB(1L << 50);
 
         private final long size;
         Unit(long size) { this.size = size; }
