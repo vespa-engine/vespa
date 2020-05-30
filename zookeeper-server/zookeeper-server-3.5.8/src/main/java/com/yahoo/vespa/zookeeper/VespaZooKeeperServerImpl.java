@@ -28,7 +28,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         this.zookeeperServerConfig = zookeeperServerConfig;
         new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
         zkServerThread = new Thread(this, "zookeeper server");
-            zkServerThread.start();
+        zkServerThread.start();
     }
 
     private void shutdown() {

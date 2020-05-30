@@ -12,9 +12,9 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,29 +26,33 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 public class Configurator {
+
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Configurator.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
 
     private final ZookeeperServerConfig zookeeperServerConfig;
-    private final String configFilePath;
-    private final String jksKeyStoreFilePath;
+    private final Path configFilePath;
+    private final Path jksKeyStoreFilePath;
 
     public Configurator(ZookeeperServerConfig zookeeperServerConfig) {
+        log.log(Level.FINE, zookeeperServerConfig.toString());
         this.zookeeperServerConfig = zookeeperServerConfig;
-        this.configFilePath = zookeeperServerConfig.zooKeeperConfigFile();
-        this.jksKeyStoreFilePath = zookeeperServerConfig.jksKeyStoreFile();
+        this.configFilePath = makeAbsolutePath(zookeeperServerConfig.zooKeeperConfigFile());
+        this.jksKeyStoreFilePath = makeAbsolutePath(zookeeperServerConfig.jksKeyStoreFile());
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
     }
 
     void writeConfigToDisk(Optional<TransportSecurityOptions> transportSecurityOptions) {
-        new File(configFilePath).getParentFile().mkdirs();
+        configFilePath.toFile().getParentFile().mkdirs();
 
         try {
             writeZooKeeperConfigFile(zookeeperServerConfig, transportSecurityOptions);
@@ -61,7 +65,7 @@ public class Configurator {
 
     private void writeZooKeeperConfigFile(ZookeeperServerConfig config,
                                           Optional<TransportSecurityOptions> transportSecurityOptions) throws IOException {
-        try (FileWriter writer = new FileWriter(configFilePath)) {
+        try (FileWriter writer = new FileWriter(configFilePath.toFile())) {
             writer.write(transformConfigToString(config, transportSecurityOptions));
         }
     }
@@ -118,7 +122,7 @@ public class Configurator {
                 .withType(KeyStoreType.JKS)
                 .withKeyEntry("foo", privateKey, certificates);
 
-        KeyStoreUtils.writeKeyStoreToFile(keyStoreBuilder.build(), Paths.get(jksKeyStoreFilePath));
+        KeyStoreUtils.writeKeyStoreToFile(keyStoreBuilder.build(), jksKeyStoreFilePath);
     }
 
     private void ensureThisServerIsRepresented(int myid, List<ZookeeperServerConfig.Server> servers) {
@@ -138,11 +142,16 @@ public class Configurator {
         sb.append("server.").append(server.id()).append("=").append(server.hostname()).append(":").append(server.quorumPort()).append(":").append(server.electionPort()).append("\n");
     }
 
-
-
-
     static Set<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
         return zookeeperServerConfig.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toSet());
+    }
+
+    Path makeAbsolutePath(String filename) {
+        Path path = Paths.get(filename);
+        if (path.isAbsolute())
+            return path;
+        else
+            return Paths.get(Defaults.getDefaults().underVespaHome(filename));
     }
 
     private interface TlsConfig {
@@ -162,7 +171,7 @@ public class Configurator {
 
         String configFieldPrefix();
 
-        String jksKeyStoreFilePath();
+        Path jksKeyStoreFilePath();
 
         SSLContext sslContext();
 
@@ -195,9 +204,9 @@ public class Configurator {
     static class TlsClientServerConfig implements TlsConfig {
 
         private final SSLContext sslContext;
-        private final String jksKeyStoreFilePath;
+        private final Path jksKeyStoreFilePath;
 
-        TlsClientServerConfig(SSLContext sslContext, String jksKeyStoreFilePath) {
+        TlsClientServerConfig(SSLContext sslContext, Path jksKeyStoreFilePath) {
             this.sslContext = sslContext;
             this.jksKeyStoreFilePath = jksKeyStoreFilePath;
         }
@@ -233,7 +242,7 @@ public class Configurator {
         }
 
         @Override
-        public String jksKeyStoreFilePath() {
+        public Path jksKeyStoreFilePath() {
             return jksKeyStoreFilePath;
         }
 
@@ -246,9 +255,9 @@ public class Configurator {
     static class TlsQuorumConfig implements TlsConfig {
 
         private final SSLContext sslContext;
-        private final String jksKeyStoreFilePath;
+        private final Path jksKeyStoreFilePath;
 
-        TlsQuorumConfig(SSLContext sslContext, String jksKeyStoreFilePath) {
+        TlsQuorumConfig(SSLContext sslContext, Path jksKeyStoreFilePath) {
             this.sslContext = sslContext;
             this.jksKeyStoreFilePath = jksKeyStoreFilePath;
         }
@@ -293,7 +302,7 @@ public class Configurator {
         }
 
         @Override
-        public String jksKeyStoreFilePath() {
+        public Path jksKeyStoreFilePath() {
             return jksKeyStoreFilePath;
         }
 
