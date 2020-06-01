@@ -14,7 +14,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -57,7 +56,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
@@ -131,22 +129,6 @@ public class SessionActiveHandlerTest {
     }
 
     @Test
-    public void require_that_session_created_from_active_that_is_no_longer_active_cannot_be_activated() throws Exception {
-        long sessionId = 1;
-        activateAndAssertOK(1, 0);
-        sessionId++;
-        activateAndAssertOK(sessionId, 1);
-
-        sessionId++;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 1, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(CONFLICT));
-        assertThat(message,
-                   containsString("Cannot activate session 3 because the currently active session (2) has changed since session 3 was created (was 1 at creation time)"));
-    }
-
-    @Test
     public void testAlreadyActivatedSession() throws Exception {
         activateAndAssertOK(1, 0);
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
@@ -158,14 +140,6 @@ public class SessionActiveHandlerTest {
     @Test
     public void testActivation() throws Exception {
         activateAndAssertOK(1, 0);
-    }
-
-    @Test
-    public void testActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90, 0);
-        activateAndAssertError(92, 89,
-                               Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_CONFLICT,
-                               "tenant:" + tenantName + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
     }
 
     @Test

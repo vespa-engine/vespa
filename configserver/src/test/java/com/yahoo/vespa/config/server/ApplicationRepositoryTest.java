@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.api.ApplicationRoles;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -481,6 +482,27 @@ public class ApplicationRepositoryTest {
         RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+    }
+
+    @Test
+    public void testActivationofSessionCreatedFromNoLongerActiveSessionFails() {
+        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
+
+        PrepareResult result1 = deployApp(testAppJdiscOnly);
+        result1.sessionId();
+
+        long sessionId2 = applicationRepository.createSessionFromExisting(applicationId(),
+                                                                          new BaseDeployLogger(),
+                                                                          false,
+                                                                          timeoutBudget);
+        // Deploy and activate another session
+        PrepareResult result2 = deployApp(testAppJdiscOnly);
+        result2.sessionId();
+
+        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId2, prepareParams(), clock.instant());
+        exceptionRule.expect(ActivationConflictException.class);
+        exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
+        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId2, timeoutBudget, false);
     }
 
     private ApplicationRepository createApplicationRepository() {
