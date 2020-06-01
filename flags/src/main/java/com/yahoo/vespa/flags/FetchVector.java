@@ -51,6 +51,9 @@ public class FetchVector {
          */
         VESPA_VERSION,
 
+        /** Email address of user - provided by auth0 in console. */
+        CONSOLE_USER_EMAIL,
+
         /**
          * Zone from ZoneId::value of the form environment.region.
          *
