@@ -1,44 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.application.provider.DeployData;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.MockSessionZKClient;
-import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionTest;
-import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
+import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
@@ -50,9 +35,8 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.time.Duration;
+import java.util.List;
 
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -74,13 +58,10 @@ public class SessionActiveHandlerTest {
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
     private static final String pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
 
-    private Curator curator;
-    private LocalSessionRepo localRepo;
-    private TenantApplications applicationRepo;
     private SessionHandlerTest.MockProvisioner hostProvisioner;
-    private VespaModelFactory modelFactory;
     private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
+    private ApplicationRepository applicationRepository;
     private SessionActiveHandler handler;
 
     @Rule
@@ -88,27 +69,23 @@ public class SessionActiveHandlerTest {
 
     @Before
     public void setup() {
-        curator = new MockCurator();
-        modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        VespaModelFactory modelFactory = new TestModelFactory(Version.fromString("7.222.2"));
+        hostProvisioner = new SessionHandlerTest.MockProvisioner();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
-                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
+                .curator(new MockCurator())
+                .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepo = TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName);
-        localRepo = new LocalSessionRepo(tenantName, componentRegistry);
-        hostProvisioner = new SessionHandlerTest.MockProvisioner();
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withLocalSessionRepo(localRepo)
-                .withApplicationRepo(applicationRepo);
+        applicationRepository = new ApplicationRepository(tenantRepository, hostProvisioner,
+                                                          new OrchestratorMock(), componentRegistry.getClock());
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName);
         tenantRepository.addTenant(tenantBuilder);
         handler = createHandler();
     }
 
     @Test
-    public void testForceActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90, 0);
-        activateAndAssertOK(92, 89, "?force=true");
+    public void testActivation() throws Exception {
+        activateAndAssertOK();
     }
 
     @Test
@@ -118,45 +95,10 @@ public class SessionActiveHandlerTest {
     }
 
     @Test
-    public void testActivation() throws Exception {
-        activateAndAssertOK(1, 0);
-    }
-
-    @Test
     public void require_that_handler_gives_error_for_unsupported_methods() throws Exception {
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-    }
-
-    private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient) throws IOException {
-        zkClient.writeStatus(status);
-        ZooKeeperClient zkC = new ZooKeeperClient(componentRegistry.getConfigCurator(), new BaseDeployLogger(), false,
-                                                  TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
-        zkC.write(Collections.singletonMap(modelFactory.version(), new MockFileRegistry()));
-        zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
-        return new RemoteSession(tenantName, sessionId, componentRegistry, zkClient);
-    }
-
-    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
-        writeApplicationId(zkc, deployData.getApplicationId());
-        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
-        localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
-                                              app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                              applicationRepo, new HostRegistry<>()));
-    }
-
-    private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath);
-        activateRequest.invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(OK));
-        assertActivationMessageOK(activateRequest, message);
-        RemoteSession session = activateRequest.getSession();
-        assertThat(session.getStatus(), Is.is(Session.Status.ACTIVATE));
-        return activateRequest;
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
@@ -170,70 +112,47 @@ public class SessionActiveHandlerTest {
     protected class ActivateRequest {
 
         private long sessionId;
-        private RemoteSession session;
         private HttpResponse actResponse;
-        private Session.Status initialStatus;
-        private DeployData deployData;
         private ApplicationMetaData metaData;
         private String subPath;
 
-        ActivateRequest(long sessionId, long previousSessionId, String subPath) {
-            this(sessionId, previousSessionId, Session.Status.PREPARE, subPath);
-        }
-
-        ActivateRequest(long sessionId, long previousSessionId, Session.Status initialStatus, String subPath) {
-            this.sessionId = sessionId;
-            this.initialStatus = initialStatus;
-            this.deployData = new DeployData("foo",
-                                             "bar",
-                                             ApplicationId.from(tenantName.value(), appName, "default"),
-                                             0L,
-                                             false,
-                                             sessionId,
-                                             previousSessionId);
+        ActivateRequest(String subPath) {
             this.subPath = subPath;
         }
 
-        public RemoteSession getSession() {
-            return session;
-        }
+        public SessionHandler getHandler() { return handler; }
 
-        public SessionHandler getHandler() {
-            return handler;
-        }
+        HttpResponse getActResponse() { return actResponse; }
 
-        HttpResponse getActResponse() {
-            return actResponse;
-        }
+        public long getSessionId() { return sessionId; }
 
-        public long getSessionId() {
-            return sessionId;
-        }
+        ApplicationMetaData getMetaData() { return metaData; }
 
-        ApplicationMetaData getMetaData() {
-            return metaData;
-        }
-
-        void invoke() throws Exception {
-            SessionZooKeeperClient zkClient =
-                    new MockSessionZKClient(curator, tenantName, sessionId,
-                                            Optional.of(AllocatedHosts.withHosts(Set.of(new HostSpec("bar", Collections.emptyList(), Optional.empty())))));
-            session = createRemoteSession(sessionId, initialStatus, zkClient);
-            addLocalSession(sessionId, deployData, zkClient);
-            tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());
-            metaData = localRepo.getSession(sessionId).getMetaData();
+        void invoke() {
+            Tenant tenant = tenantRepository.getTenant(tenantName);
+            long sessionId = applicationRepository.createSession(applicationId(),
+                                                                 new TimeoutBudget(componentRegistry.getClock(), Duration.ofSeconds(10)),
+                                                                 testApp);
+            applicationRepository.prepare(tenant,
+                                          sessionId,
+                                          new PrepareParams.Builder().applicationId(applicationId()).build(),
+                                          componentRegistry.getClock().instant());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
+            LocalSession session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+            metaData = session.getMetaData();
+            this.sessionId = sessionId;
         }
     }
 
-    private void activateAndAssertOK(long sessionId, long previousSessionId) throws Exception {
-        activateAndAssertOKPut(sessionId, previousSessionId, "");
+    private void activateAndAssertOK() throws Exception {
+        ActivateRequest activateRequest = new ActivateRequest("");
+        activateRequest.invoke();
+        HttpResponse actResponse = activateRequest.getActResponse();
+        String message = getRenderedString(actResponse);
+        assertThat(message, actResponse.getStatus(), Is.is(OK));
+        assertActivationMessageOK(activateRequest, message);
     }
 
-    private void activateAndAssertOK(long sessionId, long previousSessionId, String subPath) throws Exception {
-        activateAndAssertOKPut(sessionId, previousSessionId, subPath);
-    }
-    
     private void assertActivationMessageOK(ActivateRequest activateRequest, String message) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         new JsonFormat(true).encode(byteArrayOutputStream, activateRequest.getMetaData().getSlime());
@@ -247,17 +166,14 @@ public class SessionActiveHandlerTest {
         assertThat(hostProvisioner.lastHosts.size(), is(1));
     }
 
-    private void writeApplicationId(SessionZooKeeperClient zkc, ApplicationId id) {
-        zkc.writeApplicationId(id);
-    }
-
     private SessionActiveHandler createHandler() {
         return new SessionActiveHandler(SessionActiveHandler.testOnlyContext(),
-                                        new ApplicationRepository(tenantRepository,
-                                                                  hostProvisioner,
-                                                                  new OrchestratorMock(),
-                                                                  componentRegistry.getClock()),
+                                        applicationRepository,
                                         Zone.defaultZone());
+    }
+
+    private ApplicationId applicationId() {
+        return ApplicationId.from(tenantName.value(), appName, "default");
     }
 
 }
