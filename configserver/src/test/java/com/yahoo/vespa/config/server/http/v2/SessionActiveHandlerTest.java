@@ -43,7 +43,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -55,18 +54,15 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static com.yahoo.vespa.config.server.http.SessionHandlerTest.createTestRequest;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.Cmd;
-import static com.yahoo.vespa.config.server.http.SessionHandlerTest.FailingMockProvisioner;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.createTestRequest;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -110,13 +106,6 @@ public class SessionActiveHandlerTest {
     }
 
     @Test
-    public void testThatPreviousSessionIsDeactivated() throws Exception {
-        RemoteSession firstSession = activateAndAssertOK(90, 0);
-        activateAndAssertOK(91, 90);
-        assertThat(firstSession.getStatus(), Is.is(Session.Status.DEACTIVATE));
-    }
-
-    @Test
     public void testForceActivationWithActivationInBetween() throws Exception {
         activateAndAssertOK(90, 0);
         activateAndAssertOK(92, 89, "?force=true");
@@ -129,15 +118,6 @@ public class SessionActiveHandlerTest {
     }
 
     @Test
-    public void testAlreadyActivatedSession() throws Exception {
-        activateAndAssertOK(1, 0);
-        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
-        String message = getRenderedString(response);
-        assertThat(message, response.getStatus(), Is.is(BAD_REQUEST));
-        assertThat(message, containsString("Session 1 is already active"));
-    }
-
-    @Test
     public void testActivation() throws Exception {
         activateAndAssertOK(1, 0);
     }
@@ -147,15 +127,6 @@ public class SessionActiveHandlerTest {
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
         testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-    }
-
-    @Test
-    @Ignore
-    public void require_that_handler_gives_error_when_provisioner_activated_fails() throws Exception {
-        hostProvisioner = new FailingMockProvisioner();
-        hostProvisioner.activated = false;
-        activateAndAssertError(1, 0, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
-        assertFalse(hostProvisioner.activated);
     }
 
     private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient) throws IOException {
@@ -186,18 +157,6 @@ public class SessionActiveHandlerTest {
         RemoteSession session = activateRequest.getSession();
         assertThat(session.getStatus(), Is.is(Session.Status.ACTIVATE));
         return activateRequest;
-    }
-
-    private void activateAndAssertErrorPut(long sessionId, long previousSessionId,
-                                           int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "");
-        activateRequest.invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        RemoteSession session = activateRequest.getSession();
-        assertThat(actResponse.getStatus(), Is.is(statusCode));
-        String message = getRenderedString(actResponse);
-        assertThat(message, Is.is("{\"error-code\":\"" + errorCode.name() + "\",\"message\":\"" + expectedError + "\"}"));
-        assertThat(session.getStatus(), Is.is(Session.Status.PREPARE));
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
@@ -255,7 +214,7 @@ public class SessionActiveHandlerTest {
             return metaData;
         }
 
-        ActivateRequest invoke() throws Exception {
+        void invoke() throws Exception {
             SessionZooKeeperClient zkClient =
                     new MockSessionZKClient(curator, tenantName, sessionId,
                                             Optional.of(AllocatedHosts.withHosts(Set.of(new HostSpec("bar", Collections.emptyList(), Optional.empty())))));
@@ -264,13 +223,11 @@ public class SessionActiveHandlerTest {
             tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());
             metaData = localRepo.getSession(sessionId).getMetaData();
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
-            return this;
         }
     }
 
-    private RemoteSession activateAndAssertOK(long sessionId, long previousSessionId) throws Exception {
-        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, "");
-        return activateRequest.getSession();
+    private void activateAndAssertOK(long sessionId, long previousSessionId) throws Exception {
+        activateAndAssertOKPut(sessionId, previousSessionId, "");
     }
 
     private void activateAndAssertOK(long sessionId, long previousSessionId, String subPath) throws Exception {
@@ -288,12 +245,6 @@ public class SessionActiveHandlerTest {
                 "/instance/" + "default"));
         assertTrue(hostProvisioner.activated);
         assertThat(hostProvisioner.lastHosts.size(), is(1));
-    }
-
-    private void activateAndAssertError(long sessionId, long previousSessionId, int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        hostProvisioner.activated = false;
-        activateAndAssertErrorPut(sessionId, previousSessionId, statusCode, errorCode, expectedError);
-        assertFalse(hostProvisioner.activated);
     }
 
     private void writeApplicationId(SessionZooKeeperClient zkc, ApplicationId id) {
