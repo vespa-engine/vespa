@@ -44,7 +44,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     private ApplicationId idTenant2 = new ApplicationId.Builder()
                                       .tenant(tenantName2)
                                       .applicationName("foo").instanceName("quux").build();
-    private MockSession session2;
+    private MockLocalSession session2;
 
     @Before
     public void setupHandler() {
@@ -52,13 +52,13 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 
-        session2 = new MockSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
+        session2 = new MockLocalSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
         Tenant tenant1 = tenantRepository.getTenant(tenantName1);
         tenant1.getLocalSessionRepo().addSession(session2);
         tenant1.getApplicationRepo().createApplication(idTenant1);
         tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2).commit();
 
-        MockSession session3 = new MockSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
+        MockLocalSession session3 = new MockLocalSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
         Tenant tenant2 = tenantRepository.getTenant(tenantName2);
         tenant2.getLocalSessionRepo().addSession(session3);
         tenant2.getApplicationRepo().createApplication(idTenant2);

@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.RemoteSessionFactory;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionFactoryImpl;
@@ -232,7 +231,7 @@ public class TenantRepository {
         SessionFactory sessionFactory = new SessionFactoryImpl(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
         LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry);
         RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(globalComponentRegistry,
-                                                                    new RemoteSessionFactory(globalComponentRegistry, tenantName),
+                                                                    sessionFactory,
                                                                     reloadHandler,
                                                                     tenantName,
                                                                     applicationRepo);

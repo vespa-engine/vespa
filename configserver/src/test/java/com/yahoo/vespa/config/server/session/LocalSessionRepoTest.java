@@ -97,8 +97,8 @@ public class LocalSessionRepoTest {
         }
         assertNull(repo.getSession(1L));
 
-        repo.addSession(new SessionHandlerTest.MockSession(1L, FilesApplicationPackage.fromFile(testApp)));
-        repo.addSession(new SessionHandlerTest.MockSession(2L, FilesApplicationPackage.fromFile(testApp)));
+        repo.addSession(new SessionHandlerTest.MockLocalSession(1L, FilesApplicationPackage.fromFile(testApp)));
+        repo.addSession(new SessionHandlerTest.MockLocalSession(2L, FilesApplicationPackage.fromFile(testApp)));
         assertNotNull(repo.getSession(1L));
         assertNotNull(repo.getSession(2L));
         assertNull(repo.getSession(3L));
