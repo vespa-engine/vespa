@@ -2,18 +2,19 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Response;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,8 +50,8 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     @Before
     public void setupHandler() {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(tenantName1);
-        tenantRepository.addTenant(tenantName2);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName1));
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName2));
 
         session2 = new MockSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
         Tenant tenant1 = tenantRepository.getTenant(tenantName1);

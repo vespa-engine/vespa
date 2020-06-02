@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class HttpGetConfigHandlerTest {
         }} );
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(tenant, mockRequestHandler, mockRequestHandler);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenant).withRequestHandler(mockRequestHandler));
         handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), tenantRepository);
     }
 

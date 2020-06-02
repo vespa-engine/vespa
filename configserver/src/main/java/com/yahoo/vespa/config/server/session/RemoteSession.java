@@ -140,8 +140,22 @@ public class RemoteSession extends Session {
         return zooKeeperClient.getAllocatedHosts();
     }
 
+    // Note: Assumes monotonically increasing session ids
+    public boolean isNewerThan(long sessionId) {
+        return getSessionId() > sessionId;
+    }
+
+    public Transaction createDeactivateTransaction() {
+        return createSetStatusTransaction(Status.DEACTIVATE);
+    }
+
+    private Transaction createSetStatusTransaction(Status status) {
+        return zooKeeperClient.createWriteStatusTransaction(status);
+    }
+
     public ApplicationMetaData getMetaData() {
         return zooKeeperClient.loadApplicationPackage().getMetaData();
     }
+
 
 }
