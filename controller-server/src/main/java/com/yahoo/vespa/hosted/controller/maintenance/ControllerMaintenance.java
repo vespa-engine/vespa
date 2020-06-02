@@ -102,10 +102,10 @@ public class ControllerMaintenance extends AbstractComponent {
     /** Create one OS upgrader per cloud found in the zone registry of controller */
     private static List<OsUpgrader> osUpgraders(Controller controller) {
         return controller.zoneRegistry().zones().controllerUpgraded().zones().stream()
-                         .map(ZoneApi::getCloudName)
+                         .map(ZoneApi::getCloud)
                          .distinct()
                          .sorted()
-                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), controller.zoneRegistry().cloud(cloud)))
+                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), cloud))
                          .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 

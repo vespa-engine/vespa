@@ -44,9 +44,9 @@ public class OsApiTest extends ControllerContainerTest {
                                              .reprovisionToUpgradeOs(true)
                                              .requireAccessControl(true)
                                              .build();
-    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1.name()).build();
-    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1.name()).build();
-    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2.name()).build();
+    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").withCloud(cloud1).build();
+    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").withCloud(cloud1).build();
+    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").withCloud(cloud2).build();
 
     private ContainerTester tester;
     private List<OsUpgrader> osUpgraders;

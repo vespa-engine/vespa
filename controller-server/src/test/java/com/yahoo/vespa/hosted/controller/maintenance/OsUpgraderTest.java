@@ -242,7 +242,7 @@ public class OsUpgraderTest {
     }
 
     private static ZoneApi zone(String id, Cloud cloud) {
-        return ZoneApiMock.newBuilder().withId(id).withCloud(cloud.name().value()).build();
+        return ZoneApiMock.newBuilder().withId(id).withCloud(cloud).build();
     }
 
 }

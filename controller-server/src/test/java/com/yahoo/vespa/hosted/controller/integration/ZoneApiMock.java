@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -14,17 +15,18 @@ import java.util.Objects;
  * @author hakonhall
  */
 public class ZoneApiMock implements ZoneApi {
+
     private final SystemName systemName;
     private final ZoneId id;
-    private final CloudName cloudName;
+    private final Cloud cloud;
     private final String cloudNativeRegionName;
 
     public static Builder newBuilder() { return new Builder(); }
 
-    private ZoneApiMock(SystemName systemName, ZoneId id, CloudName cloudName, String cloudNativeRegionName) {
+    private ZoneApiMock(SystemName systemName, ZoneId id, Cloud cloud, String cloudNativeRegionName) {
         this.systemName = systemName;
         this.id = id;
-        this.cloudName = cloudName;
+        this.cloud = cloud;
         this.cloudNativeRegionName = cloudNativeRegionName;
     }
 
@@ -47,7 +49,12 @@ public class ZoneApiMock implements ZoneApi {
     public ZoneId getId() { return id; }
 
     @Override
-    public CloudName getCloudName() { return cloudName; }
+    public CloudName getCloudName() { return cloud.name(); }
+
+    @Override
+    public Cloud getCloud() {
+        return cloud;
+    }
 
     @Override
     public String getCloudNativeRegionName() { return cloudNativeRegionName; }
@@ -66,9 +73,10 @@ public class ZoneApiMock implements ZoneApi {
     }
 
     public static class Builder {
+
         private final SystemName systemName = SystemName.defaultSystem();
         private ZoneId id = ZoneId.defaultId();
-        private CloudName cloudName = CloudName.defaultName();
+        private Cloud cloud = Cloud.defaultCloud();
         private String cloudNativeRegionName = id.region().value();
 
         public Builder with(ZoneId id) {
@@ -79,11 +87,15 @@ public class ZoneApiMock implements ZoneApi {
         public Builder withId(String id) { return with(ZoneId.from(id)); }
 
         public Builder with(CloudName cloudName) {
-            this.cloudName = cloudName;
-            return this;
+            return withCloud(Cloud.builder().name(cloudName).build());
         }
 
         public Builder withCloud(String cloud) { return with(CloudName.from(cloud)); }
+
+        public Builder withCloud(Cloud cloud) {
+            this.cloud = cloud;
+            return this;
+        }
 
         public Builder withCloudNativeRegionName(String cloudRegionName) {
             this.cloudNativeRegionName = cloudRegionName;
@@ -91,7 +103,8 @@ public class ZoneApiMock implements ZoneApi {
         }
 
         public ZoneApiMock build() {
-            return new ZoneApiMock(systemName, id, cloudName, cloudNativeRegionName);
+            return new ZoneApiMock(systemName, id, cloud, cloudNativeRegionName);
         }
     }
+
 }

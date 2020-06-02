@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -293,6 +294,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         @Override
                         public CloudName getCloudName() {
                             return CloudName.defaultName();
+                        }
+
+                        @Override
+                        public Cloud getCloud() {
+                            return Cloud.defaultCloud();
                         }
 
                         @Override

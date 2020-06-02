@@ -210,11 +210,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Cloud cloud(CloudName name) {
-        return clouds.get(name);
-    }
-
-    @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.stream().anyMatch(zone -> zone.getId().equals(zoneId));
     }

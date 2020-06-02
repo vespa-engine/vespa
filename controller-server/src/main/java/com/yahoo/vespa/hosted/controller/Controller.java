@@ -205,11 +205,11 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        Cloud cloud = zoneRegistry.cloud(cloudName);
-        if (cloud == null) {
+        Optional<Cloud> cloud = clouds().stream().filter(c -> c.name().equals(cloudName)).findFirst();
+        if (cloud.isEmpty()) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
-        if (cloud.reprovisionToUpgradeOs() && upgradeBudget.isEmpty()) {
+        if (cloud.get().reprovisionToUpgradeOs() && upgradeBudget.isEmpty()) {
             throw new IllegalArgumentException("Cloud '" + cloudName.value() + "' requires a time budget for OS upgrades");
         }
         try (Lock lock = curator.lockOsVersions()) {
@@ -234,10 +234,10 @@ public class Controller extends AbstractComponent {
     public void updateOsVersionStatus(OsVersionStatus newStatus) {
         try (Lock lock = curator.lockOsVersionStatus()) {
             OsVersionStatus currentStatus = curator.readOsVersionStatus();
-            for (CloudName cloud : clouds()) {
-                Set<Version> newVersions = newStatus.versionsIn(cloud);
-                if (currentStatus.versionsIn(cloud).size() > 1 && newVersions.size() == 1) {
-                    log.info("All nodes in " + cloud + " cloud upgraded to OS version " +
+            for (Cloud cloud : clouds()) {
+                Set<Version> newVersions = newStatus.versionsIn(cloud.name());
+                if (currentStatus.versionsIn(cloud.name()).size() > 1 && newVersions.size() == 1) {
+                    log.info("All nodes in " + cloud.name() + " cloud upgraded to OS version " +
                              newVersions.iterator().next().toFullString());
                 }
             }
@@ -270,9 +270,9 @@ public class Controller extends AbstractComponent {
         return metric;
     }
 
-    private Set<CloudName> clouds() {
+    private Set<Cloud> clouds() {
         return zoneRegistry.zones().all().zones().stream()
-                           .map(ZoneApi::getCloudName)
+                           .map(ZoneApi::getCloud)
                            .collect(Collectors.toUnmodifiableSet());
     }
 
