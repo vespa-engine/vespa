@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Instant;
@@ -115,5 +116,16 @@ public abstract class Session {
     public AllocatedHosts getAllocatedHosts() {
         return zooKeeperClient.getAllocatedHosts();
     }
+
+    public Transaction createDeactivateTransaction() {
+        return createSetStatusTransaction(Status.DEACTIVATE);
+    }
+
+    private Transaction createSetStatusTransaction(Status status) {
+        return zooKeeperClient.createWriteStatusTransaction(status);
+    }
+
+    // Note: Assumes monotonically increasing session ids
+    public boolean isNewerThan(long sessionId) { return getSessionId() > sessionId; }
 
 }
