@@ -13,9 +13,8 @@ namespace search::queryeval {
 class AndSearch : public MultiSearch
 {
 public:
-    // Caller takes ownership of the returned SearchIterator.
-    static AndSearch *create(const Children &children, bool strict, const UnpackInfo & unpackInfo);
-    static AndSearch *create(const Children &children, bool strict);
+    static std::unique_ptr<AndSearch> create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo);
+    static std::unique_ptr<AndSearch> create(ChildrenIterators children, bool strict);
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
@@ -24,7 +23,7 @@ public:
     AndSearch & estimate(uint32_t est) { _estimate = est; return *this; }
     uint32_t estimate() const { return _estimate; }
 protected:
-    AndSearch(const Children & children);
+    AndSearch(Children children);
     void doUnpack(uint32_t docid) override;
     UP andWith(UP filter, uint32_t estimate) override;
     UP offerFilterToChildren(UP filter, uint32_t estimate);

@@ -20,7 +20,7 @@ public:
      */
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
-    MultiBitVectorIteratorBase(const Children & children);
+    MultiBitVectorIteratorBase(Children children);
     class MetaWord {
     public:
         MetaWord(const Word * words, bool inverted) : _words(words), _inverted(inverted) { }

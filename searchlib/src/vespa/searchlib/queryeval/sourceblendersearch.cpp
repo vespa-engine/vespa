@@ -158,14 +158,14 @@ SourceBlenderSearch::setChild(size_t index, SearchIterator::UP child) {
     _sources[_children[index]] = child.release();
 }
 
-SourceBlenderSearch *
+SearchIterator::UP
 SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
                             const Children &children, bool strict)
 {
     if (strict) {
-        return new SourceBlenderSearchStrict(std::move(sourceSelector), children);
+        return SearchIterator::UP(new SourceBlenderSearchStrict(std::move(sourceSelector), children));
     } else {
-        return new SourceBlenderSearch(std::move(sourceSelector), children);
+        return SearchIterator::UP(new SourceBlenderSearch(std::move(sourceSelector), children));
     }
 }
 

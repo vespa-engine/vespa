@@ -57,7 +57,8 @@ SearchIterator::UP
 EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bool strict) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
-    MultiSearch::Children children(_terms.size());
+    MultiSearch::Children children;
+    children.reserve(_terms.size());
     fef::TermMatchDataMerger::Inputs childMatch;
     vespalib::hash_map<uint16_t, UnpackNeed> unpack_needs(outputs.size());
     for (size_t i = 0; i < outputs.size(); ++i) {
@@ -70,20 +71,21 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bo
             unpack_needs[child_term_field_match_data->getFieldId()].notify(*child_term_field_match_data);
             childMatch.emplace_back(child_term_field_match_data, _exactness[i]);
         }
-        children[i] = _terms[i]->createSearch(*md, strict).release();
+        children.push_back(_terms[i]->createSearch(*md, strict));
     }
-    return SearchIterator::UP(EquivSearch::create(children, std::move(md), childMatch, outputs, strict));
+    return EquivSearch::create(std::move(children), std::move(md), childMatch, outputs, strict);
 }
 
 SearchIterator::UP
 EquivBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    MultiSearch::Children children(_terms.size());
+    MultiSearch::Children children;
+    children.reserve(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        children[i] = _terms[i]->createFilterSearch(strict, constraint).release();
+        children.push_back(_terms[i]->createFilterSearch(strict, constraint));
     }
     UnpackInfo unpack_info;
-    return SearchIterator::UP(OrSearch::create(children, strict, unpack_info));
+    return OrSearch::create(std::move(children), strict, unpack_info);
 }
 
 void

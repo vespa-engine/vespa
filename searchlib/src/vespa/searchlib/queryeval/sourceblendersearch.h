@@ -68,8 +68,9 @@ public:
      * @param strict whether this search is strict
      * (a strict search will locate its next hit when seeking fails)
      **/
-    static SourceBlenderSearch * create(std::unique_ptr<Iterator> sourceSelector,
-                                        const Children &children, bool strict);
+    static SearchIterator::UP create(std::unique_ptr<Iterator> sourceSelector,
+                                     const Children &children,
+                                     bool strict);
     ~SourceBlenderSearch() override;
     size_t getNumChildren() const { return _children.size(); }
     SearchIterator::UP steal(size_t index) {

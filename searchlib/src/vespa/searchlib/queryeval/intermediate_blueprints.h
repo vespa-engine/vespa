@@ -22,7 +22,7 @@ public:
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
@@ -49,7 +49,7 @@ public:
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
@@ -69,7 +69,7 @@ public:
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
@@ -90,7 +90,7 @@ public:
     bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
 
     WeakAndBlueprint(uint32_t n) : _n(n) {}
@@ -118,7 +118,7 @@ public:
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
@@ -140,7 +140,7 @@ public:
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
@@ -159,7 +159,7 @@ public:
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
@@ -185,7 +185,7 @@ public:
      */
     ssize_t findSource(uint32_t sourceId) const;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;

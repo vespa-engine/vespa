@@ -9,11 +9,9 @@ namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
-class MySearch : public SearchIterator
+class MySearch : public MultiSearch
 {
 public:
-    typedef MultiSearch::Children      Children;
-    typedef std::vector<SearchIterator::UP>      MyChildren;
     typedef search::fef::TermFieldMatchDataArray TFMDA;
     typedef search::fef::MatchData               MatchData;
 
@@ -21,7 +19,6 @@ private:
     vespalib::string _tag;
     bool             _isLeaf;
     bool             _isStrict;
-    MyChildren       _children;
     TFMDA            _match;
     MatchData       *_md;
 
@@ -33,21 +30,18 @@ protected:
 
 public:
     MySearch(const std::string &tag, bool leaf, bool strict)
-        : _tag(tag), _isLeaf(leaf), _isStrict(strict), _children(),
+        : _tag(tag), _isLeaf(leaf), _isStrict(strict),
           _match(), _md(0) {}
 
     MySearch(const std::string &tag, const TFMDA &tfmda, bool strict)
-        : _tag(tag), _isLeaf(true), _isStrict(strict), _children(),
+        : _tag(tag), _isLeaf(true), _isStrict(strict),
           _match(tfmda), _md(0) {}
 
-    MySearch(const std::string &tag, const Children &children,
+    MySearch(const std::string &tag, Children children,
              MatchData *md, bool strict)
-        : _tag(tag), _isLeaf(false), _isStrict(strict), _children(),
-          _match(), _md(md) {
-        for (size_t i(0); i < children.size(); i++) {
-            _children.emplace_back(children[i]);
-        }
-    }
+      : MultiSearch(std::move(children)),
+        _tag(tag), _isLeaf(false), _isStrict(strict),
+        _match(), _md(md) {}
 
     MySearch &add(SearchIterator *search) {
         _children.emplace_back(search);
@@ -98,7 +92,7 @@ public:
         visit(visitor, "_tag",      _tag);
         visit(visitor, "_isLeaf",   _isLeaf);
         visit(visitor, "_isStrict", _isStrict);
-        visit(visitor, "_children", _children);
+        MultiSearch::visitMembers(visitor);
         visit(visitor, "_handles",  _handles);
     }
 

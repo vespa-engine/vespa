@@ -56,6 +56,12 @@ public:
           _search(new FakeSearch("<tag>", "<field>", "<term>", result, makeArray(tfmd))),
           _minMaxPostingInfo(new MinMaxPostingInfo(minMaxPostingInfo))
     { setDocId(_search->getDocId()); }
+
+    // wraps a generic search (typically wand)
+    TrackedSearch(const std::string &name, SearchHistory &hist, SearchIterator::UP search)
+        : _name(name), _history(hist), _matchData(), _search(std::move(search)), _minMaxPostingInfo()
+    { setDocId(_search->getDocId()); }
+
     // wraps a generic search (typically wand)
     TrackedSearch(const std::string &name, SearchHistory &hist, SearchIterator *search)
         : _name(name), _history(hist), _matchData(), _search(search), _minMaxPostingInfo()

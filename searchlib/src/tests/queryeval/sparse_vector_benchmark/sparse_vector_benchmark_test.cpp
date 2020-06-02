@@ -139,19 +139,19 @@ constexpr vespalib::duration max_time = 1000s;
 struct ChildFactory {
     ChildFactory() {}
     virtual std::string name() const = 0;
-    virtual SearchIterator *createChild(uint32_t idx, uint32_t limit) const = 0;
+    virtual SearchIterator::UP createChild(uint32_t idx, uint32_t limit) const = 0;
     virtual ~ChildFactory() {}
 };
 
 struct SparseVectorFactory {
     virtual std::string name() const = 0;
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
+    virtual SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
     virtual ~SparseVectorFactory() {}
 };
 
 struct FilterStrategy {
     virtual std::string name() const = 0;
-    virtual SearchIterator *createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
+    virtual SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
     virtual ~FilterStrategy() {}
 };
 
@@ -184,8 +184,8 @@ struct ModSearchFactory : ChildFactory {
     virtual std::string name() const override {
         return vespalib::make_string("ModSearch(%u)", bias);
     }
-    virtual SearchIterator *createChild(uint32_t idx, uint32_t limit) const override {
-        return new ModSearch(bias + idx, limit);
+    SearchIterator::UP createChild(uint32_t idx, uint32_t limit) const override {
+        return SearchIterator::UP(new ModSearch(bias + idx, limit));
     }
 };
 
@@ -197,7 +197,7 @@ struct VespaWandFactory : SparseVectorFactory {
     virtual std::string name() const override {
         return vespalib::make_string("VespaWand(%u)", n);
     }
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         wand::Terms terms;
         for (size_t i = 0; i < childCnt; ++i) {
             terms.push_back(wand::Term(childFactory.createChild(i, limit), default_weight, limit / (i + 1)));
@@ -212,12 +212,12 @@ struct RiseWandFactory : SparseVectorFactory {
     virtual std::string name() const override {
         return vespalib::make_string("RiseWand(%u)", n);
     }
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         wand::Terms terms;
         for (size_t i = 0; i < childCnt; ++i) {
             terms.push_back(wand::Term(childFactory.createChild(i, limit), default_weight, limit / (i + 1)));
         }
-        return new rise::TermFrequencyRiseWand(terms, n);
+        return SearchIterator::UP(new rise::TermFrequencyRiseWand(terms, n));
     }
 };
 
@@ -226,11 +226,11 @@ struct WeightedSetFactory : SparseVectorFactory {
     virtual std::string name() const override {
         return vespalib::make_string("WeightedSet");
     }
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
-        std::vector<SearchIterator*> terms;
+    SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+        std::vector<SearchIterator *> terms;
         std::vector<int32_t> weights;
         for (size_t i = 0; i < childCnt; ++i) {
-            terms.push_back(childFactory.createChild(i, limit));
+            terms.push_back(childFactory.createChild(i, limit).release());
             weights.push_back(default_weight);
         }
         return WeightedSetTermSearch::create(terms, tfmd, weights, MatchData::UP(nullptr));
@@ -242,22 +242,22 @@ struct DotProductFactory : SparseVectorFactory {
     virtual std::string name() const override {
         return vespalib::make_string("DotProduct");
     }
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         MatchDataLayout layout;
         std::vector<TermFieldHandle> handles;
         for (size_t i = 0; i < childCnt; ++i) {
             handles.push_back(layout.allocTermField(0));
         }
-        std::vector<SearchIterator*> terms;
+        std::vector<SearchIterator *> terms;
         std::vector<TermFieldMatchData*> childMatch;
         std::vector<int32_t> weights;
         MatchData::UP md = layout.createMatchData();
         for (size_t i = 0; i < childCnt; ++i) {
-            terms.push_back(childFactory.createChild(i, limit));
+            terms.push_back(childFactory.createChild(i, limit).release());
             childMatch.push_back(md->resolveTermField(handles[i]));
             weights.push_back(default_weight);
         }
-        return DotProductSearch::create(terms, tfmd, childMatch, weights, std::move(md)).release();
+        return DotProductSearch::create(terms, tfmd, childMatch, weights, std::move(md));
     }
 };
 
@@ -265,12 +265,12 @@ struct OrFactory : SparseVectorFactory {
     virtual std::string name() const override {
         return vespalib::make_string("Or");
     }
-    virtual SearchIterator *createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         OrSearch::Children children;
         for (size_t i = 0; i < childCnt; ++i) {
             children.push_back(childFactory.createChild(i, limit));
         }
-        return OrSearch::create(children, true);
+        return OrSearch::create(std::move(children), true);
     }
 };
 
@@ -280,7 +280,7 @@ struct NoFilterStrategy : FilterStrategy {
     virtual std::string name() const override {
         return vespalib::make_string("NoFilter");
     }
-    virtual SearchIterator *createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         return vectorFactory.createSparseVector(childFactory, childCnt, limit);
     }
 };
@@ -289,11 +289,11 @@ struct PositiveFilterBeforeStrategy : FilterStrategy {
     virtual std::string name() const override {
         return vespalib::make_string("PositiveBefore");
     }
-    virtual SearchIterator *createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         AndSearch::Children children;
-        children.push_back(new ModSearch(2, limit)); // <- 50% hits (hardcoded)
+        children.emplace_back(new ModSearch(2, limit)); // <- 50% hits (hardcoded)
         children.push_back(vectorFactory.createSparseVector(childFactory, childCnt, limit));
-        return AndSearch::create(children, true);
+        return AndSearch::create(std::move(children), true);
     }
 };
 
@@ -301,11 +301,11 @@ struct NegativeFilterAfterStrategy : FilterStrategy {
     virtual std::string name() const override {
         return vespalib::make_string("NegativeAfter");
     }
-    virtual SearchIterator *createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
+    SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         AndNotSearch::Children children;
         children.push_back(vectorFactory.createSparseVector(childFactory, childCnt, limit));
-        children.push_back(new ModSearch(2, limit)); // <- 50% hits (hardcoded)
-        return AndNotSearch::create(children, true);
+        children.emplace_back(new ModSearch(2, limit)); // <- 50% hits (hardcoded)
+        return AndNotSearch::create(std::move(children), true);
     }
 };
 

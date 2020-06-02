@@ -48,6 +48,7 @@ using search::query::QueryBuilder;
 using search::queryeval::AndNotSearch;
 using search::queryeval::AndSearch;
 using search::queryeval::Blueprint;
+using search::queryeval::ChildrenIterators;
 using search::queryeval::ElementIteratorWrapper;
 using search::queryeval::ElementIterator;
 using search::queryeval::EmptySearch;
@@ -104,12 +105,12 @@ public:
     explicit Create(bool strict = true) : _strict(strict) {}
 
     Create &add(SearchIterator *s) {
-        _children.push_back(s);
+        _children.emplace_back(s);
         return *this;
     }
 
-    operator SearchIterator *() const {
-        return SearchType::create(_children, _strict);
+    operator SearchIterator *() {
+        return SearchType::create(std::move(_children), _strict).release();
     }
 };
 typedef Create<OrSearch>     MyOr;
@@ -143,9 +144,11 @@ public:
         return *this;
     }
 
-    operator SearchIterator *() const {
+    operator SearchIterator *() {
         return SourceBlenderSearch::create(
-                ISourceSelectorDummy::makeDummyIterator(), _children, _strict);
+                ISourceSelectorDummy::makeDummyIterator(),
+                _children,
+                _strict).release();
     }
 };
 
@@ -245,20 +248,20 @@ SearchIterator *getLeaf(const string &fld, const string &tag) {
 template <>
 SearchIterator *getLeaf<Phrase>(const string &fld, const string &tag) {
     SimplePhraseSearch::Children children;
-    children.push_back(getTerm(phrase_term1, fld, tag));
-    children.push_back(getTerm(phrase_term2, fld, tag));
+    children.emplace_back(getTerm(phrase_term1, fld, tag));
+    children.emplace_back(getTerm(phrase_term2, fld, tag));
     static TermFieldMatchData tmd;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&tmd).add(&tmd);
     vector<uint32_t> eval_order(2);
-    return new SimplePhraseSearch(children, MatchData::UP(), tfmda, eval_order, tmd, true);
+    return new SimplePhraseSearch(std::move(children), MatchData::UP(), tfmda, eval_order, tmd, true);
 }
 
 template <typename NearType>
 SearchIterator *getNearParent(SearchIterator *a, SearchIterator *b) {
     typename NearType::Children children;
-    children.push_back(a);
-    children.push_back(b);
+    children.emplace_back(a);
+    children.emplace_back(b);
     TermFieldMatchDataArray data;
     static TermFieldMatchData tmd;
     // we only check how many term/field combinations
@@ -266,15 +269,15 @@ SearchIterator *getNearParent(SearchIterator *a, SearchIterator *b) {
     // two terms searching in (two index fields + two attribute fields)
     data.add(&tmd).add(&tmd).add(&tmd).add(&tmd)
         .add(&tmd).add(&tmd).add(&tmd).add(&tmd);
-    return new NearType(children, data, distance, true);
+    return new NearType(std::move(children), data, distance, true);
 }
 
 template <typename SearchType>
 SearchIterator *getSimpleParent(SearchIterator *a, SearchIterator *b) {
     typename SearchType::Children children;
-    children.push_back(a);
-    children.push_back(b);
-    return SearchType::create(children, true);
+    children.emplace_back(a);
+    children.emplace_back(b);
+    return SearchType::create(std::move(children), true).release();
 }
 
 template <typename T>

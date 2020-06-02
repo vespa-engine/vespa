@@ -170,10 +170,12 @@ public:
             }
             SimplePhraseSearch::Children children;
             for (size_t i = 0; i < _children.size(); ++i) {
-                children.push_back(_children[i]->createSearch(*_md, _strict).release());
+                children.push_back(_children[i]->createSearch(*_md, _strict));
             }
-            search = std::make_unique<SimplePhraseSearch>(children, MatchData::UP(), childMatch, _order,
-                                                      *_md->resolveTermField(phrase_handle), _strict);
+            search = std::make_unique<SimplePhraseSearch>(std::move(children),
+                                                          MatchData::UP(), childMatch, _order,
+                                                          *_md->resolveTermField(phrase_handle),
+                                                          _strict);
         }
         search->initFullRange();
         return search.release();

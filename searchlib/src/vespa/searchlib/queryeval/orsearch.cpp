@@ -78,30 +78,36 @@ OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
     TermwiseHelper::orChildren(result, getChildren().begin(), getChildren().end(), begin_id);
 }
 
-SearchIterator *
-OrSearch::create(const MultiSearch::Children &children, bool strict) {
+SearchIterator::UP
+OrSearch::create(ChildrenIterators children, bool strict) {
     UnpackInfo unpackInfo;
     unpackInfo.forceAll();
-    return create(children, strict, unpackInfo);
+    return create(std::move(children), strict, unpackInfo);
 }
 
-SearchIterator *
-OrSearch::create(const MultiSearch::Children &children, bool strict, const UnpackInfo & unpackInfo) {
+SearchIterator::UP
+OrSearch::create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo) {
     if (strict) {
         if (unpackInfo.unpackAll()) {
-            return new OrLikeSearch<true, FullUnpack>(children, FullUnpack());
+            using MyOr = OrLikeSearch<true, FullUnpack>;
+            return std::make_unique<MyOr>(std::move(children), FullUnpack());
         } else if(unpackInfo.empty()) {
-            return new OrLikeSearch<true, NoUnpack>(children, NoUnpack());
+            using MyOr = OrLikeSearch<true, NoUnpack>;
+            return std::make_unique<MyOr>(std::move(children), NoUnpack());
         } else {
-            return new OrLikeSearch<true, SelectiveUnpack>(children, SelectiveUnpack(unpackInfo));
+            using MyOr = OrLikeSearch<true, SelectiveUnpack>;
+            return std::make_unique<MyOr>(std::move(children), SelectiveUnpack(unpackInfo));
         }
     } else {
         if (unpackInfo.unpackAll()) {
-            return new OrLikeSearch<false, FullUnpack>(children, FullUnpack());
+            using MyOr = OrLikeSearch<false, FullUnpack>;
+            return std::make_unique<MyOr>(std::move(children), FullUnpack());
         } else if(unpackInfo.empty()) {
-            return new OrLikeSearch<false, NoUnpack>(children, NoUnpack());
+            using MyOr = OrLikeSearch<false, NoUnpack>;
+            return std::make_unique<MyOr>(std::move(children), NoUnpack());
         } else {
-            return new OrLikeSearch<false, SelectiveUnpack>(children, SelectiveUnpack(unpackInfo));
+            using MyOr = OrLikeSearch<false, SelectiveUnpack>;
+            return std::make_unique<MyOr>(std::move(children), SelectiveUnpack(unpackInfo));
         }
     }
 }
