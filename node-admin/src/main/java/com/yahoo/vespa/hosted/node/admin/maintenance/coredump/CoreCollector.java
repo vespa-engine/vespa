@@ -6,13 +6,13 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -31,11 +31,9 @@ public class CoreCollector {
     private static final Pattern FROM_PATH_PATTERN = Pattern.compile("^.* from '(?<path>.*?)'");
 
     private final DockerOperations docker;
-    private final Path vespaHomeInContainer;
 
-    public CoreCollector(DockerOperations docker, Path vespaHomeInContainer) {
+    public CoreCollector(DockerOperations docker) {
         this.docker = docker;
-        this.vespaHomeInContainer = vespaHomeInContainer;
     }
 
     Path readBinPathFallback(NodeAgentContext context, Path coredumpPath) {
@@ -53,10 +51,12 @@ public class CoreCollector {
     }
 
     Path GDBPath(NodeAgentContext context) {
-        DockerImage image = context.node().currentDockerImage().get();
+        Optional<DockerImage> image = context.node().currentDockerImage();
 
-        if (image.tag().get().startsWith("vespa/ci")) {
-            return vespaHomeInContainer.resolve("bin64/gdb");
+        if (image.isPresent()
+                && image.get().tag().isPresent()
+                && image.get().tag().get().startsWith("vespa/ci")) {
+            return context.pathInNodeUnderVespaHome("bin64/gdb");
         }
         else {
             return Paths.get("/opt/rh/devtoolset-9/root/bin/gdb");
