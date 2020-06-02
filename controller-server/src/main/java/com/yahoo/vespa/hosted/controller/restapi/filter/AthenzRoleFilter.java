@@ -125,6 +125,11 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
                 roleMemberships.add(Role.paymentProcessor());
         }));
 
+        futures.add(executor.submit(() -> {
+            if (athenz.hasAccountingAccess(identity))
+                roleMemberships.add(Role.hostedAccountant());
+        }));
+
         // Run last request in handler thread to avoid creating extra thread.
         if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/true))
             roleMemberships.add(Role.systemFlagsDryrunner());
