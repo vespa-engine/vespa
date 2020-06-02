@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,7 +43,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     @Before
     public void setupHandler() throws Exception {
         tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(tenant);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenant));
         tenantRepository.getTenant(tenant).getLocalSessionRepo().addSession(new MockSession(1L, FilesApplicationPackage.fromFile(createTestApp())));
         handler = createHandler();
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";

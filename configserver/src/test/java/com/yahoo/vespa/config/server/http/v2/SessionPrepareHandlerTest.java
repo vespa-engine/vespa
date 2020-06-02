@@ -1,26 +1,37 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.path.Path;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.SessionHandler;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
+import com.yahoo.vespa.config.server.configchange.MockRestartAction;
+import com.yahoo.vespa.config.server.http.*;
+import com.yahoo.vespa.config.server.session.*;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -28,11 +39,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
-import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
@@ -51,13 +65,11 @@ import static org.junit.Assert.assertThat;
  */
 public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
-    private static final File app = new File("src/test/resources/deploy/validapp");
 
     private Curator curator = new MockCurator();
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
     private final Clock clock = componentRegistry.getClock();
-    private final TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-    private ApplicationRepository applicationRepository;
+    private LocalSessionRepo localRepo;
 
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
@@ -65,15 +77,16 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(tenant);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                  new MockProvisioner(),
-                                  new OrchestratorMock(),
-                                  clock);
+        localRepo = new LocalSessionRepo(tenant, componentRegistry);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)
+                .withSessionFactory(new MockSessionFactory())
+                .withLocalSessionRepo(localRepo)
+                .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenant));
+        tenantRepository.addTenant(tenantBuilder);
     }
 
     @Test
@@ -94,8 +107,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_handler_gives_error_for_unsupported_methods() throws Exception {
-        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
-        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
@@ -107,61 +120,85 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_activate_url_is_returned_on_success() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
+        assertThat(session.getStatus(), is(Session.Status.PREPARE));
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
-        assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + sessionId +
-                                         "/active\",\"message\":\"Session " + sessionId + preparedMessage);
+        assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + "1/active\",\"message\":\"Session 1" + preparedMessage);
     }
 
     @Test
     public void require_debug() throws Exception {
         HttpResponse response = createHandler().handle(
-                createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L, "?debug=true"));
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L, "?debug=true"));
         assertThat(response.getStatus(), is(NOT_FOUND));
         assertThat(SessionHandlerTest.getRenderedString(response), containsString("NotFoundException"));
     }
 
     @Test
     public void require_verbose() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        MockSession session = new MockSession(1, null);
+        session.doVerboseLogging = true;
+        localRepo.addSession(session);
         HttpResponse response = createHandler().handle(
-                createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId, "?verbose=true"));
-        System.out.println(getRenderedString(response));
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L, "?verbose=true"));
         assertThat(response.getStatus(), is(OK));
-        assertThat(getRenderedString(response), containsString("Created application "));
+        assertThat(SessionHandlerTest.getRenderedString(response), containsString("debuglog"));
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient(LocalSession session) {
+        return new MockSessionZKClient(curator, tenant, session.getSessionId());
     }
 
     @Test
     public void require_get_response_activate_url_on_ok() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        request(HttpRequest.Method.PUT, sessionId);
-        HttpResponse getResponse = request(HttpRequest.Method.GET, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        request(HttpRequest.Method.PUT, 1L);
+        session.setStatus(Session.Status.PREPARE);
+        SessionZooKeeperClient zooKeeperClient = createSessionZooKeeperClient(session);
+        zooKeeperClient.writeStatus(Session.Status.PREPARE);
+        HttpResponse getResponse = request(HttpRequest.Method.GET, 1L);
         assertResponseContains(getResponse, "\"activate\":\"http://foo:1337" + pathPrefix +
-                sessionId + "/active\",\"message\":\"Session " + sessionId + preparedMessage);
+                "1/active\",\"message\":\"Session 1" + preparedMessage);
     }
 
     @Test
     public void require_get_response_error_on_not_prepared() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-
-        HttpResponse getResponse = request(HttpRequest.Method.GET, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        session.setStatus(Session.Status.NEW);
+        SessionZooKeeperClient zooKeeperClient = createSessionZooKeeperClient(session);
+        zooKeeperClient.writeStatus(Session.Status.NEW);
+        HttpResponse getResponse = request(HttpRequest.Method.GET, 1L);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
                                                 HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                "Session not prepared: " + sessionId);
-
-        request(HttpRequest.Method.PUT, sessionId);
-        applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);
-
-        getResponse = request(HttpRequest.Method.GET, sessionId);
+                                                "Session not prepared: 1");
+        session.setStatus(Session.Status.ACTIVATE);
+        zooKeeperClient.writeStatus(Session.Status.ACTIVATE);
+        getResponse = request(HttpRequest.Method.GET, 1L);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
                                                 HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                "Session is active: " + sessionId);
+                                                "Session is active: 1");
+    }
+
+    @Test
+    public void require_cannot_prepare_active_session() throws Exception {
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        session.setStatus(Session.Status.ACTIVATE);
+        HttpResponse putResponse = request(HttpRequest.Method.PUT, 1L);
+        assertHttpStatusCodeErrorCodeAndMessage(putResponse, BAD_REQUEST,
+                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                "Session is active: 1");
     }
 
     @Test
     public void require_get_response_error_when_session_id_does_not_exist() throws Exception {
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
         HttpResponse getResponse = request(HttpRequest.Method.GET, 9999L);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
                                                 HttpErrorResponse.errorCodes.NOT_FOUND,
@@ -170,116 +207,137 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_tenant_is_in_response() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
+        assertThat(session.getStatus(), is(Session.Status.PREPARE));
         assertResponseContains(response, tenantMessage);
     }
 
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
-        SessionHandler handler = createHandler();
+        final TenantName defaultTenant = TenantName.from("test2");
+        // Need different repo for 'test2' tenant
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(defaultTenant, componentRegistry);
+        TenantBuilder defaultTenantBuilder = TenantBuilder.create(componentRegistry, defaultTenant)
+                .withLocalSessionRepo(localRepoDefault)
+                .withSessionFactory(new MockSessionFactory());
+        tenantRepository.addTenant(defaultTenantBuilder);
+        final SessionHandler handler = createHandler();
 
-        TenantName defaultTenant = TenantName.from("test2");
-        tenantRepository.addTenant(defaultTenant);
-        ApplicationId applicationId1 = ApplicationId.from(defaultTenant, ApplicationName.from("app"), InstanceName.defaultName());
-        long sessionId = applicationRepository.createSession(applicationId1, timeoutBudget, app);
-
+        long sessionId = 1;
+        // Deploy with default tenant
+        MockSession session = new MockSession(sessionId, null);
+        localRepoDefault.addSession(session);
         pathPrefix = "/application/v2/tenant/" + defaultTenant + "/session/";
+
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertThat(session.getStatus(), is(Session.Status.PREPARE));
 
+        // Same session id, as this is for another tenant
+        session = new MockSession(sessionId, null);
+        localRepo.addSession(session);
         String applicationName = "myapp";
-        ApplicationId applicationId2 = ApplicationId.from(tenant.value(), applicationName, "default");
-        long sessionId2 = applicationRepository.createSession(applicationId2, timeoutBudget, app);
-        assertEquals(sessionId, sessionId2);  // Want to test when they are equal (but for different tenants)
-
-        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId2 +
+        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId +
                 "/prepared?applicationName=" + applicationName;
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertThat(session.getStatus(), is(Session.Status.PREPARE));
 
-        ApplicationId applicationId3 = ApplicationId.from(tenant.value(), applicationName, "quux");
-        long sessionId3 = applicationRepository.createSession(applicationId3, timeoutBudget, app);
-        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId3 +
+        sessionId++;
+        session = new MockSession(sessionId, null);
+        localRepo.addSession(session);
+        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId +
                 "/prepared?applicationName=" + applicationName + "&instance=quux";
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertThat(session.getStatus(), is(Session.Status.PREPARE));
     }
 
     @Test
     public void require_that_config_change_actions_are_in_response() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertResponseContains(response, "\"configChangeActions\":{\"restart\":[],\"refeed\":[]}");
     }
 
     @Test
+    public void require_that_config_change_actions_are_logged_if_existing() throws Exception {
+        List<ServiceInfo> services = Collections.singletonList(
+                new ServiceInfo("serviceName", "serviceType", null,
+                                ImmutableMap.of("clustername", "foo", "clustertype", "bar"), "configId", "hostName"));
+        ConfigChangeActions actions = new ConfigChangeActions(Arrays.asList(
+                new MockRestartAction("change", services),
+                new MockRefeedAction("change-id", false, "other change", services, "test")));
+        MockSession session = new MockSession(1, null, actions);
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
+        assertResponseContains(response,
+                               "Change(s) between active and new application that require restart:\\nIn cluster 'foo' of type 'bar");
+        assertResponseContains(response,
+                               "Change(s) between active and new application that may require re-feed:\\nchange-id: Consider removing data and re-feed document type 'test'");
+    }
+
+    @Test
     public void require_that_config_change_actions_are_not_logged_if_not_existing() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertResponseNotContains(response, "Change(s) between active and new application that require restart");
         assertResponseNotContains(response, "Change(s) between active and new application that require re-feed");
     }
 
     @Test
     public void test_out_of_capacity_response() throws IOException {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        String exceptionMessage = "Out of capacity";
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
-                                                                                applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
-                                                                                new OutOfCapacityException(exceptionMessage));
-        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        String message = "Internal error";
+        SessionThrowingException session = new SessionThrowingException(new OutOfCapacityException(message));
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
         assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.OUT_OF_CAPACITY.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertThat(data.get().field("message").asString(), is(message));
     }
 
     @Test
     public void test_that_nullpointerexception_gives_internal_server_error() throws IOException {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        String exceptionMessage = "nullpointer thrown in test handler";
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
-                                                                                applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
-                                                                                new NullPointerException(exceptionMessage));
-        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        String message = "No nodes available";
+        SessionThrowingException session = new SessionThrowingException(new NullPointerException(message));
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
         assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertThat(data.get().field("message").asString(), is(message));
     }
 
     @Test
     public void test_application_lock_failure() throws IOException {
-        String exceptionMessage = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
-                                                                                applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
-                                                                                new ApplicationLockException(new UncheckedTimeoutException(exceptionMessage)));
-        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        String message = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
+        SessionThrowingException session =
+                new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));
+        localRepo.addSession(session);
+        HttpResponse response = request(HttpRequest.Method.PUT, 1L);
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
         assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.APPLICATION_LOCK_FAILURE.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertThat(data.get().field("message").asString(), is(message));
     }
 
     @Test
     public void test_docker_image_repository() {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        MockSession session = new MockSession(1, null);
+        localRepo.addSession(session);
         String dockerImageRepository = "https://foo.bar.com:4443/baz";
-        request(HttpRequest.Method.PUT, sessionId, Map.of("dockerImageRepository", dockerImageRepository,
-                                                          "applicationName", applicationId().application().value()));
-        applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);
-        assertEquals(DockerImage.fromString(dockerImageRepository),
-                     applicationRepository.getActiveSession(applicationId()).getDockerImageRepository().get());
+        request(HttpRequest.Method.PUT, 1L, Map.of("dockerImageRepository", dockerImageRepository));
+        assertEquals(DockerImage.fromString(dockerImageRepository), localRepo.getSession(1).getDockerImageRepository().get());
     }
 
     private Slime getData(HttpResponse response) throws IOException {
@@ -301,8 +359,12 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private SessionHandler createHandler() {
         return new SessionPrepareHandler(
                 SessionPrepareHandler.testOnlyContext(),
-                applicationRepository,
+                new ApplicationRepository(tenantRepository,
+                                          new MockProvisioner(),
+                                          new OrchestratorMock(),
+                                          clock),
                 componentRegistry.getConfigserverConfig());
+
     }
 
     private HttpResponse request(HttpRequest.Method put, long l) {
@@ -313,24 +375,50 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         return createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, put, Cmd.PREPARED, l, "", null, requestParameters));
     }
 
-    private ApplicationId applicationId() {
-        return ApplicationId.from(tenant.value(), "app", "default");
-    }
+    public static class SessionThrowingException extends LocalSession {
+        private final RuntimeException exception;
 
-    private static class FailingSessionPrepareHandler extends SessionPrepareHandler {
-
-        private final RuntimeException exceptionToBeThrown;
-
-        public FailingSessionPrepareHandler(Context ctx, ApplicationRepository applicationRepository,
-                                            ConfigserverConfig configserverConfig, RuntimeException exceptionToBeThrown) {
-            super(ctx, applicationRepository, configserverConfig);
-            this.exceptionToBeThrown = exceptionToBeThrown;
+        SessionThrowingException(RuntimeException exception) {
+            super(TenantName.defaultName(), 1, null, null,
+                  new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>());
+            this.exception = exception;
         }
 
         @Override
-        protected HttpResponse handlePUT(com.yahoo.container.jdisc.HttpRequest request) {
-            throw exceptionToBeThrown;
+        public ConfigChangeActions prepare(DeployLogger logger,
+                                           PrepareParams params,
+                                           Optional<ApplicationSet> application,
+                                           Path tenantPath,
+                                           Instant now) {
+            throw exception;
         }
-    }
 
+        @Override
+        public Session.Status getStatus() {
+            return null;
+        }
+
+        @Override
+        public Transaction createActivateTransaction() {
+            return null;
+        }
+
+        @Override
+        public ApplicationFile getApplicationFile(Path relativePath, Mode mode) {
+            return null;
+        }
+
+        @Override
+        public ApplicationId getApplicationId() {
+            return null;
+        }
+
+        @Override
+        public Instant getCreateTime() {
+            return Instant.EPOCH;
+        }
+
+        @Override
+        public void delete(NestedTransaction transaction) {  }
+    }
 }
