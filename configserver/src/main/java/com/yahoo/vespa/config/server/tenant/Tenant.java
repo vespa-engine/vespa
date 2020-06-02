@@ -38,7 +38,6 @@ public class Tenant implements TenantHandlerProvider {
     private final Curator curator;
 
     Tenant(TenantName name,
-           Path path,
            SessionFactory sessionFactory,
            LocalSessionRepo localSessionRepo,
            RemoteSessionRepo remoteSessionRepo,
@@ -47,7 +46,7 @@ public class Tenant implements TenantHandlerProvider {
            TenantApplications applicationRepo,
            Curator curator) {
         this.name = name;
-        this.path = path;
+        this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
         this.reloadHandler = reloadHandler;
         this.remoteSessionRepo = remoteSessionRepo;

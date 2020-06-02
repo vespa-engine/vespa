@@ -4,11 +4,15 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -18,7 +22,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
@@ -60,8 +63,7 @@ public class HostHandlerTest {
     public void setup() {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        TenantBuilder tb = TenantBuilder.create(componentRegistry, mytenant);
-        tenantRepository.addTenant(tb);
+        tenantRepository.addTenant(mytenant);
         handler = createHostHandler();
     }
 

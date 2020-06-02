@@ -3,9 +3,7 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,9 +34,7 @@ public class TenantTest {
     private Tenant createTenant(String name) {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         TenantName tenantName = TenantName.from(name);
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName));
-        tenantRepository.addTenant(tenantBuilder);
+        tenantRepository.addTenant(tenantName);
         return tenantRepository.getTenant(tenantName);
     }
 

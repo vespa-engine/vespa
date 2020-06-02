@@ -185,7 +185,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
     }
 
-    private static Transaction deactivateCurrentActivateNew(RemoteSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+    private static Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
         Transaction transaction = prepared.createActivateTransaction();
         if (isValidSession(active)) {
             checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
@@ -195,11 +195,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         return transaction;
     }
 
-    private static boolean isValidSession(RemoteSession session) {
+    private static boolean isValidSession(Session session) {
         return session != null;
     }
 
-    private static void checkIfActiveHasChanged(LocalSession session, RemoteSession currentActiveSession, boolean ignoreStaleSessionFailure) {
+    private static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create

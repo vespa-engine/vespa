@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -9,11 +10,9 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
+import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -22,6 +21,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +33,7 @@ import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
+import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,15 +49,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private static final HashMap<String, String> postHeaders = new HashMap<>();
 
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+    ApplicationRepository applicationRepository;
 
     private String pathPrefix = "/application/v2/session/";
     private String createdMessage = " created.\"";
     private String tenantMessage = "";
 
     public File testApp = new File("src/test/apps/app");
-    private LocalSessionRepo localSessionRepo;
-    private TenantRepository tenantRepository;
-    private MockSessionFactory sessionFactory;
 
     static {
         postHeaders.put(ApplicationApiHandler.contentTypeHeader, ApplicationApiHandler.APPLICATION_X_GZIP);
@@ -64,13 +63,12 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        localSessionRepo = new LocalSessionRepo(tenant, componentRegistry);
-        tenantRepository = new TenantRepository(componentRegistry, false);
-        sessionFactory = new MockSessionFactory();
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)
-                .withSessionFactory(sessionFactory)
-                .withLocalSessionRepo(localSessionRepo);
-        tenantRepository.addTenant(tenantBuilder);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          new SessionHandlerTest.MockProvisioner(),
+                                                          new OrchestratorMock(),
+                                                          componentRegistry.getClock());
+        tenantRepository.addTenant(tenant);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
         tenantMessage = ",\"tenant\":\"test\"";
@@ -81,13 +79,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_from_parameter_cannot_be_set_if_data_in_request() throws IOException {
         HttpRequest request = post(Collections.singletonMap("from", "active"));
         HttpResponse response = createHandler().handle(request);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' is illegal for POST");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' is illegal for POST");
     }
 
     @Test
     public void require_that_post_request_must_contain_data() throws IOException {
         HttpResponse response = createHandler().handle(post());
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no data");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no data");
     }
 
     @Test
@@ -95,13 +93,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         HashMap<String, String> headers = new HashMap<>(); // no Content-Type header
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         HttpResponse response = createHandler().handle(post(outFile, headers, null));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no Content-Type header");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no Content-Type header");
     }
 
     private void assertIllegalFromParameter(String fromValue) throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         HttpRequest request = post(outFile, postHeaders, Collections.singletonMap("from", fromValue));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
+        assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
     }
 
     @Test
@@ -112,54 +110,35 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
         assertThat(SessionHandlerTest.getRenderedString(response),
-                   is("{\"log\":[]" + tenantMessage + ",\"session-id\":\"0\",\"prepared\":\"http://" +
-                              hostname + ":" + port + pathPrefix + "0/prepared\",\"content\":\"http://" +
-                              hostname + ":" + port + pathPrefix + "0/content/\",\"message\":\"Session 0" + createdMessage + "}"));
-    }
-
-    @Test
-    public void require_that_session_factory_is_called() throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler().handle(post(outFile));
-        assertTrue(sessionFactory.createCalled);
+                   is("{\"log\":[]" + tenantMessage + ",\"session-id\":\"2\",\"prepared\":\"http://" +
+                              hostname + ":" + port + pathPrefix + "2/prepared\",\"content\":\"http://" +
+                              hostname + ":" + port + pathPrefix + "2/content/\",\"message\":\"Session 2" + createdMessage + "}"));
     }
 
     @Test
     public void require_that_handler_does_not_support_get() throws IOException {
         HttpResponse response = createHandler().handle(HttpRequest.createTestRequest(pathPrefix, GET));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
+        assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
                                                             HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
                                                             "Method 'GET' is not supported");
     }
 
     @Test
     public void require_internal_error_when_exception() throws IOException {
-        sessionFactory.doThrow = true;
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        new FileWriter(outFile).write("rubbish");
         HttpResponse response = createHandler().handle(post(outFile));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
-                                                            HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR,
-                                                            "foo");
+        assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
+                                                HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR,
+                                                "Unable to create compressed application stream");
     }
 
     @Test
     public void require_that_handler_unpacks_application() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         createHandler().handle(post(outFile));
-        assertTrue(sessionFactory.createCalled);
-        final File applicationPackage = sessionFactory.applicationPackage;
-        assertNotNull(applicationPackage);
-        assertTrue(applicationPackage.exists());
-        final File[] files = applicationPackage.listFiles();
-        assertNotNull(files);
-        assertThat(files.length, is(3));
-    }
-
-    @Test
-    public void require_that_session_is_stored_in_repo() throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler().handle(post(outFile));
-        assertNotNull(localSessionRepo.getSession(0));
+        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, "services.xml", LocalSession.Mode.READ);
+        assertTrue(applicationFile.exists());
     }
 
     @Test
@@ -182,14 +161,9 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private SessionCreateHandler createHandler() {
-        return new SessionCreateHandler(
-                SessionCreateHandler.testOnlyContext(),
-                new ApplicationRepository(tenantRepository,
-                                          new SessionHandlerTest.MockProvisioner(),
-                                          new OrchestratorMock(),
-                                          componentRegistry.getClock()),
-                componentRegistry.getConfigserverConfig());
-
+        return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
+                                        applicationRepository,
+                                        componentRegistry.getConfigserverConfig());
     }
 
     private HttpRequest post() throws FileNotFoundException {

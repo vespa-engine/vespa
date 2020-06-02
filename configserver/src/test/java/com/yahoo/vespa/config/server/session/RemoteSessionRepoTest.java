@@ -4,10 +4,8 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -33,16 +31,17 @@ public class RemoteSessionRepoTest {
 
     private RemoteSessionRepo remoteSessionRepo;
     private Curator curator;
+    TenantRepository tenantRepository;
 
     @Before
     public void setupFacade() {
         curator = new MockCurator();
-        Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder()
-                                                     .curator(curator)
-                                                     .build(),
-                                             tenantName)
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
                 .build();
-        this.remoteSessionRepo = tenant.getRemoteSessionRepo();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(tenantName);
+        this.remoteSessionRepo = tenantRepository.getTenant(tenantName).getRemoteSessionRepo();
         curator.create(TenantRepository.getTenantPath(tenantName).append("/applications"));
         curator.create(TenantRepository.getSessionsPath(tenantName));
         createSession(1L, false);
@@ -97,10 +96,9 @@ public class RemoteSessionRepoTest {
     public void testBadApplicationRepoOnActivate() {
         long sessionId = 3L;
         TenantName mytenant = TenantName.from("mytenant");
-        GlobalComponentRegistry registry = new TestComponentRegistry.Builder().curator(curator).build();
         curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
-        Tenant tenant = TenantBuilder.create(registry, mytenant)
-                                     .build();
+        tenantRepository.addTenant(mytenant);
+        Tenant tenant = tenantRepository.getTenant(mytenant);
         curator.create(TenantRepository.getSessionsPath(mytenant));
         remoteSessionRepo = tenant.getRemoteSessionRepo();
         assertThat(remoteSessionRepo.getSessions().size(), is(0));
