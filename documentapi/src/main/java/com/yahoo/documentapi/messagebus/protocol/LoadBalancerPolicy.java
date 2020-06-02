@@ -49,9 +49,9 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
 
         pattern = cluster + "/*/" + session;
         String type = params.get("type");
-        if (type == "adaptive") {
+        if ("adaptive".equals(type)) {
             loadBalancer = new AdaptiveLoadBalancer(cluster);
-        } else if (type == "legacy") {
+        } else if ("legacy".equals(type)) {
             loadBalancer = new LegacyLoadBalancer(cluster);
         } else {
             loadBalancer = new LegacyLoadBalancer(cluster);
@@ -102,4 +102,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
     public void destroy() {
 
     }
+
+    // For testing
+    LoadBalancer getLoadBalancer() { return loadBalancer; }
 }

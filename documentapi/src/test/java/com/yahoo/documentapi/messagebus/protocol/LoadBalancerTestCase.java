@@ -41,6 +41,16 @@ public class LoadBalancerTestCase {
     }
 
     @Test
+    public void testLoadBalancerCreation() {
+        LoadBalancerPolicy lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing");
+        assertTrue(lbp.getLoadBalancer() instanceof LegacyLoadBalancer);
+        lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing;type=legacy");
+        assertTrue(lbp.getLoadBalancer() instanceof LegacyLoadBalancer);
+        lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing;type=adaptive");
+        assertTrue(lbp.getLoadBalancer() instanceof AdaptiveLoadBalancer);
+    }
+
+    @Test
     public void testAdaptiveLoadBalancer() {
         LoadBalancer lb = new AdaptiveLoadBalancer("foo");
 
