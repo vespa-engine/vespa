@@ -150,21 +150,25 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
                 String policy = policy(docproc);
 
                 for (DocprocChain chain : docproc.getChains().allChains().allComponents()) {
-                    addChainHop(table, cluster.getConfigId(), policy, chain);
+                    addChainHop(table, cluster.getConfigId(), policy, chain, cluster.getDocprocLoadbalancerType());
                 }
             }
         }
     }
 
-    private static void addChainHop(RoutingTableSpec table, String configId, String policy, DocprocChain chain) {
-        final String selector;
+    private static void addChainHop(RoutingTableSpec table, String configId, String policy, DocprocChain chain, String docprocLoadBalancerType) {
+        final StringBuilder selector = new StringBuilder();
         if (policy != null) {
-            selector = configId + "/" + policy + "/" + chain.getSessionName();
+            selector.append(configId).append("/").append(policy).append("/").append(chain.getSessionName());
         } else {
-            selector = "[LoadBalancer:cluster=" + configId +
-                       ";session=" + chain.getSessionName() + "]";
+            selector.append("[LoadBalancer:cluster=").append(configId)
+                    .append(";session=").append(chain.getSessionName());
+            if ((docprocLoadBalancerType != null) && ! docprocLoadBalancerType.isEmpty()) {
+                selector.append(";type=").append(docprocLoadBalancerType);
+            }
+            selector.append("]");
         }
-        table.addHop(new HopSpec(chain.getServiceName(), selector));
+        table.addHop(new HopSpec(chain.getServiceName(), selector.toString()));
     }
 
     private static String policy(ContainerDocproc docproc) {

@@ -42,6 +42,7 @@ public class TestProperties implements ModelContext.Properties {
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
+    private String docprocLoadBalancerType = null;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -61,22 +62,22 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-
-    @Override
-    public double threadPoolSizeFactor() {
+    @Override public String docprocLoadBalancerType() { return docprocLoadBalancerType; }
+    @Override public double threadPoolSizeFactor() {
         return threadPoolSizeFactor;
     }
-
-    @Override
-    public double queueSizeFactor() {
+    @Override public double queueSizeFactor() {
         return queueSizeFactor;
     }
-
     @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
 
+    public TestProperties setDocprocLoadBalancerType(String type) {
+        docprocLoadBalancerType = type;
+        return this;
+    }
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
         return this;
