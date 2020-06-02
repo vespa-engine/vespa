@@ -32,6 +32,7 @@ private:
 
 //-----------------------------------------------------------------------------
 
+/** normal AND operator */
 class AndBlueprint : public IntermediateBlueprint
 {
 public:
@@ -56,6 +57,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/** normal OR operator */
 class OrBlueprint : public IntermediateBlueprint
 {
 public:
@@ -118,13 +120,14 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     NearBlueprint(uint32_t window) : _window(window) {}
 };
 
 //-----------------------------------------------------------------------------
 
-class ONearBlueprint : public IntermediateBlueprint
+class ONearBlueprint  : public IntermediateBlueprint
 {
 private:
     uint32_t _window;
@@ -139,6 +142,7 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     ONearBlueprint(uint32_t window) : _window(window) {}
 };
@@ -157,6 +161,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -181,6 +187,8 @@ public:
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
