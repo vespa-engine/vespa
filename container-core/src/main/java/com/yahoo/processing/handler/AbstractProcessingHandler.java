@@ -164,8 +164,7 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     private static Renderer selectRenderer(com.yahoo.processing.Request processingRequest,
                                            ComponentRegistry<Renderer> renderers, Renderer defaultRenderer) {
         Renderer renderer = null;
-        // TODO: Support setting a particular renderer instead of just selecting
-        // by name?
+        // TODO: Support setting a particular renderer instead of just selecting by name?
         String rendererId = processingRequest.properties().getString("format");
         if (rendererId != null && !"".equals(rendererId)) {
             renderer = renderers.getComponent(ComponentSpecification.fromString(rendererId));

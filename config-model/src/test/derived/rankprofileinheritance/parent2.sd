@@ -1,0 +1,24 @@
+schema parent2 {
+
+  document parent2 {
+
+    field field2 type int {
+      indexing: attribute
+    }
+
+  }
+
+  rank-profile profile2 {
+
+    function function2() {
+      expression: attribute(field2) + 5
+    }
+
+    summary-features {
+      function2
+      attribute(field2)
+    }
+
+  }
+
+}

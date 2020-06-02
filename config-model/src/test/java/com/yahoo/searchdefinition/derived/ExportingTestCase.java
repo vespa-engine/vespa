@@ -156,4 +156,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("hnsw_index");
     }
 
+    @Test
+    public void testRankProfileInheritance() throws IOException, ParseException {
+        assertCorrectDeriving("rankprofileinheritance", "child");
+    }
+
 }
