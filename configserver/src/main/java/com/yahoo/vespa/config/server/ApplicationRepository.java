@@ -815,7 +815,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return null;
     }
 
-    private LocalSession getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
+    public LocalSession getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             return tenant.getLocalSessionRepo().getSession(applicationRepo.requireActiveSessionOf(applicationId));

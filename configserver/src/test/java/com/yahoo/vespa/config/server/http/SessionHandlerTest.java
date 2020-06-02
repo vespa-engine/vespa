@@ -201,7 +201,7 @@ public class SessionHandlerTest {
                 e.printStackTrace();
             }
             this.applicationPackage = tempDir;
-            return new SessionHandlerTest.MockSession(0, FilesApplicationPackage.fromFile(applicationPackage));
+            return new SessionHandlerTest.MockSession(0, FilesApplicationPackage.fromFile(applicationPackage), applicationId);
         }
 
         @Override
@@ -248,17 +248,4 @@ public class SessionHandlerTest {
 
     }
 
-    public static class FailingMockProvisioner extends MockProvisioner {
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            throw new IllegalArgumentException("Cannot activate application");
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            throw new IllegalArgumentException("Cannot remove application");
-        }
-
-    }
 }
