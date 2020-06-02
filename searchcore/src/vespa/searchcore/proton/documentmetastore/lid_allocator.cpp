@@ -201,7 +201,7 @@ private:
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
     search::BitVector::UP get_white_list_filter() const override {
-        return search::BitVector::create(_activeLids);
+        return search::BitVector::create(_activeLids, 0, _docIdLimit);
     }
 
     SearchIterator::UP
