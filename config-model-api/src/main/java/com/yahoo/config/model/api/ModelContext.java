@@ -87,6 +87,8 @@ public interface ModelContext {
             return 0.9999;
         }
 
+        String docprocLoadBalancerType();
+
         boolean useDistributorBtreeDb();
 
         boolean useThreePhaseUpdates();

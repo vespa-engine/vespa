@@ -162,6 +162,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private final double threadPoolSizeFactor;
     private final double queueSizeFactor;
+    private final String docprocLoadbalancerType;
 
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
@@ -171,6 +172,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
         this.queueSizeFactor = deployState.getProperties().queueSizeFactor();
+        this.docprocLoadbalancerType = deployState.getProperties().docprocLoadBalancerType();
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -198,6 +200,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public double getQueueSizeFactor() {
         return queueSizeFactor;
+    }
+
+    public String getDocprocLoadbalancerType() {
+        return docprocLoadbalancerType;
     }
 
     public void setZone(Zone zone) {
