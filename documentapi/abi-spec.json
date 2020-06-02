@@ -2082,20 +2082,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.LoadBalancer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public java.util.List getNodeWeights()",
-      "public com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node getRecipient(java.util.List)",
-      "public void received(com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node, boolean)"
-    ],
-    "fields": []
-  },
   "com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
     "interfaces": [],

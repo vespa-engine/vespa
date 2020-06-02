@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -30,7 +32,7 @@ public class LoadBalancerTestCase {
     }
 
     private static void assertIllegalArgument(String clusterName, String recipient, String expectedMessage) {
-        LoadBalancer policy = new LoadBalancer(clusterName);
+        LegacyLoadBalancer policy = new LegacyLoadBalancer(clusterName);
         try {
             fail("Expected exception, got index " + policy.getIndex(recipient) + ".");
         } catch (IllegalArgumentException e) {
@@ -39,8 +41,67 @@ public class LoadBalancerTestCase {
     }
 
     @Test
-    public void testLoadBalancer() {
-        LoadBalancer lb = new LoadBalancer("foo");
+    public void testAdaptiveLoadBalancer() {
+        LoadBalancer lb = new AdaptiveLoadBalancer("foo");
+
+        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
+                new Mirror.Entry("foo/1/default", "tcp/bar:2"),
+                new Mirror.Entry("foo/2/default", "tcp/bar:3"));
+        List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
+
+        for (int i = 0; i < 9999; i++) {
+            LoadBalancer.Node node = lb.getRecipient(entries);
+            assertNotNull(node);
+        }
+
+        long sentSum = 0;
+        for (var metrics : weights) {
+            assertTrue(10 > Math.abs(metrics.sent() - 3333));
+            sentSum += metrics.sent();
+        }
+        assertEquals(9999, sentSum);
+
+        for (var metrics : weights) {
+            metrics.reset();
+        }
+
+        // Simulate 1/1, 1/2, 1/4 processing capacity
+        for (int i = 0; i < 9999; i++) {
+            LoadBalancer.Node node = lb.getRecipient(entries);
+            assertNotNull(node);
+            if (node.entry.getName().contains("1")) {
+                lb.received(node, false);
+            } else if (node.entry.getName().contains("2")) {
+                if ((i % 2) == 0) {
+                    lb.received(node, false);
+                }
+            } else {
+                if ((i % 4) == 0) {
+                    lb.received(node, false);
+                }
+            }
+        }
+
+        sentSum = 0;
+        long sumPending = 0;
+        for (var metrics : weights) {
+            System.out.println("m: s=" + metrics.sent() + " p=" + metrics.pending());
+            sentSum += metrics.sent();
+            sumPending += metrics.pending();
+        }
+        assertEquals(9999, sentSum);
+        assertTrue(200 > Math.abs(sumPending -  2700));
+        assertTrue( 100 > Math.abs(weights.get(0).sent() - 1780));
+        assertTrue( 200 > Math.abs(weights.get(1).sent() - 5500));
+        assertTrue( 100 > Math.abs(weights.get(2).sent() - 2650));
+        assertTrue( 100 > Math.abs(weights.get(0).pending() - 1340));
+        assertEquals( 0, weights.get(1).pending());
+        assertTrue( 100 > Math.abs(weights.get(2).pending() - 1340));
+    }
+
+    @Test
+    public void testLegacyLoadBalancer() {
+        LoadBalancer lb = new LegacyLoadBalancer("foo");
 
         List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
                                                    new Mirror.Entry("foo/1/default", "tcp/bar:2"),
@@ -53,13 +114,13 @@ public class LoadBalancerTestCase {
                 assertEquals("foo/" + (i % 3) + "/default" , node.entry.getName());
             }
 
-            assertEquals(33, weights.get(0).sent);
-            assertEquals(33, weights.get(1).sent);
-            assertEquals(33, weights.get(2).sent);
+            assertEquals(33, weights.get(0).sent());
+            assertEquals(33, weights.get(1).sent());
+            assertEquals(33, weights.get(2).sent());
 
-            weights.get(0).sent = 0;
-            weights.get(1).sent = 0;
-            weights.get(2).sent = 0;
+            weights.get(0).reset();
+            weights.get(1).reset();
+            weights.get(2).reset();
         }
 
         {
@@ -78,9 +139,9 @@ public class LoadBalancerTestCase {
                 lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/1/default", "tcp/bar:2"), weights.get(1)), false);
             }
 
-            assertEquals(421, (int)(100 * weights.get(0).weight / weights.get(1).weight));
-            assertEquals(100, (int)(100 * weights.get(1).weight));
-            assertEquals(421, (int)(100 * weights.get(2).weight / weights.get(1).weight));
+            assertEquals(421, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(0)).weight / ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
+            assertEquals(100, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
+            assertEquals(421, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(2)).weight / ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
         }
 
 
@@ -96,9 +157,7 @@ public class LoadBalancerTestCase {
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
     }
 
-    @Test
-    public void testLoadBalancerOneItemOnly() {
-        LoadBalancer lb = new LoadBalancer("foo");
+    private void verifyLoadBalancerOneItemOnly(LoadBalancer lb) {
 
         List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
@@ -108,6 +167,10 @@ public class LoadBalancerTestCase {
         lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/0/default", "tcp/bar:1"), weights.get(0)), true); // busy
 
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-
+    }
+    @Test
+    public void testLoadBalancerOneItemOnly() {
+        verifyLoadBalancerOneItemOnly(new LegacyLoadBalancer("foo"));
+        verifyLoadBalancerOneItemOnly(new AdaptiveLoadBalancer("foo"));
     }
 }
