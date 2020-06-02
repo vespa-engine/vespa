@@ -11,6 +11,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp
     dense_multi_matmul_function.cpp
+    dense_number_join_function.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
     dense_simple_join_function.cpp

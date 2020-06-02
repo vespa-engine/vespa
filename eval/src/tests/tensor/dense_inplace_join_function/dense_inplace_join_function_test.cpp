@@ -98,9 +98,9 @@ TEST("require that self-join operations can be optimized") {
     TEST_DO(verify_p0_optimized("mut_x5_A+mut_x5_A"));
 }
 
-TEST("require that join(tensor,scalar) operations are not optimized") {
-    TEST_DO(verify_not_optimized("mut_x5_A-mut_dbl_B"));
-    TEST_DO(verify_not_optimized("mut_dbl_A-mut_x5_B"));
+TEST("require that join(tensor,scalar) operations are optimized") {
+    TEST_DO(verify_p0_optimized("mut_x5_A-mut_dbl_B"));
+    TEST_DO(verify_p1_optimized("mut_dbl_A-mut_x5_B"));
 }
 
 TEST("require that join with different tensor shapes are optimized") {
