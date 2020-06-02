@@ -30,7 +30,8 @@ class LegacyLoadBalancer extends LoadBalancer {
      * @param choices the node choices, represented as Slobrok entries
      * @return the chosen node, or null only if the given choices were zero
      */
-    public Node getRecipient(List<Mirror.Entry> choices) {
+    @Override
+    Node getRecipient(List<Mirror.Entry> choices) {
         if (choices.isEmpty()) return null;
 
         double weightSum = 0.0;
@@ -56,6 +57,7 @@ class LegacyLoadBalancer extends LoadBalancer {
         return selectedNode;
     }
 
+    @Override
     protected NodeMetrics createNodeMetrics() {
         return new LegacyNodeMetrics();
     }
@@ -66,15 +68,12 @@ class LegacyLoadBalancer extends LoadBalancer {
             LegacyNodeMetrics n = (LegacyNodeMetrics) nodeMetrics;
             if (n == null) continue;
             double want = n.weight * 1.01010101010101010101;
-            if (want >= 1.0) {
-                n.weight = want;
-            } else {
-                n.weight = 1.0;
-            }
+            n.weight = Math.max(1.0, want);
         }
     }
 
-    public void received(Node node, boolean busy) {
+    @Override
+    void received(Node node, boolean busy) {
         if (busy) {
             synchronized (this) {
                 LegacyNodeMetrics n = (LegacyNodeMetrics) node.metrics;

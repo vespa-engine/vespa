@@ -12,9 +12,13 @@ import java.util.Random;
  * @author baldersheim
  */
 class AdaptiveLoadBalancer extends LoadBalancer {
-    private Random random = new Random();
+    private final Random random;
     AdaptiveLoadBalancer(String cluster) {
+        this(cluster, new Random());
+    }
+    AdaptiveLoadBalancer(String cluster, Random random) {
         super(cluster);
+        this.random = random;
     }
 
     @Override

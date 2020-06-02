@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +53,7 @@ public class LoadBalancerTestCase {
 
     @Test
     public void testAdaptiveLoadBalancer() {
-        LoadBalancer lb = new AdaptiveLoadBalancer("foo");
+        LoadBalancer lb = new AdaptiveLoadBalancer("foo", new Random(1));
 
         List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
                 new Mirror.Entry("foo/1/default", "tcp/bar:2"),
@@ -100,13 +101,13 @@ public class LoadBalancerTestCase {
             sumPending += metrics.pending();
         }
         assertEquals(9999, sentSum);
-        assertTrue(200 > Math.abs(sumPending -  2700));
-        assertTrue( 100 > Math.abs(weights.get(0).sent() - 1780));
-        assertTrue( 200 > Math.abs(weights.get(1).sent() - 5500));
-        assertTrue( 100 > Math.abs(weights.get(2).sent() - 2650));
-        assertTrue( 100 > Math.abs(weights.get(0).pending() - 1340));
-        assertEquals( 0, weights.get(1).pending());
-        assertTrue( 100 > Math.abs(weights.get(2).pending() - 1340));
+        assertEquals(2636, sumPending);
+        assertEquals(1781, weights.get(0).sent());
+        assertEquals(5585, weights.get(1).sent());
+        assertEquals(2633, weights.get(2).sent());
+        assertEquals(1318, weights.get(0).pending());
+        assertEquals(0, weights.get(1).pending());
+        assertEquals(1318, weights.get(2).pending());
     }
 
     @Test
