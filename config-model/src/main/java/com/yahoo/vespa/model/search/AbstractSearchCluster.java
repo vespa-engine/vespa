@@ -75,7 +75,6 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     public abstract int getRowBits();
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
-    protected abstract void assureSdConsistent();
 
     @Override
     public abstract void getConfig(DocumentdbInfoConfig.Builder builder);

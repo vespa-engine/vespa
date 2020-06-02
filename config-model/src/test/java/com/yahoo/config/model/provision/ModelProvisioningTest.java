@@ -252,19 +252,56 @@ public class ModelProvisioningTest {
                     "     <documents>" +
                     "       <document type='type1' mode='index'/>" +
                     "     </documents>" +
-                    "     <nodes count='2'/>" +
+                    "     <nodes count='2'>" +
+                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                    "     </nodes>" +
                     "   </content>" +
                     "</services>";
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(2);
             VespaModel model = tester.createModel(xmlWithNodes, true);
-
             assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
             assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
             assertEquals("Heap size is lowered with combined clusters",
                          17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+            assertEquals("Memory for proton is lowered to account for the jvm heap",
+                         (long)(3 * (Math.pow(1024, 3)) * (1 - 0.17)), protonMemorySize(model.getContentClusters().get("content1")));
             assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
             assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
+        }
+    }
+
+    /** For comparison with the above */
+    @Test
+    public void testNonCombinedCluster() {
+        var containerElements = Set.of("jdisc", "container");
+        for (var containerElement : containerElements) {
+            String xmlWithNodes =
+                    "<?xml version='1.0' encoding='utf-8' ?>" +
+                    "<services>" +
+                    "  <" + containerElement + " version='1.0' id='container1'>" +
+                    "     <search/>" +
+                    "     <nodes count='2'/>" +
+                    "  </" + containerElement + ">" +
+                    "  <content version='1.0' id='content1'>" +
+                    "     <redundancy>2</redundancy>" +
+                    "     <documents>" +
+                    "       <document type='type1' mode='index'/>" +
+                    "     </documents>" +
+                    "     <nodes count='2'>" +
+                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                    "     </nodes>" +
+                    "   </content>" +
+                    "</services>";
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(4);
+            VespaModel model = tester.createModel(xmlWithNodes, true);
+            assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+            assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+            assertEquals("Heap size is normal",
+                         60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+            assertEquals("Memory for proton is normal",
+                         (long)(3 * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
         }
     }
 
@@ -1741,7 +1778,13 @@ public class ModelProvisioningTest {
     private int physicalMemoryPercentage(ContainerCluster cluster) {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
         cluster.getConfig(b);
-        return new QrStartConfig(b).jvm().heapSizeAsPercentageOfPhysicalMemory();
+        return b.build().jvm().heapSizeAsPercentageOfPhysicalMemory();
+    }
+
+    private long protonMemorySize(ContentCluster cluster) {
+        ProtonConfig.Builder b  = new ProtonConfig.Builder();
+        cluster.getSearch().getIndexed().getSearchNode(0).getConfig(b);
+        return b.build().hwinfo().memory().size();
     }
 
     @Test
