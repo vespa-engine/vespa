@@ -30,14 +30,17 @@ class AdaptiveLoadBalancer extends LoadBalancer {
             entry = choices.get(0);
             metrics = getNodeMetrics(entry);
         } else {
-            int candidateA = 0;
-            int candidateB = 1;
+            int candA = 0;
+            int candB = 1;
             if (choices.size() > 2) {
-                candidateA = random.nextInt(choices.size());
-                candidateB = random.nextInt(choices.size());
+                candA = random.nextInt(choices.size());
+                candB = random.nextInt(choices.size());
+                while (candB == candA) {
+                    candB = random.nextInt(choices.size());
+                }
             }
-            entry = choices.get(candidateA);
-            Mirror.Entry entryB = choices.get(candidateB);
+            entry = choices.get(candA);
+            Mirror.Entry entryB = choices.get(candB);
             metrics = getNodeMetrics(entry);
             NodeMetrics metricsB = getNodeMetrics(entryB);
             if (metrics.pending() > metricsB.pending()) {

@@ -101,13 +101,13 @@ public class LoadBalancerTestCase {
             sumPending += metrics.pending();
         }
         assertEquals(9999, sentSum);
-        assertEquals(2636, sumPending);
-        assertEquals(1781, weights.get(0).sent());
-        assertEquals(5585, weights.get(1).sent());
-        assertEquals(2633, weights.get(2).sent());
-        assertEquals(1318, weights.get(0).pending());
+        assertEquals(2039, sumPending);
+        assertEquals(1332, weights.get(0).sent());
+        assertEquals(6645, weights.get(1).sent());
+        assertEquals(2022, weights.get(2).sent());
+        assertEquals(1020, weights.get(0).pending());
         assertEquals(0, weights.get(1).pending());
-        assertEquals(1318, weights.get(2).pending());
+        assertEquals(1019, weights.get(2).pending());
     }
 
     @Test
