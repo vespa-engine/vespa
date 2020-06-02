@@ -4,6 +4,7 @@
 
 #include "nativerankfeature.h"
 #include "termdistancecalculator.h"
+#include <map>
 
 namespace search::features {
 
@@ -26,9 +27,10 @@ public:
 };
 
 /**
- * Implements the executor for calculating the native proximity score.
- **/
-class NativeProximityExecutor : public fef::FeatureExecutor {
+ * Class containing shared state for native proximity executor.
+ */
+class NativeProximityExecutorSharedState : public fef::Anything {
+public:
 public:
     /**
      * Represents a term pair with connectedness and associated term distance calculator.
@@ -50,10 +52,34 @@ public:
         feature_t divisor;
         FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0) {}
     };
+private:
+    const NativeProximityParams&  _params;
+    std::vector<FieldSetup>       _setups;
+    uint32_t                      _total_field_weight;
+    std::map<uint32_t, QueryTermVector> _fields;
 
+public:
+    NativeProximityExecutorSharedState(const fef::IQueryEnvironment& env, const NativeProximityParams& params);
+    ~NativeProximityExecutorSharedState();
+    static void generateTermPairs(const fef::IQueryEnvironment& env, const QueryTermVector& terms,
+                                  uint32_t slidingWindow, FieldSetup& setup);
+    const std::vector<FieldSetup>& get_setups() const { return _setups; }
+    const NativeProximityParams& get_params() const { return _params; }
+    uint32_t get_total_field_weight() const { return _total_field_weight; }
+    bool empty() const { return _setups.empty(); }
+    const std::map<uint32_t, QueryTermVector>& get_fields() const { return _fields; }
+};
+
+/**
+ * Implements the executor for calculating the native proximity score.
+ **/
+class NativeProximityExecutor : public fef::FeatureExecutor {
+public:
+    using TermPair = NativeProximityExecutorSharedState::TermPair;
+    using FieldSetup = NativeProximityExecutorSharedState::FieldSetup;
 private:
     const NativeProximityParams & _params;
-    std::vector<FieldSetup>       _setups;
+    vespalib::ConstArrayRef<FieldSetup> _setups;
     uint32_t                      _totalFieldWeight;
     const fef::MatchData         *_md;
 
@@ -63,13 +89,8 @@ private:
     virtual void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
-    NativeProximityExecutor(const fef::IQueryEnvironment & env, const NativeProximityParams & params);
+    NativeProximityExecutor(const NativeProximityExecutorSharedState& shared_state);
     void execute(uint32_t docId) override;
-
-    static void generateTermPairs(const fef::IQueryEnvironment & env, const QueryTermVector & terms,
-                                  uint32_t slidingWindow, FieldSetup & setup);
-
-    bool empty() const { return _setups.empty(); }
 };
 
 
@@ -81,6 +102,7 @@ private:
     NativeProximityParams _params;
     vespalib::string      _defaultProximityBoost;
     vespalib::string      _defaultRevProximityBoost;
+    vespalib::string      _shared_state_key;
 
 public:
     NativeProximityBlueprint();
