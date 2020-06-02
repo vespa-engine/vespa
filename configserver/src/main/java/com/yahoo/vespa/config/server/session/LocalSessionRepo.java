@@ -47,12 +47,6 @@ public class LocalSessionRepo {
     private final LongFlag expiryTimeFlag;
 
     public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
-        this(tenantName, componentRegistry);
-        loadSessions(loader);
-    }
-
-    // Constructor public only for testing
-    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry) {
         sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
@@ -60,6 +54,7 @@ public class LocalSessionRepo {
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
+        loadSessions(loader);
     }
 
     public synchronized void addSession(LocalSession session) {
@@ -151,4 +146,10 @@ public class LocalSessionRepo {
             deleteSession(session);
         }
     }
+
+    @Override
+    public String toString() {
+        return getSessions().toString();
+    }
+
 }
