@@ -104,7 +104,6 @@ public class ControllerMaintenance extends AbstractComponent {
         return controller.zoneRegistry().zones().controllerUpgraded().zones().stream()
                          .map(ZoneApi::getCloud)
                          .distinct()
-                         .sorted()
                          .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), cloud))
                          .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
