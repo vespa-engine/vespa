@@ -56,6 +56,7 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/state/active?recursive=true"), "active-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/"), "nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true"), "nodes-recursive.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&includeDeprovisioned=true"), "nodes-recursive-include-deprovisioned.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
 
         // GET with filters

@@ -322,7 +322,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                                                                 request.getProperty("clusterType"),
                                                                 request.getProperty("clusterId")));
         filter = ApplicationFilter.from(request.getProperty("application"), filter);
-        filter = StateFilter.from(request.getProperty("state"), filter);
+        filter = StateFilter.from(request.getProperty("state"), request.getBooleanProperty("includeDeprovisioned"), filter);
         filter = NodeTypeFilter.from(request.getProperty("type"), filter);
         filter = ParentHostFilter.from(request.getProperty("parentHost"), filter);
         filter = NodeOsVersionFilter.from(request.getProperty("osVersion"), filter);

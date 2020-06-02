@@ -130,6 +130,8 @@ public class MockNodeRepository extends NodeRepository {
                              flavors.getFlavorOrThrow("large"), Optional.empty(), NodeType.host));
         nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipConfig(104, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), Optional.empty(), NodeType.host));
+        nodes.add(createNode("dockerhost6", "dockerhost6.yahoo.com", ipConfig(105, 1, 3), Optional.empty(),
+                flavors.getFlavorOrThrow("large"), Optional.empty(), NodeType.host));
 
         // Config servers
         nodes.add(createNode("cfg1", "cfg1.yahoo.com", ipConfig(201), Optional.empty(),
@@ -146,6 +148,9 @@ public class MockNodeRepository extends NodeRepository {
 
         fail(node5.hostname(), Agent.system, getClass().getSimpleName());
         dirtyRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
+
+        fail("dockerhost6.yahoo.com", Agent.operator, getClass().getSimpleName());
+        removeRecursively("dockerhost6.yahoo.com");
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
