@@ -53,9 +53,7 @@ public class CoreCollector {
     Path GDBPath(NodeAgentContext context) {
         Optional<DockerImage> image = context.node().currentDockerImage();
 
-        if (image.isPresent()
-                && image.get().tag().isPresent()
-                && image.get().tag().get().startsWith("vespa/ci")) {
+        if (image.isPresent() && image.get().repository().endsWith("vespa/ci")) {
             return context.pathInNodeUnderVespaHome("bin64/gdb");
         }
         else {
