@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+#include <assert.h>
 
 namespace search::queryeval {
 
@@ -52,11 +53,11 @@ class ChildrenIterators {
             return _data[idx];
         }
         void insert(size_t index, SearchIterator::UP search) {
-            // assert(index <= _data.size());
+            assert(index <= _data.size());
             _data.insert(_data.begin()+index, std::move(search));
         }
         SearchIterator::UP remove(size_t index) {
-            // assert(index < _data.size());
+            assert(index < _data.size());
             SearchIterator::UP search = std::move(_data[index]);
             _data.erase(_data.begin() + index);
             return search;
