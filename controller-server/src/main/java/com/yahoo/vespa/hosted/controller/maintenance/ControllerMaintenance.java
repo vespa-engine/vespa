@@ -105,7 +105,7 @@ public class ControllerMaintenance extends AbstractComponent {
                          .map(ZoneApi::getCloudName)
                          .distinct()
                          .sorted()
-                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), controller.zoneRegistry().cloud(cloud)))
+                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), cloud))
                          .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
