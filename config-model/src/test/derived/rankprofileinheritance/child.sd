@@ -1,0 +1,37 @@
+schema child {
+
+  document child inherits parent1, parent2 {
+
+    field field3 type int {
+      indexing: attribute
+    }
+
+  }
+
+  rank-profile profile3 inherits profile1 {
+
+    function function3() {
+      expression: attribute(field3) + 5
+    }
+
+    summary-features {
+      function3
+      attribute(field3)
+    }
+
+  }
+
+  rank-profile profile4 inherits profile2 {
+
+    function function4() {
+      expression: attribute(field3) + 5
+    }
+
+    summary-features inherits profile2 {
+      function4
+      attribute(field3)
+    }
+
+  }
+
+}

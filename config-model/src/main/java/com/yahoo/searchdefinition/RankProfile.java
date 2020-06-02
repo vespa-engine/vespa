@@ -91,6 +91,7 @@ public class RankProfile implements Cloneable {
     private double rankScoreDropLimit = -Double.MAX_VALUE;
 
     private Set<ReferenceNode> summaryFeatures;
+    private String inheritedSummaryFeatures;
 
     private Set<ReferenceNode> rankFeatures;
 
@@ -386,9 +387,15 @@ public class RankProfile implements Cloneable {
 
     /** Returns a read-only view of the summary features to use in this profile. This is never null */
     public Set<ReferenceNode> getSummaryFeatures() {
+        if (inheritedSummaryFeatures != null && summaryFeatures != null) {
+            Set<ReferenceNode> combined = new HashSet<>();
+            combined.addAll(getInherited().getSummaryFeatures());
+            combined.addAll(summaryFeatures);
+            return Collections.unmodifiableSet(combined);
+        }
         if (summaryFeatures != null) return Collections.unmodifiableSet(summaryFeatures);
         if (getInherited() != null) return getInherited().getSummaryFeatures();
-        return Collections.emptySet();
+        return Set.of();
     }
 
     private void addSummaryFeature(ReferenceNode feature) {
@@ -397,15 +404,28 @@ public class RankProfile implements Cloneable {
         summaryFeatures.add(feature);
     }
 
-    /**
-     * Adds the content of the given feature list to the internal list of summary features.
-     *
-     * @param features The features to add.
-     */
+    /** Adds the content of the given feature list to the internal list of summary features. */
     public void addSummaryFeatures(FeatureList features) {
         for (ReferenceNode feature : features) {
             addSummaryFeature(feature);
         }
+    }
+
+    /**
+     * Sets the name this should inherit the summary features of.
+     * Without setting this, this will either have the summary features of the parent,
+     * or if summary features are set in this, only have the summary features in this.
+     * With this set the resulting summary features of this will be the superset of those defined in this and
+     * the final (with inheritance included) summary features of the given parent.
+     * The profile must be the profile which is directly inherited by this.
+     *
+     * @param parentProfile
+     */
+    public void setInheritedSummaryFeatures(String parentProfile) {
+        if ( ! parentProfile.equals(inheritedName))
+            throw new IllegalArgumentException("This can only inherit the summary features of its parent, '" +
+                                               inheritedName + ", but attemtping to inherit '" + parentProfile);
+        this.inheritedSummaryFeatures = parentProfile;
     }
 
     /** Returns a read-only view of the rank features to use in this profile. This is never null */

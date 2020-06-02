@@ -339,6 +339,7 @@ TOKEN :
 | < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
@@ -2144,23 +2145,26 @@ Object secondPhaseItem(RankProfile profile) :
 Object summaryFeatures(RankProfile profile) :
 {
     String features;
+    String inherited = null;
 }
 {
     ( <SUMMARYFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
       <SUMMARYFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
-                                                              token.image.lastIndexOf("}")).trim(); } )
+                                                              token.image.lastIndexOf("}")).trim(); } |
+      <SUMMARYFEATURES_ML_INHERITS> {
+          int inheritsIndex = token.image.indexOf("inherits ");
+          String rest = token.image.substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = token.image.substring(token.image.indexOf("{") + 1, token.image.lastIndexOf("}")).trim();
+      }
+    )
     {
         profile.addSummaryFeatures(getFeatureList(features));
         return null;
     }
 }
 
-/**
- * This rule consumes a rank-features block of a rank profile.
- *
- * @param profile The rank profile to modify.
- * @return Null.
- */
+/** Consumes a rank-features block of a rank profile */
 Object rankFeatures(RankProfile profile) :
 {
     String features;
