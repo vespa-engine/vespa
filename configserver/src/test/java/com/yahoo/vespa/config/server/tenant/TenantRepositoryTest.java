@@ -11,6 +11,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -205,8 +207,8 @@ public class TenantRepositoryTest {
         }
 
         @Override
-        protected void createTenant(TenantBuilder builder) {
-            throw new RuntimeException("Failed to create: " + builder.getTenantName());
+        public void createTenant(TenantName tenantName) {
+            throw new RuntimeException("Failed to create: " + tenantName);
         }
     }
 

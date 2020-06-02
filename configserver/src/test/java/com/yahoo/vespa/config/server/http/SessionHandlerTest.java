@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -16,11 +15,9 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -29,22 +26,16 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Base class for session handler tests
@@ -97,7 +88,6 @@ public class SessionHandlerTest {
 
     public static class MockSession extends LocalSession {
 
-        public boolean doVerboseLogging = false;
         public Session.Status status;
         private ConfigChangeActions actions = new ConfigChangeActions();
         private Instant createTime = Instant.now();
@@ -106,11 +96,6 @@ public class SessionHandlerTest {
 
         public MockSession(long sessionId, ApplicationPackage app) {
             super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
-        }
-
-        public MockSession(long sessionId, ApplicationPackage applicationPackage, ConfigChangeActions actions) {
-            this(sessionId, applicationPackage);
-            this.actions = actions;
         }
 
         public MockSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
@@ -122,9 +107,6 @@ public class SessionHandlerTest {
         public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
             status = Session.Status.PREPARE;
             this.dockerImageRepository = params.dockerImageRepository();
-            if (doVerboseLogging) {
-                logger.log(Level.FINE, "debuglog");
-            }
             return actions;
         }
 
@@ -179,38 +161,6 @@ public class SessionHandlerTest {
         @Override
         public String toString() {
             return name;
-        }
-    }
-
-    public static class MockSessionFactory implements SessionFactory {
-        public boolean createCalled = false;
-        public boolean createFromCalled = false;
-        public boolean doThrow = false;
-        public File applicationPackage;
-
-        @Override
-        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
-            createCalled = true;
-            if (doThrow) {
-                throw new RuntimeException("foo");
-            }
-            File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
-            try {
-                IOUtils.copyDirectory(applicationDirectory, tempDir);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            this.applicationPackage = tempDir;
-            return new SessionHandlerTest.MockSession(0, FilesApplicationPackage.fromFile(applicationPackage), applicationId);
-        }
-
-        @Override
-        public LocalSession createSessionFromExisting(Session existingSession, DeployLogger logger, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
-            if (doThrow) {
-                throw new RuntimeException("foo");
-            }
-            createFromCalled = true;
-            return new SessionHandlerTest.MockSession(existingSession.getSessionId() + 1, FilesApplicationPackage.fromFile(applicationPackage));
         }
     }
 

@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -78,8 +77,7 @@ public class SessionActiveHandlerTest {
         tenantRepository = new TenantRepository(componentRegistry, false);
         applicationRepository = new ApplicationRepository(tenantRepository, hostProvisioner,
                                                           new OrchestratorMock(), componentRegistry.getClock());
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName);
-        tenantRepository.addTenant(tenantBuilder);
+        tenantRepository.addTenant(tenantName);
         handler = createHandler();
     }
 
