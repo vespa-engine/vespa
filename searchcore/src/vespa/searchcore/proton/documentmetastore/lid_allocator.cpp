@@ -196,17 +196,15 @@ class WhiteListBlueprint : public SimpleLeafBlueprint, public WhiteListProvider
 {
 private:
     const search::GrowableBitVector &_activeLids;
-    const uint32_t _docIdLimit;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
     search::BitVector::UP get_white_list_filter() const override {
-        return search::BitVector::create(_activeLids, 0, _docIdLimit);
+        return search::BitVector::create(_activeLids, 0, get_docid_limit());
     }
 
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda,
-                     bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
@@ -219,14 +217,13 @@ private:
             std::lock_guard<std::mutex> lock(_lock);
             _matchDataVector.push_back(tfmd);
         }
-        return search::BitVectorIterator::create(&_activeLids, _docIdLimit, *tfmd, strict);
+        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
     }
 
 public:
-    WhiteListBlueprint(const search::GrowableBitVector &activeLids, uint32_t docIdLimit)
+    WhiteListBlueprint(const search::GrowableBitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
           _activeLids(activeLids),
-          _docIdLimit(docIdLimit),
           _matchDataVector()
     {
         setEstimate(HitEstimate(_activeLids.size(), false));
@@ -244,9 +241,9 @@ public:
 }
 
 Blueprint::UP
-LidAllocator::createWhiteListBlueprint(uint32_t docIdLimit) const
+LidAllocator::createWhiteListBlueprint() const
 {
-    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(), docIdLimit);
+    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector());
 }
 
 void
