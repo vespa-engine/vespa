@@ -206,6 +206,12 @@ public class SystemFlagsDataArchive {
                     // Throws exception if not recognized
                     NodeType.valueOf(nodeTypeString);
                 });
+            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.CONSOLE_USER_EMAIL))) {
+                condition.get("values").forEachArrayElement(conditionValue -> {
+                    String consoleUserEmailString = conditionValue.asString()
+                            .orElseThrow(() -> new IllegalArgumentException("Non-string email address: " + conditionValue));
+                    NodeType.valueOf(consoleUserEmailString);
+                });
             }
         }));
     }
