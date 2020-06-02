@@ -36,7 +36,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -507,9 +506,13 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void testAlreadyActivatedSession() {
+    public void testPrepareAndActivateAlreadyActivatedSession() {
         PrepareResult result = deployApp(testAppJdiscOnly);
         long sessionId = result.sessionId();
+
+        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expectMessage(containsString("Session is active: 2"));
+        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));

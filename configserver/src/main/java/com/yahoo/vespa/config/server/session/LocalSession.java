@@ -24,6 +24,7 @@ import com.yahoo.vespa.curator.Curator;
 import java.io.File;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * A LocalSession is a session that has been created locally on this configserver. A local session can be edited and
@@ -67,6 +68,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
                                        Path tenantPath,
                                        Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        logger.log(Level.FINE, "Created application " + params.getApplicationId());
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
         ConfigChangeActions actions = sessionPreparer.prepare(hostValidator, logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
