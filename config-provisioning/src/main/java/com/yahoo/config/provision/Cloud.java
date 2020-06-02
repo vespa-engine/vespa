@@ -56,6 +56,23 @@ public class Cloud {
         return new Builder().name(CloudName.defaultName()).build();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Cloud cloud = (Cloud) o;
+        return dynamicProvisioning == cloud.dynamicProvisioning &&
+               allowHostSharing == cloud.allowHostSharing &&
+               reprovisionToUpgradeOs == cloud.reprovisionToUpgradeOs &&
+               requireAccessControl == cloud.requireAccessControl &&
+               name.equals(cloud.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
