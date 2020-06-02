@@ -316,7 +316,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config) {
         return new SiaIdentityProvider(
-                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, CLIENT_TRUST_STORE, ATHENZ_TRUST_STORE);
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, ATHENZ_TRUST_STORE, CLIENT_TRUST_STORE);
     }
 
     private boolean isExpired(AthenzCredentials credentials) {
