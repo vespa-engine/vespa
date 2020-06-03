@@ -34,7 +34,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         // TODO: Disabled until we have application metadata
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
-        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
+        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
     }
 
     @Override

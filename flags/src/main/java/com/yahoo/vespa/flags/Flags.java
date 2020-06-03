@@ -246,11 +246,6 @@ public class Flags {
             "Takes effect on next application redeploy",
             APPLICATION_ID);
 
-    public static final UnboundLongFlag CONFIGSERVER_SESSIONS_EXPIRY_INTERVAL_IN_DAYS = defineLongFlag(
-            "configserver-sessions-expiry-interval-in-days", 1,
-            "Expiry time for unused sessions in config server",
-            "Takes effect on next run of config server maintainer SessionsMaintainer");
-
     public static final UnboundLongFlag CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS = defineLongFlag(
             "configserver-local-sessions-expiry-interval-in-days", 21,
             "Expiry time for expired local sessions in config server",
