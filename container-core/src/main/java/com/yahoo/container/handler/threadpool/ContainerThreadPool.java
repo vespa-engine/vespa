@@ -36,7 +36,7 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
         int coreNumThreads = computeCoreThreadPoolSize(threadpoolConfig.corePoolSize(), maxNumThreads);
         WorkerCompletionTimingThreadPoolExecutor executor =
                 new WorkerCompletionTimingThreadPoolExecutor(coreNumThreads, maxNumThreads,
-                        0L, TimeUnit.SECONDS,
+                        (int)threadpoolConfig.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
                         createQ(threadpoolConfig.queueSize(), maxNumThreads),
                         ThreadFactoryFactory.getThreadFactory(threadpoolConfig.name()),
                         metric);

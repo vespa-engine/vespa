@@ -9,6 +9,9 @@ maxthreads int default=500
 # The number of threads to keep in the pool, even if they are idle
 corePoolSize int default=500
 
+# The number of seconds that excess idle threads will wait for new tasks before terminating
+keepAliveTime double default=60.0
+
 ## max queue size
 ## There can be queueSize + maxthreads requests inflight concurrently
 ## The container will start replying 503
