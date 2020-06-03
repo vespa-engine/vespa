@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
@@ -15,12 +16,44 @@ namespace search::features {
 
 const uint32_t NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH(std::numeric_limits<uint32_t>::max());
 
+NativeFieldMatchExecutorSharedState::NativeFieldMatchExecutorSharedState(const IQueryEnvironment& env,
+                                                                         const NativeFieldMatchParams& params)
+    : fef::Anything(),
+      _params(params),
+      _query_terms(),
+      _divisor(0)
+{
+    QueryTermHelper queryTerms(env);
+    for (const QueryTerm & qtTmp : queryTerms.terms()) {
+        if (qtTmp.termData()->getWeight().percent() != 0) // only consider query terms with contribution
+        {
+            MyQueryTerm qt(qtTmp);
+            typedef search::fef::ITermFieldRangeAdapter FRA;
+            uint32_t totalFieldWeight = 0;
+            for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
+                const ITermFieldData& tfd = iter.get();
+                uint32_t fieldId = tfd.getFieldId();
+                if (_params.considerField(fieldId)) { // only consider fields with contribution
+                    totalFieldWeight += _params.vector[fieldId].fieldWeight;
+                    qt.handles().emplace_back(tfd.getHandle(), &tfd);
+                }
+            }
+            if (!qt.handles().empty()) {
+                _query_terms.push_back(qt);
+                _divisor += (qt.significance() * qt.termData()->getWeight().percent() * totalFieldWeight);
+            }
+        }
+    }
+}
+
+NativeFieldMatchExecutorSharedState::~NativeFieldMatchExecutorSharedState() = default;
+
 feature_t
 NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, uint32_t docId)
 {
     feature_t termScore = 0;
     for (size_t i = 0; i < qt.handles().size(); ++i) {
-        TermFieldHandle tfh = qt.handles()[i];
+        TermFieldHandle tfh = qt.handles()[i].first;
         const TermFieldMatchData *tfmd = _md->resolveTermField(tfh);
         const NativeFieldMatchParam & param = _params.vector[tfmd->getFieldId()];
         if (tfmd->getDocId() == docId) { // do we have a hit
@@ -38,33 +71,17 @@ NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, uint32_t docId)
     return termScore;
 }
 
-NativeFieldMatchExecutor::NativeFieldMatchExecutor(const IQueryEnvironment & env,
-                                                   const NativeFieldMatchParams & params) :
-    FeatureExecutor(),
-    _params(params),
-    _queryTerms(),
-    _divisor(0),
-    _md(nullptr)
+NativeFieldMatchExecutor::NativeFieldMatchExecutor(const NativeFieldMatchExecutorSharedState& shared_state)
+    : FeatureExecutor(),
+      _params(shared_state.get_params()),
+      _queryTerms(shared_state.get_query_terms()),
+      _divisor(shared_state.get_divisor()),
+      _md(nullptr)
 {
-    QueryTermHelper queryTerms(env);
-    for (const QueryTerm & qtTmp : queryTerms.terms()) {
-        if (qtTmp.termData()->getWeight().percent() != 0) // only consider query terms with contribution
-        {
-            MyQueryTerm qt(qtTmp);
-            typedef search::fef::ITermFieldRangeAdapter FRA;
-            uint32_t totalFieldWeight = 0;
-            for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
-                const ITermFieldData& tfd = iter.get();
-                uint32_t fieldId = tfd.getFieldId();
-                if (_params.considerField(fieldId)) { // only consider fields with contribution
-                    totalFieldWeight += _params.vector[fieldId].fieldWeight;
-                    qt.handles().push_back(tfd.getHandle());
-                }
-            }
-            if (!qt.handles().empty()) {
-                _queryTerms.push_back(qt);
-                _divisor += (qt.significance() * qt.termData()->getWeight().percent() * totalFieldWeight);
-            }
+    for (const auto& qt : _queryTerms) {
+        for (const auto& handle : qt.handles()) {
+            // Record that we need normal term field match data
+            (void) handle.second->getHandle(MatchDataDetails::Normal);
         }
     }
 }
@@ -92,7 +109,8 @@ NativeFieldMatchBlueprint::NativeFieldMatchBlueprint() :
     Blueprint("nativeFieldMatch"),
     _params(),
     _defaultFirstOcc("expdecay(8000,12.50)"),
-    _defaultNumOcc("loggrowth(1500,4000,19)")
+    _defaultNumOcc("loggrowth(1500,4000,19)"),
+    _shared_state_key()
 {
 }
 
@@ -116,9 +134,12 @@ bool
 NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
                                  const ParameterList & params)
 {
+    vespalib::asciistream shared_state_key_builder;
     _params.resize(env.getNumFields());
     FieldWrapper fields(env, params, FieldType::INDEX);
     vespalib::string defaultFirstOccImportance = env.getProperties().lookup(getBaseName(), "firstOccurrenceImportance").get("0.5");
+    shared_state_key_builder << "fef.nativeFieldMatch[";
+    bool first_field = true;
     for (uint32_t i = 0; i < fields.getNumFields(); ++i) {
         const FieldInfo * info = fields.getField(i);
         uint32_t fieldId = info->id();
@@ -160,8 +181,16 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
         }
         if (param.field) {
             env.hintFieldAccess(fieldId);
+            if (first_field) {
+                first_field = false;
+            } else {
+                shared_state_key_builder << ",";
+            }
+            shared_state_key_builder << info->name();
         }
     }
+    shared_state_key_builder << "]";
+    _shared_state_key = shared_state_key_builder.str();
     _params.minFieldLength = util::strToNum<uint32_t>(env.getProperties().lookup
                                                       (getBaseName(), "minFieldLength").get("6"));
 
@@ -172,17 +201,23 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
 FeatureExecutor &
 NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    NativeFieldMatchExecutor &native = stash.create<NativeFieldMatchExecutor>(env, _params);
-    if (native.empty()) {
+    auto *shared_state = dynamic_cast<const NativeFieldMatchExecutorSharedState *>(env.getObjectStore().get(_shared_state_key));
+    if (shared_state == nullptr) {
+        shared_state = &stash.create<NativeFieldMatchExecutorSharedState>(env, _params);
+    }
+    if (shared_state->empty()) {
         return stash.create<SingleZeroValueExecutor>();
     } else {
-        return native;
+        return stash.create<NativeFieldMatchExecutor>(*shared_state);
     }
 }
 
 void
 NativeFieldMatchBlueprint::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const {
     QueryTermHelper::lookupAndStoreQueryTerms(queryEnv, objectStore);
+    if (objectStore.get(_shared_state_key) == nullptr) {
+        objectStore.add(_shared_state_key, std::make_unique<NativeFieldMatchExecutorSharedState>(queryEnv, _params));
+    }
 }
 
 }
