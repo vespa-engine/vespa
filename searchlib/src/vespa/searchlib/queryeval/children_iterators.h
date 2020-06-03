@@ -20,6 +20,7 @@ class ChildrenIterators {
     public:
         ChildrenIterators() {}
         ChildrenIterators(ChildrenIterators && other) = default;
+        ChildrenIterators& operator= (ChildrenIterators && other) = default;
 
         // convenience constructors for unit tests:
         template <typename... Args>
@@ -46,11 +47,8 @@ class ChildrenIterators {
         void emplace_back(Arg && search) {
             _data.emplace_back(std::forward<Arg>(search));
         }
-        const SearchIterator::UP & operator[] (size_t idx) const {
-            return _data[idx];
-        }
-        SearchIterator::UP & operator[] (size_t idx) {
-            return _data[idx];
+        SearchIterator * operator[] (size_t idx) const {
+            return _data[idx].get();
         }
         void insert(size_t index, SearchIterator::UP search) {
             assert(index <= _data.size());
@@ -62,10 +60,45 @@ class ChildrenIterators {
             _data.erase(_data.begin() + index);
             return search;
         }
-        auto begin() const { return _data.begin(); }
-        auto end() const { return _data.end(); }
-        auto begin() { return _data.begin(); }
-        auto end() { return _data.end(); }
+        class const_iterator {
+        private:
+            typedef std::vector<SearchIterator::UP>::const_iterator base_iterator;
+            base_iterator _ptr;
+        public:
+            typedef std::forward_iterator_tag iterator_category;
+
+            const_iterator() = default;
+            explicit const_iterator(base_iterator p)
+                : _ptr(p) {}
+            ~const_iterator() = default;
+            const_iterator & operator= (const const_iterator &other) = default;
+
+            bool operator== (const const_iterator &other) const { return _ptr == other._ptr; }
+            bool operator!= (const const_iterator &other) const { return _ptr != other._ptr; }
+            SearchIterator& operator* () const { return **_ptr; }
+            SearchIterator * operator-> () const { return _ptr->get(); }
+
+            const_iterator& operator++ () {
+                ++_ptr;
+                return *this;
+            }
+            const_iterator operator++ (int) {
+                auto r = *this;
+                ++_ptr;
+                return r;
+            }
+            // useful?
+            // typedef SearchIterator value_type;
+            // typedef SearchIterator& reference;
+            // typedef SearchIterator* pointer;
+        };
+
+        const_iterator begin() const { return const_iterator(_data.begin()); }
+        const_iterator end() const { return const_iterator(_data.end()); }
+
+        std::vector<SearchIterator::UP> release() {
+            return std::move(_data);
+        }
 };
 
 } // namespace
