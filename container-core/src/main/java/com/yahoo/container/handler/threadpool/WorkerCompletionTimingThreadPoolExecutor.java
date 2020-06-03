@@ -1,9 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
-import com.yahoo.jdisc.Metric;
-
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,12 +17,12 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-    private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.thread_pool.unhandled_exceptions";
+
 
     volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
     private final AtomicLong startedCount = new AtomicLong(0);
     private final AtomicLong completedCount = new AtomicLong(0);
-    private final Metric metric;
+    private final ThreadPoolMetric metric;
 
     WorkerCompletionTimingThreadPoolExecutor(
             int corePoolSize,
@@ -34,7 +31,7 @@ class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
             TimeUnit unit,
             BlockingQueue<Runnable> workQueue,
             ThreadFactory threadFactory,
-            Metric metric) {
+            ThreadPoolMetric metric) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         this.metric = metric;
     }
@@ -51,7 +48,7 @@ class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
         super.afterExecute(r, t);
         completedCount.incrementAndGet();
         if (t != null) {
-            metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, metric.createContext(Map.of("exception", t.getClass().getSimpleName())));
+            metric.reportUnhandledException(t);
         }
     }
 
