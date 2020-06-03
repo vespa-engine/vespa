@@ -14,6 +14,7 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
+#include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -23,8 +24,8 @@ LOG_SETUP("attribute_combiner_test");
 using search::AttributeFactory;
 using search::AttributeManager;
 using search::AttributeVector;
-using search::IntegerAttribute;
 using search::FloatingPointAttribute;
+using search::IntegerAttribute;
 using search::MatchingElements;
 using search::StringAttribute;
 using search::attribute::BasicType;
@@ -37,40 +38,9 @@ using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::IDocsumFieldWriter;
+using search::docsummary::test::SlimeValue;
 
 namespace {
-
-vespalib::string
-toCompactJsonString(const vespalib::Slime &slime)
-{
-    vespalib::SimpleBuffer buf;
-    vespalib::slime::JsonFormat::encode(slime, buf, true);
-    return buf.get().make_string();
-}
-
-struct FieldBlock {
-    vespalib::string input;
-    vespalib::Slime slime;
-    search::RawBuf binary;
-    vespalib::string json;
-
-    explicit FieldBlock(const vespalib::string &jsonInput);
-    ~FieldBlock();
-    const char *data() const { return binary.GetDrainPos(); }
-    size_t dataLen() const { return binary.GetUsedLen(); }
-};
-
-FieldBlock::FieldBlock(const vespalib::string &jsonInput)
-    : input(jsonInput), slime(), binary(1024), json()
-{
-    size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-    EXPECT_TRUE(used > 0);
-    json = toCompactJsonString(slime);
-    search::SlimeOutputRawBufAdapter adapter(binary);
-    vespalib::slime::BinaryFormat::encode(slime, adapter);
-}
-
-FieldBlock::~FieldBlock() = default;
 
 struct AttributeManagerFixture
 {
@@ -228,83 +198,73 @@ AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter
 }
 
 void
-AttributeCombinerTest::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
+AttributeCombinerTest::assertWritten(const vespalib::string &exp_slime_as_json, uint32_t docId)
 {
-    vespalib::Slime target;
-    vespalib::slime::SlimeInserter inserter(target);
+    vespalib::Slime act;
+    vespalib::slime::SlimeInserter inserter(act);
     writer->insertField(docId, nullptr, &state, search::docsummary::RES_JSONSTRING, inserter);
-    search::RawBuf binary(1024);
-    vespalib::string json = toCompactJsonString(target);
-    search::SlimeOutputRawBufAdapter adapter(binary);
-    vespalib::slime::BinaryFormat::encode(target, adapter);
-    FieldBlock block(expectedJson);
-    EXPECT_EQ(block.dataLen(), binary.GetUsedLen());
-    EXPECT_EQ(0, memcmp(block.data(), binary.GetDrainPos(), block.dataLen()));
-    if (block.dataLen() != binary.GetUsedLen() ||
-        memcmp(block.data(), binary.GetDrainPos(), block.dataLen()) != 0) {
-        LOG(error, "Expected '%s'", expectedJson.c_str());
-        LOG(error, "Expected normalized '%s'", block.json.c_str());
-        LOG(error, "Got '%s'", json.c_str());
-    }
+
+    SlimeValue exp(exp_slime_as_json);
+    EXPECT_EQ(exp.slime, act);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_array_of_struct)
 {
     set_field("array", false);
-    assertWritten("[ { fval: 110.0, name: \"n1.1\", val: 10}, { name: \"n1.2\", val: 11}]", 1);
-    assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2);
-    assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3);
-    assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    assertWritten("[ { fval: 110.0, name: 'n1.1', val: 10}, { name: 'n1.2', val: 11}]", 1);
+    assertWritten("[ { fval: 120.0, name: 'n2', val: 20}, { fval: 121.0, val: 21 }]", 2);
+    assertWritten("[ { fval: 130.0, name: 'n3.1', val: 30}, { fval: 131.0, name: 'n3.2'} ]", 3);
+    assertWritten("[ { }, { fval: 141.0, name: 'n4.2', val:  41} ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_map_of_struct)
 {
     set_field("smap", false);
-    assertWritten("[ { key: \"k1.1\", value: { fval: 110.0, name: \"n1.1\", val: 10} }, { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1);
-    assertWritten("[ { key: \"k2\", value: { fval: 120.0, name: \"n2\", val: 20} }, { key: \"\", value: { fval: 121.0, val: 21 } }]", 2);
-    assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} }, { key: \"k3.2\", value: { fval: 131.0, name: \"n3.2\"} } ]", 3);
-    assertWritten("[ { key: \"\", value: { } }, { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4);
+    assertWritten("[ { key: 'k1.1', value: { fval: 110.0, name: 'n1.1', val: 10} }, { key: 'k1.2', value: { name: 'n1.2', val: 11} }]", 1);
+    assertWritten("[ { key: 'k2', value: { fval: 120.0, name: 'n2', val: 20} }, { key: '', value: { fval: 121.0, val: 21 } }]", 2);
+    assertWritten("[ { key: 'k3.1', value: { fval: 130.0, name: 'n3.1', val: 30} }, { key: 'k3.2', value: { fval: 131.0, name: 'n3.2'} } ]", 3);
+    assertWritten("[ { key: '', value: { } }, { key: 'k4.2', value: { fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_map_of_string)
 {
     set_field("map", false);
-    assertWritten("[ { key: \"k1.1\", value: \"n1.1\" }, { key: \"k1.2\", value: \"n1.2\"}]", 1);
-    assertWritten("[ { key: \"k2\", value: \"\" }]", 2);
-    assertWritten("[ { key: \"k3.1\", value: \"n3.1\" }, { key: \"\", value: \"n3.2\"} ]", 3);
-    assertWritten("[ { key: \"\", value: \"\" }, { key: \"k4.2\", value: \"n4.2\" } ]", 4);
+    assertWritten("[ { key: 'k1.1', value: 'n1.1' }, { key: 'k1.2', value: 'n1.2'}]", 1);
+    assertWritten("[ { key: 'k2', value: '' }]", 2);
+    assertWritten("[ { key: 'k3.1', value: 'n3.1' }, { key: '', value: 'n3.2'} ]", 3);
+    assertWritten("[ { key: '', value: '' }, { key: 'k4.2', value: 'n4.2' } ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_array_of_struct)
 {
     set_field("array", true);
-    assertWritten("[ { name: \"n1.2\", val: 11}]", 1);
+    assertWritten("[ { name: 'n1.2', val: 11}]", 1);
     assertWritten("[ ]", 2);
-    assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30} ]", 3);
-    assertWritten("[ { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    assertWritten("[ { fval: 130.0, name: 'n3.1', val: 30} ]", 3);
+    assertWritten("[ { fval: 141.0, name: 'n4.2', val:  41} ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_map_of_struct)
 {
     set_field("smap", true);
-    assertWritten("[ { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1);
+    assertWritten("[ { key: 'k1.2', value: { name: 'n1.2', val: 11} }]", 1);
     assertWritten("[ ]", 2);
-    assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} } ]", 3);
-    assertWritten("[ { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4);
+    assertWritten("[ { key: 'k3.1', value: { fval: 130.0, name: 'n3.1', val: 30} } ]", 3);
+    assertWritten("[ { key: 'k4.2', value: { fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_map_of_string)
 {
     set_field("map", true);
-    assertWritten("[ { key: \"k1.2\", value: \"n1.2\"}]", 1);
+    assertWritten("[ { key: 'k1.2', value: 'n1.2'}]", 1);
     assertWritten("[ ]", 2);
-    assertWritten("[ { key: \"k3.1\", value: \"n3.1\" } ]", 3);
-    assertWritten("[ { key: \"k4.2\", value: \"n4.2\" } ]", 4);
+    assertWritten("[ { key: 'k3.1', value: 'n3.1' } ]", 3);
+    assertWritten("[ { key: 'k4.2', value: 'n4.2' } ]", 4);
     assertWritten("null", 5);
 }
 

@@ -20,6 +20,7 @@ vespa_define_module(
     src/vespa/searchsummary
     src/vespa/searchsummary/config
     src/vespa/searchsummary/docsummary
+    src/vespa/searchsummary/test
 
     TESTS
     src/tests/docsumformat
