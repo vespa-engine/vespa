@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
@@ -25,6 +26,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         this.threadpool = new ContainerThreadPool(threadpoolConfig, metric);
     }
 
+    @Inject
     public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
         this.threadpool = new ContainerThreadPool(threadpoolConfig, metric, processTerminator);
     }
