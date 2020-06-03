@@ -58,14 +58,12 @@ MatchView::getMatcher(const vespalib::string & rankProfile) const
     return retval;
 }
 
-
 MatchContext::UP
 MatchView::createContext() const {
     IAttributeContext::UP attrCtx = _attrMgr->createContext();
     auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get());
     return std::make_unique<MatchContext>(std::move(attrCtx), std::move(searchCtx));
 }
-
 
 std::unique_ptr<SearchReply>
 MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const SearchRequest &req,
@@ -74,13 +72,12 @@ MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const Sear
     Matcher::SP matcher = getMatcher(req.ranking);
     SearchSession::OwnershipBundle owned_objects;
     owned_objects.search_handler = std::move(searchHandler);
+    owned_objects.readGuard = _metaStore->getReadGuard();
     owned_objects.context = createContext();
-    owned_objects.readGuard = _metaStore->getReadGuard();;
     MatchContext *ctx = owned_objects.context.get();
     const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
     return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
                           *_sessionMgr, dms, std::move(owned_objects));
 }
-
 
 } // namespace proton
