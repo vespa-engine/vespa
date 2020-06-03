@@ -21,7 +21,7 @@ import java.util.Optional;
  *
  * @author Ulf Lilleengen
  */
-public abstract class Session {
+public abstract class Session implements Comparable<Session>  {
 
     private final long sessionId;
     protected final TenantName tenant;
@@ -64,17 +64,19 @@ public abstract class Session {
             return Status.NEW;
         }
     }
-    
-    public TenantName getTenant() {
-        return tenant;
-    }
+
+    public TenantName getTenantName() { return tenant; }
 
     /**
      * Helper to provide a log message preamble for code dealing with sessions
      * @return log preamble
      */
     public String logPre() {
-        return TenantRepository.logPre(getTenant());
+        if (getApplicationId().equals(ApplicationId.defaultId())) {
+            return TenantRepository.logPre(getTenantName());
+        } else {
+            return TenantRepository.logPre(getApplicationId());
+        }
     }
 
     public Instant getCreateTime() {
@@ -127,5 +129,12 @@ public abstract class Session {
 
     // Note: Assumes monotonically increasing session ids
     public boolean isNewerThan(long sessionId) { return getSessionId() > sessionId; }
+
+    @Override
+    public int compareTo(Session rhs) {
+        Long lhsId = getSessionId();
+        Long rhsId = rhs.getSessionId();
+        return lhsId.compareTo(rhsId);
+    }
 
 }

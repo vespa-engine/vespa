@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.transaction.Transaction;
@@ -12,7 +11,6 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
 
@@ -75,10 +73,6 @@ public class RemoteSession extends Session {
         return applicationSet == null ? applicationSet = loadApplication() : applicationSet;
     }
 
-    public Session.Status getStatus() {
-        return zooKeeperClient.readStatus();
-    }
-
     public synchronized void deactivate() {
         applicationSet = null;
     }
@@ -98,15 +92,6 @@ public class RemoteSession extends Session {
         log.log(Level.INFO, logPre() + "Session activated: " + getSessionId());
     }
     
-    @Override
-    public String logPre() {
-        if (getApplicationId().equals(ApplicationId.defaultId())) {
-            return TenantRepository.logPre(getTenant());
-        } else {
-            return TenantRepository.logPre(getApplicationId());
-        }
-    }
-
     void confirmUpload() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
         log.log(Level.FINE, "Notifying upload waiter for session " + getSessionId());
@@ -134,10 +119,6 @@ public class RemoteSession extends Session {
         Transaction transaction = zooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
-    }
-
-    public AllocatedHosts getAllocatedHosts() {
-        return zooKeeperClient.getAllocatedHosts();
     }
 
     public ApplicationMetaData getMetaData() {
