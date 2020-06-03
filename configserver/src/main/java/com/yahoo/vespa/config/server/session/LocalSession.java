@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
@@ -18,7 +17,6 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
@@ -35,7 +33,7 @@ import java.util.logging.Level;
  */
 // This is really the store of an application, whether it is active or in an edit session
 // TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer   -bratseth
-public class LocalSession extends Session implements Comparable<LocalSession> {
+public class LocalSession extends Session {
 
     protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
@@ -118,13 +116,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         transaction.add(FileTransaction.from(FileOperations.delete(serverDBSessionDir.getAbsolutePath())));
     }
 
-    @Override
-    public int compareTo(LocalSession rhs) {
-        Long lhsId = getSessionId();
-        Long rhsId = rhs.getSessionId();
-        return lhsId.compareTo(rhsId);
-    }
-
     public void waitUntilActivated(TimeoutBudget timeoutBudget) {
         zooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }
@@ -135,21 +126,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     public ApplicationMetaData getMetaData() {
         return applicationPackage.getMetaData();
-    }
-
-    public AllocatedHosts getAllocatedHosts() {
-        return zooKeeperClient.getAllocatedHosts();
-    }
-
-    public TenantName getTenantName() { return tenant; }
-
-    @Override
-    public String logPre() {
-        if (getApplicationId().equals(ApplicationId.defaultId())) {
-            return TenantRepository.logPre(getTenant());
-        } else {
-            return TenantRepository.logPre(getApplicationId());
-        }
     }
 
     // The rest of this class should be moved elsewhere ...
