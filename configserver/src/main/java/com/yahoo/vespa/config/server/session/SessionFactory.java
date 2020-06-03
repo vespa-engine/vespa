@@ -177,23 +177,6 @@ public class SessionFactory {
         }
     }
 
-    private SessionZooKeeperClient createSessionZooKeeperClient(Path sessionPath) {
-        return new SessionZooKeeperClient(curator, configCurator, sessionPath, serverId, nodeFlavors);
-    }
-
-    // TODO: move helpers down
-    private File getAndValidateExistingSessionAppDir(long sessionId) {
-        File appDir = getSessionAppDir(sessionId);
-        if (!appDir.exists() || !appDir.isDirectory()) {
-            throw new IllegalArgumentException("Unable to find correct application directory for session " + sessionId);
-        }
-        return appDir;
-    }
-
-    private File getSessionAppDir(long sessionId) {
-        return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant).getUserApplicationDir(sessionId);
-    }
-
     /**
      * Returns a new session instance for the given session id.
      */
@@ -221,6 +204,22 @@ public class SessionFactory {
 
     Path getSessionPath(long sessionId) {
         return sessionsPath.append(String.valueOf(sessionId));
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient(Path sessionPath) {
+        return new SessionZooKeeperClient(curator, configCurator, sessionPath, serverId, nodeFlavors);
+    }
+
+    private File getAndValidateExistingSessionAppDir(long sessionId) {
+        File appDir = getSessionAppDir(sessionId);
+        if (!appDir.exists() || !appDir.isDirectory()) {
+            throw new IllegalArgumentException("Unable to find correct application directory for session " + sessionId);
+        }
+        return appDir;
+    }
+
+    private File getSessionAppDir(long sessionId) {
+        return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant).getUserApplicationDir(sessionId);
     }
 
 }
