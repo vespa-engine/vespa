@@ -1,37 +1,33 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.handler;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.container.handler.threadpool;
 
-import static org.junit.Assert.fail;
+import com.yahoo.collections.Tuple2;
+import com.yahoo.concurrent.Receiver;
+import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.jdisc.Metric;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.yahoo.container.protect.ProcessTerminator;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import com.yahoo.concurrent.Receiver;
-import com.yahoo.concurrent.Receiver.MessageState;
-import com.yahoo.collections.Tuple2;
-import com.yahoo.jdisc.Metric;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
- * Check threadpool provider accepts tasks and shuts down properly.
- *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @author bjorncs
  */
-public class ThreadPoolProviderTestCase {
-
+public class ContainerThreadPoolTest {
     @Test
-    public final void testThreadPoolProvider() throws InterruptedException {
+    public final void testThreadPool() throws InterruptedException {
         ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(1));
-        ThreadPoolProvider provider = new ThreadPoolProvider(config, Mockito.mock(Metric.class));
-        Executor exec = provider.get();
-        Tuple2<MessageState, Boolean> reply;
+        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
+        Executor exec = threadPool.executor();
+        Tuple2<Receiver.MessageState, Boolean> reply;
         FlipIt command = new FlipIt();
         for (boolean done = false; !done;) {
             try {
@@ -42,13 +38,13 @@ public class ThreadPoolProviderTestCase {
             }
         }
         reply = command.didItRun.get(5 * 60 * 1000);
-        if (reply.first != MessageState.VALID) {
+        if (reply.first != Receiver.MessageState.VALID) {
             fail("Executor task probably timed out, five minutes should be enough to flip a boolean.");
         }
         if (reply.second != Boolean.TRUE) {
             fail("Executor task seemed to run, but did not get correct value.");
         }
-        provider.deconstruct();
+        threadPool.deconstruct();
         command = new FlipIt();
         try {
             exec.execute(command);
@@ -61,9 +57,9 @@ public class ThreadPoolProviderTestCase {
 
     private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
         ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(maxThreads).queueSize(queueSize));
-        ThreadPoolProvider provider = new ThreadPoolProvider(config, Mockito.mock(Metric.class));
-        ThreadPoolProvider.ExecutorServiceWrapper wrapper = (ThreadPoolProvider.ExecutorServiceWrapper) provider.get();
-        ThreadPoolProvider.WorkerCompletionTimingThreadPoolExecutor executor = (ThreadPoolProvider.WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
+        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
+        ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
+        WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
         return executor;
     }
 
@@ -103,37 +99,37 @@ public class ThreadPoolProviderTestCase {
 
     @Test
     @Ignore // Ignored because it depends on the system time and so is unstable on factory
-    public void testThreadPoolProviderTerminationOnBreakdown() throws InterruptedException {
+    public void testThreadPoolTerminationOnBreakdown() throws InterruptedException {
         ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(2)
-                                                                                     .maxThreadExecutionTimeSeconds(1));
+                .maxThreadExecutionTimeSeconds(1));
         MockProcessTerminator terminator = new MockProcessTerminator();
-        ThreadPoolProvider provider = new ThreadPoolProvider(config, Mockito.mock(Metric.class), terminator);
+        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class), terminator);
 
         // No dying when threads hang shorter than max thread execution time
-        provider.get().execute(new Hang(500));
-        provider.get().execute(new Hang(500));
+        threadPool.executor().execute(new Hang(500));
+        threadPool.executor().execute(new Hang(500));
         assertEquals(0, terminator.dieRequests);
-        assertRejected(provider, new Hang(500)); // no more threads
+        assertRejected(threadPool, new Hang(500)); // no more threads
         assertEquals(0, terminator.dieRequests); // ... but not for long enough yet
         try { Thread.sleep(1500); } catch (InterruptedException e) {}
-        provider.get().execute(new Hang(1));
+        threadPool.executor().execute(new Hang(1));
         assertEquals(0, terminator.dieRequests);
         try { Thread.sleep(50); } catch (InterruptedException e) {} // Make sure both threads are available
 
         // Dying when hanging both thread pool threads for longer than max thread execution time
-        provider.get().execute(new Hang(2000));
-        provider.get().execute(new Hang(2000));
+        threadPool.executor().execute(new Hang(2000));
+        threadPool.executor().execute(new Hang(2000));
         assertEquals(0, terminator.dieRequests);
-        assertRejected(provider, new Hang(2000)); // no more threads
+        assertRejected(threadPool, new Hang(2000)); // no more threads
         assertEquals(0, terminator.dieRequests); // ... but not for long enough yet
         try { Thread.sleep(1500); } catch (InterruptedException e) {}
-        assertRejected(provider, new Hang(2000)); // no more threads
+        assertRejected(threadPool, new Hang(2000)); // no more threads
         assertEquals(1, terminator.dieRequests); // ... for longer than maxThreadExecutionTime
     }
 
-    private void assertRejected(ThreadPoolProvider provider, Runnable task) {
+    private void assertRejected(ContainerThreadPool threadPool, Runnable task) {
         try {
-            provider.get().execute(task);
+            threadPool.executor().execute(task);
             fail("Expected execution rejected");
         } catch (final RejectedExecutionException expected) {
         }
