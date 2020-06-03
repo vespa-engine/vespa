@@ -3,21 +3,21 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.*;
-import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
-import com.yahoo.path.Path;
+import com.yahoo.config.model.application.provider.DeployData;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.Flags;
@@ -26,6 +26,7 @@ import java.io.File;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
