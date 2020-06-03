@@ -544,12 +544,12 @@ Test::testNativeProximity()
         env.getProperties().add("vespa.term.2.connexity", "0.6");
         {
             NativeProximityExecutor::FieldSetup setup(0);
-            NativeProximityExecutor::TermPairVector & pairs = setup.pairs;
-            NativeProximityExecutor::generateTermPairs(env, terms, 0, setup);
+            NativeProximityExecutorSharedState::TermPairVector & pairs = setup.pairs;
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 0, setup);
             EXPECT_EQUAL(pairs.size(), 0u);
-            NativeProximityExecutor::generateTermPairs(env, terms, 1, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 1, setup);
             EXPECT_EQUAL(pairs.size(), 0u);
-            NativeProximityExecutor::generateTermPairs(env, terms, 2, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
             EXPECT_EQUAL(pairs.size(), 2u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
@@ -562,7 +562,7 @@ Test::testNativeProximity()
             pairs.clear();
             setup.divisor = 0;
 
-            NativeProximityExecutor::generateTermPairs(env, terms, 3, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 3, setup);
             EXPECT_EQUAL(pairs.size(), 3u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
@@ -581,7 +581,7 @@ Test::testNativeProximity()
             b.setWeight(search::query::Weight(0));
 
             // test that (ab) is filtered away
-            NativeProximityExecutor::generateTermPairs(env, terms, 2, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
             EXPECT_EQUAL(pairs.size(), 1u);
             EXPECT_TRUE(pairs[0].first.termData() == &b);
             EXPECT_TRUE(pairs[0].second.termData() == &c);

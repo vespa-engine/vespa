@@ -200,6 +200,30 @@ public class SystemFlagsDataArchiveTest {
         }
     }
 
+    @Test
+    public void normalize_json_fail_on_invalid_email() {
+        try {
+            SystemFlagsDataArchive.normalizeJson("{\n" +
+                    "    \"id\": \"foo\",\n" +
+                    "    \"rules\": [\n" +
+                    "        {\n" +
+                    "            \"conditions\": [\n" +
+                    "                {\n" +
+                    "                    \"type\": \"whitelist\",\n" +
+                    "                    \"dimension\": \"console-user-email\",\n" +
+                    "                    \"values\": [ 123 ]\n" +
+                    "                }\n" +
+                    "            ],\n" +
+                    "            \"value\": true\n" +
+                    "        }\n" +
+                    "    ]\n" +
+                    "}\n");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Non-string email address: 123", e.getMessage());
+        }
+    }
+
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "main.controller");
         assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");

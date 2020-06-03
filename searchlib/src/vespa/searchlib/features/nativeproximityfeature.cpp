@@ -7,12 +7,73 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stash.h>
-#include <map>
 
 using namespace search::fef;
 
 namespace search::features {
+
+NativeProximityExecutorSharedState::NativeProximityExecutorSharedState(const IQueryEnvironment& env,
+                                                                       const NativeProximityParams& params)
+    : fef::Anything(),
+      _params(params),
+      _setups(),
+      _total_field_weight(0),
+      _fields()
+{
+    QueryTermHelper queryTerms(env);
+    for (const QueryTerm& qt : queryTerms.terms()) {
+        typedef search::fef::ITermFieldRangeAdapter FRA;
+        for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
+            uint32_t fieldId = iter.get().getFieldId();
+            if (_params.considerField(fieldId)) { // only consider fields with contribution
+                QueryTerm myQt = qt;
+                myQt.fieldHandle(iter.get().getHandle());
+                _fields[fieldId].push_back(myQt);
+            }
+        }
+    }
+    for (const auto& entry : _fields) {
+        if (entry.second.size() >= 2) {
+            FieldSetup setup(entry.first);
+            generateTermPairs(env, entry.second, _params.slidingWindow, setup);
+            if (!setup.pairs.empty()) {
+                _setups.push_back(std::move(setup));
+                _total_field_weight += params.vector[entry.first].fieldWeight;
+            }
+        }
+    }
+}
+
+
+NativeProximityExecutorSharedState::~NativeProximityExecutorSharedState() = default;
+
+void
+NativeProximityExecutorSharedState::generateTermPairs(const IQueryEnvironment& env, const QueryTermVector& terms,
+                                           uint32_t slidingWindow, FieldSetup& setup)
+{
+    TermPairVector& pairs = setup.pairs;
+    for (size_t i = 0; i < terms.size(); ++i) {
+        for (size_t j = i + 1; (j < i + slidingWindow) && (j < terms.size()); ++j) {
+            feature_t connectedness = 1;
+            for (size_t k = j; k > i; --k) {
+                connectedness = std::min(util::lookupConnectedness(env, terms[k].termData()->getUniqueId(),
+                                                                   terms[k-1].termData()->getUniqueId(), 0.1),
+                                         connectedness);
+            }
+            connectedness /= (j - i);
+            if (terms[i].termData()->getWeight().percent() != 0 ||
+                terms[j].termData()->getWeight().percent() != 0)
+            { // only consider term pairs with contribution
+                pairs.push_back(TermPair(terms[i], terms[j], connectedness));
+                setup.divisor += (terms[i].significance() * terms[i].termData()->getWeight().percent() +
+                                  terms[j].significance() * terms[j].termData()->getWeight().percent()) * connectedness;
+            }
+        }
+    }
+}
+
 
 feature_t
 NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, uint32_t docId)
@@ -47,35 +108,18 @@ NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t f
     return score;
 }
 
-NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
-                                                 const NativeProximityParams & params) :
-    FeatureExecutor(),
-    _params(params),
-    _setups(),
-    _totalFieldWeight(0),
-    _md(nullptr)
+NativeProximityExecutor::NativeProximityExecutor(const NativeProximityExecutorSharedState& shared_state)
+    : FeatureExecutor(),
+      _params(shared_state.get_params()),
+      _setups(shared_state.get_setups()),
+      _totalFieldWeight(shared_state.get_total_field_weight()),
+      _md(nullptr)
 {
-    QueryTermHelper queryTerms(env);
-    std::map<uint32_t, QueryTermVector> fields;
-    for (const QueryTerm & qt : queryTerms.terms()) {
-        typedef search::fef::ITermFieldRangeAdapter FRA;
-        for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
-            uint32_t fieldId = iter.get().getFieldId();
-            if (_params.considerField(fieldId)) { // only consider fields with contribution
-                QueryTerm myQt = qt;
-                myQt.fieldHandle(iter.get().getHandle());
-                fields[fieldId].push_back(myQt);
-            }
-        }
-    }
-    for (const auto & entry : fields) {
-        if (entry.second.size() >= 2) {
-            FieldSetup setup(entry.first);
-            generateTermPairs(env, entry.second, _params.slidingWindow, setup);
-            if (!setup.pairs.empty()) {
-                _setups.push_back(std::move(setup));
-                _totalFieldWeight += params.vector[entry.first].fieldWeight;
-            }
+    auto& fields = shared_state.get_fields();
+    for (const auto& entry : fields) {
+        for (const auto& qt : entry.second) {
+            // Record that we need normal term field match data
+            (void) qt.termData()->lookupField(entry.first)->getHandle(MatchDataDetails::Normal);
         }
     }
 }
@@ -99,37 +143,12 @@ NativeProximityExecutor::handle_bind_match_data(const fef::MatchData &md)
     _md = &md;
 }
 
-void
-NativeProximityExecutor::generateTermPairs(const IQueryEnvironment & env, const QueryTermVector & terms,
-                                           uint32_t slidingWindow, FieldSetup & setup)
-{
-    TermPairVector & pairs = setup.pairs;
-    for (size_t i = 0; i < terms.size(); ++i) {
-        for (size_t j = i + 1; (j < i + slidingWindow) && (j < terms.size()); ++j) {
-            feature_t connectedness = 1;
-            for (size_t k = j; k > i; --k) {
-                connectedness = std::min(util::lookupConnectedness(env, terms[k].termData()->getUniqueId(),
-                                                                   terms[k-1].termData()->getUniqueId(), 0.1),
-                                         connectedness);
-            }
-            connectedness /= (j - i);
-            if (terms[i].termData()->getWeight().percent() != 0 ||
-                terms[j].termData()->getWeight().percent() != 0)
-            { // only consider term pairs with contribution
-                pairs.push_back(TermPair(terms[i], terms[j], connectedness));
-                setup.divisor += (terms[i].significance() * terms[i].termData()->getWeight().percent() +
-                                  terms[j].significance() * terms[j].termData()->getWeight().percent()) * connectedness;
-            }
-        }
-    }
-}
-
-
 NativeProximityBlueprint::NativeProximityBlueprint() :
     Blueprint("nativeProximity"),
     _params(),
     _defaultProximityBoost("expdecay(500,3)"),
-    _defaultRevProximityBoost("expdecay(400,3)")
+    _defaultRevProximityBoost("expdecay(400,3)"),
+    _shared_state_key()
 {
 }
 
@@ -153,10 +172,13 @@ bool
 NativeProximityBlueprint::setup(const IIndexEnvironment & env,
                                 const ParameterList & params)
 {
+    vespalib::asciistream shared_state_key_builder;
     _params.resize(env.getNumFields());
     _params.slidingWindow = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "slidingWindowSize").get("4"));
     FieldWrapper fields(env, params, FieldType::INDEX);
     vespalib::string defaultProximityImportance  = env.getProperties().lookup(getBaseName(), "proximityImportance").get("0.5");
+    shared_state_key_builder << "fef.nativeProximity[";
+    bool first_field = true;
     for (uint32_t i = 0; i < fields.getNumFields(); ++i) {
         const FieldInfo * info = fields.getField(i);
         uint32_t fieldId = info->id();
@@ -193,8 +215,16 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
         }
         if (param.field) {
             env.hintFieldAccess(fieldId);
+            if (first_field) {
+                first_field = false;
+            } else {
+                shared_state_key_builder << ",";
+            }
+            shared_state_key_builder << info->name();
         }
     }
+    shared_state_key_builder << "]";
+    _shared_state_key = shared_state_key_builder.str();
 
     describeOutput("score", "The native proximity score");
     return true;
@@ -203,11 +233,14 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
 FeatureExecutor &
 NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    NativeProximityExecutor &native = stash.create<NativeProximityExecutor>(env, _params);
-    if (native.empty()) {
+    auto *shared_state = dynamic_cast<const NativeProximityExecutorSharedState *>(env.getObjectStore().get(_shared_state_key));
+    if (shared_state == nullptr) {
+        shared_state = &stash.create<NativeProximityExecutorSharedState>(env, _params);
+    }
+    if (shared_state->empty()) {
         return stash.create<SingleZeroValueExecutor>();
     } else {
-        return native;
+        return stash.create<NativeProximityExecutor>(*shared_state);
     }
 
 }
@@ -215,6 +248,9 @@ NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib:
 void
 NativeProximityBlueprint::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const {
     QueryTermHelper::lookupAndStoreQueryTerms(queryEnv, objectStore);
+    if (objectStore.get(_shared_state_key) == nullptr) {
+        objectStore.add(_shared_state_key, std::make_unique<NativeProximityExecutorSharedState>(queryEnv, _params));
+    }
 }
 
 }

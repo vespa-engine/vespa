@@ -147,6 +147,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag DOCPROC_LOADBALANCER_TYPE = defineStringFlag(
+            "docproc-loadbalancer-type", "",
+            "Selects what kind of load balancer to use for document processing {'adaptive', 'legacy' ''}",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
             "use-distributor-btree-db", false,
             "Whether to use the new B-tree bucket database in the distributors.",

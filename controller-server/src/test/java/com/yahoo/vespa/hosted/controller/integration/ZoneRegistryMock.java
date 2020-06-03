@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -24,9 +23,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author mpolden
@@ -37,7 +38,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
-    private final Map<CloudName, Cloud> clouds = new HashMap<>();
+    private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
 
     private List<? extends ZoneApi> zones;
     private SystemName system;
@@ -62,8 +63,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                              ZoneApiMock.fromId("prod.us-west-1"),
                              ZoneApiMock.fromId("prod.us-central-1"),
                              ZoneApiMock.fromId("prod.eu-west-1"));
-        var cloud = Cloud.defaultCloud();
-        this.clouds.put(cloud.name(), cloud);
         // All zones use a shared routing method by default
         setRoutingMethod(this.zones, RoutingMethod.shared);
     }
@@ -102,13 +101,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock addCloud(Cloud... clouds) {
-        for (var cloud : clouds) {
-            this.clouds.put(cloud.name(), cloud);
-        }
-        return this;
-    }
-
     public ZoneRegistryMock exclusiveRoutingIn(ZoneApi... zones) {
         return exclusiveRoutingIn(List.of(zones));
     }
@@ -134,6 +126,15 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
+    public ZoneRegistryMock reprovisionToUpgradeOsIn(ZoneApi... zones) {
+        return reprovisionToUpgradeOsIn(List.of(zones));
+    }
+
+    public ZoneRegistryMock reprovisionToUpgradeOsIn(List<ZoneApi> zones) {
+        this.reprovisionToUpgradeOs.addAll(zones);
+        return this;
+    }
+
     @Override
     public SystemName system() {
         return system;
@@ -141,7 +142,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(zones, zoneRoutingMethods);
+        return ZoneFilterMock.from(zones, zoneRoutingMethods, reprovisionToUpgradeOs);
     }
 
     @Override
@@ -207,11 +208,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public URI apiUrl() {
         return URI.create("https://api.tld:4443/");
-    }
-
-    @Override
-    public Cloud cloud(CloudName name) {
-        return clouds.get(name);
     }
 
     @Override

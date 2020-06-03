@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.maintenance.JobControl;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -205,11 +204,11 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        Cloud cloud = zoneRegistry.cloud(cloudName);
-        if (cloud == null) {
+        Set<CloudName> clouds = clouds();
+        if (!clouds.contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
-        if (cloud.reprovisionToUpgradeOs() && upgradeBudget.isEmpty()) {
+        if (!zoneRegistry.zones().ofCloud(cloudName).reprovisionToUpgradeOs().ids().isEmpty() && upgradeBudget.isEmpty()) {
             throw new IllegalArgumentException("Cloud '" + cloudName.value() + "' requires a time budget for OS upgrades");
         }
         try (Lock lock = curator.lockOsVersions()) {

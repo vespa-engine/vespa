@@ -153,6 +153,7 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final double threadPoolSizeFactor;
         private final double queueSizefactor;
+        private final String docprocLoadBalancerType;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final int jdiscHealthCheckProxyClientTimeout;
@@ -193,6 +194,8 @@ public class ModelContextImpl implements ModelContext {
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            docprocLoadBalancerType = Flags.DOCPROC_LOADBALANCER_TYPE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
@@ -251,6 +254,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double queueSizeFactor() {
             return queueSizefactor;
+        }
+
+        @Override
+        public String docprocLoadBalancerType() {
+            return docprocLoadBalancerType;
         }
 
         @Override
