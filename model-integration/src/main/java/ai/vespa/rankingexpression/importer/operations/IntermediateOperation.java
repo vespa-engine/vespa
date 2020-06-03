@@ -59,7 +59,7 @@ public abstract class IntermediateOperation {
 
     IntermediateOperation(String modelName, String name, List<IntermediateOperation> inputs) {
         this.name = name;
-        this.modelName = modelName;
+        this.modelName = ensureValidAsDimensionName(modelName);
         this.inputs = new ArrayList<>(inputs);
         this.inputs.forEach(i -> i.outputs.add(this));
     }
@@ -350,6 +350,11 @@ public abstract class IntermediateOperation {
     }
 
     public abstract String operationName();
+
+    /** Required due to tensor dimension name restrictions */
+    private static String ensureValidAsDimensionName(String modelName) {
+        return modelName.replaceAll("[^\\w\\d\\$@_]", "_");
+    }
 
     @Override
     public String toString() {
