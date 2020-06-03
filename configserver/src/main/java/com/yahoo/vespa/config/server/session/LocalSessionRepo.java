@@ -46,7 +46,7 @@ public class LocalSessionRepo {
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final LongFlag expiryTimeFlag;
 
-    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
+    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, SessionFactory sessionFactory) {
         sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
@@ -54,7 +54,7 @@ public class LocalSessionRepo {
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
-        loadSessions(loader);
+        loadSessions(sessionFactory);
     }
 
     public synchronized void addSession(LocalSession session) {
@@ -73,14 +73,14 @@ public class LocalSessionRepo {
         return sessionCache.getSessions();
     }
 
-    private void loadSessions(LocalSessionLoader loader) {
+    private void loadSessions(SessionFactory sessionFactory) {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) {
             return;
         }
         for (File session : sessions) {
             try {
-                addSession(loader.loadSession(Long.parseLong(session.getName())));
+                addSession(sessionFactory.createSessionFromId(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");

@@ -58,11 +58,11 @@ public class LocalSessionRepoTest {
                                             .sessionLifetime(5)
                                             .build())
                 .build();
-        LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
+        SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry,
                                                            TenantApplications.create(globalComponentRegistry, new MockReloadHandler(), tenantName),
                                                            new HostRegistry<>(),
                                                            tenantName);
-        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, loader);
+        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);
     }
 
     @Test

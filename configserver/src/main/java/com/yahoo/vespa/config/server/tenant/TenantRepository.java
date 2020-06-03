@@ -15,11 +15,9 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
-import com.yahoo.vespa.config.server.session.LocalSessionLoader;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
-import com.yahoo.vespa.config.server.session.SessionFactoryImpl;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -230,9 +228,8 @@ public class TenantRepository {
                                                                        reloadHandler,
                                                                        tenantName);
 
-        SessionFactory sessionFactory = new SessionFactoryImpl(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
-        // TODO: Fix the casting
-        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry, (LocalSessionLoader) sessionFactory);
+        SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
+        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);
         RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(globalComponentRegistry,
                                                                     sessionFactory,
                                                                     reloadHandler,
