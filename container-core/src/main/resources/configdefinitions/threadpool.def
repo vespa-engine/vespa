@@ -2,9 +2,12 @@
 
 namespace=container.handler
 
-## Num ber of thread in the thread pool
+## Maximum number of thread in the thread pool
 ## Setting it to 0 or negative number will cause it to be set to #cores * 4
 maxthreads int default=500
+
+# The number of threads to keep in the pool, even if they are idle
+corePoolSize int default=500
 
 ## max queue size
 ## There can be queueSize + maxthreads requests inflight concurrently

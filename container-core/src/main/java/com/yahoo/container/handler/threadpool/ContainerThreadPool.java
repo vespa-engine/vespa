@@ -32,9 +32,10 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
     }
 
     public ContainerThreadPool(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
-        int maxNumThreads = computeThreadPoolSize(threadpoolConfig.maxthreads());
+        int maxNumThreads = computeMaximumThreadPoolSize(threadpoolConfig.maxthreads());
+        int coreNumThreads = computeCoreThreadPoolSize(threadpoolConfig.corePoolSize(), maxNumThreads);
         WorkerCompletionTimingThreadPoolExecutor executor =
-                new WorkerCompletionTimingThreadPoolExecutor(maxNumThreads, maxNumThreads,
+                new WorkerCompletionTimingThreadPoolExecutor(coreNumThreads, maxNumThreads,
                         0L, TimeUnit.SECONDS,
                         createQ(threadpoolConfig.queueSize(), maxNumThreads),
                         ThreadFactoryFactory.getThreadFactory(threadpoolConfig.name()),
@@ -79,9 +80,14 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
                 : new ArrayBlockingQueue<>(queueSize);
     }
 
-    private static int computeThreadPoolSize(int maxNumThreads) {
+    private static int computeMaximumThreadPoolSize(int maxNumThreads) {
         return (maxNumThreads <= 0)
                 ? Runtime.getRuntime().availableProcessors() * 4
                 : maxNumThreads;
     }
+
+    private static int computeCoreThreadPoolSize(int corePoolSize, int maxNumThreads) {
+        return Math.min(corePoolSize, maxNumThreads);
+    }
+
 }
