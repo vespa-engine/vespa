@@ -229,7 +229,6 @@ public class TenantRepository {
                                                                        tenantName);
 
         SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
-        // TODO: Fix the casting
         LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);
         RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(globalComponentRegistry,
                                                                     sessionFactory,
