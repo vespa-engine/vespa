@@ -788,7 +788,7 @@ DocumentMetaStore::getLidUsageStats() const
 Blueprint::UP
 DocumentMetaStore::createWhiteListBlueprint() const
 {
-    return _lidAlloc.createWhiteListBlueprint(getCommittedDocIdLimit());
+    return _lidAlloc.createWhiteListBlueprint();
 }
 
 AttributeVector::SearchContext::UP

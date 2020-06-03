@@ -35,8 +35,7 @@ public:
 
     DocId getFreeLid(DocId lidLimit);
     DocId peekFreeLid(DocId lidLimit);
-    void ensureSpace(uint32_t newSize,
-                     uint32_t newCapacity);
+    void ensureSpace(uint32_t newSize, uint32_t newCapacity);
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
     void unregisterLid(DocId lid);
     size_t getUsedLidsSize() const;
@@ -48,7 +47,7 @@ public:
                   generation_t currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
-    search::queryeval::Blueprint::UP createWhiteListBlueprint(uint32_t docIdLimit) const;
+    search::queryeval::Blueprint::UP createWhiteListBlueprint() const;
     void updateActiveLids(DocId lid, bool active);
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
