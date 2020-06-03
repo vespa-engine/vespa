@@ -10,7 +10,7 @@ maxthreads int default=500
 corePoolSize int default=500
 
 # The number of seconds that excess idle threads will wait for new tasks before terminating
-keepAliveTime double default=60.0
+keepAliveTime double default=5.0
 
 ## max queue size
 ## There can be queueSize + maxthreads requests inflight concurrently
