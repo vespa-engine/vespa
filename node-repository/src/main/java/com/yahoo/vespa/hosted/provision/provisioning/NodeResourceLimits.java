@@ -62,7 +62,7 @@ public class NodeResourceLimits {
     }
 
     private double minRealMemoryGb(ClusterSpec.Type clusterType) {
-        return minAdvertisedMemoryGb(clusterType) - 0.7;
+        return minAdvertisedMemoryGb(clusterType) - 1.7;
     }
 
     private double minAdvertisedDiskGb(NodeResources requested) {
