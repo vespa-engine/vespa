@@ -12,6 +12,7 @@ import java.io.File;
  *
  * @author Ulf Lilleengen
  */
+// TODO: remove interface
 public interface SessionFactory {
 
     /**
@@ -37,5 +38,11 @@ public interface SessionFactory {
                                            boolean internalRedeploy, TimeoutBudget timeoutBudget);
 
     RemoteSession createRemoteSession(long sessionId);
+
+    /**
+     * Returns a new session instance for the given session id.
+     */
+    // TODO: rename
+    LocalSession loadSession(long sessionId);
 
 }

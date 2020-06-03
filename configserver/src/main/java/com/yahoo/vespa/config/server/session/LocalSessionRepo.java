@@ -46,7 +46,7 @@ public class LocalSessionRepo {
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final LongFlag expiryTimeFlag;
 
-    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
+    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, SessionFactory loader) {
         sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
@@ -73,7 +73,7 @@ public class LocalSessionRepo {
         return sessionCache.getSessions();
     }
 
-    private void loadSessions(LocalSessionLoader loader) {
+    private void loadSessions(SessionFactory loader) {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) {
             return;

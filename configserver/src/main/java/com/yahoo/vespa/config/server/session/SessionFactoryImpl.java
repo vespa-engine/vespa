@@ -34,7 +34,8 @@ import java.util.logging.Logger;
  *
  * @author Ulf Lilleengen
  */
-public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
+// TODO: rename to SessionFactory
+public class SessionFactoryImpl implements SessionFactory {
 
     private static final Logger log = Logger.getLogger(SessionFactoryImpl.class.getName());
     private static final long nonExistingActiveSession = 0;
@@ -166,6 +167,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         return new SessionZooKeeperClient(curator, configCurator, sessionPath, serverId, nodeFlavors);
     }
 
+    // TODO: move helpers down
     private File getAndValidateExistingSessionAppDir(long sessionId) {
         File appDir = getSessionAppDir(sessionId);
         if (!appDir.exists() || !appDir.isDirectory()) {
