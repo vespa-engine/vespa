@@ -180,8 +180,7 @@ public class SessionFactory {
     /**
      * Returns a new session instance for the given session id.
      */
-    // TODO: rename
-    public LocalSession loadSession(long sessionId) {
+    LocalSession createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
