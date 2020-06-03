@@ -3,7 +3,6 @@ package com.yahoo.container.handler.threadpool;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.yahoo.container.protect.ProcessTerminator;
-import com.yahoo.jdisc.Metric;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -22,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class ExecutorServiceWrapper extends ForwardingExecutorService {
 
     private final WorkerCompletionTimingThreadPoolExecutor wrapped;
-    private final Metric metric;
+    private final ThreadPoolMetric metric;
     private final ProcessTerminator processTerminator;
     private final long maxThreadExecutionTimeMillis;
     private final Thread metricReporter;
@@ -30,16 +29,15 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
 
     ExecutorServiceWrapper(
             WorkerCompletionTimingThreadPoolExecutor wrapped,
-            Metric metric, ProcessTerminator processTerminator,
+            ThreadPoolMetric metric, ProcessTerminator processTerminator,
             long maxThreadExecutionTimeMillis) {
         this.wrapped = wrapped;
         this.metric = metric;
         this.processTerminator = processTerminator;
         this.maxThreadExecutionTimeMillis = maxThreadExecutionTimeMillis;
 
-        metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
-        metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
-        metric.add(MetricNames.REJECTED_REQUEST, 0, null);
+        metric.reportThreadPoolSize(wrapped.getPoolSize());
+        metric.reportActiveThreads(wrapped.getActiveCount());
         metricReporter = new Thread(this::reportMetrics);
         metricReporter.setDaemon(true);
         metricReporter.start();
@@ -48,8 +46,8 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
     private final void reportMetrics() {
         try {
             while (!closed.get()) {
-                metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
-                metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
+                metric.reportThreadPoolSize(wrapped.getPoolSize());
+                metric.reportActiveThreads(wrapped.getActiveCount());
                 Thread.sleep(100);
             }
         } catch (InterruptedException e) { }
@@ -72,7 +70,7 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
         try {
             super.execute(command);
         } catch (RejectedExecutionException e) {
-            metric.add(MetricNames.REJECTED_REQUEST, 1, null);
+            metric.reportRejectRequest();
             long timeSinceLastReturnedThreadMillis = System.currentTimeMillis() - wrapped.lastThreadAssignmentTimeMillis;
             if (timeSinceLastReturnedThreadMillis > maxThreadExecutionTimeMillis)
                 processTerminator.logAndDie("No worker threads have been available for " +
@@ -83,12 +81,6 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
 
     @Override
     protected ExecutorService delegate() { return wrapped; }
-
-    private static final class MetricNames {
-        private static final String REJECTED_REQUEST = "serverRejectedRequests";
-        private static final String THREAD_POOL_SIZE = "serverThreadPoolSize";
-        private static final String ACTIVE_THREADS   = "serverActiveThreads";
-    }
 
 }
 

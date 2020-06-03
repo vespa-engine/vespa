@@ -32,18 +32,20 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
     }
 
     public ContainerThreadPool(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
-        int maxNumThreads = computeThreadPoolSize(threadpoolConfig.maxthreads());
+        ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, threadpoolConfig.name());
+        int maxNumThreads = computeMaximumThreadPoolSize(threadpoolConfig.maxthreads());
+        int coreNumThreads = computeCoreThreadPoolSize(threadpoolConfig.corePoolSize(), maxNumThreads);
         WorkerCompletionTimingThreadPoolExecutor executor =
-                new WorkerCompletionTimingThreadPoolExecutor(maxNumThreads, maxNumThreads,
-                        0L, TimeUnit.SECONDS,
+                new WorkerCompletionTimingThreadPoolExecutor(coreNumThreads, maxNumThreads,
+                        (int)threadpoolConfig.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
                         createQ(threadpoolConfig.queueSize(), maxNumThreads),
-                        ThreadFactoryFactory.getThreadFactory("threadpool"),
-                        metric);
+                        ThreadFactoryFactory.getThreadFactory(threadpoolConfig.name()),
+                        threadPoolMetric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we we want to achieve with the Q that will prefer thread locality.
         executor.prestartAllCoreThreads();
-        threadpool = new ExecutorServiceWrapper(executor, metric, processTerminator,
+        threadpool = new ExecutorServiceWrapper(executor, threadPoolMetric, processTerminator,
                 threadpoolConfig.maxThreadExecutionTimeSeconds() * 1000L);
     }
 
@@ -79,9 +81,14 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
                 : new ArrayBlockingQueue<>(queueSize);
     }
 
-    private static int computeThreadPoolSize(int maxNumThreads) {
+    private static int computeMaximumThreadPoolSize(int maxNumThreads) {
         return (maxNumThreads <= 0)
                 ? Runtime.getRuntime().availableProcessors() * 4
                 : maxNumThreads;
     }
+
+    private static int computeCoreThreadPoolSize(int corePoolSize, int maxNumThreads) {
+        return Math.min(corePoolSize, maxNumThreads);
+    }
+
 }

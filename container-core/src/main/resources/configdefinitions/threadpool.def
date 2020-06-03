@@ -2,9 +2,15 @@
 
 namespace=container.handler
 
-## Num ber of thread in the thread pool
+## Maximum number of thread in the thread pool
 ## Setting it to 0 or negative number will cause it to be set to #cores * 4
 maxthreads int default=500
+
+# The number of threads to keep in the pool, even if they are idle
+corePoolSize int default=500
+
+# The number of seconds that excess idle threads will wait for new tasks before terminating
+keepAliveTime double default=5.0
 
 ## max queue size
 ## There can be queueSize + maxthreads requests inflight concurrently
@@ -16,3 +22,6 @@ queueSize int default=0
 # get out of a bad state. This should be set a bit higher than the expected max execution
 # time of each request when in a state of overload, i.e about "worst case execution time*2"
 maxThreadExecutionTimeSeconds int default=190
+
+# Prefix for the name of the threads
+name string default="default-pool"
