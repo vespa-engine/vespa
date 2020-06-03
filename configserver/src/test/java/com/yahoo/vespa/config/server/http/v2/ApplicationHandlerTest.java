@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.After;
 import org.junit.Before;
@@ -68,7 +67,6 @@ public class ApplicationHandlerTest {
     private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
 
-    private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
@@ -77,7 +75,7 @@ public class ApplicationHandlerTest {
 
     @Before
     public void setup() {
-        componentRegistry = new TestComponentRegistry.Builder().build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();
@@ -98,8 +96,8 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testDelete() throws Exception {
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
+        tenantRepository.addTenant(foobar);
+        tenantRepository.addTenant(mytenantName);
 
         {
             applicationRepository.deploy(testApp, prepareParams(applicationId));

@@ -5,7 +5,6 @@ package com.yahoo.vespa.config.server.session;
  * Interface of a component that is able to load a session given a session id.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public interface LocalSessionLoader {
 

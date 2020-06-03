@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -46,9 +45,7 @@ public class HttpListConfigsHandlerTest {
         }} );
         TenantName tenantName = TenantName.from("mytenant");
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withRequestHandler(mockRequestHandler);
-        tenantRepository.addTenant(tenantBuilder);
+        tenantRepository.addTenant(tenantName, mockRequestHandler, mockRequestHandler);
         handler = new HttpListConfigsHandler(HttpListConfigsHandler.testOnlyContext(),
                                              tenantRepository,
                                              Zone.defaultZone());

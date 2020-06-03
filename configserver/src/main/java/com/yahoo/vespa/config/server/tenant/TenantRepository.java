@@ -7,10 +7,20 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.RequestHandler;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
+import com.yahoo.vespa.config.server.session.LocalSessionLoader;
+import com.yahoo.vespa.config.server.session.LocalSessionRepo;
+import com.yahoo.vespa.config.server.session.RemoteSessionFactory;
+import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
+import com.yahoo.vespa.config.server.session.SessionFactory;
+import com.yahoo.vespa.config.server.session.SessionFactoryImpl;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -35,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -137,12 +148,13 @@ public class TenantRepository {
     }
 
     public synchronized void addTenant(TenantName tenantName) {
-        addTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
+        addTenant(tenantName, null, null);
     }
 
-    public synchronized void addTenant(TenantBuilder builder) {
-        writeTenantPath(builder.getTenantName());
-        createTenant(builder);
+    public synchronized void addTenant(TenantName tenantName, RequestHandler requestHandler,
+                                       ReloadHandler reloadHandler) {
+        writeTenantPath(tenantName);
+        createTenant(tenantName, requestHandler, reloadHandler);
     }
 
      private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
@@ -193,17 +205,43 @@ public class TenantRepository {
         }
     }
 
-    private void createTenant(TenantName tenantName) {
-        createTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
+    protected void createTenant(TenantName tenantName) {
+        createTenant(tenantName, null, null);
     }
 
     // Creates tenant and all its dependencies. This also includes loading active applications
-    protected void createTenant(TenantBuilder builder) {
-        TenantName tenantName = builder.getTenantName();
+    private void createTenant(TenantName tenantName, RequestHandler requestHandler, ReloadHandler reloadHandler) {
         if (tenants.containsKey(tenantName)) return;
 
+        TenantRequestHandler tenantRequestHandler = null;
+        if (requestHandler == null) {
+            tenantRequestHandler = new TenantRequestHandler(globalComponentRegistry.getMetrics(),
+                                                            tenantName,
+                                                            List.of(globalComponentRegistry.getReloadListener()),
+                                                            ConfigResponseFactory.create(globalComponentRegistry.getConfigserverConfig()),
+                                                            globalComponentRegistry);
+            requestHandler = tenantRequestHandler;
+        }
+
+        if (reloadHandler == null && tenantRequestHandler != null)
+            reloadHandler = tenantRequestHandler;
+
+        HostValidator<ApplicationId> hostValidator = tenantRequestHandler;
+        TenantApplications applicationRepo = TenantApplications.create(globalComponentRegistry,
+                                                                       reloadHandler,
+                                                                       tenantName);
+
+        SessionFactory sessionFactory = new SessionFactoryImpl(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
+        // TODO: Fix the casting
+        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry, (LocalSessionLoader) sessionFactory);
+        RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(globalComponentRegistry,
+                                                                    new RemoteSessionFactory(globalComponentRegistry, tenantName),
+                                                                    reloadHandler,
+                                                                    tenantName,
+                                                                    applicationRepo);
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant = builder.build();
+        Tenant tenant =  new Tenant(tenantName, sessionFactory, localSessionRepo, remoteSessionRepo, requestHandler,
+                                    reloadHandler, applicationRepo, globalComponentRegistry.getCurator());
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
     }
