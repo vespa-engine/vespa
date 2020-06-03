@@ -37,9 +37,7 @@ public class Status {
         this.dockerImage = Objects.requireNonNull(dockerImage, "Docker image must be non-null").filter(d -> !DockerImage.EMPTY.equals(d));
         this.failCount = failCount;
         if (wantToDeprovision && !wantToRetire) {
-            // TODO(mpolden): Throw when persisted nodes have been rewritten
-            wantToRetire = true;
-            //throw new IllegalArgumentException("Node cannot be marked wantToDeprovision unless it's also marked wantToRetire");
+            throw new IllegalArgumentException("Node cannot be marked wantToDeprovision unless it's also marked wantToRetire");
         }
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
