@@ -29,6 +29,12 @@ std::pair<BitVector::Index, BitVector::Index>
 extract_size_capacity(const AllocatedBitVector & bv) {
     BitVector::Index size = bv.size();
     BitVector::Index capacity = bv.capacity();
+    while (capacity < size) {
+        // Since size and capacity might be changed in another thread we need
+        // this fallback to avoid inconsistency during shrink.
+        size = bv.size();
+        capacity = bv.capacity();
+    }
     return std::pair<BitVector::Index, BitVector::Index>(size, capacity);
 }
 
