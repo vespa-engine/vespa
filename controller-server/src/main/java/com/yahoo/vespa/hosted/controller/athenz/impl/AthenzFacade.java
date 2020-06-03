@@ -247,6 +247,10 @@ public class AthenzFacade implements AccessControl {
         return hasAccess("callback", new AthenzResourceName(service.getDomain().getName(), "payment-notification-resource").toResourceNameString(), identity);
     }
 
+    public boolean hasAccountingAccess(AthenzIdentity identity) {
+        return hasAccess("modify", new AthenzResourceName(service.getDomain().getName(), "hosted-accounting-resource").toResourceNameString(), identity);
+    }
+
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
      * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}
