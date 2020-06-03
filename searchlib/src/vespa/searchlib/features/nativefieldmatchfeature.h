@@ -29,7 +29,7 @@ public:
 };
 
 /**
- * Class containing shared state for native proximity executor.
+ * Class containing shared state for native field match executor.
  */
 class NativeFieldMatchExecutorSharedState : public fef::Anything {
 public:
