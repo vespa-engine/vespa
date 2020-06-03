@@ -197,11 +197,11 @@ public class SessionFactory {
         return nonExistingActiveSession;
     }
 
-    long getNextSessionId() {
+    private long getNextSessionId() {
         return new SessionCounter(componentRegistry.getConfigCurator(), tenant).nextSessionId();
     }
 
-    Path getSessionPath(long sessionId) {
+    private Path getSessionPath(long sessionId) {
         return sessionsPath.append(String.valueOf(sessionId));
     }
 
