@@ -32,6 +32,7 @@ extract_size_capacity(const AllocatedBitVector & bv) {
     while (capacity < size) {
         // Since size and capacity might be changed in another thread we need
         // this fallback to avoid inconsistency during shrink.
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         size = bv.size();
         capacity = bv.capacity();
     }
