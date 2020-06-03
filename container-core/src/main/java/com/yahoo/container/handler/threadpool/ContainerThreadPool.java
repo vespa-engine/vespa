@@ -37,7 +37,7 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
                 new WorkerCompletionTimingThreadPoolExecutor(maxNumThreads, maxNumThreads,
                         0L, TimeUnit.SECONDS,
                         createQ(threadpoolConfig.queueSize(), maxNumThreads),
-                        ThreadFactoryFactory.getThreadFactory("threadpool"),
+                        ThreadFactoryFactory.getThreadFactory(threadpoolConfig.name()),
                         metric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
