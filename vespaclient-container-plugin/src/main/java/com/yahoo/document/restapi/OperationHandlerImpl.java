@@ -72,7 +72,7 @@ public class OperationHandlerImpl implements OperationHandler {
 
     public static final int VISIT_TIMEOUT_MS = 120000;
     public static final int WANTED_DOCUMENT_COUNT_UPPER_BOUND = 1000; // Approximates the max default size of a bucket
-    public static final int CONCURRENCY_UPPER_BOUND = 200;
+    public static final int CONCURRENCY_UPPER_BOUND = 100;
     private final DocumentAccess documentAccess;
     private final DocumentApiMetrics metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
