@@ -118,8 +118,8 @@ public abstract class IntermediateOperation {
             // Each dimension is distinct and ordered correctly:
             for (int j = i + 1; j < type.dimensions().size(); j++) {
                 renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
-                        DimensionRenamer.Constraint.notEqual(false),
-                        this);
+                                      DimensionRenamer.Constraint.notEqual(false),
+                                      this);
             }
         }
     }
@@ -188,7 +188,7 @@ public abstract class IntermediateOperation {
     boolean verifyInputs(int expected, Function<IntermediateOperation, Optional<?>> func) {
         if (inputs.size() != expected) {
             throw new IllegalArgumentException("Expected " + expected + " inputs for '" +
-                    name + "', got " + inputs.size());
+                                               name + "', got " + inputs.size());
         }
         return inputs.stream().map(func).allMatch(Optional::isPresent);
     }
@@ -321,8 +321,8 @@ public abstract class IntermediateOperation {
      */
     TensorType.Value resultValueType() {
         return TensorType.Value.largestOf(inputs.stream()
-                .map(input -> input.type().get().type().valueType())
-                .collect(Collectors.toList()));
+                                                .map(input -> input.type().get().type().valueType())
+                                                .collect(Collectors.toList()));
     }
 
     public abstract IntermediateOperation withInputs(List<IntermediateOperation> inputs);
@@ -359,14 +359,14 @@ public abstract class IntermediateOperation {
     @Override
     public String toString() {
         return operationName() + "(" +
-                inputs().stream().map(input -> asString(input.type())).collect(Collectors.joining(", ")) +
-                ")";
+               inputs().stream().map(input -> asString(input.type())).collect(Collectors.joining(", ")) +
+               ")";
     }
 
     public String toFullString() {
         return "\t" + type + ":\t" + operationName() + "(" +
-                inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
-                ")";
+               inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
+               ")";
     }
 
     /**
