@@ -170,7 +170,8 @@ Test::testNativeFieldMatch()
         f.firstOccTable = &t;
         f.numOccTable = &t;
         p.vector.push_back(f);
-        NativeFieldMatchExecutor nfme(ft.getQueryEnv(), p);
+        NativeFieldMatchExecutorSharedState nfmess(ft.getQueryEnv(), p);
+        NativeFieldMatchExecutor nfme(nfmess);
         EXPECT_EQUAL(p.minFieldLength, 6u);
         EXPECT_EQUAL(nfme.getFirstOccBoost(0, 0, 4), 0);
         EXPECT_EQUAL(nfme.getFirstOccBoost(0, 1, 4), 1);

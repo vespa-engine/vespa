@@ -29,13 +29,12 @@ public:
 };
 
 /**
- * Implements the executor for calculating the native field match score.
- **/
-class NativeFieldMatchExecutor : public fef::FeatureExecutor
-{
-private:
-    typedef std::vector<fef::TermFieldHandle> HandleVector;
-
+ * Class containing shared state for native field match executor.
+ */
+class NativeFieldMatchExecutorSharedState : public fef::Anything {
+public:
+    using WrappedHandle = std::pair<fef::TermFieldHandle, const fef::ITermFieldData*>;
+    using HandleVector = std::vector<WrappedHandle>;
     class MyQueryTerm : public QueryTerm
     {
     private:
@@ -45,8 +44,28 @@ private:
         HandleVector &handles() { return _handles; }
         const HandleVector &handles() const { return _handles; }
     };
+private:
+    const NativeFieldMatchParams& _params;
+    std::vector<MyQueryTerm>      _query_terms;
+    feature_t                     _divisor;
+public:
+    NativeFieldMatchExecutorSharedState(const fef::IQueryEnvironment& env, const NativeFieldMatchParams& params);
+    ~NativeFieldMatchExecutorSharedState();
+    const NativeFieldMatchParams& get_params() const { return _params; }
+    const std::vector<MyQueryTerm>& get_query_terms() const { return _query_terms; }
+    feature_t get_divisor() const { return _divisor; }
+    bool empty() const { return _query_terms.empty(); }
+};
+
+/**
+ * Implements the executor for calculating the native field match score.
+ **/
+class NativeFieldMatchExecutor : public fef::FeatureExecutor
+{
+private:
+    using MyQueryTerm = NativeFieldMatchExecutorSharedState::MyQueryTerm;
     const NativeFieldMatchParams & _params;
-    std::vector<MyQueryTerm>       _queryTerms;
+    vespalib::ConstArrayRef<MyQueryTerm> _queryTerms;
     feature_t                      _divisor;
     const fef::MatchData          *_md;
 
@@ -74,8 +93,7 @@ private:
     virtual void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
-    NativeFieldMatchExecutor(const fef::IQueryEnvironment & env,
-                             const NativeFieldMatchParams & params);
+    NativeFieldMatchExecutor(const NativeFieldMatchExecutorSharedState& shared_state);
     void execute(uint32_t docId) override;
 
     feature_t getFirstOccBoost(uint32_t field, uint32_t position, uint32_t fieldLength) const {
@@ -85,7 +103,6 @@ public:
     feature_t getNumOccBoost(uint32_t field, uint32_t occs, uint32_t fieldLength) const {
         return getNumOccBoost(_params.vector[field], occs, fieldLength);
     }
-    bool empty() const { return _queryTerms.empty(); }
 };
 
 
@@ -97,6 +114,7 @@ private:
     NativeFieldMatchParams _params;
     vespalib::string            _defaultFirstOcc;
     vespalib::string            _defaultNumOcc;
+    vespalib::string            _shared_state_key;
 
 public:
     NativeFieldMatchBlueprint();
