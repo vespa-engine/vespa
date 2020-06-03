@@ -48,7 +48,7 @@ public class RemoteSessionRepo {
 
     private final Curator curator;
     private final Path sessionsPath;
-    private final RemoteSessionFactory remoteSessionFactory;
+    private final SessionFactory sessionFactory;
     private final Map<Long, RemoteSessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
@@ -59,7 +59,7 @@ public class RemoteSessionRepo {
     private final SessionCache<RemoteSession> sessionCache;
 
     public RemoteSessionRepo(GlobalComponentRegistry componentRegistry,
-                             RemoteSessionFactory remoteSessionFactory,
+                             SessionFactory sessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
@@ -67,7 +67,7 @@ public class RemoteSessionRepo {
         this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
-        this.remoteSessionFactory = remoteSessionFactory;
+        this.sessionFactory = sessionFactory;
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
@@ -149,7 +149,7 @@ public class RemoteSessionRepo {
      */
     private void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding session to RemoteSessionRepo: " + sessionId);
-        RemoteSession session = remoteSessionFactory.createSession(sessionId);
+        RemoteSession session = sessionFactory.createRemoteSession(sessionId);
         Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
         Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
         fileCache.addListener(this::nodeChanged);

@@ -36,4 +36,6 @@ public interface SessionFactory {
     LocalSession createSessionFromExisting(Session existingSession, DeployLogger logger,
                                            boolean internalRedeploy, TimeoutBudget timeoutBudget);
 
+    RemoteSession createRemoteSession(long sessionId);
+
 }

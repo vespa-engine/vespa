@@ -25,6 +25,7 @@ import com.yahoo.vespa.config.server.session.DummyTransaction;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 
 import java.io.ByteArrayOutputStream;
@@ -86,7 +87,7 @@ public class SessionHandlerTest {
         return baos.toString(StandardCharsets.UTF_8);
     }
 
-    public static class MockSession extends LocalSession {
+    public static class MockLocalSession extends LocalSession {
 
         public Session.Status status;
         private ConfigChangeActions actions = new ConfigChangeActions();
@@ -94,11 +95,11 @@ public class SessionHandlerTest {
         private ApplicationId applicationId;
         private Optional<DockerImage> dockerImageRepository;
 
-        public MockSession(long sessionId, ApplicationPackage app) {
+        public MockLocalSession(long sessionId, ApplicationPackage app) {
             super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
         }
 
-        public MockSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
+        public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
             this(sessionId, app);
             this.applicationId = applicationId;
         }

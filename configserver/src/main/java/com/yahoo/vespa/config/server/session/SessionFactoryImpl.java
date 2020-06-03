@@ -77,6 +77,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         return create(applicationFile, applicationId, nonExistingActiveSession, false, timeoutBudget);
     }
 
+    public RemoteSession createRemoteSession(long sessionId) {
+        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionPath);
+        return new RemoteSession(tenant, sessionId, componentRegistry, sessionZKClient);
+    }
+
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
         if (configCurator.exists(sessionPath.getAbsolute())) {
@@ -140,8 +146,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
-            SessionZooKeeperClient sessionZooKeeperClient =
-                    new SessionZooKeeperClient(curator, configCurator, getSessionPath(sessionId), serverId, nodeFlavors);
+            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(getSessionPath(sessionId));
             File userApplicationDir = getSessionAppDir(sessionId);
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile,
@@ -155,6 +160,10 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient(Path sessionPath) {
+        return new SessionZooKeeperClient(curator, configCurator, sessionPath, serverId, nodeFlavors);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
@@ -174,11 +183,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
-        SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
-                                                                            configCurator,
-                                                                            sessionIdPath,
-                                                                            serverId,
-                                                                            nodeFlavors);
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionIdPath);
         return new LocalSession(tenant, sessionId, sessionPreparer, applicationPackage, sessionZKClient,
                          getSessionAppDir(sessionId), applicationRepo, hostRegistry);
     }
