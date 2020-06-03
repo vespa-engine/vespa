@@ -434,7 +434,7 @@ public class NodeRepository extends AbstractComponent {
                     .map(node -> {
                         if (node.state() != State.provisioned && node.state() != State.dirty)
                             illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                        return node.with(node.status().withWantToRetire(false).withWantToDeprovision(false));
+                        return node.withWantToRetire(false, false, Agent.system, clock.instant());
                     })
                     .collect(Collectors.toList());
 

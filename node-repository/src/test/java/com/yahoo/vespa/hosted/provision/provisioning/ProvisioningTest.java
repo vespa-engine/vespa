@@ -633,7 +633,7 @@ public class ProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         // Flag all nodes for retirement
         List<Node> readyNodes = tester.makeReadyNodes(5, defaultResources);
-        readyNodes.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+        readyNodes.forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
 
         try {
             prepare(application, 2, 0, 2, 0, defaultResources, tester);
@@ -661,7 +661,7 @@ public class ProvisioningTest {
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
-        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
         // redeploy without allow failing
         tester.activate(application, tester.prepare(application, cluster, capacityFORCED));
 
@@ -724,7 +724,7 @@ public class ProvisioningTest {
         // Retire some nodes and redeploy
         {
             List<Node> nodesToRetire = tester.getNodes(application, Node.State.active).asList().subList(0, 2);
-            nodesToRetire.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+            nodesToRetire.forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
 
             SystemState state = prepare(application, 2, 0, 2, 0, defaultResources, tester);
             tester.activate(application, state.allHosts);

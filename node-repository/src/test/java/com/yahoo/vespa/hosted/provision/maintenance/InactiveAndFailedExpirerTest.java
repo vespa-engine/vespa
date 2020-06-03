@@ -191,11 +191,11 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void nodes_marked_for_deprovisioning_move_to_parked() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyNodes(5, nodeResources);
+        tester.makeReadyHosts(2, nodeResources);
 
         // Activate and deallocate
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromRequiredNodeType(NodeType.host));
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
@@ -204,7 +204,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Nodes marked for deprovisioning are moved to parked
         tester.nodeRepository().write(inactiveNodes.stream()
-                                                   .map(node -> node.with(node.status().withWantToDeprovision(true)))
+                                                   .map(node -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()))
                                                    .collect(Collectors.toList()), () -> {});
         tester.advanceTime(Duration.ofMinutes(11));
         new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();

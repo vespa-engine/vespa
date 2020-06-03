@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -13,7 +12,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -165,8 +163,7 @@ public class NodeRepositoryTest {
 
         // Set host 1 properties and deprovision it
         Node host1 = tester.nodeRepository().getNode("host1").get();
-        host1 = host1.withWantToRetire(true, Agent.system, tester.nodeRepository().clock().instant());
-        host1 = host1.with(host1.status().withWantToDeprovision(true));
+        host1 = host1.withWantToRetire(true, true, Agent.system, tester.nodeRepository().clock().instant());
         host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
         host1 = host1.with(host1.status().withIncreasedFailCount());
         host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
