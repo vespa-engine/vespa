@@ -3,6 +3,9 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python/vespa
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
