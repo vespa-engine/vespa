@@ -1,9 +1,9 @@
-repository: thigm85/vespa
+repository: vespa-engine/vespa
 output: web
 topnav_title: vespa
 site_title: vespa
-company_name: TGM
-description: A description of your project
+company_name: Verizon Media
+description: Vespa python API
 # Set to false to disable KaTeX math
 use_math: true
 # Add Google analytics id if you have one and want to use it here
