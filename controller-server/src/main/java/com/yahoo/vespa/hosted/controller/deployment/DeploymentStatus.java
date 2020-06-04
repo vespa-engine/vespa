@@ -560,7 +560,8 @@ public class DeploymentStatus {
             return firstFailing.equals(lastCompleted) ? Optional.of(lastCompleted)
                                                       : Optional.of(lastCompleted.plus(Duration.ofMinutes(10))
                                                                                  .plus(Duration.between(firstFailing, lastCompleted)
-                                                                                               .dividedBy(2)));
+                                                                                               .dividedBy(2)))
+                    .filter(status.now::isBefore);
         }
 
         private static JobStepStatus ofProductionDeployment(DeclaredZone step, List<StepStatus> dependencies,
