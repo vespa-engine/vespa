@@ -88,9 +88,9 @@ public class DeploymentStatistics {
 
             // Add all unsuccessful runs for failing jobs as any run may have resulted in an incomplete deployment
             // where a subset of nodes have upgraded.
-            // TODO jonmv: canary-pipeline.custom on 7.188.11, but not really, in staging ...
             failing.not().failingApplicationChange()
                    .not().withStatus(RunStatus.outOfCapacity)
+                   .not().withStatus(RunStatus.aborted)
                    .mapToList(JobStatus::runs)
                    .forEach(runs -> runs.descendingMap().values().stream()
                                         .dropWhile(run -> ! run.hasEnded())
@@ -103,6 +103,7 @@ public class DeploymentStatistics {
 
             failing.failingApplicationChange()
                    .concat(failing.withStatus(RunStatus.outOfCapacity))
+                   .concat(failing.withStatus(RunStatus.aborted))
                    .lastCompleted().asList()
                    .forEach(run -> {
                        otherFailing.putIfAbsent(run.versions().targetPlatform(), new ArrayList<>());
