@@ -9,6 +9,7 @@
   "tenants": {},
   "operator": [
     "hostedOperator",
-    "hostedSupporter"
+    "hostedSupporter",
+    "hostedAccountant"
   ]
 }
