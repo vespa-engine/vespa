@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
+import ai.vespa.util.http.retry.Sleeper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -53,9 +54,12 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
     private static final Logger LOG = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration PING_REQUEST_TIMEOUT = Duration.ofMillis(500);
+    private static final Duration SINGLE_TARGET_WAIT = Duration.ofSeconds(2);
+    private static final int SINGLE_TARGET_RETRIES = 3;
     private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
     private final CloseableHttpClient client;
+    private final Sleeper sleeper;
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
@@ -66,21 +70,30 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
         this.client = createHttpClient(config, sslContextProvider,
                 new ControllerOrConfigserverHostnameVerifier(zoneRegistry));
+        this.sleeper = new Sleeper.Default();
     }
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        List<URI> allServers = new ArrayList<>(proxyRequest.getTargets());
+        List<URI> targets = new ArrayList<>(proxyRequest.getTargets());
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers)) {
+        boolean singleTarget = targets.size() == 1;
+        if (singleTarget) {
+            for (int i = 0; i < SINGLE_TARGET_RETRIES - 1; i++) {
+                targets.add(targets.get(0));
+            }
+        } else if (queueFirstServerIfDown(targets)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
-        for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
+
+        for (URI url : targets) {
+            Optional<ProxyResponse> proxyResponse = proxyCall(url, proxyRequest, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
+            }
+            if (singleTarget) {
+                sleeper.sleep(SINGLE_TARGET_WAIT);
             }
         }
 
@@ -185,6 +198,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 .setConnectionRequestTimeout((int) PING_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PING_REQUEST_TIMEOUT.toMillis()).build();
         httpGet.setConfig(config);
+
         try (CloseableHttpResponse response = client.execute(httpGet)) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;

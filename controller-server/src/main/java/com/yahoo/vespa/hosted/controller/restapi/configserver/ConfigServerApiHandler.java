@@ -96,7 +96,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
         }
 
         try {
-            return proxy.handle(new ProxyRequest(request, List.of(getEndpoint(zoneId)), cfgPath));
+            return proxy.handle(ProxyRequest.tryOne(getEndpoint(zoneId), cfgPath, request));
         } catch (ProxyException e) {
             throw new RuntimeException(e);
         }
@@ -126,4 +126,5 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     private URI getEndpoint(ZoneId zoneId) {
         return CONTROLLER_ZONE.equals(zoneId) ? CONTROLLER_URI : zoneRegistry.getConfigServerVipUri(zoneId);
     }
+
 }

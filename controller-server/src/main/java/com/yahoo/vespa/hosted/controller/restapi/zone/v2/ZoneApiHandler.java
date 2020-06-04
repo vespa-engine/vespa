@@ -20,8 +20,6 @@ import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
 
-import java.net.URI;
-import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -85,7 +83,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
         try {
-            return proxy.handle(new ProxyRequest(request, getConfigserverEndpoints(zoneId), path.getRest()));
+            return proxy.handle(proxyRequest(zoneId, path.getRest(), request));
         } catch (ProxyException e) {
             throw new RuntimeException(e);
         }
@@ -114,13 +112,12 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private List<URI> getConfigserverEndpoints(ZoneId zoneId) {
+    private ProxyRequest proxyRequest(ZoneId zoneId, String path, HttpRequest request) {
         // TODO: Use config server VIP for all zones that have one
         if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
-        } else {
-            return zoneRegistry.getConfigServerUris(zoneId);
+            return ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request);
         }
+        return ProxyRequest.tryAll(zoneRegistry.getConfigServerUris(zoneId), path, request);
     }
 
 }
