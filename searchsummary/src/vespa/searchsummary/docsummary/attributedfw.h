@@ -8,12 +8,20 @@ namespace search::attribute { class IAttributeVector; }
 
 namespace search::docsummary {
 
+/**
+ * Factory to create an IDocsumFieldWriter to write an attribute vector to slime.
+ */
+class AttributeDFWFactory {
+public:
+    static std::unique_ptr<IDocsumFieldWriter> create(IAttributeManager& attr_mgr, const vespalib::string& attr_name);
+};
+
 class AttrDFW : public ISimpleDFW
 {
 private:
     vespalib::string _attrName;
 protected:
-    const attribute::IAttributeVector & vec(const GetDocsumsState & s) const;
+    const attribute::IAttributeVector& get_attribute(const GetDocsumsState& s) const;
     const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
     AttrDFW(const vespalib::string & attrName);

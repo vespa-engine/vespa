@@ -30,7 +30,7 @@ uint64_t
 AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state)
 {
     search::common::Location &location = *state->_parsedLocation;
-    const IAttributeVector & attribute(vec(*state));
+    const auto& attribute = get_attribute(*state);
 
     uint64_t absdist = std::numeric_limits<int64_t>::max();
     int32_t docx = 0;
@@ -221,10 +221,10 @@ void
 PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target)
 {
     if (type == RES_XMLSTRING) {
-        insertFromAttr(vec(*dsState), docid, target);
+        insertFromAttr(get_attribute(*dsState), docid, target);
         return;
     }
-    vespalib::asciistream val(formatField(vec(*dsState), docid, type));
+    vespalib::asciistream val(formatField(get_attribute(*dsState), docid, type));
     target.insertString(vespalib::Memory(val.c_str(), val.size()));
 }
 
