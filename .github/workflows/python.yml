@@ -34,6 +34,6 @@ jobs:
     - name: Check if there is no diff library/notebooks
       run: |
         if [ -n "$(nbdev_diff_nbs)" ]; then echo -e "!!! Detected difference between the notebooks and the library"; false; fi
-    - name: Run tests
+    - name: Run notebook tests
       run: |
         nbdev_test_nbs
