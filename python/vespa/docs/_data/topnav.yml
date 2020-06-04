@@ -2,7 +2,7 @@ topnav:
 - title: Topnav
   items:
     - title: github
-      external_url: https://github.com/thigm85/vespa/tree/master/
+      external_url: https://github.com/vespa-engine/vespa/tree/master/
 
 #Topnav dropdowns
 topnav_dropdowns:
