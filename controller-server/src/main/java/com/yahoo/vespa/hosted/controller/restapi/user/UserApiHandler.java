@@ -126,6 +126,10 @@ public class UserApiHandler extends LoggingRequestHandler {
         return response;
     }
 
+    private static final Set<RoleDefinition> hostedOperators = Set.of(
+            RoleDefinition.hostedOperator,
+            RoleDefinition.hostedSupporter,
+            RoleDefinition.hostedAccountant);
 
     private HttpResponse userMetadata(HttpRequest request) {
         @SuppressWarnings("unchecked")
@@ -142,10 +146,9 @@ public class UserApiHandler extends LoggingRequestHandler {
                 .sorted(Comparator.comparing(Role::definition).reversed())
                 .collect(Collectors.groupingBy(TenantRole::tenant, Collectors.toList()));
 
-        // List of operator roles, currently only one available, but possible to extend
+        // List of operator roles as defined in `hostedOperators` above
         List<Role> operatorRoles = roles.stream()
-                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
-                        role.definition().equals(RoleDefinition.hostedSupporter))
+                .filter(role -> hostedOperators.contains(role.definition()))
                 .sorted(Comparator.comparing(Role::definition))
                 .collect(Collectors.toList());
 
