@@ -201,7 +201,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
     public void userMetadataTest() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         ControllerTester controller = new ControllerTester(tester);
-        Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter());
+        Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
         User user = new User("dev@domail", "Joe Developer", "dev", null);
 
         tester.assertResponse(request("/api/user/v1/user")
