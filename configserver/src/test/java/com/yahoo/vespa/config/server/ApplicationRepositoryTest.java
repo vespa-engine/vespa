@@ -2,7 +2,11 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -20,7 +24,14 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.GetConfigRequest;
+import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.protocol.DefContent;
+import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -36,6 +47,9 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.model.VespaModelFactory;
+import org.hamcrest.core.Is;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -76,6 +90,8 @@ public class ApplicationRepositoryTest {
     private final static File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
     private final static File testAppJdiscOnlyRestart = new File("src/test/apps/app-jdisc-only-restart");
     private final static File testAppLogServerWithContainer = new File("src/test/apps/app-logserver-with-container");
+    private final static File app1 = new File("src/test/apps/cs1");
+    private final static File app2 = new File("src/test/apps/cs2");
 
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
@@ -94,12 +110,21 @@ public class ApplicationRepositoryTest {
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         Curator curator = new MockCurator();
-        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
-                                                                .curator(curator)
-                                                                .build());
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                                            .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
+                                            .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
+                                            .build())
+                .build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -529,6 +554,93 @@ public class ApplicationRepositoryTest {
         assertEquals(Session.Status.DEACTIVATE, firstSession.getStatus());
     }
 
+    @Test
+    public void testResolveForAppId() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        // TODO: Need to reload config before resolving works
+        RequestHandler requestHandler = reloadConfig(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337 , config.intval());
+    }
+
+    @Test
+    public void testResolveConfigForMultipleApps() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        ApplicationId appId2 = new ApplicationId.Builder()
+                .tenant(tenant1)
+                .applicationName("myapp2")
+                .instanceName("default")
+                .build();
+        applicationRepository.deploy(app2, new PrepareParams.Builder()
+                .applicationId(appId2)
+                .vespaVersion(vespaVersion)
+                .build());
+
+        // TODO: Need to reload config before resolving works
+        RequestHandler requestHandler = reloadConfig(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337, config.intval());
+
+        // TODO: Need to reload config before resolving works
+        RequestHandler requestHandler2 = reloadConfig(appId2);
+        SimpletypesConfig config2 = resolve(SimpletypesConfig.class, requestHandler2, appId2, vespaVersion);
+        assertEquals(1330, config2.intval());
+
+        assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
+        assertThat(requestHandler.resolveApplicationId("doesnotexist"), Is.is(ApplicationId.defaultId()));
+        assertThat(requestHandler.resolveApplicationId("mytesthost"), Is.is(new ApplicationId.Builder()
+                                                                                  .tenant(tenant1)
+                                                                                  .applicationName("testapp").build())); // Host set in application package.
+    }
+
+    @Test
+    public void testResolveMultipleVersions() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        // TODO: Need to reload config before resolving works
+        RequestHandler requestHandler = reloadConfig(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337, config.intval());
+
+        // TODO: Revisit this test, I cannot see that we create a model for version 3.2.1
+        config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), new Version(3, 2, 1));
+        assertThat(config.intval(), Is.is(1337));
+    }
+
+    @Test
+    public void testResolveForDeletedApp() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        // TODO: Need to reload config before resolving works
+        RequestHandler requestHandler = reloadConfig(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337 , config.intval());
+
+        applicationRepository.delete(applicationId());
+
+        exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
+        exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
+        resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+    }
+
     private ApplicationRepository createApplicationRepository() {
         return new ApplicationRepository(tenantRepository,
                                          provisioner,
@@ -569,7 +681,6 @@ public class ApplicationRepositoryTest {
         return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
     }
 
-
     /** Stores all added or set values for each metric and context. */
     static class MockMetric implements Metric {
 
@@ -591,7 +702,6 @@ public class ApplicationRepositoryTest {
             return new Context(properties);
         }
 
-
         private static class Context implements Metric.Context {
 
             private final Map<String, ?> point;
@@ -602,6 +712,50 @@ public class ApplicationRepositoryTest {
 
         }
 
+    }
+
+    private <T extends ConfigInstance> T resolve(Class<T> clazz,
+                                                 RequestHandler applications,
+                                                 ApplicationId appId,
+                                                 Version vespaVersion) {
+        String configId = "";
+        ConfigResponse response = getConfigResponse(clazz, applications, appId, vespaVersion, configId);
+        return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
+    }
+
+    private <T extends ConfigInstance> ConfigResponse getConfigResponse(Class<T> clazz,
+                                                                        RequestHandler applications,
+                                                                        ApplicationId appId,
+                                                                        Version vespaVersion,
+                                                                        String configId) {
+        return applications.resolveConfig(appId, new GetConfigRequest() {
+            @Override
+            public ConfigKey<T> getConfigKey() {
+                return new ConfigKey<>(clazz, configId);
+            }
+
+            @Override
+            public DefContent getDefContent() {
+                return DefContent.fromClass(clazz);
+            }
+
+            @Override
+            public Optional<VespaVersion> getVespaVersion() {
+                return Optional.of(VespaVersion.fromString(vespaVersion.toFullString()));
+            }
+
+            @Override
+            public boolean noCache() {
+                return false;
+            }
+        }, Optional.empty());
+    }
+
+    @NotNull
+    private RequestHandler reloadConfig(ApplicationId applicationId) {
+        RequestHandler requestHandler = tenantRepository.getTenant(applicationId.tenant()).getRequestHandler();
+        ((TenantApplications) requestHandler).reloadConfig(applicationRepository.getActiveSession(applicationId).ensureApplicationLoaded());
+        return requestHandler;
     }
 
 }

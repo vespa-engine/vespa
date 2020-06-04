@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -45,7 +46,7 @@ public class TenantRepositoryTest {
 
     private TenantRepository tenantRepository;
     private TestComponentRegistry globalComponentRegistry;
-    private TenantRequestHandlerTest.MockReloadListener listener;
+    private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
 
@@ -59,7 +60,7 @@ public class TenantRepositoryTest {
     public void setupSessions() {
         curator = new MockCurator();
         globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
+        listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
         tenantRepository = new TenantRepository(globalComponentRegistry);
