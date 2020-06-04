@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
-import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
 
@@ -82,11 +81,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
         if ( ! zoneRegistry.hasZone(zoneId)) {
             throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
-        try {
-            return proxy.handle(proxyRequest(zoneId, path.getRest(), request));
-        } catch (ProxyException e) {
-            throw new RuntimeException(e);
-        }
+        return proxy.handle(proxyRequest(zoneId, path.getRest(), request));
     }
 
     private HttpResponse root(HttpRequest request) {

@@ -74,8 +74,8 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
     }
 
     @Override
-    public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        List<URI> targets = new ArrayList<>(proxyRequest.getTargets());
+    public ProxyResponse handle(ProxyRequest request) {
+        List<URI> targets = new ArrayList<>(request.getTargets());
 
         StringBuilder errorBuilder = new StringBuilder();
         boolean singleTarget = targets.size() == 1;
@@ -88,7 +88,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         }
 
         for (URI url : targets) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(url, proxyRequest, errorBuilder);
+            Optional<ProxyResponse> proxyResponse = proxy(request, url, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
@@ -97,26 +97,24 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             }
         }
 
-        throw new ProxyException(ErrorResponse.internalServerError("Failed talking to config servers: "
-                + errorBuilder.toString()));
+        throw new RuntimeException("Failed talking to config servers: " + errorBuilder.toString());
     }
 
-    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
-            throws ProxyException {
+    private Optional<ProxyResponse> proxy(ProxyRequest request, URI url, StringBuilder errorBuilder) {
         HttpRequestBase requestBase = createHttpBaseRequest(
-                proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
+                request.getMethod(), request.createConfigServerRequestUri(url), request.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
-        copyHeaders(proxyRequest.getHeaders(), requestBase);
+        copyHeaders(request.getHeaders(), requestBase);
 
         try (CloseableHttpResponse response = client.execute(requestBase)) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
-                errorBuilder.append("Talking to server ").append(uri.getHost());
+                errorBuilder.append("Talking to server ").append(url.getHost());
                 errorBuilder.append(", got ").append(status).append(" ")
                         .append(content).append("\n");
                 LOG.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
-                                                        uri.getHost(), status, content));
+                                                        url.getHost(), status, content));
                 return Optional.empty();
             }
             Header contentHeader = response.getLastHeader("Content-Type");
@@ -127,11 +125,11 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 contentType = "application/json";
             }
             // Send response back
-            return Optional.of(new ProxyResponse(proxyRequest, content, status, uri, contentType));
+            return Optional.of(new ProxyResponse(request, content, status, url, contentType));
         } catch (Exception e) {
-            errorBuilder.append("Talking to server ").append(uri.getHost());
+            errorBuilder.append("Talking to server ").append(url.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
-            LOG.log(Level.FINE, e, () -> "Got exception while sending request to " + uri.getHost());
+            LOG.log(Level.FINE, e, () -> "Got exception while sending request to " + url.getHost());
             return Optional.empty();
         }
     }
@@ -142,33 +140,32 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 .orElse("");
     }
 
-    private static HttpRequestBase createHttpBaseRequest(Method method, URI uri, InputStream data) throws ProxyException {
+    private static HttpRequestBase createHttpBaseRequest(Method method, URI url, InputStream data) {
         switch (method) {
             case GET:
-                return new HttpGet(uri);
+                return new HttpGet(url);
             case POST:
-                HttpPost post = new HttpPost(uri);
+                HttpPost post = new HttpPost(url);
                 if (data != null) {
                     post.setEntity(new InputStreamEntity(data));
                 }
                 return post;
             case PUT:
-                HttpPut put = new HttpPut(uri);
+                HttpPut put = new HttpPut(url);
                 if (data != null) {
                     put.setEntity(new InputStreamEntity(data));
                 }
                 return put;
             case DELETE:
-                return new HttpDelete(uri);
+                return new HttpDelete(url);
             case PATCH:
-                HttpPatch patch = new HttpPatch(uri);
+                HttpPatch patch = new HttpPatch(url);
                 if (data != null) {
                     patch.setEntity(new InputStreamEntity(data));
                 }
                 return patch;
-            default:
-                throw new ProxyException(ErrorResponse.methodNotAllowed("Will not proxy such calls."));
         }
+        throw new IllegalArgumentException("Refusing to proxy " + method + " " + url + ": Unsupported method");
     }
 
     private static void copyHeaders(Map<String, List<String>> headers, HttpRequestBase toRequest) {

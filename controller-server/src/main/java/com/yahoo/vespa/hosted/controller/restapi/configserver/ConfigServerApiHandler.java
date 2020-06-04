@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
-import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
 
@@ -95,11 +94,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
                     "' through /configserver/v1, following APIs are permitted: " + String.join(", ", WHITELISTED_APIS));
         }
 
-        try {
-            return proxy.handle(ProxyRequest.tryOne(getEndpoint(zoneId), cfgPath, request));
-        } catch (ProxyException e) {
-            throw new RuntimeException(e);
-        }
+        return proxy.handle(ProxyRequest.tryOne(getEndpoint(zoneId), cfgPath, request));
     }
 
     private HttpResponse root(HttpRequest request) {
