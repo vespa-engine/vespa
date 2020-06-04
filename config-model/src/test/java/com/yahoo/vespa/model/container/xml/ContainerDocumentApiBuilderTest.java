@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBase {
 
     private Map<String, Handler<?>> getHandlers(String clusterName) {
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
+        ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get(clusterName);
         Map<String, Handler<?>> handlerMap = new HashMap<>();
         Collection<Handler<?>> handlers = cluster.getHandlers();
         for (Handler<?> handler : handlers) {
