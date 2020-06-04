@@ -58,13 +58,13 @@ public class ThreadPoolExecutorComponent extends SimpleComponent implements Thre
 
         public Builder(String name) { this.name = name; }
 
-        Builder maxPoolSize(int size) { this.maxPoolSize = size; return this; }
-        Builder corePoolSize(int size) { this.corePoolSize = size; return this; }
-        Builder keepAliveTime(Duration time) { this.keepAliveTime = time; return this; }
-        Builder queueSize(int size) { this.queueSize = size; return this; }
-        Builder maxThreadExecutionTime(Duration time) { this.maxThreadExecutionTime = time; return this; }
+        public Builder maxPoolSize(int size) { this.maxPoolSize = size; return this; }
+        public Builder corePoolSize(int size) { this.corePoolSize = size; return this; }
+        public Builder keepAliveTime(Duration time) { this.keepAliveTime = time; return this; }
+        public Builder queueSize(int size) { this.queueSize = size; return this; }
+        public Builder maxThreadExecutionTime(Duration time) { this.maxThreadExecutionTime = time; return this; }
 
-        ThreadPoolExecutorComponent build() { return new ThreadPoolExecutorComponent(this); }
+        public ThreadPoolExecutorComponent build() { return new ThreadPoolExecutorComponent(this); }
 
     }
 }
