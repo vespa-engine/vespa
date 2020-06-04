@@ -22,11 +22,11 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
 
     private final ContainerThreadPool threadpool;
 
+    @Inject
     public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric) {
         this.threadpool = new ContainerThreadPool(threadpoolConfig, metric);
     }
 
-    @Inject
     public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
         this.threadpool = new ContainerThreadPool(threadpoolConfig, metric, processTerminator);
     }
