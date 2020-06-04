@@ -6,8 +6,8 @@ index = {}
 
 modules = []
 
-doc_url = "https://thigm85.github.io/vespa/"
+doc_url = "https://vespa-engine.github.io/vespa/"
 
-git_url = "https://github.com/thigm85/vespa/tree/master/"
+git_url = "https://github.com/vespa-engine/vespa/tree/master/"
 
 def custom_doc_links(name): return None

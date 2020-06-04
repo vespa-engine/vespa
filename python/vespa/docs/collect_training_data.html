@@ -115,7 +115,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
     <span class="n">labelled_data</span> <span class="o">=</span> <span class="n">labelled_data</span><span class="p">,</span>
     <span class="n">id_field</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
     <span class="n">query_model</span> <span class="o">=</span> <span class="n">query_model</span><span class="p">,</span>
-    <span class="n">number_random_docs</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">number_additional_docs</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="p">)</span>
 <span class="n">training_data_batch</span>
 </pre></div>
@@ -217,7 +217,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -241,7 +241,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -289,7 +289,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -313,7 +313,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -361,7 +361,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -385,7 +385,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>0.333333</td>
       <td>0.700000</td>
-      <td>22584</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -433,7 +433,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -457,7 +457,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>0.333333</td>
       <td>0.700000</td>
-      <td>22584</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -502,7 +502,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
             <span class="n">relevant_id</span> <span class="o">=</span> <span class="n">doc_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
             <span class="n">id_field</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
             <span class="n">query_model</span> <span class="o">=</span> <span class="n">query_model</span><span class="p">,</span>
-            <span class="n">number_random_docs</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">number_additional_docs</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="p">)</span>
         <span class="n">training_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">training_data_point</span><span class="p">)</span>
 <span class="n">training_data</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">training_data</span><span class="p">)</span>
@@ -606,7 +606,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -630,7 +630,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -678,7 +678,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -702,7 +702,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -750,7 +750,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -774,7 +774,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>0.333333</td>
       <td>0.700000</td>
-      <td>22584</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -822,7 +822,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -846,7 +846,7 @@ description: "Collect training data to analyse and/or improve ranking functions"
       <td>1.000000</td>
       <td>0.333333</td>
       <td>0.700000</td>
-      <td>22584</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>

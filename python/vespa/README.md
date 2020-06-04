@@ -10,7 +10,7 @@
 
 > Connect to a running Vespa application
 
-```python
+```
 from vespa.application import Vespa
 
 app = Vespa(url = "https://api.cord19.vespa.ai")
@@ -20,7 +20,7 @@ app = Vespa(url = "https://api.cord19.vespa.ai")
 
 > Easily define matching and ranking criteria
 
-```python
+```
 from vespa.query import Query, Union, WeakAnd, ANN, RankProfile
 from random import random
 
@@ -44,21 +44,21 @@ query_model = Query(match_phase=match_phase, rank_profile=rank_profile)
 
 > Send queries via the query API. See the [query page](/vespa/query) for more examples.
 
-```python
+```
 query_result = app.query(
     query="Is remdesivir an effective treatment for COVID-19?", 
     query_model=query_model
 )
 ```
 
-```python
+```
 query_result["root"]["fields"]
 ```
 
 
 
 
-    {'totalCount': 1078}
+    {'totalCount': 1077}
 
 
 
@@ -66,7 +66,7 @@ query_result["root"]["fields"]
 
 > How to structure labelled data
 
-```python
+```
 labelled_data = [
     {
         "query_id": 0, 
@@ -87,12 +87,12 @@ Non-relevant documents are assigned `"score": 0` by default. Relevant documents 
 
 > Collect training data to analyse and/or improve ranking functions. See the [collect training data page](/vespa/collect_training_data) for more examples.
 
-```python
+```
 training_data_batch = app.collect_training_data(
     labelled_data = labelled_data,
     id_field = "id",
     query_model = query_model,
-    number_random_docs = 2
+    number_additional_docs = 2
 )
 training_data_batch
 ```
@@ -186,7 +186,7 @@ training_data_batch
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -210,7 +210,7 @@ training_data_batch
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -258,7 +258,7 @@ training_data_batch
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>47396</td>
+      <td>56212</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -282,7 +282,7 @@ training_data_batch
       <td>0.617188</td>
       <td>0.428571</td>
       <td>0.457087</td>
-      <td>32484</td>
+      <td>34026</td>
       <td>0</td>
       <td>0</td>
     </tr>
@@ -330,7 +330,7 @@ training_data_batch
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -349,12 +349,12 @@ training_data_batch
       <td>...</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>0.333333</td>
+      <td>0.500000</td>
       <td>1.0</td>
       <td>1.000000</td>
-      <td>0.250000</td>
-      <td>0.641667</td>
-      <td>19805</td>
+      <td>0.333333</td>
+      <td>0.700000</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -402,7 +402,7 @@ training_data_batch
       <td>1.000000</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>28609</td>
+      <td>29774</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -421,12 +421,12 @@ training_data_batch
       <td>...</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>0.333333</td>
+      <td>0.500000</td>
       <td>1.0</td>
       <td>1.000000</td>
-      <td>0.250000</td>
-      <td>0.641667</td>
-      <td>19805</td>
+      <td>0.333333</td>
+      <td>0.700000</td>
+      <td>22787</td>
       <td>1</td>
       <td>0</td>
     </tr>
@@ -446,7 +446,7 @@ We will define the following evaluation metrics:
 * recall @ 10 per query
 * MRR @ 10 per query
 
-```python
+```
 from vespa.evaluation import MatchRatio, Recall, ReciprocalRank
 
 eval_metrics = [MatchRatio(), Recall(at=10), ReciprocalRank(at=10)]
@@ -454,7 +454,7 @@ eval_metrics = [MatchRatio(), Recall(at=10), ReciprocalRank(at=10)]
 
 Evaluate:
 
-```python
+```
 evaluation = app.evaluate(
     labelled_data = labelled_data,
     eval_metrics = eval_metrics, 
@@ -497,18 +497,18 @@ evaluation
     <tr>
       <th>0</th>
       <td>0</td>
-      <td>1145</td>
-      <td>58692</td>
-      <td>0.019509</td>
+      <td>1267</td>
+      <td>62529</td>
+      <td>0.020263</td>
       <td>0</td>
       <td>0</td>
     </tr>
     <tr>
       <th>1</th>
       <td>1</td>
-      <td>805</td>
-      <td>58692</td>
-      <td>0.013716</td>
+      <td>887</td>
+      <td>62529</td>
+      <td>0.014185</td>
       <td>0</td>
       <td>0</td>
     </tr>

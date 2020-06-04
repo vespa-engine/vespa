@@ -123,7 +123,7 @@ description: "Python query API"
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>{&#39;totalCount&#39;: 49206}</pre>
+<pre>{&#39;totalCount&#39;: 52387}</pre>
 </div>
 
 </div>
@@ -134,6 +134,12 @@ description: "Python query API"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Specify-a-query-model">Specify a query model<a class="anchor-link" href="#Specify-a-query-model"> </a></h2>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Query-+-term-matching-+-rank-profile">Query + term-matching + rank profile<a class="anchor-link" href="#Query-+-term-matching-+-rank-profile"> </a></h3>
@@ -187,7 +193,7 @@ description: "Python query API"
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>{&#39;totalCount&#39;: 49206}</pre>
+<pre>{&#39;totalCount&#39;: 52387}</pre>
 </div>
 
 </div>
@@ -275,7 +281,121 @@ description: "Python query API"
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>{&#39;totalCount&#39;: 1081}</pre>
+<pre>{&#39;totalCount&#39;: 1084}</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Recall-specific-documents">Recall specific documents<a class="anchor-link" href="#Recall-specific-documents"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Let's take a look at the top 3 ids from the last query.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">top_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="s2">&quot;fields&quot;</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;root&quot;</span><span class="p">][</span><span class="s2">&quot;children&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]]</span>
+<span class="n">top_ids</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[40215, 18456, 33692]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Assume that we now want to retrieve the second and third ids above. We can do so with the <code>recall</code> argument.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">results_with_recall</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;Is remdesivir an effective treatment for COVID-19?&quot;</span><span class="p">,</span> 
+                    <span class="n">query_model</span><span class="o">=</span><span class="n">query_model</span><span class="p">,</span>
+                    <span class="n">recall</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="n">top_ids</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It will only retrieve the documents with Vespa field <code>id</code> that is defined on the list that is inside the tuple.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">id_recalled</span> <span class="o">=</span> <span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="s2">&quot;fields&quot;</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">results_with_recall</span><span class="p">[</span><span class="s2">&quot;root&quot;</span><span class="p">][</span><span class="s2">&quot;children&quot;</span><span class="p">]]</span>
+<span class="n">id_recalled</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[18456, 33692]</pre>
 </div>
 
 </div>
