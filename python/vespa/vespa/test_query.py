@@ -1,3 +1,5 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 import unittest
 
 from vespa.query import Query, OR, AND, WeakAnd, ANN, Union, RankProfile, VespaResult

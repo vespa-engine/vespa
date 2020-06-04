@@ -1,3 +1,5 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 from typing import Dict, List
 
 # todo: When creating a VespaResult class use getters with appropriate defaults to avoid the try clauses here.

@@ -1,3 +1,5 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 from typing import Optional, Dict, Tuple, List
 from requests import post
 from pandas import DataFrame
