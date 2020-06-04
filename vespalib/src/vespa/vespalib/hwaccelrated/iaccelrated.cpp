@@ -46,7 +46,8 @@ std::vector<T> createAndFill(size_t sz) {
 }
 
 template<typename T>
-void verifyDotproduct(const IAccelrated & accel)
+void
+verifyDotproduct(const IAccelrated & accel)
 {
     const size_t testLength(255);
     srand(1);
@@ -66,7 +67,8 @@ void verifyDotproduct(const IAccelrated & accel)
 }
 
 template<typename T>
-void verifyEuclideanDistance(const IAccelrated & accel) {
+void
+verifyEuclideanDistance(const IAccelrated & accel) {
     const size_t testLength(255);
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
@@ -84,7 +86,8 @@ void verifyEuclideanDistance(const IAccelrated & accel) {
     }
 }
 
-void verifyPopulationCount(const IAccelrated & accel)
+void
+verifyPopulationCount(const IAccelrated & accel)
 {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
@@ -101,6 +104,82 @@ void verifyPopulationCount(const IAccelrated & accel)
     }
 }
 
+void
+fill(std::vector<uint64_t> & v, size_t n) {
+    v.reserve(n);
+    for (size_t i(0); i < n; i++) {
+        v.emplace_back(random());
+    }
+}
+
+void
+simpleAndWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] &= src[i];
+    }
+}
+
+void
+simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] |= src[i];
+    }
+}
+
+void
+verifyOr64(const IAccelrated & accel) {
+    std::vector<uint64_t> vectors[3] ;
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < VESPA_NELEMS(vectors); i++) {
+            std::vector<uint64_t> expected = vectors[0];
+            for (size_t j = 1; j < i; j++) {
+                simpleOrWith(expected, vectors[j]);
+            }
+            std::vector<std::pair<const uint64_t *, bool>> vRefs;
+            for (size_t j(0); j < i; j++) {
+                vRefs.emplace_back(&vectors[j][0], false);
+            }
+            uint64_t dest[8] __attribute((aligned(64)));
+            accel.or64(offset, vRefs, dest);
+            int diff = memcmp(&expected[offset], dest, sizeof(dest));
+            if (diff != 0) {
+                fprintf(stderr, "Accelrator is not failing and64\n");
+                LOG_ABORT("should not be reached");
+            }
+        }
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel) {
+    std::vector<uint64_t> vectors[3] ;
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < VESPA_NELEMS(vectors); i++) {
+            std::vector<uint64_t> expected = vectors[0];
+            for (size_t j = 1; j < i; j++) {
+                simpleAndWith(expected, vectors[j]);
+            }
+            std::vector<std::pair<const uint64_t *, bool>> vRefs;
+            for (size_t j(0); j < i; j++) {
+                vRefs.emplace_back(&vectors[j][0], false);
+            }
+            uint64_t dest[8] __attribute((aligned(64)));
+            accel.and64(offset, vRefs, dest);
+            int diff = memcmp(&expected[offset], dest, sizeof(dest));
+            if (diff != 0) {
+                fprintf(stderr, "Accelrator is not failing and64\n");
+                LOG_ABORT("should not be reached");
+            }
+        }
+    }
+}
+
 class RuntimeVerificator
 {
 public:
@@ -114,6 +193,8 @@ private:
         verifyEuclideanDistance<float>(accelrated);
         verifyEuclideanDistance<double>(accelrated);
         verifyPopulationCount(accelrated);
+        verifyAnd64(accelrated);
+        verifyOr64(accelrated);
     }
 };
 

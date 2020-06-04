@@ -1,19 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/multibitvectoriterator.h>
-#include <vespa/searchlib/queryeval/andsearch.h>
-#include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/searchlib/queryeval/sourceblendersearch.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
+#include "multibitvectoriterator.h"
+#include "andsearch.h"
+#include "andnotsearch.h"
+#include "sourceblendersearch.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/util/optimized.h>
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::queryeval {
 
 using vespalib::Trinary;
+using vespalib::hwaccelrated::IAccelrated;
 
 namespace {
 
@@ -21,7 +21,14 @@ template<typename Update>
 class MultiBitVectorIterator : public MultiBitVectorIteratorBase
 {
 public:
-    MultiBitVectorIterator(const Children & children) : MultiBitVectorIteratorBase(children) { }
+    explicit MultiBitVectorIterator(const Children & children)
+        : MultiBitVectorIteratorBase(children),
+          _update(),
+          _lastWords(),
+          _accel(IAccelrated::getAccelrator())
+    {
+        memset(&_lastWords, 0, sizeof(_lastWords));
+    }
 protected:
     void updateLastValue(uint32_t docId);
     void strictSeek(uint32_t docId);
@@ -29,33 +36,55 @@ private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::False; }
     bool acceptExtraFilter() const override { return Update::isAnd(); }
-    Update                  _update;
+    Update              _update;
+    Word                _lastWords[8] __attribute__((aligned(32)));
+    const IAccelrated & _accel;
 };
 
 template<typename Update>
 class MultiBitVectorIteratorStrict : public MultiBitVectorIterator<Update>
 {
 public:
-    MultiBitVectorIteratorStrict(const MultiSearch::Children & children) : MultiBitVectorIterator<Update>(children) { }
+    explicit MultiBitVectorIteratorStrict(const MultiSearch::Children & children)
+        : MultiBitVectorIterator<Update>(children)
+    { }
 private:
     void doSeek(uint32_t docId) override { this->strictSeek(docId); }
     Trinary is_strict() const override { return Trinary::True; }
+};
+
+struct And {
+    using Word = BitWord::Word;
+    void operator () (const IAccelrated & accel, uint32_t offset, const std::vector<std::pair<const Word *, bool>> & src, Word *dest) {
+        accel.and64(offset, src, dest);
+    }
+    static bool isAnd() { return true; }
+};
+
+struct Or {
+    using Word = BitWord::Word;
+    void operator () (const IAccelrated & accel, uint32_t offset, const std::vector<std::pair<const Word *, bool>> & src, Word *dest) {
+        accel.or64(offset, src, dest);
+    }
+    static bool isAnd() { return false; }
 };
 
 template<typename Update>
 void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId)
 {
     if (docId >= _lastMaxDocIdLimit) {
-        if (__builtin_expect(docId < _numDocs, true)) {
-            const uint32_t index(wordNum(docId));
-            _lastValue = _bvs[0][index];
-            for(uint32_t i(1); i < _bvs.size(); i++) {
-                _lastValue = _update(_lastValue, _bvs[i][index]);
-            }
-            _lastMaxDocIdLimit = (index + 1) * WordLen;
-        } else {
+        if (__builtin_expect(docId >= _numDocs, false)) {
             setAtEnd();
+            return;
         }
+        const uint32_t index(wordNum(docId));
+        if (docId >= _lastMaxDocIdLimitRequireFetch) {
+            uint32_t baseIndex = index & ~(sizeof(_lastWords)/sizeof(Word) - 1);
+            _update(_accel, baseIndex, _bvs, _lastWords);
+            _lastMaxDocIdLimitRequireFetch = (baseIndex + (sizeof(_lastWords)/sizeof(Word))) * WordLen;
+        }
+        _lastValue = _lastWords[index % (sizeof(_lastWords)/sizeof(Word))];
+        _lastMaxDocIdLimit = (index + 1) * WordLen;
     }
 }
 
@@ -75,7 +104,7 @@ template<typename Update>
 void
 MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
 {
-    for (updateLastValue(docId), _lastValue=_lastValue & checkTab(docId);
+    for (updateLastValue(docId), _lastValue = _lastValue & checkTab(docId);
          (_lastValue == 0) && __builtin_expect(! isAtEnd(), true);
          updateLastValue(_lastMaxDocIdLimit));
     if (__builtin_expect(!isAtEnd(), true)) {
@@ -88,21 +117,6 @@ MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
     }
 }
 
-struct And {
-    typedef BitWord::Word Word;
-    Word operator () (const Word a, const Word b) {
-        return a & b;
-    }
-    static bool isAnd() { return true; }
-};
-
-struct Or {
-    typedef BitWord::Word Word;
-    Word operator () (const Word a, const Word b) {
-        return a | b;
-    }
-    static bool isAnd() { return false; }
-};
 
 typedef MultiBitVectorIterator<And> AndBVIterator;
 typedef MultiBitVectorIteratorStrict<And> AndBVIteratorStrict;
@@ -136,8 +150,9 @@ bool canOptimize(const MultiSearch & s) {
 MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children) :
     MultiSearch(children),
     _numDocs(std::numeric_limits<unsigned int>::max()),
-    _lastValue(0),
     _lastMaxDocIdLimit(0),
+    _lastMaxDocIdLimitRequireFetch(0),
+    _lastValue(0),
     _bvs()
 {
     _bvs.reserve(children.size());
@@ -155,6 +170,7 @@ MultiBitVectorIteratorBase::initRange(uint32_t beginId, uint32_t endId)
 {
     MultiSearch::initRange(beginId, endId);
     _lastMaxDocIdLimit = 0;
+    _lastMaxDocIdLimitRequireFetch = 0;
 }
 
 SearchIterator::UP
@@ -166,6 +182,7 @@ MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
         _bvs.emplace_back(reinterpret_cast<const Word *>(bv.getBitValues()), bv.isInverted());
         insert(getChildren().size(), std::move(filter));
         _lastMaxDocIdLimit = 0;  // force reload
+        _lastMaxDocIdLimitRequireFetch = 0;
     }
     return filter;
 }

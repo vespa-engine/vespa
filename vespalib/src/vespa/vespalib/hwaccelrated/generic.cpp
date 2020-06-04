@@ -165,4 +165,14 @@ GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, 
     return euclideanDistanceT<double, 4>(a, b, sz);
 }
 
+void
+GenericAccelrator::and64(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> &src, uint64_t *dest) const {
+    helper::andChunks<16, 4>(offset, src, dest);
+}
+
+void
+GenericAccelrator::or64(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> &src, uint64_t *dest) const {
+    helper::orChunks<16,4>(offset, src, dest);
+}
+
 }
