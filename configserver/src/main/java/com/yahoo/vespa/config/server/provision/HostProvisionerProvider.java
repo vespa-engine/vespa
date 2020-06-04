@@ -5,10 +5,8 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.provision.Provisioner;
-import java.util.logging.Level;
 
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * This class is necessary to support both having and not having a host provisioner. We inject

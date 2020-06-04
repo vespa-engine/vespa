@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
-import java.io.IOException;
 import java.io.StringReader;
 
 /**
@@ -74,7 +73,7 @@ public class SuperModelController {
 
     long getGeneration() { return generation; }
 
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) throws IOException {
+    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) {
         return model.getConfig(configClass, applicationId, configId);
     }
 

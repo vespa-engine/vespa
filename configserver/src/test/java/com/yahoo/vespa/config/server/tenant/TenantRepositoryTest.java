@@ -2,21 +2,19 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.ReloadHandler;
-import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;

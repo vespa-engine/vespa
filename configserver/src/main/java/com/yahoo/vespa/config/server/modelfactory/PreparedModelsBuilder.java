@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -78,13 +77,12 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     @Override
-    protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
+    protected PreparedModelResult buildModelVersion(ModelFactory modelFactory,
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId,
                                                     Optional<DockerImage> wantedDockerImageRepository,
                                                     Version wantedNodeVespaVersion,
-                                                    Optional<AllocatedHosts> allocatedHosts,
-                                                    Instant now) {
+                                                    Optional<AllocatedHosts> allocatedHosts) {
         Version modelVersion = modelFactory.version();
         log.log(Level.FINE, "Building model " + modelVersion + " for " + applicationId);
 

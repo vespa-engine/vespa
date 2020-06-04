@@ -111,11 +111,6 @@ public class ConfigCurator {
         return (data == null) ? null : Utf8.toString(data);
     }
 
-    /** Returns the data at a path and node. Replaces / by # in node names. Returns null if the path doesn't exist. */
-    public byte[] getBytes(String path, String node) {
-        return getBytes(createFullPath(path, node));
-    }
-
     /**
      * Returns the data at a path, or null if the path does not exist.
      *
