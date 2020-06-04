@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.proxy;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -37,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,9 +50,9 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @SuppressWarnings("unused") // Injected
 public class ConfigServerRestExecutorImpl extends AbstractComponent implements ConfigServerRestExecutor {
 
-    private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
-
+    private static final Logger LOG = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration PING_REQUEST_TIMEOUT = Duration.ofMillis(500);
     private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
     private final CloseableHttpClient client;
@@ -83,14 +83,14 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 return proxyResponse.get();
             }
         }
-        // TODO Add logging, for now, experimental and we want to not add more noise.
+
         throw new ProxyException(ErrorResponse.internalServerError("Failed talking to config servers: "
                 + errorBuilder.toString()));
     }
 
     private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
             throws ProxyException {
-        final HttpRequestBase requestBase = createHttpBaseRequest(
+        HttpRequestBase requestBase = createHttpBaseRequest(
                 proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
@@ -102,12 +102,12 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 errorBuilder.append("Talking to server ").append(uri.getHost());
                 errorBuilder.append(", got ").append(status).append(" ")
                         .append(content).append("\n");
-                log.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
-                                                            uri.getHost(), status, content));
+                LOG.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
+                                                        uri.getHost(), status, content));
                 return Optional.empty();
             }
-            final Header contentHeader = response.getLastHeader("Content-Type");
-            final String contentType;
+            Header contentHeader = response.getLastHeader("Content-Type");
+            String contentType;
             if (contentHeader != null && contentHeader.getValue() != null && ! contentHeader.getValue().isEmpty()) {
                 contentType = contentHeader.getValue().replace("; charset=UTF-8","");
             } else {
@@ -118,7 +118,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         } catch (Exception e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
-            log.log(Level.FINE, e, () -> "Got exception while sending request to " + uri.getHost());
+            LOG.log(Level.FINE, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
     }
@@ -169,7 +169,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
     }
 
     /**
-     * During upgrade, one server can be down, this is normal. Therefor we do a quick ping on the first server,
+     * During upgrade, one server can be down, this is normal. Therefore we do a quick ping on the first server,
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
@@ -178,15 +178,14 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             return false;
         }
         URI uri = allServers.get(0);
-        HttpGet httpget = new HttpGet(uri);
+        HttpGet httpGet = new HttpGet(uri);
 
-        int timeout = 500;
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(timeout)
-                .setConnectionRequestTimeout(timeout)
-                .setSocketTimeout(timeout).build();
-        httpget.setConfig(config);
-        try (CloseableHttpResponse response = client.execute(httpget)) {
+                .setConnectTimeout((int) PING_REQUEST_TIMEOUT.toMillis())
+                .setConnectionRequestTimeout((int) PING_REQUEST_TIMEOUT.toMillis())
+                .setSocketTimeout((int) PING_REQUEST_TIMEOUT.toMillis()).build();
+        httpGet.setConfig(config);
+        try (CloseableHttpResponse response = client.execute(httpGet)) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
             }
@@ -242,4 +241,5 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             return "localhost".equals(hostname) || configserverVerifier.verify(hostname, session);
         }
     }
+
 }
