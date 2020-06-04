@@ -2,7 +2,6 @@
 package ai.vespa.hosted.cd;
 
 import ai.vespa.hosted.api.EndpointAuthenticator;
-import ai.vespa.hosted.cd.metric.Metrics;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -17,7 +16,7 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * An endpoint in a Vespa application {@link Deployment}, which allows document and metrics retrieval.
+ * An endpoint in a Vespa application {@link Deployment}, which allows document retrieval.
  *
  * @author jonmv
  */
