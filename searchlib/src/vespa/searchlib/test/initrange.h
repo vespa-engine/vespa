@@ -25,6 +25,7 @@ public:
     void verify(SearchIterator & iterator) const;
     /// Convenience that takes ownership of the pointer.
     void verify(SearchIterator * iterator) const;
+    void verify(SearchIterator::UP iterator) const { verify(*iterator); }
 private:
     void verify(SearchIterator & iterator, bool strict) const;
     void verify(SearchIterator & iterator, const Ranges & ranges, bool strict) const;

@@ -6,27 +6,27 @@
 namespace search::queryeval {
 
 TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &self,
-                                                 const MultiSearch::Children &subSearches,
+                                                 MultiSearch::Children subSearches,
                                                  UnpackInfo &unpackInfo)
-    : children(),
-      termwise(),
+    : termwise_ch(),
+      other_ch(),
       first_termwise(subSearches.size()),
       termwise_unpack()
 {
-    children.reserve(subSearches.size());
-    termwise.reserve(subSearches.size());
+    other_ch.reserve(subSearches.size());
+    termwise_ch.reserve(subSearches.size());
     for (size_t i = 0; i < subSearches.size(); ++i) {
         bool need_unpack = unpackInfo.needUnpack(i);
         bool allow_termwise = self.getChild(i).getState().allow_termwise_eval();
         if (need_unpack || !allow_termwise) {
             if (need_unpack) {
-                size_t index = (i < first_termwise) ? children.size() : (children.size() + 1);
+                size_t index = (i < first_termwise) ? other_ch.size() : (other_ch.size() + 1);
                 termwise_unpack.add(index);
             }
-            children.push_back(subSearches[i]);
+            other_ch.push_back(std::move(subSearches[i]));
         } else {
             first_termwise = std::min(i, first_termwise);
-            termwise.push_back(subSearches[i]);
+            termwise_ch.push_back(std::move(subSearches[i]));
         }
     }
 }
@@ -37,7 +37,7 @@ void
 TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict)
 {
     auto termwise_search = make_termwise(std::move(search), strict);
-    children.insert(children.begin() + first_termwise, termwise_search.release());
+    other_ch.insert(other_ch.begin() + first_termwise, std::move(termwise_search));
 }
 
 }

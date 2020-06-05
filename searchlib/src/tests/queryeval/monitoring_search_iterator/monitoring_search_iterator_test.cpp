@@ -77,16 +77,18 @@ struct TreeFixture
         : _itr()
     {
         MultiSearch::Children children;
-        children.push_back(new MonitoringSearchIterator("child1",
-                                                        SearchIterator::UP
-                                                        (new SimpleSearch(SimpleResult().addHit(2).addHit(4).addHit(6))),
-                                                        false));
-        children.push_back(new MonitoringSearchIterator("child2",
-                                                        SearchIterator::UP
-                                                        (new SimpleSearch(SimpleResult().addHit(3).addHit(4).addHit(5))),
+        children.emplace_back(
+                new MonitoringSearchIterator("child1",
+                                             SearchIterator::UP
+                                             (new SimpleSearch(SimpleResult().addHit(2).addHit(4).addHit(6))),
+                                             false));
+        children.emplace_back(
+                new MonitoringSearchIterator("child2",
+                                             SearchIterator::UP
+                                             (new SimpleSearch(SimpleResult().addHit(3).addHit(4).addHit(5))),
                                                         false));
         _itr.reset(new MonitoringSearchIterator("and",
-                                                SearchIterator::UP(AndSearch::create(children, true)),
+                                                SearchIterator::UP(AndSearch::create(std::move(children), true)),
                                                 false));
         _res.search(*_itr);
     }

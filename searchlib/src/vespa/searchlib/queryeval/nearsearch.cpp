@@ -31,11 +31,11 @@ void setup_fields(uint32_t window, std::vector<T> &matchers, const TermFieldMatc
 
 } // namespace search::queryeval::<unnamed>
 
-NearSearchBase::NearSearchBase(const Children & terms,
+NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
                                bool strict)
-    : AndSearch(terms),
+    : AndSearch(std::move(terms)),
       _data_size(data.size()),
       _window(window),
       _strict(strict)
@@ -107,8 +107,7 @@ NearSearchBase::doSeek(uint32_t docId)
     const Children & terms(getChildren());
     bool foundHit = true;
     for (uint32_t i = 0, len = terms.size(); i < len; ++i) {
-        SearchIterator *term = terms[i];
-        if (!term->seek(docId)) {
+        if (! terms[i]->seek(docId)) {
             LOG(debug, "Term %d does not occur in document %d.", i, docId);
             foundHit = false;
             break;
@@ -123,11 +122,11 @@ NearSearchBase::doSeek(uint32_t docId)
     }
 }
 
-NearSearch::NearSearch(const Children & terms,
+NearSearch::NearSearch(Children terms,
                        const TermFieldMatchDataArray &data,
                        uint32_t window,
                        bool strict)
-    : NearSearchBase(terms, data, window, strict),
+    : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
     setup_fields(window, _matchers, data);
@@ -224,11 +223,11 @@ NearSearch::match(uint32_t docId)
     return false;
 }
 
-ONearSearch::ONearSearch(const Children & terms,
+ONearSearch::ONearSearch(Children terms,
                          const TermFieldMatchDataArray &data,
                          uint32_t window,
                          bool strict)
-    : NearSearchBase(terms, data, window, strict),
+    : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
     setup_fields(window, _matchers, data);

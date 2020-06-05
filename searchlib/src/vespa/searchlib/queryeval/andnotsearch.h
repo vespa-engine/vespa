@@ -24,11 +24,10 @@ protected:
      *
      * @param children the search objects we are andnot'ing
      **/
-    AndNotSearch(const Children & children) : MultiSearch(children) { }
+    AndNotSearch(MultiSearch::Children children) : MultiSearch(std::move(children)) { }
 
 public:
-    // Caller takes ownership of the returned SearchIterator.
-    static SearchIterator *create(const Children &children, bool strict);
+    static std::unique_ptr<SearchIterator> create(ChildrenIterators children, bool strict);
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
@@ -43,7 +42,7 @@ private:
 class AndNotSearchStrictBase : public AndNotSearch
 {
 protected:
-    AndNotSearchStrictBase(const Children & children) : AndNotSearch(children) { }
+    AndNotSearchStrictBase(Children children) : AndNotSearch(std::move(children)) { }
 private:
     Trinary is_strict() const override { return Trinary::True; }
     UP andWith(UP filter, uint32_t estimate) override;
@@ -61,7 +60,7 @@ private:
     //typedef FilterAttributeIteratorT<SingleValueSmallNumericAttribute::SingleSearchContext> BlackListIterator;
     typedef AttributeIteratorT<SingleValueSmallNumericAttribute::SingleSearchContext> BlackListIterator;
 public:
-    OptimizedAndNotForBlackListing(const MultiSearch::Children & children);
+    OptimizedAndNotForBlackListing(MultiSearch::Children children);
     static bool isBlackListIterator(const SearchIterator * iterator);
 
     uint32_t seekFast(uint32_t docid) {
@@ -69,8 +68,8 @@ public:
     }
     void initRange(uint32_t beginid, uint32_t endid) override;
 private:
-    SearchIterator * positive() { return getChildren()[0]; }
-    BlackListIterator * blackList() { return static_cast<BlackListIterator *>(getChildren()[1]); }
+    SearchIterator * positive() { return getChildren()[0].get(); }
+    BlackListIterator * blackList() { return static_cast<BlackListIterator *>(getChildren()[1].get()); }
     template<bool doSeekOnly>
     uint32_t internalSeek(uint32_t docid) {
         uint32_t curr(docid);

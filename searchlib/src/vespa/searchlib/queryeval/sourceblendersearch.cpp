@@ -10,6 +10,14 @@ namespace search::queryeval {
 
 EmptySearch SourceBlenderSearch::_emptySearch;
 
+class SourceBlenderSearchNonStrict : public SourceBlenderSearch
+{
+public:
+    SourceBlenderSearchNonStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children)
+        : SourceBlenderSearch(std::move(sourceSelector), children)
+    {}
+};
+
 class SourceBlenderSearchStrict : public SourceBlenderSearch
 {
 public:
@@ -158,14 +166,14 @@ SourceBlenderSearch::setChild(size_t index, SearchIterator::UP child) {
     _sources[_children[index]] = child.release();
 }
 
-SourceBlenderSearch *
+SearchIterator::UP
 SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
                             const Children &children, bool strict)
 {
     if (strict) {
-        return new SourceBlenderSearchStrict(std::move(sourceSelector), children);
+        return std::make_unique<SourceBlenderSearchStrict>(std::move(sourceSelector), children);
     } else {
-        return new SourceBlenderSearch(std::move(sourceSelector), children);
+        return std::make_unique<SourceBlenderSearchNonStrict>(std::move(sourceSelector), children);
     }
 }
 

@@ -169,7 +169,8 @@ AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 template <bool is_strict>
 struct LocationPreFilterIterator : public OrLikeSearch<is_strict, NoUnpack>
 {
-    LocationPreFilterIterator(const std::vector<SearchIterator *> &children) : OrLikeSearch<is_strict, NoUnpack>(children, NoUnpack()) {}
+    LocationPreFilterIterator(OrSearch::Children children)
+        : OrLikeSearch<is_strict, NoUnpack>(std::move(children), NoUnpack()) {}
     void doUnpack(uint32_t) override {}
 };
 
@@ -215,14 +216,14 @@ public:
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
-        std::vector<SearchIterator *> children;
+        OrSearch::Children children;
         for (auto it(_rangeSearches.begin()), mt(_rangeSearches.end()); it != mt; it++) {
-            children.push_back((*it)->createIterator(tfmda[0], strict).release());
+            children.push_back((*it)->createIterator(tfmda[0], strict));
         }
         if (strict) {
-            return std::make_unique<LocationPreFilterIterator<true>>(children);
+            return std::make_unique<LocationPreFilterIterator<true>>(std::move(children));
         } else {
-            return std::make_unique<LocationPreFilterIterator<false>>(children);
+            return std::make_unique<LocationPreFilterIterator<false>>(std::move(children));
         }
     }
 

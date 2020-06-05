@@ -23,8 +23,8 @@ protected:
     Trinary is_strict() const override { return Trinary::True; }
     SearchIterator::UP andWith(SearchIterator::UP filter, uint32_t estimate) override;
 public:
-    AndSearchStrict(const MultiSearch::Children & children, const Unpack & unpacker) :
-        AndSearchNoStrict<Unpack>(children, unpacker)
+    AndSearchStrict(MultiSearch::Children children, const Unpack & unpacker)
+        : AndSearchNoStrict<Unpack>(std::move(children), unpacker)
     {
     }
 

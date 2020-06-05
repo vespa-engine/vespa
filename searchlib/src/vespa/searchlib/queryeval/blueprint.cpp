@@ -400,10 +400,9 @@ IntermediateBlueprint::createSearch(fef::MatchData &md, bool strict) const
     subSearches.reserve(_children.size());
     for (size_t i = 0; i < _children.size(); ++i) {
         bool strictChild = (strict && inheritStrict(i));
-        SearchIterator::UP search = _children[i]->createSearch(md, strictChild);
-        subSearches.push_back(search.release());
+        subSearches.push_back(_children[i]->createSearch(md, strictChild));
     }
-    return createIntermediateSearch(subSearches, strict, md);
+    return createIntermediateSearch(std::move(subSearches), strict, md);
 }
 
 IntermediateBlueprint::IntermediateBlueprint() = default;

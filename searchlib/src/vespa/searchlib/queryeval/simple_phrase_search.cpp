@@ -157,23 +157,23 @@ SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
 }
 
 
-SimplePhraseSearch::SimplePhraseSearch(const Children &children,
+SimplePhraseSearch::SimplePhraseSearch(Children children,
                                        fef::MatchData::UP md,
                                        const fef::TermFieldMatchDataArray &childMatch,
                                        vector<uint32_t> eval_order,
                                        TermFieldMatchData &tmd, bool strict)
-    : AndSearch(children),
+    : AndSearch(std::move(children)),
       _md(std::move(md)),
       _childMatch(childMatch),
       _eval_order(std::move(eval_order)),
       _tmd(tmd),
       _doom(nullptr),
       _strict(strict),
-      _iterators(children.size())
+      _iterators(getChildren().size())
 {
-    assert(!children.empty());
-    assert(children.size() == _childMatch.size());
-    assert(children.size() == _eval_order.size());
+    assert(getChildren().size() > 0);
+    assert(getChildren().size() == _childMatch.size());
+    assert(getChildren().size() == _eval_order.size());
 }
 
 void

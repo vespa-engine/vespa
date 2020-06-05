@@ -131,8 +131,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-SearchIterator *
-WeightedSetTermSearch::create(const std::vector<SearchIterator*> &children,
+SearchIterator::UP
+WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
                               TermFieldMatchData &tmd,
                               const std::vector<int32_t> &weights,
                               fef::MatchData::UP match_data)
@@ -141,9 +141,9 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator*> &children,
     typedef WeightedSetTermSearchImpl<vespalib::LeftHeap, SearchIteratorPack> HeapImpl;
 
     if (children.size() < 128) {
-        return new ArrayHeapImpl(tmd, weights, SearchIteratorPack(children, std::move(match_data)));
+        return SearchIterator::UP(new ArrayHeapImpl(tmd, weights, SearchIteratorPack(children, std::move(match_data))));
     }
-    return new HeapImpl(tmd, weights, SearchIteratorPack(children, std::move(match_data)));
+    return SearchIterator::UP(new HeapImpl(tmd, weights, SearchIteratorPack(children, std::move(match_data))));
 }
 
 //-----------------------------------------------------------------------------
