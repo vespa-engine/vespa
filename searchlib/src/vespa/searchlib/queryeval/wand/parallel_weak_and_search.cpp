@@ -128,7 +128,7 @@ insertMonitoringSearchIterator(const wand::Terms &terms)
 }
 
 template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
-SearchIterator *
+SearchIterator::UP
 createWand(const wand::Terms &terms,
            const ParallelWeakAndSearch::MatchParams &matchParams,
            ParallelWeakAndSearch::RankParams &&rankParams)
@@ -149,9 +149,9 @@ createWand(const wand::Terms &terms,
                                                      std::move(rankParams.childrenMatchData)),
                                              matchParams)),
              false));
-        return new MonitoringDumpIterator(std::move(monitoringIterator));
+        return std::make_unique<MonitoringDumpIterator>(std::move(monitoringIterator));
     }
-    return new WandType(rankParams.rootMatchData,
+    return std::make_unique<WandType>(rankParams.rootMatchData,
                         VectorizedIteratorTerms(terms,
                                 DotProductScorer(),
                                 matchParams.docIdLimit,
@@ -163,7 +163,7 @@ createWand(const wand::Terms &terms,
 
 } // namespace search::queryeval::wand
 
-SearchIterator *
+SearchIterator::UP
 ParallelWeakAndSearch::createArrayWand(const Terms &terms,
                                        const MatchParams &matchParams,
                                        RankParams &&rankParams,
@@ -176,7 +176,7 @@ ParallelWeakAndSearch::createArrayWand(const Terms &terms,
     }
 }
 
-SearchIterator *
+SearchIterator::UP
 ParallelWeakAndSearch::createHeapWand(const Terms &terms,
                                       const MatchParams &matchParams,
                                       RankParams &&rankParams,
@@ -189,7 +189,7 @@ ParallelWeakAndSearch::createHeapWand(const Terms &terms,
     }
 }
 
-SearchIterator *
+SearchIterator::UP
 ParallelWeakAndSearch::create(const Terms &terms,
                               const MatchParams &matchParams,
                               RankParams &&rankParams,
@@ -251,7 +251,7 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
                                        childrenMatchData->resolveTermField(handles[i])));
         }
         assert(terms.size() == dict_entries.size());
-        return SearchIterator::UP(create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict));
+        return create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict);
     }
 }
 
