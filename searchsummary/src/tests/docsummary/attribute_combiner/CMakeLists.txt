@@ -5,6 +5,7 @@ vespa_add_executable(searchsummary_attribute_combiner_test_app TEST
     attribute_combiner_test.cpp
     DEPENDS
     searchsummary
+    searchsummary_test
     GTest::GTest
 )
 vespa_add_test(NAME searchsummary_attribute_combiner_test_app COMMAND searchsummary_attribute_combiner_test_app)

@@ -1,19 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
+#include <vespa/searchsummary/test/mock_attribute_manager.h>
+#include <vespa/searchsummary/test/mock_state_callback.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -21,150 +18,24 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_combiner_test");
 
-using search::AttributeFactory;
-using search::AttributeManager;
-using search::AttributeVector;
-using search::FloatingPointAttribute;
-using search::IntegerAttribute;
-using search::MatchingElements;
-using search::StringAttribute;
 using search::attribute::BasicType;
-using search::attribute::CollectionType;
-using search::attribute::Config;
-using search::attribute::IAttributeVector;
 using search::attribute::getUndefined;
 using search::docsummary::AttributeCombinerDFW;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::IDocsumFieldWriter;
+using search::docsummary::test::MockAttributeManager;
+using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
 
 namespace {
 
-struct AttributeManagerFixture
-{
-    AttributeManager mgr;
-
-    AttributeManagerFixture();
-
-    ~AttributeManagerFixture();
-
-    template <typename AttributeType, typename ValueType>
-    void
-    buildAttribute(const vespalib::string &name,
-                   BasicType type,
-                   std::vector<std::vector<ValueType>> values);
-
-    void
-    buildStringAttribute(const vespalib::string &name,
-                         std::vector<std::vector<vespalib::string>> values);
-    void
-    buildFloatAttribute(const vespalib::string &name,
-                        std::vector<std::vector<double>> values);
-
-    void
-    buildIntegerAttribute(const vespalib::string &name,
-                          BasicType type,
-                          std::vector<std::vector<IAttributeVector::largeint_t>> values);
-};
-
-AttributeManagerFixture::AttributeManagerFixture()
-    : mgr()
-{
-    buildStringAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
-    buildStringAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
-    buildStringAttribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-}
-
-AttributeManagerFixture::~AttributeManagerFixture() = default;
-
-template <typename AttributeType, typename ValueType>
-void
-AttributeManagerFixture::buildAttribute(const vespalib::string &name,
-                                        BasicType type,
-                                        std::vector<std::vector<ValueType>> values)
-{
-    Config cfg(type, CollectionType::Type::ARRAY);
-    auto attrBase = AttributeFactory::createAttribute(name, cfg);
-    EXPECT_TRUE(attrBase);
-    auto attr = std::dynamic_pointer_cast<AttributeType>(attrBase);
-    EXPECT_TRUE(attr);
-    attr->addReservedDoc();
-    for (const auto &docValues : values) {
-        uint32_t docId = 0;
-        EXPECT_TRUE(attr->addDoc(docId));
-        EXPECT_NE(0u, docId);
-        for (const auto &value : docValues) {
-            attr->append(docId, value, 1);
-        }
-        attr->commit();
-    }
-    EXPECT_TRUE(mgr.add(attr));
-}
-
-void
-AttributeManagerFixture::buildStringAttribute(const vespalib::string &name,
-                                              std::vector<std::vector<vespalib::string>> values)
-{
-    buildAttribute<StringAttribute, vespalib::string>(name, BasicType::Type::STRING, std::move(values));
-}
-
-void
-AttributeManagerFixture::buildFloatAttribute(const vespalib::string &name,
-                                             std::vector<std::vector<double>> values)
-{
-    buildAttribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, std::move(values));
-}
-
-void
-AttributeManagerFixture::buildIntegerAttribute(const vespalib::string &name,
-                                               BasicType type,
-                                               std::vector<std::vector<IAttributeVector::largeint_t>> values)
-{
-    buildAttribute<IntegerAttribute, IAttributeVector::largeint_t>(name, type, std::move(values));
-}
-
-
-class DummyStateCallback : public GetDocsumsStateCallback
-{
-public:
-    MatchingElements _matching_elements;
-
-    DummyStateCallback();
-    void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
-    void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
-    void ParseLocation(GetDocsumsState *) override { }
-    std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields &) override { return std::make_unique<MatchingElements>(_matching_elements); }
-    ~DummyStateCallback() override { }
-};
-
-DummyStateCallback::DummyStateCallback()
-    : GetDocsumsStateCallback(),
-      _matching_elements()
-{
-    _matching_elements.add_matching_elements(1, "array", {1});
-    _matching_elements.add_matching_elements(3, "array", {0});
-    _matching_elements.add_matching_elements(4, "array", {1});
-    _matching_elements.add_matching_elements(1, "smap", {1});
-    _matching_elements.add_matching_elements(3, "smap", {0});
-    _matching_elements.add_matching_elements(4, "smap", {1});
-    _matching_elements.add_matching_elements(1, "map", {1});
-    _matching_elements.add_matching_elements(3, "map", {0});
-    _matching_elements.add_matching_elements(4, "map", {1});
-}
-
 struct AttributeCombinerTest : public ::testing::Test
 {
-    AttributeManagerFixture             attrs;
+    MockAttributeManager                attrs;
     std::unique_ptr<IDocsumFieldWriter> writer;
-    DummyStateCallback                  stateCallback;
+    MockStateCallback                   callback;
     GetDocsumsState                     state;
     std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
 
@@ -177,11 +48,31 @@ struct AttributeCombinerTest : public ::testing::Test
 AttributeCombinerTest::AttributeCombinerTest()
     : attrs(),
       writer(),
-      stateCallback(),
-      state(stateCallback),
+      callback(),
+      state(callback),
       _matching_elems_fields()
 {
-    state._attrCtx = attrs.mgr.createContext();
+    attrs.build_string_attribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    attrs.build_int_attribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
+    attrs.build_float_attribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    attrs.build_string_attribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
+    attrs.build_string_attribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    attrs.build_int_attribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
+    attrs.build_float_attribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    attrs.build_string_attribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
+    attrs.build_string_attribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+
+    callback.add_matching_elements(1, "array", {1});
+    callback.add_matching_elements(3, "array", {0});
+    callback.add_matching_elements(4, "array", {1});
+    callback.add_matching_elements(1, "smap", {1});
+    callback.add_matching_elements(3, "smap", {0});
+    callback.add_matching_elements(4, "smap", {1});
+    callback.add_matching_elements(1, "map", {1});
+    callback.add_matching_elements(3, "map", {0});
+    callback.add_matching_elements(4, "map", {1});
+
+    state._attrCtx = attrs.mgr().createContext();
 }
 
 AttributeCombinerTest::~AttributeCombinerTest() = default;

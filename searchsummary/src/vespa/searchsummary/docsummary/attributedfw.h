@@ -4,6 +4,8 @@
 
 #include "docsumfieldwriter.h"
 
+
+namespace search { class MatchingElementsFields; }
 namespace search::attribute { class IAttributeVector; }
 
 namespace search::docsummary {
@@ -13,7 +15,11 @@ namespace search::docsummary {
  */
 class AttributeDFWFactory {
 public:
-    static std::unique_ptr<IDocsumFieldWriter> create(IAttributeManager& attr_mgr, const vespalib::string& attr_name);
+    static std::unique_ptr<IDocsumFieldWriter> create(IAttributeManager& attr_mgr,
+                                                      const vespalib::string& attr_name,
+                                                      bool filter_elements = false,
+                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields
+                                                      = std::shared_ptr<MatchingElementsFields>());
 };
 
 class AttrDFW : public ISimpleDFW

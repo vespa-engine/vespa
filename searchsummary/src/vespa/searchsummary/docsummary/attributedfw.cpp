@@ -9,6 +9,8 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -139,12 +141,21 @@ template <typename DataType>
 class MultiAttrDFW : public AttrDFW {
 private:
     bool _is_weighted_set;
+    bool _filter_elements;
+    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
 public:
-    explicit MultiAttrDFW(const vespalib::string& attr_name, bool is_weighted_set)
+    explicit MultiAttrDFW(const vespalib::string& attr_name, bool is_weighted_set,
+                          bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
         : AttrDFW(attr_name),
-          _is_weighted_set(is_weighted_set)
-    {}
+          _is_weighted_set(is_weighted_set),
+          _filter_elements(filter_elements),
+          _matching_elems_fields(std::move(matching_elems_fields))
+    {
+        if (filter_elements && _matching_elems_fields) {
+            _matching_elems_fields->add_field(attr_name);
+        }
+    }
     void insertField(uint32_t docid, GetDocsumsState* state, ResType type, Inserter& target) override;
 };
 
@@ -202,8 +213,19 @@ MultiAttrDFW<DataType>::insertField(uint32_t docid, GetDocsumsState* state, ResT
     Cursor &arr = target.insertArray();
     std::vector<DataType> elements(entries);
     entries = std::min(entries, attr.get(docid, elements.data(), entries));
-    for (uint32_t i = 0; i < entries; ++i) {
-        insert_element(elements, i, _is_weighted_set, arr);
+
+    if (_filter_elements) {
+        const auto& matching_elems = state->get_matching_elements(*_matching_elems_fields)
+                .get_matching_elements(docid, getAttributeName());
+        if (!matching_elems.empty() && matching_elems.back() < entries) {
+            for (uint32_t id_to_keep : matching_elems) {
+                insert_element(elements, id_to_keep, _is_weighted_set, arr);
+            }
+        }
+    } else {
+        for (uint32_t i = 0; i < entries; ++i) {
+            insert_element(elements, i, _is_weighted_set, arr);
+        }
     }
 }
 
@@ -212,14 +234,17 @@ MultiAttrDFW<DataType>::insertField(uint32_t docid, GetDocsumsState* state, ResT
 namespace {
 
 std::unique_ptr<IDocsumFieldWriter>
-create_multi_writer(const IAttributeVector& attr)
+create_multi_writer(const IAttributeVector& attr,
+                    bool filter_elements,
+                    std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     auto type = attr.getBasicType();
     bool is_weighted_set = attr.hasWeightedSetType();
     switch (type) {
     case BasicType::NONE:
     case BasicType::STRING: {
-        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedString>>(attr.getName(), is_weighted_set);
+        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedString>>(attr.getName(), is_weighted_set,
+                                                                                filter_elements, std::move(matching_elems_fields));
     }
     case BasicType::BOOL:
     case BasicType::UINT2:
@@ -228,11 +253,13 @@ create_multi_writer(const IAttributeVector& attr)
     case BasicType::INT16:
     case BasicType::INT32:
     case BasicType::INT64: {
-        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedInt>>(attr.getName(), is_weighted_set);
+        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedInt>>(attr.getName(), is_weighted_set,
+                                                                             filter_elements, std::move(matching_elems_fields));
     }
     case BasicType::FLOAT:
     case BasicType::DOUBLE: {
-        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedFloat>>(attr.getName(), is_weighted_set);
+        return std::make_unique<MultiAttrDFW<IAttributeVector::WeightedFloat>>(attr.getName(), is_weighted_set,
+                                                                               filter_elements, std::move(matching_elems_fields));
     }
     default:
         // should not happen
@@ -244,7 +271,10 @@ create_multi_writer(const IAttributeVector& attr)
 }
 
 std::unique_ptr<IDocsumFieldWriter>
-AttributeDFWFactory::create(IAttributeManager& attr_mgr, const vespalib::string& attr_name)
+AttributeDFWFactory::create(IAttributeManager& attr_mgr,
+                            const vespalib::string& attr_name,
+                            bool filter_elements,
+                            std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     auto ctx = attr_mgr.createContext();
     const auto* attr = ctx->getAttribute(attr_name);
@@ -253,7 +283,7 @@ AttributeDFWFactory::create(IAttributeManager& attr_mgr, const vespalib::string&
         return std::unique_ptr<IDocsumFieldWriter>();
     }
     if (attr->hasMultiValue()) {
-        return create_multi_writer(*attr);
+        return create_multi_writer(*attr, filter_elements, std::move(matching_elems_fields));
     } else {
         return std::make_unique<SingleAttrDFW>(attr->getName());
     }
