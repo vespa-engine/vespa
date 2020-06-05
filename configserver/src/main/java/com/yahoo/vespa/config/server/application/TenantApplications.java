@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -64,32 +67,41 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     private final Executor zkWatcherExecutor;
     private final Metrics metrics;
     private final TenantName tenant;
-    private final List<ReloadListener> reloadListeners;
+    private final ReloadListener reloadListener;
     private final ConfigResponseFactory responseFactory;
     private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock = Clock.systemUTC();
 
-
-    private TenantApplications(TenantName tenant, GlobalComponentRegistry registry) {
-        this.curator = registry.getCurator();
+    public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
+                              ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
+                              ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry) {
+        this.curator = curator;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.locksPath = TenantRepository.getLocksPath(tenant);
         this.tenant = tenant;
-        this.zkWatcherExecutor = command -> registry.getZkWatcherExecutor().execute(tenant, command);
-        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
+        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
-        this.metrics = registry.getMetrics();
-        this.reloadListeners = List.of(registry.getReloadListener());
-        this.responseFactory = ConfigResponseFactory.create(registry.getConfigserverConfig());
+        this.metrics = metrics;
+        this.reloadListener = reloadListener;
+        this.responseFactory = ConfigResponseFactory.create(configserverConfig);
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
-        this.hostRegistry = registry.getHostRegistries().createApplicationHostRegistry(tenant);
+        this.hostRegistry = hostRegistry;
     }
 
-    public static TenantApplications create(GlobalComponentRegistry registry, TenantName tenant) {
-        return new TenantApplications(tenant, registry);
+    // For testing only
+    public static TenantApplications create(GlobalComponentRegistry componentRegistry, TenantName tenantName) {
+        return new TenantApplications(tenantName,
+                                      componentRegistry.getCurator(),
+                                      componentRegistry.getZkWatcherExecutor(),
+                                      componentRegistry.getZkCacheExecutor(),
+                                      componentRegistry.getMetrics(),
+                                      componentRegistry.getReloadListener(),
+                                      componentRegistry.getConfigserverConfig(),
+                                      componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName));
     }
 
     /**
@@ -232,10 +244,8 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     }
 
     private void notifyReloadListeners(ApplicationSet applicationSet) {
-        for (ReloadListener reloadListener : reloadListeners) {
-            reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
-            reloadListener.configActivated(applicationSet);
-        }
+        reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
+        reloadListener.configActivated(applicationSet);
     }
 
     /**
@@ -284,10 +294,8 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     }
 
     private void reloadListenersOnRemove(ApplicationId applicationId) {
-        for (ReloadListener listener : reloadListeners) {
-            listener.hostsUpdated(tenant, hostRegistry.getAllHosts());
-            listener.applicationRemoved(applicationId);
-        }
+        reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
+        reloadListener.applicationRemoved(applicationId);
     }
 
     private void setLiveApp(ApplicationSet applicationSet) {
@@ -403,9 +411,7 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     @Override
     public void verifyHosts(ApplicationId key, Collection<String> newHosts) {
         hostRegistry.verifyHosts(key, newHosts);
-        for (ReloadListener reloadListener : reloadListeners) {
-            reloadListener.verifyHostsAreAvailable(tenant, newHosts);
-        }
+        reloadListener.verifyHostsAreAvailable(tenant, newHosts);
     }
 
 

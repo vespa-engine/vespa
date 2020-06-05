@@ -208,7 +208,15 @@ public class TenantRepository {
     private void createTenant(TenantName tenantName, RequestHandler requestHandler, ReloadHandler reloadHandler) {
         if (tenants.containsKey(tenantName)) return;
 
-        TenantApplications applicationRepo = TenantApplications.create(componentRegistry, tenantName);
+        TenantApplications applicationRepo =
+                new TenantApplications(tenantName,
+                                       curator,
+                                       componentRegistry.getZkWatcherExecutor(),
+                                       componentRegistry.getZkCacheExecutor(),
+                                       componentRegistry.getMetrics(),
+                                       componentRegistry.getReloadListener(),
+                                       componentRegistry.getConfigserverConfig(),
+                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName));
         if (requestHandler == null)
             requestHandler = applicationRepo;
         if (reloadHandler == null)
