@@ -664,7 +664,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         tenant.getApplicationRepo().createApplication(applicationId);
-        LocalSession session = tenant.getSessionFactory().createSession(applicationDirectory, applicationId, timeoutBudget);
+        Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
+        LocalSession session = tenant.getSessionFactory().createSession(applicationDirectory, applicationId,
+                                                                        timeoutBudget, activeSessionId);
         tenant.getLocalSessionRepo().addSession(session);
         return session.getSessionId();
     }

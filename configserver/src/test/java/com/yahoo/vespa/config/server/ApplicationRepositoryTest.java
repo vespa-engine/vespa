@@ -142,6 +142,23 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
+    public void redeploy() {
+        PrepareResult result = deployApp(testApp);
+
+        long firstSessionId = result.sessionId();
+
+        PrepareResult result2 = deployApp(testApp);
+        long secondSessionId = result2.sessionId();
+        assertNotEquals(firstSessionId, secondSessionId);
+
+        TenantName tenantName = applicationId().tenant();
+        Tenant tenant = tenantRepository.getTenant(tenantName);
+        LocalSession session = tenant.getLocalSessionRepo().getSession(
+                tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+        assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
+    }
+
+    @Test
     public void createFromActiveSession() {
         PrepareResult result = deployApp(testApp);
         long sessionId = applicationRepository.createSessionFromExisting(applicationId(),
