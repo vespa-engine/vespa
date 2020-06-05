@@ -10,6 +10,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -19,11 +20,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,14 +68,16 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
+        this(zoneRegistry, sslContextProvider.getIdentitySslContext(), new Sleeper.Default(),
+             new ConnectionReuseStrategy(zoneRegistry));
+    }
 
-        this.client = createHttpClient(config, sslContextProvider,
-                new ControllerOrConfigserverHostnameVerifier(zoneRegistry));
-        this.sleeper = new Sleeper.Default();
+    ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, SSLContext sslContext,
+                                 Sleeper sleeper, ConnectionReuseStrategy connectionReuseStrategy) {
+        this.client = createHttpClient(sslContext,
+                                       new ControllerOrConfigserverHostnameVerifier(zoneRegistry),
+                                       connectionReuseStrategy);
+        this.sleeper = sleeper;
     }
 
     @Override
@@ -218,18 +225,25 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         }
     }
 
-    private static CloseableHttpClient createHttpClient(RequestConfig config,
-                                                        ServiceIdentityProvider sslContextProvider,
-                                                        HostnameVerifier hostnameVerifier) {
+    private static CloseableHttpClient createHttpClient(SSLContext sslContext,
+                                                        HostnameVerifier hostnameVerifier,
+                                                        org.apache.http.ConnectionReuseStrategy connectionReuseStrategy) {
+
+        RequestConfig config = RequestConfig.custom()
+                                            .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                                            .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                                            .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         return HttpClientBuilder.create()
-                .setUserAgent("config-server-proxy-client")
-                .setSSLContext(sslContextProvider.getIdentitySslContext())
-                .setSSLHostnameVerifier(hostnameVerifier)
-                .setDefaultRequestConfig(config)
-                .setMaxConnPerRoute(10)
-                .setMaxConnTotal(500)
-                .setConnectionTimeToLive(1, TimeUnit.MINUTES)
-                .build();
+                                .setUserAgent("config-server-proxy-client")
+                                .setSSLContext(sslContext)
+                                .setSSLHostnameVerifier(hostnameVerifier)
+                                .setDefaultRequestConfig(config)
+                                .setMaxConnPerRoute(10)
+                                .setMaxConnTotal(500)
+                                .setConnectionReuseStrategy(connectionReuseStrategy)
+                                .setConnectionTimeToLive(1, TimeUnit.MINUTES)
+                                .build();
+
     }
 
     private static class ControllerOrConfigserverHostnameVerifier implements HostnameVerifier {
@@ -251,6 +265,37 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         public boolean verify(String hostname, SSLSession session) {
             return "localhost".equals(hostname) || configserverVerifier.verify(hostname, session);
         }
+    }
+
+    /**
+     * A connection reuse strategy which avoids reusing connections to VIPs. Since VIPs are TCP-level load balancers,
+     * a reconnect is needed to (potentially) switch real server.
+     */
+    public static class ConnectionReuseStrategy extends DefaultConnectionReuseStrategy {
+
+        private final Set<String> vips;
+
+        public ConnectionReuseStrategy(ZoneRegistry zoneRegistry) {
+            this(zoneRegistry.zones().all().ids().stream()
+                             .map(zoneRegistry::getConfigServerVipUri)
+                             .map(URI::getHost)
+                             .collect(Collectors.toUnmodifiableSet()));
+        }
+
+        public ConnectionReuseStrategy(Set<String> vips) {
+            this.vips = Set.copyOf(vips);
+        }
+
+        @Override
+        public boolean keepAlive(HttpResponse response, HttpContext context) {
+            HttpCoreContext coreContext = HttpCoreContext.adapt(context);
+            String host = coreContext.getTargetHost().getHostName();
+            if (vips.contains(host)) {
+                return false;
+            }
+            return super.keepAlive(response, context);
+        }
+
     }
 
 }
