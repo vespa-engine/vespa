@@ -650,7 +650,7 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
 
-            if (node.type() == NodeType.host) {
+            if (node.type().isDockerHost()) {
                 List<Node> children = list().childrenOf(node).asList();
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
@@ -665,8 +665,9 @@ public class NodeRepository extends AbstractComponent {
                 return removed;
             }
             else {
-                db.removeNodes(List.of(node));
-                return List.of(node);
+                List<Node> removed = List.of(node);
+                db.removeNodes(removed);
+                return removed;
             }
         }
     }
@@ -681,8 +682,8 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Throws if the given node cannot be removed. Removal is allowed if:
      *  - Tenant node: node is unallocated
-     *  - Non-Docker-container node: iff in state provisioned|failed|parked
-     *  - Docker-container-node:
+     *  - Host node: iff in state provisioned|failed|parked
+     *  - Child node:
      *      If only removing the container node: node in state ready
      *      If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
      */
@@ -694,7 +695,7 @@ public class NodeRepository extends AbstractComponent {
 
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !removingAsChild) {
             if (node.state() != State.ready)
-                illegal(node + " can not be removed as it is not in the state [ready]");
+                illegal(node + " can not be removed as it is not in the state " + State.ready);
         }
         else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) { // removing a child node
             Set<State> legalStates = EnumSet.of(State.provisioned, State.failed, State.parked, State.dirty, State.ready);
