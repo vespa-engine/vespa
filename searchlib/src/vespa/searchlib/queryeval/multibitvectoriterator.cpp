@@ -156,8 +156,8 @@ MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children
     _bvs()
 {
     _bvs.reserve(children.size());
-    for (size_t i(0); i < children.size(); i++) {
-        const auto * bv = static_cast<const BitVectorIterator *>(children[i]);
+    for (const auto & child : children) {
+        const auto * bv = static_cast<const BitVectorIterator *>(child);
         _bvs.emplace_back(reinterpret_cast<const Word *>(bv->getBitValues()), bv->isInverted());
         _numDocs = std::min(_numDocs, bv->getDocIdLimit());
     }
