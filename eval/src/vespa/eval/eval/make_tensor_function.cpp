@@ -15,25 +15,6 @@ namespace vespalib::eval {
 namespace {
 
 using namespace nodes;
-using map_fun_t = double (*)(double);
-using join_fun_t = double (*)(double, double);
-
-//-----------------------------------------------------------------------------
-
-// TODO(havardpe): generic function pointer resolving for all single
-//                 operation lambdas.
-
-template <typename OP2>
-bool is_op2(const Function &lambda) {
-    if (lambda.num_params() == 2) {
-        if (auto op2 = as<OP2>(lambda.root())) {
-            auto sym1 = as<Symbol>(op2->lhs());
-            auto sym2 = as<Symbol>(op2->rhs());
-            return (sym1 && sym2 && (sym1->id() != sym2->id()));
-        }
-    }
-    return false;
-}
 
 //-----------------------------------------------------------------------------
 
@@ -63,13 +44,13 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::reduce(a, aggr, dimensions, stash);
     }
 
-    void make_map(const Node &, map_fun_t function) {
+    void make_map(const Node &, operation::op1_t function) {
         assert(stack.size() >= 1);
         const auto &a = stack.back().get();
         stack.back() = tensor_function::map(a, function, stash);
     }
 
-    void make_join(const Node &, join_fun_t function) {
+    void make_join(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
         const auto &b = stack.back().get();
         stack.pop_back();
@@ -77,7 +58,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::join(a, b, function, stash);
     }
 
-    void make_merge(const Node &, join_fun_t function) {
+    void make_merge(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
         const auto &b = stack.back().get();
         stack.pop_back();
@@ -203,14 +184,16 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         abort();
     }
     void visit(const TensorMap &node) override {
-        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
-        make_map(node, token.get()->get().get_function<1>());
+        if (auto op1 = operation::lookup_op1(node.lambda())) {
+            make_map(node, op1.value());
+        } else {
+            const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+            make_map(node, token.get()->get().get_function<1>());
+        }
     }
     void visit(const TensorJoin &node) override {
-        if (is_op2<Mul>(node.lambda())) {
-            make_join(node, operation::Mul::f);
-        } else if (is_op2<Add>(node.lambda())) {
-            make_join(node, operation::Add::f);
+        if (auto op2 = operation::lookup_op2(node.lambda())) {
+            make_join(node, op2.value());
         } else {
             const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
             make_join(node, token.get()->get().get_function<2>());

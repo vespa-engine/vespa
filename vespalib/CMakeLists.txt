@@ -24,8 +24,8 @@ vespa_define_module(
     src/tests/assert
     src/tests/barrier
     src/tests/benchmark_timer
-    src/tests/btree
     src/tests/box
+    src/tests/btree
     src/tests/closure
     src/tests/component
     src/tests/compress
@@ -128,6 +128,7 @@ vespa_define_module(
     src/tests/tutorial/minimal
     src/tests/tutorial/simple
     src/tests/tutorial/threads
+    src/tests/typify
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/util/md5
