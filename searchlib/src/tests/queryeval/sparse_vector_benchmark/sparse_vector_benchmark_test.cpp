@@ -230,6 +230,7 @@ struct WeightedSetFactory : SparseVectorFactory {
         std::vector<SearchIterator *> terms;
         std::vector<int32_t> weights;
         for (size_t i = 0; i < childCnt; ++i) {
+            // TODO: pass ownership with unique_ptr
             terms.push_back(childFactory.createChild(i, limit).release());
             weights.push_back(default_weight);
         }

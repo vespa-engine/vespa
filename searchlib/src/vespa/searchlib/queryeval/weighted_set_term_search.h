@@ -27,6 +27,7 @@ protected:
     WeightedSetTermSearch() {}
 
 public:
+    // TODO: pass ownership with unique_ptr
     static SearchIterator::UP create(const std::vector<SearchIterator *> &children,
                                      search::fef::TermFieldMatchData &tmd,
                                      const std::vector<int32_t> &weights,

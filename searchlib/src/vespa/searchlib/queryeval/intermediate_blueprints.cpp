@@ -433,6 +433,7 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     assert(sub_searches.size() == childCnt());
     assert(_weights.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
+        // TODO: pass ownership with unique_ptr
         terms.push_back(wand::Term(sub_searches[i].release(),
                                    _weights[i],
                                    getChild(i).getState().estimate().estHits));
@@ -697,6 +698,7 @@ SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searc
     SourceBlenderSearch::Children children;
     assert(sub_searches.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
+        // TODO: pass ownership with unique_ptr
         children.push_back(SourceBlenderSearch::Child(sub_searches[i].release(),
                                                       getChild(i).getSourceId()));
         assert(children.back().sourceId != 0xffffffff);

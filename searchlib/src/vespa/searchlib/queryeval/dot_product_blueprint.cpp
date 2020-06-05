@@ -59,6 +59,7 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
         childMatch.push_back(childState.field(0).resolve(*md));
+        // TODO: pass ownership with unique_ptr
         children[i] = _terms[i]->createSearch(*md, true).release();
     }
     return DotProductSearch::create(children, *tfmda[0], childMatch, _weights, std::move(md));

@@ -86,6 +86,7 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
+        // TODO: pass ownership with unique_ptr
         terms.push_back(wand::Term(_terms[i]->createSearch(*childrenMatchData, true).release(),
                                    _weights[i],
                                    childState.estimate().estHits,
