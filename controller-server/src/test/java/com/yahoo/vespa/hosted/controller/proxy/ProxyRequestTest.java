@@ -21,12 +21,6 @@ public class ProxyRequestTest {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void testEmpty() throws Exception {
-        exception.expectMessage("Request must be non-null");
-        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, List.of(), "/zone/v2");
-    }
-
-    @Test
     public void testBadUri() throws Exception {
         exception.expectMessage("Request path '/path' does not end with proxy path '/zone/v2/'");
         testRequest("http://domain.tld/path", "/zone/v2/");
@@ -67,8 +61,9 @@ public class ProxyRequestTest {
         }
     }
 
-    private static ProxyRequest testRequest(String url, String pathPrefix) throws ProxyException {
-        return new ProxyRequest(
-                HttpRequest.Method.GET, URI.create(url), Map.of(), null, List.of(), pathPrefix);
+    private static ProxyRequest testRequest(String url, String pathPrefix) {
+        return new ProxyRequest(HttpRequest.Method.GET, URI.create(url), Map.of(), null,
+                                List.of(URI.create("http://example.com")), pathPrefix);
     }
+
 }

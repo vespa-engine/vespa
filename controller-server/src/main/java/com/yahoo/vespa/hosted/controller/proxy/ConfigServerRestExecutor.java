@@ -10,5 +10,7 @@ import com.yahoo.container.jdisc.HttpResponse;
  * @author Haakon Dybdahl
  */
 public interface ConfigServerRestExecutor {
-    HttpResponse handle(ProxyRequest proxyRequest) throws ProxyException;
+
+    HttpResponse handle(ProxyRequest request);
+
 }
