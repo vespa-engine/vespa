@@ -292,7 +292,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
 
     private void setLiveApp(ApplicationSet applicationSet) {
         ApplicationId id = applicationSet.getId();
-        System.out.println("Setting live " + id);
         Collection<String> hostsForApp = applicationSet.getAllHosts();
         hostRegistry.update(id, hostsForApp);
         applicationSet.updateHostMetrics();
