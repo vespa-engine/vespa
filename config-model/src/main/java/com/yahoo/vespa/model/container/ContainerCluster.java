@@ -178,7 +178,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addSimpleComponent(ThreadPoolProvider.class);
+        addComponent(new ThreadPoolExecutorComponent.Builder("default-pool").build());
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");

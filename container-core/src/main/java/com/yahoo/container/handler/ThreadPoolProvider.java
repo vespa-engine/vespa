@@ -46,7 +46,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
      */
     @Override
     public void deconstruct() {
-        threadpool.deconstruct();
+        threadpool.close();
     }
 
 }
