@@ -27,7 +27,6 @@ public enum RoleDefinition {
 
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
-             Policy.classifiedApiRead,
              Policy.publicRead,
              Policy.user,
              Policy.tenantCreate),
