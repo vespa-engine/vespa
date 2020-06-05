@@ -3,21 +3,20 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.component.Version;
-import java.util.logging.Level;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Handles request for supermodel config.
@@ -84,7 +83,7 @@ public class SuperModelRequestHandler implements RequestHandler {
         return null;
     }
 
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) throws IOException {
+    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) {
         return handler.getConfig(configClass, applicationId, configId);
     }
 
@@ -128,4 +127,5 @@ public class SuperModelRequestHandler implements RequestHandler {
         superModelManager.markAsComplete();
         updateHandler();
     }
+
 }

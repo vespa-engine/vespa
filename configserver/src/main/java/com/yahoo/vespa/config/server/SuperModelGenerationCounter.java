@@ -2,11 +2,9 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.path.Path;
-import com.yahoo.transaction.AbstractTransaction;
-import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.GenerationCounter;
-import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.recipes.CuratorCounter;
 
 /**
  * Distributed global generation counter for the super model.

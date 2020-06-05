@@ -1,23 +1,49 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.MockReloadHandler;
-
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.model.TestModelFactory;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
+import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.VespaModelFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -25,14 +51,34 @@ import static org.junit.Assert.*;
 public class TenantApplicationsTest {
 
     private static final TenantName tenantName = TenantName.from("tenant");
+    private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
 
-    private Curator curator;
+    private MockReloadListener listener = new MockReloadListener();
     private CuratorFramework curatorFramework;
+    private TestComponentRegistry componentRegistry;
+    private TenantApplications applications;
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
-    public void setup() {
-        curator = new MockCurator();
+    public void setup() throws IOException {
+        Curator curator = new MockCurator();
         curatorFramework = curator.framework();
+        componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                                            .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
+                                            .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
+                                            .build())
+                .modelFactoryRegistry(createRegistry())
+                .reloadListener(listener)
+                .build();
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
+        tenantRepository.addTenant(tenantName);
+        applications = TenantApplications.create(componentRegistry, tenantName);
     }
 
     @Test
@@ -94,29 +140,71 @@ public class TenantApplicationsTest {
         assertThat(repo.activeApplications().size(), is(0));
     }
 
-    @Test
-    public void require_that_reload_handler_is_called_when_apps_are_removed() throws Exception {
-        ApplicationId foo = createApplicationId("foo");
-        writeApplicationData(foo, 3L);
-        writeApplicationData(createApplicationId("bar"), 4L);
-        MockReloadHandler reloadHandler = new MockReloadHandler();
-        TenantApplications repo = createZKAppRepo(reloadHandler);
-        assertNull(reloadHandler.lastRemoved);
-        repo.createDeleteTransaction(foo).commit();
-        long endTime = System.currentTimeMillis() + 60_000;
-        while (System.currentTimeMillis() < endTime && reloadHandler.lastRemoved == null) {
-            Thread.sleep(100);
+    public static class MockReloadListener implements ReloadListener {
+        public AtomicInteger reloaded = new AtomicInteger(0);
+        AtomicInteger removed = new AtomicInteger(0);
+        Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
+
+        @Override
+        public void configActivated(ApplicationSet application) {
+            reloaded.incrementAndGet();
         }
-        assertNotNull(reloadHandler.lastRemoved);
-        assertThat(reloadHandler.lastRemoved.serializedForm(), is(foo.serializedForm()));
+
+        @Override
+        public void hostsUpdated(TenantName tenant, Collection<String> newHosts) {
+            tenantHosts.put(tenant.value(), newHosts);
+        }
+
+        @Override
+        public void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts) {
+        }
+
+        @Override
+        public void applicationRemoved(ApplicationId applicationId) {
+            removed.incrementAndGet();
+        }
+    }
+
+    private void assertdefaultAppNotFound() {
+        assertFalse(applications.hasApplication(ApplicationId.defaultId(), Optional.of(vespaVersion)));
+    }
+
+    @Test
+    public void testListConfigs() throws IOException, SAXException {
+        assertdefaultAppNotFound();
+
+        VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
+        applications.createApplication(ApplicationId.defaultId());
+        applications.createPutTransaction(ApplicationId.defaultId(), 1).commit();
+        applications.reloadConfig(ApplicationSet.fromSingle(new Application(model,
+                                                                            new ServerCache(),
+                                                                            1,
+                                                                            false,
+                                                                            vespaVersion,
+                                                                            MetricUpdater.createTestUpdater(),
+                                                                            ApplicationId.defaultId())));
+        Set<ConfigKey<?>> configNames = applications.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), false);
+        assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
+
+        configNames = applications.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "container", "container.jdisc.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("specific", "container", "project")));
+    }
+
+    @Test
+    public void testAppendIdsInNonRecursiveListing() {
+        assertEquals(applications.appendOneLevelOfId("search/music", "search/music/qrservers/default/qr.0"), "search/music/qrservers");
+        assertEquals(applications.appendOneLevelOfId("search", "search/music/qrservers/default/qr.0"), "search/music");
+        assertEquals(applications.appendOneLevelOfId("search/music/qrservers/default/qr.0", "search/music/qrservers/default/qr.0"), "search/music/qrservers/default/qr.0");
+        assertEquals(applications.appendOneLevelOfId("", "search/music/qrservers/default/qr.0"), "search");
     }
 
     private TenantApplications createZKAppRepo() {
-        return createZKAppRepo(new MockReloadHandler());
-    }
-
-    private TenantApplications createZKAppRepo(MockReloadHandler reloadHandler) {
-        return TenantApplications.create(new TestComponentRegistry.Builder().curator(curator).build(), reloadHandler, tenantName);
+        return TenantApplications.create(componentRegistry, tenantName);
     }
 
     private static ApplicationId createApplicationId(String name) {
@@ -134,4 +222,10 @@ public class TenantApplicationsTest {
                 .forPath(TenantRepository.getApplicationsPath(tenantName).append(applicationId).getAbsolute(),
                          Utf8.toAsciiBytes(sessionId));
     }
+
+    private ModelFactoryRegistry createRegistry() {
+        return new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(vespaVersion),
+                                                      new TestModelFactory(new Version(3, 2, 1))));
+    }
+
 }

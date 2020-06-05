@@ -2,19 +2,16 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,7 +25,11 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -127,10 +128,6 @@ public class SuperModelRequestHandlerTest {
             super(vespaModel, cache, appGeneration, false, new Version(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
 
-    }
-
-    public static NodeFlavors emptyNodeFlavors() {
-        return new NodeFlavors(new FlavorsConfig(new FlavorsConfig.Builder()));
     }
 
     private ApplicationId applicationId(String tenantName, String applicationName) {

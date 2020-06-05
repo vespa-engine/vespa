@@ -223,10 +223,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        return deploy(in, prepareParams, false, clock.instant());
-    }
-
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();

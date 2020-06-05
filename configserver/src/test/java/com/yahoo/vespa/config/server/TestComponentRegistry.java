@@ -11,6 +11,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -20,7 +21,6 @@ import com.yahoo.vespa.config.server.session.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.config.server.tenant.TenantRequestHandlerTest;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -106,7 +106,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                         .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
                         .sessionLifetime(5));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
-        private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
+        private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private MockTenantListener tenantListener = new MockTenantListener();
         private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
         private HostRegistries hostRegistries = new HostRegistries();
@@ -153,6 +153,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder clock(Clock clock) {
             this.clock = clock;
+            return this;
+        }
+
+        public Builder reloadListener(ReloadListener reloadListener) {
+            this.reloadListener = reloadListener;
             return this;
         }
 

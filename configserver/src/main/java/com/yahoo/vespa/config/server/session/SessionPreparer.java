@@ -153,8 +153,6 @@ public class SessionPreparer {
         final DeployLogger logger;
         final PrepareParams params;
 
-        final Optional<ApplicationSet> currentActiveApplicationSet;
-        final Path tenantPath;
         final ApplicationId applicationId;
 
         /** The repository part of docker image to be used for this deployment */
@@ -187,8 +185,6 @@ public class SessionPreparer {
                     SessionZooKeeperClient sessionZooKeeperClient) {
             this.logger = logger;
             this.params = params;
-            this.currentActiveApplicationSet = currentActiveApplicationSet;
-            this.tenantPath = tenantPath;
             this.applicationPackage = preprocessedApplicationPackage;
             this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();

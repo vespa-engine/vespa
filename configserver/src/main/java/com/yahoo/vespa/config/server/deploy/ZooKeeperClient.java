@@ -21,7 +21,6 @@ import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

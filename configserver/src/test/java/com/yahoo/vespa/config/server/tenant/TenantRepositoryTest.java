@@ -2,21 +2,20 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.ReloadHandler;
-import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -47,7 +46,7 @@ public class TenantRepositoryTest {
 
     private TenantRepository tenantRepository;
     private TestComponentRegistry globalComponentRegistry;
-    private TenantRequestHandlerTest.MockReloadListener listener;
+    private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
 
@@ -61,7 +60,7 @@ public class TenantRepositoryTest {
     public void setupSessions() {
         curator = new MockCurator();
         globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
+        listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
         tenantRepository = new TenantRepository(globalComponentRegistry);

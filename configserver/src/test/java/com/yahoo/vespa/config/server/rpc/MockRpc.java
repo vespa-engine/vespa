@@ -55,14 +55,6 @@ public class MockRpc extends RpcServer {
         this(port, true, tempDir);
     }
 
-    /** Reset fields used to assert on the calls made to this */
-    public void resetChecks() {
-        forced = false;
-        tryResolveConfig = false;
-        tryRespond = false;
-        latestRequest = null;
-    }
-
     private static ConfigserverConfig createConfig(int port) {
         ConfigserverConfig.Builder b = new ConfigserverConfig.Builder();
         b.rpcport(port);

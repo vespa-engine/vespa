@@ -59,7 +59,7 @@ public class HttpProxyTest {
     public void testFetchException() {
         when(fetcher.get(any(), any())).thenThrow(new RequestTimeoutException("timed out"));
 
-        HttpResponse actualResponse = proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
-                                                "clustercontroller-status/v1/clusterName");
+        proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
+                  "clustercontroller-status/v1/clusterName");
     }
 }

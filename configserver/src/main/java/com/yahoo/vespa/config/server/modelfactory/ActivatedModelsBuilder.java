@@ -36,7 +36,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.net.URI;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -88,8 +87,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationId applicationId,
                                             Optional<DockerImage> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion,
-                                            Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
-                                            Instant now) {
+                                            Optional<AllocatedHosts> ignored // Ignored since we have this in the app package for activated models
+    ) {
         log.log(Level.FINE, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.version(), appGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);

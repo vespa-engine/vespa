@@ -12,9 +12,7 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -75,7 +73,7 @@ public class TenantRepository {
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
 
     private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
-    private final GlobalComponentRegistry globalComponentRegistry;
+    private final GlobalComponentRegistry componentRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
 
@@ -90,30 +88,30 @@ public class TenantRepository {
     /**
      * Creates a new tenant repository
      * 
-     * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
+     * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public TenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-        this(globalComponentRegistry, true);
+    public TenantRepository(GlobalComponentRegistry componentRegistry) {
+        this(componentRegistry, true);
     }
 
     /**
      * Creates a new tenant repository
      *
-     * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
+     * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      * @param useZooKeeperWatchForTenantChanges set to false for tests where you want to control adding and deleting
      *                                          tenants yourself
      */
-    public TenantRepository(GlobalComponentRegistry globalComponentRegistry, boolean useZooKeeperWatchForTenantChanges) {
-        this.globalComponentRegistry = globalComponentRegistry;
-        ConfigserverConfig configserverConfig = globalComponentRegistry.getConfigserverConfig();
+    public TenantRepository(GlobalComponentRegistry componentRegistry, boolean useZooKeeperWatchForTenantChanges) {
+        this.componentRegistry = componentRegistry;
+        ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
         this.throwExceptionIfBootstrappingFails = configserverConfig.throwIfBootstrappingTenantRepoFails();
-        this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
-        this.tenantListeners.add(globalComponentRegistry.getTenantListener());
-        this.zkCacheExecutor = globalComponentRegistry.getZkCacheExecutor();
-        this.zkWatcherExecutor = globalComponentRegistry.getZkWatcherExecutor();
+        this.curator = componentRegistry.getCurator();
+        metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
+        this.tenantListeners.add(componentRegistry.getTenantListener());
+        this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
+        this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -210,34 +208,21 @@ public class TenantRepository {
     private void createTenant(TenantName tenantName, RequestHandler requestHandler, ReloadHandler reloadHandler) {
         if (tenants.containsKey(tenantName)) return;
 
-        TenantRequestHandler tenantRequestHandler = null;
-        if (requestHandler == null) {
-            tenantRequestHandler = new TenantRequestHandler(globalComponentRegistry.getMetrics(),
-                                                            tenantName,
-                                                            List.of(globalComponentRegistry.getReloadListener()),
-                                                            ConfigResponseFactory.create(globalComponentRegistry.getConfigserverConfig()),
-                                                            globalComponentRegistry);
-            requestHandler = tenantRequestHandler;
-        }
-
-        if (reloadHandler == null && tenantRequestHandler != null)
-            reloadHandler = tenantRequestHandler;
-
-        HostValidator<ApplicationId> hostValidator = tenantRequestHandler;
-        TenantApplications applicationRepo = TenantApplications.create(globalComponentRegistry,
-                                                                       reloadHandler,
-                                                                       tenantName);
-
-        SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry, applicationRepo, hostValidator, tenantName);
-        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);
-        RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(globalComponentRegistry,
+        TenantApplications applicationRepo = TenantApplications.create(componentRegistry, tenantName);
+        if (requestHandler == null)
+            requestHandler = applicationRepo;
+        if (reloadHandler == null)
+            reloadHandler = applicationRepo;
+        SessionFactory sessionFactory = new SessionFactory(componentRegistry, applicationRepo, applicationRepo, tenantName);
+        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, componentRegistry, sessionFactory);
+        RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(componentRegistry,
                                                                     sessionFactory,
                                                                     reloadHandler,
                                                                     tenantName,
                                                                     applicationRepo);
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant =  new Tenant(tenantName, sessionFactory, localSessionRepo, remoteSessionRepo, requestHandler,
-                                    reloadHandler, applicationRepo, globalComponentRegistry.getCurator());
+        Tenant tenant = new Tenant(tenantName, sessionFactory, localSessionRepo, remoteSessionRepo, requestHandler,
+                                   reloadHandler, applicationRepo, componentRegistry.getCurator());
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
     }
