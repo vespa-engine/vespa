@@ -591,40 +591,6 @@ LockableMap<Map>::addAndLockResults(
 uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b);
 
 template<typename Map>
-typename LockableMap<Map>::WrappedEntry
-LockableMap<Map>::createAppropriateBucket(
-        uint16_t newBucketBits,
-        const char* clientId,
-        const BucketId& bucket)
-{
-    std::unique_lock<std::mutex> guard(_lock);
-    typename Map::const_iterator iter = _map.lower_bound(bucket.toKey());
-
-    // Find the two buckets around the possible new bucket. The new
-    // bucket's used bits should be the highest used bits it can be while
-    // still being different from both of these.
-    if (iter != _map.end()) {
-        newBucketBits = getMinDiffBits(newBucketBits, BucketId(BucketId::keyToBucketId(iter->first)), bucket);
-    }
-
-    if (iter != _map.begin()) {
-        --iter;
-        newBucketBits = getMinDiffBits(newBucketBits, BucketId(BucketId::keyToBucketId(iter->first)), bucket);
-    }
-
-    BucketId newBucket(newBucketBits, bucket.getRawId());
-    newBucket.setUsedBits(newBucketBits);
-    BucketId::Type key = newBucket.stripUnused().toKey();
-
-    LockId lid(key, clientId);
-    acquireKey(lid, guard);
-    bool preExisted;
-    typename Map::iterator it = _map.find(key, true, preExisted);
-    _lockedKeys.insert(LockId(key, clientId));
-    return WrappedEntry(*this, key, it->second, clientId, preExisted);
-}
-
-template<typename Map>
 std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
 LockableMap<Map>::getContained(const BucketId& bucket,
                                const char* clientId)
