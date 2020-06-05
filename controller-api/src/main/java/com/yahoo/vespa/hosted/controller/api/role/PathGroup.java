@@ -22,7 +22,8 @@ enum PathGroup {
 
     /** Paths exclusive to operators (including read), used for system management. */
     classifiedOperator(PathPrefix.api,
-                       "/configserver/v1/{*}"),
+                       "/configserver/v1/{*}",
+                       "/deployment/v1/{*}"),
 
     /** Paths used for system management by operators. */
     operator(PathPrefix.none,
@@ -199,15 +200,11 @@ enum PathGroup {
                    "/",
                    "/d/{*}"),
 
-    /** Same as classifiedInfo, but with optional /api prefix */
-    classifiedApiInfo(PathPrefix.api,
-                      "/deployment/v1/{*}",
-                      "/user/v1/user"),
-
     /** Paths providing public information. */
     publicInfo(PathPrefix.api,
-               "/badge/v1/{*}",
-               "/zone/v1/{*}"),
+               "/user/v1/user",     // Information about who you are.
+               "/badge/v1/{*}",     // Badges for deployment jobs.
+               "/zone/v1/{*}"),     // Lists environment and regions.
 
     /** Paths used for deploying system-wide feature flags. */
     systemFlagsDeploy(PathPrefix.none, "/system-flags/v1/deploy"),
