@@ -31,17 +31,22 @@ T get(const void * base, bool invert) {
     return __builtin_expect(invert, false) ? ~v : v;
 }
 
+template <typename T>
+const T * cast(const void * ptr, size_t offsetBytes) {
+    return static_cast<const T *>(static_cast<const void *>(static_cast<const char *>(ptr) + offsetBytes));
+}
+
 template<unsigned ChunkSize, unsigned Chunks>
 void
-andChunks(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> & src, uint64_t * dest) {
+andChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, void * dest) {
     typedef uint64_t Chunk __attribute__ ((vector_size (ChunkSize)));
-    Chunk * chunk = reinterpret_cast<Chunk *>(dest);
-    const Chunk * tmp = reinterpret_cast<const Chunk *>(src[0].first+offset);
+    Chunk * chunk = static_cast<Chunk *>(dest);
+    const Chunk * tmp = cast<Chunk>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
         chunk[n] = get<Chunk>(tmp+n, src[0].second);
     }
     for (size_t i(1); i < src.size(); i++) {
-        tmp = reinterpret_cast<const Chunk *>(src[i].first+offset);
+        tmp = cast<Chunk>(src[i].first, offset);
         for (size_t n=0; n < Chunks; n++) {
             chunk[n] &= get<Chunk>(tmp+n, src[i].second);
         }
@@ -50,15 +55,15 @@ andChunks(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> & 
 
 template<unsigned ChunkSize, unsigned Chunks>
 void
-orChunks(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> & src, uint64_t * dest) {
+orChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, void * dest) {
     typedef uint64_t Chunk __attribute__ ((vector_size (ChunkSize)));
-    Chunk * chunk = reinterpret_cast<Chunk *>(dest);
-    const Chunk * tmp = reinterpret_cast<const Chunk *>(src[0].first+offset);
+    Chunk * chunk = static_cast<Chunk *>(dest);
+    const Chunk * tmp = cast<Chunk>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
         chunk[n] = get<Chunk>(tmp+n, src[0].second);
     }
     for (size_t i(1); i < src.size(); i++) {
-        tmp = reinterpret_cast<const Chunk *>(src[i].first+offset);
+        tmp = cast<Chunk>(src[i].first, offset);
         for (size_t n=0; n < Chunks; n++) {
             chunk[n] |= get<Chunk>(tmp+n, src[i].second);
         }

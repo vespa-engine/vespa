@@ -30,11 +30,12 @@ public:
     virtual size_t populationCount(const uint64_t *a, size_t sz) const = 0;
     virtual double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const = 0;
     virtual double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const = 0;
-    // And 64 bytes from multiple sources
-    virtual void and64(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> &src, uint64_t *dest) const = 0;
-    virtual void or64(size_t offset, const std::vector<std::pair<const uint64_t *, bool>> &src, uint64_t *dest) const = 0;
+    // AND 64 bytes from multiple, optionally inverted sources
+    virtual void and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const = 0;
+    // OR 64 bytes from multiple, optionally inverted sources
+    virtual void or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const = 0;
 
-    static const IAccelrated & getAccelrator() __attribute__((noinline));
+    static const IAccelrated & getAccelerator() __attribute__((noinline));
 };
 
 }

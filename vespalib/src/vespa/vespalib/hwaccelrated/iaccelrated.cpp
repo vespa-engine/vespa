@@ -149,7 +149,7 @@ void
 verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
            size_t offset, size_t num_vectors, bool invertSome)
 {
-    std::vector<std::pair<const uint64_t *, bool>> vRefs;
+    std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
         vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
     }
@@ -160,7 +160,7 @@ verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> &
     }
 
     uint64_t dest[8] __attribute((aligned(64)));
-    accel.or64(offset, vRefs, dest);
+    accel.or64(offset*sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 64 bytes OR");
@@ -171,7 +171,7 @@ void
 verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
            size_t offset, size_t num_vectors, bool invertSome)
 {
-    std::vector<std::pair<const uint64_t *, bool>> vRefs;
+    std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
         vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
     }
@@ -181,7 +181,7 @@ verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> 
     }
 
     uint64_t dest[8] __attribute((aligned(64)));
-    accel.and64(offset, vRefs, dest);
+    accel.and64(offset*sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 64 bytes AND");
@@ -239,7 +239,7 @@ RuntimeVerificator::RuntimeVerificator()
     GenericAccelrator generic;
     verify(generic);
 
-    const IAccelrated & thisCpu(IAccelrated::getAccelrator());
+    const IAccelrated & thisCpu(IAccelrated::getAccelerator());
     verify(thisCpu);
 }
 
@@ -272,7 +272,7 @@ static Selector _G_selector;
 RuntimeVerificator _G_verifyAccelrator;
 
 const IAccelrated &
-IAccelrated::getAccelrator()
+IAccelrated::getAccelerator()
 {
     static IAccelrated::UP accelrator = _G_selector.create();
     return *accelrator;

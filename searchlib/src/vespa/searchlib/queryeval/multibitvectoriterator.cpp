@@ -24,7 +24,7 @@ public:
     explicit MultiBitVectorIterator(const Children & children)
         : MultiBitVectorIteratorBase(children),
           _update(),
-          _accel(IAccelrated::getAccelrator()),
+          _accel(IAccelrated::getAccelerator()),
           _lastWords()
     {
         static_assert(sizeof(_lastWords) == 64, "Latswords should have 64 byte size");
@@ -56,16 +56,16 @@ private:
 
 struct And {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, uint32_t offset, const std::vector<std::pair<const Word *, bool>> & src, Word *dest) {
-        accel.and64(offset, src, dest);
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, Word *dest) {
+        accel.and64(offset*sizeof(uint64_t), src, dest);
     }
     static bool isAnd() { return true; }
 };
 
 struct Or {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, uint32_t offset, const std::vector<std::pair<const Word *, bool>> & src, Word *dest) {
-        accel.or64(offset, src, dest);
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, Word *dest) {
+        accel.or64(offset*sizeof(uint64_t), src, dest);
     }
     static bool isAnd() { return false; }
 };
@@ -159,7 +159,7 @@ MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children
     _bvs.reserve(children.size());
     for (const auto & child : children) {
         const auto * bv = static_cast<const BitVectorIterator *>(child);
-        _bvs.emplace_back(reinterpret_cast<const Word *>(bv->getBitValues()), bv->isInverted());
+        _bvs.emplace_back(bv->getBitValues(), bv->isInverted());
         _numDocs = std::min(_numDocs, bv->getDocIdLimit());
     }
 }
@@ -180,7 +180,7 @@ MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
     (void) estimate;
     if (filter->isBitVector() && acceptExtraFilter()) {
         const auto & bv = static_cast<const BitVectorIterator &>(*filter);
-        _bvs.emplace_back(reinterpret_cast<const Word *>(bv.getBitValues()), bv.isInverted());
+        _bvs.emplace_back(bv.getBitValues(), bv.isInverted());
         insert(getChildren().size(), std::move(filter));
         _lastMaxDocIdLimit = 0;  // force reload
         _lastMaxDocIdLimitRequireFetch = 0;

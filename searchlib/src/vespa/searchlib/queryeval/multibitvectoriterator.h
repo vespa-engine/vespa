@@ -21,7 +21,7 @@ public:
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
     MultiBitVectorIteratorBase(const Children & children);
-    using MetaWord = std::pair<const Word *, bool>;
+    using MetaWord = std::pair<const void *, bool>;
 
     uint32_t                _numDocs;
     uint32_t                _lastMaxDocIdLimit; // next documentid requiring recomputation.
