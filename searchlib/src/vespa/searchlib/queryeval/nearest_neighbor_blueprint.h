@@ -49,7 +49,6 @@ public:
                                                      bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
-    void fetchPostings(const ExecuteInfo &execInfo) override;
 };
 
 }
