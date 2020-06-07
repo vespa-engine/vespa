@@ -185,6 +185,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.optimize();
         trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
+        trace.addEvent(5, "MTF: Handle Global Filters");
+        _query.handle_global_filters(searchContext.getDocIdLimit());
         _query.freeze();
         trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());

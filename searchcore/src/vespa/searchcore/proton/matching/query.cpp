@@ -190,17 +190,7 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 void
 Query::optimize()
 {
-    using search::queryeval::GlobalFilter;
     _blueprint = Blueprint::optimize(std::move(_blueprint));
-    if (_blueprint->getState().want_global_filter()) {
-        auto white_list = (_white_list_provider ?
-                           _white_list_provider->get_white_list_filter() :
-                           search::BitVector::UP());
-        auto global_filter = GlobalFilter::create(std::move(white_list));
-        _blueprint->set_global_filter(*global_filter);
-        // optimized order may change after accounting for global filter:
-        _blueprint = Blueprint::optimize(std::move(_blueprint));
-    }
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
 
@@ -208,6 +198,24 @@ void
 Query::fetchPostings()
 {
     _blueprint->fetchPostings(search::queryeval::ExecuteInfo::create(true, 1.0));
+}
+
+void
+Query::handle_global_filters(uint32_t docid_limit)
+{
+    using search::queryeval::GlobalFilter;
+    if (_blueprint->getState().want_global_filter()) {
+        auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
+        bool strict = true;
+        auto filter_iterator = _blueprint->createFilterSearch(strict, constraint);
+        filter_iterator->initRange(1, docid_limit);
+        auto white_list = filter_iterator->get_hits(1);
+        auto global_filter = GlobalFilter::create(std::move(white_list));
+        _blueprint->set_global_filter(*global_filter);
+        // optimized order may change after accounting for global filter:
+        _blueprint = Blueprint::optimize(std::move(_blueprint));
+        LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
+    }
 }
 
 void
