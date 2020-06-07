@@ -80,10 +80,10 @@ public class SessionFactory {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
-        return create(applicationDirectory, applicationId, nonExistingActiveSession, false, timeoutBudget);
+    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
+                                      TimeoutBudget timeoutBudget, Optional<Long> activeSessionId) {
+        return create(applicationDirectory, applicationId, activeSessionId.orElse(nonExistingActiveSession), false, timeoutBudget);
     }
-
 
     public RemoteSession createRemoteSession(long sessionId) {
         Path sessionPath = sessionsPath.append(String.valueOf(sessionId));

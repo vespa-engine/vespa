@@ -47,7 +47,7 @@ GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, 
     using vespalib::slime::Symbol;
     using vespalib::slime::ArrayInserter;
 
-    const IAttributeVector & attribute = vec(*dsState);
+    const auto& attribute = get_attribute(*dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
         Cursor &arr = target.insertArray();

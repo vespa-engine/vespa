@@ -12,7 +12,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -138,7 +137,7 @@ public class LocalSessionTest {
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
         TenantApplications applications = TenantApplications.create(
-                new TestComponentRegistry.Builder().curator(curator).build(), new MockReloadHandler(), tenant);
+                new TestComponentRegistry.Builder().curator(curator).build(), tenant);
         applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, preparer, FilesApplicationPackage.fromFile(testApp),
                                 zkc, sessionDir, applications, new HostRegistry<>());

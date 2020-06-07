@@ -6,6 +6,7 @@
 #include "unpackinfo.h"
 #include "executeinfo.h"
 #include "global_filter.h"
+#include "multisearch.h"
 #include <vespa/searchlib/common/bitvector.h>
 
 namespace vespalib { class ObjectVisitor; }
@@ -297,7 +298,7 @@ public:
     virtual void sort(std::vector<Blueprint*> &children) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
-    createIntermediateSearch(const std::vector<SearchIterator *> &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

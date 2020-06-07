@@ -1,15 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
+import ai.vespa.util.http.retry.Sleeper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -19,11 +20,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,75 +56,87 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @SuppressWarnings("unused") // Injected
 public class ConfigServerRestExecutorImpl extends AbstractComponent implements ConfigServerRestExecutor {
 
-    private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
-
+    private static final Logger LOG = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration PING_REQUEST_TIMEOUT = Duration.ofMillis(500);
+    private static final Duration SINGLE_TARGET_WAIT = Duration.ofSeconds(2);
+    private static final int SINGLE_TARGET_RETRIES = 3;
     private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
     private final CloseableHttpClient client;
+    private final Sleeper sleeper;
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
+        this(zoneRegistry, sslContextProvider.getIdentitySslContext(), new Sleeper.Default(),
+             new ConnectionReuseStrategy(zoneRegistry));
+    }
 
-        this.client = createHttpClient(config, sslContextProvider,
-                new ControllerOrConfigserverHostnameVerifier(zoneRegistry));
+    ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, SSLContext sslContext,
+                                 Sleeper sleeper, ConnectionReuseStrategy connectionReuseStrategy) {
+        this.client = createHttpClient(sslContext,
+                                       new ControllerOrConfigserverHostnameVerifier(zoneRegistry),
+                                       connectionReuseStrategy);
+        this.sleeper = sleeper;
     }
 
     @Override
-    public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        List<URI> allServers = new ArrayList<>(proxyRequest.getTargets());
+    public ProxyResponse handle(ProxyRequest request) {
+        List<URI> targets = new ArrayList<>(request.getTargets());
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers)) {
+        boolean singleTarget = targets.size() == 1;
+        if (singleTarget) {
+            for (int i = 0; i < SINGLE_TARGET_RETRIES - 1; i++) {
+                targets.add(targets.get(0));
+            }
+        } else if (queueFirstServerIfDown(targets)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
-        for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
+
+        for (URI url : targets) {
+            Optional<ProxyResponse> proxyResponse = proxy(request, url, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
+            if (singleTarget) {
+                sleeper.sleep(SINGLE_TARGET_WAIT);
+            }
         }
-        // TODO Add logging, for now, experimental and we want to not add more noise.
-        throw new ProxyException(ErrorResponse.internalServerError("Failed talking to config servers: "
-                + errorBuilder.toString()));
+
+        throw new RuntimeException("Failed talking to config servers: " + errorBuilder.toString());
     }
 
-    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
-            throws ProxyException {
-        final HttpRequestBase requestBase = createHttpBaseRequest(
-                proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
+    private Optional<ProxyResponse> proxy(ProxyRequest request, URI url, StringBuilder errorBuilder) {
+        HttpRequestBase requestBase = createHttpBaseRequest(
+                request.getMethod(), request.createConfigServerRequestUri(url), request.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
-        copyHeaders(proxyRequest.getHeaders(), requestBase);
+        copyHeaders(request.getHeaders(), requestBase);
 
         try (CloseableHttpResponse response = client.execute(requestBase)) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
-                errorBuilder.append("Talking to server ").append(uri.getHost());
+                errorBuilder.append("Talking to server ").append(url.getHost());
                 errorBuilder.append(", got ").append(status).append(" ")
                         .append(content).append("\n");
-                log.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
-                                                            uri.getHost(), status, content));
+                LOG.log(Level.FINE, () -> String.format("Got response from %s with status code %d and content:\n %s",
+                                                        url.getHost(), status, content));
                 return Optional.empty();
             }
-            final Header contentHeader = response.getLastHeader("Content-Type");
-            final String contentType;
+            Header contentHeader = response.getLastHeader("Content-Type");
+            String contentType;
             if (contentHeader != null && contentHeader.getValue() != null && ! contentHeader.getValue().isEmpty()) {
                 contentType = contentHeader.getValue().replace("; charset=UTF-8","");
             } else {
                 contentType = "application/json";
             }
             // Send response back
-            return Optional.of(new ProxyResponse(proxyRequest, content, status, uri, contentType));
+            return Optional.of(new ProxyResponse(request, content, status, url, contentType));
         } catch (Exception e) {
-            errorBuilder.append("Talking to server ").append(uri.getHost());
+            errorBuilder.append("Talking to server ").append(url.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
-            log.log(Level.FINE, e, () -> "Got exception while sending request to " + uri.getHost());
+            LOG.log(Level.FINE, e, () -> "Got exception while sending request to " + url.getHost());
             return Optional.empty();
         }
     }
@@ -129,33 +147,32 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 .orElse("");
     }
 
-    private static HttpRequestBase createHttpBaseRequest(Method method, URI uri, InputStream data) throws ProxyException {
+    private static HttpRequestBase createHttpBaseRequest(Method method, URI url, InputStream data) {
         switch (method) {
             case GET:
-                return new HttpGet(uri);
+                return new HttpGet(url);
             case POST:
-                HttpPost post = new HttpPost(uri);
+                HttpPost post = new HttpPost(url);
                 if (data != null) {
                     post.setEntity(new InputStreamEntity(data));
                 }
                 return post;
             case PUT:
-                HttpPut put = new HttpPut(uri);
+                HttpPut put = new HttpPut(url);
                 if (data != null) {
                     put.setEntity(new InputStreamEntity(data));
                 }
                 return put;
             case DELETE:
-                return new HttpDelete(uri);
+                return new HttpDelete(url);
             case PATCH:
-                HttpPatch patch = new HttpPatch(uri);
+                HttpPatch patch = new HttpPatch(url);
                 if (data != null) {
                     patch.setEntity(new InputStreamEntity(data));
                 }
                 return patch;
-            default:
-                throw new ProxyException(ErrorResponse.methodNotAllowed("Will not proxy such calls."));
         }
+        throw new IllegalArgumentException("Refusing to proxy " + method + " " + url + ": Unsupported method");
     }
 
     private static void copyHeaders(Map<String, List<String>> headers, HttpRequestBase toRequest) {
@@ -169,7 +186,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
     }
 
     /**
-     * During upgrade, one server can be down, this is normal. Therefor we do a quick ping on the first server,
+     * During upgrade, one server can be down, this is normal. Therefore we do a quick ping on the first server,
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
@@ -178,15 +195,15 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             return false;
         }
         URI uri = allServers.get(0);
-        HttpGet httpget = new HttpGet(uri);
+        HttpGet httpGet = new HttpGet(uri);
 
-        int timeout = 500;
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(timeout)
-                .setConnectionRequestTimeout(timeout)
-                .setSocketTimeout(timeout).build();
-        httpget.setConfig(config);
-        try (CloseableHttpResponse response = client.execute(httpget)) {
+                .setConnectTimeout((int) PING_REQUEST_TIMEOUT.toMillis())
+                .setConnectionRequestTimeout((int) PING_REQUEST_TIMEOUT.toMillis())
+                .setSocketTimeout((int) PING_REQUEST_TIMEOUT.toMillis()).build();
+        httpGet.setConfig(config);
+
+        try (CloseableHttpResponse response = client.execute(httpGet)) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
             }
@@ -208,18 +225,25 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         }
     }
 
-    private static CloseableHttpClient createHttpClient(RequestConfig config,
-                                                        ServiceIdentityProvider sslContextProvider,
-                                                        HostnameVerifier hostnameVerifier) {
+    private static CloseableHttpClient createHttpClient(SSLContext sslContext,
+                                                        HostnameVerifier hostnameVerifier,
+                                                        org.apache.http.ConnectionReuseStrategy connectionReuseStrategy) {
+
+        RequestConfig config = RequestConfig.custom()
+                                            .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                                            .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                                            .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         return HttpClientBuilder.create()
-                .setUserAgent("config-server-proxy-client")
-                .setSSLContext(sslContextProvider.getIdentitySslContext())
-                .setSSLHostnameVerifier(hostnameVerifier)
-                .setDefaultRequestConfig(config)
-                .setMaxConnPerRoute(10)
-                .setMaxConnTotal(500)
-                .setConnectionTimeToLive(1, TimeUnit.MINUTES)
-                .build();
+                                .setUserAgent("config-server-proxy-client")
+                                .setSSLContext(sslContext)
+                                .setSSLHostnameVerifier(hostnameVerifier)
+                                .setDefaultRequestConfig(config)
+                                .setMaxConnPerRoute(10)
+                                .setMaxConnTotal(500)
+                                .setConnectionReuseStrategy(connectionReuseStrategy)
+                                .setConnectionTimeToLive(1, TimeUnit.MINUTES)
+                                .build();
+
     }
 
     private static class ControllerOrConfigserverHostnameVerifier implements HostnameVerifier {
@@ -242,4 +266,36 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             return "localhost".equals(hostname) || configserverVerifier.verify(hostname, session);
         }
     }
+
+    /**
+     * A connection reuse strategy which avoids reusing connections to VIPs. Since VIPs are TCP-level load balancers,
+     * a reconnect is needed to (potentially) switch real server.
+     */
+    public static class ConnectionReuseStrategy extends DefaultConnectionReuseStrategy {
+
+        private final Set<String> vips;
+
+        public ConnectionReuseStrategy(ZoneRegistry zoneRegistry) {
+            this(zoneRegistry.zones().all().ids().stream()
+                             .map(zoneRegistry::getConfigServerVipUri)
+                             .map(URI::getHost)
+                             .collect(Collectors.toUnmodifiableSet()));
+        }
+
+        public ConnectionReuseStrategy(Set<String> vips) {
+            this.vips = Set.copyOf(vips);
+        }
+
+        @Override
+        public boolean keepAlive(HttpResponse response, HttpContext context) {
+            HttpCoreContext coreContext = HttpCoreContext.adapt(context);
+            String host = coreContext.getTargetHost().getHostName();
+            if (vips.contains(host)) {
+                return false;
+            }
+            return super.keepAlive(response, context);
+        }
+
+    }
+
 }

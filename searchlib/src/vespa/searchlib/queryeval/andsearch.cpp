@@ -48,8 +48,8 @@ AndSearch::doUnpack(uint32_t docid)
     }
 }
 
-AndSearch::AndSearch(const Children & children) :
-    MultiSearch(children),
+AndSearch::AndSearch(Children children) :
+    MultiSearch(std::move(children)),
     _estimate(std::numeric_limits<uint32_t>::max())
 {
 }
@@ -99,31 +99,37 @@ private:
 
 }
 
-AndSearch *
-AndSearch::create(const MultiSearch::Children &children, bool strict)
+std::unique_ptr<AndSearch>
+AndSearch::create(ChildrenIterators children, bool strict)
 {
     UnpackInfo unpackInfo;
     unpackInfo.forceAll();
-    return create(children, strict, unpackInfo);
+    return create(std::move(children), strict, unpackInfo);
 }
 
-AndSearch *
-AndSearch::create(const MultiSearch::Children &children, bool strict, const UnpackInfo & unpackInfo) {
+std::unique_ptr<AndSearch>
+AndSearch::create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo) {
     if (strict) {
         if (unpackInfo.unpackAll()) {
-            return new AndSearchStrict<FullUnpack>(children, FullUnpack());
+            using MyAnd = AndSearchStrict<FullUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), FullUnpack());
         } else if(unpackInfo.empty()) {
-            return new AndSearchStrict<NoUnpack>(children, NoUnpack());
+            using MyAnd = AndSearchStrict<NoUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), NoUnpack());
         } else {
-            return new AndSearchStrict<SelectiveUnpack>(children, SelectiveUnpack(unpackInfo));
+            using MyAnd = AndSearchStrict<SelectiveUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), SelectiveUnpack(unpackInfo));
         }
     } else {
         if (unpackInfo.unpackAll()) {
-            return new AndSearchNoStrict<FullUnpack>(children, FullUnpack());
+            using MyAnd = AndSearchNoStrict<FullUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), FullUnpack());
         } else if (unpackInfo.empty()) {
-            return new AndSearchNoStrict<NoUnpack>(children, NoUnpack());
+            using MyAnd = AndSearchNoStrict<NoUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), NoUnpack());
         } else {
-            return new AndSearchNoStrict<SelectiveUnpack>(children, SelectiveUnpack(unpackInfo));
+            using MyAnd = AndSearchNoStrict<SelectiveUnpack>;
+            return std::make_unique<MyAnd>(std::move(children), SelectiveUnpack(unpackInfo));
         }
     }
 }

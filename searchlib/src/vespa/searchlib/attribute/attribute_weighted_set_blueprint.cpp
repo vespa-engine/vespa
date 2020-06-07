@@ -162,6 +162,7 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
         auto child_tfmd = match_data->resolveTermField(handle);
         std::vector<queryeval::SearchIterator*> children(_contexts.size());
         for (size_t i = 0; i < _contexts.size(); ++i) {
+            // TODO: pass ownership with unique_ptr
             children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
         return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, _weights, std::move(match_data)));

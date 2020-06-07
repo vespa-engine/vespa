@@ -9,13 +9,14 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.http.*;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.HttpHandler;
+import com.yahoo.vespa.config.server.http.JSONResponse;
 
-import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 
 /**

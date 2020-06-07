@@ -59,7 +59,7 @@ public class LocalSessionRepoTest {
                                             .build())
                 .build();
         SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry,
-                                                           TenantApplications.create(globalComponentRegistry, new MockReloadHandler(), tenantName),
+                                                           TenantApplications.create(globalComponentRegistry, tenantName),
                                                            new HostRegistry<>(),
                                                            tenantName);
         repo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);

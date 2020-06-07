@@ -20,7 +20,7 @@ public:
      */
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
-    MultiBitVectorIteratorBase(const Children & children);
+    MultiBitVectorIteratorBase(Children hildren);
     using MetaWord = std::pair<const void *, bool>;
 
     uint32_t                _numDocs;

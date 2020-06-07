@@ -187,11 +187,6 @@ public:
     std::map<BucketId, WrappedEntry>
     getContained(const BucketId& bucketId, const char* clientId);
 
-    WrappedEntry
-    createAppropriateBucket(uint16_t newBucketBits,
-                            const char* clientId,
-                            const BucketId& bucket);
-
     typedef std::map<BucketId, WrappedEntry> EntryMap;
 
     /**

@@ -8,8 +8,6 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 /**
  * A provider for {@link RpcAuthorizer}. The instance provided is dependent on the configuration of the configserver.

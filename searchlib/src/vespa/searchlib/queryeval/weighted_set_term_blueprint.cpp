@@ -50,6 +50,7 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
     fef::MatchData::UP md = _layout.createMatchData();
     std::vector<SearchIterator*> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
+        // TODO: pass ownership with unique_ptr
         children[i] = _terms[i]->createSearch(*md, true).release();
     }
     return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _weights, std::move(md)));

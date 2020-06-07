@@ -91,12 +91,12 @@ SearchIterator::UP createAndFilter(const IntermediateBlueprint &self,
     for (size_t i = 0; i < self.childCnt(); ++i) {
         bool child_strict = strict && (i == 0);
         auto search = self.getChild(i).createFilterSearch(child_strict, constraint);
-        sub_searches.push_back(search.release());
+        sub_searches.push_back(std::move(search));
     }
     UnpackInfo unpack_info;
-    AndSearch * search = AndSearch::create(sub_searches, strict, unpack_info);
+    auto search = AndSearch::create(std::move(sub_searches), strict, unpack_info);
     search->estimate(self.getState().estimate().estHits);
-    return SearchIterator::UP(search);
+    return search;
 }
 
 } // namespace search::queryeval::<unnamed>
@@ -166,23 +166,24 @@ AndNotBlueprint::inheritStrict(size_t i) const
 }
 
 SearchIterator::UP
-AndNotBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                           bool strict, search::fef::MatchData &md) const
 {
     UnpackInfo unpack_info(calculateUnpackInfo(md));
     if (should_do_termwise_eval(unpack_info, md.get_termwise_limit())) {
-        TermwiseBlueprintHelper helper(*this, sub_searches, unpack_info);
+        TermwiseBlueprintHelper helper(*this, std::move(sub_searches), unpack_info);
         bool termwise_strict = (strict && inheritStrict(helper.first_termwise));
         auto termwise_search = (helper.first_termwise == 0)
-                               ? SearchIterator::UP(AndNotSearch::create(helper.termwise, termwise_strict))
-                               : SearchIterator::UP(OrSearch::create(helper.termwise, termwise_strict));
+                               ? AndNotSearch::create(helper.get_termwise_children(), termwise_strict)
+                               : OrSearch::create(helper.get_termwise_children(), termwise_strict);
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
-        if (helper.children.size() == 1) {
-            return SearchIterator::UP(helper.children.front());
+        auto rearranged = helper.get_result();
+        if (rearranged.size() == 1) {
+            return std::move(rearranged[0]);
         }
-        return SearchIterator::UP(AndNotSearch::create(helper.children, strict));
+        return AndNotSearch::create(std::move(rearranged), strict);
     }
-    return SearchIterator::UP(AndNotSearch::create(sub_searches, strict));
+    return AndNotSearch::create(std::move(sub_searches), strict);
 }
 
 namespace {
@@ -207,9 +208,9 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
         auto search = (i == 0)
                 ? getChild(i).createFilterSearch(child_strict, constraint)
                 : getChild(i).createFilterSearch(child_strict, invert(constraint));
-        sub_searches.push_back(search.release());
+        sub_searches.push_back(std::move(search));
     }
-    return SearchIterator::UP(AndNotSearch::create(sub_searches, strict));
+    return AndNotSearch::create(std::move(sub_searches), strict);
 }
 
 //-----------------------------------------------------------------------------
@@ -265,26 +266,27 @@ AndBlueprint::inheritStrict(size_t i) const
 }
 
 SearchIterator::UP
-AndBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                        bool strict, search::fef::MatchData & md) const
 {
     UnpackInfo unpack_info(calculateUnpackInfo(md));
-    AndSearch * search = 0;
+    std::unique_ptr<AndSearch> search;
     if (should_do_termwise_eval(unpack_info, md.get_termwise_limit())) {
-        TermwiseBlueprintHelper helper(*this, sub_searches, unpack_info);
+        TermwiseBlueprintHelper helper(*this, std::move(sub_searches), unpack_info);
         bool termwise_strict = (strict && inheritStrict(helper.first_termwise));
-        auto termwise_search = SearchIterator::UP(AndSearch::create(helper.termwise, termwise_strict));
+        auto termwise_search = AndSearch::create(helper.get_termwise_children(), termwise_strict);
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
-        if (helper.children.size() == 1) {
-            return SearchIterator::UP(helper.children.front());
+        auto rearranged = helper.get_result();
+        if (rearranged.size() == 1) {
+            return std::move(rearranged[0]);
         } else {
-            search = AndSearch::create(helper.children, strict, helper.termwise_unpack);
+            search = AndSearch::create(std::move(rearranged), strict, helper.termwise_unpack);
         }
     } else {
-        search = AndSearch::create(sub_searches, strict, unpack_info);
+        search = AndSearch::create(std::move(sub_searches), strict, unpack_info);
     }
     search->estimate(getState().estimate().estHits);
-    return SearchIterator::UP(search);
+    return search;
 }
 
 SearchIterator::UP
@@ -353,21 +355,22 @@ OrBlueprint::inheritStrict(size_t) const
 }
 
 SearchIterator::UP
-OrBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                       bool strict, search::fef::MatchData & md) const
 {
     UnpackInfo unpack_info(calculateUnpackInfo(md));
     if (should_do_termwise_eval(unpack_info, md.get_termwise_limit())) {
-        TermwiseBlueprintHelper helper(*this, sub_searches, unpack_info);
+        TermwiseBlueprintHelper helper(*this, std::move(sub_searches), unpack_info);
         bool termwise_strict = (strict && inheritStrict(helper.first_termwise));
-        auto termwise_search = SearchIterator::UP(OrSearch::create(helper.termwise, termwise_strict));
+        auto termwise_search = OrSearch::create(helper.get_termwise_children(), termwise_strict);
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
-        if (helper.children.size() == 1) {
-            return SearchIterator::UP(helper.children.front());
+        auto rearranged = helper.get_result();
+        if (rearranged.size() == 1) {
+            return std::move(rearranged[0]);
         }
-        return SearchIterator::UP(OrSearch::create(helper.children, strict, helper.termwise_unpack));
+        return OrSearch::create(std::move(rearranged), strict, helper.termwise_unpack);
     }
-    return SearchIterator::UP(OrSearch::create(sub_searches, strict, unpack_info));
+    return OrSearch::create(std::move(sub_searches), strict, unpack_info);
 }
 
 SearchIterator::UP
@@ -378,10 +381,10 @@ OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
     for (size_t i = 0; i < childCnt(); ++i) {
         bool child_strict = strict && inheritStrict(i);
         auto search = getChild(i).createFilterSearch(child_strict, constraint);
-        sub_searches.push_back(search.release());
+        sub_searches.push_back(std::move(search));
     }
     UnpackInfo unpack_info;
-    return SearchIterator::UP(OrSearch::create(sub_searches, strict, unpack_info));
+    return OrSearch::create(std::move(sub_searches), strict, unpack_info);
 }
 
 //-----------------------------------------------------------------------------
@@ -423,18 +426,19 @@ WeakAndBlueprint::always_needs_unpack() const
 }
 
 SearchIterator::UP
-WeakAndBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                            bool strict, search::fef::MatchData &) const
 {
     WeakAndSearch::Terms terms;
     assert(sub_searches.size() == childCnt());
     assert(_weights.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
-        terms.push_back(wand::Term(sub_searches[i],
+        // TODO: pass ownership with unique_ptr
+        terms.push_back(wand::Term(sub_searches[i].release(),
                                    _weights[i],
                                    getChild(i).getState().estimate().estHits));
     }
-    return SearchIterator::UP(WeakAndSearch::create(terms, _n, strict));
+    return WeakAndSearch::create(terms, _n, strict);
 }
 
 //-----------------------------------------------------------------------------
@@ -471,7 +475,7 @@ NearBlueprint::createSearch(fef::MatchData &md, bool strict) const
 }
 
 SearchIterator::UP
-NearBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                         bool strict, search::fef::MatchData &md) const
 {
     search::fef::TermFieldMatchDataArray tfmda;
@@ -481,7 +485,7 @@ NearBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searche
             tfmda.add(cs.field(j).resolve(md));
         }
     }
-    return SearchIterator::UP(new NearSearch(sub_searches, tfmda, _window, strict));
+    return SearchIterator::UP(new NearSearch(std::move(sub_searches), tfmda, _window, strict));
 }
 
 SearchIterator::UP
@@ -529,7 +533,7 @@ ONearBlueprint::createSearch(fef::MatchData &md, bool strict) const
 }
 
 SearchIterator::UP
-ONearBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                          bool strict, search::fef::MatchData &md) const
 {
     search::fef::TermFieldMatchDataArray tfmda;
@@ -541,7 +545,7 @@ ONearBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_search
     }
     // could sort sub_searches here
     // but then strictness inheritance would also need to be fixed
-    return SearchIterator::UP(new ONearSearch(sub_searches, tfmda, _window, strict));
+    return SearchIterator::UP(new ONearSearch(std::move(sub_searches), tfmda, _window, strict));
 }
 
 SearchIterator::UP
@@ -604,27 +608,27 @@ RankBlueprint::inheritStrict(size_t i) const
 }
 
 SearchIterator::UP
-RankBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+RankBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                         bool strict, search::fef::MatchData & md) const
 {
     UnpackInfo unpack_info(calculateUnpackInfo(md));
     if (unpack_info.unpackAll()) {
-        return SearchIterator::UP(RankSearch::create(sub_searches, strict));
+        return RankSearch::create(std::move(sub_searches), strict);
     } else {
         MultiSearch::Children require_unpack;
         require_unpack.reserve(sub_searches.size());
-        require_unpack.push_back(sub_searches[0]);
+        require_unpack.push_back(std::move(sub_searches[0]));
         for (size_t i(1); i < sub_searches.size(); i++) {
             if (unpack_info.needUnpack(i)) {
-                require_unpack.push_back(sub_searches[i]);
+                require_unpack.push_back(std::move(sub_searches[i]));
             } else {
-                delete sub_searches[i];
+                sub_searches[i].reset();
             }
         }
         if (require_unpack.size() == 1) {
-            return SearchIterator::UP(require_unpack[0]);
+            return SearchIterator::UP(std::move(require_unpack[0]));
         } else {
-            return SearchIterator::UP(RankSearch::create(require_unpack, strict));
+            return RankSearch::create(std::move(require_unpack), strict);
         }
     }
 }
@@ -688,18 +692,19 @@ SourceBlenderBlueprint::findSource(uint32_t sourceId) const
 }
 
 SearchIterator::UP
-SourceBlenderBlueprint::createIntermediateSearch(const MultiSearch::Children &sub_searches,
+SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                                  bool strict, search::fef::MatchData &) const
 {
     SourceBlenderSearch::Children children;
     assert(sub_searches.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
-        children.push_back(SourceBlenderSearch::Child(sub_searches[i],
+        // TODO: pass ownership with unique_ptr
+        children.push_back(SourceBlenderSearch::Child(sub_searches[i].release(),
                                                       getChild(i).getSourceId()));
         assert(children.back().sourceId != 0xffffffff);
     }
-    return SearchIterator::UP(SourceBlenderSearch::create(_selector.createIterator(),
-                                                  children, strict));
+    return SourceBlenderSearch::create(_selector.createIterator(),
+                                       children, strict);
 }
 
 SearchIterator::UP
@@ -711,10 +716,10 @@ SourceBlenderBlueprint::createFilterSearch(bool strict, FilterConstraint constra
         for (size_t i = 0; i < childCnt(); ++i) {
             bool child_strict = strict && inheritStrict(i);
             auto search = getChild(i).createFilterSearch(child_strict, constraint);
-            sub_searches.push_back(search.release());
+            sub_searches.push_back(std::move(search));
         }
         UnpackInfo unpack_info;
-        return SearchIterator::UP(OrSearch::create(sub_searches, strict, unpack_info));
+        return OrSearch::create(std::move(sub_searches), strict, unpack_info);
     } else {
         return std::make_unique<EmptySearch>();
     }

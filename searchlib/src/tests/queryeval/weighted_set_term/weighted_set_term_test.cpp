@@ -123,7 +123,7 @@ struct MockFixture {
         mock = new MockSearch(initial);
         children.push_back(mock);
         weights.push_back(1);
-        search.reset(WeightedSetTermSearch::create(children, tfmd, weights, MatchData::UP(nullptr)));
+        search = WeightedSetTermSearch::create(children, tfmd, weights, MatchData::UP(nullptr));
     }
 };
 

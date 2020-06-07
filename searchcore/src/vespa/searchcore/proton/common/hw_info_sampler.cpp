@@ -157,3 +157,16 @@ HwInfoSampler::sampleDiskWriteSpeed(const vespalib::string &path, const Config &
 }
 
 }
+
+#ifdef RHEL_8_2_KLUDGE
+
+// Kludge to avoid unresolved symbols with gcc-toolset-9 on RHEL 8.2
+#include <codecvt>
+
+namespace std {
+
+template class codecvt_utf8<wchar_t>;
+
+}
+
+#endif

@@ -44,7 +44,7 @@ public class ContainerThreadPoolTest {
         if (reply.second != Boolean.TRUE) {
             fail("Executor task seemed to run, but did not get correct value.");
         }
-        threadPool.deconstruct();
+        threadPool.close();
         command = new FlipIt();
         try {
             exec.execute(command);

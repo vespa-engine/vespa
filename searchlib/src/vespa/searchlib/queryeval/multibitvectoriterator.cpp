@@ -21,8 +21,8 @@ template<typename Update>
 class MultiBitVectorIterator : public MultiBitVectorIteratorBase
 {
 public:
-    explicit MultiBitVectorIterator(const Children & children)
-        : MultiBitVectorIteratorBase(children),
+    explicit MultiBitVectorIterator(Children children)
+        : MultiBitVectorIteratorBase(std::move(children)),
           _update(),
           _accel(IAccelrated::getAccelerator()),
           _lastWords()
@@ -46,8 +46,8 @@ template<typename Update>
 class MultiBitVectorIteratorStrict : public MultiBitVectorIterator<Update>
 {
 public:
-    explicit MultiBitVectorIteratorStrict(const MultiSearch::Children & children)
-        : MultiBitVectorIterator<Update>(children)
+    explicit MultiBitVectorIteratorStrict(MultiSearch::Children  children)
+        : MultiBitVectorIterator<Update>(std::move(children))
     { }
 private:
     void doSeek(uint32_t docId) override { this->strictSeek(docId); }
@@ -127,7 +127,7 @@ typedef MultiBitVectorIteratorStrict<Or> OrBVIteratorStrict;
 bool hasAtLeast2Bitvectors(const MultiSearch::Children & children)
 {
     size_t count(0);
-    for (const SearchIterator * search : children) {
+    for (const auto & search : children) {
         if (search->isBitVector()) {
             count++;
         }
@@ -148,17 +148,17 @@ bool canOptimize(const MultiSearch & s) {
 
 }
 
-MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children) :
-    MultiSearch(children),
+MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(Children children) :
+    MultiSearch(std::move(children)),
     _numDocs(std::numeric_limits<unsigned int>::max()),
     _lastMaxDocIdLimit(0),
     _lastMaxDocIdLimitRequireFetch(0),
     _lastValue(0),
     _bvs()
 {
-    _bvs.reserve(children.size());
-    for (const auto & child : children) {
-        const auto * bv = static_cast<const BitVectorIterator *>(child);
+    _bvs.reserve(getChildren().size());
+    for (const auto & child : getChildren()) {
+        const auto * bv = static_cast<const BitVectorIterator *>(child.get());
         _bvs.emplace_back(bv->getBitValues(), bv->isInverted());
         _numDocs = std::min(_numDocs, bv->getDocIdLimit());
     }
@@ -196,8 +196,8 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
     } else {
         auto &children = getChildren();
         _unpackInfo.each([&children,docid](size_t i) {
-                             static_cast<BitVectorIterator *>(children[i])->unpack(docid);
-                         }, children.size());
+                static_cast<BitVectorIterator *>(children[i].get())->unpack(docid);
+            }, children.size());
     }
 }
 
@@ -236,7 +236,7 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
                 if ( ! strict && (bit->is_strict() == Trinary::True)) {
                     strict = true;
                 }
-                stolen.push_back(bit.release());
+                stolen.push_back(std::move(bit));
             } else {
                 it++;
             }
@@ -244,21 +244,21 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
         SearchIterator::UP next;
         if (parent.isAnd()) {
             if (strict) {
-                next = std::make_unique<AndBVIteratorStrict>(stolen);
+                next = std::make_unique<AndBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<AndBVIterator>(stolen);
+                next = std::make_unique<AndBVIterator>(std::move(stolen));
             }
         } else if (parent.isOr()) {
             if (strict) {
-                next = std::make_unique<OrBVIteratorStrict>(stolen);
+                next = std::make_unique<OrBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<OrBVIterator>(stolen);
+                next = std::make_unique<OrBVIterator>(std::move(stolen));
             }
         } else if (parent.isAndNot()) {
             if (strict) {
-                next = std::make_unique<OrBVIteratorStrict>(stolen);
+                next = std::make_unique<OrBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<OrBVIterator>(stolen);
+                next = std::make_unique<OrBVIterator>(std::move(stolen));
             }
         }
         auto & nextM(static_cast<MultiBitVectorIteratorBase &>(*next));
@@ -272,8 +272,8 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
         }
     }
     auto & toOptimize(const_cast<MultiSearch::Children &>(parent.getChildren()));
-    for (SearchIterator * & search : toOptimize) {
-        search = optimize(MultiSearch::UP(search)).release();
+    for (auto & search : toOptimize) {
+        search = optimize(std::move(search));
     }
 
     return parentIt;

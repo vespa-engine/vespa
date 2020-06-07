@@ -98,9 +98,9 @@ Test::testSearch(bool strict)
     TermFieldMatchData tfmd;
     MultiSearch::Children andd;
     for (size_t i(0); i < _bvs.size(); i++) {
-        andd.push_back(BitVectorIterator::create(_bvs[i].get(), tfmd, strict, false).release());
+        andd.push_back(BitVectorIterator::create(_bvs[i].get(), tfmd, strict, false));
     }
-    SearchIterator::UP s(T::create(andd, strict));
+    SearchIterator::UP s = T::create(std::move(andd), strict);
     if (_optimize) {
         LOG(info, "Optimizing iterator");
         s = MultiBitVectorIteratorBase::optimize(std::move(s));

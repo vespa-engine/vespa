@@ -5,6 +5,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     andsearch.cpp
     blueprint.cpp
     booleanmatchiteratorwrapper.cpp
+    children_iterators.cpp
     create_blueprint_visitor_helper.cpp
     document_weight_search_iterator.cpp
     dot_product_blueprint.cpp

@@ -8,7 +8,7 @@ import java.time.Duration;
  *
  * @author bjorncs
  */
-interface Sleeper {
+public interface Sleeper {
     void sleep(Duration duration);
 
     class Default implements Sleeper {

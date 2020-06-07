@@ -32,7 +32,7 @@ import static org.junit.Assert.fail;
 public class NodeRepositoryTest {
 
     @Test
-    public void nodeRepositoryTest() {
+    public void add_and_remove() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         assertEquals(0, tester.nodeRepository().getNodes().size());
 
@@ -120,13 +120,8 @@ public class NodeRepositoryTest {
         tester.addNode("node11", "node11", "host1", "docker", NodeType.tenant);
         tester.addNode("node12", "node12", "host1", "docker", NodeType.tenant);
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
-        assertEquals(6, tester.nodeRepository().getNodes().size());
-
-        Node node = tester.nodeRepository().getNode("host1").get();
-        IP.Config cfg = new IP.Config(Set.of("127.0.0.1"), Set.of());
-        node = node.with(cfg);
-
         tester.setNodeState("node11", Node.State.active);
+        assertEquals(6, tester.nodeRepository().getNodes().size());
 
         try {
             tester.nodeRepository().removeRecursively("host1");
@@ -149,6 +144,32 @@ public class NodeRepositoryTest {
         tester.nodeRepository().removeRecursively("host1");
         assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
         assertEquals(IP.Config.EMPTY.primary(), tester.nodeRepository().getNode("host1").get().ipConfig().primary());
+    }
+
+    @Test
+    public void delete_config_host() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+
+        String cfghost1 = "cfghost1";
+        String cfg1 = "cfg1";
+        tester.addNode("id1", cfghost1, "default", NodeType.confighost);
+        tester.addNode("id2", cfg1, cfghost1, "docker", NodeType.config);
+        tester.setNodeState(cfghost1, Node.State.active);
+        tester.setNodeState(cfg1, Node.State.active);
+        assertEquals(2, tester.nodeRepository().getNodes().size());
+
+        try {
+            tester.nodeRepository().removeRecursively(cfghost1);
+            fail("Should not be able to delete host node, one of the children is in state active");
+        } catch (IllegalArgumentException ignored) { }
+        assertEquals(2, tester.nodeRepository().getNodes().size());
+
+        // Fail host and container
+        tester.nodeRepository().failRecursively(cfghost1, Agent.system, getClass().getSimpleName());
+
+        // Remove recursively
+        tester.nodeRepository().removeRecursively(cfghost1);
+        assertEquals(0, tester.nodeRepository().list().not().state(Node.State.deprovisioned).size());
     }
 
     @Test

@@ -28,33 +28,21 @@ public class ProxyRequest {
     private final List<URI> targets;
     private final String targetPath;
 
-    /**
-     * The constructor calls exception if the request is invalid.
-     *
-     * @param request the request from the jdisc framework.
-     * @param targets list of targets this request should be proxied to (targets are tried once in order until a response is returned).
-     * @param targetPath the path to proxy to.
-     * @throws ProxyException on errors
-     */
-    public ProxyRequest(HttpRequest request, List<URI> targets, String targetPath) throws ProxyException {
-        this(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(), request.getData(),
-             targets, targetPath);
-    }
-
-    ProxyRequest(Method method, URI requestUri, Map<String, List<String>> headers, InputStream body,
-                 List<URI> targets, String targetPath) throws ProxyException {
-        Objects.requireNonNull(requestUri, "Request must be non-null");
-        if (!requestUri.getPath().endsWith(targetPath))
-            throw new ProxyException(ErrorResponse.badRequest(String.format(
-                    "Request path '%s' does not end with proxy path '%s'", requestUri.getPath(), targetPath)));
-
+    ProxyRequest(Method method, URI url, Map<String, List<String>> headers, InputStream body, List<URI> targets,
+                 String path) {
+        Objects.requireNonNull(url);
+        if (!url.getPath().endsWith(path)) {
+            throw new IllegalArgumentException(String.format("Request path '%s' does not end with proxy path '%s'", url.getPath(), path));
+        }
+        if (targets.isEmpty()) {
+            throw new IllegalArgumentException("targets must be non-empty");
+        }
         this.method = Objects.requireNonNull(method);
-        this.requestUri = Objects.requireNonNull(requestUri);
+        this.requestUri = Objects.requireNonNull(url);
         this.headers = Objects.requireNonNull(headers);
         this.requestData = body;
-
         this.targets = List.copyOf(targets);
-        this.targetPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
+        this.targetPath = path.startsWith("/") ? path : "/" + path;
     }
 
 
@@ -98,6 +86,18 @@ public class ProxyRequest {
     @Override
     public String toString() {
         return "[targets: " + targets + " request: " + targetPath + "]";
+    }
+
+    /** Create a proxy request that tries all given targets in order */
+    public static ProxyRequest tryAll(List<URI> targets, String path, HttpRequest request) {
+        return new ProxyRequest(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(),
+                                request.getData(), targets, path);
+    }
+
+    /** Create a proxy request that repeatedly tries a single target */
+    public static ProxyRequest tryOne(URI target, String path, HttpRequest request) {
+        return new ProxyRequest(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(),
+                                request.getData(), List.of(target), path);
     }
 
 }

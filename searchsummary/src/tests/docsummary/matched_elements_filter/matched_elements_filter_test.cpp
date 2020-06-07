@@ -15,7 +15,7 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
-#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
@@ -32,6 +32,7 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::docsummary::test::SlimeValue;
 using vespalib::Slime;
 
 using namespace document;
@@ -39,17 +40,6 @@ using namespace search::docsummary;
 using namespace vespalib::slime;
 
 using ElementVector = std::vector<uint32_t>;
-
-struct SlimeValue {
-    Slime slime;
-
-    SlimeValue(const std::string& json_input)
-        : slime()
-    {
-        size_t used = JsonFormat::decode(json_input, slime);
-        EXPECT_GT(used, 0);
-    }
-};
 
 StructDataType::UP
 make_struct_elem_type()

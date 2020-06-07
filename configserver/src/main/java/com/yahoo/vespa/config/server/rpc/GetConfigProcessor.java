@@ -3,10 +3,9 @@ package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.collections.Pair;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
-import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;

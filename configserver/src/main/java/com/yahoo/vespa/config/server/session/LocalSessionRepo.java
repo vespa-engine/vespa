@@ -10,8 +10,6 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.LongFlag;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -44,7 +42,6 @@ public class LocalSessionRepo {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
-    private final LongFlag expiryTimeFlag;
 
     public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, SessionFactory sessionFactory) {
         sessionCache = new SessionCache<>();
@@ -53,7 +50,6 @@ public class LocalSessionRepo {
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
-        this.expiryTimeFlag = Flags.CONFIGSERVER_LOCAL_SESSIONS_EXPIRY_INTERVAL_IN_DAYS.bindTo(componentRegistry.getFlagSource());
         loadSessions(sessionFactory);
     }
 
@@ -98,7 +94,7 @@ public class LocalSessionRepo {
                 // Sessions with state other than ACTIVATED
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
                     deleteSession(candidate);
-                } else if (createTime.plus(Duration.ofDays(expiryTimeFlag.value())).isBefore(clock.instant())) {
+                } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
                     ApplicationId applicationId = candidate.getApplicationId();
                     Long activeSession = activeSessions.get(applicationId);

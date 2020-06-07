@@ -89,14 +89,17 @@ struct WandTestSpec : public WandSpec
     WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdjustFrequency = 1,
                  score_t scoreThreshold = 0, double thresholdBoostFactor = 1);
     ~WandTestSpec();
-    SearchIterator *create() {
+    SearchIterator::UP create() {
         MatchData::UP childrenMatchData = createMatchData();
         MatchData *tmp = childrenMatchData.get();
-        return new TrackedSearch("PWAND", getHistory(), ParallelWeakAndSearch::create(getTerms(tmp),
-                        matchParams,
-                        RankParams(rootMatchData,
-                                   std::move(childrenMatchData)),
-                        true));
+        return SearchIterator::UP(
+                new TrackedSearch("PWAND", getHistory(),
+                                  ParallelWeakAndSearch::create(
+                                          getTerms(tmp),
+                                          matchParams,
+                                          RankParams(rootMatchData,
+                                                     std::move(childrenMatchData)),
+                                          true)));
     }
 };
 

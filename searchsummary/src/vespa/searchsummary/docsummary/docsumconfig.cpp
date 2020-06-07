@@ -88,11 +88,9 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             rc = fieldWriter.get();
         }
     } else if (overrideName == "attribute") {
-        const char *vectorName = argument.c_str();
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            IDocsumFieldWriter *fw = AttributeDFWFactory::create(*getEnvironment()->getAttributeManager(), vectorName);
-            fieldWriter.reset(fw);
-            rc = fw != NULL;
+            fieldWriter = AttributeDFWFactory::create(*getEnvironment()->getAttributeManager(), argument);
+            rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {

@@ -223,10 +223,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        return deploy(in, prepareParams, false, clock.instant());
-    }
-
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
@@ -664,7 +660,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         tenant.getApplicationRepo().createApplication(applicationId);
-        LocalSession session = tenant.getSessionFactory().createSession(applicationDirectory, applicationId, timeoutBudget);
+        Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
+        LocalSession session = tenant.getSessionFactory().createSession(applicationDirectory, applicationId,
+                                                                        timeoutBudget, activeSessionId);
         tenant.getLocalSessionRepo().addSession(session);
         return session.getSessionId();
     }

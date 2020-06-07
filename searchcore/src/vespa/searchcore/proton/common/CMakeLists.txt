@@ -26,3 +26,7 @@ vespa_add_library(searchcore_pcommon STATIC
     searchcore_fconfig
     ${VESPA_STDCXX_FS_LIB}
 )
+
+if(VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 8.2")
+  set_source_files_properties(hw_info_sampler.cpp PROPERTIES COMPILE_FLAGS -DRHEL_8_2_KLUDGE)
+endif()

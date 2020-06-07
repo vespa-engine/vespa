@@ -35,6 +35,7 @@ typedef std::vector<AttrDictEntry> AttrDictEntries;
  * Wrapper used to specify underlying terms during setup
  **/
 struct Term {
+    // TODO: use unique_ptr for ownership
     SearchIterator          *search;
     int32_t                  weight;
     uint32_t                 estHits;
@@ -44,6 +45,7 @@ struct Term {
         : search(s), weight(w), estHits(e), matchData(tfmd) {}
     Term() : Term(nullptr, 0, 0, nullptr){}
     Term(SearchIterator *s, int32_t w, uint32_t e) : Term(s, w, e, nullptr) {}
+    Term(SearchIterator::UP s, int32_t w, uint32_t e) : Term(s.release(), w, e, nullptr) {}
 };
 
 //-----------------------------------------------------------------------------
