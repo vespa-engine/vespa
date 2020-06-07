@@ -20,4 +20,14 @@ Avx2Accelrator::squaredEuclideanDistance(const double * a, const double * b, siz
     return avx::euclideanDistanceSelectAlignment<double, 32>(a, b, sz);
 }
 
+void
+Avx2Accelrator::and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const {
+    helper::andChunks<32u, 2u>(offset, src, dest);
+}
+
+void
+Avx2Accelrator::or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const {
+    helper::orChunks<32u, 2u>(offset, src, dest);
+}
+
 }
