@@ -126,56 +126,92 @@ simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
     }
 }
 
+std::vector<uint64_t>
+simpleInvert(const std::vector<uint64_t> & src) {
+    std::vector<uint64_t> inverted;
+    inverted.reserve(src.size());
+    for (size_t i(0); i < src.size(); i++) {
+        inverted.push_back(~src[i]);
+    }
+    return inverted;
+}
+
+std::vector<uint64_t>
+optionallyInvert(bool invert, std::vector<uint64_t> v) {
+    return invert ? simpleInvert(std::move(v)) : std::move(v);
+}
+
+bool shouldInvert(bool invertSome) {
+    return invertSome ? (random() & 1) : false;
+}
+
+void
+verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const uint64_t *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.or64(offset, vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes OR");
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const uint64_t *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.and64(offset, vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes AND");
+    }
+}
+
 void
 verifyOr64(const IAccelrated & accel) {
-    std::vector<uint64_t> vectors[3] ;
+    std::vector<std::vector<uint64_t>> vectors(3) ;
     for (auto & v : vectors) {
         fill(v, 16);
     }
     for (size_t offset = 0; offset < 8; offset++) {
-        for (size_t i = 1; i < VESPA_NELEMS(vectors); i++) {
-            std::vector<uint64_t> expected = vectors[0];
-            for (size_t j = 1; j < i; j++) {
-                simpleOrWith(expected, vectors[j]);
-            }
-            std::vector<std::pair<const uint64_t *, bool>> vRefs;
-            for (size_t j(0); j < i; j++) {
-                vRefs.emplace_back(&vectors[j][0], false);
-            }
-            uint64_t dest[8] __attribute((aligned(64)));
-            accel.or64(offset, vRefs, dest);
-            int diff = memcmp(&expected[offset], dest, sizeof(dest));
-            if (diff != 0) {
-                fprintf(stderr, "Accelrator is not failing and64\n");
-                LOG_ABORT("should not be reached");
-            }
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyOr64(accel, vectors, offset, i, false);
+            verifyOr64(accel, vectors, offset, i, true);
         }
     }
 }
 
 void
 verifyAnd64(const IAccelrated & accel) {
-    std::vector<uint64_t> vectors[3] ;
+    std::vector<std::vector<uint64_t>> vectors(3);
     for (auto & v : vectors) {
         fill(v, 16);
     }
     for (size_t offset = 0; offset < 8; offset++) {
-        for (size_t i = 1; i < VESPA_NELEMS(vectors); i++) {
-            std::vector<uint64_t> expected = vectors[0];
-            for (size_t j = 1; j < i; j++) {
-                simpleAndWith(expected, vectors[j]);
-            }
-            std::vector<std::pair<const uint64_t *, bool>> vRefs;
-            for (size_t j(0); j < i; j++) {
-                vRefs.emplace_back(&vectors[j][0], false);
-            }
-            uint64_t dest[8] __attribute((aligned(64)));
-            accel.and64(offset, vRefs, dest);
-            int diff = memcmp(&expected[offset], dest, sizeof(dest));
-            if (diff != 0) {
-                fprintf(stderr, "Accelrator is not failing and64\n");
-                LOG_ABORT("should not be reached");
-            }
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyAnd64(accel, vectors, offset, i, false);
+            verifyAnd64(accel, vectors, offset, i, true);
         }
     }
 }

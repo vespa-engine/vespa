@@ -24,9 +24,10 @@ public:
     explicit MultiBitVectorIterator(const Children & children)
         : MultiBitVectorIteratorBase(children),
           _update(),
-          _lastWords(),
-          _accel(IAccelrated::getAccelrator())
+          _accel(IAccelrated::getAccelrator()),
+          _lastWords()
     {
+        static_assert(sizeof(_lastWords) == 64, "Latswords should have 64 byte size");
         memset(&_lastWords, 0, sizeof(_lastWords));
     }
 protected:
@@ -37,8 +38,8 @@ private:
     Trinary is_strict() const override { return Trinary::False; }
     bool acceptExtraFilter() const override { return Update::isAnd(); }
     Update              _update;
-    Word                _lastWords[8] __attribute__((aligned(32)));
     const IAccelrated & _accel;
+    alignas(64) Word    _lastWords[8];
 };
 
 template<typename Update>
