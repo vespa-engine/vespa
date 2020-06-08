@@ -25,8 +25,7 @@ PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uin
                           uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
     : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector, searchContext),
       _postingList(postingList),
-      _merger(docIdLimit),
-      _fetchPostingsDone(false)
+      _merger(docIdLimit)
 {
 }
 
@@ -116,22 +115,18 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
-    if (_fetchPostingsDone) return;
-
-    _fetchPostingsDone = true;
-
-    if (_uniqueValues < 2u) return;
-
-    if (execInfo.isStrict() && !fallbackToFiltering()) {
-        size_t sum(countHits());
-        if (sum < _docIdLimit / 64) {
-            _merger.reserveArray(_uniqueValues, sum);
-            fillArray();
-        } else {
-            _merger.allocBitVector();
-            fillBitVector();
+    if (!_merger.merge_done() && _uniqueValues >= 2u) {
+        if (execInfo.isStrict() && !fallbackToFiltering()) {
+            size_t sum(countHits());
+            if (sum < _docIdLimit / 64) {
+                _merger.reserveArray(_uniqueValues, sum);
+                fillArray();
+            } else {
+                _merger.allocBitVector();
+                fillBitVector();
+            }
+            _merger.merge();
         }
-        _merger.merge();
     }
 }
 
@@ -141,12 +136,12 @@ void
 PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                                             size_t max_per_group, size_t cutoff_groups, bool cutoff_strict)
 {
-    assert(!_fetchPostingsDone);
-    _fetchPostingsDone = true;
-    _merger.reserveArray(128, wanted_hits);
-    diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
-                         max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
-    _merger.merge();
+    if (!_merger.merge_done()) {
+        _merger.reserveArray(128, wanted_hits);
+        diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
+                             max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        _merger.merge();
+    }
 }
 
 
@@ -155,7 +150,6 @@ SearchIterator::UP
 PostingListSearchContextT<DataT>::
 createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
-    assert(_fetchPostingsDone);
     if (_uniqueValues == 0u) {
         return std::make_unique<EmptySearch>();
     }

@@ -107,7 +107,6 @@ protected:
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingListMerger<DataT> _merger;
-    bool           _fetchPostingsDone;
 
     static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
     static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;

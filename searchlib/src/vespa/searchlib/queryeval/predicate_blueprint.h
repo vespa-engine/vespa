@@ -87,6 +87,7 @@ private:
     // The zstar iterator is either a vector or a btree iterator.
     optional<BTreeIterator> _zstar_btree_iterator;
     optional<VectorIterator> _zstar_vector_iterator;
+    bool _fetch_postings_done;
 };
 
 }

@@ -62,6 +62,8 @@ public:
                                 { if (__builtin_expect(key < limit, true)) { bv.setBit(key); } });
     }
 
+    bool merge_done() const { return hasArray() || hasBitVector(); }
+
     // Until diversity handling has been rewritten
     PostingVector &getWritableArray() { return _array; }
     StartVector   &getWritableStartPos() { return _startPos; }

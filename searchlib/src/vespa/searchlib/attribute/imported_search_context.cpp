@@ -44,7 +44,6 @@ ImportedSearchContext::ImportedSearchContext(
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _targetLids(_reference_attribute.getTargetLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
-      _fetchPostingsDone(false),
       _params(params)
 {
 }
@@ -239,15 +238,11 @@ ImportedSearchContext::considerAddSearchCacheEntry()
 }
 
 void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
-    assert(!_fetchPostingsDone);
-    _fetchPostingsDone = true;
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(execInfo);
-        if (execInfo.isStrict()
-            || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))
-        {
-            makeMergedPostings(_target_attribute.getIsFilter());
-            considerAddSearchCacheEntry();
+        if (!_merger.merge_done() && (execInfo.isStrict() || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))) {
+                makeMergedPostings(_target_attribute.getIsFilter());
+                considerAddSearchCacheEntry();
         }
     }
 }
