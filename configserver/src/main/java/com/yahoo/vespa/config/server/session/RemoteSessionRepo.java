@@ -18,6 +18,9 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -53,6 +56,7 @@ public class RemoteSessionRepo {
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
     private final MetricUpdater metrics;
+    private final BooleanFlag distributeApplicationPackage;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final Executor zkWatcherExecutor;
@@ -62,7 +66,8 @@ public class RemoteSessionRepo {
                              SessionFactory sessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
-                             TenantApplications applicationRepo) {
+                             TenantApplications applicationRepo,
+                             FlagSource flagSource) {
         this.sessionCache = new SessionCache<>();
         this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
@@ -71,6 +76,7 @@ public class RemoteSessionRepo {
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         StripedExecutor<TenantName> zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
@@ -89,6 +95,7 @@ public class RemoteSessionRepo {
 
     public void addSession(RemoteSession session) {
         sessionCache.addSession(session);
+        metrics.incAddedSessions();
     }
 
     public int deleteExpiredSessions(Clock clock, Duration expiryTime) {
@@ -155,8 +162,9 @@ public class RemoteSessionRepo {
         fileCache.addListener(this::nodeChanged);
         loadSessionIfActive(session);
         addSession(session);
-        metrics.incAddedSessions();
         sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
+        if (distributeApplicationPackage.value())
+            sessionFactory.createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
 
     private void sessionRemoved(long sessionId) {

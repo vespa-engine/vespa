@@ -55,7 +55,7 @@ public class FileDirectory  {
         return root.getAbsolutePath() + "/" + ref.value();
     }
 
-    File getFile(FileReference reference) {
+    public File getFile(FileReference reference) {
         ensureRootExist();
         File dir = new File(getPath(reference));
         if (!dir.exists()) {
