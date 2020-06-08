@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.time.Duration;
@@ -105,8 +106,11 @@ public interface SyncSession extends Session {
      * Updates a document.
      *
      * @param update the updates to perform
-     * @return true, if the document was found and updated
-     * @throws UnsupportedOperationException thrown if this access does not support update
+     * @return false if the updates could not be applied as the document does not exist and
+     * {@link DocumentUpdate#setCreateIfNonExistent(boolean) create-if-non-existent} is not set.
+     * @throws DocumentAccessException on update error, including but not limited to: 1. timeouts,
+     * 2. the document exists but the {@link DocumentUpdate#setCondition(TestAndSetCondition) condition}
+     * is not met.
      */
     boolean update(DocumentUpdate update);
 
@@ -115,8 +119,11 @@ public interface SyncSession extends Session {
      *
      * @param update   the updates to perform.
      * @param priority the priority with which to perform this operation
-     * @return true, if the document was found and updated
-     * @throws UnsupportedOperationException thrown if this access does not support update
+     * @return false if the updates could not be applied as the document does not exist and
+     * {@link DocumentUpdate#setCreateIfNonExistent(boolean) create-if-non-existent} is not set.
+     * @throws DocumentAccessException on update error, including but not limited to: 1. timeouts,
+     * 2. the document exists but the {@link DocumentUpdate#setCondition(TestAndSetCondition) condition}
+     * is not met.
      */
     boolean update(DocumentUpdate update, DocumentProtocol.Priority priority);
 
