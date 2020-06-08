@@ -184,19 +184,19 @@ public class RankingExpressionShadowingTestCase extends SchemaTestCase {
                         "        }\n" +
                         "    }\n" +
                         "    constant W_hidden {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(x[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant b_input {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(x[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant W_final {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(x[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant b_final {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(x[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "}\n");
@@ -211,11 +211,11 @@ public class RankingExpressionShadowingTestCase extends SchemaTestCase {
                 censorBindingHash(testRankProperties.get(0).toString()));
         assertEquals("(rankingExpression(hidden_layer).rankingScript,rankingExpression(relu@))",
                 censorBindingHash(testRankProperties.get(1).toString()));
-        assertEquals("(rankingExpression(hidden_layer).type,tensor(x[]))",
+        assertEquals("(rankingExpression(hidden_layer).type,tensor(x[1]))",
                 censorBindingHash(testRankProperties.get(2).toString()));
         assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))",
                 testRankProperties.get(3).toString());
-        assertEquals("(rankingExpression(final_layer).type,tensor(x[]))",
+        assertEquals("(rankingExpression(final_layer).type,tensor(x[1]))",
                 testRankProperties.get(4).toString());
         assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))",
                      testRankProperties.get(5).toString());
