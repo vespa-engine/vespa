@@ -97,9 +97,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
             LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
             if (max_hits * 10 < est_hits) {
-                // too many hits filtered out, use brute force implementation:
-                _approximate = false;
-                return;
+                LOG(debug, "too many hits filtered out, consider using brute force implementation");
             }
             est_hits = std::min(est_hits, max_hits);
         }
