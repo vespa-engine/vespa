@@ -159,7 +159,7 @@ public class RankingExpressionShadowingTestCase extends SchemaTestCase {
     public void testNeuralNetworkSetup() throws ParseException {
         // Note: the type assigned to query profile and constant tensors here is not the correct type
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(x[])");
+        QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(x[1])");
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfiles);
         builder.importString(
                 "search test {\n" +
