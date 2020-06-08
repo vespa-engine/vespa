@@ -46,7 +46,8 @@ std::vector<T> createAndFill(size_t sz) {
 }
 
 template<typename T>
-void verifyDotproduct(const IAccelrated & accel)
+void
+verifyDotproduct(const IAccelrated & accel)
 {
     const size_t testLength(255);
     srand(1);
@@ -66,7 +67,8 @@ void verifyDotproduct(const IAccelrated & accel)
 }
 
 template<typename T>
-void verifyEuclideanDistance(const IAccelrated & accel) {
+void
+verifyEuclideanDistance(const IAccelrated & accel) {
     const size_t testLength(255);
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
@@ -84,7 +86,8 @@ void verifyEuclideanDistance(const IAccelrated & accel) {
     }
 }
 
-void verifyPopulationCount(const IAccelrated & accel)
+void
+verifyPopulationCount(const IAccelrated & accel)
 {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
@@ -101,6 +104,118 @@ void verifyPopulationCount(const IAccelrated & accel)
     }
 }
 
+void
+fill(std::vector<uint64_t> & v, size_t n) {
+    v.reserve(n);
+    for (size_t i(0); i < n; i++) {
+        v.emplace_back(random());
+    }
+}
+
+void
+simpleAndWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] &= src[i];
+    }
+}
+
+void
+simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] |= src[i];
+    }
+}
+
+std::vector<uint64_t>
+simpleInvert(const std::vector<uint64_t> & src) {
+    std::vector<uint64_t> inverted;
+    inverted.reserve(src.size());
+    for (size_t i(0); i < src.size(); i++) {
+        inverted.push_back(~src[i]);
+    }
+    return inverted;
+}
+
+std::vector<uint64_t>
+optionallyInvert(bool invert, std::vector<uint64_t> v) {
+    return invert ? simpleInvert(std::move(v)) : std::move(v);
+}
+
+bool shouldInvert(bool invertSome) {
+    return invertSome ? (random() & 1) : false;
+}
+
+void
+verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const void *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.or64(offset*sizeof(uint64_t), vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes OR");
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const void *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.and64(offset*sizeof(uint64_t), vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes AND");
+    }
+}
+
+void
+verifyOr64(const IAccelrated & accel) {
+    std::vector<std::vector<uint64_t>> vectors(3) ;
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyOr64(accel, vectors, offset, i, false);
+            verifyOr64(accel, vectors, offset, i, true);
+        }
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel) {
+    std::vector<std::vector<uint64_t>> vectors(3);
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyAnd64(accel, vectors, offset, i, false);
+            verifyAnd64(accel, vectors, offset, i, true);
+        }
+    }
+}
+
 class RuntimeVerificator
 {
 public:
@@ -114,6 +229,8 @@ private:
         verifyEuclideanDistance<float>(accelrated);
         verifyEuclideanDistance<double>(accelrated);
         verifyPopulationCount(accelrated);
+        verifyAnd64(accelrated);
+        verifyOr64(accelrated);
     }
 };
 
@@ -122,7 +239,7 @@ RuntimeVerificator::RuntimeVerificator()
     GenericAccelrator generic;
     verify(generic);
 
-    const IAccelrated & thisCpu(IAccelrated::getAccelrator());
+    const IAccelrated & thisCpu(IAccelrated::getAccelerator());
     verify(thisCpu);
 }
 
@@ -155,7 +272,7 @@ static Selector _G_selector;
 RuntimeVerificator _G_verifyAccelrator;
 
 const IAccelrated &
-IAccelrated::getAccelrator()
+IAccelrated::getAccelerator()
 {
     static IAccelrated::UP accelrator = _G_selector.create();
     return *accelrator;
