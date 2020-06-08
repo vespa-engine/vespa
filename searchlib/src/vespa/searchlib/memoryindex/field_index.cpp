@@ -6,6 +6,7 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -271,6 +272,13 @@ public:
         LOG(debug, "Return PostingIterator: field_id(%u), doc_count(%zu)",
             _field_id, _posting_itr.size());
         return result;
+    }
+
+    SearchIterator::UP createFilterSearch(bool, FilterConstraint) const override {
+        auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
+        auto & tfmda = wrapper->tfmda();
+        wrapper->wrap(make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda));
+        return wrapper;
     }
 };
 
