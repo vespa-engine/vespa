@@ -14,9 +14,8 @@ namespace search::queryeval {
 class EmptyBlueprint : public SimpleLeafBlueprint
 {
 protected:
-    SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 public:
     EmptyBlueprint(const FieldSpecBaseList &fields);
     EmptyBlueprint(const FieldSpecBase &field);
