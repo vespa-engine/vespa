@@ -26,13 +26,14 @@ import java.util.logging.Logger;
 
 /**
  *
- * Contains state for the local instance of the configserver.
+ * Session repository for config server. Stores session state in zookeeper and file system. There are two
+ * different session types (RemoteSession and LocalSession).
  *
  * @author Ulf Lilleengen
  */
-public class LocalSessionRepo {
+public class SessionRepository {
 
-    private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
+    private static final Logger log = Logger.getLogger(SessionRepository.class.getName());
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
 
     private final SessionCache<LocalSession> sessionCache;
@@ -43,7 +44,7 @@ public class LocalSessionRepo {
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
 
-    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, SessionFactory sessionFactory) {
+    public SessionRepository(TenantName tenantName, GlobalComponentRegistry componentRegistry, SessionFactory sessionFactory) {
         sessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
