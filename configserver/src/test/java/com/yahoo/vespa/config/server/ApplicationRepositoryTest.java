@@ -298,14 +298,14 @@ public class ApplicationRepositoryTest {
             LocalSession applicationData = tenant.getSessionRepository().getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(tenant.getRemoteSessionRepo().getSession(sessionId));
+            assertNotNull(tenant.getSessionRepo().getRemoteSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
             assertNull(tenant.getSessionRepository().getSession(sessionId));
-            assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
+            assertNull(tenant.getSessionRepo().getRemoteSession(sessionId));
             assertTrue(provisioner.removed);
             assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId);
@@ -346,7 +346,7 @@ public class ApplicationRepositoryTest {
             RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
             Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
-            assertNull(tenant.getRemoteSessionRepo().getSession(prepareResult.sessionId()));
+            assertNull(tenant.getSessionRepo().getRemoteSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
