@@ -14,6 +14,10 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#ifndef XXH_INLINE_ALL
+#  define XXH_INLINE_ALL // Let XXH64 be inlined for fixed hash size (bucket ID)
+#endif
+#include <xxhash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.handler.impl");
@@ -892,6 +896,11 @@ FileStorHandlerImpl::Disk::broadcast()
     for (auto & stripe : _stripes) {
         stripe.broadcast();
     }
+}
+
+uint64_t FileStorHandlerImpl::Disk::dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
+    const uint64_t raw_id = bucket.getBucketId().getId();
+    return XXH64(&raw_id, sizeof(uint64_t), 0);
 }
 
 bool

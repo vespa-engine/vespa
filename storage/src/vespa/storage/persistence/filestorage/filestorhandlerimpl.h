@@ -197,12 +197,7 @@ public:
         std::string dumpQueue() const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
-        static uint64_t dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
-            // Disperse bucket bits by multiplying with the 64-bit FNV-1 prime.
-            // This avoids an inherent affinity between the LSB of a bucket's bits
-            // and the stripe an operation ends up on.
-            return bucket.getBucketId().getId() * 1099511628211ULL;
-        }
+        static uint64_t dispersed_bucket_bits(const document::Bucket& bucket) noexcept;
         // We make a fairly reasonable assumption that there will be less than 64k stripes.
         uint16_t stripe_index(const document::Bucket& bucket) const noexcept {
             return static_cast<uint16_t>(dispersed_bucket_bits(bucket) % _stripes.size());
