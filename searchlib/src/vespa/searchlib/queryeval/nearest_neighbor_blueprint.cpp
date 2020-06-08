@@ -101,11 +101,12 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
                 _approximate = false;
                 return;
             }
+            est_hits = std::min(est_hits, max_hits);
         }
-        perform_top_k();
-        est_hits = _found_hits.size();
-        LOG(debug, "perform_top_k found %u hits", est_hits);
+        est_hits = std::min(est_hits, _target_num_hits);
         setEstimate(HitEstimate(est_hits, false));
+        perform_top_k();
+        LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
     }
 }
 
