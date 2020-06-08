@@ -82,7 +82,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append("{field=").append(field);
         buffer.append(",queryTensorName=").append(queryTensorName);
         buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
-        buffer.append(",approximate=").append(String.valueOf(approximate));
+        buffer.append(",approximate=").append(approximate);
         buffer.append(",targetNumHits=").append(targetNumHits).append("}");
     }
 

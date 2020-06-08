@@ -125,7 +125,7 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "  document test { \n" +
                 "    field a type tensor(x[10]) { indexing: attribute }\n" +
                 "    field b type tensor(y{}) { indexing: attribute }\n" +
-                "    field c type tensor(x[]) { indexing: attribute }\n" +
+                "    field c type tensor(x[5]) { indexing: attribute }\n" +
                 "  }\n" +
                 "  rank-profile p1 {}\n" +
                 "  rank-profile p2 {}\n" +
@@ -140,11 +140,28 @@ public class RankProfileTestCase extends SchemaTestCase {
         assertAttributeTypeSettings(registry.get(search, "p2"), search);
     }
 
+    @Test
+    public void requireThatDenseDimensionsMustBeBound() throws ParseException {
+        try {
+            SearchBuilder builder = new SearchBuilder(new RankProfileRegistry());
+            builder.importString("search test {\n" +
+                                 "  document test { \n" +
+                                 "    field a type tensor(x[]) { indexing: attribute }\n" +
+                                 "  }\n" +
+                                 "}");
+            builder.build();
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Illegal type in field a type tensor(x[]): Dense tensor dimensions must have a size",
+                         e.getMessage());
+        }
+    }
+
     private static void assertAttributeTypeSettings(RankProfile profile, Search search) {
         RawRankProfile rawProfile = new RawRankProfile(profile, new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search));
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.a").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.attribute.b").get());
-        assertEquals("tensor(x[])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").get());
+        assertEquals("tensor(x[5])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").get());
     }
 
     @Test

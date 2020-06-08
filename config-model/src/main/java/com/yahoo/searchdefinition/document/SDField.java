@@ -7,12 +7,14 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperation;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperationContainer;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
@@ -116,9 +118,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private boolean isExtraField = false;
 
     /**
-     * Creates a new field. This method is only used to create reserved fields
-     * @param name The name of the field
-     * @param dataType The datatype of the field
+     * Creates a new field. This method is only used to create reserved fields.
+     *
+     * @param name the name of the field
+     * @param dataType the datatype of the field
     */
     protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean populate) {
         super(name, id, dataType);
@@ -129,69 +132,58 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         this(repo, name, id, dataType, true);
     }
 
-    /**
-       Creates a new field.
-
-       @param name The name of the field
-       @param dataType The datatype of the field
-    */
+    /** Creates a new field */
     public SDField(SDDocumentType repo, String name, DataType dataType, boolean populate) {
-        super(name,dataType);
+        super(name, dataType);
         populate(populate, repo, name, dataType);
     }
 
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
-        populate(populate,repo, name, dataType, null, 0);
-    }
-
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
-        if (populate || (dataType instanceof MapDataType)) {
-            populateWithStructFields(repo, name, dataType, recursion);
-            populateWithStructMatching(repo, name, dataType, fieldMatching);
-        }
-    }
-
-
-    /**
-     * Creates a new field.
-     *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     * @param owner the owning document (used to check for id collisions)
-     */
+    /** Creates a new field */
     protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner, boolean populate) {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
-        this.ownerDocType=owner;
+        this.ownerDocType = owner;
         populate(populate, repo, name, dataType);
     }
 
     /**
-     * Creates a new field.
+     * Creates a new field
      *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     * @param owner The owning document (used to check for id collisions)
-     * @param fieldMatching The matching object to set for the field
+     * @param name the name of the field
+     * @param dataType the datatype of the field
+     * @param owner the owning document (used to check for id collisions)
+     * @param fieldMatching the matching object to set for the field
      */
     protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner,
                       Matching fieldMatching, boolean populate, int recursion) {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
-        this.ownerDocType=owner;
+        this.ownerDocType = owner;
         if (fieldMatching != null)
             this.setMatching(fieldMatching);
         populate(populate, repo, name, dataType, fieldMatching, recursion);
     }
 
-    /**
-     *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     */
     public SDField(SDDocumentType repo,  String name, DataType dataType) {
         this(repo, name,dataType, true);
     }
     public SDField(String name, DataType dataType) {
         this(null, name,dataType);
+    }
+
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
+        populate(populate, repo, name, dataType, null, 0);
+    }
+
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
+        if (dataType instanceof TensorDataType) {
+            TensorType type = ((TensorDataType)dataType).getTensorType();
+            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+                throw new IllegalArgumentException("Illegal type in field " + name + " type " + type +
+                                                   ": Dense tensor dimensions must have a size");
+        }
+        if (populate || (dataType instanceof MapDataType)) {
+            populateWithStructFields(repo, name, dataType, recursion);
+            populateWithStructMatching(repo, name, dataType, fieldMatching);
+        }
     }
 
     public void setIsExtraField(boolean isExtra) {

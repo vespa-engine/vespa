@@ -9,6 +9,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
  * @author Simon Thoresen Hult
  */
 public final class TrimExpression extends Expression {
+
     public TrimExpression() {
         super(DataType.STRING);
     }

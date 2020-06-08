@@ -29,6 +29,7 @@ public class RankingExpressionWithOnnxTestCase {
     private final static String name = "mnist_softmax";
 
     private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_Variable), f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
+    private final static String vespaExpressionWithBatchReduce = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b)), tensor<float>(d0[1])(1.0), f(a,b)(a * b))";
 
     @After
     public void removeGeneratedModelFiles() {
@@ -93,10 +94,10 @@ public class RankingExpressionWithOnnxTestCase {
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                 "onnx('mnist_softmax.onnx')",
                 null,
-                "field mytensor type tensor<float>(d0[],d1[784]) { indexing: attribute }",
+                "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
     }
 
 
@@ -105,18 +106,16 @@ public class RankingExpressionWithOnnxTestCase {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType =
                 "<query-profile-type id='root'>" +
-                "  <field name='query(mytensor)' type='tensor&lt;float&gt;(d0[3],d1[784],d2[10])'/>" +
+                "  <field name='query(mytensor)' type='tensor&lt;float&gt;(d0[1],d1[784],d2[10])'/>" +
                 "</query-profile-type>";
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
-                queryProfile,
-                queryProfileType);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir, queryProfile, queryProfileType);
         RankProfileSearchFixture search = fixtureWith("sum(query(mytensor) * attribute(mytensor) * constant(mytensor),d2)",
                 "onnx('mnist_softmax.onnx')",
-                "constant mytensor { file: ignored\ntype: tensor<float>(d0[7],d1[784]) }",
-                "field mytensor type tensor<float>(d0[],d1[784]) { indexing: attribute }",
+                "constant mytensor { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }",
+                "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
     }
 
 
