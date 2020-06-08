@@ -6,7 +6,6 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -28,10 +27,10 @@ import static org.junit.Assert.fail;
 /**
  * @author Ulf Lilleengen
  */
-public class LocalSessionRepoTest {
+public class SessionRepositoryTest {
 
     private File testApp = new File("src/test/apps/app");
-    private LocalSessionRepo repo;
+    private SessionRepository repo;
     private static final TenantName tenantName = TenantName.defaultName();
 
     @Rule
@@ -62,7 +61,7 @@ public class LocalSessionRepoTest {
                                                            TenantApplications.create(globalComponentRegistry, tenantName),
                                                            new HostRegistry<>(),
                                                            tenantName);
-        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, sessionFactory);
+        repo = new SessionRepository(tenantName, globalComponentRegistry, sessionFactory);
     }
 
     @Test
