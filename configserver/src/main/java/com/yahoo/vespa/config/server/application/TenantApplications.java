@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -32,8 +31,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collection;
@@ -76,12 +73,10 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock = Clock.systemUTC();
-    private final TenantFileSystemDirs tenantFileSystemDirs;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
-                              ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry,
-                              TenantFileSystemDirs tenantFileSystemDirs) {
+                              ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry) {
         this.curator = curator;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.locksPath = TenantRepository.getLocksPath(tenant);
@@ -95,7 +90,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         this.responseFactory = ConfigResponseFactory.create(configserverConfig);
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistry;
-        this.tenantFileSystemDirs = tenantFileSystemDirs;
     }
 
     // For testing only
@@ -107,8 +101,7 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
                                       componentRegistry.getMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
-                                      componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
-                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
+                                      componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName));
     }
 
     /**
@@ -133,10 +126,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         String data = curator.getData(applicationPath(id)).map(Utf8::toString)
                              .orElseThrow(() -> new NotFoundException("No such application id: '" + id + "'"));
         return data.isEmpty() ? Optional.empty() : Optional.of(Long.parseLong(data));
-    }
-
-    public boolean hasLocalSession(long sessionId) {
-        return Files.exists(Paths.get(tenantFileSystemDirs.sessionsPath().getAbsolutePath(), String.valueOf(sessionId)));
     }
 
     /**
@@ -246,6 +235,12 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
             log.log(Level.FINE, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
         }
         return application.resolveConfig(req, responseFactory);
+    }
+
+    // For testing only
+    long getApplicationGeneration(ApplicationId appId, Optional<Version> vespaVersion) {
+        Application application = getApplication(appId, vespaVersion);
+        return application.getApplicationGeneration();
     }
 
     private void notifyReloadListeners(ApplicationSet applicationSet) {
