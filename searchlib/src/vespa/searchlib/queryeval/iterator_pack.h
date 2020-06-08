@@ -23,10 +23,12 @@ public:
     SearchIteratorPack(SearchIteratorPack &&rhs) noexcept;
     SearchIteratorPack &operator=(SearchIteratorPack &&rhs) noexcept;
 
+    // TODO: use MultiSearch::Children to pass ownership
     SearchIteratorPack(const std::vector<SearchIterator*> &children,
                        const std::vector<fef::TermFieldMatchData*> &childMatch,
                        MatchDataUP md);
 
+    // TODO: use MultiSearch::Children to pass ownership
     SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md);
 
     uint32_t get_docid(uint32_t ref) const {
