@@ -83,6 +83,7 @@
         <module>hosted-api</module>
         <module>hosted-zone-api</module>
         <module>http-utils</module>
+        <module>hosted-api</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
@@ -126,6 +127,7 @@
         <module>tenant-auth</module>
         <module>tenant-base</module>
         <module>tenant-cd</module>
+        <module>tenant-cd-impl</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>

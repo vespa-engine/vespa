@@ -111,6 +111,12 @@
 		    </exclusion>
 	    </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd-impl</artifactId>
+            <version>${test-framework.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
