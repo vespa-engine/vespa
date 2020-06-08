@@ -64,7 +64,14 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return deploymentTimes.entrySet().stream()
                               .sorted(Map.Entry.comparingByValue())
                               .map(Map.Entry::getKey)
+                              .filter(id -> shouldMaintain(id))
                               .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private boolean shouldMaintain(ApplicationId id) {
+        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking")) return false;
+        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-canary")) return false;
+        return true;
     }
 
     // TODO: Do not start deploying until some time has gone (ideally only until bootstrap of config server is finished)
