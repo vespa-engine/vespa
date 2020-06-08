@@ -58,7 +58,6 @@ using namespace search;
 namespace {
 
 const string field = "field";
-const int32_t weight = 1;
 
 class MyAttributeManager : public IAttributeManager {
     AttributeVector::SP _attribute_vector;
