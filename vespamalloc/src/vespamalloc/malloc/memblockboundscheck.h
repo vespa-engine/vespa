@@ -59,10 +59,10 @@ protected:
     void verifyFill() const __attribute__((noinline));
 
     void setSize(size_t sz) { static_cast<uint64_t *>(_ptr)[0] = sz; }
-    static size_t preambleOverhead(std::align_val_t alignment) {
-        return std::max(4*sizeof(unsigned), size_t(alignment));
+    static constexpr size_t preambleOverhead(std::align_val_t alignment) {
+        return std::max(preambleOverhead(), size_t(alignment));
     }
-    static size_t preambleOverhead() {
+    static constexpr size_t preambleOverhead() {
         return 4*sizeof(unsigned);
     }
 
@@ -141,24 +141,24 @@ public:
         }
         return StackTraceLen;
     }
-    static size_t adjustSize(size_t sz)   { return sz + overhead(); }
-    static size_t adjustSize(size_t sz, std::align_val_t alignment)   { return sz + overhead(alignment); }
-    static size_t unAdjustSize(size_t sz) { return sz - overhead(); }
+    static constexpr size_t adjustSize(size_t sz)   { return sz + overhead(); }
+    static constexpr size_t adjustSize(size_t sz, std::align_val_t alignment)   { return sz + overhead(alignment); }
+    static constexpr size_t unAdjustSize(size_t sz) { return sz - overhead(); }
     static void dumpInfo(size_t level) __attribute__((noinline));
-    static size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
+    static constexpr size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
     void info(FILE * os, unsigned level=0) const __attribute__((noinline));
 
 protected:
-    static size_t postambleOverhead() {
+    static constexpr size_t postambleOverhead() {
         return sizeof(unsigned) + StackTraceLen*sizeof(void *);
     }
-    static size_t overhead() {
+    static constexpr size_t overhead() {
         return preambleOverhead() + postambleOverhead();
     }
-    static size_t overhead(std::align_val_t alignment) {
+    static constexpr size_t overhead(std::align_val_t alignment) {
         return preambleOverhead(alignment) + postambleOverhead();
     }
-    void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + 4*sizeof(unsigned) + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
+    void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + preambleOverhead() + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
     void init(size_t sz) {
         if (_ptr) {
             setSize(sz);
