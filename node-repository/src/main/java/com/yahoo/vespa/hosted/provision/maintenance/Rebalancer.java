@@ -41,7 +41,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
 
     @Override
     protected void maintain() {
-        if (nodeRepository().canProvisionHostsWhenRequired()) return; // All nodes will be allocated on new hosts, so rebalancing makes no sense
+        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return; // Rebalancing not necessary
         if (nodeRepository().zone().environment().isTest()) return; // Test zones have short lived deployments, no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed

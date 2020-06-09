@@ -20,6 +20,7 @@ import java.util.Optional;
  * @author mgimle
  */
 public class HostCapacityResponse extends HttpResponse {
+
     private final StringBuilder text;
     private final Slime slime;
     private final CapacityChecker capacityChecker;

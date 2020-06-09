@@ -47,7 +47,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final InfrastructureProvisioner infrastructureProvisioner;
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
-    private final CapacityReportMaintainer capacityReportMaintainer;
+    private final SpareCapacityMaintainer spareCapacityMaintainer;
     private final OsUpgradeActivator osUpgradeActivator;
     private final Rebalancer rebalancer;
     private final NodeMetricsDbMaintainer nodeMetricsDbMaintainer;
@@ -88,7 +88,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
-        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, defaults.capacityReportInterval);
+        spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, clock, defaults.spareCapacityMaintenanceInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
         rebalancer = new Rebalancer(deployer, nodeRepository, metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
@@ -110,7 +110,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.close();
         dirtyExpirer.close();
         nodeRebooter.close();
-        capacityReportMaintainer.close();
+        spareCapacityMaintainer.close();
         provisionedExpirer.close();
         metricsReporter.close();
         infrastructureProvisioner.close();
@@ -153,7 +153,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration failedExpirerInterval;
         private final Duration dirtyExpiry;
         private final Duration provisionedExpiry;
-        private final Duration capacityReportInterval;
+        private final Duration spareCapacityMaintenanceInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
@@ -175,7 +175,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
-            capacityReportInterval = Duration.ofMinutes(10);
+            spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;

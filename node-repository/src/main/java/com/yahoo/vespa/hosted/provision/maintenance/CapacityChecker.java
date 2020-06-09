@@ -11,6 +11,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * @author mgimle
+ */
 public class CapacityChecker {
 
     private List<Node> hosts;
@@ -42,15 +45,15 @@ public class CapacityChecker {
     }
 
     public List<Node> nodesFromHostnames(List<String> hostnames) {
-        List<Node> nodes = hostnames.stream()
-                .filter(h -> nodeMap.containsKey(h))
-                .map(h -> nodeMap.get(h))
-                .collect(Collectors.toList());
+        List<Node> nodes = hostnames.stream().filter(h -> nodeMap.containsKey(h))
+                                    .map(h -> nodeMap.get(h))
+                                    .collect(Collectors.toList());
+
         if (nodes.size() != hostnames.size()) {
             Set<String> notFoundNodes = new HashSet<>(hostnames);
             notFoundNodes.removeAll(nodes.stream().map(Node::hostname).collect(Collectors.toList()));
             throw new IllegalArgumentException(String.format("Host(s) not found: [ %s ]",
-                    String.join(", ", notFoundNodes)));
+                                                             String.join(", ", notFoundNodes)));
         }
 
         return nodes;
@@ -92,9 +95,9 @@ public class CapacityChecker {
         if (hosts.size() == 0) return Optional.empty();
 
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
-                .sorted(Comparator.comparingInt(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                                                        .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                                                        .map(Map.Entry::getKey)
+                                                        .collect(Collectors.toList());
 
         for (int i = 1; i <= parentRemovalPriorityList.size(); i++) {
             List<Node> hostsToRemove = parentRemovalPriorityList.subList(0, i);
@@ -116,12 +119,12 @@ public class CapacityChecker {
 
     private Map<Node, List<Node>> constructNodeChildrenMap(List<Node> tenants, List<Node> hosts, Map<String, Node> hostnameToNode) {
         Map<Node, List<Node>> nodeChildren = tenants.stream()
-                .filter(n -> n.parentHostname().isPresent())
-                .filter(n -> hostnameToNode.containsKey(n.parentHostname().get()))
-                .collect(Collectors.groupingBy(
-                        n -> hostnameToNode.get(n.parentHostname().orElseThrow())));
+                                                    .filter(n -> n.parentHostname().isPresent())
+                                                    .filter(n -> hostnameToNode.containsKey(n.parentHostname().get()))
+                                                    .collect(Collectors.groupingBy(n -> hostnameToNode.get(n.parentHostname().orElseThrow())));
 
-        for (var host : hosts) nodeChildren.putIfAbsent(host, List.of());
+        for (var host : hosts)
+            nodeChildren.putIfAbsent(host, List.of());
 
         return nodeChildren;
     }
@@ -149,10 +152,8 @@ public class CapacityChecker {
     private Map<Node, Integer> computeMaximalRepeatedRemovals(List<Node> hosts,
                                                               Map<Node, List<Node>> nodeChildren,
                                                               Map<Node, AllocationResources> availableResources) {
-        Map<Node, Integer> timesNodeCanBeRemoved = hosts.stream().collect(Collectors.toMap(
-                Function.identity(),
-                __ -> Integer.MAX_VALUE
-        ));
+        Map<Node, Integer> timesNodeCanBeRemoved = hosts.stream().collect(Collectors.toMap(Function.identity(),
+                                                                                           __ -> Integer.MAX_VALUE));
         for (Node host : hosts) {
             List<Node> children = nodeChildren.get(host);
             if (children.size() == 0) continue;
@@ -326,8 +327,10 @@ public class CapacityChecker {
      * as well as the specific host and tenant which caused it.
      */
     public static class HostFailurePath {
+
         public List<Node> hostsCausingFailure;
         public HostRemovalFailure failureReason;
+
     }
 
     /**
@@ -336,6 +339,7 @@ public class CapacityChecker {
      * will be empty.
      */
     public static class HostRemovalFailure {
+
         public Optional<Node> host;
         public Optional<Node> tenant;
         public AllocationFailureReasonList allocationFailures;
@@ -406,6 +410,7 @@ public class CapacityChecker {
         public AllocationResources subtract(AllocationResources other) {
             return new AllocationResources(this.nodeResources.subtract(other.nodeResources), this.availableIPs - other.availableIPs);
         }
+
     }
 
     /**
@@ -449,6 +454,7 @@ public class CapacityChecker {
 
             return String.format("[%s]", String.join(", ", reasons));
         }
+
     }
 
     /**
@@ -487,6 +493,7 @@ public class CapacityChecker {
                     insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(), incompatibleDiskSpeed(),
                                  incompatibleStorageType(), insufficientAvailableIps(), violatesParentHostPolicy());
         }
+
     }
 
     public static class AllocationHistory {

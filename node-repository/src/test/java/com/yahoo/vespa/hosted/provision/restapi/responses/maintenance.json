@@ -4,9 +4,6 @@
       "name": "AutoscalingMaintainer"
     },
     {
-      "name": "CapacityReportMaintainer"
-    },
-    {
       "name": "DirtyExpirer"
     },
     {
@@ -56,6 +53,9 @@
     },
     {
       "name":"ScalingSuggestionsMaintainer"
+    },
+    {
+      "name": "SpareCapacityMaintainer"
     }
   ],
   "inactive": [
