@@ -199,8 +199,9 @@ public class FileServer {
         downloader.close();
     }
 
+    // TODO: move to e.g. a util class
     // Connection pool with all config servers except this one (might be an empty pool if there is only one config server)
-    private static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig) {
+    public static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig) {
         List<String> configServers = ConfigServerSpec.fromConfig(configserverConfig)
                 .stream()
                 .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
