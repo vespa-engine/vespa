@@ -34,7 +34,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private final File downloadDirectory;
     private final BooleanFlag distributeApplicationPackage;
 
-    public ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
+    ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                         Curator curator,
                                         Duration interval,
                                         ConfigserverConfig configserverConfig,
