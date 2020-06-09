@@ -21,13 +21,6 @@ private:
 
 static CreateAllocator _CreateAllocator __attribute__ ((init_priority (543)));
 
-#if 1 // Only until we get on to a new C++14 compiler
-void operator delete(void* ptr, std::size_t sz) noexcept __attribute__((visibility ("default")));
-void operator delete[](void* ptr, std::size_t sz) noexcept __attribute__((visibility ("default")));
-void operator delete(void* ptr, std::size_t sz, const std::nothrow_t&) noexcept __attribute__((visibility ("default")));
-void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcept __attribute__((visibility ("default")));
-#endif
-
 void* operator new(std::size_t sz)
 {
     void * ptr(vespamalloc::createAllocator()->malloc(sz));
@@ -72,6 +65,37 @@ void operator delete(void* ptr, std::size_t sz, const std::nothrow_t&) noexcept 
 }
 void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcept {
     if (ptr) { vespamalloc::_GmemP->free(ptr, sz); }
+}
+
+void* operator new(std::size_t sz, std::align_val_t) {
+    return vespamalloc::_GmemP->malloc(sz);
+}
+void* operator new(std::size_t sz, std::align_val_t, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz);
+}
+void operator delete(void* ptr , std::align_val_t) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
+}
+void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
+}
+void* operator new[](std::size_t sz, std::align_val_t) {
+    return vespamalloc::_GmemP->malloc(sz);
+}
+void* operator new[](std::size_t sz, std::align_val_t, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz);
+}
+void operator delete[](void* ptr, std::align_val_t) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
+}
+void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
+}
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
+}
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
+    return vespamalloc::_GmemP->free(ptr);
 }
 
 extern "C" {

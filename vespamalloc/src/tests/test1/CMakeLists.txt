@@ -6,3 +6,25 @@ vespa_add_executable(vespamalloc_testatomic_app TEST
     ${VESPA_ATOMIC_LIB}
 )
 vespa_add_test(NAME vespamalloc_testatomic_app NO_VALGRIND COMMAND vespamalloc_testatomic_app)
+
+vespa_add_executable(vespamalloc_new_test_app TEST
+    SOURCES
+    new_test.cpp
+)
+vespa_add_test(NAME vespamalloc_new_test_app NO_VALGRIND COMMAND vespamalloc_new_test_app)
+
+vespa_add_executable(vespamalloc_new_test_with_vespamalloc_app TEST
+    SOURCES
+    new_test.cpp
+    DEPENDS
+    vespamalloc
+)
+vespa_add_test(NAME vespamalloc_new_test_with_vespamalloc_app NO_VALGRIND COMMAND vespamalloc_new_test_with_vespamalloc_app)
+
+vespa_add_executable(vespamalloc_new_test_with_vespamallocd_app TEST
+    SOURCES
+    new_test.cpp
+    DEPENDS
+    vespamallocd
+)
+vespa_add_test(NAME vespamalloc_new_test_with_vespamallocd_app NO_VALGRIND COMMAND vespamalloc_new_test_with_vespamallocd_app)
