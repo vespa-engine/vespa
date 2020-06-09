@@ -35,10 +35,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private final BooleanFlag distributeApplicationPackage;
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
-                                        Curator curator,
-                                        Duration interval,
-                                        ConfigserverConfig configserverConfig,
-                                        FlagSource flagSource) {
+                                 Curator curator,
+                                 Duration interval,
+                                 ConfigserverConfig configserverConfig,
+                                 FlagSource flagSource) {
         super(applicationRepository, curator, interval, interval);
         this.applicationRepository = applicationRepository;
         this.configserverConfig = configserverConfig;
