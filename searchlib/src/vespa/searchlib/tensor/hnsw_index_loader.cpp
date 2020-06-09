@@ -39,7 +39,10 @@ HnswIndexLoader::load(const fileutil::LoadedBuffer& buf)
     }
     if (_failed) return false;
     _graph.node_refs.ensure_size(num_nodes);
-    _graph.set_entry_node(entry_docid, entry_level);
+    HnswGraph::EntryNode entry;
+    entry.docid = entry_docid;
+    entry.level = entry_level;
+    _graph.set_entry_node(entry);
     return true;
 }
 

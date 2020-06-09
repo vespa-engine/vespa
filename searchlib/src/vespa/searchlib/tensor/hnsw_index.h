@@ -145,8 +145,8 @@ public:
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const;
 
-    uint32_t get_entry_docid() const { return _graph.entry_docid; }
-    int32_t get_entry_level() const { return _graph.entry_level; }
+    uint32_t get_entry_docid() const { return _graph.get_entry_node().docid; }
+    int32_t get_entry_level() const { return _graph.get_entry_node().level; }
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;

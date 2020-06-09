@@ -38,8 +38,8 @@ struct HnswGraph {
     NodeRefVector node_refs;
     NodeStore     nodes;
     LinkStore     links;
-    uint32_t      entry_docid;
-    int32_t       entry_level;
+
+    std::atomic<uint64_t> entry_docid_and_level;
 
     HnswGraph();
 
@@ -63,9 +63,25 @@ struct HnswGraph {
     
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& new_links);
 
-    void set_entry_node(uint32_t docid, int32_t level) {
-        entry_docid = docid;
-        entry_level = level;
+    struct EntryNode {
+        uint32_t docid;
+        int32_t level;
+        EntryNode() : docid(0), level(-1) {}
+    };
+
+    void set_entry_node(EntryNode node) {
+        uint64_t value = node.level;
+        value <<= 32;
+        value |= node.docid;
+        entry_docid_and_level.store(value, std::memory_order_release);
+    }
+
+    EntryNode get_entry_node() const {
+        EntryNode entry;
+        uint64_t value = entry_docid_and_level.load(std::memory_order_acquire);
+        entry.docid = (uint32_t)value;
+        entry.level = (int32_t)(value >> 32);
+        return entry;
     }
 
     size_t size() const { return node_refs.size(); }

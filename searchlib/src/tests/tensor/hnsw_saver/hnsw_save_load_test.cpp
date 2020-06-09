@@ -49,7 +49,10 @@ void populate(HnswGraph &graph) {
     graph.set_link_array(6, 0, V{1, 2, 4});
     graph.set_link_array(2, 1, V{4});
     graph.set_link_array(4, 1, V{2});
-    graph.set_entry_node(2, 1);
+    HnswGraph::EntryNode entry;
+    entry.docid = 2;
+    entry.level = 1;
+    graph.set_entry_node(entry);
 }
 
 void modify(HnswGraph &graph) {
@@ -63,7 +66,10 @@ void modify(HnswGraph &graph) {
     graph.set_link_array(4, 1, V{7});
     graph.set_link_array(7, 1, V{4});
 
-    graph.set_entry_node(4, 1);
+    HnswGraph::EntryNode entry;
+    entry.docid = 4;
+    entry.level = 1;
+    graph.set_entry_node(entry);
 }
 
 
@@ -110,8 +116,9 @@ public:
 
     void expect_copy_as_populated() const {
         EXPECT_EQ(copy.size(), 7);
-        EXPECT_EQ(copy.entry_docid, 2);
-        EXPECT_EQ(copy.entry_level, 1);
+        auto entry = copy.get_entry_node();
+        EXPECT_EQ(entry.docid, 2);
+        EXPECT_EQ(entry.level, 1);
 
         expect_empty_d(0);
         expect_empty_d(3);
