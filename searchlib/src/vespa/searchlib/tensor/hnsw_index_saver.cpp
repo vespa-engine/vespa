@@ -11,8 +11,9 @@ HnswIndexSaver::~HnswIndexSaver() {}
 HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     : _graph_links(graph.links), _meta_data()
 {
-    _meta_data.entry_docid = graph.entry_docid;
-    _meta_data.entry_level = graph.entry_level;
+    auto entry = graph.get_entry_node();
+    _meta_data.entry_docid = entry.docid;
+    _meta_data.entry_level = entry.level;
     size_t num_nodes = graph.node_refs.size();
     _meta_data.nodes.reserve(num_nodes);
     for (size_t i = 0; i < num_nodes; ++i) {

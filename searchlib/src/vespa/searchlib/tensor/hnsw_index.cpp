@@ -276,15 +276,15 @@ HnswIndex::add_document(uint32_t docid)
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
     _graph.make_node_for_document(docid, level + 1);
-    uint32_t entry_docid = get_entry_docid();
-    if (entry_docid == 0) {
-        _graph.set_entry_node(docid, level);
+    auto entry = _graph.get_entry_node();
+    if (entry.docid == 0) {
+        _graph.set_entry_node({docid, level});
         return;
     }
 
-    int search_level = get_entry_level();
-    double entry_dist = calc_distance(input, entry_docid);
-    HnswCandidate entry_point(entry_docid, entry_dist);
+    int search_level = entry.level;
+    double entry_dist = calc_distance(input, entry.docid);
+    HnswCandidate entry_point(entry.docid, entry_dist);
     while (search_level > level) {
         entry_point = find_nearest_in_layer(input, entry_point, search_level);
         --search_level;
@@ -303,7 +303,7 @@ HnswIndex::add_document(uint32_t docid)
         --search_level;
     }
     if (level > get_entry_level()) {
-        _graph.set_entry_node(docid, level);
+        _graph.set_entry_node({docid, level});
     }
 }
 
@@ -343,7 +343,7 @@ HnswIndex::remove_document(uint32_t docid)
         LinkArrayRef my_links = _graph.get_link_array(docid, level);
         for (uint32_t neighbor_id : my_links) {
             if (need_new_entrypoint) {
-                _graph.set_entry_node(neighbor_id, level);
+                _graph.set_entry_node({neighbor_id, level});
                 need_new_entrypoint = false;
             }
             remove_link_to(neighbor_id, docid, level);
@@ -352,7 +352,8 @@ HnswIndex::remove_document(uint32_t docid)
         _graph.set_link_array(docid, level, empty);
     }
     if (need_new_entrypoint) {
-        _graph.set_entry_node(0, -1);
+        HnswGraph::EntryNode entry;
+        _graph.set_entry_node(entry);
     }
     _graph.remove_node_for_document(docid);
 }
@@ -407,8 +408,9 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     uint32_t reachable = count_reachable_nodes();
     uint32_t unreachable = valid_nodes - reachable;
     object.setLong("unreachable_nodes", unreachable);
-    object.setLong("entry_docid", _graph.entry_docid);
-    object.setLong("entry_level", _graph.entry_level);
+    auto entry_node = _graph.get_entry_node();
+    object.setLong("entry_docid", entry_node.docid);
+    object.setLong("entry_level", entry_node.level);
     auto& cfgObj = object.setObject("cfg");
     cfgObj.setLong("max_links_at_level_0", _cfg.max_links_at_level_0());
     cfgObj.setLong("max_links_on_inserts", _cfg.max_links_on_inserts());
@@ -472,13 +474,13 @@ FurthestPriQ
 HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const
 {
     FurthestPriQ best_neighbors;
-    if (get_entry_level() < 0) {
+    auto entry = _graph.get_entry_node();
+    if (entry.level < 0) {
         return best_neighbors;
     }
-    uint32_t entry_docid = get_entry_docid();
-    int search_level = get_entry_level();
-    double entry_dist = calc_distance(vector, entry_docid);
-    HnswCandidate entry_point(entry_docid, entry_dist);
+    int search_level = entry.level;
+    double entry_dist = calc_distance(vector, entry.docid);
+    HnswCandidate entry_point(entry.docid, entry_dist);
     while (search_level > 0) {
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
@@ -517,7 +519,7 @@ HnswIndex::set_node(uint32_t docid, const HnswNode &node)
     }
     int max_level = num_levels - 1;
     if (get_entry_level() < max_level) {
-        _graph.set_entry_node(docid, max_level);
+        _graph.set_entry_node({docid, max_level});
     }
 }
 
@@ -548,15 +550,15 @@ HnswIndex::check_link_symmetry() const
 uint32_t
 HnswIndex::count_reachable_nodes() const
 {
-    int search_level = get_entry_level();
+    auto entry = _graph.get_entry_node();
+    int search_level = entry.level;
     if (search_level < 0) {
         return 0;
     }
     auto visited = _visited_set_pool.get(_graph.size());
-    uint32_t entry_id = get_entry_docid();
     LinkArray found_links;
-    found_links.push_back(entry_id);
-    visited.mark(entry_id);
+    found_links.push_back(entry.docid);
+    visited.mark(entry.docid);
     while (search_level >= 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
             uint32_t docid = found_links[idx];

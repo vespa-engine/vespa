@@ -11,9 +11,11 @@ HnswGraph::HnswGraph()
   : node_refs(),
     nodes(HnswIndex::make_default_node_store_config()),
     links(HnswIndex::make_default_link_store_config()),
-    entry_docid(0), // Note that docid 0 is reserved and never used
-    entry_level(-1)
-{}
+    entry_docid_and_level()
+{
+    EntryNode entry;
+    set_entry_node(entry);
+}
 
 HnswGraph::~HnswGraph() {}
 
