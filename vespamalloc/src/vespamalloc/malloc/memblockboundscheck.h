@@ -11,8 +11,22 @@ class MemBlockBoundsCheckBaseTBase : public CommonT<5>
 public:
     typedef StackEntry<StackReturnEntry> Stack;
     void * rawPtr()          { return _ptr; }
-    void *ptr()              { unsigned *p((unsigned*)_ptr); return p ? (p+4) : NULL; }
-    const void *ptr()  const { unsigned *p((unsigned*)_ptr); return p ? (p+4) : NULL; }
+    void *ptr()              {
+        char *p((char*)_ptr);
+        return p ? (p+preambleOverhead()) : nullptr;
+    }
+    const void *ptr() const {
+        const char *p((const char*)_ptr);
+        return p ? (p+preambleOverhead()) : nullptr;
+    }
+    void *ptr(std::align_val_t alignment) {
+        char *p((char*)_ptr);
+        return p ? (p+preambleOverhead(alignment)) : nullptr;
+    }
+    const void *ptr(std::align_val_t alignment) const {
+        const char *p((const char*)_ptr);
+        return p ? (p+preambleOverhead(alignment)) : nullptr;
+    }
 
     void setThreadId(int th)              { if (_ptr) { static_cast<uint32_t*>(_ptr)[2] = th; } }
     bool allocated()                const { return (static_cast<unsigned*>(_ptr)[3] == ALLOC_MAGIC); }
@@ -45,6 +59,12 @@ protected:
     void verifyFill() const __attribute__((noinline));
 
     void setSize(size_t sz) { static_cast<uint64_t *>(_ptr)[0] = sz; }
+    static size_t preambleOverhead(std::align_val_t alignment) {
+        return std::max(4*sizeof(unsigned), size_t(alignment));
+    }
+    static size_t preambleOverhead() {
+        return 4*sizeof(unsigned);
+    }
 
     enum {
         ALLOC_MAGIC = 0xF1E2D3C4,
@@ -121,13 +141,23 @@ public:
         }
         return StackTraceLen;
     }
-    static size_t adjustSize(size_t sz)   { return sz + ((4+1)*sizeof(unsigned) + StackTraceLen*sizeof(void *)); }
-    static size_t unAdjustSize(size_t sz) { return sz - ((4+1)*sizeof(unsigned) + StackTraceLen*sizeof(void *)); }
+    static size_t adjustSize(size_t sz)   { return sz + overhead(); }
+    static size_t adjustSize(size_t sz, std::align_val_t alignment)   { return sz + overhead(alignment); }
+    static size_t unAdjustSize(size_t sz) { return sz - overhead(); }
     static void dumpInfo(size_t level) __attribute__((noinline));
     static size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
     void info(FILE * os, unsigned level=0) const __attribute__((noinline));
 
 protected:
+    static size_t postambleOverhead() {
+        return sizeof(unsigned) + StackTraceLen*sizeof(void *);
+    }
+    static size_t overhead() {
+        return preambleOverhead() + postambleOverhead();
+    }
+    static size_t overhead(std::align_val_t alignment) {
+        return preambleOverhead(alignment) + postambleOverhead();
+    }
     void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + 4*sizeof(unsigned) + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
     void init(size_t sz) {
         if (_ptr) {

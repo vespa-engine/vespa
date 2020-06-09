@@ -72,11 +72,11 @@ void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcep
  * Due to allocation being power of 2 up to huge page size (2M)
  * alignment will always be satisfied. size will always be larger or equal to alignment.
  */
-void* operator new(std::size_t sz, std::align_val_t) {
-    return vespamalloc::_GmemP->malloc(sz);
+void* operator new(std::size_t sz, std::align_val_t alignment) {
+    return vespamalloc::_GmemP->malloc(sz, alignment);
 }
-void* operator new(std::size_t sz, std::align_val_t, const std::nothrow_t&) noexcept {
-    return vespamalloc::_GmemP->malloc(sz);
+void* operator new(std::size_t sz, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz, alignment);
 }
 void operator delete(void* ptr , std::align_val_t) noexcept {
     return vespamalloc::_GmemP->free(ptr);
@@ -84,11 +84,11 @@ void operator delete(void* ptr , std::align_val_t) noexcept {
 void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
     return vespamalloc::_GmemP->free(ptr);
 }
-void* operator new[](std::size_t sz, std::align_val_t) {
-    return vespamalloc::_GmemP->malloc(sz);
+void* operator new[](std::size_t sz, std::align_val_t alignment) {
+    return vespamalloc::_GmemP->malloc(sz, alignment);
 }
-void* operator new[](std::size_t sz, std::align_val_t, const std::nothrow_t&) noexcept {
-    return vespamalloc::_GmemP->malloc(sz);
+void* operator new[](std::size_t sz, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz, alignment);
 }
 void operator delete[](void* ptr, std::align_val_t) noexcept {
     return vespamalloc::_GmemP->free(ptr);
@@ -96,11 +96,11 @@ void operator delete[](void* ptr, std::align_val_t) noexcept {
 void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
     return vespamalloc::_GmemP->free(ptr);
 }
-void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
-    return vespamalloc::_GmemP->free(ptr);
+void operator delete(void* ptr, std::size_t sz, std::align_val_t alignment) noexcept {
+    return vespamalloc::_GmemP->free(ptr, sz, alignment);
 }
-void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
-    return vespamalloc::_GmemP->free(ptr);
+void operator delete[](void* ptr, std::size_t sz, std::align_val_t alignment) noexcept {
+    return vespamalloc::_GmemP->free(ptr, sz, alignment);
 }
 
 extern "C" {

@@ -10,14 +10,14 @@ namespace vespamalloc {
 template <size_t MinSizeClassC, size_t MaxSizeClassMultiAllocC>
 class MemBlockT : public CommonT<MinSizeClassC>
 {
-    static const size_t MAX_ALIGN= 0x200000ul;
 public:
-    typedef StackEntry<StackReturnEntry> Stack;
+    using Parent = CommonT<MinSizeClassC>;
+    using Stack = StackEntry<StackReturnEntry>;
     enum {
         MaxSizeClassMultiAlloc = MaxSizeClassMultiAllocC,
         SizeClassSpan = (MaxSizeClassMultiAllocC-MinSizeClassC)
     };
-    MemBlockT() : _ptr(NULL) { }
+    MemBlockT() : _ptr(nullptr) { }
     MemBlockT(void * p) : _ptr(p) { }
     MemBlockT(void * p, size_t /*sz*/) : _ptr(p) { }
     MemBlockT(void * p, size_t, bool) : _ptr(p) { }
@@ -25,6 +25,7 @@ public:
     void readjustAlignment(const T & segment)  { (void) segment; }
     void *rawPtr()            { return _ptr; }
     void *ptr()               { return _ptr; }
+    void *ptr(std::align_val_t) { return _ptr; }
     const void *ptr()   const { return _ptr; }
     bool validAlloc()   const { return true; }
     bool validFree()    const { return true; }
@@ -36,12 +37,13 @@ public:
     bool allocated()    const { return false; }
     int threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }
-    Stack * callStack()                   { return NULL; }
+    Stack * callStack()                   { return nullptr; }
     size_t callStackLen()           const { return 0; }
     void fillMemory(size_t)               { }
     void logBigBlock(size_t exact, size_t adjusted, size_t gross) const __attribute__((noinline));
 
     static size_t adjustSize(size_t sz)   { return sz; }
+    static size_t adjustSize(size_t sz, std::align_val_t)   { return sz; }
     static size_t unAdjustSize(size_t sz) { return sz; }
     static void dumpInfo(size_t level);
     static void dumpFile(FILE * fp)       { _logFile = fp; }
@@ -49,9 +51,9 @@ public:
     static void setFill(uint8_t ) { }
     static bool verifySizeClass(int sc) { (void) sc; return true; }
     static size_t getMinSizeForAlignment(size_t align, size_t sz) {
-        return (sz < MAX_ALIGN)
+        return (sz < Parent::MAX_ALIGN)
                    ? std::max(sz, align)
-                   : (align < MAX_ALIGN) ? sz : sz + align;
+                   : (align < Parent::MAX_ALIGN) ? sz : sz + align;
     }
 private:
     void * _ptr;
@@ -64,4 +66,3 @@ template <> void MemBlock::dumpInfo(size_t level);
 extern template class MemBlockT<5, 20>;
 
 }
-

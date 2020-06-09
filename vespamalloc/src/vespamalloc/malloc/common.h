@@ -66,6 +66,7 @@ template <size_t MinClassSizeC>
 class CommonT
 {
 public:
+    static constexpr size_t MAX_ALIGN = 0x200000ul;
     enum {MinClassSize = MinClassSizeC};
     static inline SizeClassT sizeClass(size_t sz) {
         SizeClassT tmp(msbIdx(sz - 1) - (MinClassSizeC - 1));

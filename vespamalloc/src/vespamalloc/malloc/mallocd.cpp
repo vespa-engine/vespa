@@ -8,11 +8,11 @@ typedef ThreadListT<MemBlockBoundsCheck, Stat> ThreadList;
 typedef MemoryWatcher<MemBlockBoundsCheck, ThreadList> Allocator;
 
 static char _Gmem[sizeof(Allocator)];
-static Allocator *_GmemP = NULL;
+static Allocator *_GmemP = nullptr;
 
 static Allocator * createAllocator()
 {
-    if (_GmemP == NULL) {
+    if (_GmemP == nullptr) {
         _GmemP = new (_Gmem) Allocator(-1, 0x7fffffffffffffffl);
     }
     return _GmemP;
