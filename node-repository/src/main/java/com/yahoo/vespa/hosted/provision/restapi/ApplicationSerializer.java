@@ -40,6 +40,8 @@ public class ApplicationSerializer {
 
     private static void toSlime(Cluster cluster, List<Node> applicationNodes, Cursor clusterObject) {
         List<Node> nodes = NodeList.copyOf(applicationNodes).not().retired().cluster(cluster.id()).asList();
+        if (nodes.isEmpty()) return;
+
         int groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).flavor().resources());
 
