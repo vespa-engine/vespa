@@ -451,10 +451,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
-        Set<String> fileReferencesOnDisk = new HashSet<>();
-        File[] filesOnDisk = fileReferencesPath.listFiles();
-        if (filesOnDisk != null)
-            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
+        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
         log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
         Instant instant = Instant.now().minus(keepFileReferences);
@@ -472,6 +469,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
+    }
+
+    // TODO: move to e.g. a util class
+    public static Set<String> getFileReferencesOnDisk(File fileReferencesPath) {
+        Set<String> fileReferencesOnDisk = new HashSet<>();
+        File[] filesOnDisk = fileReferencesPath.listFiles();
+        if (filesOnDisk != null)
+            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
+        return fileReferencesOnDisk;
     }
 
     public Set<FileReference> getFileReferences(ApplicationId applicationId) {
@@ -512,7 +518,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    Set<ApplicationId> listApplications() {
+    public Set<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
                 .collect(Collectors.toSet());
