@@ -10,8 +10,6 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 
-namespace proton::documentmetastore { struct WhiteListProvider; }
-
 namespace proton::matching {
 
 class ViewResolver;
@@ -21,12 +19,10 @@ class Query
 {
 private:
     using Blueprint=search::queryeval::Blueprint;
-    using WhiteListProvider=proton::documentmetastore::WhiteListProvider;
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
     search::fef::Location   _location;
     Blueprint::UP           _whiteListBlueprint;
-    WhiteListProvider      *_white_list_provider;
 
 public:
     Query();
@@ -93,6 +89,7 @@ public:
      **/
     void optimize();
     void fetchPostings();
+    void handle_global_filters(uint32_t docidLimit);
     void freeze();
 
     /**

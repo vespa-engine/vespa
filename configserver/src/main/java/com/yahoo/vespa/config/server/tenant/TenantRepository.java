@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -215,7 +216,8 @@ public class TenantRepository {
                                        componentRegistry.getMetrics(),
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
-                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName));
+                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
+                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
         if (requestHandler == null)
             requestHandler = applicationRepo;
         if (reloadHandler == null)
@@ -238,7 +240,6 @@ public class TenantRepository {
     public synchronized Tenant defaultTenant() {
         return tenants.get(DEFAULT_TENANT);
     }
-
 
     private void removeUnusedApplications() {
         getAllTenants().forEach(tenant -> tenant.getApplicationRepo().removeUnusedApplications());

@@ -847,8 +847,8 @@ TEST_F("NN blueprint handles strong filter", NearestNeighborBlueprintFixture)
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*strong_filter);
-    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
-    EXPECT_FALSE(bp->may_approximate());
+    EXPECT_EQUAL(1u, bp->getState().estimate().estHits);
+    EXPECT_TRUE(bp->may_approximate());
 }
 
 TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)

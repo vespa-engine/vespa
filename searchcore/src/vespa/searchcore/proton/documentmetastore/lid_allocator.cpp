@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_allocator.h"
-#include "white_list_provider.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -192,16 +191,12 @@ LidAllocator::constructFreeList(DocId lidLimit)
 
 namespace {
 
-class WhiteListBlueprint : public SimpleLeafBlueprint, public WhiteListProvider
+class WhiteListBlueprint : public SimpleLeafBlueprint
 {
 private:
     const search::GrowableBitVector &_activeLids;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
-
-    search::BitVector::UP get_white_list_filter() const override {
-        return search::BitVector::create(_activeLids, 0, get_docid_limit());
-    }
 
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
@@ -210,16 +205,6 @@ private:
         (void) tfmda;
         return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
     }
-
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
-        auto tfmd = new search::fef::TermFieldMatchData;
-        {
-            std::lock_guard<std::mutex> lock(_lock);
-            _matchDataVector.push_back(tfmd);
-        }
-        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
-    }
-
 public:
     WhiteListBlueprint(const search::GrowableBitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
@@ -230,6 +215,15 @@ public:
     }
 
     bool isWhiteList() const override { return true; }
+
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+        auto tfmd = new search::fef::TermFieldMatchData;
+        {
+            std::lock_guard<std::mutex> lock(_lock);
+            _matchDataVector.push_back(tfmd);
+        }
+        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
+    }
 
     ~WhiteListBlueprint() {
         for (auto matchData : _matchDataVector) {
