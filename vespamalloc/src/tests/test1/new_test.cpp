@@ -11,14 +11,21 @@ void cmp(const void *base, size_t offset, const void *p) {
     cmp((static_cast<const char *>(base) + offset), p);
 }
 
+template <typename S>
+void veryfy_aligned(const S * p) {
+    EXPECT_TRUE((uintptr_t(p) % alignof(S)) == 0);
+}
+
 TEST("verify new with normal alignment") {
     struct S {
         int a;
         long b;
         int c;
     };
-    static_assert(sizeof(S) == 24, "sizeof(S) == 16");
+    static_assert(sizeof(S) == 24);
+    static_assert(alignof(S) == 8);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 8, &s->b);
     cmp(s.get(), 16, &s->c);
@@ -31,8 +38,10 @@ TEST("verify new with alignment = 16") {
         alignas(16) long b;
         int c;
     };
-    static_assert(sizeof(S) == 32, "sizeof(S) == 32");
+    static_assert(sizeof(S) == 32);
+    static_assert(alignof(S) == 16);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 16, &s->b);
     cmp(s.get(), 24, &s->c);
@@ -45,8 +54,10 @@ TEST("verify new with alignment = 32") {
         alignas(32) long b;
         int c;
     };
-    static_assert(sizeof(S) == 64, "sizeof(S) == 64");
+    static_assert(sizeof(S) == 64);
+    static_assert(alignof(S) == 32);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 32, &s->b);
     cmp(s.get(), 40, &s->c);
@@ -59,8 +70,10 @@ TEST("verify new with alignment = 64") {
         alignas(64) long b;
         int c;
     };
-    static_assert(sizeof(S) == 128, "sizeof(S) == 128");
+    static_assert(sizeof(S) == 128);
+    static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 64, &s->b);
     cmp(s.get(), 72, &s->c);
@@ -71,8 +84,10 @@ TEST("verify new with alignment = 64 with single element") {
     struct S {
         alignas(64) long a;
     };
-    static_assert(sizeof(S) == 64, "sizeof(S) == 64");
+    static_assert(sizeof(S) == 64);
+    static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     LOG(info, "&s=%p", s.get());
 }
@@ -81,8 +96,10 @@ TEST("verify new with alignment = 64 with single element") {
     struct alignas(64) S {
         long a;
     };
-    static_assert(sizeof(S) == 64, "sizeof(S) == 64");
+    static_assert(sizeof(S) == 64);
+    static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
+    veryfy_aligned(s.get());
     cmp(s.get(), &s->a);
     LOG(info, "&s=%p", s.get());
 }
