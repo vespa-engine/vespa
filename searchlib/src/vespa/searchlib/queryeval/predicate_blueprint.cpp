@@ -163,7 +163,8 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
       _bounds_btree_iterators(),
       _bounds_vector_iterators(),
       _zstar_btree_iterator(),
-      _zstar_vector_iterator()
+      _zstar_vector_iterator(),
+      _fetch_postings_done(false)
 {
     const auto &interval_index = _index.getIntervalIndex();
     const auto zero_constraints_docs = _index.getZeroConstraintDocs();
@@ -234,36 +235,39 @@ namespace {
 }
 
 void PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
-    const auto &interval_index = _index.getIntervalIndex();
-    const auto &bounds_index = _index.getBoundsIndex();
-    lookupPostingLists(_interval_dict_entries, _interval_vector_iterators,
-                       _interval_btree_iterators, interval_index);
-    lookupPostingLists(_bounds_dict_entries, _bounds_vector_iterators,
-                       _bounds_btree_iterators, bounds_index);
+    if (!_fetch_postings_done) {
+        const auto &interval_index = _index.getIntervalIndex();
+        const auto &bounds_index = _index.getBoundsIndex();
+        lookupPostingLists(_interval_dict_entries, _interval_vector_iterators,
+                           _interval_btree_iterators, interval_index);
+        lookupPostingLists(_bounds_dict_entries, _bounds_vector_iterators,
+                           _bounds_btree_iterators, bounds_index);
 
-    // Lookup zstar interval iterator
-    if (_zstar_dict_entry.valid()) {
-        auto vector_iterator = interval_index.getVectorPostingList(Constants::z_star_compressed_hash);
-        if (vector_iterator) {
-            _zstar_vector_iterator.emplace(std::move(*vector_iterator));
-        } else {
-            _zstar_btree_iterator.emplace(interval_index.getBTreePostingList(_zstar_dict_entry));
+        // Lookup zstar interval iterator
+        if (_zstar_dict_entry.valid()) {
+            auto vector_iterator = interval_index.getVectorPostingList(Constants::z_star_compressed_hash);
+            if (vector_iterator) {
+                _zstar_vector_iterator.emplace(std::move(*vector_iterator));
+            } else {
+                _zstar_btree_iterator.emplace(interval_index.getBTreePostingList(_zstar_dict_entry));
+            }
         }
-    }
 
-    PredicateAttribute::MinFeatureHandle mfh = predicate_attribute().getMinFeatureVector();
-    Alloc kv(Alloc::alloc(mfh.second, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE*4));
-    _kVBacking.swap(kv);
-    _kV = BitVectorCache::CountVector(static_cast<uint8_t *>(_kVBacking.get()), mfh.second);
-    _index.computeCountVector(_cachedFeatures, _kV);
-    for (const auto & entry : _bounds_dict_entries) {
-        addBoundsPostingToK(entry.feature);
+        PredicateAttribute::MinFeatureHandle mfh = predicate_attribute().getMinFeatureVector();
+        Alloc kv(Alloc::alloc(mfh.second, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE*4));
+        _kVBacking.swap(kv);
+        _kV = BitVectorCache::CountVector(static_cast<uint8_t *>(_kVBacking.get()), mfh.second);
+        _index.computeCountVector(_cachedFeatures, _kV);
+        for (const auto & entry : _bounds_dict_entries) {
+            addBoundsPostingToK(entry.feature);
+        }
+        for (const auto & entry : _interval_dict_entries) {
+            addPostingToK(entry.feature);
+        }
+        addPostingToK(Constants::z_star_compressed_hash);
+        addZeroConstraintToK();
+        _fetch_postings_done = true;
     }
-    for (const auto & entry : _interval_dict_entries) {
-        addPostingToK(entry.feature);
-    }
-    addPostingToK(Constants::z_star_compressed_hash);
-    addZeroConstraintToK();
 }
 
 SearchIterator::UP

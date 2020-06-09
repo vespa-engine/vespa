@@ -70,10 +70,12 @@ void
 DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
-    _hasEquivParent = areAnyParentsEquiv(getParent());
-    _bitVector = _diskIndex.readBitVector(*_lookupRes);
-    if (!_useBitVector || !_bitVector) {
-        _postingHandle = _diskIndex.readPostingList(*_lookupRes);
+    if (!_fetchPostingsDone) {
+        _hasEquivParent = areAnyParentsEquiv(getParent());
+        _bitVector = _diskIndex.readBitVector(*_lookupRes);
+        if (!_useBitVector || !_bitVector) {
+            _postingHandle = _diskIndex.readPostingList(*_lookupRes);
+        }
     }
     _fetchPostingsDone = true;
 }
