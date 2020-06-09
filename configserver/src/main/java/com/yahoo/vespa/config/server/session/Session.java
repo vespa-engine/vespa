@@ -107,7 +107,7 @@ public abstract class Session implements Comparable<Session>  {
 
     public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
 
-    FileReference getApplicationPackageReference() {return zooKeeperClient.readApplicationPackageReference(); }
+    public FileReference getApplicationPackageReference() {return zooKeeperClient.readApplicationPackageReference(); }
 
     public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
 

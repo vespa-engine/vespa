@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
+import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
@@ -23,8 +24,9 @@ public class ConfigServerMaintenance extends AbstractComponent {
     //private final TenantsMaintainer tenantsMaintainer;
     private final FileDistributionMaintainer fileDistributionMaintainer;
     private final SessionsMaintainer sessionsMaintainer;
+    private final ApplicationPackageMaintainer applicationPackageMaintainer;
 
-    @SuppressWarnings("unused") // instantiated by Dependency Injection
+    @Inject
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
@@ -35,6 +37,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
+        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig, flagSource);
     }
 
     @Override
@@ -42,6 +45,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         //tenantsMaintainer.close();
         fileDistributionMaintainer.close();
         sessionsMaintainer.close();
+        applicationPackageMaintainer.close();
     }
 
     /*

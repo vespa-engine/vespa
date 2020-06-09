@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-public class FileDownloader {
+public class FileDownloader implements AutoCloseable {
 
     private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
     public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
@@ -34,7 +34,11 @@ public class FileDownloader {
     private final FileReferenceDownloader fileReferenceDownloader;
 
     public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool, defaultDownloadDirectory , defaultDownloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
+        this(connectionPool, defaultDownloadDirectory );
+    }
+
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory) {
+        this(connectionPool, downloadDirectory , downloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
     }
 
     FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
