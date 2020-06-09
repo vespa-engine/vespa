@@ -70,11 +70,6 @@ public class Tenant implements TenantHandlerProvider {
         return requestHandler;
     }
 
-    /**
-     * The RemoteSessionRepo for this
-     *
-     * @return repo
-     */
     public SessionRepository getSessionRepo() {
         return sessionRepository;
     }

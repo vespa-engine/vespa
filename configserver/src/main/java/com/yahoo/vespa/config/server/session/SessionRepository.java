@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
  * different session types (RemoteSession and LocalSession).
  *
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public class SessionRepository {
 
@@ -258,7 +259,7 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     private void sessionAdded(long sessionId) {
-        log.log(Level.FINE, () -> "Adding session to RemoteSessionRepo: " + sessionId);
+        log.log(Level.FINE, () -> "Adding session " + sessionId);
         RemoteSession session = sessionFactory.createRemoteSession(sessionId);
         Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
         Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
