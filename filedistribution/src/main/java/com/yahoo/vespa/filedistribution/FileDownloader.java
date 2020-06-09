@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-public class FileDownloader {
+public class FileDownloader implements AutoCloseable {
 
     private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
     public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));

@@ -51,8 +51,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     protected void maintain() {
         if (! distributeApplicationPackage.value()) return;
 
-        var fileDownloader =  new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory);
-        try {
+        try (var fileDownloader = new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory)){
             for (var applicationId : applicationRepository.listApplications()) {
                 RemoteSession session = applicationRepository.getActiveSession(applicationId);
                 FileReference applicationPackage = session.getApplicationPackageReference();
@@ -65,8 +64,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                     }
                 }
             }
-        } finally {
-            fileDownloader.close();
         }
     }
 
