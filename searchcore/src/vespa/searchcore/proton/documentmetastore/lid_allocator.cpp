@@ -210,16 +210,6 @@ private:
         (void) tfmda;
         return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
     }
-
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
-        auto tfmd = new search::fef::TermFieldMatchData;
-        {
-            std::lock_guard<std::mutex> lock(_lock);
-            _matchDataVector.push_back(tfmd);
-        }
-        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
-    }
-
 public:
     WhiteListBlueprint(const search::GrowableBitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
@@ -230,6 +220,15 @@ public:
     }
 
     bool isWhiteList() const override { return true; }
+
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+        auto tfmd = new search::fef::TermFieldMatchData;
+        {
+            std::lock_guard<std::mutex> lock(_lock);
+            _matchDataVector.push_back(tfmd);
+        }
+        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
+    }
 
     ~WhiteListBlueprint() {
         for (auto matchData : _matchDataVector) {
