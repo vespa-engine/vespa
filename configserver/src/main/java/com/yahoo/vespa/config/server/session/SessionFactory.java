@@ -164,6 +164,7 @@ public class SessionFactory {
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
+            ensureSessionPathDoesNotExist(sessionId);
             ApplicationPackage app = createApplicationPackage(applicationFile, applicationId,
                                                               sessionId, currentlyActiveSessionId, internalRedeploy);
             return createSessionFromApplication(app, sessionId, timeoutBudget, clock);
@@ -192,7 +193,6 @@ public class SessionFactory {
     private ApplicationPackage createApplicationPackage(File applicationFile, ApplicationId applicationId,
                                                         long sessionId, long currentlyActiveSessionId,
                                                         boolean internalRedeploy) throws IOException {
-        ensureSessionPathDoesNotExist(sessionId);
         File userApplicationDir = getSessionAppDir(sessionId);
         IOUtils.copyDirectory(applicationFile, userApplicationDir);
         ApplicationPackage applicationPackage = createApplication(applicationFile,
