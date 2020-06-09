@@ -37,7 +37,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
-        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig, flagSource);
+        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofMinutes(1), configserverConfig, flagSource);
     }
 
     @Override
