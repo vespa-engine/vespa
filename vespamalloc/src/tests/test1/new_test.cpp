@@ -12,8 +12,9 @@ void cmp(const void *base, size_t offset, const void *p) {
 }
 
 template <typename S>
-void veryfy_aligned(const S * p) {
+void veryfy_aligned(S * p) {
     EXPECT_TRUE((uintptr_t(p) % alignof(S)) == 0);
+    memset(p, 0, sizeof(S));
 }
 
 TEST("verify new with normal alignment") {

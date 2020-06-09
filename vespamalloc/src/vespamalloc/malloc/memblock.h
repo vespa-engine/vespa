@@ -25,11 +25,11 @@ public:
     void readjustAlignment(const T & segment)  { (void) segment; }
     void *rawPtr()            { return _ptr; }
     void *ptr()               { return _ptr; }
-    void *ptr(std::align_val_t) { return _ptr; }
     const void *ptr()   const { return _ptr; }
     bool validAlloc()   const { return true; }
     bool validFree()    const { return true; }
-    void setExact(size_t )    { }
+    void setExact(size_t)     { }
+    void setExact(size_t, std::align_val_t )    { }
     void alloc(bool )         { }
     void setThreadId(int )    { }
     void free()               { }

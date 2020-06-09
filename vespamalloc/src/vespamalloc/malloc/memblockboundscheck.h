@@ -13,24 +13,17 @@ public:
     void * rawPtr()          { return _ptr; }
     void *ptr()              {
         char *p((char*)_ptr);
-        return p ? (p+preambleOverhead()) : nullptr;
+        return p ? (p+alignment()) : nullptr;
     }
     const void *ptr() const {
         const char *p((const char*)_ptr);
-        return p ? (p+preambleOverhead()) : nullptr;
-    }
-    void *ptr(std::align_val_t alignment) {
-        char *p((char*)_ptr);
-        return p ? (p+preambleOverhead(alignment)) : nullptr;
-    }
-    const void *ptr(std::align_val_t alignment) const {
-        const char *p((const char*)_ptr);
-        return p ? (p+preambleOverhead(alignment)) : nullptr;
+        return p ? (p+alignment()) : nullptr;
     }
 
     void setThreadId(int th)              { if (_ptr) { static_cast<uint32_t*>(_ptr)[2] = th; } }
-    bool allocated()                const { return (static_cast<unsigned*>(_ptr)[3] == ALLOC_MAGIC); }
-    size_t size()                   const { return static_cast<const uint64_t *>(_ptr)[0]; }
+    bool allocated()                const { return (static_cast<uint32_t*>(_ptr)[3] == ALLOC_MAGIC); }
+    size_t size()                   const { return static_cast<const uint32_t *>(_ptr)[0]; }
+    size_t alignment()              const { return static_cast<const uint32_t *>(_ptr)[1]; }
     int threadId()                  const { return static_cast<int*>(_ptr)[2]; }
     Stack * callStack()                   { return reinterpret_cast<Stack *>((char *)_ptr + size() + 4*sizeof(unsigned)); }
     const Stack * callStack()       const { return reinterpret_cast<const Stack *>((const char *)_ptr + size() + 4*sizeof(unsigned)); }
@@ -58,7 +51,11 @@ protected:
     MemBlockBoundsCheckBaseTBase(void * p) : _ptr(p) { }
     void verifyFill() const __attribute__((noinline));
 
-    void setSize(size_t sz) { static_cast<uint64_t *>(_ptr)[0] = sz; }
+    void setSize(size_t sz) {
+        assert(sz < 0x100000000ul);
+        static_cast<uint32_t *>(_ptr)[0] = sz;
+    }
+    void setAlignment(size_t alignment) { static_cast<uint32_t *>(_ptr)[1] = alignment; }
     static constexpr size_t preambleOverhead(std::align_val_t alignment) {
         return std::max(preambleOverhead(), size_t(alignment));
     }
@@ -89,15 +86,22 @@ public:
         MaxSizeClassMultiAlloc = MaxSizeClassMultiAllocC,
         SizeClassSpan = (MaxSizeClassMultiAllocC-5)
     };
-    MemBlockBoundsCheckBaseT() : MemBlockBoundsCheckBaseTBase(NULL) { }
-    MemBlockBoundsCheckBaseT(void * p) : MemBlockBoundsCheckBaseTBase(p ? (unsigned *)p-4 : NULL) { }
-    MemBlockBoundsCheckBaseT(void * p, size_t sz) : MemBlockBoundsCheckBaseTBase(p) { setSize(sz); }
+    MemBlockBoundsCheckBaseT() : MemBlockBoundsCheckBaseTBase(nullptr) { }
+    MemBlockBoundsCheckBaseT(void * p)
+        : MemBlockBoundsCheckBaseTBase(p ? static_cast<char *>(p) - preambleOverhead() : nullptr)
+    { }
+    MemBlockBoundsCheckBaseT(void * p, size_t sz)
+        : MemBlockBoundsCheckBaseTBase(p)
+    {
+        setSize(sz);
+        setAlignment(preambleOverhead());
+    }
     MemBlockBoundsCheckBaseT(void * p, size_t, bool) : MemBlockBoundsCheckBaseTBase(p) { }
     bool validCommon() const {
         const unsigned *p(reinterpret_cast<const unsigned*>(_ptr));
         return p
             && ((p[3] == ALLOC_MAGIC) || (p[3] == FREE_MAGIC))
-            && *(reinterpret_cast<const unsigned *> ((const char*)_ptr + size() + 4*sizeof(unsigned) + StackTraceLen*sizeof(void *))) == TAIL_MAGIC;
+            && *(reinterpret_cast<const unsigned *> ((const char*)_ptr + size() + alignment() + StackTraceLen*sizeof(void *))) == TAIL_MAGIC;
     }
     bool validAlloc1() const {
         unsigned *p((unsigned*)_ptr);
@@ -130,7 +134,12 @@ public:
         fillMemory(size());
         setTailMagic();
     }
-    void setExact(size_t sz)              { init(sz); }
+    void setExact(size_t sz) {
+        init(sz, preambleOverhead());
+    }
+    void setExact(size_t sz, std::align_val_t alignment) {
+        init(sz, preambleOverhead(alignment));
+    }
     size_t callStackLen()           const {
         const Stack * stack = callStack();
         // Use int to avoid compiler warning about always true.
@@ -158,10 +167,11 @@ protected:
     static constexpr size_t overhead(std::align_val_t alignment) {
         return preambleOverhead(alignment) + postambleOverhead();
     }
-    void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + preambleOverhead() + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
-    void init(size_t sz) {
+    void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + alignment() + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
+    void init(size_t sz, size_t alignment) {
         if (_ptr) {
             setSize(sz);
+            setAlignment(alignment);
             setTailMagic();
         }
     }

@@ -96,9 +96,7 @@ MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) 
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
-MemoryManager<MemBlockPtrT, ThreadListT>::~MemoryManager()
-{
-}
+MemoryManager<MemBlockPtrT, ThreadListT>::~MemoryManager() = default;
 
 template <typename MemBlockPtrT, typename ThreadListT>
 bool MemoryManager<MemBlockPtrT, ThreadListT>::initThisThread()
@@ -163,11 +161,11 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz)
     MemBlockPtrT mem;
     ThreadPool & tp = _threadList.getCurrent();
     tp.malloc(mem.adjustSize(sz), mem);
+    mem.setExact(sz);
     if (!mem.validFree()) {
         fprintf(stderr, "Memory %p(%ld) has been tampered with after free.\n", mem.ptr(), mem.size());
         crash();
     }
-    mem.setExact(sz);
     mem.alloc(_prAllocLimit<=mem.adjustSize(sz));
     return mem.ptr();
 }
@@ -178,13 +176,13 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz, std::align_va
     MemBlockPtrT mem;
     ThreadPool & tp = _threadList.getCurrent();
     tp.malloc(mem.adjustSize(sz, alignment), mem);
+    mem.setExact(sz, alignment);
     if (!mem.validFree()) {
         fprintf(stderr, "Memory %p(%ld) has been tampered with after free.\n", mem.ptr(), mem.size());
         crash();
     }
-    mem.setExact(sz);
     mem.alloc(_prAllocLimit<=mem.adjustSize(sz, alignment));
-    return mem.ptr(alignment);
+    return mem.ptr();
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
