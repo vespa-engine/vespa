@@ -74,7 +74,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,6 +88,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
@@ -469,15 +469,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
-    }
-
-    // TODO: move to e.g. a util class
-    public static Set<String> getFileReferencesOnDisk(File fileReferencesPath) {
-        Set<String> fileReferencesOnDisk = new HashSet<>();
-        File[] filesOnDisk = fileReferencesPath.listFiles();
-        if (filesOnDisk != null)
-            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
-        return fileReferencesOnDisk;
     }
 
     public Set<FileReference> getFileReferences(ApplicationId applicationId) {

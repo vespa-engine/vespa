@@ -10,7 +10,11 @@ import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +25,16 @@ import java.util.stream.Collectors;
  */
 public class FileDistributionUtil {
 
+    /**
+     * Returns all files in the given directory, non-recursive.
+     */
+    public static Set<String> getFileReferencesOnDisk(File directory) {
+        Set<String> fileReferencesOnDisk = new HashSet<>();
+        File[] filesOnDisk = directory.listFiles();
+        if (filesOnDisk != null)
+            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
+        return fileReferencesOnDisk;
+    }
 
     /**
      * Returns a connection pool with all config servers except this one, or an empty pool if there

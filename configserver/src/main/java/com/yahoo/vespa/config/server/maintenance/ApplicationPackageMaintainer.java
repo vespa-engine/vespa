@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.ApplicationRepository.getFileReferencesOnDisk;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
 
 /**
