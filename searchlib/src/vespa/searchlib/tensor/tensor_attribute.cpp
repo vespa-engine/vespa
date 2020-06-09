@@ -253,6 +253,23 @@ TensorAttribute::getRefCopy() const
     return RefCopyVector(&_refVector[0], &_refVector[0] + size);
 }
 
+std::unique_ptr<PrepareResult>
+TensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) const
+{
+    (void) docid;
+    (void) tensor;
+    return std::unique_ptr<PrepareResult>();
+}
+
+void
+TensorAttribute::complete_set_tensor(DocId docid, const Tensor& tensor,
+                                     std::future<std::unique_ptr<PrepareResult>> prepare_result)
+{
+    (void) docid;
+    (void) tensor;
+    (void) prepare_result;
+}
+
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
 
 }
