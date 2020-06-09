@@ -44,6 +44,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     private final String name = "mnist_softmax_saved";
 
     private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
+    private final static String vespaExpressionWithBatchReduce = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
 
     @After
     public void removeGeneratedModelFiles() {
@@ -114,28 +115,28 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
                                                       null,
-                                                      "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
+                                                      "field mytensor type tensor(d0[1],d1[784]) { indexing: attribute }",
                                                       "Placeholder",
                                                       application);
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
     }
 
     @Test
     public void testTensorFlowReferenceWithFeatureCombination() {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='query(mytensor)' type='tensor(d0[3],d1[784],d2[10])'/>" +
+                                  "  <field name='query(mytensor)' type='tensor(d0[1],d1[784],d2[10])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
                                                                               queryProfileType);
         RankProfileSearchFixture search = fixtureWith("sum(query(mytensor) * attribute(mytensor) * constant(mytensor),d2)",
                                                       "tensorflow('mnist_softmax/saved')",
-                                                      "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
-                                                      "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
+                                                      "constant mytensor { file: ignored\ntype: tensor(d0[1],d1[784]) }",
+                                                      "field mytensor type tensor(d0[1],d1[784]) { indexing: attribute }",
                                                       "Placeholder",
                                                       application);
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
     }
 
     @Test

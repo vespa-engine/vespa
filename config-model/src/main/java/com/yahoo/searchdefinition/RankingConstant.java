@@ -56,7 +56,9 @@ public class RankingConstant {
         this.pathType = PathType.URI;
     }
 
-    public void setType(TensorType tensorType) { this.tensorType = tensorType; }
+    public void setType(TensorType type) {
+        this.tensorType = type;
+    }
 
     /** Initiate sending of this constant to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
@@ -78,6 +80,9 @@ public class RankingConstant {
             throw new IllegalArgumentException("Ranking constants must have a file or uri.");
         if (tensorType == null)
             throw new IllegalArgumentException("Ranking constant '" + name + "' must have a type.");
+        if (tensorType.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+            throw new IllegalArgumentException("Illegal type in field " + name + " type " + tensorType +
+                                               ": Dense tensor dimensions must have a size");
     }
 
     public String toString() {

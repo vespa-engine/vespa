@@ -2,7 +2,7 @@
 search tensor {
 
   document tensor {
-    field f1 type tensor(x[]) {
+    field f1 type tensor(x[3]) {
       indexing: summary
     }
     field f2 type tensor<float>(x[2],y[1]) {

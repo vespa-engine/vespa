@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.SubstituteString;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.tensor.TensorType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         Set<String> tensorFields = new HashSet<>();
         for (QueryProfileType type : registry.getTypeRegistry().allComponents()) {
             for (var fieldEntry : type.fields().entrySet()) {
+                validateTensorField(fieldEntry.getKey(), fieldEntry.getValue().getType().asTensorType());
                 if (fieldEntry.getValue().getType().asTensorType().rank() > 0)
                     tensorFields.add(fieldEntry.getKey());
             }
@@ -71,6 +73,12 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                                       "See https://docs.vespa.ai/documentation/query-profiles.html");
         }
 
+    }
+
+    private void validateTensorField(String fieldName, TensorType type) {
+        if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+            throw new IllegalArgumentException("Illegal type in field " + fieldName + " type " + type +
+                                               ": Dense tensor dimensions must have a size");
     }
 
     @Override

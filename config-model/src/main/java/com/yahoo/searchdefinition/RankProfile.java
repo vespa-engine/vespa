@@ -304,6 +304,12 @@ public class RankProfile implements Cloneable {
     }
 
     public void addConstant(String name, Value value) {
+        if (value instanceof TensorValue) {
+            TensorType type = ((TensorValue)value).type();
+            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+                throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
+                                                   ": Dense tensor dimensions must have a size");
+        }
         constants.put(name, value.freeze());
     }
 

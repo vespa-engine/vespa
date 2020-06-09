@@ -4,12 +4,12 @@ search simple {
 
   constant constant_tensor_1 {
     file: tensors/constant_tensor_1.json
-    type: tensor(x[], y[])
+    type: tensor(x[4], y[3])
   }
 
   constant constant_tensor_2 {
     file: tensors/constant_tensor_2.json
-    type: tensor(x[])
+    type: tensor(x[6])
   }
 
   constant constant_tensor_3 {
@@ -24,6 +24,6 @@ search simple {
 
   constant constant_tensor_5 {
     file: tensors/constant_tensor_5.json
-    type: tensor(x[], y[], z[])
+    type: tensor(x[33], y[10], z[46])
   }
 }

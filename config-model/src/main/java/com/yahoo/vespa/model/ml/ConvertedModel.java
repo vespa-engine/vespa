@@ -448,7 +448,7 @@ public class ConvertedModel {
                         int i = rename.fromDimensions().indexOf(dimension.name());
                         if (i < 0) {
                             throw new IllegalArgumentException("Rename does not contain dimension '" +
-                                    dimension + "' in child expression type: " + childType);
+                                                               dimension + "' in child expression type: " + childType);
                         }
                         from.add((String)rename.fromDimensions().get(i));
                         to.add((String)rename.toDimensions().get(i));

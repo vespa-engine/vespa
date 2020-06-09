@@ -119,12 +119,12 @@ public class AttributeChangeValidatorTest {
                         "Field 'f1' changed: tensor type: 'tensor(x[2])' -> 'tensor(x[3])'", Instant.now()));
 
         new Fixture(
-                "field f1 type tensor(x[]) { indexing: attribute }",
+                "field f1 type tensor(x[5]) { indexing: attribute }",
                 "field f1 type tensor(x[3]) { indexing: attribute }")
                 .assertValidation(newRefeedAction(
                         "tensor-type-change",
                         ValidationOverrides.empty,
-                        "Field 'f1' changed: tensor type: 'tensor(x[])' -> 'tensor(x[3])'", Instant.now()));
+                        "Field 'f1' changed: tensor type: 'tensor(x[5])' -> 'tensor(x[3])'", Instant.now()));
     }
 
     @Test
