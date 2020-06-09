@@ -14,7 +14,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".visitor.instance");
+LOG_SETUP(".visitor.instance.visitor");
 
 using document::BucketSpace;
 
@@ -367,8 +367,7 @@ Visitor::sendReplyOnce()
 {
     assert(_initiatingCmd.get());
     if (!_hasSentReply) {
-        std::shared_ptr<api::StorageReply> reply(
-                _initiatingCmd->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
         _hitCounter->updateVisitorStatistics(_visitorStatistics);
         static_cast<api::CreateVisitorReply*>(reply.get())
@@ -563,8 +562,7 @@ Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
     _priority = initiatingCmd->getPriority();
     _timeToDie = _component.getClock().getTimeInMicros() + timeout.getMicros();
     if (_initiatingCmd.get()) {
-        std::shared_ptr<api::StorageReply> reply(
-                _initiatingCmd->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
         reply->setResult(api::ReturnCode::ABORTED);
         _messageHandler->send(reply);
     }
@@ -594,7 +592,7 @@ Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
 
     // In case there was no messages to resend we need to call
     // continueVisitor to provoke it to resume.
-    for (uint32_t i=0; i<_visitorOptions._maxParallelOneBucket; ++i) {
+    for (uint32_t i = 0; i < _visitorOptions._maxParallelOneBucket; ++i) {
         if (!continueVisitor()) return;
     }
 }
@@ -669,8 +667,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
         return;
     }
     assert(!meta.message);
-    meta.message.reset(
-            static_cast<documentapi::DocumentMessage*>(message.release()));
+    meta.message.reset(static_cast<documentapi::DocumentMessage*>(message.release()));
     meta.retryCount++;
     const size_t retryCount = meta.retryCount;
 
@@ -702,7 +699,7 @@ Visitor::onCreateIteratorReply(
         const std::shared_ptr<CreateIteratorReply>& reply,
         VisitorThreadMetrics& /*metrics*/)
 {
-    std::list<BucketIterationState*>::reverse_iterator it = _bucketStates.rbegin();
+    auto it = _bucketStates.rbegin();
 
     document::Bucket bucket(reply->getBucket());
     document::BucketId bucketId(bucket.getBucketId());
@@ -752,7 +749,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
                _id.c_str(),
                reply->getBucketId().toString().c_str(),
                reply->getResult().toString().c_str());
-    std::list<BucketIterationState*>::reverse_iterator it = _bucketStates.rbegin();
+    auto it = _bucketStates.rbegin();
 
     // New requests will be pushed on end of list.. So searching
     // in reverse order should quickly get correct result.
@@ -803,7 +800,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
             LOG(debug, "Visitor %s handling block of %zu documents.",
                 _id.c_str(),
                 reply->getEntries().size());
-            try{
+            try {
                 framework::MilliSecTimer processingTimer(_component.getClock());
                 handleDocuments(reply->getBucketId(),
                                 reply->getEntries(),
@@ -814,18 +811,16 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
                 MBUS_TRACE(reply->getTrace(), 5, "Done processing data block in visitor plugin");
 
                 uint64_t size = 0;
-                for (size_t i = 0; i < reply->getEntries().size(); ++i) {
-                    size += reply->getEntries()[i]->getPersistedDocumentSize();
+                for (const auto& entry : reply->getEntries()) {
+                    size += entry->getPersistedDocumentSize();
                 }
 
                 _visitorStatistics.setDocumentsVisited(
                         _visitorStatistics.getDocumentsVisited()
                         + reply->getEntries().size());
-                _visitorStatistics.setBytesVisited(
-                        _visitorStatistics.getBytesVisited() + size);
+                _visitorStatistics.setBytesVisited(_visitorStatistics.getBytesVisited() + size);
             } catch (std::exception& e) {
-                LOG(warning, "handleDocuments threw exception %s",
-                    e.what());
+                LOG(warning, "handleDocuments threw exception %s", e.what());
                 reportProblem(e.what());
             }
         }
@@ -849,8 +844,7 @@ Visitor::sendDueQueuedMessages(framework::MicroSecTime timeNow)
     while (!_visitorTarget._queuedMessages.empty()
            && (_visitorTarget._pendingMessages.size()
                < _visitorOptions._maxPending)) {
-        VisitorTarget::MessageQueue::iterator it(
-                _visitorTarget._queuedMessages.begin());
+        auto it = _visitorTarget._queuedMessages.begin();
         if (it->first < timeNow) {
             auto& msgMeta = _visitorTarget.metaForMessageId(it->second);
             _visitorTarget._queuedMessages.erase(it);
@@ -1204,13 +1198,10 @@ Visitor::getIterators()
     if (sentCount == 0) {
         if (LOG_WOULD_LOG(debug)) {
             LOG(debug, "Enough iterators being processed. Doing nothing for "
-                "visitor '%s' bucketStates = %d.",
-                _id.c_str(), (int)_bucketStates.size());
-            for (std::list<BucketIterationState*>::iterator it(
-                         _bucketStates.begin());
-                 it != _bucketStates.end(); ++it)
-            {
-                LOG(debug, "Existing: %s", (*it)->toString().c_str());
+                "visitor '%s' bucketStates = %zu.",
+                _id.c_str(), _bucketStates.size());
+            for (const auto& state : _bucketStates) {
+                LOG(debug, "Existing: %s", state->toString().c_str());
             }
         }
     }
