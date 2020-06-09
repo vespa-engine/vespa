@@ -5,7 +5,6 @@
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
@@ -27,8 +26,9 @@ public:
           _accel(IAccelrated::getAccelerator()),
           _lastWords()
     {
-        static_assert(sizeof(_lastWords) == 64, "Latswords should have 64 byte size");
-        memset(&_lastWords, 0, sizeof(_lastWords));
+        static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
+        static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
+        memset(_lastWords, 0, sizeof(_lastWords));
     }
 protected:
     void updateLastValue(uint32_t docId);
@@ -40,6 +40,7 @@ private:
     Update              _update;
     const IAccelrated & _accel;
     alignas(64) Word    _lastWords[8];
+    static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
 };
 
 template<typename Update>
@@ -56,16 +57,16 @@ private:
 
 struct And {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, Word *dest) {
-        accel.and64(offset*sizeof(uint64_t), src, dest);
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+        accel.and64(offset, src, dest);
     }
     static bool isAnd() { return true; }
 };
 
 struct Or {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, Word *dest) {
-        accel.or64(offset*sizeof(uint64_t), src, dest);
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+        accel.or64(offset, src, dest);
     }
     static bool isAnd() { return false; }
 };
@@ -80,11 +81,11 @@ void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId)
         }
         const uint32_t index(wordNum(docId));
         if (docId >= _lastMaxDocIdLimitRequireFetch) {
-            uint32_t baseIndex = index & ~(sizeof(_lastWords)/sizeof(Word) - 1);
-            _update(_accel, baseIndex, _bvs, _lastWords);
-            _lastMaxDocIdLimitRequireFetch = (baseIndex + (sizeof(_lastWords)/sizeof(Word))) * WordLen;
+            uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
+            _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
+            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * WordLen;
         }
-        _lastValue = _lastWords[index % (sizeof(_lastWords)/sizeof(Word))];
+        _lastValue = _lastWords[index % NumWordsInBatch];
         _lastMaxDocIdLimit = (index + 1) * WordLen;
     }
 }
