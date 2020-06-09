@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
@@ -18,6 +17,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.ApplicationRepository.getFileReferencesOnDisk;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -52,7 +52,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     protected void maintain() {
         if (! distributeApplicationPackage.value()) return;
 
-        var fileDownloader =  new FileDownloader(FileServer.createConnectionPool(configserverConfig));
+        var fileDownloader =  new FileDownloader(createConnectionPool(configserverConfig));
         try {
             for (var applicationId : applicationRepository.listApplications()) {
                 RemoteSession session = applicationRepository.getActiveSession(applicationId);
