@@ -67,6 +67,11 @@ void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcep
     if (ptr) { vespamalloc::_GmemP->free(ptr, sz); }
 }
 
+/*
+ * Below are overloads taking alignment into account too.
+ * Due to allocation being power of 2 up to huge page size (2M)
+ * alignment will always be satisfied. size will always be larger or equal to alignment.
+ */
 void* operator new(std::size_t sz, std::align_val_t) {
     return vespamalloc::_GmemP->malloc(sz);
 }
