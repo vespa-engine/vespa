@@ -34,7 +34,11 @@ public class FileDownloader {
     private final FileReferenceDownloader fileReferenceDownloader;
 
     public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool, defaultDownloadDirectory , defaultDownloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
+        this(connectionPool, defaultDownloadDirectory );
+    }
+
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory) {
+        this(connectionPool, downloadDirectory , downloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
     }
 
     FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {

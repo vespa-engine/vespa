@@ -45,14 +45,13 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
         distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
-        if (distributeApplicationPackage.value()) assertDownloadDirectoryIsDefault(downloadDirectory);
     }
 
     @Override
     protected void maintain() {
         if (! distributeApplicationPackage.value()) return;
 
-        var fileDownloader =  new FileDownloader(createConnectionPool(configserverConfig));
+        var fileDownloader =  new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory);
         try {
             for (var applicationId : applicationRepository.listApplications()) {
                 RemoteSession session = applicationRepository.getActiveSession(applicationId);
@@ -74,13 +73,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private boolean missingOnDisk(FileReference applicationPackageReference) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(downloadDirectory);
         return ! fileReferencesOnDisk.contains(applicationPackageReference.value());
-    }
-
-    // Required to use FileDownloader because it has no public ctor that takes a directory.
-    private static void assertDownloadDirectoryIsDefault(File fileReferencesDir) {
-        if (fileReferencesDir != FileDownloader.defaultDownloadDirectory) throw new IllegalArgumentException(
-                "Files must be downloaded to the default download directory ("
-                        + FileDownloader.defaultDownloadDirectory +  "), not " + fileReferencesDir);
     }
 
 }
