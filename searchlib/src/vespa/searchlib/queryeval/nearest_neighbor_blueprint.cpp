@@ -9,6 +9,9 @@
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
 
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::DenseTensor;
@@ -84,19 +87,24 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
 {
     _global_filter = global_filter.shared_from_this();
     auto nns_index = _attr_tensor.nearest_neighbor_index();
+    LOG(debug, "set_global_filter with: %s / %s / %s",
+        (_approximate ? "approximate" : "exact"),
+        (nns_index ? "nns_index" : "no_index"),
+        (_global_filter->has_filter() ? "has_filter" : "no_filter"));
     if (_approximate && nns_index) {
         uint32_t est_hits = _attr_tensor.getNumDocs();
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
+            LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
             if (max_hits * 10 < est_hits) {
-                // too many hits filtered out, use brute force implementation:
-                _approximate = false;
-                return;
+                LOG(debug, "too many hits filtered out, consider using brute force implementation");
             }
             est_hits = std::min(est_hits, max_hits);
         }
         est_hits = std::min(est_hits, _target_num_hits);
         setEstimate(HitEstimate(est_hits, false));
+        perform_top_k();
+        LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
     }
 }
 
@@ -107,7 +115,7 @@ NearestNeighborBlueprint::perform_top_k()
     if (_approximate && nns_index) {
         auto lhs_type = _query_tensor->fast_type();
         auto rhs_type = _attr_tensor.getTensorType();
-        // different cell types should have be converted already
+        // different cell types should be converted already
         if (lhs_type == rhs_type) {
             auto lhs = _query_tensor->cellsRef();
             uint32_t k = _target_num_hits;
@@ -118,13 +126,6 @@ NearestNeighborBlueprint::perform_top_k()
                 _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
             }
         }
-    }
-}
-
-void
-NearestNeighborBlueprint::fetchPostings(const ExecuteInfo &execInfo) {
-    if (execInfo.isStrict()) {
-        perform_top_k();
     }
 }
 
