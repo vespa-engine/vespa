@@ -40,6 +40,8 @@ template<unsigned ChunkSize, unsigned Chunks>
 void
 andChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, void * dest) {
     typedef uint64_t Chunk __attribute__ ((vector_size (ChunkSize)));
+    static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
+    static_assert(ChunkSize*Chunks == 64, "ChunkSize*Chunks == 64");
     Chunk * chunk = static_cast<Chunk *>(dest);
     const Chunk * tmp = cast<Chunk>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
@@ -57,6 +59,8 @@ template<unsigned ChunkSize, unsigned Chunks>
 void
 orChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, void * dest) {
     typedef uint64_t Chunk __attribute__ ((vector_size (ChunkSize)));
+    static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
+    static_assert(ChunkSize*Chunks == 64, "ChunkSize*Chunks == 64");
     Chunk * chunk = static_cast<Chunk *>(dest);
     const Chunk * tmp = cast<Chunk>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
