@@ -13,7 +13,6 @@
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchcore/proton/documentmetastore/white_list_provider.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
@@ -157,7 +156,6 @@ void
 Query::setWhiteListBlueprint(Blueprint::UP whiteListBlueprint)
 {
     _whiteListBlueprint = std::move(whiteListBlueprint);
-    _white_list_provider = dynamic_cast<WhiteListProvider *>(_whiteListBlueprint.get());
 }
 
 void
