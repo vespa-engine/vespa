@@ -66,7 +66,14 @@ struct HnswGraph {
     struct EntryNode {
         uint32_t docid;
         int32_t level;
-        EntryNode() : docid(0), level(-1) {}
+        EntryNode()
+          : docid(0), // Note that docid 0 is reserved and never used
+            level(-1)
+        {}
+        EntryNode(uint32_t docid_in, int32_t level_in)
+          : docid(docid_in),
+            level(level_in)
+        {}
     };
 
     void set_entry_node(EntryNode node) {

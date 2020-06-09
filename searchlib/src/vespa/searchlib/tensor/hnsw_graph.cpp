@@ -14,8 +14,6 @@ HnswGraph::HnswGraph()
     entry_docid_and_level()
 {
     EntryNode entry;
-    entry.docid = 0; // Note that docid 0 is reserved and never used
-    entry.level = -1;
     set_entry_node(entry);
 }
 

@@ -278,9 +278,7 @@ HnswIndex::add_document(uint32_t docid)
     _graph.make_node_for_document(docid, level + 1);
     auto entry = _graph.get_entry_node();
     if (entry.docid == 0) {
-        entry.docid = docid;
-        entry.level = level;
-        _graph.set_entry_node(entry);
+        _graph.set_entry_node({docid, level});
         return;
     }
 
@@ -305,9 +303,7 @@ HnswIndex::add_document(uint32_t docid)
         --search_level;
     }
     if (level > get_entry_level()) {
-        entry.docid = docid;
-        entry.level = level;
-        _graph.set_entry_node(entry);
+        _graph.set_entry_node({docid, level});
     }
 }
 
@@ -347,10 +343,7 @@ HnswIndex::remove_document(uint32_t docid)
         LinkArrayRef my_links = _graph.get_link_array(docid, level);
         for (uint32_t neighbor_id : my_links) {
             if (need_new_entrypoint) {
-                HnswGraph::EntryNode entry;
-                entry.docid = neighbor_id;
-                entry.level = level;
-                _graph.set_entry_node(entry);
+                _graph.set_entry_node({neighbor_id, level});
                 need_new_entrypoint = false;
             }
             remove_link_to(neighbor_id, docid, level);
@@ -526,10 +519,7 @@ HnswIndex::set_node(uint32_t docid, const HnswNode &node)
     }
     int max_level = num_levels - 1;
     if (get_entry_level() < max_level) {
-        HnswGraph::EntryNode entry;
-        entry.docid = docid;
-        entry.level = max_level;
-        _graph.set_entry_node(entry);
+        _graph.set_entry_node({docid, max_level});
     }
 }
 
