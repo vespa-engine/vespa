@@ -120,19 +120,19 @@ protected:
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
                                          const BitVector *filter, uint32_t explore_k) const;
 
-    struct AddDocOperation : public PrepareResult {
+    struct PreparedAddDoc : public PrepareResult {
         uint32_t docid;
         int32_t max_level;
         std::vector<LinkArray> connections;
-        AddDocOperation(uint32_t docid_in, int32_t max_level_in)
+        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in)
           : docid(docid_in), max_level(max_level_in), connections(max_level+1)
         {}
-        ~AddDocOperation() = default;
-        AddDocOperation(AddDocOperation&& other) = default;
+        ~PreparedAddDoc() = default;
+        PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
-    AddDocOperation internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
+    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
     LinkArray filter_valid_docids(const LinkArrayRef &docids);
-    void internal_complete_add(uint32_t docid, AddDocOperation &op);
+    void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
               RandomLevelGenerator::UP level_generator, const Config& cfg);

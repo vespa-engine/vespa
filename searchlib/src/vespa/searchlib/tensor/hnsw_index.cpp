@@ -275,16 +275,16 @@ HnswIndex::~HnswIndex() = default;
 void
 HnswIndex::add_document(uint32_t docid)
 {
-    AddDocOperation op = internal_prepare_add(docid, get_vector(docid));
+    PreparedAddDoc op = internal_prepare_add(docid, get_vector(docid));
     internal_complete_add(docid, op);
 }
 
-HnswIndex::AddDocOperation
+HnswIndex::PreparedAddDoc
 HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
 {
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
-    AddDocOperation op(docid, level);
+    PreparedAddDoc op(docid, level);
     auto entry = _graph.get_entry_node();
     if (entry.docid == 0) {
         return op;
@@ -327,7 +327,7 @@ HnswIndex::filter_valid_docids(const LinkArrayRef &docids)
 }
 
 void
-HnswIndex::internal_complete_add(uint32_t docid, AddDocOperation &op)
+HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
     _graph.make_node_for_document(docid, op.max_level + 1);
     for (int level = 0; level <= op.max_level; ++level) {
@@ -344,15 +344,15 @@ HnswIndex::prepare_add_document(uint32_t docid,
             TypedCells vector,
             vespalib::GenerationHandler::Guard read_guard) const
 {
-    AddDocOperation op = internal_prepare_add(docid, vector);
+    PreparedAddDoc op = internal_prepare_add(docid, vector);
     (void) read_guard; // must keep guard until this point
-    return std::make_unique<AddDocOperation>(std::move(op));
+    return std::make_unique<PreparedAddDoc>(std::move(op));
 }
 
 void
 HnswIndex::complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result)
 {
-    auto prepared = dynamic_cast<AddDocOperation *>(prepare_result.get());
+    auto prepared = dynamic_cast<PreparedAddDoc *>(prepare_result.get());
     if (prepared && (prepared->docid == docid)) {
         internal_complete_add(docid, *prepared);
     } else {
