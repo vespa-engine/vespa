@@ -138,9 +138,7 @@ public:
     }
     ~AttributeWriterTest();
     void setup(uint32_t threads) {
-        if (_aw) {
-            _aw.reset();
-        }
+        _aw.reset();
         _attributeFieldWriterReal = std::make_unique<ForegroundTaskExecutor>(threads);
         _attributeFieldWriter = std::make_unique<SequencedTaskExecutorObserver>(*_attributeFieldWriterReal);
         _m = std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
