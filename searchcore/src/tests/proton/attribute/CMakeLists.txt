@@ -8,8 +8,8 @@ vespa_add_executable(searchcore_attribute_test_app TEST
     searchcore_flushengine
     searchcore_pcommon
 )
-vespa_add_test(NAME searchcore_attribute_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/attribute_test.sh
-               DEPENDS searchcore_attribute_test_app)
+vespa_add_test(NAME searchcore_attribute_test_app COMMAND searchcore_attribute_test_app)
+
 vespa_add_executable(searchcore_attributeflush_test_app TEST
     SOURCES
     attributeflush_test.cpp
