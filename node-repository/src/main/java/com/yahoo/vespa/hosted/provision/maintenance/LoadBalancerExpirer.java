@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
@@ -99,7 +100,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             // Remove any real no longer allocated to this application
             reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
             try {
-                service.create(lb.id().application(), lb.id().cluster(), reals, true);
+                service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
                 db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
             } catch (Exception e) {
                 failed.add(lb.id());
