@@ -19,19 +19,23 @@ class InvLogLevelGenerator : public RandomLevelGenerator {
     std::mt19937_64 _rng;
     std::mutex _mutex;
     std::uniform_real_distribution<double> _uniform;
-    double _levelMultiplier;
+    const double _levelMultiplier;
+
+    double get_uniform() {
+        std::lock_guard<std::mutex> guard(_mutex);
+        return _uniform(_rng);
+    }
 public:
     InvLogLevelGenerator(uint32_t m)
       : _rng(0x1234deadbeef5678uLL),
         _mutex(),
-        _uniform(0.0, 1.0),
+        _uniform(1.0, 0.0),
         _levelMultiplier(1.0 / log(1.0 * m))
     {}
 
     uint32_t max_level() override {
-        std::lock_guard<std::mutex> guard(_mutex);
-        double unif = _uniform(_rng);
-        double r = -log(1.0-unif) * _levelMultiplier;
+        double unif = get_uniform();
+        double r = -log(unif) * _levelMultiplier;
         return (uint32_t) r;
     }
 };
