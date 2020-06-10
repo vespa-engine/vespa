@@ -63,19 +63,44 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
             metric.set("spareHostCapacity", worstCaseHostLoss - 1, null);
             if (worstCaseHostLoss == 1) { // Try to get back to needing 2 hosts to fail in the worst case
-                Optional<Node> moveCandidate = identifyMoveCandidate(failurePath.get());
+                Optional<Move> moveCandidate = identifyMoveCandidate(failurePath.get());
                 if (moveCandidate.isPresent())
                     move(moveCandidate.get());
             }
         }
     }
 
-    private Optional<Node> identifyMoveCandidate(CapacityChecker.HostFailurePath failurePath) {
-        Node host = failurePath.hostsCausingFailure.get(0);
+    private Optional<Move> identifyMoveCandidate(CapacityChecker.HostFailurePath failurePath) {
+        Optional<Node> nodeWhichCantMove = failurePath.failureReason.tenant;
+        if (nodeWhichCantMove.isEmpty()) return Optional.empty();
+        return findMoveWhichMakesRoomFor(nodeWhichCantMove.get());
+    }
+
+    private Optional<Move> findMoveWhichMakesRoomFor(Node node) {
+        return Optional.empty();
+    }
+
+    private void move(Move move) {
 
     }
 
-    private void move(Node node) {
+    private static class Move {
+
+        static final Move none = new Move(null, null);
+
+        final Node node;
+        final Node toHost;
+
+        Move(Node node, Node toHost) {
+            this.node = node;
+            this.toHost = toHost;
+        }
+
+        @Override
+        public String toString() {
+            return "move " +
+                   ( node == null ? "none" : (node.hostname() + " to " + toHost));
+        }
 
     }
 

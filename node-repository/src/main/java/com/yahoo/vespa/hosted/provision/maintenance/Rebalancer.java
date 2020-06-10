@@ -42,18 +42,13 @@ public class Rebalancer extends NodeRepositoryMaintainer {
     @Override
     protected void maintain() {
         if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return; // Rebalancing not necessary
-        if (nodeRepository().zone().environment().isTest()) return; // Test zones have short lived deployments, no need to rebalance
+        if (nodeRepository().zone().environment().isTest()) return; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().list();
-
         updateSkewMetric(allNodes);
-
         if ( ! zoneIsStable(allNodes)) return;
-
-        Move bestMove = findBestMove(allNodes);
-        if (bestMove == Move.none) return;
-        deployTo(bestMove);
+        findBestMove(allNodes).execute(Agent.Rebalancer, deployer, metric, nodeRepository());
    }
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
@@ -81,7 +76,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
      */
     private Move findBestMove(NodeList allNodes) {
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes, nodeRepository().resourcesCalculator());
-        Move bestMove = Move.none;
+        Move bestMove = Move.empty();
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
             ApplicationId applicationId = node.allocation().get().owner();
@@ -99,59 +94,6 @@ public class Rebalancer extends NodeRepositoryMaintainer {
             }
         }
         return bestMove;
-    }
-
-    /** Returns true only if this operation changes the state of the wantToRetire flag */
-    private boolean markWantToRetire(Node node, boolean wantToRetire) {
-        try (Mutex lock = nodeRepository().lock(node)) {
-            Optional<Node> nodeToMove = nodeRepository().getNode(node.hostname());
-            if (nodeToMove.isEmpty()) return false;
-            if (nodeToMove.get().state() != Node.State.active) return false;
-
-            if (nodeToMove.get().status().wantToRetire() == wantToRetire) return false;
-
-            nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.Rebalancer, clock.instant()), lock);
-            return true;
-        }
-    }
-
-    /**
-     * Try a redeployment to effect the chosen move.
-     * If it can be done, that's ok; we'll try this or another move later.
-     *
-     * @return true if the move was done, false if it couldn't be
-     */
-    private boolean deployTo(Move move) {
-        ApplicationId application = move.node.allocation().get().owner();
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return false;
-
-            boolean couldMarkRetiredNow = markWantToRetire(move.node, true);
-            if ( ! couldMarkRetiredNow) return false;
-
-            Optional<Node> expectedNewNode = Optional.empty();
-            try {
-                if ( ! deployment.prepare()) return false;
-                expectedNewNode =
-                        nodeRepository().getNodes(application, Node.State.reserved).stream()
-                                        .filter(node -> !node.hostname().equals(move.node.hostname()))
-                                        .filter(node -> node.allocation().get().membership().cluster().id().equals(move.node.allocation().get().membership().cluster().id()))
-                                        .findAny();
-                if (expectedNewNode.isEmpty()) return false;
-                if ( ! expectedNewNode.get().hasParent(move.toHost.hostname())) return false;
-                if ( ! deployment.activate()) return false;
-
-                log.info("Rebalancer redeployed " + application + " to " + move);
-                return true;
-            }
-            finally {
-                markWantToRetire(move.node, false); // Necessary if this failed, no-op otherwise
-
-                // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
-                expectedNewNode.flatMap(node -> nodeRepository().getNode(node.hostname(), Node.State.reserved))
-                               .ifPresent(node -> nodeRepository().setDirty(node, Agent.Rebalancer, "Expired by Rebalancer"));
-            }
-        }
     }
 
     private double skewReductionByRemoving(Node node, Node fromHost, DockerHostCapacity capacity) {
@@ -176,17 +118,12 @@ public class Rebalancer extends NodeRepositoryMaintainer {
                 .orElse(true);
     }
 
-    private static class Move {
+    private static class Move extends MaintenanceDeployment.Move {
 
-        static final Move none = new Move(null, null, 0);
-
-        final Node node;
-        final Node toHost;
         final double netSkewReduction;
 
         Move(Node node, Node toHost, double netSkewReduction) {
-            this.node = node;
-            this.toHost = toHost;
+            super(node, toHost);
             this.netSkewReduction = netSkewReduction;
         }
 
@@ -195,6 +132,10 @@ public class Rebalancer extends NodeRepositoryMaintainer {
             return "move " +
                    ( node == null ? "none" :
                                     (node.hostname() + " to " + toHost + " [skew reduction "  + netSkewReduction + "]"));
+        }
+
+        public static Move empty() {
+            return new Move(null, null, 0);
         }
 
     }

@@ -197,7 +197,8 @@ public class CapacityChecker {
     /**
      * Tests whether it's possible to remove the provided hosts.
      * Does not mutate any input variable.
-     * @return Empty optional if removal is possible, information on what caused the failure otherwise
+     *
+     * @return empty optional if removal is possible, information on what caused the failure otherwise
      */
     private Optional<HostRemovalFailure> findHostRemovalFailure(List<Node> hostsToRemove, List<Node> allHosts,
                                                                 Map<Node, List<Node>> nodechildren,
