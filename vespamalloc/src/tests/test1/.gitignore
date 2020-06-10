@@ -2,3 +2,5 @@
 Makefile
 testatomic
 vespamalloc_testatomic_app
+vespamalloc_new_test_with_vespamalloc_app
+vespamalloc_new_test_with_vespamallocd_app

@@ -29,9 +29,7 @@ private:
     void verifyWriteAfterFreeDetection(); // Should abort
 };
 
-Test::~Test()
-{
-}
+Test::~Test() = default;
 
 void Test::testFillValue(char *a)
 {
