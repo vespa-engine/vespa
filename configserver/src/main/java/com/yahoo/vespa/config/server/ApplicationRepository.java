@@ -49,10 +49,10 @@ import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.metrics.ApplicationMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -736,6 +737,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ConfigserverConfig configserverConfig() {
         return configserverConfig;
+    }
+
+    public ApplicationId getApplicationIdForHostname(String hostname) {
+        Optional<ApplicationId> applicationId = tenantRepository.getAllTenantNames().stream()
+                .map(tenantName -> tenantRepository.getTenant(tenantName).getApplicationRepo().getApplicationIdForHostName(hostname))
+                .filter(Objects::nonNull)
+                .findFirst();
+        return applicationId.orElse(null);
     }
 
     private void validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
