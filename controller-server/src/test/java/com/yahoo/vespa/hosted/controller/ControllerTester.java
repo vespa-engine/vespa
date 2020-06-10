@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
@@ -54,6 +55,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -302,7 +304,7 @@ public final class ControllerTester {
     private TenantName createCloudTenant(String tenantName) {
         TenantName tenant = TenantName.from(tenantName);
         TenantSpec spec = new CloudTenantSpec(tenant, "token");
-        controller().tenants().create(spec, new Credentials(new SimplePrincipal("dev")));
+        controller().tenants().create(spec, new Auth0Credentials(new SimplePrincipal("dev"), Collections.emptySet()));
         return tenant;
     }
 

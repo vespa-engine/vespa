@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -62,7 +64,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // POST a tenant is not available to everyone.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .data("{\"token\":\"hello\"}"),
-                              accessDenied, 403);
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"You are not currently permitted to create tenants. Please contact the Vespa team to request access.\"}", 403);
 
         // POST a tenant is available to operators.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
@@ -200,6 +202,8 @@ public class UserApiTest extends ControllerContainerCloudTest {
     @Test
     public void userMetadataTest() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
+        ((InMemoryFlagSource) tester.controller().flagSource())
+                .withBooleanFlag(Flags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         ControllerTester controller = new ControllerTester(tester);
         Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
         User user = new User("dev@domail", "Joe Developer", "dev", null);
