@@ -66,7 +66,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService(nodeRepository)
-                                                               .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
+                                                               .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService, flagSource));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,

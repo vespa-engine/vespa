@@ -111,10 +111,10 @@ class Activator {
     /** Activate load balancers */
     private void activateLoadBalancers(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction,
                                        @SuppressWarnings("unused") Mutex applicationLock) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, clustersOf(hosts), applicationLock, transaction));
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, allClustersOf(hosts), applicationLock, transaction));
     }
 
-    private static Set<ClusterSpec> clustersOf(Collection<HostSpec> hosts) {
+    private static Set<ClusterSpec> allClustersOf(Collection<HostSpec> hosts) {
         return hosts.stream()
                     .map(HostSpec::membership)
                     .flatMap(Optional::stream)
