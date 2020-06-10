@@ -1,7 +1,4 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
 
 package com.yahoo.vespa.model.container.xml;
 
@@ -11,10 +8,7 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
+
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -114,7 +108,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyIgnoreJvmGCOptions(true);
     }
 
-    private void verifyJvmGCOptions(String featureFlagDefault, String override, String expected) throws IOException, SAXException  {
+    private void verifyJvmGCOptions(boolean isHosted, String featureFlagDefault, String override, String expected) throws IOException, SAXException  {
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
@@ -127,7 +121,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
-                .properties(new TestProperties().setJvmGCOptions(featureFlagDefault))
+                .properties(new TestProperties().setJvmGCOptions(featureFlagDefault).setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");
@@ -137,11 +131,13 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(null,null, ContainerCluster.G1GC);
-        verifyJvmGCOptions("-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
-        verifyJvmGCOptions(null,"-XX:+UseG1GC", "-XX:+UseG1GC");
-        verifyJvmGCOptions("-XX:+UseConcMarkSweepGC","-XX:+UseG1GC", "-XX:+UseG1GC");
-        verifyJvmGCOptions(null,"-XX:+UseConcMarkSweepGC", "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(false, null,null, ContainerCluster.G1GC);
+        verifyJvmGCOptions(true, null,null, ContainerCluster.CMS);
+        verifyJvmGCOptions(false, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(true, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(false, null,"-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, "-XX:+UseConcMarkSweepGC","-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, null,"-XX:+UseConcMarkSweepGC", "-XX:+UseConcMarkSweepGC");
     }
 
 }
