@@ -62,7 +62,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         if (failurePath.isPresent()) {
             int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
             metric.set("spareHostCapacity", worstCaseHostLoss - 1, null);
-            if (worstCaseHostLoss <= 1) {
+            if (worstCaseHostLoss == 1) { // Try to get back to needing 2 hosts to fail in the worst case
                 Optional<Node> moveCandidate = identifyMoveCandidate(failurePath.get());
                 if (moveCandidate.isPresent())
                     move(moveCandidate.get());
@@ -71,7 +71,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private Optional<Node> identifyMoveCandidate(CapacityChecker.HostFailurePath failurePath) {
-        return Optional.empty();
+        Node host = failurePath.hostsCausingFailure.get(0);
+
     }
 
     private void move(Node node) {

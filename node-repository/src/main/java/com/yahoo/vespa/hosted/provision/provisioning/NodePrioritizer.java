@@ -206,7 +206,7 @@ public class NodePrioritizer {
             builder.parent(parent).freeParentCapacity(parentCapacity);
 
             if (!isNewNode)
-                builder.resizable(!allocateFully
+                builder.resizable(! allocateFully
                                   && requestedNodes.canResize(node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
 
             if (spareHosts.contains(parent))
