@@ -89,6 +89,7 @@ public interface ModelContext {
 
         String docprocLoadBalancerType();
 
+        /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
 
         boolean useDistributorBtreeDb();
