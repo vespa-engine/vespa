@@ -50,7 +50,6 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
-                .properties(new TestProperties().setHostedVespa(true))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");
@@ -85,11 +84,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.G1GC);
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
+        verifyIgnoreJvmGCOptionsIfJvmArgs("jvmargs", ContainerCluster.G1GC);
+        verifyIgnoreJvmGCOptionsIfJvmArgs( "jvm-options", "-XX:+UseG1GC");
 
     }
-    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(boolean isHosted, String jvmOptionsName, String expectedGC) throws IOException, SAXException {
+    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(String jvmOptionsName, String expectedGC) throws IOException, SAXException {
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
@@ -102,8 +101,6 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
-                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");
@@ -117,7 +114,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyIgnoreJvmGCOptions(true);
     }
 
-    private void verifyJvmGCOptions(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
+    private void verifyJvmGCOptions(String featureFlagDefault, String override, String expected) throws IOException, SAXException  {
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
@@ -130,8 +127,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
-                .zone(zone)
-                .properties(new TestProperties().setHostedVespa(isHosted))
+                .properties(new TestProperties().setJvmGCOptions(featureFlagDefault))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");
@@ -139,18 +135,13 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         assertEquals(expected, qrStartConfig.jvm().gcopts());
     }
 
-    private void verifyJvmGCOptions(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
-        verifyJvmGCOptions(isHosted, null, zone, expected);
-        verifyJvmGCOptions(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
-        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyJvmGCOptions(isHosted, null, DEV, ContainerCluster.G1GC);
-        verifyJvmGCOptions(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
-    }
-
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
-        verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.G1GC);
+        verifyJvmGCOptions(null,null, ContainerCluster.G1GC);
+        verifyJvmGCOptions("-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(null,"-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions("-XX:+UseConcMarkSweepGC","-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(null,"-XX:+UseConcMarkSweepGC", "-XX:+UseConcMarkSweepGC");
     }
 
 }

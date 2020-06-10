@@ -89,6 +89,8 @@ public interface ModelContext {
 
         String docprocLoadBalancerType();
 
+        String jvmGCOptions();
+
         boolean useDistributorBtreeDb();
 
         boolean useThreePhaseUpdates();

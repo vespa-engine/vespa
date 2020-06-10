@@ -152,6 +152,11 @@ public class Flags {
             "Selects what kind of load balancer to use for document processing {'adaptive', 'legacy' ''}",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+    public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
+            "jvm-gc-options", "",
+            "Sets deafult jvm gc options",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
             "use-distributor-btree-db", false,
