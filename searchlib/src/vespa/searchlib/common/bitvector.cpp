@@ -167,7 +167,7 @@ BitVector::countInterval(Range range_in) const
         ++endw;
     }
     if (startw < endw) {
-        res += IAccelrated::getAccelrator().populationCount(bitValues + startw, endw - startw);
+        res += IAccelrated::getAccelerator().populationCount(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
         res += Optimized::popCount(bitValues[endw] & ~endBits(last));
@@ -185,13 +185,13 @@ BitVector::orWith(const BitVector & right)
         if (right.size() > 0) {
             ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
             if (commonBytes > 0) {
-                IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+                IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
             }
             Index last(right.size() - 1);
             getWordIndex(last)[0] |= (right.getWordIndex(last)[0] & ~endBits(last));
         }
     } else {
-        IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
     }
     repairEnds();
     invalidateCachedCount();
@@ -216,7 +216,7 @@ BitVector::andWith(const BitVector & right)
     verifyInclusiveStart(*this, right);
 
     uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
-    IAccelrated::getAccelrator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+    IAccelrated::getAccelerator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
     if (right.size() < size()) {
         clearInterval(right.size(), size());
     }
@@ -235,13 +235,13 @@ BitVector::andNotWith(const BitVector& right)
         if (right.size() > 0) {
             ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
             if (commonBytes > 0) {
-                IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+                IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
             }
             Index last(right.size() - 1);
             getWordIndex(last)[0] &= ~(right.getWordIndex(last)[0] & ~endBits(last));
         }
     } else {
-        IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
     }
 
     repairEnds();
@@ -250,7 +250,7 @@ BitVector::andNotWith(const BitVector& right)
 
 void
 BitVector::notSelf() {
-    IAccelrated::getAccelrator().notBit(getActiveStart(), getActiveBytes());
+    IAccelrated::getAccelerator().notBit(getActiveStart(), getActiveBytes());
     setGuardBit();
     invalidateCachedCount();
 }

@@ -256,7 +256,7 @@ namespace dotproduct::array {
 template <typename BaseType>
 DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
     : FeatureExecutor(),
-      _multiplier(IAccelrated::getAccelrator()),
+      _multiplier(IAccelrated::getAccelerator()),
       _queryVector(queryVector)
 {
 }

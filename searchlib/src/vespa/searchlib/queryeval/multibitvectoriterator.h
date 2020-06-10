@@ -11,7 +11,7 @@ namespace search::queryeval {
 class MultiBitVectorIteratorBase : public MultiSearch, protected BitWord
 {
 public:
-    ~MultiBitVectorIteratorBase();
+    ~MultiBitVectorIteratorBase() override;
     void initRange(uint32_t beginId, uint32_t endId) override;
     void addUnpackIndex(size_t index) { _unpackInfo.add(index); }
     /**
@@ -20,26 +20,21 @@ public:
      */
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
-    MultiBitVectorIteratorBase(Children children);
-    class MetaWord {
-    public:
-        MetaWord(const Word * words, bool inverted) : _words(words), _inverted(inverted) { }
-        Word operator [] (uint32_t index) const { return _inverted ? ~_words[index] : _words[index]; }
-    private:
-        const Word * _words;
-        bool         _inverted;
-    };
+    MultiBitVectorIteratorBase(Children hildren);
+    using MetaWord = std::pair<const void *, bool>;
 
     uint32_t                _numDocs;
-    Word                    _lastValue; // Last value computed
     uint32_t                _lastMaxDocIdLimit; // next documentid requiring recomputation.
+    uint32_t                _lastMaxDocIdLimitRequireFetch;
+    Word                    _lastValue; // Last value computed
     std::vector<MetaWord>   _bvs;
 private:
     virtual bool acceptExtraFilter() const = 0;
     UP andWith(UP filter, uint32_t estimate) override;
     void doUnpack(uint32_t docid) override;
-    UnpackInfo _unpackInfo;
     static SearchIterator::UP optimizeMultiSearch(SearchIterator::UP parent);
+
+    UnpackInfo  _unpackInfo;
 };
 
 }
