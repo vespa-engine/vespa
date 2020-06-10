@@ -287,6 +287,13 @@ public class Flags {
             CONSOLE_USER_EMAIL
     );
 
+    public static final UnboundBooleanFlag CONFIGSERVER_PROVISION_LB = defineFeatureFlag(
+            "configserver-provision-lb", false,
+            "Provision load balancer for config server cluster",
+            "Takes effect when zone-config-servers application is redeployed",
+            ZONE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

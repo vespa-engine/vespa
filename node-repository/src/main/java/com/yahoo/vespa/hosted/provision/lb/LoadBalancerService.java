@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeType;
 
 /**
  * A managed load balance service.
@@ -26,6 +27,12 @@ public interface LoadBalancerService {
 
     /** Returns the protocol supported by this load balancer service */
     Protocol protocol();
+
+    /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
+    default boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
+        return (nodeType == NodeType.tenant && clusterType.isContainer()) ||
+               (nodeType == NodeType.config && clusterType == ClusterSpec.Type.admin);
+    }
 
     /** Load balancer protocols */
     enum Protocol {

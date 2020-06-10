@@ -66,6 +66,12 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         return Protocol.dualstack;
     }
 
+    @Override
+    public boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
+        // Shared routing layer only supports routing to tenant nodes
+        return nodeType == NodeType.tenant && clusterType.isContainer();
+    }
+
     private static String withPrefixLength(String address) {
         if (IP.isV6(address)) {
             return address + "/128";
