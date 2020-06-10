@@ -11,6 +11,9 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.tensor.hnsw_index");
 
 namespace search::tensor {
 
@@ -274,7 +277,6 @@ HnswIndex::add_document(uint32_t docid)
 {
     AddDocOperation op = internal_prepare_add(docid, get_vector(docid));
     internal_complete_add(docid, op);
-    auto up = std::make_unique<AddDocOperation>(std::move(op));
 }
 
 HnswIndex::AddDocOperation
@@ -334,6 +336,29 @@ HnswIndex::internal_complete_add(uint32_t docid, AddDocOperation &op)
     }
     if (op.max_level > get_entry_level()) {
         _graph.set_entry_node({docid, op.max_level});
+    }
+}
+
+std::unique_ptr<PrepareResult>
+HnswIndex::prepare_add_document(uint32_t docid, 
+            TypedCells vector,
+            vespalib::GenerationHandler::Guard read_guard) const
+{
+    AddDocOperation op = internal_prepare_add(docid, vector);
+    (void) read_guard; // must keep guard until this point
+    return std::make_unique<AddDocOperation>(std::move(op));
+}
+
+void
+HnswIndex::complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result)
+{
+    auto prepared = dynamic_cast<AddDocOperation *>(prepare_result.get());
+    if (prepared && (prepared->docid == docid)) {
+        internal_complete_add(docid, *prepared);
+    } else {
+        LOG(warning, "complete_add_document called with invalid prepare_result");
+        // fallback to normal add
+        add_document(docid);
     }
 }
 
