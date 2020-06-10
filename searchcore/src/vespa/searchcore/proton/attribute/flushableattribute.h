@@ -38,6 +38,7 @@ private:
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     HwInfo                       _hwInfo;
     std::shared_ptr<AttributeDirectory> _attrDir;
+    double                       _replay_operation_cost;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
@@ -71,6 +72,7 @@ public:
     virtual Task::UP initFlush(SerialNum currentSerial) override;
     virtual FlushStats getLastFlushStats() const override { return _lastStats; }
     virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    virtual double get_replay_operation_cost() const override;
 };
 
 } // namespace proton
