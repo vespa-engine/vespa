@@ -286,13 +286,13 @@ public class ApplicationHandlerTest {
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
         long sessionId = tenantRepository.getTenant(applicationId.tenant()).getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenantRepository.getTenant(applicationId.tenant()).getLocalSessionRepo().getSession(sessionId));
+        assertNull(tenantRepository.getTenant(applicationId.tenant()).getSessionRepository().getSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(Tenant tenant, ApplicationId applicationId) throws IOException {
         long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, true);
-        assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
+        assertNull(tenant.getSessionRepository().getSession(sessionId));
     }
 
     private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, boolean fullAppIdInUrl) throws IOException {
