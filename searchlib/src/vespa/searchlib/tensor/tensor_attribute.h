@@ -3,9 +3,11 @@
 #pragma once
 
 #include "i_tensor_attribute.h"
-#include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include "prepare_result.h"
 #include "tensor_store.h"
+#include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <future>
 
 namespace search::tensor {
 
@@ -51,6 +53,23 @@ public:
     uint32_t getVersion() const override;
     RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const Tensor &tensor) = 0;
+
+    /**
+     * Performs the prepare step in a two-phase operation to set a tensor for a document.
+     *
+     * This function can be called by any thread.
+     * It should return the result of the costly and non-modifying part of such operation.
+     */
+    virtual std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const Tensor& tensor) const;
+
+    /**
+     * Performs the complete step in a two-phase operation to set a tensor for a document.
+     *
+     * This function is only called by the attribute writer thread.
+     * It must wait for the result from the prepare step (via the future) before it does the modifying changes.
+     */
+    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::future<std::unique_ptr<PrepareResult>> prepare_result);
+
     virtual void compactWorst() = 0;
 };
 
