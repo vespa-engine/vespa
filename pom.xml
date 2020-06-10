@@ -31,6 +31,7 @@
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>client</module>
+        <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
         <module>clustercontroller-core</module>
@@ -127,7 +128,6 @@
         <module>tenant-auth</module>
         <module>tenant-base</module>
         <module>tenant-cd</module>
-        <module>tenant-cd-impl</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>

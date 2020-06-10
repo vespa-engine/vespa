@@ -113,7 +113,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd-impl</artifactId>
+            <artifactId>cloud-tenant-cd</artifactId>
             <version>${test-framework.version}</version>
             <scope>test</scope>
         </dependency>
