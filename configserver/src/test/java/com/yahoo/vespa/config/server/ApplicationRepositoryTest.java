@@ -47,6 +47,9 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.jetbrains.annotations.NotNull;
@@ -113,16 +116,22 @@ public class ApplicationRepositoryTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
+
     @Before
     public void setup() throws IOException {
+        setup(new InMemoryFlagSource());
+    }
+
+    public void setup(FlagSource flagSource) throws IOException {
         Curator curator = new MockCurator();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .configServerConfig(new ConfigserverConfig.Builder()
                                             .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
-                                            .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
+                                            .configServerDBDir(tempFolder.newFolder().getAbsolutePath())
+                                            .configDefinitionsDir(tempFolder.newFolder().getAbsolutePath())
                                             .build())
+                .flagSource(flagSource)
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
@@ -656,6 +665,14 @@ public class ApplicationRepositoryTest {
         exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
         exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
         resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+    }
+
+    @Test
+    public void testDistributionOfApplicationPackage() throws IOException {
+        FlagSource flagSource = new InMemoryFlagSource()
+                .withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
+        setup(flagSource);
+        applicationRepository.deploy(app1, prepareParams());
     }
 
     private ApplicationRepository createApplicationRepository() {

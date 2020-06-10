@@ -56,7 +56,7 @@ public class HostHandlerTest {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();
-        tenant.getSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
+        tenant.getSessionRepo().addRemoteSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
     }
 
     @Before

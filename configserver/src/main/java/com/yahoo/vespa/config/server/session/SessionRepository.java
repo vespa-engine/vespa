@@ -206,7 +206,7 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public void addSession(RemoteSession session) {
+    public void addRemoteSession(RemoteSession session) {
         remoteSessionCache.addSession(session);
         metrics.incAddedSessions();
     }
@@ -274,7 +274,7 @@ public class SessionRepository {
         Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
         fileCache.addListener(this::nodeChanged);
         loadSessionIfActive(session);
-        addSession(session);
+        addRemoteSession(session);
         remoteSessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
         if (distributeApplicationPackage.value())
             sessionFactory.createLocalSessionUsingDistributedApplicationPackage(sessionId);
