@@ -127,7 +127,7 @@
         <module>storage</module>
         <module>tenant-auth</module>
         <module>tenant-base</module>
-        <module>tenant-cd</module>
+        <module>tenant-cd-api</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>
