@@ -33,7 +33,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
+    public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
         var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
         proxyNodes.sort(hostnameComparator);
 
@@ -52,7 +52,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                 Optional.empty(),
                 Set.of(4080, 4443),
                 networkNames,
-                reals
+                spec.reals()
         );
     }
 

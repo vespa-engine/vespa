@@ -17,10 +17,10 @@ import java.util.Set;
 public class PassthroughLoadBalancerService implements LoadBalancerService {
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
-        var real = reals.stream()
-                        .min(Comparator.naturalOrder())
-                        .orElseThrow(() -> new IllegalArgumentException("No reals given"));
+    public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        var real = spec.reals().stream()
+                       .min(Comparator.naturalOrder())
+                       .orElseThrow(() -> new IllegalArgumentException("No reals given"));
         return new LoadBalancerInstance(real.hostname(), Optional.empty(), Set.of(real.port()),
                                         Set.of(real.ipAddress() + "/32"), Set.of());
     }

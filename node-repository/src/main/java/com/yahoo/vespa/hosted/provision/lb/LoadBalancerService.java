@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.provision.lb;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 
-import java.util.Set;
-
 /**
  * A managed load balance service.
  *
@@ -14,16 +12,14 @@ import java.util.Set;
 public interface LoadBalancerService {
 
     /**
-     * Create a load balancer for given application cluster. Implementations are expected to be idempotent
+     * Create a load balancer from the given specification. Implementations are expected to be idempotent
      *
-     * @param application Application owning the LB
-     * @param cluster     Target cluster of the LB
-     * @param reals       Reals that should be configured on the LB
+     * @param spec        Load balancer specification
      * @param force       Whether reconfiguration should be forced (e.g. allow configuring an empty set of reals on a
      *                    pre-existing load balancer).
      * @return The provisioned load balancer instance
      */
-    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force);
+    LoadBalancerInstance create(LoadBalancerSpec spec, boolean force);
 
     /** Permanently remove load balancer for given application cluster */
     void remove(ApplicationId application, ClusterSpec.Id cluster);

@@ -20,8 +20,8 @@ public class PassthroughLoadBalancerServiceTest {
         var lbService = new PassthroughLoadBalancerService();
         var real = new Real(HostName.from("host1.example.com"), "192.0.2.10");
         var reals = Set.of(real, new Real(HostName.from("host2.example.com"), "192.0.2.11"));
-        var instance = lbService.create(ApplicationId.from("tenant1", "app1", "default"),
-                                        ClusterSpec.Id.from("c1"), reals, false);
+        var instance = lbService.create(new LoadBalancerSpec(ApplicationId.from("tenant1", "app1", "default"),
+                                                             ClusterSpec.Id.from("c1"), reals), false);
         assertEquals(real.hostname(), instance.hostname());
         assertEquals(Set.of(real.port()), instance.ports());
         assertEquals(Set.of(real.ipAddress() + "/32"), instance.networks());
