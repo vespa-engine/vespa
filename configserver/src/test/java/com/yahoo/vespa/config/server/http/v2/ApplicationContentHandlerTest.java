@@ -54,13 +54,13 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
         session2 = new MockLocalSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
         Tenant tenant1 = tenantRepository.getTenant(tenantName1);
-        tenant1.getSessionRepository().addSession(session2);
+        tenant1.getLocalSessionRepo().addSession(session2);
         tenant1.getApplicationRepo().createApplication(idTenant1);
         tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2).commit();
 
         MockLocalSession session3 = new MockLocalSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
         Tenant tenant2 = tenantRepository.getTenant(tenantName2);
-        tenant2.getSessionRepository().addSession(session3);
+        tenant2.getLocalSessionRepo().addSession(session3);
         tenant2.getApplicationRepo().createApplication(idTenant2);
         tenant2.getApplicationRepo().createPutTransaction(idTenant2, 3).commit();
 

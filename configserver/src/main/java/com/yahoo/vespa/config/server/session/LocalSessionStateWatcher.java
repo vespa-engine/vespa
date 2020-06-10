@@ -21,14 +21,14 @@ public class LocalSessionStateWatcher {
 
     private final Curator.FileCache fileCache;
     private final LocalSession session;
-    private final SessionRepository sessionRepository;
+    private final LocalSessionRepo localSessionRepo;
     private final Executor zkWatcherExecutor;
 
     LocalSessionStateWatcher(Curator.FileCache fileCache, LocalSession session,
-                             SessionRepository sessionRepository, Executor zkWatcherExecutor) {
+                             LocalSessionRepo localSessionRepo, Executor zkWatcherExecutor) {
         this.fileCache = fileCache;
         this.session = session;
-        this.sessionRepository = sessionRepository;
+        this.localSessionRepo = localSessionRepo;
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileCache.start();
         this.fileCache.addListener(this::nodeChanged);
@@ -40,9 +40,9 @@ public class LocalSessionStateWatcher {
         log.log(status == Session.Status.DELETE ? Level.INFO : Level.FINE,
                 session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
-        if (status.equals(Session.Status.DELETE) && sessionRepository.getSession(sessionId) != null) {
+        if (status.equals(Session.Status.DELETE) && localSessionRepo.getSession(sessionId) != null) {
             log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
-            sessionRepository.deleteSession(session);
+            localSessionRepo.deleteSession(session);
         }
     }
 

@@ -213,7 +213,7 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
                     break;
             }
             // We may have lost events and may need to remove applications.
-            // New applications are added when session is added, not here. See SessionRepository.
+            // New applications are added when session is added, not here. See RemoteSessionRepo.
             removeUnusedApplications();
         });
     }

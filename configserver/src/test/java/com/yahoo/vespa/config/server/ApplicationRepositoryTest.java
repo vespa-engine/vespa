@@ -37,7 +37,7 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
@@ -146,7 +146,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(tenant.getApplicationRepo()
+        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
     }
@@ -178,7 +178,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(
+        LocalSession session = tenant.getLocalSessionRepo().getSession(
                 tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
     }
@@ -295,17 +295,17 @@ public class ApplicationRepositoryTest {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
             Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
-            LocalSession applicationData = tenant.getSessionRepository().getSession(sessionId);
+            LocalSession applicationData = tenant.getLocalSessionRepo().getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(tenant.getSessionRepo().getRemoteSession(sessionId));
+            assertNotNull(tenant.getRemoteSessionRepo().getSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(tenant.getSessionRepository().getSession(sessionId));
-            assertNull(tenant.getSessionRepo().getRemoteSession(sessionId));
+            assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
+            assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
             assertTrue(provisioner.removed);
             assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId);
@@ -346,7 +346,7 @@ public class ApplicationRepositoryTest {
             RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
             Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
-            assertNull(tenant.getSessionRepo().getRemoteSession(prepareResult.sessionId()));
+            assertNull(tenant.getRemoteSessionRepo().getSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
@@ -379,14 +379,14 @@ public class ApplicationRepositoryTest {
         assertNotEquals(activeSessionId, deployment3session);
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
-        SessionRepository sessionRepository = tester.tenant().getSessionRepository();
-        assertEquals(3, sessionRepository.getSessions().size());
+        LocalSessionRepo localSessionRepo = tester.tenant().getLocalSessionRepo();
+        assertEquals(3, localSessionRepo.getSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = sessionRepository.getSessions();
+        Collection<LocalSession> sessions = localSessionRepo.getSessions();
         assertEquals(1, sessions.size());
         ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
         LocalSession localSession = localSessions.get(0);
@@ -400,9 +400,9 @@ public class ApplicationRepositoryTest {
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
-        assertEquals(2, sessionRepository.getSessions().size());
-        sessionRepository.deleteSession(localSession);
-        assertEquals(1, sessionRepository.getSessions().size());
+        assertEquals(2, localSessionRepo.getSessions().size());
+        localSessionRepo.deleteSession(localSession);
+        assertEquals(1, localSessionRepo.getSessions().size());
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
@@ -457,7 +457,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));
