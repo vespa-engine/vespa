@@ -6,8 +6,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
+import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.data.Stat;
@@ -28,10 +27,9 @@ public class Tenant implements TenantHandlerProvider {
     static final String APPLICATIONS = "applications";
 
     private final TenantName name;
-    private final RemoteSessionRepo remoteSessionRepo;
     private final Path path;
     private final SessionFactory sessionFactory;
-    private final LocalSessionRepo localSessionRepo;
+    private final SessionRepository sessionRepository;
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
     private final ReloadHandler reloadHandler;
@@ -39,8 +37,7 @@ public class Tenant implements TenantHandlerProvider {
 
     Tenant(TenantName name,
            SessionFactory sessionFactory,
-           LocalSessionRepo localSessionRepo,
-           RemoteSessionRepo remoteSessionRepo,
+           SessionRepository sessionRepository,
            RequestHandler requestHandler,
            ReloadHandler reloadHandler,
            TenantApplications applicationRepo,
@@ -49,9 +46,8 @@ public class Tenant implements TenantHandlerProvider {
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
         this.reloadHandler = reloadHandler;
-        this.remoteSessionRepo = remoteSessionRepo;
         this.sessionFactory = sessionFactory;
-        this.localSessionRepo = localSessionRepo;
+        this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
         this.curator = curator;
     }
@@ -74,13 +70,8 @@ public class Tenant implements TenantHandlerProvider {
         return requestHandler;
     }
 
-    /**
-     * The RemoteSessionRepo for this
-     *
-     * @return repo
-     */
-    public RemoteSessionRepo getRemoteSessionRepo() {
-        return remoteSessionRepo;
+    public SessionRepository getSessionRepo() {
+        return sessionRepository;
     }
 
     public TenantName getName() {
@@ -95,8 +86,8 @@ public class Tenant implements TenantHandlerProvider {
         return sessionFactory;
     }
 
-    public LocalSessionRepo getLocalSessionRepo() {
-        return localSessionRepo;
+    public SessionRepository getSessionRepository() {
+        return sessionRepository;
     }
 
     @Override
@@ -140,9 +131,9 @@ public class Tenant implements TenantHandlerProvider {
      * Called by watchers as a reaction to {@link #delete()}.
      */
     void close() {
-        remoteSessionRepo.close();              // Closes watchers and clears memory.
+        sessionRepository.close();              // Closes watchers and clears memory.
         applicationRepo.close();                // Closes watchers.
-        localSessionRepo.close();               // Closes watchers, clears memory, and deletes local files and ZK session state.
+        sessionRepository.close();               // Closes watchers, clears memory, and deletes local files and ZK session state.
     }
 
     /** Deletes the tenant tree from ZooKeeper (application and session status for the tenant) and triggers {@link #close()}. */

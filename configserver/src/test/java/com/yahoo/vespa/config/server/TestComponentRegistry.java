@@ -60,6 +60,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
     private final SecretStore secretStore;
+    private final FlagSource flagSource;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -74,7 +75,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   TenantListener tenantListener,
                                   Zone zone,
                                   Clock clock,
-                                  SecretStore secretStore) {
+                                  SecretStore secretStore,
+                                  FlagSource flagSource) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -94,6 +96,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
         this.zkCacheExecutor = new InThreadExecutorService();
         this.secretStore = secretStore;
+        this.flagSource = flagSource;
     }
 
     public static class Builder {
@@ -115,6 +118,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Optional<Provisioner> hostProvisioner = Optional.empty();
         private Zone zone = Zone.defaultZone();
         private Clock clock = Clock.systemUTC();
+        private FlagSource flagSource = new InMemoryFlagSource();
 
         public Builder configServerConfig(ConfigserverConfig configserverConfig) {
             this.configserverConfig = configserverConfig;
@@ -161,6 +165,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
@@ -172,11 +181,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionProvider,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
-                                                                  zone, new InMemoryFlagSource(), secretStore);
+                                                                  zone, flagSource, secretStore);
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
                                              permApp, fileDistributionProvider, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
-                                             zone, clock, secretStore);
+                                             zone, clock, secretStore, flagSource);
         }
     }
 
@@ -221,7 +230,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     }
 
     @Override
-    public FlagSource getFlagSource() { return new InMemoryFlagSource(); }
+    public FlagSource getFlagSource() { return flagSource; }
 
     @Override
     public ExecutorService getZkCacheExecutor() {

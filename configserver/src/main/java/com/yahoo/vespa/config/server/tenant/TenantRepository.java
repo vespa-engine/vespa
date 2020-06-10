@@ -14,8 +14,7 @@ import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
+import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
@@ -49,7 +48,7 @@ import java.util.stream.Collectors;
  * This component will monitor the set of tenants in the config server by watching in ZooKeeper.
  * It will set up Tenant objects accordingly, which will manage the config sessions per tenant.
  * This class will read the preexisting set of tenants from ZooKeeper at startup. (For now it will also
- * create a default tenant since that will be used for API that do no know about tenants or have not yet
+ * create a default tenant since that will be used for APIs that do no know about tenants or have not yet
  * implemented support for it).
  *
  * This instance is called from two different threads, the http handler threads and the zookeeper watcher threads.
@@ -224,15 +223,11 @@ public class TenantRepository {
         if (reloadHandler == null)
             reloadHandler = applicationRepo;
         SessionFactory sessionFactory = new SessionFactory(componentRegistry, applicationRepo, applicationRepo, tenantName);
-        LocalSessionRepo localSessionRepo = new LocalSessionRepo(tenantName, componentRegistry, sessionFactory);
-        RemoteSessionRepo remoteSessionRepo = new RemoteSessionRepo(componentRegistry,
-                                                                    sessionFactory,
-                                                                    reloadHandler,
-                                                                    tenantName,
-                                                                    applicationRepo,
+        SessionRepository sessionRepository = new SessionRepository(tenantName, componentRegistry, sessionFactory,
+                                                                    applicationRepo, reloadHandler,
                                                                     componentRegistry.getFlagSource());
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant = new Tenant(tenantName, sessionFactory, localSessionRepo, remoteSessionRepo, requestHandler,
+        Tenant tenant = new Tenant(tenantName, sessionFactory, sessionRepository, requestHandler,
                                    reloadHandler, applicationRepo, componentRegistry.getCurator());
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
