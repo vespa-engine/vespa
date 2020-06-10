@@ -213,6 +213,8 @@ Query::handle_global_filters(uint32_t docid_limit)
         // optimized order may change after accounting for global filter:
         _blueprint = Blueprint::optimize(std::move(_blueprint));
         LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
+        // strictness may change if optimized order changed:
+        fetchPostings();
     }
 }
 
