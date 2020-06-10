@@ -48,26 +48,14 @@ public:
      */
     virtual std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
                                                                 vespalib::tensor::TypedCells vector,
-                                                                vespalib::GenerationHandler::Guard read_guard) const {
-        // TODO: Make it pure virtual after more wiring is complete.
-        (void) docid;
-        (void) vector;
-        (void) read_guard;
-        return std::unique_ptr<PrepareResult>();
-    }
-
+                                                                vespalib::GenerationHandler::Guard read_guard) const = 0;
     /**
      * Performs the complete step in a two-phase operation to add a document to the index.
      *
      * This function is only called by the attribute writer thread.
      * It uses the result from the prepare step to do the modifying changes.
      */
-    virtual void complete_add_document(uint32_t docid,
-                                       std::unique_ptr<PrepareResult> prepare_result) {
-        // TODO: Make it pure virtual after more wiring is complete.
-        (void) docid;
-        (void) prepare_result;
-    }
+    virtual void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) = 0;
 
     virtual void remove_document(uint32_t docid) = 0;
     virtual void transfer_hold_lists(generation_t current_gen) = 0;
