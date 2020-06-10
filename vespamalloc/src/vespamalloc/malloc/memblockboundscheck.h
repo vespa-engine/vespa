@@ -25,8 +25,8 @@ public:
     size_t size()                   const { return static_cast<const uint32_t *>(_ptr)[0]; }
     size_t alignment()              const { return static_cast<const uint32_t *>(_ptr)[1]; }
     int threadId()                  const { return static_cast<int*>(_ptr)[2]; }
-    Stack * callStack()                   { return reinterpret_cast<Stack *>((char *)_ptr + size() + 4*sizeof(unsigned)); }
-    const Stack * callStack()       const { return reinterpret_cast<const Stack *>((const char *)_ptr + size() + 4*sizeof(unsigned)); }
+    Stack * callStack()                   { return reinterpret_cast<Stack *>((char *)_ptr + size() + alignment()); }
+    const Stack * callStack()       const { return reinterpret_cast<const Stack *>((const char *)_ptr + size() + alignment()); }
     void fillMemory(size_t sz) {
         if (_fillValue != NO_FILL) {
             memset(ptr(), _fillValue, sz);
@@ -167,7 +167,9 @@ protected:
     static constexpr size_t overhead(std::align_val_t alignment) {
         return preambleOverhead(alignment) + postambleOverhead();
     }
-    void setTailMagic() { *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + alignment() + StackTraceLen*sizeof(void *))) = TAIL_MAGIC; }
+    void setTailMagic() {
+        *(reinterpret_cast<unsigned *> ((char*)_ptr + size() + alignment() + StackTraceLen*sizeof(void *))) = TAIL_MAGIC;
+    }
     void init(size_t sz, size_t alignment) {
         if (_ptr) {
             setSize(sz);
