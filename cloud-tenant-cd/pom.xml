@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd</artifactId>
+            <artifactId>tenant-cd-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

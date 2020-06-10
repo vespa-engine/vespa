@@ -6,9 +6,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>tenant-cd</artifactId>
-    <name>Hosted Vespa tenant CD</name>
-    <description>Test library for hosted Vespa applications.</description>
+    <artifactId>tenant-cd-api</artifactId>
+    <name>Hosted Vespa tenant CD API</name>
+    <description>Test API library for hosted Vespa applications.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>jar</packaging>
 
