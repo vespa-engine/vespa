@@ -62,7 +62,7 @@ public class LocalVisitorSession implements VisitorSession {
                 // Iterate through all documents and pass on to data handler
                 outstanding.forEach((id, document) -> {
                     data.onMessage(new PutDocumentMessage(new DocumentPut(document)),
-                                                               new AckToken(id));
+                                   new AckToken(id));
                 });
                 // Transition to a terminal state when done
                 state.updateAndGet(current -> {
@@ -93,7 +93,8 @@ public class LocalVisitorSession implements VisitorSession {
 
     @Override
     public boolean isDone() {
-        return outstanding.isEmpty();
+        return    outstanding.isEmpty() // All documents ack'ed
+               && control.isDone();     // Control handler has been notified
     }
 
     @Override
@@ -134,8 +135,7 @@ public class LocalVisitorSession implements VisitorSession {
 
     @Override
     public void destroy() {
-        if ( ! isDone())
-            abort();
+        abort();
     }
 
 }
