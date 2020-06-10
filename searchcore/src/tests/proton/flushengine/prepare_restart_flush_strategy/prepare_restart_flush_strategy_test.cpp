@@ -3,6 +3,7 @@
 
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/flush_target_candidates.h>
+#include <vespa/searchcore/proton/flushengine/flush_target_candidate.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
@@ -21,26 +22,25 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
 {
     SerialNum flushedSerial;
     uint64_t approxDiskBytes;
-    SimpleFlushTarget(const vespalib::string &name,
-                      SerialNum flushedSerial_,
-                      uint64_t approxDiskBytes_)
-        : test::DummyFlushTarget(name),
-          flushedSerial(flushedSerial_),
-          approxDiskBytes(approxDiskBytes_)
-    {}
+    double replay_operation_cost;
     SimpleFlushTarget(const vespalib::string &name,
                       const Type &type,
                       SerialNum flushedSerial_,
-                      uint64_t approxDiskBytes_)
+                      uint64_t approxDiskBytes_,
+                      double replay_operation_cost_)
         : test::DummyFlushTarget(name, type, Component::OTHER),
           flushedSerial(flushedSerial_),
-          approxDiskBytes(approxDiskBytes_)
+          approxDiskBytes(approxDiskBytes_),
+          replay_operation_cost(replay_operation_cost_)
     {}
     virtual SerialNum getFlushedSerialNum() const override {
         return flushedSerial;
     }
     virtual uint64_t getApproxBytesToWriteToDisk() const override {
         return approxDiskBytes;
+    }
+    double get_replay_operation_cost() const override {
+        return replay_operation_cost;
     }
 };
 
@@ -66,30 +66,35 @@ public:
                          const vespalib::string &targetName,
                          IFlushTarget::Type targetType,
                          SerialNum flushedSerial,
-                         uint64_t approxDiskBytes) {
+                         uint64_t approxDiskBytes,
+                         double replay_operation_cost) {
         IFlushHandler::SP handler = createAndGetHandler(handlerName);
         IFlushTarget::SP target = std::make_shared<SimpleFlushTarget>(targetName,
                                                                       targetType,
                                                                       flushedSerial,
-                                                                      approxDiskBytes);
+                                                                      approxDiskBytes,
+                                                                      replay_operation_cost);
         _result.push_back(std::make_shared<FlushContext>(handler, target, 0));
         return *this;
     }
     ContextsBuilder &add(const vespalib::string &handlerName,
                          const vespalib::string &targetName,
                          SerialNum flushedSerial,
-                         uint64_t approxDiskBytes) {
-        return add(handlerName, targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes);
+                         uint64_t approxDiskBytes,
+                         double replay_operation_cost = 0.0) {
+        return add(handlerName, targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
     ContextsBuilder &add(const vespalib::string &targetName,
                          SerialNum flushedSerial,
-                         uint64_t approxDiskBytes) {
-        return add("handler1", targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes);
+                         uint64_t approxDiskBytes,
+                         double replay_operation_cost = 0.0) {
+        return add("handler1", targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
     ContextsBuilder &addGC(const vespalib::string &targetName,
                            SerialNum flushedSerial,
-                           uint64_t approxDiskBytes) {
-        return add("handler1", targetName, IFlushTarget::Type::GC, flushedSerial, approxDiskBytes);
+                           uint64_t approxDiskBytes,
+                           double replay_operation_cost = 0.0) {
+        return add("handler1", targetName, IFlushTarget::Type::GC, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
     FlushContext::List build() const { return _result; }
 };
@@ -99,6 +104,7 @@ class CandidatesBuilder
 private:
     const FlushContext::List *_sortedFlushContexts;
     size_t _numCandidates;
+    mutable std::vector<FlushTargetCandidate> _candidates;
     flushengine::TlsStats _tlsStats;
     Config _cfg;
 
@@ -106,6 +112,7 @@ public:
     CandidatesBuilder(const FlushContext::List &sortedFlushContexts)
         : _sortedFlushContexts(&sortedFlushContexts),
           _numCandidates(sortedFlushContexts.size()),
+          _candidates(),
           _tlsStats(1000, 11, 110),
           _cfg(2.0, 3.0, 4.0)
     {}
@@ -125,8 +132,16 @@ public:
                                           replayEndSerial);
         return *this;
     }
+    void setup_candidates() const {
+        _candidates.clear();
+        _candidates.reserve(_sortedFlushContexts->size());
+        for (const auto &flush_context : *_sortedFlushContexts) {
+            _candidates.emplace_back(flush_context, _tlsStats.getLastSerial(), _cfg);
+        }
+    }
     FlushTargetCandidates build() const {
-        return FlushTargetCandidates(*_sortedFlushContexts,
+        setup_candidates();
+        return FlushTargetCandidates(_candidates,
                                      _numCandidates,
                                      _tlsStats,
                                      _cfg);
@@ -196,9 +211,12 @@ struct FlushStrategyFixture
 {
     flushengine::TlsStatsMap _tlsStatsMap;
     PrepareRestartFlushStrategy strategy;
-    FlushStrategyFixture()
+    FlushStrategyFixture(const Config &config)
         : _tlsStatsMap(defaultTransactionLogStats()),
-          strategy(DEFAULT_CFG)
+          strategy(config)
+    {}
+    FlushStrategyFixture()
+        : FlushStrategyFixture(DEFAULT_CFG)
     {}
     FlushContext::List getFlushTargets(const FlushContext::List &targetList,
                                        const flushengine::TlsStatsMap &tlsStatsMap) const {
@@ -297,6 +315,12 @@ TEST_F("require that flush targets for different flush handlers are treated inde
     TEST_DO(assertFlushContexts("[foo,baz,quz]", targets));
 }
 
+TEST_F("require that expensive to replay target is flushed", FlushStrategyFixture(Config(2.0, 1.0, 4.0)))
+{
+    FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
+            add("foo", 10, 249).add("bar", 60, 150).add("baz", 60, 150, 12.0).build(), f._tlsStatsMap);
+    TEST_DO(assertFlushContexts("[foo,baz]", targets));
+}
 
 TEST_MAIN()
 {

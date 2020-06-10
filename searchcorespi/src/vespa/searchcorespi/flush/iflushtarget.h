@@ -137,6 +137,11 @@ public:
     virtual uint64_t getApproxBytesToWriteToDisk() const = 0;
 
     /**
+     * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
+     */
+    virtual double get_replay_operation_cost() const { return 0.0; }
+
+    /**
      * Returns the last serial number for the transaction applied to
      * target before it was flushed to disk.  The transaction log can
      * not be pruned beyond this.

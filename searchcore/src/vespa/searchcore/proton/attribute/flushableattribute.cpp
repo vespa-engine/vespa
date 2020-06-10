@@ -165,9 +165,15 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
       _fileHeaderContext(fileHeaderContext),
       _attributeFieldWriter(attributeFieldWriter),
       _hwInfo(hwInfo),
-      _attrDir(attrDir)
+      _attrDir(attrDir),
+      _replay_operation_cost(0.0)
 {
     _lastStats.setPathElementsToLog(8);
+    auto &config = attr->getConfig();
+    if (config.basicType() == search::attribute::BasicType::Type::TENSOR &&
+        config.tensorType().is_tensor() && config.tensorType().is_dense() && config.hnsw_index_params().has_value()) {
+        _replay_operation_cost = 100.0; // replaying operations to hnsw index is 100 times more expensive than reading from tls
+    }
 }
 
 
@@ -234,6 +240,12 @@ uint64_t
 FlushableAttribute::getApproxBytesToWriteToDisk() const
 {
     return _attr->getEstimatedSaveByteSize();
+}
+
+double
+FlushableAttribute::get_replay_operation_cost() const
+{
+    return _replay_operation_cost;
 }
 
 } // namespace proton

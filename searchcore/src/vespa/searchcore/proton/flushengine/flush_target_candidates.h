@@ -2,10 +2,13 @@
 #pragma once
 
 #include "prepare_restart_flush_strategy.h"
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace proton {
 
 namespace flushengine { class TlsStats; }
+
+class FlushTargetCandidate;
 
 /**
  * A set of flush targets that are candidates to be flushed.
@@ -27,8 +30,8 @@ public:
         double totalCost() const { return bytesCost + operationsCost; }
     };
 private:
-    const FlushContext::List *_sortedFlushContexts; // NOTE: ownership is handled outside
-    size_t _numCandidates;
+    vespalib::ConstArrayRef<FlushTargetCandidate> _candidates; // NOTE: ownership is handled outside
+    size_t  _num_candidates;
     TlsReplayCost _tlsReplayCost;
     double _flushTargetsWriteCost;
 
@@ -37,8 +40,8 @@ private:
 public:
     using UP = std::unique_ptr<FlushTargetCandidates>;
 
-    FlushTargetCandidates(const FlushContext::List &sortedFlushContexts,
-                          size_t numCandidates,
+    FlushTargetCandidates(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+                          size_t num_candidates,
                           const flushengine::TlsStats &tlsStats,
                           const Config &cfg);
 
