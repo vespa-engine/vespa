@@ -80,6 +80,8 @@
         <module>filedistribution</module>
         <module>flags</module>
         <module>fsa</module>
+        <module>hosted-api</module>
+        <module>hosted-zone-api</module>
         <module>http-utils</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
@@ -144,7 +146,6 @@
         <module>zkfacade</module>
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-server</module>
-        <module>hosted-api</module>
     </modules>
 </project>
 

@@ -87,7 +87,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
-        addSimpleComponent("ai.vespa.cloud.SystemInfo");
+        addSimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider");
         addMetricsV2Handler();
         addTestrunnerComponentsIfTester(deployState);
     }
