@@ -31,6 +31,7 @@
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>client</module>
+        <module>cloud-tenant-base</module>
         <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
@@ -85,6 +86,7 @@
         <module>hosted-zone-api</module>
         <module>http-utils</module>
         <module>hosted-api</module>
+        <module>hosted-tenant-base</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
