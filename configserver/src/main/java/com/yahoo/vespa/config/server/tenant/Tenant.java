@@ -7,6 +7,7 @@ import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.data.Stat;
 
@@ -27,6 +28,7 @@ public class Tenant implements TenantHandlerProvider {
 
     private final TenantName name;
     private final Path path;
+    private final SessionFactory sessionFactory;
     private final SessionRepository sessionRepository;
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
@@ -34,6 +36,7 @@ public class Tenant implements TenantHandlerProvider {
     private final Curator curator;
 
     Tenant(TenantName name,
+           SessionFactory sessionFactory,
            SessionRepository sessionRepository,
            RequestHandler requestHandler,
            ReloadHandler reloadHandler,
@@ -43,6 +46,7 @@ public class Tenant implements TenantHandlerProvider {
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
         this.reloadHandler = reloadHandler;
+        this.sessionFactory = sessionFactory;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
         this.curator = curator;
@@ -78,7 +82,13 @@ public class Tenant implements TenantHandlerProvider {
         return path;
     }
 
-    public SessionRepository getSessionRepository() { return sessionRepository; }
+    public SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+
+    public SessionRepository getSessionRepository() {
+        return sessionRepository;
+    }
 
     @Override
     public String toString() {

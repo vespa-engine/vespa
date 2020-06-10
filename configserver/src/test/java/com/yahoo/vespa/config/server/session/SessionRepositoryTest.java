@@ -9,6 +9,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -74,9 +75,12 @@ public class SessionRepositoryTest {
                 .build();
         tenantRepository = new TenantRepository(globalComponentRegistry, false);
         TenantApplications applicationRepo = TenantApplications.create(globalComponentRegistry, tenantName);
-        sessionRepository = new SessionRepository(tenantName, globalComponentRegistry,
-                                                  applicationRepo, applicationRepo, new InMemoryFlagSource(),
-                                                  applicationRepo, globalComponentRegistry.getSessionPreparer());
+        SessionFactory sessionFactory = new SessionFactory(globalComponentRegistry,
+                                                           applicationRepo,
+                                                           new HostRegistry<>(),
+                                                           tenantName);
+        sessionRepository = new SessionRepository(tenantName, globalComponentRegistry, sessionFactory,
+                                                  applicationRepo, applicationRepo, new InMemoryFlagSource());
     }
 
     @Test

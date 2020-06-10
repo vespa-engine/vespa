@@ -53,6 +53,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
@@ -302,7 +303,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession activeSession = getActiveLocalSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        LocalSession newSession = tenant.getSessionRepository().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
+        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getSessionRepository().addSession(newSession);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
@@ -634,8 +635,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           TimeoutBudget timeoutBudget) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         SessionRepository sessionRepository = tenant.getSessionRepository();
+        SessionFactory sessionFactory = tenant.getSessionFactory();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
-        LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
+        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
         sessionRepository.addSession(session);
         return session.getSessionId();
     }
@@ -655,10 +657,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         tenant.getApplicationRepo().createApplication(applicationId);
         Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
-        LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,
-                                                                           applicationId,
-                                                                           timeoutBudget,
-                                                                           activeSessionId);
+        LocalSession session = tenant.getSessionFactory().createSession(applicationDirectory, applicationId,
+                                                                        timeoutBudget, activeSessionId);
         tenant.getSessionRepository().addSession(session);
         return session.getSessionId();
     }
