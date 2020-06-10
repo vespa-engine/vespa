@@ -175,7 +175,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
-            capacityReportInterval = Duration.ofMinutes(10);
+            capacityReportInterval = Duration.ofHours(1);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
