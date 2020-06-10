@@ -154,7 +154,6 @@ public class ModelContextImpl implements ModelContext {
         private final double threadPoolSizeFactor;
         private final double queueSizefactor;
         private final String docprocLoadBalancerType;
-        private final String jvmGCOPtions;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final int jdiscHealthCheckProxyClientTimeout;
@@ -197,8 +196,6 @@ public class ModelContextImpl implements ModelContext {
             queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             docprocLoadBalancerType = Flags.DOCPROC_LOADBALANCER_TYPE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
@@ -283,8 +280,6 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(jdiscHealthCheckProxyClientTimeout); }
-        @Override public String jvmGCOptions() { return jvmGCOPtions; }
-
     }
 
 }
