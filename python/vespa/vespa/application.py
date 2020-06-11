@@ -114,7 +114,7 @@ class Vespa(object):
             recall=(id_field, [relevant_id]),
             **kwargs
         )
-        hits = get_hits(vespa_result=relevant_id_result)
+        hits = relevant_id_result.hits
         features = []
         if len(hits) == 1 and hits[0]["fields"][id_field] == relevant_id:
             random_hits_result = self.query(
@@ -123,7 +123,7 @@ class Vespa(object):
                 hits=number_additional_docs,
                 **kwargs
             )
-            hits.extend(get_hits(random_hits_result))
+            hits.extend(random_hits_result.hits)
 
             features = annotate_data(
                 hits=hits,
@@ -246,14 +246,6 @@ class Vespa(object):
             evaluation.append(evaluation_query)
         evaluation = DataFrame.from_records(evaluation)
         return evaluation
-
-
-# todo: create a VespaResult class to store vespa results
-def get_hits(vespa_result):
-    hits = []
-    if "children" in vespa_result["root"]:
-        hits = vespa_result["root"]["children"]
-    return hits
 
 
 # todo: a better pattern for labelled data would be (query_id, query, doc_id, score) with the possibility od
