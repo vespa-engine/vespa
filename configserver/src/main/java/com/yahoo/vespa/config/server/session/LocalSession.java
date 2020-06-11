@@ -39,7 +39,6 @@ public class LocalSession extends Session {
     private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
     private final File serverDBSessionDir;
-    private final SessionZooKeeperClient sessionZooKeeperClient;
     private final HostValidator<ApplicationId> hostValidator;
 
     /**
@@ -54,7 +53,6 @@ public class LocalSession extends Session {
         super(tenant, sessionId, sessionZooKeeperClient);
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationPackage = applicationPackage;
-        this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.hostValidator = hostValidator;
@@ -67,7 +65,7 @@ public class LocalSession extends Session {
                                        Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
-        Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
         ConfigChangeActions actions = sessionPreparer.prepare(hostValidator, logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
                                                               serverDBSessionDir, applicationPackage, sessionZooKeeperClient);
@@ -88,17 +86,17 @@ public class LocalSession extends Session {
     }
 
     private Transaction createSetStatusTransaction(Status status) {
-        return zooKeeperClient.createWriteStatusTransaction(status);
+        return sessionZooKeeperClient.createWriteStatusTransaction(status);
     }
 
     private void setStatus(Session.Status newStatus) {
-        zooKeeperClient.writeStatus(newStatus);
+        sessionZooKeeperClient.writeStatus(newStatus);
     }
 
     public Transaction createActivateTransaction() {
-        zooKeeperClient.createActiveWaiter();
+        sessionZooKeeperClient.createActiveWaiter();
         Transaction transaction = createSetStatusTransaction(Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutTransaction(zooKeeperClient.readApplicationId(), getSessionId()).operations());
+        transaction.add(applicationRepo.createPutTransaction(sessionZooKeeperClient.readApplicationId(), getSessionId()).operations());
         return transaction;
     }
 
@@ -112,12 +110,12 @@ public class LocalSession extends Session {
 
     /** Add transactions to delete this session to the given nested transaction */
     public void delete(NestedTransaction transaction) {
-        transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
+        transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
         transaction.add(FileTransaction.from(FileOperations.delete(serverDBSessionDir.getAbsolutePath())));
     }
 
     public void waitUntilActivated(TimeoutBudget timeoutBudget) {
-        zooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
+        sessionZooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }
 
     public enum Mode {

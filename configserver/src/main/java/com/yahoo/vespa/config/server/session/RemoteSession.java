@@ -50,20 +50,20 @@ public class RemoteSession extends Session {
     }
 
     void loadPrepared() {
-        Curator.CompletionWaiter waiter = zooKeeperClient.getPrepareWaiter();
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded();
         notifyCompletion(waiter);
     }
 
     private ApplicationSet loadApplication() {
-        ApplicationPackage applicationPackage = zooKeeperClient.loadApplicationPackage();
+        ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
 
         // Read hosts allocated on the config server instance which created this
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
-        return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
-                                                                     zooKeeperClient.readDockerImageRepository(),
-                                                                     zooKeeperClient.readVespaVersion(),
+        return ApplicationSet.fromList(applicationLoader.buildModels(sessionZooKeeperClient.readApplicationId(),
+                                                                     sessionZooKeeperClient.readDockerImageRepository(),
+                                                                     sessionZooKeeperClient.readVespaVersion(),
                                                                      applicationPackage,
                                                                      new SettableOptional<>(allocatedHosts),
                                                                      clock.instant()));
@@ -78,11 +78,11 @@ public class RemoteSession extends Session {
     }
 
     public Transaction createDeleteTransaction() {
-        return zooKeeperClient.createWriteStatusTransaction(Status.DELETE);
+        return sessionZooKeeperClient.createWriteStatusTransaction(Status.DELETE);
     }
 
     void makeActive(ReloadHandler reloadHandler) {
-        Curator.CompletionWaiter waiter = zooKeeperClient.getActiveWaiter();
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getActiveWaiter();
         log.log(Level.FINE, () -> logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
         log.log(Level.FINE, () -> logPre() + "Reloading config for " + getSessionId());
@@ -93,7 +93,7 @@ public class RemoteSession extends Session {
     }
     
     void confirmUpload() {
-        Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getUploadWaiter();
         log.log(Level.FINE, "Notifying upload waiter for session " + getSessionId());
         notifyCompletion(waiter);
         log.log(Level.FINE, "Done notifying upload for session " + getSessionId());
@@ -116,13 +116,13 @@ public class RemoteSession extends Session {
     }
 
     public void delete() {
-        Transaction transaction = zooKeeperClient.deleteTransaction();
+        Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
     }
 
     public ApplicationMetaData getMetaData() {
-        return zooKeeperClient.loadApplicationPackage().getMetaData();
+        return sessionZooKeeperClient.loadApplicationPackage().getMetaData();
     }
 
 }
