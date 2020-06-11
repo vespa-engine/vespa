@@ -18,17 +18,17 @@ import java.util.Set;
  */
 public enum RoleDefinition {
 
+    /** Deus ex machina. */
+    hostedOperator(Policy.operator),
+
+    /** Machina autem exspiravit. */
+    hostedSupporter(Policy.supporter),
+
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
             Policy.publicRead,
             Policy.user,
             Policy.tenantCreate),
-
-    /** Deus ex machina. */
-    hostedOperator(Policy.operator),
-
-    /** Machina autem exspiravit. */
-    hostedSupporter(everyone, Policy.supporter),
 
     /** Build service which may submit new applications for continuous deployment. */
     buildService(everyone,
