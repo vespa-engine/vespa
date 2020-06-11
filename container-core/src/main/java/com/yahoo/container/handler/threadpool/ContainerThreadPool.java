@@ -83,9 +83,9 @@ public class ContainerThreadPool implements AutoCloseable {
     }
 
     private static int computeCoreThreadPoolSize(int corePoolSize, int maxNumThreads) {
-        return corePoolSize <= 0
-            ? Runtime.getRuntime().availableProcessors() * 2
-            : Math.min(corePoolSize, maxNumThreads);
+        return Math.min(
+                corePoolSize <= 0 ? Runtime.getRuntime().availableProcessors() * 2 : corePoolSize,
+                maxNumThreads);
     }
 
 }
