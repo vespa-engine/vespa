@@ -957,6 +957,28 @@
     ],
     "fields": []
   },
+  "com.yahoo.documentapi.local.LocalVisitorSession": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.documentapi.VisitorSession"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.documentapi.local.LocalDocumentAccess, com.yahoo.documentapi.VisitorParameters)",
+      "public boolean isDone()",
+      "public com.yahoo.documentapi.ProgressToken getProgress()",
+      "public com.yahoo.messagebus.Trace getTrace()",
+      "public boolean waitUntilDone(long)",
+      "public void ack(com.yahoo.documentapi.AckToken)",
+      "public void abort()",
+      "public com.yahoo.documentapi.VisitorResponse getNext()",
+      "public com.yahoo.documentapi.VisitorResponse getNext(int)",
+      "public void destroy()"
+    ],
+    "fields": []
+  },
   "com.yahoo.documentapi.messagebus.MessageBusAsyncSession": {
     "superClass": "java.lang.Object",
     "interfaces": [
