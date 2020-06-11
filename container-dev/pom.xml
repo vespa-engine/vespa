@@ -187,6 +187,11 @@
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>hosted-zone-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- NOTE: Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
          and hence make them invisible to user projects' build classpath.
