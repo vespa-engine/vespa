@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -12,11 +14,13 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
+import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.POST;
@@ -36,6 +40,8 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     @Before
     public void before() {
         tester = new ContainerTester(container, responseFiles);
+        ((InMemoryFlagSource) tester.controller().flagSource())
+                .withBooleanFlag(Flags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
         deploymentTester.controllerTester().computeVersionStatus();
     }
@@ -73,6 +79,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     private static Credentials credentials(String name) {
-        return new Credentials(() -> name);
+        return new Auth0Credentials(() -> name, Collections.emptySet());
     }
 }

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
-import java.awt.event.AdjustmentEvent;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
@@ -59,8 +58,9 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t2/application/a2")));
         assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
 
-        // Check that we are allowed to create tenants in public
-        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1")));
+        // Check that we are allowed to create tenants in public.
+        // hostedSupporter isn't actually allowed to create tenants - but any logged in user will be a member of the "everyone" role.
+        assertTrue(publicEnforcer.allows(Role.everyone(), Action.create, URI.create("/application/v4/tenant/t1")));
     }
 
     @Test
