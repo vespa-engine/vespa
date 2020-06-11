@@ -22,9 +22,6 @@ public class Auth0Credentials extends Credentials {
         this.roles = Collections.unmodifiableSet(roles);
     }
 
-    @Override
-    public Principal user() { return super.user(); }
-
     /** The set of roles set in the auth0 cookie, extracted by CloudAccessControlRequests. */
     public Set<Role> getRoles() {
         return roles;
