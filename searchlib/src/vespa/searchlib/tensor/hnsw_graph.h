@@ -23,6 +23,7 @@ struct HnswGraph {
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
     using NodeRefVector = vespalib::RcuVector<AtomicEntryRef>;
+    using NodeRef = vespalib::datastore::EntryRef;
 
     // This stores the level arrays for all nodes.
     // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
@@ -49,10 +50,22 @@ struct HnswGraph {
 
     void remove_node_for_document(uint32_t docid);
 
+    NodeRef get_node_ref(uint32_t docid) const {
+        return node_refs[docid].load_acquire();
+    }
+
     LevelArrayRef get_level_array(uint32_t docid) const {
-        auto node_ref = node_refs[docid].load_acquire();
+        auto node_ref = get_node_ref(docid);
         assert(node_ref.valid());
         return nodes.get(node_ref);
+    }
+
+    LevelArrayRef get_level_array(uint32_t docid, NodeRef cached_ref) const {
+        auto node_ref = get_node_ref(docid);
+        if (node_ref.valid() && (cached_ref == node_ref)) {
+            return nodes.get(node_ref);
+        }
+        return LevelArrayRef();
     }
 
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const {
@@ -60,7 +73,16 @@ struct HnswGraph {
         assert(level < levels.size());
         return links.get(levels[level].load_acquire());
     }
-    
+
+    LinkArrayRef get_link_array(uint32_t docid, LevelArrayRef cached_levels, uint32_t level) const {
+        auto node_ref = get_node_ref(docid);
+        auto levels = get_level_array(docid, node_ref);
+        if ((levels == cached_levels) && (level < levels.size())) {
+            return links.get(levels[level].load_acquire());
+        }
+        return LinkArrayRef();
+    }
+
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& new_links);
 
     struct EntryNode {
