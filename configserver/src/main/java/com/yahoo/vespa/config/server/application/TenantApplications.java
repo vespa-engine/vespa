@@ -420,6 +420,10 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         reloadListener.verifyHostsAreAvailable(tenant, newHosts);
     }
 
+    public HostValidator<ApplicationId> getHostValidator() {
+        return this;
+    }
+
     public HostRegistry<ApplicationId> getApplicationHostRegistry() {
         return hostRegistry;
     }

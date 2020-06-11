@@ -224,7 +224,6 @@ public class TenantRepository {
         SessionRepository sessionRepository = new SessionRepository(tenantName, componentRegistry,
                                                                     applicationRepo, reloadHandler,
                                                                     componentRegistry.getFlagSource(),
-                                                                    applicationRepo,
                                                                     componentRegistry.getSessionPreparer());
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
         Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler,

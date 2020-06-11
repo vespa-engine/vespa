@@ -140,7 +140,7 @@ public class LocalSessionTest {
                 new TestComponentRegistry.Builder().curator(curator).build(), tenant);
         applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, preparer, FilesApplicationPackage.fromFile(testApp),
-                                zkc, sessionDir, applications, new HostRegistry<>());
+                                zkc, sessionDir, applications);
     }
 
     private void doPrepare(LocalSession session) {
