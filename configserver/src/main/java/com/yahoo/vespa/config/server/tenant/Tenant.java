@@ -121,9 +121,8 @@ public class Tenant implements TenantHandlerProvider {
      * Called by watchers as a reaction to {@link #delete()}.
      */
     void close() {
-        sessionRepository.close();              // Closes watchers and clears memory.
         applicationRepo.close();                // Closes watchers.
-        sessionRepository.close();               // Closes watchers, clears memory, and deletes local files and ZK session state.
+        sessionRepository.close();              // Closes watchers, clears memory, and deletes local files and ZK session state.
     }
 
     /** Deletes the tenant tree from ZooKeeper (application and session status for the tenant) and triggers {@link #close()}. */
