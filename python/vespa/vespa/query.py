@@ -204,13 +204,26 @@ class Query(object):
 
 
 class VespaResult(object):
-    def __init__(self, vespa_result):
-        self.vespa_result = vespa_result
+    def __init__(self, vespa_result, request_body=None):
+        self._vespa_result = vespa_result
+        self._request_body = request_body
+
+    @property
+    def request_body(self) -> Optional[Dict]:
+        return self._request_body
 
     @property
     def json(self) -> Dict:
-        return self.vespa_result
+        return self._vespa_result
 
     @property
     def hits(self) -> List:
-        return self.vespa_result.get("root", {}).get("children", [])
+        return self._vespa_result.get("root", {}).get("children", [])
+
+    @property
+    def number_documents_retrieved(self) -> int:
+        return self._vespa_result.get("root", {}).get("fields", {}).get("totalCount", 0)
+
+    @property
+    def number_documents_indexed(self) -> int:
+        return self._vespa_result.get("root", {}).get("coverage", {}).get("documents", 0)

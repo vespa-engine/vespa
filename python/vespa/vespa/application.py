@@ -4,7 +4,7 @@ from typing import Optional, Dict, Tuple, List
 from requests import post
 from pandas import DataFrame
 
-from vespa.query import Query
+from vespa.query import Query, VespaResult
 from vespa.evaluation import EvalMetric
 
 
@@ -37,7 +37,7 @@ class Vespa(object):
         debug_request: bool = False,
         recall: Optional[Tuple] = None,
         **kwargs
-    ) -> Dict:
+    ) -> VespaResult:
         """
         Send a query request to the Vespa application.
 
@@ -71,10 +71,10 @@ class Vespa(object):
             body.update(kwargs)
 
         if debug_request:
-            return body
+            return VespaResult(vespa_result={}, request_body=body)
         else:
             r = post(self.search_end_point, json=body)
-            return r.json()
+            return VespaResult(vespa_result=r.json())
 
     def collect_training_data_point(
         self,
@@ -114,7 +114,7 @@ class Vespa(object):
             recall=(id_field, [relevant_id]),
             **kwargs
         )
-        hits = get_hits(vespa_result=relevant_id_result)
+        hits = relevant_id_result.hits
         features = []
         if len(hits) == 1 and hits[0]["fields"][id_field] == relevant_id:
             random_hits_result = self.query(
@@ -123,7 +123,7 @@ class Vespa(object):
                 hits=number_additional_docs,
                 **kwargs
             )
-            hits.extend(get_hits(random_hits_result))
+            hits.extend(random_hits_result.hits)
 
             features = annotate_data(
                 hits=hits,
@@ -246,14 +246,6 @@ class Vespa(object):
             evaluation.append(evaluation_query)
         evaluation = DataFrame.from_records(evaluation)
         return evaluation
-
-
-# todo: create a VespaResult class to store vespa results
-def get_hits(vespa_result):
-    hits = []
-    if "children" in vespa_result["root"]:
-        hits = vespa_result["root"]["children"]
-    return hits
 
 
 # todo: a better pattern for labelled data would be (query_id, query, doc_id, score) with the possibility od

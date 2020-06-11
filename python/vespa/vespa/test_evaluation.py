@@ -2,6 +2,7 @@
 
 import unittest
 
+from vespa.query import VespaResult
 from vespa.evaluation import MatchRatio, Recall, ReciprocalRank
 
 
@@ -61,7 +62,7 @@ class TestEvalMetric(unittest.TestCase):
         metric = MatchRatio()
 
         evaluation = metric.evaluate_query(
-            query_results=self.query_results,
+            query_results=VespaResult(self.query_results),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
@@ -77,20 +78,22 @@ class TestEvalMetric(unittest.TestCase):
         )
 
         evaluation = metric.evaluate_query(
-            query_results={
-                "root": {
-                    "id": "toplevel",
-                    "relevance": 1.0,
-                    "coverage": {
-                        "coverage": 100,
-                        "documents": 62529,
-                        "full": True,
-                        "nodes": 2,
-                        "results": 1,
-                        "resultsFull": 1,
-                    },
+            query_results=VespaResult(
+                {
+                    "root": {
+                        "id": "toplevel",
+                        "relevance": 1.0,
+                        "coverage": {
+                            "coverage": 100,
+                            "documents": 62529,
+                            "full": True,
+                            "nodes": 2,
+                            "results": 1,
+                            "resultsFull": 1,
+                        },
+                    }
                 }
-            },
+            ),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
@@ -106,20 +109,22 @@ class TestEvalMetric(unittest.TestCase):
         )
 
         evaluation = metric.evaluate_query(
-            query_results={
-                "root": {
-                    "id": "toplevel",
-                    "relevance": 1.0,
-                    "fields": {"totalCount": 1083},
-                    "coverage": {
-                        "coverage": 100,
-                        "full": True,
-                        "nodes": 2,
-                        "results": 1,
-                        "resultsFull": 1,
-                    },
+            query_results=VespaResult(
+                {
+                    "root": {
+                        "id": "toplevel",
+                        "relevance": 1.0,
+                        "fields": {"totalCount": 1083},
+                        "coverage": {
+                            "coverage": 100,
+                            "full": True,
+                            "nodes": 2,
+                            "results": 1,
+                            "resultsFull": 1,
+                        },
+                    }
                 }
-            },
+            ),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
@@ -137,57 +142,45 @@ class TestEvalMetric(unittest.TestCase):
     def test_recall(self):
         metric = Recall(at=2)
         evaluation = metric.evaluate_query(
-            query_results=self.query_results,
+            query_results=VespaResult(self.query_results),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
         )
         self.assertDictEqual(
-            evaluation,
-            {
-                "recall_2_value": 0.5,
-            },
+            evaluation, {"recall_2_value": 0.5,},
         )
 
         metric = Recall(at=1)
         evaluation = metric.evaluate_query(
-            query_results=self.query_results,
+            query_results=VespaResult(self.query_results),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
         )
         self.assertDictEqual(
-            evaluation,
-            {
-                "recall_1_value": 0.0,
-            },
+            evaluation, {"recall_1_value": 0.0,},
         )
 
     def test_reciprocal_rank(self):
         metric = ReciprocalRank(at=2)
         evaluation = metric.evaluate_query(
-            query_results=self.query_results,
+            query_results=VespaResult(self.query_results),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
         )
         self.assertDictEqual(
-            evaluation,
-            {
-                "reciprocal_rank_2_value": 0.5,
-            },
+            evaluation, {"reciprocal_rank_2_value": 0.5,},
         )
 
         metric = ReciprocalRank(at=1)
         evaluation = metric.evaluate_query(
-            query_results=self.query_results,
+            query_results=VespaResult(self.query_results),
             relevant_docs=self.labelled_data[0]["relevant_docs"],
             id_field="vespa_id_field",
             default_score=0,
         )
         self.assertDictEqual(
-            evaluation,
-            {
-                "reciprocal_rank_1_value": 0.0,
-            },
+            evaluation, {"reciprocal_rank_1_value": 0.0,},
         )

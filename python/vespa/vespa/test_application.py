@@ -6,7 +6,7 @@ from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
 from vespa.application import Vespa
-from vespa.query import Query, OR, RankProfile
+from vespa.query import Query, OR, RankProfile, VespaResult
 
 
 class TestVespa(unittest.TestCase):
@@ -27,7 +27,9 @@ class TestVespaQuery(unittest.TestCase):
         app = Vespa(url="http://localhost", port=8080)
 
         body = {"yql": "select * from sources * where test"}
-        self.assertDictEqual(app.query(body=body, debug_request=True), body)
+        self.assertDictEqual(
+            app.query(body=body, debug_request=True).request_body, body
+        )
 
         self.assertDictEqual(
             app.query(
@@ -35,7 +37,7 @@ class TestVespaQuery(unittest.TestCase):
                 query_model=Query(match_phase=OR(), rank_profile=RankProfile()),
                 debug_request=True,
                 hits=10,
-            ),
+            ).request_body,
             {
                 "yql": 'select * from sources * where ([{"grammar": "any"}]userInput("this is a test"));',
                 "ranking": {"profile": "default", "listFeatures": "false"},
@@ -50,7 +52,7 @@ class TestVespaQuery(unittest.TestCase):
                 debug_request=True,
                 hits=10,
                 recall=("id", [1, 5]),
-            ),
+            ).request_body,
             {
                 "yql": 'select * from sources * where ([{"grammar": "any"}]userInput("this is a test"));',
                 "ranking": {"profile": "default", "listFeatures": "false"},
@@ -149,7 +151,10 @@ class TestVespaCollectData(unittest.TestCase):
     def test_collect_training_data_point(self):
 
         self.app.query = Mock(
-            side_effect=[self.raw_vespa_result_recall, self.raw_vespa_result_additional]
+            side_effect=[
+                VespaResult(self.raw_vespa_result_recall),
+                VespaResult(self.raw_vespa_result_additional),
+            ]
         )
         query_model = Query(rank_profile=RankProfile(list_features=True))
         data = self.app.collect_training_data_point(
@@ -204,7 +209,10 @@ class TestVespaCollectData(unittest.TestCase):
             }
         }
         self.app.query = Mock(
-            side_effect=[self.raw_vespa_result_recall, self.raw_vespa_result_additional]
+            side_effect=[
+                VespaResult(self.raw_vespa_result_recall),
+                VespaResult(self.raw_vespa_result_additional),
+            ]
         )
         query_model = Query(rank_profile=RankProfile(list_features=True))
         data = self.app.collect_training_data_point(
