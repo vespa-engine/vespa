@@ -157,10 +157,8 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         root.setBool("isPublic", controller.system().isPublic());
         root.setBool("isCd", controller.system().isCd());
-
-        if(enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value()) {
-            root.setBool(enable_public_signup_flow.id().toString(), true);
-        }
+        root.setBool(enable_public_signup_flow.id().toString(),
+                enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value());
 
         toSlime(root.setObject("user"), user);
 

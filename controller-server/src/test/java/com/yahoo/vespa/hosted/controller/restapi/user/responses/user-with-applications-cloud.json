@@ -1,7 +1,7 @@
 {
 "isPublic": true,
 "isCd": false,
-"enable-public-signup-flow": true,
+"enable-public-signup-flow": (ignore),
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
