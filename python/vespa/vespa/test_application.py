@@ -27,7 +27,7 @@ class TestVespaQuery(unittest.TestCase):
         app = Vespa(url="http://localhost", port=8080)
 
         body = {"yql": "select * from sources * where test"}
-        self.assertDictEqual(app.query(body=body, debug_request=True), body)
+        self.assertDictEqual(app.query(body=body, debug_request=True).request_body, body)
 
         self.assertDictEqual(
             app.query(
@@ -35,7 +35,7 @@ class TestVespaQuery(unittest.TestCase):
                 query_model=Query(match_phase=OR(), rank_profile=RankProfile()),
                 debug_request=True,
                 hits=10,
-            ),
+            ).request_body,
             {
                 "yql": 'select * from sources * where ([{"grammar": "any"}]userInput("this is a test"));',
                 "ranking": {"profile": "default", "listFeatures": "false"},
@@ -50,7 +50,7 @@ class TestVespaQuery(unittest.TestCase):
                 debug_request=True,
                 hits=10,
                 recall=("id", [1, 5]),
-            ),
+            ).request_body,
             {
                 "yql": 'select * from sources * where ([{"grammar": "any"}]userInput("this is a test"));',
                 "ranking": {"profile": "default", "listFeatures": "false"},

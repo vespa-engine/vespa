@@ -4,7 +4,7 @@ from typing import Optional, Dict, Tuple, List
 from requests import post
 from pandas import DataFrame
 
-from vespa.query import Query
+from vespa.query import Query, VespaResult
 from vespa.evaluation import EvalMetric
 
 
@@ -37,7 +37,7 @@ class Vespa(object):
         debug_request: bool = False,
         recall: Optional[Tuple] = None,
         **kwargs
-    ) -> Dict:
+    ) -> VespaResult:
         """
         Send a query request to the Vespa application.
 
@@ -71,10 +71,10 @@ class Vespa(object):
             body.update(kwargs)
 
         if debug_request:
-            return body
+            return VespaResult(vespa_result={}, request_body=body)
         else:
             r = post(self.search_end_point, json=body)
-            return r.json()
+            return VespaResult(vespa_result=r.json())
 
     def collect_training_data_point(
         self,
