@@ -1,8 +1,7 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 from typing import Dict, List
-
-# todo: When creating a VespaResult class use getters with appropriate defaults to avoid the try clauses here.
+from vespa.query import VespaResult
 
 
 class EvalMetric(object):
@@ -25,7 +24,7 @@ class MatchRatio(EvalMetric):
 
     def evaluate_query(
         self,
-        query_results: Dict,
+        query_results: VespaResult,
         relevant_docs: List[Dict],
         id_field: str,
         default_score: int,
@@ -40,16 +39,11 @@ class MatchRatio(EvalMetric):
         :return: Dict containing the number of retrieved docs (_retrieved_docs), the number of docs available in
             the corpus (_docs_available) and the match ratio (_value).
         """
-        try:
-            retrieved_docs = query_results["root"]["fields"]["totalCount"]
-        except KeyError:
-            retrieved_docs = 0
-        try:
-            docs_available = query_results["root"]["coverage"]["documents"]
+        retrieved_docs = query_results.number_documents_retrieved
+        docs_available = query_results.number_documents_indexed
+        value = 0
+        if docs_available > 0:
             value = retrieved_docs / docs_available
-        except KeyError:
-            docs_available = 0
-            value = 0
         return {
             str(self.name) + "_retrieved_docs": retrieved_docs,
             str(self.name) + "_docs_available": docs_available,
@@ -70,7 +64,7 @@ class Recall(EvalMetric):
 
     def evaluate_query(
         self,
-        query_results: Dict,
+        query_results: VespaResult,
         relevant_docs: List[Dict],
         id_field: str,
         default_score: int,
@@ -88,8 +82,7 @@ class Recall(EvalMetric):
         relevant_ids = {str(doc["id"]) for doc in relevant_docs}
         try:
             retrieved_ids = {
-                str(hit["fields"][id_field])
-                for hit in query_results["root"]["children"][: self.at]
+                str(hit["fields"][id_field]) for hit in query_results.hits[: self.at]
             }
         except KeyError:
             retrieved_ids = set()
@@ -113,7 +106,7 @@ class ReciprocalRank(EvalMetric):
 
     def evaluate_query(
         self,
-        query_results: Dict,
+        query_results: VespaResult,
         relevant_docs: List[Dict],
         id_field: str,
         default_score: int,
@@ -130,10 +123,7 @@ class ReciprocalRank(EvalMetric):
 
         relevant_ids = {str(doc["id"]) for doc in relevant_docs}
         rr = 0
-        try:
-            hits = query_results["root"]["children"][: self.at]
-        except KeyError:
-            hits = []
+        hits = query_results.hits[: self.at]
         for index, hit in enumerate(hits):
             if hit["fields"][id_field] in relevant_ids:
                 rr = 1 / (index + 1)
