@@ -93,29 +93,29 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd</artifactId>
+            <artifactId>tenant-cd-api</artifactId>
             <version>${test-framework.version}</version>
             <scope>test</scope>
-	    <exclusions>
-		    <exclusion>
-			    <groupId>net.java.dev.jna</groupId>
-			    <artifactId>jna</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>org.apache.commons</groupId>
-			    <artifactId>commons-exec</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>commons-lang</groupId>
-			    <artifactId>commons-lang</artifactId>
-		    </exclusion>
-	    </exclusions>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>cloud-tenant-cd</artifactId>
             <version>${test-framework.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-exec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
