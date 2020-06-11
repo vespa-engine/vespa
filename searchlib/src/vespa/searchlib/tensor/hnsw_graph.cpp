@@ -13,13 +13,14 @@ HnswGraph::HnswGraph()
     links(HnswIndex::make_default_link_store_config()),
     entry_docid_and_level()
 {
+    node_refs.ensure_size(1, AtomicEntryRef());
     EntryNode entry;
     set_entry_node(entry);
 }
 
 HnswGraph::~HnswGraph() {}
 
-void
+HnswGraph::NodeRef
 HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
 {
     node_refs.ensure_size(docid + 1, AtomicEntryRef());
@@ -29,6 +30,7 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
     vespalib::Array<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
     node_refs[docid].store_release(node_ref);
+    return node_ref;
 }
 
 void

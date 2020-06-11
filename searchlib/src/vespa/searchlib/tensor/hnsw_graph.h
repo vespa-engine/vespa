@@ -46,7 +46,7 @@ struct HnswGraph {
 
     ~HnswGraph();
 
-    void make_node_for_document(uint32_t docid, uint32_t num_levels);
+    NodeRef make_node_for_document(uint32_t docid, uint32_t num_levels);
 
     void remove_node_for_document(uint32_t docid);
 
@@ -54,46 +54,56 @@ struct HnswGraph {
         return node_refs[docid].load_acquire();
     }
 
-    LevelArrayRef get_level_array(uint32_t docid) const {
-        auto node_ref = get_node_ref(docid);
-        assert(node_ref.valid());
-        return nodes.get(node_ref);
+    bool still_valid(uint32_t docid, NodeRef node_ref) const {
+        return node_ref.valid() && (get_node_ref(docid) == node_ref);
     }
 
-    LevelArrayRef get_level_array(uint32_t docid, NodeRef cached_ref) const {
-        auto node_ref = get_node_ref(docid);
-        if (node_ref.valid() && (cached_ref == node_ref)) {
+    LevelArrayRef get_level_array(NodeRef node_ref) const {
+        if (node_ref.valid()) {
             return nodes.get(node_ref);
         }
         return LevelArrayRef();
     }
 
-    LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const {
-        auto levels = get_level_array(docid);
-        assert(level < levels.size());
-        return links.get(levels[level].load_acquire());
+    LevelArrayRef get_level_array(uint32_t docid) const {
+        auto node_ref = get_node_ref(docid);
+        return get_level_array(node_ref);
     }
 
-    LinkArrayRef get_link_array(uint32_t docid, LevelArrayRef cached_levels, uint32_t level) const {
-        auto node_ref = get_node_ref(docid);
-        auto levels = get_level_array(docid, node_ref);
-        if ((levels == cached_levels) && (level < levels.size())) {
-            return links.get(levels[level].load_acquire());
+    LinkArrayRef get_link_array(LevelArrayRef levels, uint32_t level) const {
+        if (level < levels.size()) {
+            auto links_ref = levels[level].load_acquire();
+            if (links_ref.valid()) {
+                return links.get(links_ref);
+            }
         }
         return LinkArrayRef();
+    }
+
+    LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const {
+        auto levels = get_level_array(docid);
+        return get_link_array(levels, level);
+    }
+
+    LinkArrayRef get_link_array(NodeRef node_ref, uint32_t level) const {
+        auto levels = get_level_array(node_ref);
+        return get_link_array(levels, level);
     }
 
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& new_links);
 
     struct EntryNode {
         uint32_t docid;
+        NodeRef node_ref;
         int32_t level;
         EntryNode()
           : docid(0), // Note that docid 0 is reserved and never used
+            node_ref(),
             level(-1)
         {}
-        EntryNode(uint32_t docid_in, int32_t level_in)
+        EntryNode(uint32_t docid_in, NodeRef node_ref_in, int32_t level_in)
           : docid(docid_in),
+            node_ref(node_ref_in),
             level(level_in)
         {}
     };
@@ -102,15 +112,43 @@ struct HnswGraph {
         uint64_t value = node.level;
         value <<= 32;
         value |= node.docid;
+        if (node.node_ref.valid()) {
+            assert(node.level >= 0);
+            assert(node.docid > 0);
+        } else {
+            assert(node.level == -1);
+            assert(node.docid == 0);
+        }
         entry_docid_and_level.store(value, std::memory_order_release);
+    }
+
+    uint64_t get_entry_atomic() const {
+        return entry_docid_and_level.load(std::memory_order_acquire);
     }
 
     EntryNode get_entry_node() const {
         EntryNode entry;
-        uint64_t value = entry_docid_and_level.load(std::memory_order_acquire);
-        entry.docid = (uint32_t)value;
-        entry.level = (int32_t)(value >> 32);
-        return entry;
+        while (true) {
+	    uint64_t value = get_entry_atomic();
+	    entry.docid = (uint32_t)value;
+	    entry.node_ref = get_node_ref(entry.docid);
+	    entry.level = (int32_t)(value >> 32);
+            if ((entry.docid == 0)
+                && (entry.level == -1)
+                && ! entry.node_ref.valid())
+            {
+                // invalid in every way
+	        return entry;
+            }
+            if ((entry.docid > 0)
+                && (entry.level > -1)
+                && entry.node_ref.valid()
+                && (get_entry_atomic() == value))
+            {
+                // valid in every way
+	        return entry;
+            }
+        }
     }
 
     size_t size() const { return node_refs.size(); }
