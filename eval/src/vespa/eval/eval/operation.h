@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <optional>
+
+namespace vespalib::eval { class Function; }
 
 namespace vespalib::eval::operation {
 
@@ -45,5 +48,11 @@ struct IsNan { static double f(double a); };
 struct Relu { static double f(double a); };
 struct Sigmoid { static double f(double a); };
 struct Elu { static double f(double a); };
+
+using op1_t = double (*)(double);
+using op2_t = double (*)(double, double);
+
+std::optional<op1_t> lookup_op1(const Function &fun);
+std::optional<op2_t> lookup_op2(const Function &fun);
 
 }

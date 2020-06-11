@@ -67,7 +67,6 @@ TEST("require that matmul can be optimized") {
 
 TEST("require that matmul with lambda can be optimized") {
     TEST_DO(verify_optimized("reduce(join(a2d3,b5d3,f(x,y)(x*y)),sum,d)", 2, 3, 5, true, true));
-    TEST_DO(verify_optimized("reduce(join(a2d3,b5d3,f(x,y)(y*x)),sum,d)", 2, 3, 5, true, true));
 }
 
 TEST("require that expressions similar to matmul are not optimized") {
@@ -75,6 +74,7 @@ TEST("require that expressions similar to matmul are not optimized") {
     TEST_DO(verify_not_optimized("reduce(a2d3*b5d3,sum,b)"));
     TEST_DO(verify_not_optimized("reduce(a2d3*b5d3,prod,d)"));
     TEST_DO(verify_not_optimized("reduce(a2d3*b5d3,sum)"));
+    TEST_DO(verify_not_optimized("reduce(join(a2d3,b5d3,f(x,y)(y*x)),sum,d)"));
     TEST_DO(verify_not_optimized("reduce(join(a2d3,b5d3,f(x,y)(x+y)),sum,d)"));
     TEST_DO(verify_not_optimized("reduce(join(a2d3,b5d3,f(x,y)(x*x)),sum,d)"));
     TEST_DO(verify_not_optimized("reduce(join(a2d3,b5d3,f(x,y)(y*y)),sum,d)"));
