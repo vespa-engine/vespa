@@ -133,6 +133,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
         verifyJvmGCOptions(false, null,null, ContainerCluster.G1GC);
         verifyJvmGCOptions(true, null,null, ContainerCluster.CMS);
+        verifyJvmGCOptions(true, "",null, ContainerCluster.CMS);
         verifyJvmGCOptions(false, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
         verifyJvmGCOptions(true, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
         verifyJvmGCOptions(false, null,"-XX:+UseG1GC", "-XX:+UseG1GC");
