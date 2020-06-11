@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -13,7 +12,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.host.HostValidator;
 
 import java.io.File;
 
@@ -31,7 +29,6 @@ public class LocalSession extends Session {
     protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
     private final File serverDBSessionDir;
-    private final HostValidator<ApplicationId> hostValidator;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -40,12 +37,11 @@ public class LocalSession extends Session {
      */
     public LocalSession(TenantName tenant, long sessionId, ApplicationPackage applicationPackage,
                         SessionZooKeeperClient sessionZooKeeperClient, File serverDBSessionDir,
-                        TenantApplications applicationRepo, HostValidator<ApplicationId> hostValidator) {
+                        TenantApplications applicationRepo) {
         super(tenant, sessionId, sessionZooKeeperClient);
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationPackage = applicationPackage;
         this.applicationRepo = applicationRepo;
-        this.hostValidator = hostValidator;
     }
 
     public ApplicationFile getApplicationFile(Path relativePath, Mode mode) {
@@ -99,8 +95,6 @@ public class LocalSession extends Session {
     public ApplicationMetaData getMetaData() { return applicationPackage.getMetaData(); }
 
     public ApplicationPackage getApplicationPackage() { return applicationPackage; }
-
-    public HostValidator<ApplicationId> getHostValidator() { return hostValidator; }
 
     // The rest of this class should be moved elsewhere ...
     

@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
-import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -83,7 +82,6 @@ public class SessionRepository {
     private final MetricUpdater metrics;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
-    private final HostValidator<ApplicationId> hostRegistry;
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
@@ -94,7 +92,6 @@ public class SessionRepository {
                              TenantApplications applicationRepo,
                              ReloadHandler reloadHandler,
                              FlagSource flagSource,
-                             HostValidator<ApplicationId> hostRegistry,
                              SessionPreparer sessionPreparer) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
@@ -105,7 +102,6 @@ public class SessionRepository {
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
-        this.hostRegistry = hostRegistry;
         this.sessionPreparer = sessionPreparer;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.reloadHandler = reloadHandler;
@@ -162,7 +158,7 @@ public class SessionRepository {
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
-        ConfigChangeActions actions = sessionPreparer.prepare(session.getHostValidator(), logger, params,
+        ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
                                                               getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient);
@@ -429,7 +425,7 @@ public class SessionRepository {
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
         LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
-                                                getSessionAppDir(sessionId), applicationRepo, hostRegistry);
+                                                getSessionAppDir(sessionId), applicationRepo);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -488,7 +484,7 @@ public class SessionRepository {
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
             return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient,
-                                    getSessionAppDir(sessionId), applicationRepo, hostRegistry);
+                                    getSessionAppDir(sessionId), applicationRepo);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -517,7 +513,7 @@ public class SessionRepository {
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
-                                getSessionAppDir(sessionId), applicationRepo, hostRegistry);
+                                getSessionAppDir(sessionId), applicationRepo);
     }
 
     /**

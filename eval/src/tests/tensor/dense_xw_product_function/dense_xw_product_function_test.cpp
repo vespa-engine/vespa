@@ -130,13 +130,13 @@ TEST("require that xw product gives same results as reference join/reduce") {
 
 TEST("require that various variants of xw product can be optimized") {
     TEST_DO(verify_optimized("reduce(join(y3,x2y3,f(x,y)(x*y)),sum,y)", 3, 2, true));
-    TEST_DO(verify_optimized("reduce(join(y3,x2y3,f(x,y)(y*x)),sum,y)", 3, 2, true));
 }
 
 TEST("require that expressions similar to xw product are not optimized") {
     TEST_DO(verify_not_optimized("reduce(y3*x2y3,sum,x)"));
     TEST_DO(verify_not_optimized("reduce(y3*x2y3,prod,y)"));
     TEST_DO(verify_not_optimized("reduce(y3*x2y3,sum)"));
+    TEST_DO(verify_not_optimized("reduce(join(y3,x2y3,f(x,y)(y*x)),sum,y)"));
     TEST_DO(verify_not_optimized("reduce(join(y3,x2y3,f(x,y)(x+y)),sum,y)"));
     TEST_DO(verify_not_optimized("reduce(join(y3,x2y3,f(x,y)(x*x)),sum,y)"));
     TEST_DO(verify_not_optimized("reduce(join(y3,x2y3,f(x,y)(y*y)),sum,y)"));

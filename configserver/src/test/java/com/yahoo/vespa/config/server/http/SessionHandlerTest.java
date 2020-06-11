@@ -16,7 +16,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.session.DummyTransaction;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
@@ -87,7 +86,7 @@ public class SessionHandlerTest {
         private ApplicationId applicationId;
 
         public MockLocalSession(long sessionId, ApplicationPackage app) {
-            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
+            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null, null);
         }
 
         public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {

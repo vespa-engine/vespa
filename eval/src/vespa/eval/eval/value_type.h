@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
@@ -103,5 +104,16 @@ template <> struct UnifyCellTypes<float,  float>  { using type = float; };
 template <typename CT> inline ValueType::CellType get_cell_type();
 template <> inline ValueType::CellType get_cell_type<double>() { return ValueType::CellType::DOUBLE; }
 template <> inline ValueType::CellType get_cell_type<float>() { return ValueType::CellType::FLOAT; }
+
+struct TypifyCellType {
+    template <typename T> using Result = TypifyResultType<T>;
+    template <typename F> static decltype(auto) resolve(ValueType::CellType value, F &&f) {
+        switch(value) {
+        case ValueType::CellType::DOUBLE: return f(Result<double>());
+        case ValueType::CellType::FLOAT:  return f(Result<float>());
+        }
+        abort();
+    }
+};
 
 } // namespace

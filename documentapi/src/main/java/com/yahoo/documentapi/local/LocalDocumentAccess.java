@@ -3,6 +3,7 @@ package com.yahoo.documentapi.local;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentAccess;
@@ -43,8 +44,8 @@ public class LocalDocumentAccess extends DocumentAccess {
     }
 
     @Override
-    public VisitorSession createVisitorSession(VisitorParameters parameters) {
-        throw new UnsupportedOperationException("Not supported yet");
+    public VisitorSession createVisitorSession(VisitorParameters parameters) throws ParseException {
+        return new LocalVisitorSession(this, parameters);
     }
 
     @Override

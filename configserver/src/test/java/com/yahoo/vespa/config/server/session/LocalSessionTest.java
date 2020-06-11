@@ -17,7 +17,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -139,7 +138,7 @@ public class LocalSessionTest {
                 new TestComponentRegistry.Builder().curator(curator).build(), tenant);
         applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp),
-                                zkc, sessionDir, applications, new HostRegistry<>());
+                                zkc, sessionDir, applications);
     }
 
     private void doPrepare(LocalSession session) {

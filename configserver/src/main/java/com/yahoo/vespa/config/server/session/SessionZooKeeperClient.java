@@ -14,7 +14,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
@@ -127,18 +126,6 @@ public class SessionZooKeeperClient {
 
     private Curator.CompletionWaiter getCompletionWaiter(Path path) {
         return curator.getCompletionWaiter(path, getNumberOfMembers(), serverId);
-    }
-
-    public void delete(NestedTransaction transaction ) {
-        try {
-            log.log(Level.FINE, "Deleting " + sessionPath.getAbsolute());
-            CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
-            CuratorOperations.deleteAll(sessionPath.getAbsolute(), curator).forEach(curatorTransaction::add);
-            transaction.add(curatorTransaction);
-            transaction.commit();
-        } catch (RuntimeException e) {
-            log.log(Level.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
-        }
     }
 
     /** Returns a transaction deleting this session on commit */

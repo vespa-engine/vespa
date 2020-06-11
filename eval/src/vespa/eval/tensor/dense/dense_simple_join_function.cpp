@@ -5,6 +5,8 @@
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/inline_operation.h>
+#include <vespa/vespalib/util/typify.h>
 #include <optional>
 #include <algorithm>
 
@@ -16,6 +18,7 @@ using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::TensorEngine;
+using eval::TypifyCellType;
 using eval::as;
 
 using namespace eval::operation;
@@ -30,6 +33,18 @@ using State = eval::InterpretedFunction::State;
 
 namespace {
 
+struct TypifyOverlap {
+    template <Overlap VALUE> using Result = TypifyResultValue<Overlap, VALUE>;
+    template <typename F> static decltype(auto) resolve(Overlap value, F &&f) {
+        switch (value) {
+        case Overlap::INNER: return f(Result<Overlap::INNER>());
+        case Overlap::OUTER: return f(Result<Overlap::OUTER>());
+        case Overlap::FULL:  return f(Result<Overlap::FULL>());
+        }
+        abort();
+    }
+};
+
 struct JoinParams {
     const ValueType &result_type;
     size_t factor;
@@ -38,44 +53,17 @@ struct JoinParams {
         : result_type(result_type_in), factor(factor_in), function(function_in) {}
 };
 
-struct CallFun {
-    join_fun_t function;
-    CallFun(const JoinParams &params) : function(params.function) {}
-    double eval(double a, double b) const { return function(a, b); }
-};
-
-struct AddFun {
-    AddFun(const JoinParams &) {}
-    template <typename A, typename B>
-    auto eval(A a, B b) const { return (a + b); }
-};
-
-struct MulFun {
-    MulFun(const JoinParams &) {}
-    template <typename A, typename B>
-    auto eval(A a, B b) const { return (a * b); }
-};
-
-// needed for asymmetric operations like Sub and Div
-template <typename Fun>
-struct SwapFun {
-    Fun fun;
-    SwapFun(const JoinParams &params) : fun(params) {}
-    template <typename A, typename B>
-    auto eval(A a, B b) const { return fun.eval(b, a); }
-};
-
 template <typename OCT, typename PCT, typename SCT, typename Fun>
 void apply_fun_1_to_n(OCT *dst, const PCT *pri, SCT sec, size_t n, const Fun &fun) {
     for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun.eval(pri[i], sec);
+        dst[i] = fun(pri[i], sec);
     }
 }
 
 template <typename OCT, typename PCT, typename SCT, typename Fun>
 void apply_fun_n_to_n(OCT *dst, const PCT *pri, const SCT *sec, size_t n, const Fun &fun) {
     for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun.eval(pri[i], sec[i]);
+        dst[i] = fun(pri[i], sec[i]);
     }
 }
 
@@ -93,9 +81,9 @@ void my_simple_join_op(State &state, uint64_t param) {
     using PCT = typename std::conditional<swap,RCT,LCT>::type;
     using SCT = typename std::conditional<swap,LCT,RCT>::type;
     using OCT = typename eval::UnifyCellTypes<PCT,SCT>::type;
-    using OP = typename std::conditional<swap,SwapFun<Fun>,Fun>::type;
+    using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
     const JoinParams &params = *(JoinParams*)param;
-    OP my_op(params);
+    OP my_op(params.function);
     auto pri_cells = DenseTensorView::typify_cells<PCT>(state.peek(swap ? 0 : 1));
     auto sec_cells = DenseTensorView::typify_cells<SCT>(state.peek(swap ? 1 : 0));
     auto dst_cells = make_dst_cells<OCT, pri_mut>(pri_cells, state.stash);
@@ -122,67 +110,13 @@ void my_simple_join_op(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-template <typename Fun, bool swap, Overlap overlap, bool pri_mut>
-struct MySimpleJoinOp {
-    template <typename LCT, typename RCT>
-    static auto get_fun() { return my_simple_join_op<LCT,RCT,Fun,swap,overlap,pri_mut>; }
+struct MyGetFun {
+    template <typename R1, typename R2, typename R3, typename R4, typename R5, typename R6> static auto invoke() {
+        return my_simple_join_op<R1, R2, R3, R4::value, R5::value, R6::value>;
+    }
 };
 
-template <bool swap, Overlap overlap, bool pri_mut>
-op_function my_select_4(ValueType::CellType lct,
-                        ValueType::CellType rct,
-                        join_fun_t fun_hint)
-{
-    if (fun_hint == Add::f) {
-        return select_2<MySimpleJoinOp<AddFun,swap,overlap,pri_mut>>(lct, rct);
-    } else if (fun_hint == Mul::f) {
-        return select_2<MySimpleJoinOp<MulFun,swap,overlap,pri_mut>>(lct, rct);
-    } else {
-        return select_2<MySimpleJoinOp<CallFun,swap,overlap,pri_mut>>(lct, rct);
-    }
-}
-
-template <bool swap, Overlap overlap>
-op_function my_select_3(ValueType::CellType lct,
-                        ValueType::CellType rct,
-                        bool pri_mut,
-                        join_fun_t fun_hint)
-{
-    if (pri_mut) {
-        return my_select_4<swap, overlap, true>(lct, rct, fun_hint);
-    } else {
-        return my_select_4<swap, overlap, false>(lct, rct, fun_hint);
-    }
-}
-
-template <bool swap>
-op_function my_select_2(ValueType::CellType lct,
-                        ValueType::CellType rct,
-                        Overlap overlap,
-                        bool pri_mut,
-                        join_fun_t fun_hint)
-{
-    switch (overlap) {
-    case Overlap::INNER: return my_select_3<swap, Overlap::INNER>(lct, rct, pri_mut, fun_hint);
-    case Overlap::OUTER: return my_select_3<swap, Overlap::OUTER>(lct, rct, pri_mut, fun_hint);
-    case Overlap::FULL: return my_select_3<swap, Overlap::FULL>(lct, rct, pri_mut, fun_hint);
-    }
-    abort();
-}
-
-op_function my_select(ValueType::CellType lct,
-                      ValueType::CellType rct,
-                      Primary primary,
-                      Overlap overlap,
-                      bool pri_mut,
-                      join_fun_t fun_hint)
-{
-    switch (primary) {
-    case Primary::LHS: return my_select_2<false>(lct, rct, overlap, pri_mut, fun_hint);
-    case Primary::RHS: return my_select_2<true>(lct, rct, overlap, pri_mut, fun_hint);
-    }
-    abort();
-}
+using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool,TypifyOverlap>;
 
 //-----------------------------------------------------------------------------
 
@@ -280,11 +214,10 @@ Instruction
 DenseSimpleJoinFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
     const JoinParams &params = stash.create<JoinParams>(result_type(), factor(), function());
-    auto op = my_select(lhs().result_type().cell_type(),
-                        rhs().result_type().cell_type(),
-                        _primary, _overlap,
-                        primary_is_mutable(),
-                        function());
+    auto op = typify_invoke<6,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
+                                                 rhs().result_type().cell_type(),
+                                                 function(), (_primary == Primary::RHS),
+                                                 _overlap, primary_is_mutable());
     static_assert(sizeof(uint64_t) == sizeof(&params));
     return Instruction(op, (uint64_t)(&params));
 }
