@@ -26,9 +26,9 @@ public enum RoleDefinition {
 
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
-            Policy.publicRead,
-            Policy.user,
-            Policy.tenantCreate),
+             Policy.publicRead,
+             Policy.user,
+             Policy.tenantCreate),
 
     /** Build service which may submit new applications for continuous deployment. */
     buildService(everyone,
