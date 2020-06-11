@@ -41,33 +41,33 @@ op2_t as_op2(const vespalib::string &str) {
 }
 
 TEST(InlineOperationTest, op1_lambdas_are_recognized) {
-    EXPECT_EQ(as_op1("-a"),         Neg::f);
-    EXPECT_EQ(as_op1("!a"),         Not::f);
-    EXPECT_EQ(as_op1("cos(a)"),     Cos::f);
-    EXPECT_EQ(as_op1("sin(a)"),     Sin::f);
-    EXPECT_EQ(as_op1("tan(a)"),     Tan::f);
-    EXPECT_EQ(as_op1("cosh(a)"),    Cosh::f);
-    EXPECT_EQ(as_op1("sinh(a)"),    Sinh::f);
-    EXPECT_EQ(as_op1("tanh(a)"),    Tanh::f);
-    EXPECT_EQ(as_op1("acos(a)"),    Acos::f);
-    EXPECT_EQ(as_op1("asin(a)"),    Asin::f);
-    EXPECT_EQ(as_op1("atan(a)"),    Atan::f);
-    EXPECT_EQ(as_op1("exp(a)"),     Exp::f);
-    EXPECT_EQ(as_op1("log10(a)"),   Log10::f);
-    EXPECT_EQ(as_op1("log(a)"),     Log::f);
-    EXPECT_EQ(as_op1("sqrt(a)"),    Sqrt::f);
-    EXPECT_EQ(as_op1("ceil(a)"),    Ceil::f);
-    EXPECT_EQ(as_op1("fabs(a)"),    Fabs::f);
-    EXPECT_EQ(as_op1("floor(a)"),   Floor::f);
-    EXPECT_EQ(as_op1("isNan(a)"),   IsNan::f);
-    EXPECT_EQ(as_op1("relu(a)"),    Relu::f);
-    EXPECT_EQ(as_op1("sigmoid(a)"), Sigmoid::f);
-    EXPECT_EQ(as_op1("elu(a)"),     Elu::f);
+    EXPECT_EQ(as_op1("-a"),         &Neg::f);
+    EXPECT_EQ(as_op1("!a"),         &Not::f);
+    EXPECT_EQ(as_op1("cos(a)"),     &Cos::f);
+    EXPECT_EQ(as_op1("sin(a)"),     &Sin::f);
+    EXPECT_EQ(as_op1("tan(a)"),     &Tan::f);
+    EXPECT_EQ(as_op1("cosh(a)"),    &Cosh::f);
+    EXPECT_EQ(as_op1("sinh(a)"),    &Sinh::f);
+    EXPECT_EQ(as_op1("tanh(a)"),    &Tanh::f);
+    EXPECT_EQ(as_op1("acos(a)"),    &Acos::f);
+    EXPECT_EQ(as_op1("asin(a)"),    &Asin::f);
+    EXPECT_EQ(as_op1("atan(a)"),    &Atan::f);
+    EXPECT_EQ(as_op1("exp(a)"),     &Exp::f);
+    EXPECT_EQ(as_op1("log10(a)"),   &Log10::f);
+    EXPECT_EQ(as_op1("log(a)"),     &Log::f);
+    EXPECT_EQ(as_op1("sqrt(a)"),    &Sqrt::f);
+    EXPECT_EQ(as_op1("ceil(a)"),    &Ceil::f);
+    EXPECT_EQ(as_op1("fabs(a)"),    &Fabs::f);
+    EXPECT_EQ(as_op1("floor(a)"),   &Floor::f);
+    EXPECT_EQ(as_op1("isNan(a)"),   &IsNan::f);
+    EXPECT_EQ(as_op1("relu(a)"),    &Relu::f);
+    EXPECT_EQ(as_op1("sigmoid(a)"), &Sigmoid::f);
+    EXPECT_EQ(as_op1("elu(a)"),     &Elu::f);
 }
 
 TEST(InlineOperationTest, op1_lambdas_are_recognized_with_different_parameter_names) {
-    EXPECT_EQ(lookup_op1(*Function::parse({"x"}, "-x")).value(), Neg::f);
-    EXPECT_EQ(lookup_op1(*Function::parse({"x"}, "!x")).value(), Not::f);
+    EXPECT_EQ(lookup_op1(*Function::parse({"x"}, "-x")).value(), &Neg::f);
+    EXPECT_EQ(lookup_op1(*Function::parse({"x"}, "!x")).value(), &Not::f);
 }
 
 TEST(InlineOperationTest, non_op1_lambdas_are_not_recognized) {
@@ -76,32 +76,32 @@ TEST(InlineOperationTest, non_op1_lambdas_are_not_recognized) {
 }
 
 TEST(InlineOperationTest, op2_lambdas_are_recognized) {
-    EXPECT_EQ(as_op2("a+b"),        Add::f);
-    EXPECT_EQ(as_op2("a-b"),        Sub::f);
-    EXPECT_EQ(as_op2("a*b"),        Mul::f);
-    EXPECT_EQ(as_op2("a/b"),        Div::f);
-    EXPECT_EQ(as_op2("a%b"),        Mod::f);
-    EXPECT_EQ(as_op2("a^b"),        Pow::f);
-    EXPECT_EQ(as_op2("a==b"),       Equal::f);
-    EXPECT_EQ(as_op2("a!=b"),       NotEqual::f);
-    EXPECT_EQ(as_op2("a~=b"),       Approx::f);
-    EXPECT_EQ(as_op2("a<b"),        Less::f);
-    EXPECT_EQ(as_op2("a<=b"),       LessEqual::f);
-    EXPECT_EQ(as_op2("a>b"),        Greater::f);
-    EXPECT_EQ(as_op2("a>=b"),       GreaterEqual::f);
-    EXPECT_EQ(as_op2("a&&b"),       And::f);
-    EXPECT_EQ(as_op2("a||b"),       Or::f);
-    EXPECT_EQ(as_op2("atan2(a,b)"), Atan2::f);
-    EXPECT_EQ(as_op2("ldexp(a,b)"), Ldexp::f);
-    EXPECT_EQ(as_op2("pow(a,b)"),   Pow::f);
-    EXPECT_EQ(as_op2("fmod(a,b)"),  Mod::f);
-    EXPECT_EQ(as_op2("min(a,b)"),   Min::f);
-    EXPECT_EQ(as_op2("max(a,b)"),   Max::f);
+    EXPECT_EQ(as_op2("a+b"),        &Add::f);
+    EXPECT_EQ(as_op2("a-b"),        &Sub::f);
+    EXPECT_EQ(as_op2("a*b"),        &Mul::f);
+    EXPECT_EQ(as_op2("a/b"),        &Div::f);
+    EXPECT_EQ(as_op2("a%b"),        &Mod::f);
+    EXPECT_EQ(as_op2("a^b"),        &Pow::f);
+    EXPECT_EQ(as_op2("a==b"),       &Equal::f);
+    EXPECT_EQ(as_op2("a!=b"),       &NotEqual::f);
+    EXPECT_EQ(as_op2("a~=b"),       &Approx::f);
+    EXPECT_EQ(as_op2("a<b"),        &Less::f);
+    EXPECT_EQ(as_op2("a<=b"),       &LessEqual::f);
+    EXPECT_EQ(as_op2("a>b"),        &Greater::f);
+    EXPECT_EQ(as_op2("a>=b"),       &GreaterEqual::f);
+    EXPECT_EQ(as_op2("a&&b"),       &And::f);
+    EXPECT_EQ(as_op2("a||b"),       &Or::f);
+    EXPECT_EQ(as_op2("atan2(a,b)"), &Atan2::f);
+    EXPECT_EQ(as_op2("ldexp(a,b)"), &Ldexp::f);
+    EXPECT_EQ(as_op2("pow(a,b)"),   &Pow::f);
+    EXPECT_EQ(as_op2("fmod(a,b)"),  &Mod::f);
+    EXPECT_EQ(as_op2("min(a,b)"),   &Min::f);
+    EXPECT_EQ(as_op2("max(a,b)"),   &Max::f);
 }
 
 TEST(InlineOperationTest, op2_lambdas_are_recognized_with_different_parameter_names) {
-    EXPECT_EQ(lookup_op2(*Function::parse({"x", "y"}, "x+y")).value(), Add::f);
-    EXPECT_EQ(lookup_op2(*Function::parse({"x", "y"}, "x-y")).value(), Sub::f);
+    EXPECT_EQ(lookup_op2(*Function::parse({"x", "y"}, "x+y")).value(), &Add::f);
+    EXPECT_EQ(lookup_op2(*Function::parse({"x", "y"}, "x-y")).value(), &Sub::f);
 }
 
 TEST(InlineOperationTest, non_op2_lambdas_are_not_recognized) {
