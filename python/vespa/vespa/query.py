@@ -219,3 +219,11 @@ class VespaResult(object):
     @property
     def hits(self) -> List:
         return self._vespa_result.get("root", {}).get("children", [])
+
+    @property
+    def number_documents_retrieved(self) -> int:
+        return self._vespa_result.get("root", {}).get("fields", {}).get("totalCount", 0)
+
+    @property
+    def number_documents_indexed(self) -> int:
+        return self._vespa_result.get("root", {}).get("coverage", {}).get("documents", 0)
