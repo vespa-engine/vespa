@@ -1,8 +1,16 @@
 package com.yahoo.documentapi.local;
 
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.Field;
+import com.yahoo.document.fieldset.FieldCollection;
+import com.yahoo.document.fieldset.FieldSet;
+import com.yahoo.document.fieldset.FieldSetRepo;
+import com.yahoo.document.select.DocumentSelector;
+import com.yahoo.document.select.Result;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -15,6 +23,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,14 +42,19 @@ public class LocalVisitorSession implements VisitorSession {
     private final VisitorDataHandler data;
     private final VisitorControlHandler control;
     private final Map<DocumentId, Document> outstanding;
+    private final DocumentSelector selector;
+    private final FieldSet fieldSet;
     private final AtomicReference<State> state;
 
-    public LocalVisitorSession(LocalDocumentAccess access, VisitorParameters parameters) {
+    public LocalVisitorSession(LocalDocumentAccess access, VisitorParameters parameters) throws ParseException {
         if (parameters.getResumeToken() != null)
             throw new UnsupportedOperationException("Continuation via progress tokens is not supported");
 
         if (parameters.getRemoteDataHandler() != null)
             throw new UnsupportedOperationException("Remote data handlers are not supported");
+
+        this.selector = new DocumentSelector(parameters.getDocumentSelection());
+        this.fieldSet = new FieldSetRepo().parse(access.getDocumentTypeManager(), parameters.fieldSet());
 
         this.data = parameters.getLocalDataHandler() == null ? new VisitorDataQueue() : parameters.getLocalDataHandler();
         this.data.reset();
@@ -50,7 +64,8 @@ public class LocalVisitorSession implements VisitorSession {
         this.control.reset();
         this.control.setSession(this);
 
-        this.outstanding = new ConcurrentSkipListMap<>(access.documents);
+        this.outstanding = new ConcurrentSkipListMap<>(Comparator.comparing(DocumentId::toString));
+        this.outstanding.putAll(access.documents);
         this.state = new AtomicReference<>(State.RUNNING);
 
         start();
@@ -61,7 +76,15 @@ public class LocalVisitorSession implements VisitorSession {
             try {
                 // Iterate through all documents and pass on to data handler
                 outstanding.forEach((id, document) -> {
-                    data.onMessage(new PutDocumentMessage(new DocumentPut(document)),
+                    if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
+                        return;
+
+                    Document copy = new Document(document.getDataType(), document.getId());
+                    for (Field field : document.getDataType().getFields())
+                        if (fieldSet.contains(field))
+                            copy.setFieldValue(field, document.getFieldValue(field));
+
+                    data.onMessage(new PutDocumentMessage(new DocumentPut(copy)),
                                    new AckToken(id));
                 });
                 // Transition to a terminal state when done
