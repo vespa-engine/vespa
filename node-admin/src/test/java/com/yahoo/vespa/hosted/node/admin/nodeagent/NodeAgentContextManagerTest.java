@@ -7,6 +7,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -146,46 +148,35 @@ public class NodeAgentContextManagerTest {
     }
 
     private static class AsyncExecutor<T> {
-        private final Object monitor = new Object();
-        private final Thread thread;
+        private final CountDownLatch latch = new CountDownLatch(1);
         private volatile Optional<T> response = Optional.empty();
         private volatile Optional<Exception> exception = Optional.empty();
-        private boolean completed = false;
 
-        private AsyncExecutor(ThrowingSupplier<T> supplier) {
-            this.thread = new Thread(() -> {
+        private AsyncExecutor(Callable<T> supplier) {
+            new Thread(() -> {
                 try {
-                    response = Optional.of(supplier.get());
+                    response = Optional.of(supplier.call());
                 } catch (Exception e) {
                     exception = Optional.of(e);
                 }
-                synchronized (monitor) {
-                    completed = true;
-                    monitor.notifyAll();
-                }
-            });
-            this.thread.start();
+                latch.countDown();
+            }).start();
         }
 
         private AsyncExecutor<T> awaitResult() {
-            synchronized (monitor) {
-                while (!completed) {
-                    try {
-                        monitor.wait();
-                    } catch (InterruptedException ignored) { }
-                }
+            try {
+                latch.await();
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
             return this;
         }
 
         private boolean isCompleted() {
-            synchronized (monitor) {
-                return completed;
-            }
+            return latch.getCount() == 0;
         }
     }
 
-    private interface ThrowingSupplier<T> {
-        T get() throws Exception;
-    }
 }
