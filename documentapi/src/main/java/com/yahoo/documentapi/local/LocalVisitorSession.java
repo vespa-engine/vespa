@@ -76,13 +76,14 @@ public class LocalVisitorSession implements VisitorSession {
             try {
                 // Iterate through all documents and pass on to data handler
                 outstanding.forEach((id, document) -> {
+                    if (state.get() != State.RUNNING)
+                        return;
+
                     if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
                         return;
 
                     Document copy = new Document(document.getDataType(), document.getId());
-                    for (Field field : document.getDataType().getFields())
-                        if (fieldSet.contains(field))
-                            copy.setFieldValue(field, document.getFieldValue(field));
+                    new FieldSetRepo().copyFields(document, copy, fieldSet);
 
                     data.onMessage(new PutDocumentMessage(new DocumentPut(copy)),
                                    new AckToken(id));

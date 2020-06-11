@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -137,7 +138,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         parameters.setFieldSet("music:artist");
         VisitorControlHandler control = new VisitorControlHandler();
         parameters.setControlHandler(control);
-        List<Document> received = new ArrayList<>();
+        Set<Document> received = new ConcurrentSkipListSet<>();
         parameters.setLocalDataHandler(new DumpVisitorDataHandler() {
             @Override public void onDocument(Document doc, long timeStamp) {
                 received.add(doc);
@@ -151,7 +152,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         access.createVisitorSession(parameters).waitUntilDone(0);
         assertSame(VisitorControlHandler.CompletionCode.SUCCESS,
                    control.getResult().getCode());
-        assertEquals(List.of(),
+        assertEquals(Set.of(),
                      received);
 
         // Sync-put some documents
@@ -168,7 +169,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         access.createVisitorSession(parameters).waitUntilDone(0);
         assertSame(VisitorControlHandler.CompletionCode.SUCCESS,
                    control.getResult().getCode());
-        assertEquals(List.of(doc1, doc2),
+        assertEquals(Set.of(doc1, doc2),
                      received);
 
         // Remove doc2 and set artist for doc3, to see changes are reflected in subsequent visits
@@ -187,7 +188,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         access.createVisitorSession(parameters).waitUntilDone(0);
         assertSame(VisitorControlHandler.CompletionCode.SUCCESS,
                    control.getResult().getCode());
-        assertEquals(List.of(new Document(musicType, doc1.getId()), new Document(musicType, doc3.getId())),
+        assertEquals(Set.of(new Document(musicType, doc1.getId()), new Document(musicType, doc3.getId())),
                      received);
 
         // Visit the documents again, throwing an exception in the data handler on doc3
@@ -207,7 +208,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
                    control.getResult().getCode());
         assertEquals("SEGFAULT",
                      control.getResult().getMessage());
-        assertEquals(List.of(new Document(musicType, doc1.getId())),
+        assertEquals(Set.of(new Document(musicType, doc1.getId())),
                      received);
 
         // Visit the documents again, aborting after the first document
@@ -234,7 +235,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         visit.waitUntilDone(0);
         assertSame(VisitorControlHandler.CompletionCode.ABORTED,
                    control.getResult().getCode());
-        assertEquals(List.of(new Document(musicType, doc1.getId())),
+        assertEquals(Set.of(new Document(musicType, doc1.getId())),
                      received);
     }
 
