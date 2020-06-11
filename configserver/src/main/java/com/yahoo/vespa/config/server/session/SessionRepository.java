@@ -364,8 +364,6 @@ public class SessionRepository {
                     synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
                     break;
                 case CHILD_REMOVED:
-                    sessionsChanged();
-                    break;
                 case CONNECTION_RECONNECTED:
                     sessionsChanged();
                     break;
