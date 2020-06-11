@@ -53,7 +53,7 @@ template <typename ...Ts> struct TypifyValue : Ts... { using Ts::resolve...; };
 
 //-----------------------------------------------------------------------------
 
-template <size_t N, typename Typify, typename Target, typename ...Rs> struct TypifyInvoke {
+template <size_t N, typename Typifier, typename Target, typename ...Rs> struct TypifyInvokeImpl {
     static decltype(auto) select() {
         static_assert(sizeof...(Rs) == N);
         return Target::template invoke<Rs...>();
@@ -62,13 +62,13 @@ template <size_t N, typename Typify, typename Target, typename ...Rs> struct Typ
         if constexpr (N == sizeof...(Rs)) {
             return Target::template invoke<Rs...>(std::forward<T>(value), std::forward<Args>(args)...);
         } else {
-            return Typify::resolve(value, [&](auto t)->decltype(auto)
+            return Typifier::resolve(value, [&](auto t)->decltype(auto)
                                    {
                                        using X = decltype(t);
                                        if constexpr (X::is_type) {
-                                           return TypifyInvoke<N, Typify, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
+                                           return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
                                        } else {
-                                           return TypifyInvoke<N, Typify, Target, Rs..., X>::select(std::forward<Args>(args)...);
+                                           return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);
                                        }
                                    });
         }
@@ -76,7 +76,7 @@ template <size_t N, typename Typify, typename Target, typename ...Rs> struct Typ
 };
 
 /**
- * Typify the N first parameters using Typify (typically an
+ * Typify the N first parameters using 'Typifier' (typically an
  * instantiation of the TypifyValue template) and forward the
  * remaining parameters to the Target::invoke template function with
  * the typification results from the N first parameters as template
@@ -86,9 +86,9 @@ template <size_t N, typename Typify, typename Target, typename ...Rs> struct Typ
  * wrappers when passed as template parameters. Please refer to the
  * unit test for examples.
  **/
-template <size_t N, typename Typify, typename Target, typename ...Args> decltype(auto) typify_invoke(Args && ...args) {
+template <size_t N, typename Typifier, typename Target, typename ...Args> decltype(auto) typify_invoke(Args && ...args) {
     static_assert(N > 0);
-    return TypifyInvoke<N,Typify,Target>::select(std::forward<Args>(args)...);
+    return TypifyInvokeImpl<N,Typifier,Target>::select(std::forward<Args>(args)...);
 }
 
 //-----------------------------------------------------------------------------
