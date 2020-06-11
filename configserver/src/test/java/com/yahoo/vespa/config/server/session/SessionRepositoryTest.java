@@ -76,7 +76,7 @@ public class SessionRepositoryTest {
         TenantApplications applicationRepo = TenantApplications.create(globalComponentRegistry, tenantName);
         sessionRepository = new SessionRepository(tenantName, globalComponentRegistry,
                                                   applicationRepo, applicationRepo, new InMemoryFlagSource(),
-                                                  applicationRepo, globalComponentRegistry.getSessionPreparer());
+                                                  globalComponentRegistry.getSessionPreparer());
     }
 
     @Test

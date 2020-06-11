@@ -96,7 +96,7 @@ public class SessionHandlerTest {
         private Optional<DockerImage> dockerImageRepository;
 
         public MockLocalSession(long sessionId, ApplicationPackage app) {
-            super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
+            super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null);
         }
 
         public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {

@@ -40,7 +40,6 @@ public class LocalSession extends Session {
     private final SessionPreparer sessionPreparer;
     private final File serverDBSessionDir;
     private final SessionZooKeeperClient sessionZooKeeperClient;
-    private final HostValidator<ApplicationId> hostValidator;
 
     /**
      * Create a session. This involves loading the application, validating it and distributing it.
@@ -49,15 +48,13 @@ public class LocalSession extends Session {
      */
     public LocalSession(TenantName tenant, long sessionId, SessionPreparer sessionPreparer,
                         ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient,
-                        File serverDBSessionDir, TenantApplications applicationRepo,
-                        HostValidator<ApplicationId> hostValidator) {
+                        File serverDBSessionDir, TenantApplications applicationRepo) {
         super(tenant, sessionId, sessionZooKeeperClient);
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationPackage = applicationPackage;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
-        this.hostValidator = hostValidator;
     }
 
     public ConfigChangeActions prepare(DeployLogger logger, 
@@ -68,7 +65,7 @@ public class LocalSession extends Session {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
-        ConfigChangeActions actions = sessionPreparer.prepare(hostValidator, logger, params,
+        ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
                                                               serverDBSessionDir, applicationPackage, sessionZooKeeperClient);
         setPrepared();
