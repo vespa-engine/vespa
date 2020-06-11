@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+
+import java.util.Set;
 
 /**
  * A managed load balance service.
@@ -13,26 +15,23 @@ import com.yahoo.config.provision.NodeType;
 public interface LoadBalancerService {
 
     /**
-     * Create a load balancer from the given specification. Implementations are expected to be idempotent
+     * Create a load balancer for given application cluster. Implementations are expected to be idempotent
      *
-     * @param spec        Load balancer specification
+     * @param application Application owning the LB
+     * @param cluster     Target cluster of the LB
+     * @param reals       Reals that should be configured on the LB
      * @param force       Whether reconfiguration should be forced (e.g. allow configuring an empty set of reals on a
      *                    pre-existing load balancer).
      * @return The provisioned load balancer instance
      */
-    LoadBalancerInstance create(LoadBalancerSpec spec, boolean force);
+    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
+                                NodeRepository nodeRepository);
 
     /** Permanently remove load balancer for given application cluster */
     void remove(ApplicationId application, ClusterSpec.Id cluster);
 
     /** Returns the protocol supported by this load balancer service */
     Protocol protocol();
-
-    /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
-    default boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
-        return (nodeType == NodeType.tenant && clusterType.isContainer()) ||
-               (nodeType == NodeType.config && clusterType == ClusterSpec.Type.admin);
-    }
 
     /** Load balancer protocols */
     enum Protocol {

@@ -1,13 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -100,7 +99,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             // Remove any real no longer allocated to this application
             reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
             try {
-                service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
+                service.create(lb.id().application(), lb.id().cluster(), reals, true, nodeRepository());
                 db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
             } catch (Exception e) {
                 failed.add(lb.id());
