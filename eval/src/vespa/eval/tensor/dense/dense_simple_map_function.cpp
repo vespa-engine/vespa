@@ -2,8 +2,10 @@
 
 #include "dense_simple_map_function.h"
 #include "dense_tensor_view.h"
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/inline_operation.h>
 
 namespace vespalib::tensor {
 
@@ -13,6 +15,7 @@ using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::TensorEngine;
+using eval::TypifyCellType;
 using eval::as;
 
 using namespace eval::operation;
@@ -24,16 +27,10 @@ using State = eval::InterpretedFunction::State;
 
 namespace {
 
-struct CallFun {
-    map_fun_t function;
-    CallFun(map_fun_t function_in) : function(function_in) {}
-    double eval(double a) const { return function(a); }
-};
-
 template <typename CT, typename Fun>
 void apply_fun_to_n(CT *dst, const CT *src, size_t n, const Fun &fun) {
     for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun.eval(src[i]);
+        dst[i] = fun(src[i]);
     }
 }
 
@@ -60,25 +57,13 @@ void my_simple_map_op(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-template <typename Fun, bool inplace>
-struct MySimpleMapOp {
-    template <typename CT>
-    static auto get_fun() { return my_simple_map_op<CT,Fun,inplace>; }
+struct MyGetFun {
+    template <typename R1, typename R2, typename R3> static auto invoke() {
+        return my_simple_map_op<R1, R2, R3::value>;
+    }
 };
 
-template <typename Fun>
-op_function my_select_2(ValueType::CellType ct, bool inplace) {
-    if (inplace) {
-        return select_1<MySimpleMapOp<Fun,true>>(ct);
-    } else {
-        return select_1<MySimpleMapOp<Fun,false>>(ct);
-    }
-}
-
-op_function my_select(ValueType::CellType ct, bool inplace, map_fun_t fun_hint) {
-    (void) fun_hint; // ready for function inlining
-    return my_select_2<CallFun>(ct, inplace);
-}
+using MyTypify = TypifyValue<TypifyCellType,TypifyOp1,TypifyBool>;
 
 } // namespace vespalib::tensor::<unnamed>
 
@@ -96,7 +81,7 @@ DenseSimpleMapFunction::~DenseSimpleMapFunction() = default;
 Instruction
 DenseSimpleMapFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    auto op = my_select(result_type().cell_type(), inplace(), function());
+    auto op = typify_invoke<3,MyTypify,MyGetFun>(result_type().cell_type(), function(), inplace());
     static_assert(sizeof(uint64_t) == sizeof(function()));
     return Instruction(op, (uint64_t)(function()));
 }
