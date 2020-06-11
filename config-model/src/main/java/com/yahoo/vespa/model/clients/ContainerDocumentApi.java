@@ -22,28 +22,37 @@ public class ContainerDocumentApi {
     private static final int FALLBACK_MAX_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
     private static final int FALLBACK_CORE_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
 
+    private final ContainerCluster<?> cluster;
+    private final Options options;
+    private final Handler<AbstractConfigProducer<?>> feedHandler;
+    private final Handler<AbstractConfigProducer<?>> restApiHandler;
+
     public ContainerDocumentApi(ContainerCluster<?> cluster, Options options) {
-        setupHandlers(cluster, options);
+        this.cluster = cluster;
+        this.options = options;
+        this.restApiHandler = addRestApiHandler(cluster, options);
+        this.feedHandler = addFeedHandler(cluster, options);
     }
 
-    private static void setupHandlers(ContainerCluster<?> cluster, Options options) {
-        addRestApiHandler(cluster, options);
-        addFeedHandler(cluster, options);
+    public void addNodesDependentThreadpoolConfiguration() {
+        if (cluster.getContainers().isEmpty()) throw new IllegalStateException("Cluster is empty");
+        feedHandler.addComponent(newExecutorComponent("feedapi-handler", cluster, options));
+        restApiHandler.addComponent(newExecutorComponent("restapi-handler", cluster, options));
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, Options options) {
-        var executorComponent = newExecutorComponent("feedapi-handler", cluster, options);
+    private static Handler<AbstractConfigProducer<?>> addFeedHandler(ContainerCluster<?> cluster, Options options) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
         var handler = newVespaClientHandler(
-                "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options, executorComponent);
+                "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
+        return handler;
     }
 
-    private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        var executorComponent = newExecutorComponent("restapi-handler", cluster, options);
+    private static Handler<AbstractConfigProducer<?>> addRestApiHandler(ContainerCluster<?> cluster, Options options) {
         var handler = newVespaClientHandler(
-                "com.yahoo.document.restapi.resource.RestApi", "document/v1/*", options, executorComponent);
+                "com.yahoo.document.restapi.resource.RestApi", "document/v1/*", options);
         cluster.addComponent(handler);
+        return handler;
     }
 
     private static ThreadPoolExecutorComponent newExecutorComponent(String name, ContainerCluster<?> cluster, Options options) {
@@ -58,14 +67,12 @@ public class ContainerDocumentApi {
     private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
             String componentId,
             String bindingSuffix,
-            Options options,
-            ThreadPoolExecutorComponent executorComponent) {
+            Options options) {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(componentId, null, "vespaclient-container-plugin"), ""));
         for (String rootBinding : options.bindings) {
             handler.addServerBindings(rootBinding + bindingSuffix, rootBinding + bindingSuffix + '/');
         }
-        handler.addComponent(executorComponent);
         return handler;
     }
 
