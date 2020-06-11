@@ -5,13 +5,11 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author mpolden
@@ -30,19 +28,18 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force,
-                                       NodeRepository nodeRepository) {
-        var id = new LoadBalancerId(application, cluster);
+    public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        var id = new LoadBalancerId(spec.application(), spec.cluster());
         var oldInstance = instances.get(id);
-        if (!force && oldInstance != null && !oldInstance.reals().isEmpty() && reals.isEmpty()) {
+        if (!force && oldInstance != null && !oldInstance.reals().isEmpty() && spec.reals().isEmpty()) {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
         }
         var instance = new LoadBalancerInstance(
-                HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
+                HostName.from("lb-" + spec.application().toShortString() + "-" + spec.cluster().value()),
                 Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
-                reals);
+                spec.reals());
         instances.put(id, instance);
         return instance;
     }

@@ -11,6 +11,8 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
@@ -43,7 +45,8 @@ public class LoadBalancerProvisionerTest {
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
     private final ApplicationId infraApp1 = ApplicationId.from("vespa", "tenant-host", "default");
 
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
 
     @Test
     public void provision_load_balancer() {
@@ -210,6 +213,21 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, nodes);
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
         assertEquals(combinedId, lbs.get().get(0).id().cluster());
+    }
+
+    @Test
+    public void provision_load_balancer_config_server_cluster() {
+        flagSource.withBooleanFlag(Flags.CONFIGSERVER_PROVISION_LB.id(), true);
+        ApplicationId configServerApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(configServerApp).asList();
+        var cluster = ClusterSpec.Id.from("zone-config-servers");
+        var nodes = prepare(configServerApp, Capacity.fromRequiredNodeType(NodeType.config), false,
+                            clusterRequest(ClusterSpec.Type.admin, cluster));
+        assertEquals(1, lbs.get().size());
+        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
+        tester.activate(configServerApp, nodes);
+        assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
+        assertEquals(cluster, lbs.get().get(0).id().cluster());
     }
 
     private void dirtyNodesOf(ApplicationId application) {
