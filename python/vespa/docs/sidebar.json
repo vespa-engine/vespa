@@ -1,5 +1,5 @@
 {
-  "vespa": {
+  "pyvespa": {
     "Overview": "/",
     "Vespa - collect training data": "/collect_training_data",
     "Vespa - Evaluate query models": "/evaluation",

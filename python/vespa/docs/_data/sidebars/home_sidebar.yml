@@ -19,6 +19,6 @@ entries:
       title: Query API
       url: /query
     output: web
-    title: vespa
+    title: pyvespa
   output: web
   title: Sidebar
