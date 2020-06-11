@@ -25,7 +25,7 @@ public enum RoleDefinition {
             Policy.tenantCreate),
 
     /** Deus ex machina. */
-    hostedOperator(everyone, Policy.operator),
+    hostedOperator(Policy.operator),
 
     /** Machina autem exspiravit. */
     hostedSupporter(everyone, Policy.supporter),
