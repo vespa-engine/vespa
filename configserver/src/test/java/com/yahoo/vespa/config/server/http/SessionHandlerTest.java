@@ -3,11 +3,9 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -18,14 +16,10 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.session.DummyTransaction;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
-import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 
 import java.io.ByteArrayOutputStream;
@@ -36,7 +30,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Base class for session handler tests
@@ -90,25 +83,16 @@ public class SessionHandlerTest {
     public static class MockLocalSession extends LocalSession {
 
         public Session.Status status;
-        private ConfigChangeActions actions = new ConfigChangeActions();
         private Instant createTime = Instant.now();
         private ApplicationId applicationId;
-        private Optional<DockerImage> dockerImageRepository;
 
         public MockLocalSession(long sessionId, ApplicationPackage app) {
-            super(TenantName.defaultName(), sessionId, null, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
+            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null, null, new HostRegistry<>());
         }
 
         public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
             this(sessionId, app);
             this.applicationId = applicationId;
-        }
-
-        @Override
-        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
-            status = Session.Status.PREPARE;
-            this.dockerImageRepository = params.dockerImageRepository();
-            return actions;
         }
 
         public void setStatus(Session.Status status) {
@@ -143,10 +127,6 @@ public class SessionHandlerTest {
         @Override
         public void delete(NestedTransaction transaction) {  }
 
-        @Override
-        public Optional<DockerImage> getDockerImageRepository() {
-            return dockerImageRepository;
-        }
     }
 
     public enum Cmd {

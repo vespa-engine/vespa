@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -118,7 +119,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .isBootstrap(isBootstrap);
             dockerImageRepository.ifPresent(params::dockerImageRepository);
             athenzDomain.ifPresent(params::athenzDomain);
-            session.prepare(logger, params.build(), Optional.empty(), tenant.getPath(), clock.instant());
+            // TODO: Why is activeApplicationSet empty here?
+            Optional<ApplicationSet> activeApplicationSet = Optional.empty();
+            tenant.getSessionRepository().prepareLocalSession(session, logger, params.build(), activeApplicationSet,
+                                                              tenant.getPath(), clock.instant());
             this.prepared = true;
         }
     }

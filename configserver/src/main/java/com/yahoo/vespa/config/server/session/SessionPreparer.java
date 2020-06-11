@@ -55,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,7 +116,7 @@ public class SessionPreparer {
      * @param logger                      For storing logs returned in response to client.
      * @param params                      parameters controlling behaviour of prepare.
      * @param currentActiveApplicationSet Set of currently active applications.
-     * @param tenantPath Zookeeper path for the tenant for this session
+     * @param tenantPath                  Zookeeper path for the tenant for this session
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public ConfigChangeActions prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
@@ -317,7 +318,7 @@ public class SessionPreparer {
         }
 
         private List<ContainerEndpoint> readEndpointsIfNull(List<ContainerEndpoint> endpoints) {
-            if (endpoints == null) { // endpoints is only set when prepared via HTTP
+            if (endpoints == null) { // endpoints are only set when prepared via HTTP
                 endpoints = this.containerEndpointsCache.read(applicationId);
             }
             return List.copyOf(endpoints);
@@ -383,7 +384,7 @@ public class SessionPreparer {
          */
          public ConfigChangeActions getConfigChangeActions() {
             return new ConfigChangeActions(results.stream().map(result -> result.actions)
-                                                           .flatMap(actions -> actions.stream())
+                                                           .flatMap(Collection::stream)
                                                            .collect(Collectors.toList()));
          }
 

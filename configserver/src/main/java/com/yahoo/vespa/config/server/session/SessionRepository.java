@@ -17,7 +17,9 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.host.HostValidator;
@@ -67,7 +69,7 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSession = 0;
 
-    private final SessionCache<LocalSession> localSessionCache;
+    private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
     private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
     private final Map<Long, LocalSessionStateWatcher> localSessionStateWatchers = new HashMap<>();
     private final Map<Long, RemoteSessionStateWatcher> remoteSessionStateWatchers = new HashMap<>();
@@ -97,7 +99,6 @@ public class SessionRepository {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
-        localSessionCache = new SessionCache<>();
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
@@ -148,6 +149,26 @@ public class SessionRepository {
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
+    }
+
+    public ConfigChangeActions prepareLocalSession(LocalSession session,
+                                                   DeployLogger logger,
+                                                   PrepareParams params,
+                                                   Optional<ApplicationSet> currentActiveApplicationSet,
+                                                   Path tenantPath,
+                                                   Instant now) {
+        applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        logger.log(Level.FINE, "Created application " + params.getApplicationId());
+        long sessionId = session.getSessionId();
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
+        ConfigChangeActions actions = sessionPreparer.prepare(session.getHostValidator(), logger, params,
+                                                              currentActiveApplicationSet, tenantPath, now,
+                                                              getSessionAppDir(sessionId),
+                                                              session.getApplicationPackage(), sessionZooKeeperClient);
+        session.setPrepared();
+        waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
+        return actions;
     }
 
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
@@ -375,7 +396,7 @@ public class SessionRepository {
     }
 
     public RemoteSession createRemoteSession(long sessionId) {
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(getSessionPath(sessionId));
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
     }
 
@@ -406,10 +427,10 @@ public class SessionRepository {
                                                       TimeoutBudget timeoutBudget,
                                                       Clock clock) {
         log.log(Level.FINE, TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(getSessionPath(sessionId));
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, sessionPreparer, applicationPackage, sessionZKClient,
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
                                                 getSessionAppDir(sessionId), applicationRepo, hostRegistry);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
@@ -467,8 +488,8 @@ public class SessionRepository {
         try {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
-            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(getSessionPath(sessionId));
-            return new LocalSession(tenantName, sessionId, sessionPreparer, applicationPackage, sessionZooKeeperClient,
+            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient,
                                     getSessionAppDir(sessionId), applicationRepo, hostRegistry);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -496,9 +517,8 @@ public class SessionRepository {
     LocalSession createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
-        Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionIdPath);
-        return new LocalSession(tenantName, sessionId, sessionPreparer, applicationPackage, sessionZKClient,
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
                                 getSessionAppDir(sessionId), applicationRepo, hostRegistry);
     }
 
@@ -512,7 +532,7 @@ public class SessionRepository {
         }
 
         log.log(Level.INFO, "Creating local session for session id " + sessionId);
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(getSessionPath(sessionId));
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
@@ -546,9 +566,11 @@ public class SessionRepository {
         return sessionsPath.append(String.valueOf(sessionId));
     }
 
-    private SessionZooKeeperClient createSessionZooKeeperClient(Path sessionPath) {
+
+    private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
         Optional<NodeFlavors> nodeFlavors = componentRegistry.getZone().nodeFlavors();
+        Path sessionPath = getSessionPath(sessionId);
         return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId, nodeFlavors);
     }
 

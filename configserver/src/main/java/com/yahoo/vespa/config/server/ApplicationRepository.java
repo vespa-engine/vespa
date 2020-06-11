@@ -215,7 +215,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
         try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
-            ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
+            SessionRepository sessionRepository = tenant.getSessionRepository();
+            ConfigChangeActions actions = sessionRepository.prepareLocalSession(session, logger, prepareParams,
+                                                                                currentActiveApplicationSet, tenant.getPath(), now);
             logConfigChangeActions(actions, logger);
             log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
             return new PrepareResult(sessionId, actions, deployLog);

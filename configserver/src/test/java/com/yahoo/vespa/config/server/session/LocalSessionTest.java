@@ -43,18 +43,22 @@ import static org.junit.Assert.assertTrue;
 public class LocalSessionTest {
 
     private static final File testApp = new File("src/test/apps/app");
+    private static final TenantName tenantName = TenantName.from("test_tenant");
+    private static final Path tenantPath = Path.createRoot();
 
-    private Path tenantPath = Path.createRoot();
+    TenantRepository tenantRepository;
     private Curator curator;
     private ConfigCurator configCurator;
     private TenantFileSystemDirs tenantFileSystemDirs;
 
     @Before
     public void setupTest() {
+        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().build(), false);
+        tenantRepository.addTenant(tenantName);
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         tenantFileSystemDirs = new TenantFileSystemDirs(uncheck(() -> Files.createTempDirectory("serverdb")).toFile(),
-                                                        TenantName.from("test_tenant"));
+                                                        tenantName);
     }
 
     @Test
@@ -116,15 +120,10 @@ public class LocalSessionTest {
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId) throws Exception {
-        SessionTest.MockSessionPreparer preparer = new SessionTest.MockSessionPreparer();
-        return createSession(tenant, sessionId, preparer);
+        return createSession(tenant, sessionId, Optional.empty());
     }
 
-    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer) throws Exception {
-        return createSession(tenant, sessionId, preparer, Optional.empty());
-    }
-
-    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer,
+    private LocalSession createSession(TenantName tenant, long sessionId,
                                        Optional<AllocatedHosts> allocatedHosts) throws Exception {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenant, sessionId, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
@@ -139,7 +138,7 @@ public class LocalSessionTest {
         TenantApplications applications = TenantApplications.create(
                 new TestComponentRegistry.Builder().curator(curator).build(), tenant);
         applications.createApplication(zkc.readApplicationId());
-        return new LocalSession(tenant, sessionId, preparer, FilesApplicationPackage.fromFile(testApp),
+        return new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp),
                                 zkc, sessionDir, applications, new HostRegistry<>());
     }
 
@@ -148,7 +147,8 @@ public class LocalSessionTest {
     }
 
     private void doPrepare(LocalSession session, PrepareParams params) {
-        session.prepare(getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
+        sessionRepository.prepareLocalSession(session, getLogger(), params, Optional.empty(), tenantPath, Instant.now());
     }
 
     private DeployHandlerLogger getLogger() {
