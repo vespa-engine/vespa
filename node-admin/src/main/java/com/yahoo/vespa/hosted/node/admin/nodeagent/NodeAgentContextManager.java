@@ -72,7 +72,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
                 }
 
                 try {
-                    monitor.wait(Math.max(untilNextContext.toMillis(), 0L)); // Wait until scheduler provides a new context
+                    monitor.wait(Math.max(untilNextContext.toMillis(), 1L)); // Wait until scheduler provides a new context
                 } catch (InterruptedException ignored) { }
             }
 
