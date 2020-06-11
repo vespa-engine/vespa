@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -419,5 +420,12 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         reloadListener.verifyHostsAreAvailable(tenant, newHosts);
     }
 
+    public HostRegistry<ApplicationId> getApplicationHostRegistry() {
+        return hostRegistry;
+    }
+
+    public ApplicationId getApplicationIdForHostName(String hostname) {
+        return hostRegistry.getKeyForHost(hostname);
+    }
 
 }

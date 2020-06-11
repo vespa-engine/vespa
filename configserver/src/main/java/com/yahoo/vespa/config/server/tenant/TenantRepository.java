@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -222,12 +221,13 @@ public class TenantRepository {
             requestHandler = applicationRepo;
         if (reloadHandler == null)
             reloadHandler = applicationRepo;
-        SessionFactory sessionFactory = new SessionFactory(componentRegistry, applicationRepo, applicationRepo, tenantName);
-        SessionRepository sessionRepository = new SessionRepository(tenantName, componentRegistry, sessionFactory,
+        SessionRepository sessionRepository = new SessionRepository(tenantName, componentRegistry,
                                                                     applicationRepo, reloadHandler,
-                                                                    componentRegistry.getFlagSource());
+                                                                    componentRegistry.getFlagSource(),
+                                                                    applicationRepo,
+                                                                    componentRegistry.getSessionPreparer());
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant = new Tenant(tenantName, sessionFactory, sessionRepository, requestHandler,
+        Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler,
                                    reloadHandler, applicationRepo, componentRegistry.getCurator());
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);

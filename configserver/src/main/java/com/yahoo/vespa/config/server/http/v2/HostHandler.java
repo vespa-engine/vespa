@@ -3,61 +3,37 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
-
-import java.util.logging.Level;
-
 
 /**
  * Handler for getting tenant and application for a given hostname.
  *
  * @author hmusum
- * @since 5.19
  */
 public class HostHandler extends HttpHandler {
-    final HostRegistries hostRegistries;
-    private final Zone zone;
+    private final ApplicationRepository applicationRepository;
 
     @Inject
-    public HostHandler(HttpHandler.Context ctx,
-                       GlobalComponentRegistry globalComponentRegistry) {
+    public HostHandler(HttpHandler.Context ctx, ApplicationRepository applicationRepository) {
         super(ctx);
-        this.hostRegistries = globalComponentRegistry.getHostRegistries();
-        this.zone = globalComponentRegistry.getZone();
+        this.applicationRepository = applicationRepository;
     }
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {
         String hostname = getBindingMatch(request).group(2);
-        log.log(Level.FINE, "hostname=" + hostname);
-
-        HostRegistry<TenantName> tenantHostRegistry = hostRegistries.getTenantHostRegistry();
-        log.log(Level.FINE, "hosts in tenant host registry '" + tenantHostRegistry + "' " + tenantHostRegistry.getAllHosts());
-        TenantName tenant = tenantHostRegistry.getKeyForHost(hostname);
-        if (tenant == null) return createError(hostname);
-        log.log(Level.FINE, "tenant=" + tenant);
-        HostRegistry<ApplicationId> applicationIdHostRegistry = hostRegistries.getApplicationHostRegistry(tenant);
-        ApplicationId applicationId;
-        if (applicationIdHostRegistry == null) return createError(hostname);
-        applicationId = applicationIdHostRegistry.getKeyForHost(hostname);
-        log.log(Level.FINE, "applicationId=" + applicationId);
-        if (applicationId == null) {
-            return createError(hostname);
-        } else {
-            log.log(Level.FINE, "hosts in application host registry '" + applicationIdHostRegistry + "' " + applicationIdHostRegistry.getAllHosts());
-            return new HostResponse(Response.Status.OK, applicationId, zone);
-        }
+        ApplicationId applicationId = applicationRepository.getApplicationIdForHostname(hostname);
+        return (applicationId == null)
+                ? createError(hostname)
+                : new HostResponse(Response.Status.OK, applicationId, applicationRepository.zone());
     }
 
     private HttpErrorResponse createError(String hostname) {

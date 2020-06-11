@@ -12,8 +12,9 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -29,14 +30,13 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Collections;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
  */
+// TODO: Try to move testing to ApplicationRepositoryTest and avoid all the low-level setup code here
 public class HostHandlerTest {
     private static final String urlPrefix = "http://myhost:14000/application/v2/host/";
     private static File testApp = new File("src/test/apps/app");
@@ -44,9 +44,8 @@ public class HostHandlerTest {
     private HostHandler handler;
     private final static TenantName mytenant = TenantName.from("mytenant");
     private final static String hostname = "testhost";
+    private final static Zone zone = Zone.defaultZone();
     private TenantRepository tenantRepository;
-    private HostRegistries hostRegistries;
-    private HostHandler hostHandler;
 
     static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) {
         tenant.getApplicationRepo().createApplication(applicationId);
@@ -61,32 +60,29 @@ public class HostHandlerTest {
 
     @Before
     public void setup() {
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(mytenant);
-        handler = createHostHandler();
-    }
-
-    private HostHandler createHostHandler() {
         final HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
         hostRegistry.update(mytenant, Collections.singletonList(hostname));
-        TestComponentRegistry testComponentRegistry = new TestComponentRegistry.Builder().build();
-        hostRegistries = testComponentRegistry.getHostRegistries();
-        hostRegistries.createApplicationHostRegistry(mytenant).update(ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName()), Collections.singletonList(hostname));
-        hostRegistries.getTenantHostRegistry().update(mytenant, Collections.singletonList(hostname));
-        hostHandler = new HostHandler(
-                HostHandler.testOnlyContext(),
-                testComponentRegistry);
-        return hostHandler;
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .zone(zone)
+                .build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(mytenant);
+        Tenant tenant = tenantRepository.getTenant(mytenant);
+        HostRegistry<ApplicationId> applicationHostRegistry = tenant.getApplicationRepo().getApplicationHostRegistry();
+        applicationHostRegistry.update(ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName()), Collections.singletonList(hostname));
+        ApplicationRepository applicationRepository = new ApplicationRepository(tenantRepository,
+                                                                                new SessionHandlerTest.MockProvisioner(),
+                                                                                new OrchestratorMock(),
+                                                                                Clock.systemUTC());
+        handler = new HostHandler(HostHandler.testOnlyContext(), applicationRepository);
     }
 
     @Test
     public void require_correct_tenant_and_application_for_hostname() throws Exception {
-        assertThat(hostRegistries, is(hostHandler.hostRegistries));
         long sessionId = 1;
         ApplicationId id = ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName());
         addMockApplication(tenantRepository.getTenant(mytenant), id, sessionId);
-        assertApplicationForHost(hostname, mytenant, id, Zone.defaultZone());
+        assertApplicationForHost(hostname, mytenant, id, zone);
     }
 
     @Test
