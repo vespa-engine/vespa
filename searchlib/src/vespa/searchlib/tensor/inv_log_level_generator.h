@@ -29,13 +29,13 @@ public:
     InvLogLevelGenerator(uint32_t m)
       : _rng(0x1234deadbeef5678uLL),
         _mutex(),
-        _uniform(1.0, 0.0),
+        _uniform(0.0, 1.0),
         _levelMultiplier(1.0 / log(1.0 * m))
     {}
 
     uint32_t max_level() override {
         double unif = get_uniform();
-        double r = -log(unif) * _levelMultiplier;
+        double r = -log(1.0-unif) * _levelMultiplier;
         return (uint32_t) r;
     }
 };

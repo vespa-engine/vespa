@@ -521,15 +521,31 @@ TEST_F(HnswIndexTest, shrink_called_heuristic)
 TEST(LevelGeneratorTest, gives_various_levels)
 {
     InvLogLevelGenerator generator(4);
-    EXPECT_EQ(2u, generator.max_level());
-    EXPECT_EQ(1u, generator.max_level());
-    EXPECT_EQ(0u, generator.max_level());
-    EXPECT_EQ(1u, generator.max_level());
-    EXPECT_EQ(0u, generator.max_level());
-    EXPECT_EQ(1u, generator.max_level());
-    EXPECT_EQ(0u, generator.max_level());
-    EXPECT_EQ(0u, generator.max_level());
-    EXPECT_EQ(0u, generator.max_level());
+    std::vector<uint32_t> got_levels(16);
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        2, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0
+    }));
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    }));
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0
+    }));
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1
+    }));
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 2
+    }));
+    for (auto & v : got_levels) { v = generator.max_level(); }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({
+        0, 1, 1, 0, 3, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0
+    }));
 
     uint32_t left = 1000000;
     std::vector<uint32_t> hist;
