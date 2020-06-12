@@ -119,8 +119,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .isBootstrap(isBootstrap);
             dockerImageRepository.ifPresent(params::dockerImageRepository);
             athenzDomain.ifPresent(params::athenzDomain);
-            // TODO: Why is activeApplicationSet empty here?
-            Optional<ApplicationSet> activeApplicationSet = Optional.empty();
+            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, session.getApplicationId());
             tenant.getSessionRepository().prepareLocalSession(session, logger, params.build(), activeApplicationSet,
                                                               tenant.getPath(), clock.instant());
             this.prepared = true;
