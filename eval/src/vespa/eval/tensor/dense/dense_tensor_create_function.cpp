@@ -34,7 +34,7 @@ void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param
 
 struct MyTensorCreateOp {
     template <typename CT>
-    static auto get_fun() { return my_tensor_create_op<CT>; }
+    static auto invoke() { return my_tensor_create_op<CT>; }
 };
 
 size_t get_index(const TensorSpec::Address &addr, const ValueType &type) {
@@ -72,7 +72,9 @@ eval::InterpretedFunction::Instruction
 DenseTensorCreateFunction::compile_self(const TensorEngine &, Stash &) const
 {
     static_assert(sizeof(uint64_t) == sizeof(&_self));
-    auto op = select_1<MyTensorCreateOp>(result_type().cell_type());
+
+    using MyTypify = eval::TypifyCellType;
+    auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op, (uint64_t)&_self);
 }
 
