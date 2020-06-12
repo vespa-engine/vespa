@@ -303,6 +303,38 @@ protected:
      * @param pathSize     New tree height (number of levels of internal nodes)
      */
     VESPA_DLL_LOCAL void clearPath(uint32_t pathSize);
+
+    template <typename FunctionType>
+    void
+    foreach_key_range_start(uint32_t level, FunctionType func) const
+    {
+        if (level > 0u) {
+            --level;
+            foreach_key_range_start(level, func);
+            auto &store = _allocator->getNodeStore();
+            auto node = _path[level].getNode();
+            uint32_t idx = _path[level].getIdx();
+            node->foreach_key_range(store, idx + 1, node->validSlots(), func);
+        } else {
+            _leaf.getNode()->foreach_key_range(_leaf.getIdx(), _leaf.getNode()->validSlots(), func);
+        }
+    }
+
+    template <typename FunctionType>
+    void
+    foreach_key_range_end(uint32_t level, FunctionType func) const
+    {
+        if (level > 0u) {
+            --level;
+            auto &store = _allocator->getNodeStore();
+            auto node = _path[level].getNode();
+            uint32_t eidx = _path[level].getIdx();
+            node->foreach_key_range(store, 0, eidx, func);
+            foreach_key_range_end(level, func);
+        } else {
+            _leaf.getNode()->foreach_key_range(0, _leaf.getIdx(), func);
+        }
+    }
 public:
 
     bool
@@ -449,6 +481,54 @@ public:
                 foreach_key(_allocator->getNodeStore(), func);
         } else if (_leafRoot != nullptr) {
             _leafRoot->foreach_key(func);
+        }
+    }
+
+    template <typename FunctionType>
+    void
+    foreach_key_range(const BTreeIteratorBase &end_itr, FunctionType func) const
+    {
+        if (!valid()) {
+            return;
+        }
+        if (!end_itr.valid()) {
+            foreach_key_range_start(_pathSize, func);
+            return;
+        }
+        assert(_pathSize == end_itr._pathSize);
+        assert(_allocator == end_itr._allocator);
+        uint32_t level = _pathSize;
+        if (level > 0u) {
+            uint32_t idx;
+            uint32_t eidx;
+            do {
+                --level;
+                assert(_path[level].getNode() == end_itr._path[level].getNode());
+                idx = _path[level].getIdx();
+                eidx = end_itr._path[level].getIdx();
+                if (idx > eidx) {
+                    return;
+                }
+                if (idx != eidx) {
+                    ++level;
+                    break;
+                }
+            } while (level != 0);
+            if (level > 0u) {
+                foreach_key_range_start(level - 1, func);
+                auto &store = _allocator->getNodeStore();
+                auto node = _path[level - 1].getNode();
+                node->foreach_key_range(store, idx + 1, eidx, func);
+                end_itr.foreach_key_range_end(level - 1, func);
+                return;
+            } else {
+                assert(_leaf.getNode() == end_itr._leaf.getNode());
+            }
+        }
+        uint32_t idx = _leaf.getIdx();
+        uint32_t eidx = end_itr._leaf.getIdx();
+        if (idx < eidx) {
+            _leaf.getNode()->foreach_key_range(idx, eidx, func);
         }
     }
 };

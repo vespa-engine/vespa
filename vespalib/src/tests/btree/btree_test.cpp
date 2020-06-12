@@ -36,6 +36,54 @@ toStr(const T & v)
     return ss.str();
 }
 
+class SequenceValidator
+{
+    int _wanted_count;
+    int _prev_key;
+    int _count;
+    bool _failed;
+
+public:
+    SequenceValidator(int start, int wanted_count)
+        : _wanted_count(wanted_count),
+          _prev_key(start - 1),
+          _count(0),
+          _failed(false)
+    {
+    }
+
+    bool failed() const {
+        return _failed || _wanted_count != _count;
+    }
+    
+    void operator()(int key) {
+        if (key != _prev_key + 1) {
+            _failed = true;
+        }
+        _prev_key = key;
+        ++_count;
+    }
+};
+
+class ForeachKeyValidator
+{
+    SequenceValidator & _validator;
+public:
+    ForeachKeyValidator(SequenceValidator &validator)
+        : _validator(validator)
+    {
+    }
+    void operator()(int key) {
+        _validator(key);
+    }
+};
+
+template <typename Iterator>
+void validate_subrange(Iterator &start, Iterator &end, SequenceValidator &validator) {
+    start.foreach_key_range(end, ForeachKeyValidator(validator));
+    EXPECT_FALSE(validator.failed());
+}
+
 }
 
 typedef BTreeTraits<4, 4, 31, false> MyTraits;
@@ -210,6 +258,8 @@ private:
 
     void
     requireThatIteratorDistanceWorks();
+
+    void requireThatForeachKeyWorks();
 public:
     int Main() override;
 };
@@ -1489,6 +1539,32 @@ Test::requireThatIteratorDistanceWorks()
     requireThatIteratorDistanceWorks(400);
 }
 
+void
+Test::requireThatForeachKeyWorks()
+{
+    using Tree = BTree<int, int, btree::NoAggregated, MyComp, MyTraits>;
+    using Iterator = typename Tree::ConstIterator;
+    Tree t;
+    populateTree(t, 256, 1);
+
+    {
+        // Whole range
+        SequenceValidator validator(1, 256);
+        t.foreach_key(ForeachKeyValidator(validator));
+        EXPECT_FALSE(validator.failed());
+    }
+    {
+        // Subranges
+        for (int startval = 1; startval < 259; ++startval) {
+            for (int endval = 1; endval < 259; ++endval) {
+                SequenceValidator validator(startval, std::max(0, std::min(endval,257) - std::min(startval, 257)));
+                Iterator start = t.lowerBound(startval);
+                Iterator end = t.lowerBound(endval);
+                validate_subrange(start, end, validator);
+            }
+        }
+    }
+};
 
 int
 Test::Main()
@@ -1515,6 +1591,7 @@ Test::Main()
     requireThatSmallNodesWorks();
     requireThatApplyWorks();
     requireThatIteratorDistanceWorks();
+    requireThatForeachKeyWorks();
 
     TEST_DONE();
 }

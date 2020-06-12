@@ -371,6 +371,22 @@ public:
     }
 
     template <typename NodeStoreType, typename FunctionType>
+    void foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+        const BTreeNode::Ref *it = this->_data;
+        const BTreeNode::Ref *ite = it + end_idx;
+        it += start_idx;
+        if (this->getLevel() > 1u) {
+            for (; it != ite; ++it) {
+                store.mapInternalRef(*it)->foreach_key(store, func);
+            }
+        } else {
+            for (; it != ite; ++it) {
+                store.mapLeafRef(*it)->foreach_key(func);
+            }
+        }
+    }
+
+    template <typename NodeStoreType, typename FunctionType>
     void foreach(NodeStoreType &store, FunctionType func) const {
         const BTreeNode::Ref *it = this->_data;
         const BTreeNode::Ref *ite = it + _validSlots;
@@ -454,6 +470,16 @@ public:
     void foreach_key(FunctionType func) const {
         const KeyT *it = _keys;
         const KeyT *ite = it + _validSlots;
+        for (; it != ite; ++it) {
+            func(*it);
+        }
+    }
+
+    template <typename FunctionType>
+    void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+        const KeyT *it = _keys;
+        const KeyT *ite = it + end_idx;
+        it += start_idx;
         for (; it != ite; ++it) {
             func(*it);
         }
