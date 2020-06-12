@@ -20,17 +20,19 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Comparator.comparing;
 
 /**
  * @author olaaun
@@ -38,6 +40,9 @@ import static java.util.Comparator.comparing;
  * @author jonmv
  */
 class LogReader {
+
+    static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d(.gz)?");
+    static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:.gz)?)?");
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
@@ -53,43 +58,45 @@ class LogReader {
 
     void writeLogs(OutputStream outputStream, Instant from, Instant to) {
         try {
-            List<Path> logs = getMatchingFiles(from, to);
+            List<List<Path>> logs = getMatchingFiles(from, to);
             for (int i = 0; i < logs.size(); i++) {
-                Path log = logs.get(i);
-                boolean zipped = log.toString().endsWith(".gz");
-                try (InputStream in = Files.newInputStream(log)) {
-                    InputStream inProxy;
+                for (Path log : logs.get(i)) {
+                    boolean zipped = log.toString().endsWith(".gz");
+                    try (InputStream in = Files.newInputStream(log)) {
+                        InputStream inProxy;
 
-                    // If the log needs filtering, possibly unzip (and rezip) it, and filter its lines on timestamp.
-                    if (i == 0 || i == logs.size() - 1) {
-                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
-                             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipped ? new GZIPOutputStream(buffer) : buffer, UTF_8))) {
-                            for (String line; (line = reader.readLine()) != null; ) {
-                                String[] parts = line.split("\t");
-                                if (parts.length != 7)
-                                    continue;
+                        // If the log needs filtering, possibly unzip (and rezip) it, and filter its lines on timestamp.
+                        // When multiple log files exist for the same instant, their entries should ideally be sorted. This is not done here.
+                        if (i == 0 || i == logs.size() - 1) {
+                            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
+                                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipped ? new GZIPOutputStream(buffer) : buffer, UTF_8))) {
+                                for (String line; (line = reader.readLine()) != null; ) {
+                                    String[] parts = line.split("\t");
+                                    if (parts.length != 7)
+                                        continue;
 
-                                Instant at = Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS);
-                                if (at.isAfter(from) && ! at.isAfter(to)) {
-                                    writer.write(line);
-                                    writer.newLine();
+                                    Instant at = Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS);
+                                    if (at.isAfter(from) && !at.isAfter(to)) {
+                                        writer.write(line);
+                                        writer.newLine();
+                                    }
                                 }
                             }
+                            inProxy = new ByteArrayInputStream(buffer.toByteArray());
                         }
-                        inProxy = new ByteArrayInputStream(buffer.toByteArray());
-                    }
-                    else
-                        inProxy = in;
+                        else
+                            inProxy = in;
 
-                    if ( ! zipped) {
-                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        try (OutputStream outProxy = new GZIPOutputStream(buffer)) {
-                            inProxy.transferTo(outProxy);
+                        if ( ! zipped) {
+                            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                            try (OutputStream outProxy = new GZIPOutputStream(buffer)) {
+                                inProxy.transferTo(outProxy);
+                            }
+                            inProxy = new ByteArrayInputStream(buffer.toByteArray());
                         }
-                        inProxy = new ByteArrayInputStream(buffer.toByteArray());
+                        inProxy.transferTo(outputStream);
                     }
-                    inProxy.transferTo(outputStream);
                 }
             }
         }
@@ -98,9 +105,9 @@ class LogReader {
         }
     }
 
-    /** Returns log files which may have relevant entries, sorted by modification time — the first and last must be filtered. */
-    private List<Path> getMatchingFiles(Instant from, Instant to) {
-        Map<Path, Instant> paths = new HashMap<>();
+    /** Returns log files which may have relevant entries, grouped and sorted by {@link #extractTimestamp(Path)} — the first and last group must be filtered. */
+    private List<List<Path>> getMatchingFiles(Instant from, Instant to) {
+        List<Path> paths = new ArrayList<>();
         try {
             Files.walkFileTree(logDirectory, new SimpleFileVisitor<>() {
 
@@ -112,7 +119,7 @@ class LogReader {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (logFilePattern.matcher(file.getFileName().toString()).matches())
-                        paths.put(file, attrs.lastModifiedTime().toInstant());
+                        paths.add(file);
 
                     return FileVisitResult.CONTINUE;
                 }
@@ -127,15 +134,53 @@ class LogReader {
             throw new UncheckedIOException(e);
         }
 
-        List<Path> sorted = new ArrayList<>();
-        for (var entries = paths.entrySet().stream().sorted(comparing(Map.Entry::getValue)).iterator(); entries.hasNext(); ) {
-            var entry = entries.next();
-            if (entry.getValue().isAfter(from))
-                sorted.add(entry.getKey());
-            if (entry.getValue().isAfter(to))
+        var logsByTimestamp = paths.stream()
+                                   .collect(Collectors.groupingBy(this::extractTimestamp,
+                                                                  TreeMap::new,
+                                                                  Collectors.toList()));
+        System.err.println(logsByTimestamp);
+
+        List<List<Path>> sorted = new ArrayList<>();
+        for (var entry : logsByTimestamp.entrySet()) {
+            if (entry.getKey().isAfter(from))
+                sorted.add(entry.getValue());
+            if (entry.getKey().isAfter(to))
                 break;
         }
         return sorted;
+    }
+
+    /** Extracts a timestamp after all entries in the log file with the given path. */
+    Instant extractTimestamp(Path path) {
+        String relativePath = logDirectory.relativize(path).toString();
+        Matcher matcher = logArchivePathPattern.matcher(relativePath);
+        if (matcher.matches()) {
+            return ZonedDateTime.of(Integer.parseInt(matcher.group(1)),
+                                    Integer.parseInt(matcher.group(2)),
+                                    Integer.parseInt(matcher.group(3)),
+                                    Integer.parseInt(matcher.group(4)) + 1, // timestamp is start of hour range of the log file
+                                    0,
+                                    0,
+                                    0,
+                                    ZoneId.of("UTC"))
+                                .toInstant();
+        }
+        matcher = vespaLogPathPattern.matcher(relativePath);
+        if (matcher.matches()) {
+            if (matcher.group(1) == null)
+                return Instant.MAX;
+
+            return ZonedDateTime.of(Integer.parseInt(matcher.group(1)),
+                                    Integer.parseInt(matcher.group(2)),
+                                    Integer.parseInt(matcher.group(3)),
+                                    Integer.parseInt(matcher.group(4)),
+                                    Integer.parseInt(matcher.group(5)),
+                                    Integer.parseInt(matcher.group(6)) + 1, // timestamp is that of the last entry, with seconds truncated
+                                    0,
+                                    ZoneId.of("UTC"))
+                                .toInstant();
+        }
+        throw new IllegalArgumentException("Unrecognized file pattern for file at '" + path + "'");
     }
 
 }
