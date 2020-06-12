@@ -96,24 +96,23 @@ public class ModelEvaluationTest {
         cluster.getConfig(cb);
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
 
-        assertEquals(5, config.rankprofile().size());
+        assertEquals(4, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
         assertTrue(modelNames.contains("lightgbm_regression"));
-        assertTrue(modelNames.contains("mnist_saved"));
         assertTrue(modelNames.contains("mnist_softmax"));
-        assertTrue(modelNames.contains("mnist_softmax_saved"));
+        assertTrue(modelNames.contains("small_constants_and_functions"));
 
         // Compare profile content in a denser format than config:
         StringBuilder sb = new StringBuilder();
-        for (RankProfilesConfig.Rankprofile.Fef.Property p : findProfile("mnist_saved", config).property())
+        for (RankProfilesConfig.Rankprofile.Fef.Property p : findProfile("small_constants_and_functions", config).property())
             sb.append(p.name()).append(": ").append(p.value()).append("\n");
-        assertEquals(mnistProfile, sb.toString());
+        assertEquals(profile, sb.toString());
 
         ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
                                                                 .importFrom(config, constantsConfig));
 
-        assertEquals(5, evaluator.models().size());
+        assertEquals(4, evaluator.models().size());
 
         Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
@@ -125,16 +124,6 @@ public class ModelEvaluationTest {
         assertNotNull(lightgbm.evaluatorOf());
         assertNotNull(lightgbm.evaluatorOf("lightgbm_regression"));
 
-        Model tensorflow_mnist = evaluator.models().get("mnist_saved");
-        assertNotNull(tensorflow_mnist);
-        assertEquals(1, tensorflow_mnist.functions().size());
-        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default"));
-        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default", "y"));
-        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default.y"));
-        assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default.y"));
-        assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default", "y"));
-        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), tensorflow_mnist.functions().get(0).argumentTypes().get("input"));
-
         Model onnx_mnist_softmax = evaluator.models().get("mnist_softmax");
         assertNotNull(onnx_mnist_softmax);
         assertEquals(1, onnx_mnist_softmax.functions().size());
@@ -145,22 +134,13 @@ public class ModelEvaluationTest {
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
         assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"), onnx_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
-
-        Model tensorflow_mnist_softmax = evaluator.models().get("mnist_softmax_saved");
-        assertNotNull(tensorflow_mnist_softmax);
-        assertEquals(1, tensorflow_mnist_softmax.functions().size());
-        assertNotNull(tensorflow_mnist_softmax.evaluatorOf());
-        assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default"));
-        assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default", "y"));
-        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), tensorflow_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
     }
 
-    private final String mnistProfile =
-            "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).rankingScript: join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))\n" +
-            "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).type: tensor(d3[300])\n" +
-            "rankingExpression(serving_default.y).rankingScript: join(reduce(join(map(join(reduce(join(join(join(0.009999999776482582, rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(a * b)), rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b)), f(a)(1.0507009873554805 * if (a >= 0, a, 1.6732632423543772 * (exp(a) - 1)))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b))\n" +
-            "rankingExpression(serving_default.y).input.type: tensor(d0[],d1[784])\n" +
-            "rankingExpression(serving_default.y).type: tensor(d0[],d1[10])\n";
+    private final String profile =
+            "rankingExpression(imported_ml_function_small_constants_and_functions_exp_output).rankingScript: map(input, f(a)(exp(a)))\n" +
+            "rankingExpression(default.output).rankingScript: join(rankingExpression(imported_ml_function_small_constants_and_functions_exp_output), reduce(join(join(reduce(rankingExpression(imported_ml_function_small_constants_and_functions_exp_output), sum, d0), tensor<float>(d0[1])(1.0), f(a,b)(a * b)), 9.999999974752427E-7, f(a,b)(a + b)), sum, d0), f(a,b)(a / b))\n" +
+            "rankingExpression(default.output).input.type: tensor<float>(d0[3])\n" +
+            "rankingExpression(default.output).type: tensor<float>(d0[3])\n";
 
     private RankProfilesConfig.Rankprofile.Fef findProfile(String name, RankProfilesConfig config) {
         for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
