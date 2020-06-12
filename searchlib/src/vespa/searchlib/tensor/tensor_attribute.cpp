@@ -263,7 +263,7 @@ TensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) const
 
 void
 TensorAttribute::complete_set_tensor(DocId docid, const Tensor& tensor,
-                                     std::future<std::unique_ptr<PrepareResult>> prepare_result)
+                                     std::unique_ptr<PrepareResult> prepare_result)
 {
     (void) docid;
     (void) tensor;
