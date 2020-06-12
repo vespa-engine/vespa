@@ -45,7 +45,7 @@ public class ContainerModelEvaluationTest {
     }
     private void assertLoadedModels(JDisc jdisc) {
         {
-            String expected = "{\"xgboost_xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_xgboost_2_2\",\"onnx_mnist_softmax\":\"http://localhost/model-evaluation/v1/onnx_mnist_softmax\",\"vespa_example\":\"http://localhost/model-evaluation/v1/vespa_example\",\"onnx_softmax_func\":\"http://localhost/model-evaluation/v1/onnx_softmax_func\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
+            String expected = "{\"xgboost_xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_xgboost_2_2\",\"onnx_mnist_softmax\":\"http://localhost/model-evaluation/v1/onnx_mnist_softmax\",\"tensorflow_mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_softmax_saved\",\"tensorflow_mnist_saved\":\"http://localhost/model-evaluation/v1/tensorflow_mnist_saved\",\"vespa_example\":\"http://localhost/model-evaluation/v1/vespa_example\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
             assertResponse("http://localhost/model-evaluation/v1", expected, jdisc);
         }
 
@@ -60,8 +60,9 @@ public class ContainerModelEvaluationTest {
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.36716532707214355}]}";
-            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default.output/eval?input=" + inputTensor(), expected, jdisc);
+            // Note: The specific response value here has not been verified
+            String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.5066885003407351},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3912837743150205},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":-0.12401806321703948},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.7019029168606575},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.13120114146441697},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":0.6611923203384626},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.22365810810026446},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":-0.0740018307465809},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":0.056492490256153896},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.18422015072393733}]}";
+            assertResponse("http://localhost/model-evaluation/v1/tensorflow_mnist_saved/serving_default.y/eval?input=" + inputTensor(), expected, jdisc);
         }
     }
 
@@ -78,10 +79,9 @@ public class ContainerModelEvaluationTest {
     }
 
     private String inputTensor() {
-        Tensor.Builder b = Tensor.Builder.of(TensorType.fromSpec("tensor<float>(d0[3])"));
-        b.cell(0.1, 0);
-        b.cell(0.2, 1);
-        b.cell(0.3, 2);
+        Tensor.Builder b = Tensor.Builder.of(TensorType.fromSpec("tensor(d0[],d1[784])"));
+        for (int i = 0; i < 784; i++)
+            b.cell(0.0, 0, i);
         return URLEncoder.encode(b.build().toString(), StandardCharsets.UTF_8);
     }
 

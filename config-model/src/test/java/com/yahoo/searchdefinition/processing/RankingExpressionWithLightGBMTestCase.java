@@ -48,7 +48,7 @@ public class RankingExpressionWithLightGBMTestCase {
             storedApplicationDirectory.toFile().mkdirs();
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            RankingExpressionWithOnnxTestCase.StoringApplicationPackage storedApplication = new RankingExpressionWithOnnxTestCase.StoringApplicationPackage(storedApplicationDirectory);
+            RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage storedApplication = new RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = fixtureWith("lightgbm('regression.json')");
             searchFromStored.assertFirstPhaseExpression(lightGBMExpression, "my_profile");
         }
@@ -59,13 +59,13 @@ public class RankingExpressionWithLightGBMTestCase {
 
     private RankProfileSearchFixture fixtureWith(String firstPhaseExpression) {
         return fixtureWith(firstPhaseExpression, null, null,
-                new RankingExpressionWithOnnxTestCase.StoringApplicationPackage(applicationDir));
+                new RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage(applicationDir));
     }
 
     private RankProfileSearchFixture fixtureWith(String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 RankingExpressionWithOnnxTestCase.StoringApplicationPackage application) {
+                                                 RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage application) {
         try {
             RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,

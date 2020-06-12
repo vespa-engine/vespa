@@ -74,7 +74,7 @@ public abstract class ModelImporter implements MlModelImporter {
                 signature.input(input.getKey(), input.getValue());
             }
             for (Map.Entry<String, String> output : graph.outputs(signatureName).entrySet()) {
-                signature.output(IntermediateOperation.vespaName(output.getKey()), output.getValue());
+                signature.output(output.getKey(), output.getValue());
             }
         }
     }
