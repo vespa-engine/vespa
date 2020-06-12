@@ -45,7 +45,7 @@ void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
 
 struct MyLambdaPeekOp {
     template <typename DST_CT, typename SRC_CT>
-    static auto get_fun() { return my_lambda_peek_op<DST_CT, SRC_CT>; }
+    static auto invoke() { return my_lambda_peek_op<DST_CT, SRC_CT>; }
 };
 
 } // namespace vespalib::tensor::<unnamed>
@@ -64,7 +64,8 @@ InterpretedFunction::Instruction
 DenseLambdaPeekFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
     const Self &self = stash.create<Self>(result_type(), *_idx_fun);
-    auto op = select_2<MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
+    using MyTypify = eval::TypifyCellType;
+    auto op = typify_invoke<2,MyTypify,MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
     static_assert(sizeof(uint64_t) == sizeof(&self));
     assert(child().result_type().is_dense());
     return InterpretedFunction::Instruction(op, (uint64_t)&self);

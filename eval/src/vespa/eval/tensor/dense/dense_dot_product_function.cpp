@@ -48,7 +48,7 @@ void my_cblas_float_dot_product_op(eval::InterpretedFunction::State &state, uint
 
 struct MyDotProductOp {
     template <typename LCT, typename RCT>
-    static auto get_fun() { return my_dot_product_op<LCT,RCT>; }
+    static auto invoke() { return my_dot_product_op<LCT,RCT>; }
 };
 
 eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
@@ -60,7 +60,8 @@ eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
             return my_cblas_float_dot_product_op;
         }
     }
-    return select_2<MyDotProductOp>(lct, rct);
+    using MyTypify = eval::TypifyCellType;
+    return typify_invoke<2,MyTypify,MyDotProductOp>(lct, rct);
 }
 
 } // namespace vespalib::tensor::<unnamed>

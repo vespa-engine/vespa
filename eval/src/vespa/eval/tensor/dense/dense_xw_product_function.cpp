@@ -79,7 +79,7 @@ void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint6
 template <bool common_inner>
 struct MyXWProductOp {
     template <typename LCT, typename RCT>
-    static auto get_fun() { return my_xw_product_op<LCT,RCT,common_inner>; }
+    static auto invoke() { return my_xw_product_op<LCT,RCT,common_inner>; }
 };
 
 template <bool common_inner>
@@ -92,7 +92,9 @@ eval::InterpretedFunction::op_function my_select2(CellType lct, CellType rct) {
             return my_cblas_float_xw_product_op<common_inner>;
         }
     }
-    return select_2<MyXWProductOp<common_inner>>(lct, rct);
+    using Target = MyXWProductOp<common_inner>;
+    using MyTypify = eval::TypifyCellType;
+    return typify_invoke<2,MyTypify,Target>(lct, rct);
 }
 
 eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool common_inner) {
