@@ -122,14 +122,14 @@ public:
     DirectoryHandler _dirHandler;
     std::unique_ptr<ForegroundTaskExecutor> _attributeFieldWriterReal;
     std::unique_ptr<SequencedTaskExecutorObserver> _attributeFieldWriter;
-    std::shared_ptr<MockAttributeManager> _m;
+    std::shared_ptr<MockAttributeManager> _mgr;
     std::unique_ptr<AttributeWriter> _aw;
 
     AttributeWriterTest()
         : _dirHandler(test_dir),
           _attributeFieldWriterReal(),
           _attributeFieldWriter(),
-          _m(),
+          _mgr(),
           _aw()
     {
         setup(1);
@@ -139,18 +139,18 @@ public:
         _aw.reset();
         _attributeFieldWriterReal = std::make_unique<ForegroundTaskExecutor>(threads);
         _attributeFieldWriter = std::make_unique<SequencedTaskExecutorObserver>(*_attributeFieldWriterReal);
-        _m = std::make_shared<MockAttributeManager>();
-        _m->set_writer(*_attributeFieldWriter);
+        _mgr = std::make_shared<MockAttributeManager>();
+        _mgr->set_writer(*_attributeFieldWriter);
         allocAttributeWriter();
     }
     void allocAttributeWriter() {
-        _aw = std::make_unique<AttributeWriter>(_m);
+        _aw = std::make_unique<AttributeWriter>(_mgr);
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return addAttribute({name, AVConfig(AVBasicType::INT32)});
     }
     AttributeVector::SP addAttribute(const AttributeSpec &spec) {
-        auto ret = _m->addAttribute(spec.getName(),
+        auto ret = _mgr->addAttribute(spec.getName(),
                                     AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
         allocAttributeWriter();
         return ret;
@@ -380,7 +380,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     put(3, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
-    AttributeWriter awDelayed(_m);
+    AttributeWriter awDelayed(_mgr);
     awDelayed.put(4, *doc, 2, false, emptyCallback);
     EXPECT_EQ(3u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
@@ -390,7 +390,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     awDelayed.forceCommit(6, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
 
-    AttributeWriter awDelayedShort(_m);
+    AttributeWriter awDelayedShort(_mgr);
     awDelayedShort.put(7, *doc, 2, false, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
     awDelayedShort.put(8, *doc, 2, false, emptyCallback);
@@ -784,10 +784,10 @@ createImportedAttributesRepo()
 
 TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribute_vectors)
 {
-    _m->setImportedAttributes(createImportedAttributesRepo());
+    _mgr->setImportedAttributes(createImportedAttributesRepo());
     commit(10);
-    EXPECT_EQ(0u, _m->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
-    EXPECT_EQ(0u, _m->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
+    EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
+    EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
 }
 
 class StructWriterTestBase : public AttributeWriterTest {
@@ -852,8 +852,8 @@ public:
         return doc;
     }
     void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &arrayValues) {
-        auto valueAttr = _m->getAttribute("value")->getSP();
-        auto arrayValueAttr = _m->getAttribute("array.value")->getSP();
+        auto valueAttr = _mgr->getAttribute("value")->getSP();
+        auto arrayValueAttr = _mgr->getAttribute("array.value")->getSP();
         EXPECT_EQ(value, valueAttr->getInt(lid));
         attribute::IntegerContent ibuf;
         ibuf.fill(*arrayValueAttr, lid);
@@ -904,9 +904,9 @@ public:
     }
 
     void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
-        auto valueAttr = _m->getAttribute("value")->getSP();
-        auto mapKeyAttr = _m->getAttribute("map.key")->getSP();
-        auto mapValueAttr = _m->getAttribute("map.value.value")->getSP();
+        auto valueAttr = _mgr->getAttribute("value")->getSP();
+        auto mapKeyAttr = _mgr->getAttribute("map.key")->getSP();
+        auto mapValueAttr = _mgr->getAttribute("map.value.value")->getSP();
         EXPECT_EQ(expValue, valueAttr->getInt(lid));
         attribute::IntegerContent mapKeys;
         mapKeys.fill(*mapKeyAttr, lid);
