@@ -82,24 +82,19 @@ class LogReader {
                     else
                         inProxy = in;
 
-                    // At the point when logs switch to un-zipped, replace the output stream with a zipping proxy.
-                    if ( ! zipped && ! (outputStream instanceof GZIPOutputStream))
-                        outputStream = new GZIPOutputStream(outputStream);
-
+                    if ( ! zipped) {
+                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                        try (OutputStream outProxy = new GZIPOutputStream(buffer)) {
+                            inProxy.transferTo(outProxy);
+                        }
+                        inProxy = new ByteArrayInputStream(buffer.toByteArray());
+                    }
                     inProxy.transferTo(outputStream);
                 }
             }
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-        finally {
-            try {
-                outputStream.close();
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 
