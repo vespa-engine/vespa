@@ -31,6 +31,7 @@ LOG_SETUP(".proton.common.attribute_updater");
 
 using namespace document;
 using vespalib::make_string;
+using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using search::attribute::ReferenceAttribute;
 
@@ -471,27 +472,33 @@ AttributeUpdater::updateValue(StringAttribute & vec, uint32_t lid, const FieldVa
     }
 }
 
+namespace {
+
+template <typename ExpFieldValueType>
+void
+validate_field_value_type(const FieldValue& val, const vespalib::string& attr_type, const vespalib::string& value_type)
+{
+    if (!val.inherits(ExpFieldValueType::classId)) {
+        throw UpdateException(
+                make_string("%s must be updated with %s, but was '%s'",
+                            attr_type.c_str(), value_type.c_str(), val.toString(false).c_str()));
+    }
+}
+
+}
+
 void
 AttributeUpdater::updateValue(PredicateAttribute &vec, uint32_t lid, const FieldValue &val)
 {
-    if (!val.inherits(PredicateFieldValue::classId)) {
-        throw UpdateException(
-                make_string("PredicateAttribute must be updated with "
-                            "PredicateFieldValues."));
-    }
+    validate_field_value_type<PredicateFieldValue>(val, "PredicateAttribute", "PredicateFieldValue");
     vec.updateValue(lid, static_cast<const PredicateFieldValue &>(val));
 }
 
 void
 AttributeUpdater::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValue &val)
 {
-    if (!val.inherits(TensorFieldValue::classId)) {
-        throw UpdateException(
-                make_string("TensorAttribute must be updated with "
-                            "TensorFieldValues."));
-    }
-    const auto &tensor = static_cast<const TensorFieldValue &>(val).
-                         getAsTensorPtr();
+    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    const auto &tensor = static_cast<const TensorFieldValue &>(val).getAsTensorPtr();
     if (tensor) {
         vec.setTensor(lid, *tensor);
     } else {
@@ -506,7 +513,7 @@ AttributeUpdater::updateValue(ReferenceAttribute &vec, uint32_t lid, const Field
         vec.clearDoc(lid);
         throw UpdateException(
                 make_string("ReferenceAttribute must be updated with "
-                            "ReferenceFieldValues."));
+                            "ReferenceFieldValue, but was '%s'", val.toString(false).c_str()));
     }
     const auto &reffv = static_cast<const ReferenceFieldValue &>(val);
     if (reffv.hasValidDocumentId()) {
@@ -514,6 +521,59 @@ AttributeUpdater::updateValue(ReferenceAttribute &vec, uint32_t lid, const Field
     } else {
         vec.clearDoc(lid);
     }
+}
+
+namespace {
+
+void
+validate_tensor_attribute_type(AttributeVector& attr)
+{
+    const auto& info = attr.getClass();
+    if (!info.inherits(TensorAttribute::classId)) {
+        throw UpdateException(
+                make_string("Expected attribute vector '%s' to be a TensorAttribute, but was '%s'",
+                            attr.getName().c_str(), info.name()));
+    }
+}
+
+std::unique_ptr<PrepareResult>
+prepare_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val)
+{
+    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
+    if (tensor) {
+        return attr.prepare_set_tensor(docid, *tensor);
+    }
+    return std::unique_ptr<PrepareResult>();
+}
+
+void
+complete_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val, std::unique_ptr<PrepareResult> prepare_result)
+{
+    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
+    if (tensor) {
+        attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));
+    } else {
+        attr.clearDoc(docid);
+    }
+}
+
+}
+
+std::unique_ptr<PrepareResult>
+AttributeUpdater::prepare_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val)
+{
+    validate_tensor_attribute_type(attr);
+    return prepare_set_tensor(static_cast<TensorAttribute&>(attr), docid, val);
+}
+
+void
+AttributeUpdater::complete_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val,
+                                     std::unique_ptr<PrepareResult> prepare_result)
+{
+    validate_tensor_attribute_type(attr);
+    complete_set_tensor(static_cast<TensorAttribute&>(attr), docid, val, std::move(prepare_result));
 }
 
 }  // namespace search

@@ -61,6 +61,8 @@ using proton::test::AttributeUtils;
 using proton::test::MockAttributeManager;
 using search::TuneFileAttributes;
 using search::attribute::BitVectorSearchCache;
+using search::attribute::DistanceMetric;
+using search::attribute::HnswIndexParams;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
@@ -759,6 +761,38 @@ TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts)
     setup(8);
     putAttributes(*this, {0, 1, 2});
 }
+
+AVConfig
+get_tensor_config(bool allow_multi_threaded_indexing)
+{
+    AVConfig cfg(AVBasicType::TENSOR);
+    cfg.setTensorType(ValueType::from_spec("tensor(x[2])"));
+    cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, allow_multi_threaded_indexing));
+    return cfg;
+}
+
+TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separate_write_contexts)
+{
+    addAttribute("a1");
+    addAttribute({"t1", get_tensor_config(true)});
+    addAttribute({"t2", get_tensor_config(true)});
+    addAttribute({"t3", get_tensor_config(false)});
+    allocAttributeWriter();
+
+    const auto& ctx = _aw->get_write_contexts();
+    EXPECT_EQ(3, ctx.size());
+    EXPECT_FALSE(ctx[0].use_two_phase_put());
+    EXPECT_EQ(2, ctx[0].getFields().size());
+
+    EXPECT_TRUE(ctx[1].use_two_phase_put());
+    EXPECT_EQ(1, ctx[1].getFields().size());
+    EXPECT_EQ("t1", ctx[1].getFields()[0].getAttribute().getName());
+
+    EXPECT_TRUE(ctx[2].use_two_phase_put());
+    EXPECT_EQ(1, ctx[2].getFields().size());
+    EXPECT_EQ("t2", ctx[2].getFields()[0].getAttribute().getName());
+}
+
 
 ImportedAttributeVector::SP
 createImportedAttribute(const vespalib::string &name)
