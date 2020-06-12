@@ -6,16 +6,14 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
+import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * @author bratseth
@@ -53,7 +51,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
     private void updateSkewMetric(NodeList allNodes) {
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, nodeRepository().resourcesCalculator());
+        HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         double totalSkew = 0;
         int hostCount = 0;
         for (Node host : allNodes.nodeType((NodeType.host)).state(Node.State.active)) {
@@ -75,7 +73,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
      * Returns Move.none if no moves can be made to reduce skew.
      */
     private Move findBestMove(NodeList allNodes) {
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, nodeRepository().resourcesCalculator());
+        HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         Move bestMove = Move.empty();
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
@@ -84,29 +82,29 @@ public class Rebalancer extends NodeRepositoryMaintainer {
             if (deployedRecently(applicationId)) continue;
             for (Node toHost : allNodes.matching(nodeRepository()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
-                if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
+                if ( ! capacity.freeCapacityOf(toHost).satisfies(node.resources())) continue;
 
                 double skewReductionAtFromHost = skewReductionByRemoving(node, allNodes.parentOf(node).get(), capacity);
                 double skewReductionAtToHost = skewReductionByAdding(node, toHost, capacity);
                 double netSkewReduction = skewReductionAtFromHost + skewReductionAtToHost;
                 if (netSkewReduction > bestMove.netSkewReduction)
-                    bestMove = new Move(node, toHost, netSkewReduction);
+                    bestMove = new Move(node, nodeRepository().getNode(node.parentHostname().get()).get(), toHost, netSkewReduction);
             }
         }
         return bestMove;
     }
 
-    private double skewReductionByRemoving(Node node, Node fromHost, DockerHostCapacity capacity) {
+    private double skewReductionByRemoving(Node node, Node fromHost, HostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(fromHost);
         double skewBefore = Node.skew(fromHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 
-    private double skewReductionByAdding(Node node, Node toHost, DockerHostCapacity capacity) {
+    private double skewReductionByAdding(Node node, Node toHost, HostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(toHost);
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
-        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().justNumbers()));
+        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 
@@ -122,20 +120,19 @@ public class Rebalancer extends NodeRepositoryMaintainer {
 
         final double netSkewReduction;
 
-        Move(Node node, Node toHost, double netSkewReduction) {
-            super(node, toHost);
+        Move(Node node, Node fromHost, Node toHost, double netSkewReduction) {
+            super(node, fromHost, toHost);
             this.netSkewReduction = netSkewReduction;
         }
 
         @Override
         public String toString() {
-            return "move " +
-                   ( node == null ? "none" :
-                                    (node.hostname() + " to " + toHost + " [skew reduction "  + netSkewReduction + "]"));
+            if (isEmpty()) return "move none";
+            return super.toString() + " [skew reduction "  + netSkewReduction + "]";
         }
 
         public static Move empty() {
-            return new Move(null, null, 0);
+            return new Move(null, null, null, 0);
         }
 
     }

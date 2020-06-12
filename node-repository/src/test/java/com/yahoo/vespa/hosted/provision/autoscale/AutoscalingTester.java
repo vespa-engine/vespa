@@ -208,9 +208,9 @@ class AutoscalingTester {
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
             if (zone.getCloud().dynamicProvisioning())
-                return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
+                return node.resources().withMemoryGb(node.resources().memoryGb() - 3);
             else
-                return node.flavor().resources();
+                return node.resources();
         }
 
         @Override

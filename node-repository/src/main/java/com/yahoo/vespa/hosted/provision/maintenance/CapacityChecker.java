@@ -136,7 +136,7 @@ public class CapacityChecker {
             int occupiedIps = 0;
             Set<String> ipPool = host.ipAddressPool().asSet();
             for (var child : nodeChildren.get(host)) {
-                hostResources = hostResources.subtract(child.flavor().resources().justNumbers());
+                hostResources = hostResources.subtract(child.resources().justNumbers());
                 occupiedIps += child.ipAddresses().stream().filter(ipPool::contains).count();
             }
             availableResources.put(host, new AllocationResources(hostResources, host.ipAddressPool().asSet().size() - occupiedIps));
@@ -250,7 +250,7 @@ public class CapacityChecker {
                 long eligibleParents =
                     hosts.stream().filter(h ->
                             !violatesParentHostPolicy(node, h, containedAllocations)
-                                && availableResources.get(h).satisfies(AllocationResources.from(node.flavor().resources()))).count();
+                                && availableResources.get(h).satisfies(AllocationResources.from(node.resources()))).count();
                 allocationHistory.addEntry(node, newParent.get(), eligibleParents + 1);
             }
         }
@@ -302,7 +302,7 @@ public class CapacityChecker {
             reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
 
             NodeResources l = availableHostResources.nodeResources;
-            NodeResources r = node.allocation().map(Allocation::requestedResources).orElse(node.flavor().resources());
+            NodeResources r = node.allocation().map(Allocation::requestedResources).orElse(node.resources());
 
             if (l.vcpu() < r.vcpu())
                 reason.insufficientVcpu = true;
@@ -391,7 +391,7 @@ public class CapacityChecker {
             if (node.allocation().isPresent())
                 return from(node.allocation().get().requestedResources());
             else
-                return from(node.flavor().resources());
+                return from(node.resources());
         }
 
         public static AllocationResources from(NodeResources nodeResources) {
@@ -514,7 +514,7 @@ public class CapacityChecker {
             public String toString() {
                 return String.format("%-20s %-65s -> %15s [%3d valid]",
                         tenant.hostname().replaceFirst("\\..+", ""),
-                        tenant.flavor().resources(),
+                        tenant.resources(),
                         newParent == null ? "x" : newParent.hostname().replaceFirst("\\..+", ""),
                         this.eligibleParents
                 );

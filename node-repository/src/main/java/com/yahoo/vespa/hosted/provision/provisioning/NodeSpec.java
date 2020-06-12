@@ -139,7 +139,7 @@ public interface NodeSpec {
 
         @Override
         public boolean needsResize(Node node) {
-            return ! node.flavor().resources().compatibleWith(requestedNodeResources);
+            return ! node.resources().compatibleWith(requestedNodeResources);
         }
 
         @Override

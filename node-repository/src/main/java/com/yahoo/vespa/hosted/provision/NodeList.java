@@ -46,11 +46,19 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     /** Returns the subset of nodes having exactly the given resources */
-    public NodeList resources(NodeResources resources) { return matching(node -> node.flavor().resources().equals(resources)); }
+    public NodeList resources(NodeResources resources) { return matching(node -> node.resources().equals(resources)); }
+
+    /** Returns the subset of nodes which satisfy the given resources */
+    public NodeList satisfies(NodeResources resources) { return matching(node -> node.resources().satisfies(resources)); }
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
         return matching(node -> node.flavor().name().equals(flavor));
+    }
+
+    /** Returns the subset of nodes not in the given collection */
+    public NodeList except(Collection<Node> nodes) {
+        return matching(node -> ! nodes.contains(node));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */
@@ -107,6 +115,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     public NodeList nodeType(NodeType first, NodeType... rest) {
         EnumSet<NodeType> nodeTypes = EnumSet.of(first, rest);
         return matching(node -> nodeTypes.contains(node.type()));
+    }
+
+    /** Returns the subset of nodes of the host type */
+    public NodeList hosts() {
+        return matching(node -> node.type() == NodeType.host);
     }
 
     /** Returns the subset of nodes that are parents */

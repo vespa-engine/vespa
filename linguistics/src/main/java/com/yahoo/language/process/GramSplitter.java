@@ -39,12 +39,8 @@ public class GramSplitter {
      * @throws IllegalArgumentException if n is less than 1
      */
     public GramSplitterIterator split(String input, int n) {
-        if (input == null) {
-            throw new NullPointerException("input cannot be null");
-        }
-        if (n < 1) {
-            throw new IllegalArgumentException("n (gram size) cannot be smaller than 1, was " + n);
-        }
+        if (input == null) throw new NullPointerException("input cannot be null");
+        if (n < 1) throw new IllegalArgumentException("n (gram size) cannot be smaller than 1, was " + n);
         return new GramSplitterIterator(input, n, characterClasses);
     }
 
@@ -52,29 +48,19 @@ public class GramSplitter {
 
         private final CharacterClasses characterClasses;
 
-        /**
-         * Text to split
-         */
+        /** Text to split */
         private final String input;
 
-        /**
-         * Gram size
-         */
+        /** Gram size */
         private final int n;
 
-        /**
-         * Current index
-         */
+        /** Current index */
         private int i = 0;
 
-        /**
-         * Whether the last thing that happened was being on a separator (including the start of the string)
-         */
+        /** Whether the last thing that happened was being on a separator (including the start of the string) */
         private boolean isFirstAfterSeparator = true;
 
-        /**
-         * The next gram or null if not determined yet
-         */
+        /** The next gram or null if not determined yet */
         private Gram nextGram = null;
 
         public GramSplitterIterator(String input, int n, CharacterClasses characterClasses) {
@@ -85,9 +71,7 @@ public class GramSplitter {
 
         @Override
         public boolean hasNext() {
-            if (nextGram != null) {
-                return true;
-            }
+            if (nextGram != null) return true;
             nextGram = findNext();
             return nextGram != null;
         }
@@ -95,12 +79,10 @@ public class GramSplitter {
         @Override
         public Gram next() {
             Gram currentGram = nextGram;
-            if (currentGram == null) {
+            if (currentGram == null)
                 currentGram = findNext();
-            }
-            if (currentGram == null) {
+            if (currentGram == null)
                 throw new NoSuchElementException("No next gram at position " + i);
-            }
             nextGram = null;
             return currentGram;
         }
@@ -111,24 +93,21 @@ public class GramSplitter {
                 i++;
                 isFirstAfterSeparator = true;
             }
-            if (i >= input.length()) {
-                return null;
-            }
+            if (i >= input.length()) return null;
 
             String gram = input.substring(i, Math.min(i + n, input.length()));
             int nonWordChar = indexOfNonWordChar(gram);
-            if (nonWordChar == 0) {
-                throw new RuntimeException("Programming error");
-            }
-            if (nonWordChar > 0) {
+            if (nonWordChar == 0) throw new RuntimeException("Programming error");
+
+            if (nonWordChar > 0)
                 gram = gram.substring(0, nonWordChar);
-            }
 
             if (gram.length() == n) { // normal case: got a full length gram
                 i++;
                 isFirstAfterSeparator = false;
                 return new Gram(i - 1, gram.length());
-            } else { // gram is too short due either to a non-word separator or end of string
+            }
+            else { // gram is too short due either to a non-word separator or end of string
                 if (isFirstAfterSeparator) { // make a gram anyway
                     i++;
                     isFirstAfterSeparator = false;
@@ -143,9 +122,8 @@ public class GramSplitter {
 
         private int indexOfNonWordChar(String s) {
             for (int i = 0; i < s.length(); i++) {
-                if (!characterClasses.isLetterOrDigit(s.codePointAt(i))) {
+                if ( ! characterClasses.isLetterOrDigit(s.codePointAt(i)))
                     return i;
-                }
             }
             return -1;
         }
@@ -162,9 +140,8 @@ public class GramSplitter {
          */
         public List<String> toExtractedList() {
             List<String> gramList = new ArrayList<>();
-            while (hasNext()) {
+            while (hasNext())
                 gramList.add(next().extractFrom(input));
-            }
             return Collections.unmodifiableList(gramList);
         }
     }
@@ -189,31 +166,19 @@ public class GramSplitter {
             return length;
         }
 
-        /**
-         * Returns this gram as a string from the input string
-         */
+        /** Returns this gram as a string from the input string */
         public String extractFrom(String input) {
             return input.substring(start, start + length);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof Gram)) {
-                return false;
-            }
+            if (this == o) return true;
+            if ( ! (o instanceof Gram)) return false;
 
             Gram gram = (Gram)o;
-
-            if (length != gram.length) {
-                return false;
-            }
-            if (start != gram.start) {
-                return false;
-            }
-
+            if (length != gram.length) return false;
+            if (start != gram.start) return false;
             return true;
         }
 
@@ -223,5 +188,7 @@ public class GramSplitter {
             result = 31 * result + length;
             return result;
         }
+
     }
+
 }

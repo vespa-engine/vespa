@@ -131,13 +131,18 @@ class MaintenanceDeployment implements Closeable {
 
     public static class Move {
 
-        final Node node;
-        final Node toHost;
+        private final Node node;
+        private final Node fromHost, toHost;
 
-        Move(Node node, Node toHost) {
+        Move(Node node, Node fromHost, Node toHost) {
             this.node = node;
+            this.fromHost = fromHost;
             this.toHost = toHost;
         }
+
+        public Node node() { return node; }
+        public Node fromHost() { return fromHost; }
+        public Node toHost() { return toHost; }
 
         /**
          * Try to deploy to make this move.
@@ -197,10 +202,10 @@ class MaintenanceDeployment implements Closeable {
         @Override
         public String toString() {
             return "move " +
-                   ( isEmpty() ? "none" : (node.hostname() + " to " + toHost));
+                   ( isEmpty() ? "none" : (node.hostname() + " from " + fromHost + " to " + toHost));
         }
 
-        public static Move empty() { return new Move(null, null); }
+        public static Move empty() { return new Move(null, null, null); }
 
     }
 

@@ -3,10 +3,14 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Capacity calculation for docker hosts.
@@ -16,17 +20,38 @@ import java.util.Objects;
  *
  * @author smorgrav
  */
-public class DockerHostCapacity {
+public class HostCapacity {
 
     private final NodeList allNodes;
     private final HostResourcesCalculator hostResourcesCalculator;
 
-    public DockerHostCapacity(NodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
+    public HostCapacity(NodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
         this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
-    int compareWithoutInactive(Node hostA, Node hostB) {
+    public NodeList allNodes() { return allNodes; }
+
+    /**
+     * Spare hosts are the two hosts in the system with the most free capacity.
+     *
+     * We do not count retired or inactive nodes as used capacity (as they could have been
+     * moved to create space for the spare node in the first place).
+     *
+     * @param candidates the candidates to consider. This list may contain all kinds of nodes.
+     * @param count the max number of spare hosts to return
+     */
+    public Set<Node> findSpareHosts(List<Node> candidates, int count) {
+        return candidates.stream()
+                         .filter(node -> node.type() == NodeType.host)
+                         .filter(dockerHost -> dockerHost.state() == Node.State.active)
+                         .filter(dockerHost -> freeIPs(dockerHost) > 0)
+                         .sorted(this::compareWithoutInactive)
+                         .limit(count)
+                         .collect(Collectors.toSet());
+    }
+
+    private int compareWithoutInactive(Node hostA, Node hostB) {
         int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
 

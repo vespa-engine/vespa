@@ -148,7 +148,7 @@ class NodeAllocation {
                 }
                 node.node = offered.allocate(application,
                                              ClusterMembership.from(cluster, highestIndex.add(1)),
-                                             requestedNodes.resources().orElse(node.node.flavor().resources()),
+                                             requestedNodes.resources().orElse(node.node.resources()),
                                              nodeRepository.clock().instant());
                 accepted.add(acceptNode(node, false, false));
             }
@@ -242,7 +242,7 @@ class NodeAllocation {
         Node node = prioritizableNode.node;
 
         if (node.allocation().isPresent()) // Record the currently requested resources
-            node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
+            node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
 
         if (! wantToRetire) {
             accepted++;

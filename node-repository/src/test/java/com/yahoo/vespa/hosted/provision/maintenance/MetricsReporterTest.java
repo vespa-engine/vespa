@@ -223,7 +223,7 @@ public class MetricsReporterTest {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
                                                    ClusterMembership.from("container/id1/0/3", new Version(), Optional.empty()),
-                                                   owner.flavor().resources(),
+                                                   owner.resources(),
                                                    Generation.initial(),
                                                    false);
             return Optional.of(allocation);

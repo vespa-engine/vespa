@@ -262,8 +262,8 @@ public class ProvisioningTester {
                      nodeList.stream().map(n -> n.allocation().get().membership().cluster().group().get()).distinct().count());
         for (Node node : nodeList) {
             var expected = new NodeResources(vcpu, memory, disk, bandwidth, diskSpeed, storageType);
-            assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.flavor().resources(),
-                       expected.compatibleWith(node.flavor().resources()));
+            assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.resources(),
+                       expected.compatibleWith(node.resources()));
         }
     }
 
@@ -658,7 +658,7 @@ public class ProvisioningTester {
 
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            NodeResources resources = node.flavor().resources();
+            NodeResources resources = node.resources();
             if (node.type() == NodeType.host) return resources;
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
                             .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));

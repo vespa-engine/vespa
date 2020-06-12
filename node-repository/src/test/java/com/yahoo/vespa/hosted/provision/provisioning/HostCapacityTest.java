@@ -27,10 +27,10 @@ import static org.mockito.Mockito.mock;
 /**
  * @author smorgrav
  */
-public class DockerHostCapacityTest {
+public class HostCapacityTest {
 
     private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
-    private DockerHostCapacity capacity;
+    private HostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
     private final NodeResources resources1 = new NodeResources(1, 30, 20, 1.5);
@@ -61,7 +61,7 @@ public class DockerHostCapacityTest {
 
         // init docker host capacity
         nodes = new ArrayList<>(List.of(host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE));
-        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class DockerHostCapacityTest {
         // Add a new node to host1 to deplete the memory resource
         Node nodeF = Node.createDockerNode(Set.of("::6"), "nodeF", "host1", resources1, NodeType.tenant);
         nodes.add(nodeF);
-        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         assertFalse(capacity.hasCapacity(host1, resources1));
         assertFalse(capacity.hasCapacity(host1, resources2));
     }
@@ -116,12 +116,12 @@ public class DockerHostCapacityTest {
         var cfg = Node.createDockerNode(Set.of("::2"), "cfg", "devhost", resources1, NodeType.config);
 
         var nodes = new ArrayList<>(List.of(cfg));
-        var capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        var capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         assertTrue(capacity.hasCapacity(devHost, resources1));
 
         var container1 = Node.createDockerNode(Set.of("::3"), "container1", "devhost", resources1, NodeType.tenant);
         nodes = new ArrayList<>(List.of(cfg, container1));
-        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         assertFalse(capacity.hasCapacity(devHost, resources1));
 
     }

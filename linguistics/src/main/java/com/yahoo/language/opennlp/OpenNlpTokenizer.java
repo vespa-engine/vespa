@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 public class OpenNlpTokenizer implements Tokenizer {
+
     private final static int SPACE_CODE = 32;
     private static final Logger log = Logger.getLogger(OpenNlpTokenizer.class.getName());
     private final Normalizer normalizer;

@@ -128,6 +128,8 @@ public final class Node {
         return parentHostname.isPresent() && parentHostname.get().equals(hostname);
     }
 
+    public NodeResources resources() { return flavor.resources(); }
+
     /** Returns the flavor of this node */
     public Flavor flavor() { return flavor; }
 

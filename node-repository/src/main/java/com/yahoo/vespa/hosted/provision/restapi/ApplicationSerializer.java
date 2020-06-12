@@ -43,7 +43,7 @@ public class ApplicationSerializer {
         if (nodes.isEmpty()) return;
 
         int groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).flavor().resources());
+        ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).resources());
 
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
         toSlime(cluster.maxResources(), clusterObject.setObject("max"));

@@ -13,8 +13,8 @@ public interface Transformer {
     /**
      * Remove accents from input text.
      *
-     * @param input    text to transform.
-     * @param language language of input text.
+     * @param input    text to transform
+     * @param language language of input text
      * @return text with accents removed, or input-text if the feature is unavailable
      * @throws ProcessingException thrown if there is an exception stemming this input
      */

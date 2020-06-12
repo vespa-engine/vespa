@@ -2,5 +2,4 @@
 @ExportPackage
 package com.yahoo.config.provision;
 
-import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;

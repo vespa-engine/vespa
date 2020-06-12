@@ -184,12 +184,12 @@ class Activator {
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
-            if (! hostSpec.advertisedResources().equals(node.flavor().resources())) // A resized node
+            if (! hostSpec.advertisedResources().equals(node.resources())) // A resized node
                 node = node.with(new Flavor(hostSpec.advertisedResources()));
             Allocation allocation = node.allocation().get()
                                         .with(hostSpec.membership().get())
                                         .withRequestedResources(hostSpec.requestedResources()
-                                                                        .orElse(node.flavor().resources()));
+                                                                        .orElse(node.resources()));
             if (hostSpec.networkPorts().isPresent())
                 allocation = allocation.withNetworkPorts(hostSpec.networkPorts().get());
             node = node.with(allocation);

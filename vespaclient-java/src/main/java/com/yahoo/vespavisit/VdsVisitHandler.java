@@ -19,9 +19,10 @@ import java.text.SimpleDateFormat;
 /**
  * An abstract class that can be subclassed by different visitor handlers.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public abstract class VdsVisitHandler {
+
     boolean showProgress;
     boolean showStatistics;
     boolean abortOnClusterDown;
@@ -33,8 +34,7 @@ public abstract class VdsVisitHandler {
 
     final VisitorControlHandler controlHandler = new ControlHandler();
 
-    public VdsVisitHandler(boolean showProgress, boolean showStatistics, boolean abortOnClusterDown)
-    {
+    public VdsVisitHandler(boolean showProgress, boolean showStatistics, boolean abortOnClusterDown) {
         this.showProgress = showProgress;
         this.showStatistics = showStatistics;
         this.abortOnClusterDown = abortOnClusterDown;
@@ -72,8 +72,7 @@ public abstract class VdsVisitHandler {
         return printLock;
     }
 
-    public void onDone() {
-    }
+    public void onDone() { }
 
     public String getProgressFileName() {
         return progressFileName;
@@ -127,8 +126,7 @@ public abstract class VdsVisitHandler {
         }
 
         private String getDateTime() {
-            DateFormat dateFormat =
-                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz");
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz");
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = new Date();
             return dateFormat.format(date);
@@ -140,14 +138,10 @@ public abstract class VdsVisitHandler {
                     System.err.print('\r');
                     lastLineIsProgress = false;
                 }
-                System.err.println("Visitor error (" + getDateTime() + "): " +
-                                   message);
-                if (abortOnClusterDown &&
-                    !isDone() &&
-                    (message.lastIndexOf("Could not resolve")>=0 ||
-                     message.lastIndexOf("don't allow external load")>=0)) {
-                    System.err.println("Aborting visitor as " +
-                                       "--abortonclusterdown flag is set.");
+                System.err.println("Visitor error (" + getDateTime() + "): " + message);
+                if (abortOnClusterDown && !isDone() && (message.lastIndexOf("Could not resolve")>=0 ||
+                                                        message.lastIndexOf("don't allow external load")>=0)) {
+                    System.err.println("Aborting visitor as --abortonclusterdown flag is set.");
                     abort();
                 }
             }
@@ -160,11 +154,12 @@ public abstract class VdsVisitHandler {
             if (code != CompletionCode.SUCCESS) {
                 if (code == CompletionCode.ABORTED) {
                     System.err.println("Visitor aborted: " + message);
-                } else if (code == CompletionCode.TIMEOUT) {
+                }
+                else if (code == CompletionCode.TIMEOUT) {
                     System.err.println("Visitor timed out: " + message);
-                } else {
-                    System.err.println("Visitor aborted due to unknown issue "
-                                     + code + ": " + message);
+                }
+                else {
+                    System.err.println("Visitor aborted due to unknown issue " + code + ": " + message);
                 }
             } else {
                 if (showProgress) {

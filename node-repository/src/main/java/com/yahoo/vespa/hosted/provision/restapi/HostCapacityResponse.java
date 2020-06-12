@@ -129,7 +129,7 @@ public class HostCapacityResponse extends HttpResponse {
         );
         failurePath.failureReason.tenant.ifPresent(tenant -> {
             object.setString("failedTenant", tenant.hostname());
-            object.setString("failedTenantResources", tenant.flavor().resources().toString());
+            object.setString("failedTenantResources", tenant.resources().toString());
             tenant.allocation().ifPresent(allocation ->
                     object.setString("failedTenantAllocation", allocation.toString())
             );

@@ -21,6 +21,7 @@ public enum Agent {
     ProvisionedExpirer,
     ReservationExpirer,
     DynamicProvisioningMaintainer,
-    RetiringUpgrader;
+    RetiringUpgrader,
+    SpareCapacityMaintainer
 
 }

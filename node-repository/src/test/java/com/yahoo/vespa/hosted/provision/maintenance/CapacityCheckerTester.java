@@ -129,7 +129,7 @@ public class CapacityCheckerTester {
                 childModel.parentHostname = Optional.of(hostname);
 
                 Node childNode = createNodeFromModel(childModel);
-                childResources.add(childNode.flavor().resources());
+                childResources.add(childNode.resources());
                 hosts.add(childNode);
             }
 
@@ -275,7 +275,7 @@ public class CapacityCheckerTester {
                                               nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
 
         if (membership != null) {
-            return node.allocate(owner, membership, node.flavor().resources(), Instant.now());
+            return node.allocate(owner, membership, node.resources(), Instant.now());
         } else {
             return node;
         }

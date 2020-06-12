@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,7 +37,7 @@ public class NodePrioritizer {
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final LockedNodeList allNodes;
-    private final DockerHostCapacity capacity;
+    private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
@@ -55,11 +53,11 @@ public class NodePrioritizer {
     NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, int wantedGroups, boolean allocateFully, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
-        this.capacity = new DockerHostCapacity(allNodes, nodeRepository.resourcesCalculator());
+        this.capacity = new HostCapacity(allNodes, nodeRepository.resourcesCalculator());
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
-        this.spareHosts = findSpareHosts(allNodes, capacity, spares);
+        this.spareHosts = capacity.findSpareHosts(allNodes.asList(), spares);
         this.allocateFully = allocateFully;
         this.nodeRepository = nodeRepository;
 
@@ -81,22 +79,6 @@ public class NodePrioritizer {
         this.isAllocatingForReplacement = isReplacement(nodesInCluster.size(),
                                                         nodesInCluster.state(Node.State.failed).size());
         this.isDocker = resources(requestedNodes) != null;
-    }
-
-    /**
-     * Spare hosts are the two hosts in the system with the most free capacity.
-     *
-     * We do not count retired or inactive nodes as used capacity (as they could have been
-     * moved to create space for the spare node in the first place).
-     */
-    private static Set<Node> findSpareHosts(LockedNodeList nodes, DockerHostCapacity capacity, int spares) {
-        return nodes.asList().stream()
-                    .filter(node -> node.type() == NodeType.host)
-                    .filter(dockerHost -> dockerHost.state() == Node.State.active)
-                    .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                    .sorted(capacity::compareWithoutInactive)
-                    .limit(spares)
-                    .collect(Collectors.toSet());
     }
 
     /** Returns the list of nodes sorted by PrioritizableNode::compare */
@@ -207,7 +189,7 @@ public class NodePrioritizer {
 
             if (!isNewNode)
                 builder.resizable(! allocateFully
-                                  && requestedNodes.canResize(node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
+                                  && requestedNodes.canResize(node.resources(), parentCapacity, isTopologyChange, currentClusterSize));
 
             if (spareHosts.contains(parent))
                 builder.violatesSpares(true);

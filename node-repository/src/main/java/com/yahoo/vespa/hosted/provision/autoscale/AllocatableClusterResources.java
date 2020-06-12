@@ -47,7 +47,7 @@ public class AllocatableClusterResources {
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         this.realResources = averageRealResourcesOf(nodes, nodeRepository); // Average since we average metrics over nodes
-        this.advertisedResources = nodes.get(0).flavor().resources();
+        this.advertisedResources = nodes.get(0).resources();
         this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();
         this.fulfilment = 1;
     }
@@ -125,11 +125,11 @@ public class AllocatableClusterResources {
         NodeResources sum = new NodeResources(0, 0, 0, 0);
         for (Node node : nodes)
             sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
-        return nodes.get(0).flavor().resources().justNonNumbers()
-                                                .withVcpu(sum.vcpu() / nodes.size())
-                                                .withMemoryGb(sum.memoryGb() / nodes.size())
-                                                .withDiskGb(sum.diskGb() / nodes.size())
-                                                .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
+        return nodes.get(0).resources().justNonNumbers()
+                                       .withVcpu(sum.vcpu() / nodes.size())
+                                       .withMemoryGb(sum.memoryGb() / nodes.size())
+                                       .withDiskGb(sum.diskGb() / nodes.size())
+                                       .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
     }
 
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
