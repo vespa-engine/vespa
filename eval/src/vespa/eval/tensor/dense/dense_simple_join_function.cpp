@@ -53,20 +53,6 @@ struct JoinParams {
         : result_type(result_type_in), factor(factor_in), function(function_in) {}
 };
 
-template <typename OCT, typename PCT, typename SCT, typename Fun>
-void apply_fun_1_to_n(OCT *dst, const PCT *pri, SCT sec, size_t n, const Fun &fun) {
-    for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun(pri[i], sec);
-    }
-}
-
-template <typename OCT, typename PCT, typename SCT, typename Fun>
-void apply_fun_n_to_n(OCT *dst, const PCT *pri, const SCT *sec, size_t n, const Fun &fun) {
-    for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun(pri[i], sec[i]);
-    }
-}
-
 template <typename OCT, bool pri_mut, typename PCT>
 ArrayRef<OCT> make_dst_cells(ConstArrayRef<PCT> pri_cells, Stash &stash) {
     if constexpr (pri_mut && std::is_same<PCT,OCT>::value) {
@@ -88,12 +74,12 @@ void my_simple_join_op(State &state, uint64_t param) {
     auto sec_cells = DenseTensorView::typify_cells<SCT>(state.peek(swap ? 1 : 0));
     auto dst_cells = make_dst_cells<OCT, pri_mut>(pri_cells, state.stash);
     if (overlap == Overlap::FULL) {
-        apply_fun_n_to_n(dst_cells.begin(), pri_cells.begin(), sec_cells.begin(), dst_cells.size(), my_op);
+        apply_op2_vec_vec(dst_cells.begin(), pri_cells.begin(), sec_cells.begin(), dst_cells.size(), my_op);
     } else if (overlap == Overlap::OUTER) {
         size_t offset = 0;
         size_t factor = params.factor;
         for (SCT cell: sec_cells) {
-            apply_fun_1_to_n(dst_cells.begin() + offset, pri_cells.begin() + offset, cell, factor, my_op);
+            apply_op2_vec_num(dst_cells.begin() + offset, pri_cells.begin() + offset, cell, factor, my_op);
             offset += factor;
         }
     } else {
@@ -101,7 +87,7 @@ void my_simple_join_op(State &state, uint64_t param) {
         size_t offset = 0;
         size_t factor = params.factor;
         for (size_t i = 0; i < factor; ++i) {
-            apply_fun_n_to_n(dst_cells.begin() + offset, pri_cells.begin() + offset, sec_cells.begin(), sec_cells.size(), my_op);
+            apply_op2_vec_vec(dst_cells.begin() + offset, pri_cells.begin() + offset, sec_cells.begin(), sec_cells.size(), my_op);
             offset += sec_cells.size();
         }
     }
