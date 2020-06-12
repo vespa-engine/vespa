@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
+#include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -57,6 +58,7 @@ using namespace vespa::config::search;
 
 using proton::ImportedAttributesRepo;
 using proton::test::AttributeUtils;
+using proton::test::MockAttributeManager;
 using search::TuneFileAttributes;
 using search::attribute::BitVectorSearchCache;
 using search::attribute::IAttributeVector;
@@ -118,19 +120,15 @@ const std::shared_ptr<IDestructorCallback> emptyCallback;
 class AttributeWriterTest : public ::testing::Test {
 public:
     DirectoryHandler _dirHandler;
-    DummyFileHeaderContext _fileHeaderContext;
     std::unique_ptr<ForegroundTaskExecutor> _attributeFieldWriterReal;
     std::unique_ptr<SequencedTaskExecutorObserver> _attributeFieldWriter;
-    HwInfo _hwInfo;
-    proton::AttributeManager::SP _m;
+    std::shared_ptr<MockAttributeManager> _m;
     std::unique_ptr<AttributeWriter> _aw;
 
     AttributeWriterTest()
         : _dirHandler(test_dir),
-          _fileHeaderContext(),
           _attributeFieldWriterReal(),
           _attributeFieldWriter(),
-          _hwInfo(),
           _m(),
           _aw()
     {
@@ -141,18 +139,19 @@ public:
         _aw.reset();
         _attributeFieldWriterReal = std::make_unique<ForegroundTaskExecutor>(threads);
         _attributeFieldWriter = std::make_unique<SequencedTaskExecutorObserver>(*_attributeFieldWriterReal);
-        _m = std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                                        _fileHeaderContext, *_attributeFieldWriter, _hwInfo);
+        _m = std::make_shared<MockAttributeManager>();
+        _m->set_writer(*_attributeFieldWriter);
         allocAttributeWriter();
     }
     void allocAttributeWriter() {
         _aw = std::make_unique<AttributeWriter>(_m);
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return addAttribute({name, AVConfig(AVBasicType::INT32)}, createSerialNum);
+        return addAttribute({name, AVConfig(AVBasicType::INT32)});
     }
-    AttributeVector::SP addAttribute(const AttributeSpec &spec, SerialNum serialNum) {
-        auto ret = _m->addAttribute(spec, serialNum);
+    AttributeVector::SP addAttribute(const AttributeSpec &spec) {
+        auto ret = _m->addAttribute(spec.getName(),
+                                    AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
         allocAttributeWriter();
         return ret;
     }
@@ -195,9 +194,9 @@ TEST_F(AttributeWriterTest, handles_put)
     DocBuilder idb(s);
 
     auto a1 = addAttribute("a1");
-    auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
-    auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
-    auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+    auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
+    auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)});
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -275,7 +274,7 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
     DocBuilder idb(s);
 
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -369,7 +368,7 @@ verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::string
 
 TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -414,7 +413,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 
 TEST_F(AttributeWriterTest, handles_predicate_remove)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -477,7 +476,7 @@ TEST_F(AttributeWriterTest, handles_update)
 
 TEST_F(AttributeWriterTest, handles_predicate_update)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -628,7 +627,7 @@ AttributeVector::SP
 createTensorAttribute(AttributeWriterTest &t) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
-    auto ret = t.addAttribute({"a1", cfg}, createSerialNum);
+    auto ret = t.addAttribute({"a1", cfg});
     return ret;
 }
 
@@ -724,9 +723,9 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
 
     DocBuilder idb(s);
 
-    AttributeVector::SP a1 = t.addAttribute("a1");
-    AttributeVector::SP a2 = t.addAttribute("a2");
-    AttributeVector::SP a3 = t.addAttribute("a3");
+    auto a1 = t.addAttribute("a1");
+    auto a2 = t.addAttribute("a2");
+    auto a3 = t.addAttribute("a3");
 
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(1u, a2->getNumDocs());
@@ -803,7 +802,7 @@ public:
           _valueField("value", 2, *DataType::INT, true),
           _structFieldType("struct")
     {
-        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)}, createSerialNum);
+        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)});
         _type.addField(_valueField);
         _structFieldType.addField(_valueField);
     }
@@ -837,7 +836,7 @@ public:
           _structArrayFieldType(_structFieldType),
           _structArrayField("array", _structArrayFieldType, true)
     {
-        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structArrayField);
     }
     ~StructArrayWriterTest();
@@ -888,8 +887,8 @@ public:
           _structMapFieldType(*DataType::INT, _structFieldType),
           _structMapField("map", _structMapFieldType, true)
     {
-        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
-        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structMapField);
     }
 
