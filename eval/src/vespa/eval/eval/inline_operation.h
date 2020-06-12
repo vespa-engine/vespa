@@ -4,6 +4,7 @@
 
 #include "operation.h"
 #include <vespa/vespalib/util/typify.h>
+#include <cmath>
 
 namespace vespalib::eval::operation {
 
@@ -15,11 +16,38 @@ struct CallOp1 {
     double operator()(double a) const { return my_op1(a); }
 };
 
+template <typename T> struct InlineOp1;
+template <> struct InlineOp1<Exp> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return exp(a); }
+};
+template <> struct InlineOp1<Inv> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return (A{1}/a); }
+};
+template <> struct InlineOp1<Sqrt> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return std::sqrt(a); }
+};
+template <> struct InlineOp1<Tanh> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return std::tanh(a); }
+};
+
 struct TypifyOp1 {
     template <typename T> using Result = TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(op1_t value, F &&f) {
-        (void) value;
-        return f(Result<CallOp1>());
+        if (value == Exp::f) {
+            return f(Result<InlineOp1<Exp>>());
+        } else if (value == Inv::f) {
+            return f(Result<InlineOp1<Inv>>());
+        } else if (value == Sqrt::f) {
+            return f(Result<InlineOp1<Sqrt>>());
+        } else if (value == Tanh::f) {
+            return f(Result<InlineOp1<Tanh>>());
+        } else {
+            return f(Result<CallOp1>());
+        }
     }
 };
 
@@ -44,9 +72,21 @@ template <> struct InlineOp2<Add> {
     InlineOp2(op2_t) {}
     template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a+b); }
 };
+template <> struct InlineOp2<Div> {
+    InlineOp2(op2_t) {}
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a/b); }
+};
 template <> struct InlineOp2<Mul> {
     InlineOp2(op2_t) {}
     template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a*b); }
+};
+template <> struct InlineOp2<Pow> {
+    InlineOp2(op2_t) {}
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return std::pow(a,b); }
+};
+template <> struct InlineOp2<Sub> {
+    InlineOp2(op2_t) {}
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a-b); }
 };
 
 struct TypifyOp2 {
@@ -54,8 +94,14 @@ struct TypifyOp2 {
     template <typename F> static decltype(auto) resolve(op2_t value, F &&f) {
         if (value == Add::f) {
             return f(Result<InlineOp2<Add>>());
+        } else if (value == Div::f) {
+            return f(Result<InlineOp2<Div>>());
         } else if (value == Mul::f) {
             return f(Result<InlineOp2<Mul>>());
+        } else if (value == Pow::f) {
+            return f(Result<InlineOp2<Pow>>());
+        } else if (value == Sub::f) {
+            return f(Result<InlineOp2<Sub>>());
         } else {
             return f(Result<CallOp2>());
         }
