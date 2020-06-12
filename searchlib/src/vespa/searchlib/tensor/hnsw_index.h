@@ -120,6 +120,19 @@ protected:
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
                                          const BitVector *filter, uint32_t explore_k) const;
 
+    struct PreparedAddDoc : public PrepareResult {
+        uint32_t docid;
+        int32_t max_level;
+        std::vector<LinkArray> connections;
+        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in)
+          : docid(docid_in), max_level(max_level_in), connections(max_level+1)
+        {}
+        ~PreparedAddDoc() = default;
+        PreparedAddDoc(PreparedAddDoc&& other) = default;
+    };
+    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
+    LinkArray filter_valid_docids(const LinkArrayRef &docids);
+    void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
               RandomLevelGenerator::UP level_generator, const Config& cfg);
@@ -129,6 +142,10 @@ public:
 
     // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
+    std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
+            TypedCells vector,
+            vespalib::GenerationHandler::Guard read_guard) const override;
+    void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void remove_document(uint32_t docid) override;
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;

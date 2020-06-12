@@ -549,4 +549,60 @@ TEST(LevelGeneratorTest, gives_various_levels)
     EXPECT_TRUE(hist.size() < 14);
 }
 
+class TwoPhaseTest : public HnswIndexTest {
+public:
+    TwoPhaseTest() : HnswIndexTest() {
+        init(true);
+        vectors.set(4, {1, 3}).set(5, {13, 3}).set(6, {7, 13})
+               .set(1, {3, 7}).set(2, {7, 1}).set(3, {11, 7})
+               .set(7, {6, 5}).set(8, {5, 5}).set(9, {6, 6});
+    }
+    using UP = std::unique_ptr<PrepareResult>;
+    UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
+        level_generator->level = max_level;
+        vespalib::GenerationHandler::Guard dummy;
+        auto vector = vectors.get_vector(docid);
+        return index->prepare_add_document(docid, vector, dummy);
+    }
+    void complete_add(uint32_t docid, UP up) {
+        index->complete_add_document(docid, std::move(up));
+        commit();
+    }
+};
+
+TEST_F(TwoPhaseTest, two_phase_add)
+{
+    add_document(1);
+    add_document(2);
+    add_document(3);
+    expect_entry_point(1, 0);
+    add_document(4, 1);
+    add_document(5, 1);
+    add_document(6, 2);
+    expect_entry_point(6, 2);
+
+    expect_level_0(1, {2,4,6});
+    expect_level_0(2, {1,3,4,5});
+    expect_level_0(3, {2,5,6});
+
+    expect_levels(4, {{1,2}, {5,6}});
+    expect_levels(5, {{2,3}, {4,6}});
+    expect_levels(6, {{1,3}, {4,5}, {}});
+
+    auto up = prepare_add(7, 1);
+    // simulate things happening while 7 is in progress:
+    add_document(8); // added
+    remove_document(1); // removed
+    remove_document(5);
+    vectors.set(5, {8, 14}); // updated and moved
+    add_document(5, 2);
+    add_document(9, 1); // added
+    complete_add(7, std::move(up));
+
+    // 1 filtered out because it was removed
+    // TODO: 5 filtered out because it was updated
+    expect_levels(7, {{2}, {4,5}});
+}
+
+
 GTEST_MAIN_RUN_ALL_TESTS()

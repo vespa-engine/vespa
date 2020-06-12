@@ -158,6 +158,15 @@ public:
         auto vector = _vectors.get_vector(docid).typify<double>();
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
+    std::unique_ptr<search::tensor::PrepareResult> prepare_add_document(uint32_t,
+            vespalib::tensor::TypedCells,
+            vespalib::GenerationHandler::Guard) const override {
+        return std::unique_ptr<search::tensor::PrepareResult>();
+    }
+    void complete_add_document(uint32_t docid,
+                               std::unique_ptr<search::tensor::PrepareResult>) override {
+        add_document(docid);
+    }
     void remove_document(uint32_t docid) override {
         auto vector = _vectors.get_vector(docid).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));

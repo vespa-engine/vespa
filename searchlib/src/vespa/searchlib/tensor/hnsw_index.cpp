@@ -11,6 +11,9 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.tensor.hnsw_index");
 
 namespace search::tensor {
 
@@ -272,38 +275,90 @@ HnswIndex::~HnswIndex() = default;
 void
 HnswIndex::add_document(uint32_t docid)
 {
-    auto input = get_vector(docid);
+    PreparedAddDoc op = internal_prepare_add(docid, get_vector(docid));
+    internal_complete_add(docid, op);
+}
+
+HnswIndex::PreparedAddDoc
+HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
+{
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
-    _graph.make_node_for_document(docid, level + 1);
+    PreparedAddDoc op(docid, level);
     auto entry = _graph.get_entry_node();
     if (entry.docid == 0) {
-        _graph.set_entry_node({docid, level});
-        return;
+        return op;
     }
-
     int search_level = entry.level;
-    double entry_dist = calc_distance(input, entry.docid);
+    double entry_dist = calc_distance(input_vector, entry.docid);
     HnswCandidate entry_point(entry.docid, entry_dist);
-    while (search_level > level) {
-        entry_point = find_nearest_in_layer(input, entry_point, search_level);
+    while (search_level > op.max_level) {
+        entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
         --search_level;
     }
 
     FurthestPriQ best_neighbors;
     best_neighbors.push(entry_point);
-    search_level = std::min(level, search_level);
+    search_level = std::min(op.max_level, search_level);
 
-    // Insert the added document in each level it should exist in.
+    // Find neighbors of the added document in each level it should exist in.
     while (search_level >= 0) {
-        // TODO: Rename to search_level?
-        search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
+        search_layer(input_vector, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
-        connect_new_node(docid, neighbors.used, search_level);
+        auto use = neighbors.used;
+        op.connections[search_level].assign(use.begin(), use.end());
         --search_level;
     }
-    if (level > get_entry_level()) {
-        _graph.set_entry_node({docid, level});
+    return op;
+}
+
+HnswIndex::LinkArray 
+HnswIndex::filter_valid_docids(const LinkArrayRef &docids)
+{
+    LinkArray valid;
+    valid.reserve(docids.size());
+    for (uint32_t docid : docids) {
+        auto node_ref = _graph.node_refs[docid].load_acquire();
+        if (node_ref.valid()) {
+            valid.push_back(docid);
+        }
+    }
+    return valid;
+}
+
+void
+HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
+{
+    _graph.make_node_for_document(docid, op.max_level + 1);
+    for (int level = 0; level <= op.max_level; ++level) {
+        auto neighbors = filter_valid_docids(op.connections[level]);
+        connect_new_node(docid, neighbors, level);
+    }
+    if (op.max_level > get_entry_level()) {
+        _graph.set_entry_node({docid, op.max_level});
+    }
+}
+
+std::unique_ptr<PrepareResult>
+HnswIndex::prepare_add_document(uint32_t docid, 
+            TypedCells vector,
+            vespalib::GenerationHandler::Guard read_guard) const
+{
+    PreparedAddDoc op = internal_prepare_add(docid, vector);
+    (void) read_guard; // must keep guard until this point
+    return std::make_unique<PreparedAddDoc>(std::move(op));
+}
+
+void
+HnswIndex::complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result)
+{
+    auto prepared = dynamic_cast<PreparedAddDoc *>(prepare_result.get());
+    if (prepared && (prepared->docid == docid)) {
+        internal_complete_add(docid, *prepared);
+    } else {
+        LOG(warning, "complete_add_document called with invalid prepare_result");
+        // fallback to normal add
+        add_document(docid);
     }
 }
 
