@@ -17,7 +17,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     private final HostResourcesCalculator hostResourcesCalculator = new IdentityHostResourcesCalculator();
 
     @Override
-    public Optional<LoadBalancerService> getLoadBalancerService() {
+    public Optional<LoadBalancerService> getLoadBalancerService(NodeRepository nodeRepository) {
         return Optional.empty();
     }
 
