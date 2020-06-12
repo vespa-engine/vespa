@@ -146,7 +146,8 @@ TEST(InlineOperationTest, op2_typifier_forwards_return_value_correctly) {
 TEST(InlineOperationTest, inline_op1_example_works) {
     op1_t ignored = nullptr;
     InlineOp1<Inv> op(ignored);
-    EXPECT_EQ(op(1.0), 1.0);
+    EXPECT_EQ(op(2.0), 0.5);
+    EXPECT_EQ(op(4.0f), 0.25f);
     EXPECT_EQ(op(8.0), 0.125);
 }
 

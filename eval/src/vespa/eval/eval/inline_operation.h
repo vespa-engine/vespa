@@ -23,7 +23,8 @@ template <> struct InlineOp1<Exp> {
 };
 template <> struct InlineOp1<Inv> {
     InlineOp1(op1_t) {}
-    template <typename A> constexpr auto operator()(A a) const { return (1/a); }
+    template <typename A> constexpr auto operator()(A a) const { return (1.0/a); }
+    constexpr auto operator()(float a) const { return (1.0f/a); }
 };
 template <> struct InlineOp1<Sqrt> {
     InlineOp1(op1_t) {}
