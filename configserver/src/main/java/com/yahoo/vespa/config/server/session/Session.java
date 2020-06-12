@@ -25,12 +25,12 @@ public abstract class Session implements Comparable<Session>  {
 
     private final long sessionId;
     protected final TenantName tenant;
-    protected final SessionZooKeeperClient zooKeeperClient;
+    protected final SessionZooKeeperClient sessionZooKeeperClient;
 
-    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
+    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient) {
         this.tenant = tenant;
         this.sessionId = sessionId;
-        this.zooKeeperClient = zooKeeperClient;
+        this.sessionZooKeeperClient = sessionZooKeeperClient;
     }
     /**
      * Retrieve the session id for this session.
@@ -41,7 +41,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     public Session.Status getStatus() {
-        return zooKeeperClient.readStatus();
+        return sessionZooKeeperClient.readStatus();
     }
 
     @Override
@@ -80,43 +80,43 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     public Instant getCreateTime() {
-        return zooKeeperClient.readCreateTime();
+        return sessionZooKeeperClient.readCreateTime();
     }
 
     public void setApplicationId(ApplicationId applicationId) {
-        zooKeeperClient.writeApplicationId(applicationId);
+        sessionZooKeeperClient.writeApplicationId(applicationId);
     }
 
     void setApplicationPackageReference(FileReference applicationPackageReference) {
         if (applicationPackageReference == null) throw new IllegalArgumentException(String.format(
                 "Null application package FileReference for tenant: %s, session: %d", tenant, sessionId));
-        zooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
+        sessionZooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
     }
 
     public void setVespaVersion(Version version) {
-        zooKeeperClient.writeVespaVersion(version);
+        sessionZooKeeperClient.writeVespaVersion(version);
     }
 
     public void setDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
-        zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+        sessionZooKeeperClient.writeDockerImageRepository(dockerImageRepository);
     }
 
     public void setAthenzDomain(Optional<AthenzDomain> athenzDomain) {
-        zooKeeperClient.writeAthenzDomain(athenzDomain);
+        sessionZooKeeperClient.writeAthenzDomain(athenzDomain);
     }
 
-    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
+    public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
 
-    public FileReference getApplicationPackageReference() {return zooKeeperClient.readApplicationPackageReference(); }
+    public FileReference getApplicationPackageReference() {return sessionZooKeeperClient.readApplicationPackageReference(); }
 
-    public Optional<DockerImage> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
+    public Optional<DockerImage> getDockerImageRepository() { return sessionZooKeeperClient.readDockerImageRepository(); }
 
-    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
+    public Version getVespaVersion() { return sessionZooKeeperClient.readVespaVersion(); }
 
-    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
+    public Optional<AthenzDomain> getAthenzDomain() { return sessionZooKeeperClient.readAthenzDomain(); }
 
     public AllocatedHosts getAllocatedHosts() {
-        return zooKeeperClient.getAllocatedHosts();
+        return sessionZooKeeperClient.getAllocatedHosts();
     }
 
     public Transaction createDeactivateTransaction() {
@@ -124,7 +124,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     private Transaction createSetStatusTransaction(Status status) {
-        return zooKeeperClient.createWriteStatusTransaction(status);
+        return sessionZooKeeperClient.createWriteStatusTransaction(status);
     }
 
     // Note: Assumes monotonically increasing session ids

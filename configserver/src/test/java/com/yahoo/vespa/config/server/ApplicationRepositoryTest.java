@@ -33,6 +33,7 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -45,6 +46,7 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -106,6 +108,7 @@ public class ApplicationRepositoryTest {
     private SessionHandlerTest.MockProvisioner  provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
+    private ConfigCurator configCurator;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -124,6 +127,7 @@ public class ApplicationRepositoryTest {
 
     public void setup(FlagSource flagSource) throws IOException {
         Curator curator = new MockCurator();
+        configCurator = ConfigCurator.create(curator);
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .configServerConfig(new ConfigserverConfig.Builder()
@@ -300,15 +304,21 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void delete() {
+        TenantName tenantName = applicationId().tenant();
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
             LocalSession applicationData = tenant.getSessionRepository().getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
             assertNotNull(tenant.getSessionRepo().getSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)).getAbsolute();
+            assertTrue(configCurator.exists(sessionNode));
+            TenantFileSystemDirs tenantFileSystemDirs = tenant.getApplicationRepo().getTenantFileSystemDirs();
+            File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
+            assertTrue(sessionFile.exists());
 
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
@@ -318,6 +328,8 @@ public class ApplicationRepositoryTest {
             assertTrue(provisioner.removed);
             assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId);
+            assertFalse(configCurator.exists(sessionNode));
+            assertFalse(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
         }
@@ -354,7 +366,6 @@ public class ApplicationRepositoryTest {
             // A new delete should cleanup and be successful
             RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
-            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
             assertNull(tenant.getSessionRepo().getSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
