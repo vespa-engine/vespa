@@ -138,13 +138,18 @@ public class RoutingPoliciesTest {
 
     @Test
     public void zone_routing_policies() {
+        zone_routing_policies(false);
+        zone_routing_policies(true);
+    }
+
+    private void zone_routing_policies(boolean sharedRoutingLayer) {
         var tester = new RoutingPoliciesTester();
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
 
         // Deploy application
         int clustersPerZone = 2;
-        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
+        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), sharedRoutingLayer, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates records and policies for all clusters in all zones
@@ -163,7 +168,7 @@ public class RoutingPoliciesTest {
         assertEquals(4, tester.policiesOf(context1.instanceId()).size());
 
         // Add 1 cluster in each zone and deploy
-        tester.provisionLoadBalancers(clustersPerZone + 1, context1.instanceId(), zone1, zone2);
+        tester.provisionLoadBalancers(clustersPerZone + 1, context1.instanceId(), sharedRoutingLayer, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -177,7 +182,7 @@ public class RoutingPoliciesTest {
         assertEquals(6, tester.policiesOf(context1.instanceId()).size());
 
         // Deploy another application
-        tester.provisionLoadBalancers(clustersPerZone, context2.instanceId(), zone1, zone2);
+        tester.provisionLoadBalancers(clustersPerZone, context2.instanceId(), sharedRoutingLayer, zone1, zone2);
         context2.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -195,7 +200,7 @@ public class RoutingPoliciesTest {
         assertEquals(4, tester.policiesOf(context2.instanceId()).size());
 
         // Deploy removes cluster from app1
-        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
+        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), sharedRoutingLayer, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -581,15 +586,21 @@ public class RoutingPoliciesTest {
                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
     }
     
-    private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
+    private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, boolean shared, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
         for (int i = 0; i < count; i++) {
+            HostName lbHostname;
+            if (shared) {
+                lbHostname = HostName.from("shared-lb--" + zone.value());
+            } else {
+                lbHostname = HostName.from("lb-" + i + "--" + application.serializedForm() +
+                                                     "--" + zone.value());
+            }
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
                                      application,
                                      ClusterSpec.Id.from("c" + i),
-                                     HostName.from("lb-" + i + "--" + application.serializedForm() +
-                                                   "--" + zone.value()),
+                                     lbHostname,
                                      LoadBalancer.State.active,
                                      Optional.of("dns-zone-1")));
         }
@@ -626,11 +637,15 @@ public class RoutingPoliciesTest {
             tester.controllerTester().zoneRegistry().exclusiveRoutingIn(tester.controllerTester().zoneRegistry().zones().all().zones());
         }
 
-        private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {
+        private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, boolean shared, ZoneId... zones) {
             for (ZoneId zone : zones) {
                 tester.configServer().removeLoadBalancers(application, zone);
-                tester.configServer().putLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone));
+                tester.configServer().putLoadBalancers(zone, createLoadBalancers(zone, application, shared, clustersPerZone));
             }
+        }
+
+        private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {
+            provisionLoadBalancers(clustersPerZone, application, false, zones);
         }
 
         private Collection<RoutingPolicy> policiesOf(ApplicationId instance) {
