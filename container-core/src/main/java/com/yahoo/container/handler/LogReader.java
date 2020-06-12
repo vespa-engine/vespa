@@ -138,7 +138,6 @@ class LogReader {
                                    .collect(Collectors.groupingBy(this::extractTimestamp,
                                                                   TreeMap::new,
                                                                   Collectors.toList()));
-        System.err.println(logsByTimestamp);
 
         List<List<Path>> sorted = new ArrayList<>();
         for (var entry : logsByTimestamp.entrySet()) {
