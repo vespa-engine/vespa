@@ -49,6 +49,8 @@ double IsNan::f(double a) { return std::isnan(a) ? 1.0 : 0.0; }
 double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
+//-----------------------------------------------------------------------------
+double Inv::f(double a) { return (1 / a); }
 
 namespace {
 
@@ -102,6 +104,8 @@ std::map<vespalib::string,op1_t> make_op1_map() {
     add_op1(map, "relu(a)",    Relu::f);
     add_op1(map, "sigmoid(a)", Sigmoid::f);
     add_op1(map, "elu(a)",     Elu::f);
+    //-------------------------------------
+    add_op1(map, "1/a",        Inv::f);
     return map;
 }
 
