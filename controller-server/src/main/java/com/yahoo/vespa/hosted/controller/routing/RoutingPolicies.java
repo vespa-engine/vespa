@@ -184,10 +184,10 @@ public class RoutingPolicies {
     private void removePoliciesUnreferencedBy(LoadBalancerAllocation allocation, @SuppressWarnings("unused") Lock lock) {
         var policies = get(allocation.deployment.applicationId());
         var newPolicies = new LinkedHashMap<>(policies);
-        var activeLoadBalancers = allocation.loadBalancers.stream().map(LoadBalancer::hostname).collect(Collectors.toSet());
+        var activeIds = allocation.asPolicyIds();
         for (var policy : policies.values()) {
             // Leave active load balancers and irrelevant zones alone
-            if (activeLoadBalancers.contains(policy.canonicalName()) ||
+            if (activeIds.contains(policy.id()) ||
                 !policy.id().zone().equals(allocation.deployment.zoneId())) continue;
 
             var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive).dnsName();
@@ -268,6 +268,15 @@ public class RoutingPolicies {
             this.deployment = new DeploymentId(application, zone);
             this.loadBalancers = List.copyOf(loadBalancers);
             this.deploymentSpec = deploymentSpec;
+        }
+
+        /** Returns the policy IDs of the load balancers contained in this */
+        private Set<RoutingPolicyId> asPolicyIds() {
+            return loadBalancers.stream()
+                                .map(lb -> new RoutingPolicyId(lb.application(),
+                                                               lb.cluster(),
+                                                               deployment.zoneId()))
+                                .collect(Collectors.toUnmodifiableSet());
         }
 
         /** Compute all endpoint IDs for given load balancer */
