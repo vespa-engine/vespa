@@ -86,7 +86,7 @@ public class SessionHandlerTest {
         private ApplicationId applicationId;
 
         public MockLocalSession(long sessionId, ApplicationPackage app) {
-            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null, null);
+            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null);
         }
 
         public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
@@ -122,9 +122,6 @@ public class SessionHandlerTest {
         public Instant getCreateTime() {
             return createTime;
         }
-
-        @Override
-        public void delete(NestedTransaction transaction) {  }
 
     }
 

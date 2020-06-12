@@ -13,7 +13,9 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -210,8 +212,16 @@ public class SessionRepository {
         if (watcher != null)  watcher.close();
         localSessionCache.removeSession(sessionId);
         NestedTransaction transaction = new NestedTransaction();
-        session.delete(transaction);
+        deleteLocalSession(session, transaction);
         transaction.commit();
+    }
+
+    /** Add transactions to delete this session to the given nested transaction */
+    public void deleteLocalSession(LocalSession session, NestedTransaction transaction) {
+        long sessionId = session.getSessionId();
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+        transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
+        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
     }
 
     public void close() {
@@ -424,8 +434,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
-                                                getSessionAppDir(sessionId), applicationRepo);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -483,8 +492,7 @@ public class SessionRepository {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient,
-                                    getSessionAppDir(sessionId), applicationRepo);
+            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient, applicationRepo);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -512,8 +520,7 @@ public class SessionRepository {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient,
-                                getSessionAppDir(sessionId), applicationRepo);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
     }
 
     /**
@@ -583,6 +590,61 @@ public class SessionRepository {
     @Override
     public String toString() {
         return getSessions().toString();
+    }
+
+    private static class FileTransaction extends AbstractTransaction {
+
+        public static FileTransaction from(FileOperation operation) {
+            FileTransaction transaction = new FileTransaction();
+            transaction.add(operation);
+            return transaction;
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void commit() {
+            for (Operation operation : operations())
+                ((FileOperation)operation).commit();
+        }
+
+    }
+
+    /** Factory for file operations */
+    private static class FileOperations {
+
+        /** Creates an operation which recursively deletes the given path */
+        public static DeleteOperation delete(String pathToDelete) {
+            return new DeleteOperation(pathToDelete);
+        }
+
+    }
+
+    private interface FileOperation extends Transaction.Operation {
+
+        void commit();
+
+    }
+
+    /**
+     * Recursively deletes this path and everything below.
+     * Succeeds with no action if the path does not exist.
+     */
+    private static class DeleteOperation implements FileOperation {
+
+        private final String pathToDelete;
+
+        DeleteOperation(String pathToDelete) {
+            this.pathToDelete = pathToDelete;
+        }
+
+        @Override
+        public void commit() {
+            // TODO: Check delete access in prepare()
+            IOUtils.recursiveDeleteDir(new File(pathToDelete));
+        }
+
     }
 
 }

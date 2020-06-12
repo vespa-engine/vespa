@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -11,26 +12,25 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.nio.file.Files;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -45,19 +45,26 @@ public class LocalSessionTest {
     private static final TenantName tenantName = TenantName.from("test_tenant");
     private static final Path tenantPath = Path.createRoot();
 
-    TenantRepository tenantRepository;
+    private TenantRepository tenantRepository;
     private Curator curator;
     private ConfigCurator configCurator;
-    private TenantFileSystemDirs tenantFileSystemDirs;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setupTest() {
-        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().build(), false);
-        tenantRepository.addTenant(tenantName);
+    public void setupTest() throws IOException {
         curator = new MockCurator();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .build())
+                .build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(tenantName);
         configCurator = ConfigCurator.create(curator);
-        tenantFileSystemDirs = new TenantFileSystemDirs(uncheck(() -> Files.createTempDirectory("serverdb")).toFile(),
-                                                        tenantName);
     }
 
     @Test
@@ -99,20 +106,6 @@ public class LocalSessionTest {
         assertFalse(f2.exists());
     }
 
-    @Test
-    public void require_that_session_can_be_deleted() throws Exception {
-        TenantName tenantName = TenantName.defaultName();
-        LocalSession session = createSession(tenantName, 3);
-        String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
-        assertTrue(configCurator.exists(sessionNode));
-        assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
-        NestedTransaction transaction = new NestedTransaction();
-        session.delete(transaction);
-        transaction.commit();
-        assertFalse(configCurator.exists(sessionNode));
-        assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
-    }
-
     @Test(expected = IllegalStateException.class)
     public void require_that_no_provision_info_throws_exception() throws Exception {
         createSession(TenantName.defaultName(), 3).getAllocatedHosts();
@@ -132,13 +125,9 @@ public class LocalSessionTest {
             zkClient.write(allocatedHosts.get());
         }
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
-        File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
-        sessionDir.createNewFile();
-        TenantApplications applications = TenantApplications.create(
-                new TestComponentRegistry.Builder().curator(curator).build(), tenant);
+        TenantApplications applications = tenantRepository.getTenant(tenantName).getApplicationRepo();
         applications.createApplication(zkc.readApplicationId());
-        return new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp),
-                                zkc, sessionDir, applications);
+        return new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp), zkc, applications);
     }
 
     private void doPrepare(LocalSession session) {
@@ -152,7 +141,7 @@ public class LocalSessionTest {
 
     private DeployHandlerLogger getLogger() {
         return new DeployHandlerLogger(new Slime().get(), false,
-                                       new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
+                                       new ApplicationId.Builder().tenant(tenantName).applicationName("testapp").build());
     }
 
 }

@@ -5,15 +5,10 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.transaction.AbstractTransaction;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-
-import java.io.File;
 
 /**
  * A LocalSession is a session that has been created locally on this configserver. A local session can be edited and
@@ -28,7 +23,6 @@ public class LocalSession extends Session {
 
     protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
-    private final File serverDBSessionDir;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -36,10 +30,9 @@ public class LocalSession extends Session {
      * @param sessionId The session id for this session.
      */
     public LocalSession(TenantName tenant, long sessionId, ApplicationPackage applicationPackage,
-                        SessionZooKeeperClient sessionZooKeeperClient, File serverDBSessionDir,
+                        SessionZooKeeperClient sessionZooKeeperClient,
                         TenantApplications applicationRepo) {
         super(tenant, sessionId, sessionZooKeeperClient);
-        this.serverDBSessionDir = serverDBSessionDir;
         this.applicationPackage = applicationPackage;
         this.applicationRepo = applicationRepo;
     }
@@ -78,12 +71,6 @@ public class LocalSession extends Session {
         return applicationPackage.getMetaData().getPreviousActiveGeneration();
     }
 
-    /** Add transactions to delete this session to the given nested transaction */
-    public void delete(NestedTransaction transaction) {
-        transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
-        transaction.add(FileTransaction.from(FileOperations.delete(serverDBSessionDir.getAbsolutePath())));
-    }
-
     public void waitUntilActivated(TimeoutBudget timeoutBudget) {
         sessionZooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }
@@ -95,62 +82,5 @@ public class LocalSession extends Session {
     public ApplicationMetaData getMetaData() { return applicationPackage.getMetaData(); }
 
     public ApplicationPackage getApplicationPackage() { return applicationPackage; }
-
-    // The rest of this class should be moved elsewhere ...
-    
-    private static class FileTransaction extends AbstractTransaction {
-        
-        public static FileTransaction from(FileOperation operation) {
-            FileTransaction transaction = new FileTransaction();
-            transaction.add(operation);
-            return transaction;
-        }
-
-        @Override
-        public void prepare() { }
-
-        @Override
-        public void commit() {
-            for (Operation operation : operations())
-                ((FileOperation)operation).commit();
-        }
-
-    }
-    
-    /** Factory for file operations */
-    private static class FileOperations {
-        
-        /** Creates an operation which recursively deletes the given path */
-        public static DeleteOperation delete(String pathToDelete) {
-            return new DeleteOperation(pathToDelete);
-        }
-        
-    }
-    
-    private interface FileOperation extends Transaction.Operation {
-
-        void commit();
-        
-    }
-
-    /** 
-     * Recursively deletes this path and everything below. 
-     * Succeeds with no action if the path does not exist.
-     */
-    private static class DeleteOperation implements FileOperation {
-
-        private final String pathToDelete;
-        
-        DeleteOperation(String pathToDelete) {
-            this.pathToDelete = pathToDelete;
-        }
-        
-        @Override
-        public void commit() {
-            // TODO: Check delete access in prepare()
-            IOUtils.recursiveDeleteDir(new File(pathToDelete));
-        }
-
-    }
 
 }
