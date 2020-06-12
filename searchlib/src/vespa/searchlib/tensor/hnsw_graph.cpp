@@ -37,9 +37,16 @@ void
 HnswGraph::remove_node_for_document(uint32_t docid)
 {
     auto node_ref = node_refs[docid].load_acquire();
-    nodes.remove(node_ref);
+    assert(node_ref.valid());
+    auto levels = nodes.get(node_ref);
     vespalib::datastore::EntryRef invalid;
     node_refs[docid].store_release(invalid);
+    // Ensure data referenced through the old ref can be recycled:
+    nodes.remove(node_ref);
+    for (size_t i = 0; i < levels.size(); ++i) {
+        auto old_links_ref = levels[i].load_acquire();
+        links.remove(old_links_ref);
+    }
 }
 
 void     

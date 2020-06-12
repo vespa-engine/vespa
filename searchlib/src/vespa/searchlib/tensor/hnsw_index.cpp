@@ -400,7 +400,6 @@ void
 HnswIndex::remove_document(uint32_t docid)
 {
     bool need_new_entrypoint = (docid == get_entry_docid());
-    LinkArray empty;
     LevelArrayRef node_levels = _graph.get_level_array(docid);
     for (int level = node_levels.size(); level-- > 0; ) {
         LinkArrayRef my_links = _graph.get_link_array(docid, level);
@@ -413,7 +412,6 @@ HnswIndex::remove_document(uint32_t docid)
             remove_link_to(neighbor_id, docid, level);
         }
         mutual_reconnect(my_links, level);
-        _graph.set_link_array(docid, level, empty);
     }
     if (need_new_entrypoint) {
         HnswGraph::EntryNode entry;
