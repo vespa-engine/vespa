@@ -370,6 +370,10 @@ public:
         }
     }
 
+    /**
+     * Call func with leaf entry key value as argument for all leaf entries in subtrees
+     * for children [start_idx, end_idx).
+     */
     template <typename NodeStoreType, typename FunctionType>
     void foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
         const BTreeNode::Ref *it = this->_data;
@@ -475,6 +479,9 @@ public:
         }
     }
 
+    /**
+     * Call func with leaf entry key value as argument for leaf entries [start_idx, end_idx).
+     */
     template <typename FunctionType>
     void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
         const KeyT *it = _keys;
