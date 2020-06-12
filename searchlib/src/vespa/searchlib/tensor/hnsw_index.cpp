@@ -299,6 +299,7 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
     }
     int search_level = entry.level;
     double entry_dist = calc_distance(input_vector, entry.docid);
+    // TODO: check if entry docid/node_ref is still valid here
     HnswCandidate entry_point(entry.docid, entry.node_ref, entry_dist);
     while (search_level > op.max_level) {
         entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
@@ -543,6 +544,7 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVecto
     }
     int search_level = entry.level;
     double entry_dist = calc_distance(vector, entry.docid);
+    // TODO: check if entry docid/node_ref is still valid here
     HnswCandidate entry_point(entry.docid, entry.node_ref, entry_dist);
     while (search_level > 0) {
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
