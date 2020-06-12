@@ -29,13 +29,6 @@ using State = eval::InterpretedFunction::State;
 
 namespace {
 
-template <typename CT, typename Fun>
-void apply_fun_1_to_n(CT *dst, const CT *pri, CT sec, size_t n, const Fun &fun) {
-    for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun(pri[i], sec);
-    }
-}
-
 template <typename CT, bool inplace>
 ArrayRef<CT> make_dst_cells(ConstArrayRef<CT> src_cells, Stash &stash) {
     if (inplace) {
@@ -53,7 +46,7 @@ void my_number_join_op(State &state, uint64_t param) {
     CT number = state.peek(swap ? 1 : 0).as_double();
     auto src_cells = DenseTensorView::typify_cells<CT>(tensor);
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
-    apply_fun_1_to_n(dst_cells.begin(), src_cells.begin(), number, dst_cells.size(), my_op);
+    apply_op2_vec_num(dst_cells.begin(), src_cells.begin(), number, dst_cells.size(), my_op);
     if (inplace) {
         state.pop_pop_push(tensor);
     } else {

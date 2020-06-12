@@ -64,4 +64,27 @@ struct TypifyOp2 {
 
 //-----------------------------------------------------------------------------
 
+template <typename A, typename OP1>
+void apply_op1_vec(A *dst, const A *src, size_t n, OP1 &&f) {
+    for (size_t i = 0; i < n; ++i) {
+        dst[i] = f(src[i]);
+    }
+}
+
+template <typename D, typename A, typename B, typename OP2>
+void apply_op2_vec_num(D *dst, const A *a, B b, size_t n, OP2 &&f) {
+    for (size_t i = 0; i < n; ++i) {
+        dst[i] = f(a[i], b);
+    }
+}
+
+template <typename D, typename A, typename B, typename OP2>
+void apply_op2_vec_vec(D *dst, const A *a, const B *b, size_t n, OP2 &&f) {
+    for (size_t i = 0; i < n; ++i) {
+        dst[i] = f(a[i], b[i]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 }

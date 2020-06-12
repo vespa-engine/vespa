@@ -27,13 +27,6 @@ using State = eval::InterpretedFunction::State;
 
 namespace {
 
-template <typename CT, typename Fun>
-void apply_fun_to_n(CT *dst, const CT *src, size_t n, const Fun &fun) {
-    for (size_t i = 0; i < n; ++i) {
-        dst[i] = fun(src[i]);
-    }
-}
-
 template <typename CT, bool inplace>
 ArrayRef<CT> make_dst_cells(ConstArrayRef<CT> src_cells, Stash &stash) {
     if (inplace) {
@@ -49,7 +42,7 @@ void my_simple_map_op(State &state, uint64_t param) {
     auto const &child = state.peek(0);
     auto src_cells = DenseTensorView::typify_cells<CT>(child);
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
-    apply_fun_to_n(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
+    apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
     if (!inplace) {
         state.pop_push(state.stash.create<DenseTensorView>(child.type(), TypedCells(dst_cells)));
     }
