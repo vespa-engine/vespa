@@ -67,6 +67,7 @@ TEST(InlineOperationTest, op1_lambdas_are_recognized) {
     EXPECT_EQ(as_op1("elu(a)"),     &Elu::f);
     //-------------------------------------------
     EXPECT_EQ(as_op1("1/a"),        &Inv::f);
+    EXPECT_EQ(as_op1("1.0/a"),      &Inv::f);
 }
 
 TEST(InlineOperationTest, op1_lambdas_are_recognized_with_different_parameter_names) {
