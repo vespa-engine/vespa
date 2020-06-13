@@ -71,15 +71,11 @@ Aggregator::~Aggregator()
 Aggregator &
 Aggregator::create(Aggr aggr, Stash &stash)
 {
-    switch (aggr) {
-    case Aggr::AVG:   return stash.create<Wrapper<aggr::Avg<double>>>();
-    case Aggr::COUNT: return stash.create<Wrapper<aggr::Count<double>>>();
-    case Aggr::PROD:  return stash.create<Wrapper<aggr::Prod<double>>>();
-    case Aggr::SUM:   return stash.create<Wrapper<aggr::Sum<double>>>();
-    case Aggr::MAX:   return stash.create<Wrapper<aggr::Max<double>>>();
-    case Aggr::MIN:   return stash.create<Wrapper<aggr::Min<double>>>();
-    }
-    LOG_ABORT("should not be reached");
+    return TypifyAggr::resolve(aggr, [&stash](auto t)->Aggregator&
+                               {
+                                   using T = typename decltype(t)::template templ<double>;
+                                   return stash.create<Wrapper<T>>();
+                               });
 }
 
 std::vector<Aggr>

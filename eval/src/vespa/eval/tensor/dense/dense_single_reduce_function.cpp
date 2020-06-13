@@ -2,6 +2,7 @@
 
 #include "dense_single_reduce_function.h"
 #include "dense_tensor_view.h"
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::tensor {
@@ -12,6 +13,8 @@ using eval::TensorEngine;
 using eval::TensorFunction;
 using eval::Value;
 using eval::ValueType;
+using eval::TypifyCellType;
+using eval::TypifyAggr;
 using eval::as;
 
 using namespace eval::tensor_function;
@@ -66,28 +69,13 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     state.pop_push(state.stash.create<DenseTensorView>(params.result_type, TypedCells(dst_cells)));
 }
 
-template <typename CT>
-InterpretedFunction::op_function my_select_2(Aggr aggr) {
-    switch (aggr) {
-    case Aggr::AVG:   return my_single_reduce_op<CT, Avg<CT>>;
-    case Aggr::COUNT: return my_single_reduce_op<CT, Count<CT>>;
-    case Aggr::PROD:  return my_single_reduce_op<CT, Prod<CT>>;
-    case Aggr::SUM:   return my_single_reduce_op<CT, Sum<CT>>;
-    case Aggr::MAX:   return my_single_reduce_op<CT, Max<CT>>;
-    case Aggr::MIN:   return my_single_reduce_op<CT, Min<CT>>;
+struct MyGetFun {
+    template <typename R1, typename R2> static auto invoke() {
+        return my_single_reduce_op<R1, typename R2::template templ<R1>>;
     }
-    abort();
-}
+};
 
-InterpretedFunction::op_function my_select(CellType cell_type, Aggr aggr) {
-    if (cell_type == ValueType::CellType::DOUBLE) {
-        return my_select_2<double>(aggr);
-    }
-    if (cell_type == ValueType::CellType::FLOAT) {
-        return my_select_2<float>(aggr);
-    }
-    abort();
-}
+using MyTypify = TypifyValue<TypifyCellType,TypifyAggr>;
 
 bool check_input_type(const ValueType &type) {
     return (type.is_dense() && ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
@@ -109,7 +97,7 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
-    auto op = my_select(result_type().cell_type(), _aggr);
+    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), _aggr);
     auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);
     static_assert(sizeof(uint64_t) == sizeof(&params));
     return InterpretedFunction::Instruction(op, (uint64_t)&params);
