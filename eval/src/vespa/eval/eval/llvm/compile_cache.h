@@ -26,10 +26,11 @@ private:
     struct Value {
         size_t num_refs;
         std::atomic<const CompiledFunction *> cf;
+        std::mutex result_lock;
         std::condition_variable cond;
         CompiledFunction::UP compiled_function;
         struct ctor_tag {};
-        Value(ctor_tag) : num_refs(1), cf(nullptr), cond(), compiled_function() {}
+        Value(ctor_tag) : num_refs(1), cf(nullptr), result_lock(), cond(), compiled_function() {}
         const CompiledFunction &wait_for_result();
         const CompiledFunction &get() {
             const CompiledFunction *ptr = cf.load(std::memory_order_acquire);

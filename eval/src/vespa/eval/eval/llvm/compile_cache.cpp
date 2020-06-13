@@ -15,7 +15,7 @@ std::vector<std::pair<uint64_t,Executor*>> CompileCache::_executor_stack{};
 const CompiledFunction &
 CompileCache::Value::wait_for_result()
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::unique_lock<std::mutex> guard(result_lock);
     cond.wait(guard, [this](){ return bool(compiled_function); });
     return *compiled_function;
 }
@@ -84,7 +84,7 @@ CompileCache::wait_pending()
     {
         std::lock_guard<std::mutex> guard(_lock);
         for (auto entry = _cached.begin(); entry != _cached.end(); ++entry) {
-            if (entry->second.compiled_function.get() == nullptr) {
+            if (entry->second.cf.load(std::memory_order_acquire) == nullptr) {
                 ++(entry->second.num_refs);
                 pending.push_back(std::make_unique<Token>(entry, Token::ctor_tag()));
             }
@@ -129,7 +129,7 @@ CompileCache::count_pending()
     std::lock_guard<std::mutex> guard(_lock);
     size_t pending = 0;
     for (const auto &entry: _cached) {
-        if (entry.second.compiled_function.get() == nullptr) {
+        if (entry.second.cf.load(std::memory_order_acquire) == nullptr) {
             ++pending;
         }
     }
@@ -141,7 +141,7 @@ CompileCache::CompileTask::run()
 {
     auto &entry = token->_entry->second;
     auto result = std::make_unique<CompiledFunction>(*function, pass_params);
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(entry.result_lock);
     entry.compiled_function = std::move(result);
     entry.cf.store(entry.compiled_function.get(), std::memory_order_release);
     entry.cond.notify_all();
