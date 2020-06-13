@@ -25,7 +25,7 @@ void my_cell_range_op(eval::InterpretedFunction::State &state, uint64_t param) {
 
 struct MyCellRangeOp {
     template <typename CT>
-    static auto get_fun() { return my_cell_range_op<CT>; }
+    static auto invoke() { return my_cell_range_op<CT>; }
 };
 
 } // namespace vespalib::tensor::<unnamed>
@@ -46,7 +46,9 @@ DenseCellRangeFunction::compile_self(const TensorEngine &, Stash &) const
 {
     static_assert(sizeof(uint64_t) == sizeof(this));
     assert(result_type().cell_type() == child().result_type().cell_type());
-    auto op = select_1<MyCellRangeOp>(result_type().cell_type());
+
+    using MyTypify = eval::TypifyCellType;
+    auto op = typify_invoke<1,MyTypify,MyCellRangeOp>(result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op, (uint64_t)this);
 }
 

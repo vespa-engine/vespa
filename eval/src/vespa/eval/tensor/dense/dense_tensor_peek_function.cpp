@@ -44,7 +44,7 @@ void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) 
 
 struct MyTensorPeekOp {
     template <typename CT>
-    static auto get_fun() { return my_tensor_peek_op<CT>; }
+    static auto invoke() { return my_tensor_peek_op<CT>; }
 };
 
 } // namespace vespalib::tensor::<unnamed>
@@ -71,7 +71,8 @@ eval::InterpretedFunction::Instruction
 DenseTensorPeekFunction::compile_self(const TensorEngine &, Stash &) const
 {
     static_assert(sizeof(uint64_t) == sizeof(&_spec));
-    auto op = select_1<MyTensorPeekOp>(_children[0].get().result_type().cell_type());
+    using MyTypify = eval::TypifyCellType;
+    auto op = typify_invoke<1,MyTypify,MyTensorPeekOp>(_children[0].get().result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op, (uint64_t)&_spec);
 }
 

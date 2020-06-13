@@ -95,7 +95,7 @@ void my_compiled_lambda_op(eval::InterpretedFunction::State &state, uint64_t par
 
 struct MyCompiledLambdaOp {
     template <typename CT>
-    static auto get_fun() { return my_compiled_lambda_op<CT>; }
+    static auto invoke() { return my_compiled_lambda_op<CT>; }
 };
 
 //-----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ void my_interpreted_lambda_op(eval::InterpretedFunction::State &state, uint64_t 
 
 struct MyInterpretedLambdaOp {
     template <typename CT>
-    static auto get_fun() { return my_interpreted_lambda_op<CT>; }
+    static auto invoke() { return my_interpreted_lambda_op<CT>; }
 };
 
 //-----------------------------------------------------------------------------
@@ -163,15 +163,16 @@ DenseLambdaFunction::compile_self(const TensorEngine &engine, Stash &stash) cons
 {
     assert(&engine == &prod_engine);
     auto mode = eval_mode();
+    using MyTypify = eval::TypifyCellType;
     if (mode == EvalMode::COMPILED) {
         CompiledParams &params = stash.create<CompiledParams>(_lambda);
-        auto op = select_1<MyCompiledLambdaOp>(result_type().cell_type());
+        auto op = typify_invoke<1,MyTypify,MyCompiledLambdaOp>(result_type().cell_type());
         static_assert(sizeof(&params) == sizeof(uint64_t));
         return Instruction(op, (uint64_t)(&params));
     } else {
         assert(mode == EvalMode::INTERPRETED);
         InterpretedParams &params = stash.create<InterpretedParams>(_lambda);
-        auto op = select_1<MyInterpretedLambdaOp>(result_type().cell_type());
+        auto op = typify_invoke<1,MyTypify,MyInterpretedLambdaOp>(result_type().cell_type());
         static_assert(sizeof(&params) == sizeof(uint64_t));
         return Instruction(op, (uint64_t)(&params));
     }

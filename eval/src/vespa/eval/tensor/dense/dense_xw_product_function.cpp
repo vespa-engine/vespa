@@ -76,33 +76,6 @@ void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint6
     state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
-template <bool common_inner>
-struct MyXWProductOp {
-    template <typename LCT, typename RCT>
-    static auto get_fun() { return my_xw_product_op<LCT,RCT,common_inner>; }
-};
-
-template <bool common_inner>
-eval::InterpretedFunction::op_function my_select2(CellType lct, CellType rct) {
-    if (lct == rct) {
-        if (lct == ValueType::CellType::DOUBLE) {
-            return my_cblas_double_xw_product_op<common_inner>;
-        }
-        if (lct == ValueType::CellType::FLOAT) {
-            return my_cblas_float_xw_product_op<common_inner>;
-        }
-    }
-    return select_2<MyXWProductOp<common_inner>>(lct, rct);
-}
-
-eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool common_inner) {
-    if (common_inner) {
-        return my_select2<true>(lct, rct);
-    } else {
-        return my_select2<false>(lct, rct);
-    }
-}
-
 bool isDenseTensor(const ValueType &type, size_t d) {
     return (type.is_dense() && (type.dimensions().size() == d));
 }
@@ -132,6 +105,18 @@ const TensorFunction &createDenseXWProduct(const ValueType &res, const TensorFun
                                                 common_inner);
 }
 
+struct MyXWProductOp {
+    template<typename R1, typename R2, typename R3> static auto invoke() {
+        if (std::is_same_v<R1,double> && std::is_same_v<R2,double>) {
+            return my_cblas_double_xw_product_op<R3::value>;
+        } else if (std::is_same_v<R1,float> && std::is_same_v<R2,float>) {
+            return my_cblas_float_xw_product_op<R3::value>;
+        } else {
+            return my_xw_product_op<R1, R2, R3::value>;
+        }
+    }
+};
+
 } // namespace vespalib::tensor::<unnamed>
 
 DenseXWProductFunction::Self::Self(const eval::ValueType &result_type_in,
@@ -160,8 +145,10 @@ eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
-    auto op = my_select(lhs().result_type().cell_type(),
-                        rhs().result_type().cell_type(), _common_inner);
+    using MyTypify = TypifyValue<eval::TypifyCellType,vespalib::TypifyBool>;
+    auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_type(),
+                                                      rhs().result_type().cell_type(),
+                                                      _common_inner);
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 

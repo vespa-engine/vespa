@@ -19,7 +19,7 @@ namespace {
 struct CallVectorFromDoubles {
     template <typename CT>
     static TypedCells
-    call(eval::InterpretedFunction::State &state, size_t numCells) {
+    invoke(eval::InterpretedFunction::State &state, size_t numCells) {
         ArrayRef<CT> outputCells = state.stash.create_array<CT>(numCells);
         for (size_t i = numCells; i-- > 0; ) {
             outputCells[i] = (CT) state.peek(0).as_double();
@@ -33,7 +33,8 @@ void my_vector_from_doubles_op(eval::InterpretedFunction::State &state, uint64_t
     const auto *self = (const VectorFromDoublesFunction::Self *)(param);
     CellType ct = self->resultType.cell_type();
     size_t numCells = self->resultSize;
-    TypedCells cells = dispatch_0<CallVectorFromDoubles>(ct, state, numCells);
+    using MyTypify = eval::TypifyCellType;
+    TypedCells cells = typify_invoke<1,MyTypify,CallVectorFromDoubles>(ct, state, numCells);
     const Value &result = state.stash.create<DenseTensorView>(self->resultType, cells);
     state.stack.emplace_back(result);
 }
