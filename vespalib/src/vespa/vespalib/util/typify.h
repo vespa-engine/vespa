@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "traits.h"
 #include <stddef.h>
 #include <utility>
 
@@ -32,8 +33,8 @@ template <typename T, T VALUE> struct TypifyResultValue {
 /**
  * Typification result for values resolving into simple templates
  * (templated on one type). Using this exact template is not required,
- * but is supplied as convenience and example. The resolved template
- * should be called 'templ' for consistency across typifiers.
+ * but is supplied for convenience and as example. The resolved
+ * template should be called 'templ' for consistency across typifiers.
  **/
 template <template<typename> typename TT> struct TypifyResultSimpleTemplate {
     template <typename T> using templ = TT<T>;
@@ -71,22 +72,19 @@ template <size_t N, typename Typifier, typename Target, typename ...Rs> struct T
         static_assert(sizeof...(Rs) == N);
         return Target::template invoke<Rs...>();
     }
-    template <class, class = std::void_t<>> struct has_type : std::false_type {};
-    template <class T> struct has_type<T, std::void_t<typename T::type>> : std::true_type {};
     template <typename T, typename ...Args> static decltype(auto) select(T &&value, Args &&...args) {
         if constexpr (N == sizeof...(Rs)) {
             return Target::template invoke<Rs...>(std::forward<T>(value), std::forward<Args>(args)...);
         } else {
             return Typifier::resolve(value, [&](auto t)->decltype(auto)
-                                   {
-                                       using X = decltype(t);
-                                       constexpr bool x_has_type = has_type<X>::value;
-                                       if constexpr (x_has_type) {
-                                           return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
-                                       } else {
-                                           return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);
-                                       }
-                                   });
+                                     {
+                                         using X = decltype(t);
+                                         if constexpr (has_type_type_v<X>) {
+                                             return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
+                                         } else {
+                                             return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);
+                                         }
+                                     });
         }
     }
 };
