@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -158,13 +157,12 @@ class LogReader {
             return ZonedDateTime.of(Integer.parseInt(matcher.group(1)),
                                     Integer.parseInt(matcher.group(2)),
                                     Integer.parseInt(matcher.group(3)),
-                                    Integer.parseInt(matcher.group(4)),
+                                    Integer.parseInt(matcher.group(4)) + 1, // timestamp is start of hour range of the log file
                                     0,
                                     0,
                                     0,
                                     ZoneId.of("UTC"))
-                                .toInstant()
-                                .plus(Duration.ofHours(1));
+                                .toInstant();
         }
         matcher = vespaLogPathPattern.matcher(relativePath);
         if (matcher.matches()) {
@@ -176,11 +174,10 @@ class LogReader {
                                     Integer.parseInt(matcher.group(3)),
                                     Integer.parseInt(matcher.group(4)),
                                     Integer.parseInt(matcher.group(5)),
-                                    Integer.parseInt(matcher.group(6)),
+                                    Integer.parseInt(matcher.group(6)) + 1, // timestamp is that of the last entry, truncated to second accuracy
                                     0,
                                     ZoneId.of("UTC"))
-                                .toInstant()
-                                .plus(Duration.ofSeconds(1));
+                                .toInstant();
         }
         throw new IllegalArgumentException("Unrecognized file pattern for file at '" + path + "'");
     }
