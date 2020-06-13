@@ -118,5 +118,24 @@ public:
 };
 
 } // namespave vespalib::eval::aggr
+
+struct TypifyAggr {
+    template <template<typename> typename A> struct Result {
+        static constexpr bool is_type = false;
+        template <typename T> using templ = A<T>;
+    };
+    template <typename F> static decltype(auto) resolve(Aggr aggr, F &&f) {
+        switch (aggr) {
+        case Aggr::AVG:   return f(Result<aggr::Avg>());
+        case Aggr::COUNT: return f(Result<aggr::Count>());
+        case Aggr::PROD:  return f(Result<aggr::Prod>());
+        case Aggr::SUM:   return f(Result<aggr::Sum>());
+        case Aggr::MAX:   return f(Result<aggr::Max>());
+        case Aggr::MIN:   return f(Result<aggr::Min>());
+        }
+        abort();
+    }
+};
+
 } // namespace vespalib::eval
 } // namespace vespalib
