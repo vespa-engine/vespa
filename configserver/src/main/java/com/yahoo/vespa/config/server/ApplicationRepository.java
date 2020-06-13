@@ -770,7 +770,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    private Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
+    public Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         try {
