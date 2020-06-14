@@ -302,8 +302,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024, index_warmup_executor);
 
     const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
-    _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
-    _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(*_sharedExecutor);
+    _sharedExecutor = std::make_shared<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
+    _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_sharedExecutor);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024, initialize_executor);

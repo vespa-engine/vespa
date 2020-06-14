@@ -112,7 +112,7 @@ private:
     ProtonConfigurer                _protonConfigurer;
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
-    std::unique_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
+    std::shared_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
