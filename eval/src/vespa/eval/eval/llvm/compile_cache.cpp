@@ -10,14 +10,14 @@ namespace eval {
 std::mutex CompileCache::_lock{};
 CompileCache::Map CompileCache::_cached{};
 uint64_t CompileCache::_executor_tag{0};
-std::vector<std::pair<uint64_t,Executor*>> CompileCache::_executor_stack{};
+std::vector<std::pair<uint64_t,std::shared_ptr<Executor>>> CompileCache::_executor_stack{};
 
 const CompiledFunction &
 CompileCache::Value::wait_for_result()
 {
-    std::unique_lock<std::mutex> guard(result_lock);
-    cond.wait(guard, [this](){ return bool(compiled_function); });
-    return *compiled_function;
+    std::unique_lock<std::mutex> guard(result->lock);
+    result->cond.wait(guard, [this](){ return bool(result->compiled_function); });
+    return *(result->compiled_function);
 }
 
 void
@@ -30,10 +30,10 @@ CompileCache::release(Map::iterator entry)
 }
 
 uint64_t
-CompileCache::attach_executor(Executor &executor)
+CompileCache::attach_executor(std::shared_ptr<Executor> executor)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _executor_stack.emplace_back(++_executor_tag, &executor);
+    _executor_stack.emplace_back(++_executor_tag, std::move(executor));
     return _executor_tag;
 }
 
@@ -52,6 +52,7 @@ CompileCache::compile(const Function &function, PassParams pass_params)
 {
     Token::UP token;
     Executor::Task::UP task;
+    std::shared_ptr<Executor> executor;
     vespalib::string key = gen_key(function, pass_params);
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -63,13 +64,14 @@ CompileCache::compile(const Function &function, PassParams pass_params)
             auto res = _cached.emplace(std::move(key), Value::ctor_tag());
             assert(res.second);
             token = std::make_unique<Token>(res.first, Token::ctor_tag());
-            ++(res.first->second.num_refs);
-            task = std::make_unique<CompileTask>(function, pass_params,
-                    std::make_unique<Token>(res.first, Token::ctor_tag()));
+            task = std::make_unique<CompileTask>(function, pass_params, res.first->second.result);
             if (!_executor_stack.empty()) {
-                task = _executor_stack.back().second->execute(std::move(task));
+                executor = _executor_stack.back().second;
             }
         }
+    }
+    if (executor) {
+        task = executor->execute(std::move(task));
     }
     if (task) {
         std::thread([&task](){ task.get()->run(); }).join();
@@ -84,7 +86,7 @@ CompileCache::wait_pending()
     {
         std::lock_guard<std::mutex> guard(_lock);
         for (auto entry = _cached.begin(); entry != _cached.end(); ++entry) {
-            if (entry->second.cf.load(std::memory_order_acquire) == nullptr) {
+            if (entry->second.result->cf.load(std::memory_order_acquire) == nullptr) {
                 ++(entry->second.num_refs);
                 pending.push_back(std::make_unique<Token>(entry, Token::ctor_tag()));
             }
@@ -129,7 +131,7 @@ CompileCache::count_pending()
     std::lock_guard<std::mutex> guard(_lock);
     size_t pending = 0;
     for (const auto &entry: _cached) {
-        if (entry.second.cf.load(std::memory_order_acquire) == nullptr) {
+        if (entry.second.result->cf.load(std::memory_order_acquire) == nullptr) {
             ++pending;
         }
     }
@@ -139,12 +141,11 @@ CompileCache::count_pending()
 void
 CompileCache::CompileTask::run()
 {
-    auto &entry = token->_entry->second;
-    auto result = std::make_unique<CompiledFunction>(*function, pass_params);
-    std::lock_guard<std::mutex> guard(entry.result_lock);
-    entry.compiled_function = std::move(result);
-    entry.cf.store(entry.compiled_function.get(), std::memory_order_release);
-    entry.cond.notify_all();
+    auto compiled = std::make_unique<CompiledFunction>(*function, pass_params);
+    std::lock_guard<std::mutex> guard(result->lock);
+    result->compiled_function = std::move(compiled);
+    result->cf.store(result->compiled_function.get(), std::memory_order_release);
+    result->cond.notify_all();
 }
 
 } // namespace vespalib::eval

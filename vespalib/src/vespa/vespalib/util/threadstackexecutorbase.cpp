@@ -87,6 +87,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
         if (!worker.idle) {
             assert(_taskCount != 0);
             --_taskCount;
+            wakeup(monitor);
             _barrier.completeEvent(worker.task.token);
             worker.idle = true;
         }
@@ -96,7 +97,6 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             worker.task = std::move(_tasks.front());
             worker.idle = false;
             _tasks.pop();
-            wakeup(monitor);
             return true;
         }
         if (_closed) {
