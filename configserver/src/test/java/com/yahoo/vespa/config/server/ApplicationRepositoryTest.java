@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -116,10 +117,6 @@ public class ApplicationRepositoryTest {
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
-
     @Before
     public void setup() throws IOException {
         setup(new InMemoryFlagSource());
@@ -132,8 +129,9 @@ public class ApplicationRepositoryTest {
                 .curator(curator)
                 .configServerConfig(new ConfigserverConfig.Builder()
                                             .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(tempFolder.newFolder().getAbsolutePath())
-                                            .configDefinitionsDir(tempFolder.newFolder().getAbsolutePath())
+                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                                             .build())
                 .flagSource(flagSource)
                 .build();
@@ -159,7 +157,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(tenant.getApplicationRepo()
+        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
     }
@@ -191,7 +189,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(
+        LocalSession session = tenant.getSessionRepository().getLocalSession(
                 tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
     }
@@ -309,10 +307,10 @@ public class ApplicationRepositoryTest {
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            LocalSession applicationData = tenant.getSessionRepository().getSession(sessionId);
+            LocalSession applicationData = tenant.getSessionRepository().getLocalSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(tenant.getSessionRepo().getSession(sessionId));
+            assertNotNull(tenant.getSessionRepo().getLocalSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
             String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)).getAbsolute();
             assertTrue(configCurator.exists(sessionNode));
@@ -323,8 +321,8 @@ public class ApplicationRepositoryTest {
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(tenant.getSessionRepository().getSession(sessionId));
-            assertNull(tenant.getSessionRepo().getSession(sessionId));
+            assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
+            assertNull(tenant.getSessionRepo().getLocalSession(sessionId));
             assertTrue(provisioner.removed);
             assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId);
@@ -366,7 +364,7 @@ public class ApplicationRepositoryTest {
             // A new delete should cleanup and be successful
             RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
-            assertNull(tenant.getSessionRepo().getSession(prepareResult.sessionId()));
+            assertNull(tenant.getSessionRepo().getLocalSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
@@ -400,13 +398,13 @@ public class ApplicationRepositoryTest {
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         SessionRepository sessionRepository = tester.tenant().getSessionRepository();
-        assertEquals(3, sessionRepository.getSessions().size());
+        assertEquals(3, sessionRepository.getLocalSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = sessionRepository.getSessions();
+        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
         assertEquals(1, sessions.size());
         ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
         LocalSession localSession = localSessions.get(0);
@@ -420,9 +418,9 @@ public class ApplicationRepositoryTest {
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
-        assertEquals(2, sessionRepository.getSessions().size());
-        sessionRepository.deleteSession(localSession);
-        assertEquals(1, sessionRepository.getSessions().size());
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+        sessionRepository.deleteLocalSession(localSession);
+        assertEquals(1, sessionRepository.getLocalSessions().size());
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
@@ -477,7 +475,7 @@ public class ApplicationRepositoryTest {
 
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        LocalSession session = tenant.getSessionRepository().getSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));

@@ -668,7 +668,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void deleteExpiredLocalSessions() {
         Map<Tenant, List<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getSessions()));
+        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));
@@ -757,7 +757,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private LocalSession getLocalSession(Tenant tenant, long sessionId) {
-        LocalSession session = tenant.getSessionRepository().getSession(sessionId);
+        LocalSession session = tenant.getSessionRepository().getLocalSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
@@ -823,7 +823,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public LocalSession getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
-            return tenant.getSessionRepository().getSession(applicationRepo.requireActiveSessionOf(applicationId));
+            return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }

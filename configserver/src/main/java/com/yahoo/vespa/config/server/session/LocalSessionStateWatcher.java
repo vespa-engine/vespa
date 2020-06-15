@@ -40,9 +40,9 @@ public class LocalSessionStateWatcher {
         log.log(status == Session.Status.DELETE ? Level.INFO : Level.FINE,
                 session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
-        if (status.equals(Session.Status.DELETE) && sessionRepository.getSession(sessionId) != null) {
+        if (status.equals(Session.Status.DELETE) && sessionRepository.getLocalSession(sessionId) != null) {
             log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
-            sessionRepository.deleteSession(session);
+            sessionRepository.deleteLocalSession(session);
         }
     }
 
