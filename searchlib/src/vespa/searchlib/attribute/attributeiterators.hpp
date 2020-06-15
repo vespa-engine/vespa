@@ -132,6 +132,33 @@ struct is_tree_iterator<vespalib::btree::BTreeConstIterator<KeyT, DataT, AggrT, 
 template <typename PL>
 inline constexpr bool is_tree_iterator_v = is_tree_iterator<PL>::value;
 
+template <typename PL>
+void get_hits_helper(BitVector& result, PL& iterator, uint32_t end_id)
+{
+    auto end_itr = iterator;
+    if (end_itr.valid() && end_itr.getKey() < end_id) {
+        end_itr.seek(end_id);
+    }
+    iterator.foreach_key_range(end_itr, [&](uint32_t key) { result.setBit(key); });
+    iterator = end_itr;
+}
+
+template <typename PL>
+void or_hits_helper(BitVector& result, PL& iterator, uint32_t end_id)
+{
+    auto end_itr = iterator;
+    if (end_itr.valid() && end_itr.getKey() < end_id) {
+        end_itr.seek(end_id);
+    }
+    iterator.foreach_key_range(end_itr, [&](uint32_t key)
+                               {
+                                   if (!result.testBit(key)) {
+                                       result.setBit(key);
+                                   }
+                               });
+    iterator = end_itr;
+}
+ 
 }
 
 template <typename PL>
@@ -139,13 +166,7 @@ std::unique_ptr<BitVector>
 AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
     if constexpr (is_tree_iterator_v<PL>) {
-        auto end_itr = _iterator;
-        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
-            end_itr.seek(getEndId());
-        }
-        BitVector *resultp = result.get();
-        _iterator.foreach_key_range(end_itr, [=](uint32_t key) { resultp->setBit(key); });
-        _iterator = end_itr;
+        get_hits_helper(*result, _iterator, getEndId());
     } else {
         for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
             result->setBit(_iterator.getKey());
@@ -160,17 +181,7 @@ void
 AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
     (void) begin_id;
     if constexpr (is_tree_iterator_v<PL>) {
-        auto end_itr = _iterator;
-        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
-            end_itr.seek(getEndId());
-        }
-        _iterator.foreach_key_range(end_itr, [&](uint32_t key)
-                                    {
-                                        if (!result.testBit(key)) {
-                                            result.setBit(key);
-                                        }
-                                    });
-        _iterator = end_itr;
+        or_hits_helper(result, _iterator, getEndId());
     } else {
         for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
             if ( ! result.testBit(_iterator.getKey()) ) {
@@ -192,13 +203,7 @@ std::unique_ptr<BitVector>
 FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
     if constexpr (is_tree_iterator_v<PL>) {
-        auto end_itr = _iterator;
-        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
-            end_itr.seek(getEndId());
-        }
-        BitVector *resultp = result.get();
-        _iterator.foreach_key_range(end_itr, [=](uint32_t key) { resultp->setBit(key); });
-        _iterator = end_itr;
+        get_hits_helper(*result, _iterator, getEndId());
     } else {
         for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
             result->setBit(_iterator.getKey());
@@ -213,17 +218,7 @@ void
 FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
     (void) begin_id;
     if constexpr (is_tree_iterator_v<PL>) {
-        auto end_itr = _iterator;
-        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
-            end_itr.seek(getEndId());
-        }
-        _iterator.foreach_key_range(end_itr, [&](uint32_t key)
-                                    {
-                                        if (!result.testBit(key)) {
-                                            result.setBit(key);
-                                        }
-                                    });
-        _iterator = end_itr;
+        or_hits_helper(result, _iterator, getEndId());
     } else {
         for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
             if ( ! result.testBit(_iterator.getKey()) ) {
