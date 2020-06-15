@@ -110,12 +110,46 @@ AttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
     }
 }
 
+namespace {
+
+template <typename> struct is_tree_iterator;
+
+template <typename P>
+struct is_tree_iterator<DocIdIterator<P>> {
+    static constexpr bool value = false;
+};
+
+template <typename P>
+struct is_tree_iterator<DocIdMinMaxIterator<P>> {
+    static constexpr bool value = false;
+};
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+struct is_tree_iterator<vespalib::btree::BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>> {
+    static constexpr bool value = true;
+};
+
+template <typename PL>
+inline constexpr bool is_tree_iterator_v = is_tree_iterator<PL>::value;
+
+}
+
 template <typename PL>
 std::unique_ptr<BitVector>
 AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        result->setBit(_iterator.getKey());
+    if constexpr (is_tree_iterator_v<PL>) {
+        auto end_itr = _iterator;
+        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
+            end_itr.seek(getEndId());
+        }
+        BitVector *resultp = result.get();
+        _iterator.foreach_key_range(end_itr, [=](uint32_t key) { resultp->setBit(key); });
+        _iterator = end_itr;
+    } else {
+        for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+            result->setBit(_iterator.getKey());
+        }
     }
     result->invalidateCachedCount();
     return result;
@@ -125,9 +159,23 @@ template <typename PL>
 void
 AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
     (void) begin_id;
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        if ( ! result.testBit(_iterator.getKey()) ) {
-            result.setBit(_iterator.getKey());
+    if constexpr (is_tree_iterator_v<PL>) {
+        auto end_itr = _iterator;
+        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
+            end_itr.seek(getEndId());
+        }
+        _iterator.foreach_key_range(end_itr, [&](uint32_t key)
+                                    {
+                                        if (!result.testBit(key)) {
+                                            result.setBit(key);
+                                        }
+                                    });
+        _iterator = end_itr;
+    } else {
+        for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+            if ( ! result.testBit(_iterator.getKey()) ) {
+                result.setBit(_iterator.getKey());
+            }
         }
     }
     result.invalidateCachedCount();
@@ -143,8 +191,18 @@ template <typename PL>
 std::unique_ptr<BitVector>
 FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        result->setBit(_iterator.getKey());
+    if constexpr (is_tree_iterator_v<PL>) {
+        auto end_itr = _iterator;
+        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
+            end_itr.seek(getEndId());
+        }
+        BitVector *resultp = result.get();
+        _iterator.foreach_key_range(end_itr, [=](uint32_t key) { resultp->setBit(key); });
+        _iterator = end_itr;
+    } else {
+        for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+            result->setBit(_iterator.getKey());
+        }
     }
     result->invalidateCachedCount();
     return result;
@@ -154,9 +212,23 @@ template <typename PL>
 void
 FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
     (void) begin_id;
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        if ( ! result.testBit(_iterator.getKey()) ) {
-            result.setBit(_iterator.getKey());
+    if constexpr (is_tree_iterator_v<PL>) {
+        auto end_itr = _iterator;
+        if (end_itr.valid() && end_itr.getKey() < getEndId()) {
+            end_itr.seek(getEndId());
+        }
+        _iterator.foreach_key_range(end_itr, [&](uint32_t key)
+                                    {
+                                        if (!result.testBit(key)) {
+                                            result.setBit(key);
+                                        }
+                                    });
+        _iterator = end_itr;
+    } else {
+        for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+            if ( ! result.testBit(_iterator.getKey()) ) {
+                result.setBit(_iterator.getKey());
+            }
         }
     }
     result.invalidateCachedCount();
