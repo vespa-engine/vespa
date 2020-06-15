@@ -526,10 +526,10 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    LocalSession createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
             log.log(Level.FINE, "Local session for session id " + sessionId + " already exists");
-            return createSessionFromId(sessionId);
+            return Optional.of(createSessionFromId(sessionId));
         }
 
         log.log(Level.INFO, "Creating local session for session id " + sessionId);
@@ -538,16 +538,23 @@ public class SessionRepository {
         log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
             File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
-            File sessionDir = new FileDirectory(rootDir).getFile(fileReference);
-            if (!sessionDir.exists())
-                throw new RuntimeException("File reference for session " + sessionId + " not found (" + sessionDir.getAbsolutePath() + ")");
+            File sessionDir;
+            FileDirectory fileDirectory = new FileDirectory(rootDir);
+            try {
+                sessionDir = fileDirectory.getFile(fileReference);
+            } catch (IllegalArgumentException e) {
+                // We cannot be guaranteed that the file reference exists (it could be that it has not
+                // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
+                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                return Optional.empty();
+            }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
-            return createLocalSession(sessionDir,
-                                      applicationId,
-                                      sessionId,
-                                      applicationRepo.activeSessionOf(applicationId).orElse(nonExistingActiveSession));
+            return Optional.of(createLocalSession(sessionDir,
+                                                  applicationId,
+                                                  sessionId,
+                                                  applicationRepo.activeSessionOf(applicationId).orElse(nonExistingActiveSession)));
         }
-        return null;
+        return Optional.empty();
     }
 
     // Return Optional instead of faking it with nonExistingActiveSession

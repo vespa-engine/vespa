@@ -177,4 +177,10 @@ public class FileDirectory  {
             destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
         }
     }
+
+    @Override
+    public String toString() {
+        return "root dir: " + root.getAbsolutePath();
+    }
+
 }
