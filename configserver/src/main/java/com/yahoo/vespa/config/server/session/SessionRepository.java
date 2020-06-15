@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * Session repository for config server. Stores session state in zookeeper and file system. There are two
+ * Session repository for a tenant. Stores session state in zookeeper and file system. There are two
  * different session types (RemoteSession and LocalSession).
  *
  * @author Ulf Lilleengen
@@ -325,8 +325,10 @@ public class SessionRepository {
         loadSessionIfActive(session);
         addRemoteSession(session);
         remoteSessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
-        if (distributeApplicationPackage.value())
-            createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        if (distributeApplicationPackage.value()) {
+            Optional<LocalSession> localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
+            localSession.ifPresent(this::addSession);
+        }
     }
 
     private void sessionRemoved(long sessionId) {
