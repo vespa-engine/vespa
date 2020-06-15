@@ -43,6 +43,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final CloudEventReporter cloudEventReporter;
     private final RotationStatusUpdater rotationStatusUpdater;
     private final ResourceTagMaintainer resourceTagMaintainer;
+    private final SystemRoutingPolicyMaintainer systemRoutingPolicyMaintainer;
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -71,6 +72,7 @@ public class ControllerMaintenance extends AbstractComponent {
         cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1));
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval);
         resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), controller.serviceRegistry().resourceTagger());
+        systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, Duration.ofMinutes(10));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -97,6 +99,7 @@ public class ControllerMaintenance extends AbstractComponent {
         cloudEventReporter.close();
         rotationStatusUpdater.close();
         resourceTagMaintainer.close();
+        systemRoutingPolicyMaintainer.close();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
