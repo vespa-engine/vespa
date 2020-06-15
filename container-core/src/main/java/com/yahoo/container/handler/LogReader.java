@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.google.common.collect.Iterators;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,15 +23,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -57,53 +57,102 @@ class LogReader {
         this.logFilePattern = logFilePattern;
     }
 
-    void writeLogs(OutputStream outputStream, Instant from, Instant to) {
+    void writeLogs(OutputStream out, Instant from, Instant to) {
+        double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
+        double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
         try {
-            List<List<Path>> logs = getMatchingFiles(from, to);
-            for (int i = 0; i < logs.size(); i++) {
-                for (Path log : logs.get(i)) {
-                    boolean zipped = log.toString().endsWith(".gz");
-                    try (InputStream in = Files.newInputStream(log)) {
-                        InputStream inProxy;
+            for (List<Path> logs : getMatchingFiles(from, to)) {
+                List<LogLineIterator> logLineIterators = new ArrayList<>();
+                try {
+                    // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading
+                    for (Path log : logs)
+                        logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds));
 
-                        // If the log needs filtering, possibly unzip (and rezip) it, and filter its lines on timestamp.
-                        // When multiple log files exist for the same instant, their entries should ideally be sorted. This is not done here.
-                        if (i == 0 || i == logs.size() - 1) {
-                            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
-                                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipped ? new GZIPOutputStream(buffer) : buffer, UTF_8))) {
-                                for (String line; (line = reader.readLine()) != null; ) {
-                                    String[] parts = line.split("\t");
-                                    if (parts.length != 7)
-                                        continue;
-
-                                    Instant at = Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS);
-                                    if (at.isAfter(from) && !at.isAfter(to)) {
-                                        writer.write(line);
-                                        writer.newLine();
-                                    }
-                                }
-                            }
-                            inProxy = new ByteArrayInputStream(buffer.toByteArray());
-                        }
-                        else
-                            inProxy = in;
-
-                        if ( ! zipped) {
-                            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                            try (OutputStream outProxy = new GZIPOutputStream(buffer)) {
-                                inProxy.transferTo(outProxy);
-                            }
-                            inProxy = new ByteArrayInputStream(buffer.toByteArray());
-                        }
-                        inProxy.transferTo(outputStream);
+                    Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
+                                                                              Comparator.comparingDouble(LineWithTimestamp::timestamp));
+                    while (lines.hasNext()) {
+                        writer.write(lines.next().line());
+                        writer.newLine();
+                    }
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                finally {
+                    for (LogLineIterator ll : logLineIterators) {
+                        try { ll.close(); } catch (IOException ignored) { }
                     }
                 }
             }
         }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
+        finally {
+            Exceptions.uncheck(writer::flush);
         }
+    }
+
+    private static class LogLineIterator implements Iterator<LineWithTimestamp>, AutoCloseable {
+
+        private final BufferedReader reader;
+        private final double from;
+        private final double to;
+        private LineWithTimestamp next;
+
+        private LogLineIterator(Path log, double from, double to) throws IOException {
+            boolean zipped = log.toString().endsWith(".gz");
+            InputStream in = Files.newInputStream(log);
+            this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
+            this.from = from;
+            this.to = to;
+            this.next = readNext();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public LineWithTimestamp next() {
+            LineWithTimestamp current = next;
+            next = readNext();
+            return current;
+        }
+
+        @Override
+        public void close() throws IOException {
+            reader.close();
+        }
+
+        private LineWithTimestamp readNext() {
+            try {
+                for (String line; (line = reader.readLine()) != null; ) {
+                    String[] parts = line.split("\t");
+                    if (parts.length != 7)
+                        continue;
+
+                    double timestamp = Double.parseDouble(parts[0]);
+                    if (timestamp > from && timestamp <= to)
+                        return new LineWithTimestamp(line, timestamp);
+                }
+                return null;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+    }
+
+    private static class LineWithTimestamp {
+        final String line;
+        final double timestamp;
+        LineWithTimestamp(String line, double timestamp) {
+            this.line = line;
+            this.timestamp = timestamp;
+        }
+        String line() { return line; }
+        double timestamp() { return timestamp; }
     }
 
     /** Returns log files which may have relevant entries, grouped and sorted by {@link #extractTimestamp(Path)} — the first and last group must be filtered. */

@@ -35,9 +35,6 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                              .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MAX);
 
         return new HttpResponse(200) {
-            {
-                headers().add("Content-Encoding", "gzip");
-            }
             @Override
             public void render(OutputStream outputStream) {
                 logReader.writeLogs(outputStream, from, to);
