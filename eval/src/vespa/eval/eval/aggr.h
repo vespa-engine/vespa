@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
@@ -120,10 +121,7 @@ public:
 } // namespave vespalib::eval::aggr
 
 struct TypifyAggr {
-    template <template<typename> typename A> struct Result {
-        static constexpr bool is_type = false;
-        template <typename T> using templ = A<T>;
-    };
+    template <template<typename> typename TT> using Result = TypifyResultSimpleTemplate<TT>;
     template <typename F> static decltype(auto) resolve(Aggr aggr, F &&f) {
         switch (aggr) {
         case Aggr::AVG:   return f(Result<aggr::Avg>());

@@ -39,4 +39,10 @@ struct can_skip_destruction : std::is_trivially_destructible<T> {};
 
 //-----------------------------------------------------------------------------
 
+template <typename, typename = std::void_t<>> struct has_type_type : std::false_type {};
+template <typename T> struct has_type_type<T, std::void_t<typename T::type>> : std::true_type {};
+template <typename T> constexpr bool has_type_type_v = has_type_type<T>::value;
+
+//-----------------------------------------------------------------------------
+
 } // namespace vespalib

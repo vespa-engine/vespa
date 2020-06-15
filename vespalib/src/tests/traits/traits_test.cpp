@@ -42,4 +42,14 @@ TEST("require that can_skip_destruction works") {
     EXPECT_EQUAL(can_skip_destruction<Child2>::value, true);
 }
 
+struct NoType {};
+struct TypeType { using type = NoType; };
+struct NoTypeType { static constexpr int type = 3; };
+
+TEST("require that type type member can be detected") {
+    EXPECT_FALSE(has_type_type_v<NoType>);
+    EXPECT_TRUE(has_type_type_v<TypeType>);
+    EXPECT_FALSE(has_type_type_v<NoTypeType>);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
