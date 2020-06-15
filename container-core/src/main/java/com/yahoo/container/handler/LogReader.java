@@ -132,7 +132,10 @@ class LogReader {
                         continue;
 
                     double timestamp = Double.parseDouble(parts[0]);
-                    if (timestamp > from && timestamp <= to)
+                    if (timestamp > to)
+                        return null;
+
+                    if (timestamp >= from)
                         return new LineWithTimestamp(line, timestamp);
                 }
                 return null;
