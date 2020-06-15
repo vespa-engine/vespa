@@ -50,7 +50,9 @@ double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
 //-----------------------------------------------------------------------------
-double Inv::f(double a) { return (1 / a); }
+double Inv::f(double a) { return (1.0 / a); }
+double Square::f(double a) { return (a * a); }
+double Cube::f(double a) { return (a * a * a); }
 
 namespace {
 
@@ -106,6 +108,13 @@ std::map<vespalib::string,op1_t> make_op1_map() {
     add_op1(map, "elu(a)",     Elu::f);
     //-------------------------------------
     add_op1(map, "1/a",        Inv::f);
+    add_op1(map, "a*a",        Square::f);
+    add_op1(map, "a^2",        Square::f);
+    add_op1(map, "pow(a,2)",   Square::f);
+    add_op1(map, "(a*a)*a",    Cube::f);
+    add_op1(map, "a*(a*a)",    Cube::f);
+    add_op1(map, "a^3",        Cube::f);
+    add_op1(map, "pow(a,3)",   Cube::f);
     return map;
 }
 

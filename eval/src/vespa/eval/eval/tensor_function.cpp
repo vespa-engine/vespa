@@ -545,48 +545,48 @@ If::visit_children(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-const Node &const_value(const Value &value, Stash &stash) {
+const TensorFunction &const_value(const Value &value, Stash &stash) {
     return stash.create<ConstValue>(value);
 }
 
-const Node &inject(const ValueType &type, size_t param_idx, Stash &stash) {
+const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash) {
     return stash.create<Inject>(type, param_idx);
 }
 
-const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
+const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
     ValueType result_type = child.result_type().reduce(dimensions);
     return stash.create<Reduce>(result_type, child, aggr, dimensions);
 }
 
-const Node &map(const Node &child, map_fun_t function, Stash &stash) {
+const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
     ValueType result_type = child.result_type();
     return stash.create<Map>(result_type, child, function);
 }
 
-const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
 }
 
-const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::merge(lhs.result_type(), rhs.result_type());
     return stash.create<Merge>(result_type, lhs, rhs, function);
 }
 
-const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash) {
+const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash) {
     ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
     return stash.create<Concat>(result_type, lhs, rhs, dimension);
 }
 
-const Node &create(const ValueType &type, const std::map<TensorSpec::Address,Node::CREF> &spec, Stash &stash) {
+const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address,TensorFunction::CREF> &spec, Stash &stash) {
     return stash.create<Create>(type, spec);
 }
 
-const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
+const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
     return stash.create<Lambda>(type, bindings, function, std::move(node_types));
 }
 
-const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash) {
+const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {
     std::vector<vespalib::string> dimensions;
     for (const auto &dim_spec: spec) {
         dimensions.push_back(dim_spec.first);
@@ -595,12 +595,12 @@ const Node &peek(const Node &param, const std::map<vespalib::string, std::varian
     return stash.create<Peek>(result_type, param, spec);
 }
 
-const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
+const TensorFunction &rename(const TensorFunction &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
     ValueType result_type = child.result_type().rename(from, to);
     return stash.create<Rename>(result_type, child, from, to);
 }
 
-const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash) {
+const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash) {
     ValueType result_type = ValueType::either(true_child.result_type(), false_child.result_type());
     return stash.create<If>(result_type, cond, true_child, false_child);
 }
