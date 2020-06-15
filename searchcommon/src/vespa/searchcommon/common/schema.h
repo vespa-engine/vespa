@@ -35,10 +35,12 @@ public:
         vespalib::string  _name;
         DataType          _dataType;
         CollectionType    _collectionType;
+        vespalib::string  _tensor_spec;
 
     public:
         Field(vespalib::stringref n, DataType dt);
         Field(vespalib::stringref n, DataType dt, CollectionType ct);
+        Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec);
 
         /**
          * Create this field based on the given config lines.
@@ -58,6 +60,7 @@ public:
         const vespalib::string &getName() const { return _name; }
         DataType getDataType() const { return _dataType; }
         CollectionType getCollectionType() const { return _collectionType; }
+        const vespalib::string& get_tensor_spec() const { return _tensor_spec; }
 
         bool matchingTypes(const Field &rhs) const {
             return getDataType() == rhs.getDataType() &&
