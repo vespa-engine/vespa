@@ -10,14 +10,6 @@ using namespace document;
 namespace search::index {
 namespace {
 
-const vespalib::string default_tensor_data_type = "tensor(x{},y{})";
-
-vespalib::string
-resolve_tensor_spec(const vespalib::string& field_tensor_spec)
-{
-    return field_tensor_spec.empty() ? default_tensor_data_type : field_tensor_spec;
-}
-
 DataType::Type convert(Schema::DataType type) {
     switch (type) {
     case schema::DataType::BOOL:
@@ -150,7 +142,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         }
         auto type_id = convert(field.getDataType());
         if (type_id == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), resolve_tensor_spec(field.get_tensor_spec()));
+            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
                     type_id, field.getCollectionType()));
@@ -166,7 +158,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         }
         auto type_id  = convert(field.getDataType());
         if (type_id == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), resolve_tensor_spec(field.get_tensor_spec()));
+            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
                     type_id, field.getCollectionType()));
