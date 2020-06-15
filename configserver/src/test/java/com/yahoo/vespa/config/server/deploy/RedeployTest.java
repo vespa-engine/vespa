@@ -33,11 +33,11 @@ public class RedeployTest {
 
         assertTrue(deployment.isPresent());
         long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
-        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getSession(activeSessionIdBefore).getApplicationId());
+        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdBefore).getApplicationId());
         deployment.get().activate();
         long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(activeSessionIdAfter, activeSessionIdBefore + 1);
-        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getSession(activeSessionIdAfter).getApplicationId());
+        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdAfter).getApplicationId());
     }
 
     /** No deployment is done because there is no local active session. */

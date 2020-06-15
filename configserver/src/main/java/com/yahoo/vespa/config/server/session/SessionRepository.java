@@ -126,11 +126,11 @@ public class SessionRepository {
         localSessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this, zkWatcherExecutor));
     }
 
-    public LocalSession getSession(long sessionId) {
+    public LocalSession getLocalSession(long sessionId) {
         return localSessionCache.getSession(sessionId);
     }
 
-    public List<LocalSession> getSessions() {
+    public List<LocalSession> getLocalSessions() {
         return localSessionCache.getSessions();
     }
 
@@ -178,13 +178,13 @@ public class SessionRepository {
 
                 // Sessions with state other than ACTIVATED
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
-                    deleteSession(candidate);
+                    deleteLocalSession(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
                     ApplicationId applicationId = candidate.getApplicationId();
                     Long activeSession = activeSessions.get(applicationId);
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
-                        deleteSession(candidate);
+                        deleteLocalSession(candidate);
                         log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
                                             createTime + " for '" + applicationId + "'");
                     }
@@ -205,7 +205,7 @@ public class SessionRepository {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
-    public void deleteSession(LocalSession session) {
+    public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         log.log(Level.FINE, "Deleting local session " + sessionId);
         LocalSessionStateWatcher watcher = localSessionStateWatchers.remove(sessionId);
@@ -241,7 +241,7 @@ public class SessionRepository {
     private void deleteAllSessions() {
         List<LocalSession> sessions = new ArrayList<>(localSessionCache.getSessions());
         for (LocalSession session : sessions) {
-            deleteSession(session);
+            deleteLocalSession(session);
         }
     }
 
@@ -316,7 +316,7 @@ public class SessionRepository {
      *
      * @param sessionId session id for the new session
      */
-    private void sessionAdded(long sessionId) {
+    public void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding session to SessionRepository: " + sessionId);
         RemoteSession session = createRemoteSession(sessionId);
         Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
@@ -596,7 +596,7 @@ public class SessionRepository {
 
     @Override
     public String toString() {
-        return getSessions().toString();
+        return getLocalSessions().toString();
     }
 
     private static class FileTransaction extends AbstractTransaction {
