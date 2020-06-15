@@ -138,6 +138,27 @@ public class RoutingPoliciesTest {
     }
 
     @Test
+    public void global_routing_policies_legacy_global_service_id() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        int clustersPerZone = 2;
+        int numberOfDeployments = 2;
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .globalServiceId("c0")
+                .build();
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+
+        // Creates alias records
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
+        assertEquals("Routing policy count is equal to cluster count",
+                     numberOfDeployments * clustersPerZone,
+                     tester.policiesOf(context.instance().id()).size());
+    }
+
+    @Test
     public void zone_routing_policies() {
         zone_routing_policies(false);
         zone_routing_policies(true);
