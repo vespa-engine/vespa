@@ -41,7 +41,12 @@ jobs:
       run: |
         pip install --upgrade setuptools wheel
         python setup.py sdist bdist_wheel
-        echo $(ls dist)
+        echo $(ls -alh)
+        echo $(ls -alh dist )
+    - name: Degug
+      run: |
+        echo $(ls -alh)
+        echo $(ls -alh dist )
     - name: Publish distribution to Test PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
