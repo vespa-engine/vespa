@@ -418,12 +418,16 @@ public class RoutingPolicies {
             if (instanceSpec.isEmpty()) {
                 return Set.of();
             }
+            if (instanceSpec.get().globalServiceId().filter(id -> id.equals(loadBalancer.cluster().value())).isPresent()) {
+                // Legacy assignment always has the default endpoint Id
+                return Set.of(EndpointId.defaultId());
+            }
             return instanceSpec.get().endpoints().stream()
                                .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
                                .filter(endpoint -> endpoint.regions().contains(deployment.zoneId().region()))
                                .map(com.yahoo.config.application.api.Endpoint::endpointId)
                                .map(EndpointId::of)
-                               .collect(Collectors.toSet());
+                               .collect(Collectors.toUnmodifiableSet());
         }
 
     }

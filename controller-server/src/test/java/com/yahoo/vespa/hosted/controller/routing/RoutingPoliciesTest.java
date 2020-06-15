@@ -176,8 +176,8 @@ public class RoutingPoliciesTest {
 
         // Weight of inactive zone is set to zero
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L,
-                                                                                  zone3, 1L,
-                                                                                  zone4, 0L));
+                                                                                           zone3, 1L,
+                                                                                           zone4, 0L));
 
         // Other zone in shared region is set out. Entire record group for the region is removed as all zones in the
         // region are out (weight sum = 0)
@@ -195,6 +195,27 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L,
                                                                                            zone3, 1L,
                                                                                            zone4, 1L));
+    }
+
+    @Test
+    public void global_routing_policies_legacy_global_service_id() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        int clustersPerZone = 2;
+        int numberOfDeployments = 2;
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .globalServiceId("c0")
+                .build();
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+
+        // Creates alias records
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
+        assertEquals("Routing policy count is equal to cluster count",
+                     numberOfDeployments * clustersPerZone,
+                     tester.policiesOf(context.instance().id()).size());
     }
 
     @Test
