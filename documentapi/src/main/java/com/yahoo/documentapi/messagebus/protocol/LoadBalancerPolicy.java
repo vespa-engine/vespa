@@ -26,7 +26,6 @@ import java.util.Map;
 public class LoadBalancerPolicy extends SlobrokPolicy {
     private final String session;
     private final String pattern;
-
     private final LoadBalancer loadBalancer;
 
     LoadBalancerPolicy(String param) {
@@ -48,19 +47,12 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
         }
 
         pattern = cluster + "/*/" + session;
-        String type = params.get("type");
-        if ("adaptive".equals(type)) {
-            loadBalancer = new AdaptiveLoadBalancer(cluster);
-        } else if ("legacy".equals(type)) {
-            loadBalancer = new LegacyLoadBalancer(cluster);
-        } else {
-            loadBalancer = new LegacyLoadBalancer(cluster);
-        }
+        loadBalancer = new AdaptiveLoadBalancer(cluster);
     }
 
     @Override
     public void select(RoutingContext context) {
-        LegacyLoadBalancer.Node node = getRecipient(context);
+        LoadBalancer.Node node = getRecipient(context);
 
         if (node != null) {
             context.setContext(node);
@@ -77,7 +69,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
 
        @return Returns a hop representing the TCP address of the target, or null if none could be found.
     */
-    private LegacyLoadBalancer.Node getRecipient(RoutingContext context) {
+    private LoadBalancer.Node getRecipient(RoutingContext context) {
         List<Mirror.Entry> lastLookup = lookup(context, pattern);
         return loadBalancer.getRecipient(lastLookup);
     }
@@ -85,7 +77,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
     public void merge(RoutingContext context) {
         RoutingNodeIterator it = context.getChildIterator();
         Reply reply = it.removeReply();
-        LegacyLoadBalancer.Node target = (LegacyLoadBalancer.Node)context.getContext();
+        LoadBalancer.Node target = (LoadBalancer.Node)context.getContext();
 
         boolean busy = false;
         for (int i = 0; i < reply.getNumErrors(); i++) {
