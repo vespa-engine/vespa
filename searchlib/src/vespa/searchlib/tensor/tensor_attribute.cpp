@@ -20,7 +20,6 @@ using vespalib::tensor::SparseTensor;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedDenseTensorBuilder;
 using vespalib::tensor::WrappedSimpleTensor;
-using vespalib::tensor::dispatch_0;
 using search::StateExplorerUtils;
 
 namespace search::tensor {
@@ -34,7 +33,7 @@ constexpr size_t DEAD_SLACK = 0x10000u;
 
 struct CallMakeEmptyTensor {
     template <typename CT>
-    static Tensor::UP call(const ValueType &type) {
+    static Tensor::UP invoke(const ValueType &type) {
         TypedDenseTensorBuilder<CT> builder(type);
         return builder.build();
     }
@@ -46,7 +45,8 @@ createEmptyTensor(const ValueType &type)
     if (type.is_sparse()) {
         return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
     } else if (type.is_dense()) {
-        return dispatch_0<CallMakeEmptyTensor>(type.cell_type(), type);
+        using MyTypify = vespalib::eval::TypifyCellType;
+        return vespalib::typify_invoke<1,MyTypify,CallMakeEmptyTensor>(type.cell_type(), type);
     } else {
         return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
     }

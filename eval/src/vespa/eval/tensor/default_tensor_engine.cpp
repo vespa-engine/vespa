@@ -176,7 +176,7 @@ DefaultTensorEngine::to_spec(const Value &value) const
 struct CallDenseTensorBuilder {
     template <typename CT>
     static Value::UP
-    call(const ValueType &type, const TensorSpec &spec)
+    invoke(const ValueType &type, const TensorSpec &spec)
     {
         TypedDenseTensorBuilder<CT> builder(type);
         for (const auto &cell: spec.cells()) {
@@ -191,6 +191,8 @@ struct CallDenseTensorBuilder {
     }
 };
 
+using MyTypify = eval::TypifyCellType;
+
 Value::UP
 DefaultTensorEngine::from_spec(const TensorSpec &spec) const
 {
@@ -201,7 +203,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
         double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
         return std::make_unique<DoubleValue>(value);
     } else if (type.is_dense()) {
-        return dispatch_0<CallDenseTensorBuilder>(type.cell_type(), type, spec);
+        return typify_invoke<1,MyTypify,CallDenseTensorBuilder>(type.cell_type(), type, spec);
     } else if (type.is_sparse()) {
         DirectSparseTensorBuilder builder(type);
         SparseTensorAddressBuilder address_builder;
@@ -449,7 +451,7 @@ const Value &concat_vectors(const Value &a, const Value &b, const vespalib::stri
 
 struct CallConcatVectors {
     template <typename OCT>
-    static const Value &call(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
+    static const Value &invoke(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
         return concat_vectors<OCT>(a, b, dimension, vector_size, stash);
     }
 };
@@ -461,7 +463,7 @@ DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::stri
     size_t b_size = vector_size(b.type(), dimension);
     if ((a_size > 0) && (b_size > 0)) {
         CellType result_cell_type = ValueType::unify_cell_types(a.type(), b.type());
-        return dispatch_0<CallConcatVectors>(result_cell_type, a, b, dimension, (a_size + b_size), stash);
+        return typify_invoke<1,MyTypify,CallConcatVectors>(result_cell_type, a, b, dimension, (a_size + b_size), stash);
     }
     return to_default(simple_engine().concat(to_simple(a, stash), to_simple(b, stash), dimension, stash), stash);
 }

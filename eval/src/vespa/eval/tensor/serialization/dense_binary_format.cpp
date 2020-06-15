@@ -92,7 +92,7 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 struct CallDecodeCells {
     template <typename CT>
     static std::unique_ptr<DenseTensorView>
-    call(nbostream &stream, size_t numCells, ValueType &&newType) {
+    invoke(nbostream &stream, size_t numCells, ValueType &&newType) {
         std::vector<CT> newCells;
         newCells.reserve(numCells);
         decodeCells<CT>(stream, numCells, newCells);
@@ -106,7 +106,8 @@ DenseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
     std::vector<Dimension> dimensions;
     size_t numCells = decodeDimensions(stream, dimensions);
     ValueType newType = ValueType::tensor_type(std::move(dimensions), cell_type);
-    return dispatch_0<CallDecodeCells>(cell_type, stream, numCells, std::move(newType));
+    using MyTypify = eval::TypifyCellType;
+    return typify_invoke<1,MyTypify,CallDecodeCells>(cell_type, stream, numCells, std::move(newType));
 }
 
 template <typename T>
