@@ -158,6 +158,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final int jdiscHealthCheckProxyClientTimeout;
+        private final double feedCoreThreadPoolSizeFactor;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -203,6 +204,8 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             jdiscHealthCheckProxyClientTimeout = Flags.JDISC_HEALTH_CHECK_PROXY_CLIENT_TIMEOUT.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -283,8 +286,10 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(jdiscHealthCheckProxyClientTimeout); }
+
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
 
+        @Override public double feedCoreThreadPoolSizeFactor() { return feedCoreThreadPoolSizeFactor; }
     }
 
 }

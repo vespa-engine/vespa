@@ -106,6 +106,9 @@ public interface ModelContext {
 
         // TODO(bjorncs): Temporary feature flag, revisit July 2020
         default Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofSeconds(1); }
+
+        // TODO(bjorncs): Temporary feature flag
+        default double feedCoreThreadPoolSizeFactor() { return 1.0; }
     }
 
 }
