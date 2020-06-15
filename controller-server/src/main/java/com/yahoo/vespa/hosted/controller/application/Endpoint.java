@@ -36,25 +36,37 @@ public class Endpoint {
     private final RoutingMethod routingMethod;
     private final boolean tls;
 
-    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
-                     Port port, boolean legacy, RoutingMethod routingMethod) {
+    private Endpoint(String name, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy,
+                     RoutingMethod routingMethod) {
         Objects.requireNonNull(name, "name must be non-null");
-        Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(zones, "zones must be non-null");
         Objects.requireNonNull(scope, "scope must be non-null");
-        Objects.requireNonNull(system, "system must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
         if (scope == Scope.zone && zones.size() != 1) {
             throw new IllegalArgumentException("A single zone must be given for zone-scoped endpoints");
         }
         this.name = name;
-        this.url = createUrl(name, application, zones, scope, system, port, legacy, routingMethod);
+        this.url = url;
         this.zones = List.copyOf(zones);
         this.scope = scope;
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
+    }
+
+    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
+                     Port port, boolean legacy, RoutingMethod routingMethod) {
+        this(name,
+             createUrl(name,
+                       Objects.requireNonNull(application, "application must be non-null"),
+                       zones,
+                       scope,
+                       Objects.requireNonNull(system, "system must be non-null"),
+                       port,
+                       legacy,
+                       routingMethod),
+             zones, scope, port, legacy, routingMethod);
     }
 
     /**
@@ -284,6 +296,14 @@ public class Endpoint {
     /** Build an endpoint for given application */
     public static EndpointBuilder of(ApplicationId application) {
         return new EndpointBuilder(application);
+    }
+
+    /** Create an endpoint for given system application */
+    public static Endpoint of(SystemApplication systemApplication, ZoneId zone, URI url) {
+        if (!systemApplication.hasEndpoint()) throw new IllegalArgumentException(systemApplication + " has no endpoint");
+        RoutingMethod routingMethod = RoutingMethod.exclusive;
+        Port port = url.getPort() == -1 ? Port.tls() : Port.tls(url.getPort()); // System application endpoints are always TLS
+        return new Endpoint("", url, List.of(zone), Scope.zone, port, false, routingMethod);
     }
 
     public static class EndpointBuilder {

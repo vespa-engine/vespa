@@ -8,7 +8,9 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,9 +73,25 @@ public enum SystemApplication {
         return nodeType.isDockerHost();
     }
 
+    /** Returns whether this has an endpoint */
+    public boolean hasEndpoint() {
+        return this == configServer;
+    }
+
+    /** Returns the endpoint of this, if any */
+    public Optional<Endpoint> endpointIn(ZoneId zone, ZoneRegistry zoneRegistry) {
+        if (!hasEndpoint()) return Optional.empty();
+        return Optional.of(Endpoint.of(this, zone, zoneRegistry.getConfigServerVipUri(zone)));
+    }
+
     /** All known system applications */
     public static List<SystemApplication> all() {
         return List.of(values());
+    }
+
+    /** Returns the system application matching given id, if any */
+    public static Optional<SystemApplication> matching(ApplicationId id) {
+        return Arrays.stream(values()).filter(app -> app.id().equals(id)).findFirst();
     }
 
     @Override

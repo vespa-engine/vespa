@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
@@ -577,6 +578,18 @@ public class RoutingPoliciesTest {
             assertSame(GlobalRouting.Status.in, policy.status().globalRouting().status());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+    }
+
+    @Test
+    public void config_server_routing_policy() {
+        var tester = new RoutingPoliciesTester();
+        var app = SystemApplication.configServer.id();
+
+        tester.provisionLoadBalancers(1, app, zone1);
+        tester.routingPolicies().refresh(app, DeploymentSpec.empty, zone1);
+        new NameServiceDispatcher(tester.tester.controller(), Duration.ofDays(1), Integer.MAX_VALUE).run();
+
+        assertEquals(Set.of("cfg.prod.us-west-1.test.vip"), tester.recordNames());
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */

@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -84,13 +85,14 @@ public class RoutingController {
     /** Returns zone-scoped endpoints for given deployment */
     public EndpointList endpointsOf(DeploymentId deployment) {
         var endpoints = new LinkedHashSet<Endpoint>();
+        boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // Avoid reading application more than once per call to this
         var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                if (routingMethod.isDirect() && !canRouteDirectlyTo(deployment, application.get())) continue;
-                endpoints.add(policy.endpointIn(controller.system(), routingMethod));
+                if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
+                endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
             }
         }
         return EndpointList.copyOf(endpoints);
@@ -98,6 +100,7 @@ public class RoutingController {
 
     /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(ApplicationId instance) {
+        if (SystemApplication.matching(instance).isPresent()) return EndpointList.copyOf(List.of());
         return endpointsOf(controller.applications().requireApplication(TenantAndApplicationId.from(instance)),
                                                                         instance.instance());
     }

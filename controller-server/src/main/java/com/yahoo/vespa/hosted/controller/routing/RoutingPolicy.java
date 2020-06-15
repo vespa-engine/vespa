@@ -5,9 +5,11 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -68,7 +70,10 @@ public class RoutingPolicy {
     }
 
     /** Returns the endpoint of this */
-    public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod) {
+    public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+        Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
+                                                            .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
+        if (infraEndpoint.isPresent()) return infraEndpoint.get();
         return Endpoint.of(id.owner())
                        .target(id.cluster(), id.zone())
                        .on(Port.fromRoutingMethod(routingMethod))

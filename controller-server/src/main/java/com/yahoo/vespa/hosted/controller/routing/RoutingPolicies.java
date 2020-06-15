@@ -175,7 +175,8 @@ public class RoutingPolicies {
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy) {
-        var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive).dnsName());
+        var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())
+                                         .dnsName());
         var data = RecordData.fqdn(policy.canonicalName().value());
         nameUpdaterIn(policy.id().zone()).createCname(name, data);
     }
@@ -190,7 +191,7 @@ public class RoutingPolicies {
             if (activeIds.contains(policy.id()) ||
                 !policy.id().zone().equals(allocation.deployment.zoneId())) continue;
 
-            var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive).dnsName();
+            var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry()).dnsName();
             nameUpdaterIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME, RecordName.from(dnsName));
             newPolicies.remove(policy.id());
         }
