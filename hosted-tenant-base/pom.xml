@@ -82,7 +82,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-test</artifactId>
             <version>${vespaversion}</version>
-            <scope>test</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
