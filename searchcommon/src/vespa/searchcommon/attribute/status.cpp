@@ -20,42 +20,6 @@ Status::Status()
 {
 }
 
-Status::Status(const Status& rhs)
-    : _numDocs(rhs._numDocs),
-      _numValues(rhs._numValues),
-      _numUniqueValues(rhs._numUniqueValues),
-      _allocated(rhs._allocated),
-      _used(rhs._used),
-      _dead(rhs._dead),
-      _unused(rhs._unused),
-      _onHold(rhs._onHold),
-      _onHoldMax(rhs._onHoldMax),
-      _lastSyncToken(rhs.getLastSyncToken()),
-      _updates(rhs._updates),
-      _nonIdempotentUpdates(rhs._nonIdempotentUpdates),
-      _bitVectors(rhs._bitVectors)
-{
-}
-
-Status&
-Status::operator=(const Status& rhs)
-{
-    _numDocs = rhs._numDocs;
-    _numValues = rhs._numValues;
-    _numUniqueValues = rhs._numUniqueValues;
-    _allocated = rhs._allocated;
-    _used = rhs._used;
-    _dead = rhs._dead;
-    _unused = rhs._unused;
-    _onHold = rhs._onHold;
-    _onHoldMax = rhs._onHoldMax;
-    setLastSyncToken(rhs.getLastSyncToken());
-    _updates = rhs._updates;
-    _nonIdempotentUpdates = rhs._nonIdempotentUpdates;
-    _bitVectors = rhs._bitVectors;
-    return *this;
-}
-
 vespalib::string
 Status::createName(vespalib::stringref index, vespalib::stringref attr)
 {

@@ -10,36 +10,38 @@ using namespace document;
 namespace search::index {
 namespace {
 
-DataType::Type convert(Schema::DataType type) {
+TensorDataType tensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{}, y{})"));
+
+const DataType *convert(Schema::DataType type) {
     switch (type) {
     case schema::DataType::BOOL:
     case schema::DataType::UINT2:
     case schema::DataType::UINT4:
     case schema::DataType::INT8:
-        return DataType::T_BYTE;
+        return DataType::BYTE;
     case schema::DataType::INT16:
-        return DataType::T_SHORT;
+        return DataType::SHORT;
     case schema::DataType::INT32:
-        return DataType::T_INT;
+        return DataType::INT;
     case schema::DataType::INT64:
-        return DataType::T_LONG;
+        return DataType::LONG;
     case schema::DataType::FLOAT:
-        return DataType::T_FLOAT;
+        return DataType::FLOAT;
     case schema::DataType::DOUBLE:
-        return DataType::T_DOUBLE;
+        return DataType::DOUBLE;
     case schema::DataType::STRING:
-        return DataType::T_STRING;
+        return DataType::STRING;
     case schema::DataType::RAW:
-        return DataType::T_RAW;
+        return DataType::RAW;
     case schema::DataType::BOOLEANTREE:
-        return DataType::T_PREDICATE;
+        return DataType::PREDICATE;
     case schema::DataType::TENSOR:
-        return DataType::T_TENSOR;
+        return &tensorDataType;
     default:
         break;
     }
     assert(!"Unknown datatype in schema");
-    return DataType::MAX;
+    return 0;
 }
 
 void
@@ -140,12 +142,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         if (usf != usedFields.end()) {
             continue;   // taken as index field
         }
-        auto type_id = convert(field.getDataType());
-        if (type_id == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
+        const DataType *primitiveType = convert(field.getDataType());
+        if (primitiveType->getId() == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
-                    type_id, field.getCollectionType()));
+                        primitiveType->getId(), field.getCollectionType()));
         }
         usedFields.insert(field.getName());
     }
@@ -156,12 +158,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         if (usf != usedFields.end()) {
             continue;   // taken as index field or attribute field
         }
-        auto type_id  = convert(field.getDataType());
-        if (type_id == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
+        const DataType *primitiveType(convert(field.getDataType()));
+        if (primitiveType->getId() == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
-                    type_id, field.getCollectionType()));
+                        primitiveType->getId(), field.getCollectionType()));
         }
         usedFields.insert(field.getName());
     }

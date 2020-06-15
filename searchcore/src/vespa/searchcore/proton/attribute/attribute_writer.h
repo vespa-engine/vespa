@@ -19,23 +19,20 @@ namespace proton {
 class AttributeWriter : public IAttributeWriter
 {
 private:
-    using AttributeVector = search::AttributeVector;
-    using FieldPath = document::FieldPath;
-    using DataType = document::DataType;
-    using DocumentType = document::DocumentType;
-    using FieldValue = document::FieldValue;
+    typedef search::AttributeVector AttributeVector;
+    typedef document::FieldPath FieldPath;
+    typedef document::DataType DataType;
+    typedef document::DocumentType DocumentType;
+    typedef document::FieldValue FieldValue;
     const IAttributeManager::SP _mgr;
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 public:
-    /**
-     * Represents an attribute vector for a field and details about how to write to it.
-     */
-    class WriteField {
+    class WriteField
+    {
         FieldPath        _fieldPath;
         AttributeVector &_attribute;
         bool             _structFieldAttribute; // in array/map of struct
-        bool             _use_two_phase_put;
     public:
         WriteField(AttributeVector &attribute);
         ~WriteField();
@@ -43,18 +40,12 @@ public:
         const FieldPath &getFieldPath() const { return _fieldPath; }
         void buildFieldPath(const DocumentType &docType);
         bool isStructFieldAttribute() const { return _structFieldAttribute; }
-        bool use_two_phase_put() const { return _use_two_phase_put; }
     };
-
-    /**
-     * Represents a set of fields (as attributes) that are handled by the same write thread.
-     */
-    class WriteContext {
+    class WriteContext
+    {
         ExecutorId _executorId;
         std::vector<WriteField> _fields;
         bool _hasStructFieldAttribute;
-        // When this is true, the context only contains a single field.
-        bool _use_two_phase_put;
     public:
         WriteContext(ExecutorId executorId);
         WriteContext(WriteContext &&rhs) noexcept;
@@ -65,7 +56,6 @@ public:
         ExecutorId getExecutorId() const { return _executorId; }
         const std::vector<WriteField> &getFields() const { return _fields; }
         bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
-        bool use_two_phase_put() const { return _use_two_phase_put; }
     };
 private:
     using AttrWithId = std::pair<search::AttributeVector *, ExecutorId>;
@@ -113,11 +103,6 @@ public:
 
     void onReplayDone(uint32_t docIdLimit) override;
     bool hasStructFieldAttribute() const override;
-
-    // Should only be used for unit testing.
-    const std::vector<WriteContext>& get_write_contexts() const {
-        return _writeContexts;
-    }
 };
 
 } // namespace proton

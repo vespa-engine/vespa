@@ -7,6 +7,7 @@
 #include "tensor_store.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <future>
 
 namespace search::tensor {
 
@@ -65,9 +66,9 @@ public:
      * Performs the complete step in a two-phase operation to set a tensor for a document.
      *
      * This function is only called by the attribute writer thread.
-     * It uses the result from the prepare step to do the modifying changes.
+     * It must wait for the result from the prepare step (via the future) before it does the modifying changes.
      */
-    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result);
+    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::future<std::unique_ptr<PrepareResult>> prepare_result);
 
     virtual void compactWorst() = 0;
 };

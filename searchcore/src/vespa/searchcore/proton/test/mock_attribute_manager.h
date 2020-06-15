@@ -11,26 +11,16 @@ namespace proton::test {
 class MockAttributeManager : public IAttributeManager {
 private:
     search::attribute::test::MockAttributeManager _mock;
-    std::vector<search::AttributeVector*> _writables;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
-    vespalib::ISequencedTaskExecutor* _writer;
 
 public:
     MockAttributeManager()
         : _mock(),
-          _writables(),
-          _importedAttributes(),
-          _writer()
+          _importedAttributes()
     {}
 
-    search::AttributeVector::SP addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
+    void addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
         _mock.addAttribute(name, attr);
-        _writables.push_back(attr.get());
-        return attr;
-    }
-
-    void set_writer(vespalib::ISequencedTaskExecutor& writer) {
-        _writer = &writer;
     }
 
     search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
@@ -66,18 +56,13 @@ public:
         HDR_ABORT("should not be reached");
     }
     vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
-        assert(_writer != nullptr);
-        return *_writer;
+        HDR_ABORT("should not be reached");
     }
-    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override {
-        auto attr = getAttribute(name);
-        if (attr) {
-            return attr->get();
-        }
+    search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
         return nullptr;
     }
     const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
-        return _writables;
+        HDR_ABORT("should not be reached");
     }
     void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor>) const override {
     }
