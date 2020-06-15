@@ -31,6 +31,8 @@
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>client</module>
+        <module>cloud-tenant-base</module>
+        <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
         <module>clustercontroller-core</module>
@@ -81,6 +83,7 @@
         <module>flags</module>
         <module>fsa</module>
         <module>hosted-api</module>
+        <module>hosted-tenant-base</module>
         <module>hosted-zone-api</module>
         <module>http-utils</module>
         <module>indexinglanguage</module>
@@ -125,7 +128,7 @@
         <module>storage</module>
         <module>tenant-auth</module>
         <module>tenant-base</module>
-        <module>tenant-cd</module>
+        <module>tenant-cd-api</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>

@@ -5,13 +5,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.yahoo.vespa</groupId>
-    <artifactId>tenant-base</artifactId>
+    <artifactId>cloud-tenant-base</artifactId>
+    <name>Vespa Cloud tenant base</name>
     <version>7-SNAPSHOT</version>
-    <name>Hosted Vespa tenant base</name>
-    <description>Parent POM for all hosted Vespa applications.</description>
+    <description>Parent POM for all Vespa Cloud applications.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>pom</packaging>
+
+    <parent>
+        <artifactId>hosted-tenant-base</artifactId>
+        <groupId>com.yahoo.vespa</groupId>
+        <version>7-SNAPSHOT</version>
+        <relativePath>../hosted-tenant-base/pom.xml</relativePath>
+    </parent>
 
     <licenses>
         <license>
@@ -32,14 +38,7 @@
     </scm>
 
     <properties>
-        <vespaversion>${project.version}</vespaversion>
-        <test-framework.version>${project.version}</test-framework.version>
-        <target_jdk_version>11</target_jdk_version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
-        <junit.version>5.4.2</junit.version>
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
-        <test.categories>!integration</test.categories>
     </properties>
 
     <dependencyManagement>
@@ -93,29 +92,9 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd-api</artifactId>
-            <version>${test-framework.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>cloud-tenant-cd</artifactId>
             <version>${test-framework.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-exec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-            </exclusions>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

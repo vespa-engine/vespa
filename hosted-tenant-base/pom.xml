@@ -5,11 +5,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!--    <version>7-SNAPSHOT</version>-->
+    <!--    <url>https://github.com/vespa-engine</url>-->
+    <!--    <packaging>pom</packaging>-->
+
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>tenant-base</artifactId>
+    <artifactId>hosted-tenant-base</artifactId>
     <version>7-SNAPSHOT</version>
-    <name>Hosted Vespa tenant base</name>
-    <description>Parent POM for all hosted Vespa applications.</description>
+    <name>Base pom for all tenant base poms</name>
+    <description>Parent POM for all Vespa base poms.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>pom</packaging>
 
@@ -78,28 +82,22 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-test</artifactId>
             <version>${vespaversion}</version>
-            <scope>test</scope>
-	    <exclusions>
-		    <exclusion>
-			    <groupId>org.apache.commons</groupId>
-			    <artifactId>commons-exec</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>commons-lang</groupId>
-			    <artifactId>commons-lang</artifactId>
-		    </exclusion>
-	    </exclusions>
+            <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-exec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd-api</artifactId>
-            <version>${test-framework.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>cloud-tenant-cd</artifactId>
+            <artifactId>tenant-cd</artifactId>
             <version>${test-framework.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -116,6 +114,12 @@
                     <artifactId>commons-lang</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>cloud-tenant-cd</artifactId>
+            <version>${test-framework.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.yahoo.vespa</groupId>
-    <artifactId>tenant-cd</artifactId>
-    <name>Hosted Vespa tenant CD</name>
-    <description>Test library for hosted Vespa applications.</description>
+    <artifactId>cloud-tenant-cd</artifactId>
+    <name>Vespa Cloud tenant CD implementation</name>
+    <description>Test library implementation for Vespa Cloud applications.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>jar</packaging>
 
@@ -20,6 +18,11 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>security-utils</artifactId>
@@ -49,11 +52,5 @@
             <artifactId>hosted-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
     </dependencies>
-
 </project>
