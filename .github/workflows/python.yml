@@ -37,16 +37,6 @@ jobs:
     - name: Run notebook tests
       run: |
         nbdev_test_nbs
-#    - name: Build package
-#      run: |
-#        pip install --upgrade setuptools wheel
-#        python setup.py sdist bdist_wheel
-#        echo $(ls -alh)
-#        echo $(ls -alh dist )
-#    - name: Degug
-#      run: |
-#        echo $(ls -alh)
-#        echo $(ls -alh dist )
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__
@@ -56,8 +46,3 @@ jobs:
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
         twine upload --repository testpypi dist/*
-#    - name: Publish distribution to Test PyPI
-#      uses: pypa/gh-action-pypi-publish@master
-#      with:
-#        password: ${{ secrets.test_pypi_password }}
-#        repository_url: https://test.pypi.org/legacy/
