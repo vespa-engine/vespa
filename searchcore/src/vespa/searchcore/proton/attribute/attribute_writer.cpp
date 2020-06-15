@@ -146,13 +146,14 @@ complete_put_to_attribute(SerialNum serial_num,
                           uint32_t docid,
                           AttributeVector& attr,
                           const FieldValue::SP& field_value,
-                          std::unique_ptr<PrepareResult> prepare_result,
+                          std::future<std::unique_ptr<PrepareResult>>& result_future,
                           bool immediate_commit,
                           AttributeWriter::OnWriteDoneType)
 {
     ensureLidSpace(serial_num, docid, attr);
     if (field_value.get()) {
-        AttributeUpdater::complete_set_value(attr, docid, *field_value, std::move(prepare_result));
+        auto result = result_future.get();
+        AttributeUpdater::complete_set_value(attr, docid, *field_value, std::move(result));
     } else {
         attr.clearDoc(docid);
     }
@@ -440,8 +441,7 @@ void
 CompletePutTask::run()
 {
     if (_attr.getStatus().getLastSyncToken() < _serial_num) {
-        auto result = _result_future.get();
-        complete_put_to_attribute(_serial_num, _docid, _attr, _field_value, std::move(result),
+        complete_put_to_attribute(_serial_num, _docid, _attr, _field_value, _result_future,
                                   _immediate_commit, _on_write_done);
     }
 }
