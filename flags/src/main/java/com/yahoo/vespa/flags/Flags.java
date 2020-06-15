@@ -147,11 +147,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag DOCPROC_LOADBALANCER_TYPE = defineStringFlag(
-            "docproc-loadbalancer-type", "",
-            "Selects what kind of load balancer to use for document processing {'adaptive', 'legacy' ''}",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
     public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
             "jvm-gc-options", "",
             "Sets deafult jvm gc options",

@@ -42,7 +42,6 @@ public class TestProperties implements ModelContext.Properties {
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
-    private String docprocLoadBalancerType = null;
     private String jvmGCOptions = null;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
@@ -64,7 +63,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-    @Override public String docprocLoadBalancerType() { return docprocLoadBalancerType; }
     @Override public double threadPoolSizeFactor() {
         return threadPoolSizeFactor;
     }
@@ -76,10 +74,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
 
-    public TestProperties setDocprocLoadBalancerType(String type) {
-        docprocLoadBalancerType = type;
-        return this;
-    }
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
         return this;
