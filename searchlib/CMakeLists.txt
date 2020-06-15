@@ -100,6 +100,7 @@ vespa_define_module(
     src/tests/attribute/tensorattribute
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
+    src/tests/btree
     src/tests/bytecomplens
     src/tests/common/bitvector
     src/tests/common/location
