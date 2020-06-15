@@ -13,10 +13,10 @@
     <packaging>pom</packaging>
 
     <parent>
-        <artifactId>tenant-base</artifactId>
+        <artifactId>hosted-tenant-base</artifactId>
         <groupId>com.yahoo.vespa</groupId>
         <version>7-SNAPSHOT</version>
-        <relativePath>../tenant-base/pom.xml</relativePath>
+        <relativePath>../hosted-tenant-base/pom.xml</relativePath>
     </parent>
 
     <licenses>
