@@ -538,10 +538,14 @@ public class SessionRepository {
         log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
             File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
-            File sessionDir = new FileDirectory(rootDir).getFile(fileReference);
-            if (!sessionDir.exists()) {
-                // We cannot be guaranteed that the file reference exists (it could be that it has not been downloaded
-                // yet), and e.g when bootstrapping we cannot throw an exception if that is the case, so return instead
+            File sessionDir;
+            FileDirectory fileDirectory = new FileDirectory(rootDir);
+            try {
+                sessionDir = fileDirectory.getFile(fileReference);
+            } catch (IllegalArgumentException e) {
+                // We cannot be guaranteed that the file reference exists (it could be that it has not
+                // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
+                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
