@@ -10,10 +10,7 @@ namespace search {
 
 class PredicateAttribute;
 
-namespace tensor {
-    class PrepareResult;
-    class TensorAttribute;
-}
+namespace tensor { class TensorAttribute; }
 namespace attribute {class ReferenceAttribute; }
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
@@ -23,17 +20,13 @@ VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
  */
 class AttributeUpdater {
     using Field = document::Field;
-    using FieldUpdate = document::FieldUpdate;
     using FieldValue = document::FieldValue;
+    using FieldUpdate = document::FieldUpdate;
     using ValueUpdate = document::ValueUpdate;
 
 public:
     static void handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & upd);
     static void handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & val);
-
-    static std::unique_ptr<tensor::PrepareResult> prepare_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val);
-    static void complete_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val,
-                                   std::unique_ptr<tensor::PrepareResult> prepare_result);
 
 private:
     template <typename V>

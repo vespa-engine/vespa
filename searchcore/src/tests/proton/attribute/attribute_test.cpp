@@ -19,7 +19,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -34,7 +33,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
@@ -59,11 +57,8 @@ using namespace vespa::config::search;
 
 using proton::ImportedAttributesRepo;
 using proton::test::AttributeUtils;
-using proton::test::MockAttributeManager;
 using search::TuneFileAttributes;
 using search::attribute::BitVectorSearchCache;
-using search::attribute::DistanceMetric;
-using search::attribute::HnswIndexParams;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
@@ -72,8 +67,6 @@ using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;
 using search::predicate::PredicateHash;
 using search::predicate::PredicateIndex;
-using search::tensor::DenseTensorAttribute;
-using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using search::test::DirectoryHandler;
 using std::string;
@@ -125,16 +118,20 @@ const std::shared_ptr<IDestructorCallback> emptyCallback;
 class AttributeWriterTest : public ::testing::Test {
 public:
     DirectoryHandler _dirHandler;
+    DummyFileHeaderContext _fileHeaderContext;
     std::unique_ptr<ForegroundTaskExecutor> _attributeFieldWriterReal;
     std::unique_ptr<SequencedTaskExecutorObserver> _attributeFieldWriter;
-    std::shared_ptr<MockAttributeManager> _mgr;
+    HwInfo _hwInfo;
+    proton::AttributeManager::SP _m;
     std::unique_ptr<AttributeWriter> _aw;
 
     AttributeWriterTest()
         : _dirHandler(test_dir),
+          _fileHeaderContext(),
           _attributeFieldWriterReal(),
           _attributeFieldWriter(),
-          _mgr(),
+          _hwInfo(),
+          _m(),
           _aw()
     {
         setup(1);
@@ -144,25 +141,20 @@ public:
         _aw.reset();
         _attributeFieldWriterReal = std::make_unique<ForegroundTaskExecutor>(threads);
         _attributeFieldWriter = std::make_unique<SequencedTaskExecutorObserver>(*_attributeFieldWriterReal);
-        _mgr = std::make_shared<MockAttributeManager>();
-        _mgr->set_writer(*_attributeFieldWriter);
+        _m = std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
+                                                        _fileHeaderContext, *_attributeFieldWriter, _hwInfo);
         allocAttributeWriter();
     }
     void allocAttributeWriter() {
-        _aw = std::make_unique<AttributeWriter>(_mgr);
+        _aw = std::make_unique<AttributeWriter>(_m);
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return addAttribute({name, AVConfig(AVBasicType::INT32)});
+        return addAttribute({name, AVConfig(AVBasicType::INT32)}, createSerialNum);
     }
-    AttributeVector::SP addAttribute(const AttributeSpec &spec) {
-        auto ret = _mgr->addAttribute(spec.getName(),
-                                      AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
+    AttributeVector::SP addAttribute(const AttributeSpec &spec, SerialNum serialNum) {
+        auto ret = _m->addAttribute(spec, serialNum);
         allocAttributeWriter();
         return ret;
-    }
-    void add_attribute(AttributeVector::SP attr) {
-        _mgr->addAttribute(attr->getName(), std::move(attr));
-        allocAttributeWriter();
     }
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
              bool immediateCommit = true) {
@@ -203,9 +195,9 @@ TEST_F(AttributeWriterTest, handles_put)
     DocBuilder idb(s);
 
     auto a1 = addAttribute("a1");
-    auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
-    auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
-    auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)});
+    auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+    auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
+    auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -283,7 +275,7 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
     DocBuilder idb(s);
 
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -377,7 +369,7 @@ verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::string
 
 TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -389,7 +381,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     put(3, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
-    AttributeWriter awDelayed(_mgr);
+    AttributeWriter awDelayed(_m);
     awDelayed.put(4, *doc, 2, false, emptyCallback);
     EXPECT_EQ(3u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
@@ -399,7 +391,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     awDelayed.forceCommit(6, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
 
-    AttributeWriter awDelayedShort(_mgr);
+    AttributeWriter awDelayedShort(_m);
     awDelayedShort.put(7, *doc, 2, false, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
     awDelayedShort.put(8, *doc, 2, false, emptyCallback);
@@ -422,7 +414,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 
 TEST_F(AttributeWriterTest, handles_predicate_remove)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -485,7 +477,7 @@ TEST_F(AttributeWriterTest, handles_update)
 
 TEST_F(AttributeWriterTest, handles_predicate_update)
 {
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -632,20 +624,18 @@ Tensor::UP make_tensor(const TensorSpec &spec) {
     return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
 
-const vespalib::string sparse_tensor = "tensor(x{},y{})";
-
 AttributeVector::SP
 createTensorAttribute(AttributeWriterTest &t) {
     AVConfig cfg(AVBasicType::TENSOR);
-    cfg.setTensorType(ValueType::from_spec(sparse_tensor));
-    auto ret = t.addAttribute({"a1", cfg});
+    cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
+    auto ret = t.addAttribute({"a1", cfg}, createSerialNum);
     return ret;
 }
 
 Schema
-createTensorSchema(const vespalib::string& tensor_spec = sparse_tensor) {
+createTensorSchema() {
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::TENSOR, CollectionType::SINGLE, tensor_spec));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::TENSOR, CollectionType::SINGLE));
     return schema;
 }
 
@@ -663,7 +653,7 @@ TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
     auto a1 = createTensorAttribute(*this);
     Schema s = createTensorSchema();
     DocBuilder builder(s);
-    auto tensor = make_tensor(TensorSpec(sparse_tensor)
+    auto tensor = make_tensor(TensorSpec("tensor(x{},y{})")
                               .add({{"x", "4"}, {"y", "5"}}, 7));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
     put(1, *doc, 1);
@@ -680,7 +670,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
     auto a1 = createTensorAttribute(*this);
     Schema s = createTensorSchema();
     DocBuilder builder(s);
-    auto tensor = make_tensor(TensorSpec(sparse_tensor)
+    auto tensor = make_tensor(TensorSpec("tensor(x{},y{})")
                               .add({{"x", "6"}, {"y", "7"}}, 9));
     auto doc = createTensorPutDoc(builder, *tensor);
     put(1, *doc, 1);
@@ -693,9 +683,9 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
 
     const document::DocumentType &dt(builder.getDocumentType());
     DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
-    auto new_tensor = make_tensor(TensorSpec(sparse_tensor)
+    auto new_tensor = make_tensor(TensorSpec("tensor(x{},y{})")
                                   .add({{"x", "8"}, {"y", "9"}}, 11));
-    TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec(sparse_tensor));
+    TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue new_value(xySparseTensorDataType);
     new_value = new_tensor->clone();
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
@@ -734,9 +724,9 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
 
     DocBuilder idb(s);
 
-    auto a1 = t.addAttribute("a1");
-    auto a2 = t.addAttribute("a2");
-    auto a3 = t.addAttribute("a3");
+    AttributeVector::SP a1 = t.addAttribute("a1");
+    AttributeVector::SP a2 = t.addAttribute("a2");
+    AttributeVector::SP a3 = t.addAttribute("a3");
 
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(1u, a2->getNumDocs());
@@ -771,106 +761,6 @@ TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts)
     putAttributes(*this, {0, 1, 2});
 }
 
-struct MockPrepareResult : public PrepareResult {
-    uint32_t docid;
-    const Tensor& tensor;
-    MockPrepareResult(uint32_t docid_in, const Tensor& tensor_in) : docid(docid_in), tensor(tensor_in) {}
-};
-
-class MockDenseTensorAttribute : public DenseTensorAttribute {
-public:
-    mutable size_t prepare_set_tensor_cnt;
-    mutable size_t complete_set_tensor_cnt;
-
-    MockDenseTensorAttribute(vespalib::stringref name, const AVConfig& cfg)
-        : DenseTensorAttribute(name, cfg),
-          prepare_set_tensor_cnt(0),
-          complete_set_tensor_cnt(0)
-    {}
-    std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const Tensor& tensor) const override {
-        ++prepare_set_tensor_cnt;
-        return std::make_unique<MockPrepareResult>(docid, tensor);
-    }
-
-    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result) override {
-        ++complete_set_tensor_cnt;
-        assert(prepare_result);
-        auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
-        assert(mock_result);
-        EXPECT_EQ(docid, mock_result->docid);
-        EXPECT_EQ(tensor, mock_result->tensor);
-    }
-};
-
-const vespalib::string dense_tensor = "tensor(x[2])";
-
-AVConfig
-get_tensor_config(bool allow_multi_threaded_indexing)
-{
-    AVConfig cfg(AVBasicType::TENSOR);
-    cfg.setTensorType(ValueType::from_spec(dense_tensor));
-    cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, allow_multi_threaded_indexing));
-    return cfg;
-}
-
-std::shared_ptr<MockDenseTensorAttribute>
-make_mock_tensor_attribute(const vespalib::string& name, bool allow_multi_threaded_indexing)
-{
-    auto cfg = get_tensor_config(allow_multi_threaded_indexing);
-    return std::make_shared<MockDenseTensorAttribute>(name, cfg);
-}
-
-TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separate_write_contexts)
-{
-    addAttribute("a1");
-    addAttribute({"t1", get_tensor_config(true)});
-    addAttribute({"t2", get_tensor_config(true)});
-    addAttribute({"t3", get_tensor_config(false)});
-    allocAttributeWriter();
-
-    const auto& ctx = _aw->get_write_contexts();
-    EXPECT_EQ(3, ctx.size());
-    EXPECT_FALSE(ctx[0].use_two_phase_put());
-    EXPECT_EQ(2, ctx[0].getFields().size());
-
-    EXPECT_TRUE(ctx[1].use_two_phase_put());
-    EXPECT_EQ(1, ctx[1].getFields().size());
-    EXPECT_EQ("t1", ctx[1].getFields()[0].getAttribute().getName());
-
-    EXPECT_TRUE(ctx[2].use_two_phase_put());
-    EXPECT_EQ(1, ctx[2].getFields().size());
-    EXPECT_EQ("t2", ctx[2].getFields()[0].getAttribute().getName());
-}
-
-TEST_F(AttributeWriterTest, handles_put_in_two_phases_when_specified_for_tensor_attribute)
-{
-    setup(2);
-    auto a1 = make_mock_tensor_attribute("a1", true);
-    add_attribute(a1);
-    Schema schema = createTensorSchema(dense_tensor);
-    DocBuilder builder(schema);
-    auto tensor = make_tensor(TensorSpec(dense_tensor)
-                                      .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
-    auto doc = createTensorPutDoc(builder, *tensor);
-
-    put(1, *doc, 1);
-    EXPECT_EQ(1, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(1, a1->complete_set_tensor_cnt);
-    assertExecuteHistory({1, 0});
-
-    put(2, *doc, 2);
-    EXPECT_EQ(2, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(2, a1->complete_set_tensor_cnt);
-    assertExecuteHistory({1, 0, 0, 0});
-
-    put(3, *doc, 3);
-    EXPECT_EQ(3, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(3, a1->complete_set_tensor_cnt);
-    // Note that the prepare step is executed round-robin between the 2 threads.
-    assertExecuteHistory({1, 0, 0, 0, 1, 0});
-}
-
-
 ImportedAttributeVector::SP
 createImportedAttribute(const vespalib::string &name)
 {
@@ -895,10 +785,10 @@ createImportedAttributesRepo()
 
 TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribute_vectors)
 {
-    _mgr->setImportedAttributes(createImportedAttributesRepo());
+    _m->setImportedAttributes(createImportedAttributesRepo());
     commit(10);
-    EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
-    EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
+    EXPECT_EQ(0u, _m->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
+    EXPECT_EQ(0u, _m->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
 }
 
 class StructWriterTestBase : public AttributeWriterTest {
@@ -913,7 +803,7 @@ public:
           _valueField("value", 2, *DataType::INT, true),
           _structFieldType("struct")
     {
-        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)});
+        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)}, createSerialNum);
         _type.addField(_valueField);
         _structFieldType.addField(_valueField);
     }
@@ -947,7 +837,7 @@ public:
           _structArrayFieldType(_structFieldType),
           _structArrayField("array", _structArrayFieldType, true)
     {
-        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
         _type.addField(_structArrayField);
     }
     ~StructArrayWriterTest();
@@ -963,8 +853,8 @@ public:
         return doc;
     }
     void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &arrayValues) {
-        auto valueAttr = _mgr->getAttribute("value")->getSP();
-        auto arrayValueAttr = _mgr->getAttribute("array.value")->getSP();
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto arrayValueAttr = _m->getAttribute("array.value")->getSP();
         EXPECT_EQ(value, valueAttr->getInt(lid));
         attribute::IntegerContent ibuf;
         ibuf.fill(*arrayValueAttr, lid);
@@ -998,8 +888,8 @@ public:
           _structMapFieldType(*DataType::INT, _structFieldType),
           _structMapField("map", _structMapFieldType, true)
     {
-        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
-        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
         _type.addField(_structMapField);
     }
 
@@ -1015,9 +905,9 @@ public:
     }
 
     void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
-        auto valueAttr = _mgr->getAttribute("value")->getSP();
-        auto mapKeyAttr = _mgr->getAttribute("map.key")->getSP();
-        auto mapValueAttr = _mgr->getAttribute("map.value.value")->getSP();
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto mapKeyAttr = _m->getAttribute("map.key")->getSP();
+        auto mapValueAttr = _m->getAttribute("map.value.value")->getSP();
         EXPECT_EQ(expValue, valueAttr->getInt(lid));
         attribute::IntegerContent mapKeys;
         mapKeys.fill(*mapKeyAttr, lid);

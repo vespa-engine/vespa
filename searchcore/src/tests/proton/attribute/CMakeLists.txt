@@ -7,7 +7,6 @@ vespa_add_executable(searchcore_attribute_test_app TEST
     searchcore_attribute
     searchcore_flushengine
     searchcore_pcommon
-    searchlib_test
     gtest
 )
 vespa_add_test(NAME searchcore_attribute_test_app COMMAND searchcore_attribute_test_app)

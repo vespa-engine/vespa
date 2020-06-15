@@ -70,20 +70,16 @@ namespace index {
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
 Schema::Field::Field(vespalib::stringref n, DataType dt)
-    : Field(n, dt, schema::CollectionType::SINGLE, "")
+    : _name(n),
+      _dataType(dt),
+      _collectionType(schema::CollectionType::SINGLE)
 {
 }
 
 Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct)
-    : Field(n, dt, ct, "")
-{
-}
-
-Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec)
     : _name(n),
       _dataType(dt),
-      _collectionType(ct),
-      _tensor_spec(tensor_spec)
+      _collectionType(ct)
 {
 }
 
@@ -115,14 +111,15 @@ Schema::Field::operator==(const Field &rhs) const
 {
     return _name == rhs._name &&
            _dataType == rhs._dataType &&
-           _collectionType == rhs._collectionType &&
-           _tensor_spec == rhs._tensor_spec;
+           _collectionType == rhs._collectionType;
 }
 
 bool
 Schema::Field::operator!=(const Field &rhs) const
 {
-    return !((*this) == rhs);
+    return _name != rhs._name ||
+           _dataType != rhs._dataType ||
+           _collectionType != rhs._collectionType;
 }
 
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
