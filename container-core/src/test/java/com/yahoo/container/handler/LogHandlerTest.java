@@ -47,12 +47,12 @@ public class LogHandlerTest {
         }
 
         @Override
-        protected void writeLogs(OutputStream outputStream, Instant from, Instant to)  {
+        protected void writeLogs(OutputStream out, Instant from, Instant to)  {
             try {
                 if (to.isAfter(Instant.ofEpochMilli(1000))) {
-                    outputStream.write("newer log".getBytes());
+                    out.write("newer log".getBytes());
                 } else {
-                    outputStream.write("older log".getBytes());
+                    out.write("older log".getBytes());
                 }
             } catch (Exception e) {}
         }

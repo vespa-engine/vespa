@@ -57,7 +57,7 @@ public class LogReaderTest {
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050));
 
-        assertEquals(log100 + logv11 + log110, decompress(baos.toByteArray()));
+        assertEquals(log100 + logv11 + log110, baos.toString(UTF_8));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class LogReaderTest {
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*-1.*"));
         logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)));
 
-        assertEquals(log101 + logv11, decompress(baos.toByteArray()));
+        assertEquals(log101 + logv11, baos.toString(UTF_8));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class LogReaderTest {
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)));
 
-        assertEquals(log100 + log101 + logv11 + log110 + log200 + logv, decompress(zippedBaos.toByteArray()));
+        assertEquals(log101 + log100 + logv11 + log110 + log200 + logv, zippedBaos.toString(UTF_8));
     }
 
     private byte[] compress(String input) throws IOException {
@@ -84,12 +84,6 @@ public class LogReaderTest {
         zip.write(input.getBytes());
         zip.close();
         return baos.toByteArray();
-    }
-
-    private String decompress(byte[] input) throws IOException {
-        if (input.length == 0) return "";
-        byte[] decompressed = new GZIPInputStream(new ByteArrayInputStream(input)).readAllBytes();
-        return new String(decompressed);
     }
 
 }
