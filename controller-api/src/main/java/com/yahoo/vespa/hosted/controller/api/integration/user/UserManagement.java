@@ -34,4 +34,6 @@ public interface UserManagement {
     /** Returns all users in the given role, or throws if the role does not exist. */
     List<User> listUsers(Role role);
 
+    /** Returns all roles of which the given user is part, or throws if the user does not exist */
+    List<Role> listRoles(UserId user);
 }

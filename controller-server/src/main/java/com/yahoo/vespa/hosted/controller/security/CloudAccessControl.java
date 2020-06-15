@@ -73,7 +73,7 @@ public class CloudAccessControl implements AccessControl {
     }
 
     private boolean allowedByPrivilegedRole(Auth0Credentials auth0Credentials) {
-        return auth0Credentials.getRoles().stream()
+        return auth0Credentials.getRolesFromCookie().stream()
                 .map(Role::definition)
                 .anyMatch(rd -> rd == hostedOperator || rd == hostedSupporter);
     }
@@ -83,7 +83,8 @@ public class CloudAccessControl implements AccessControl {
     }
 
     private long administeredTenants(Auth0Credentials auth0Credentials) {
-        return auth0Credentials.getRoles().stream()
+        // We have to verify the roles with auth0 to ensure the user is not using an "old" cookie to make too many tenants.
+        return userManagement.listRoles(new UserId(auth0Credentials.user().getName())).stream()
                 .map(Role::definition)
                 .filter(rd -> rd == administrator)
                 .count();
