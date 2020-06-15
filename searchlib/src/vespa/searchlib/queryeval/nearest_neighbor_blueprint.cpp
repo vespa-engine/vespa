@@ -45,7 +45,7 @@ convert_cells<double,double>(std::unique_ptr<DenseTensorView> &, vespalib::eval:
 struct ConvertCellsSelector
 {
     template <typename LCT, typename RCT>
-    static auto get_fun() { return convert_cells<LCT, RCT>; }
+    static auto invoke() { return convert_cells<LCT, RCT>; }
 };
 
 } // namespace <unnamed>
@@ -67,7 +67,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 {
     auto lct = _query_tensor->cellsRef().type;
     auto rct = _attr_tensor.getTensorType().cell_type();
-    auto fixup_fun = vespalib::tensor::select_2<ConvertCellsSelector>(lct, rct);
+    using MyTypify = vespalib::eval::TypifyCellType;
+    auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
     fixup_fun(_query_tensor, _attr_tensor.getTensorType());
     _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.getConfig().distance_metric(), rct);
     _dist_fun = _fallback_dist_fun.get();
