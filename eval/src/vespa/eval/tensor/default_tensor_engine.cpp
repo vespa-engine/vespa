@@ -18,6 +18,7 @@
 #include "dense/dense_remove_dimension_optimizer.h"
 #include "dense/dense_lambda_peek_optimizer.h"
 #include "dense/dense_lambda_function.h"
+#include "dense/dense_simple_expand_function.h"
 #include "dense/dense_simple_join_function.h"
 #include "dense/dense_number_join_function.h"
 #include "dense/dense_pow_as_map_optimizer.h"
@@ -288,6 +289,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
+            child.set(DenseSimpleExpandFunction::optimize(child.get(), stash));
             child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
             child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
             child.set(VectorFromDoublesFunction::optimize(child.get(), stash));

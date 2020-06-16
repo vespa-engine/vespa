@@ -15,6 +15,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_pow_as_map_optimizer.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
+    dense_simple_expand_function.cpp
     dense_simple_join_function.cpp
     dense_simple_map_function.cpp
     dense_single_reduce_function.cpp
