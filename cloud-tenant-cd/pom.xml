@@ -59,6 +59,11 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <attachBundleArtifact>true</attachBundleArtifact>
+                    <bundleClassifierName>deploy</bundleClassifierName>
+                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
