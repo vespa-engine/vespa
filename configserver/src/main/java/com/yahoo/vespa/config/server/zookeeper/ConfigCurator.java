@@ -3,16 +3,11 @@ package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * A (stateful) curator wrapper for the config server. This simplifies Curator method calls used by the config server
@@ -48,8 +43,6 @@ public class ConfigCurator {
 
     /** Path for session state */
     public static final String SESSIONSTATE_ZK_SUBPATH = "/sessionState";
-
-    private static final FilenameFilter acceptsAllFileNameFilter = (dir, name) -> true;
 
     private final Curator curator;
 
@@ -227,65 +220,6 @@ public class ConfigCurator {
      */
     public void putDefData(String name, String path, byte[] data) {
             putData(path, name, data);
-    }
-
-    /**
-     * Takes for instance the dir /app  and puts the contents into the given ZK path. Ignores files starting with dot,
-     * and dirs called CVS.
-     *
-     * @param dir            directory which holds the summary class part files
-     * @param path           zookeeper path
-     * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
-     * @param recurse        recurse subdirectories
-     */
-    void feedZooKeeper(File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
-        try {
-            if (filenameFilter == null) {
-                filenameFilter = acceptsAllFileNameFilter;
-            }
-            if (!dir.isDirectory()) {
-                log.fine(dir.getCanonicalPath() + " is not a directory. Not feeding the files into ZooKeeper.");
-                return;
-            }
-            for (File file : listFiles(dir, filenameFilter)) {
-                if (file.getName().startsWith(".")) continue; //.svn , .git ...
-                if ("CVS".equals(file.getName())) continue;
-                if (file.isFile()) {
-                    byte[] contents = IOUtils.readFileBytes(file);
-                    putData(path, file.getName(), contents);
-                } else if (recurse && file.isDirectory()) {
-                    createNode(path, file.getName());
-                    feedZooKeeper(file, path + '/' + file.getName(), filenameFilter, recurse);
-                }
-            }
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Exception feeding ZooKeeper at path " + path, e);
-        }
-    }
-
-    /**
-     * Same as normal listFiles, but use the filter only for normal files
-     *
-     * @param dir    directory to list files in
-     * @param filter A FilenameFilter which decides which files in dir are listed
-     * @return an array of Files
-     */
-    protected File[] listFiles(File dir, FilenameFilter filter) {
-        File[] rawList = dir.listFiles();
-        List<File> ret = new ArrayList<>();
-        if (rawList != null) {
-            for (File f : rawList) {
-                if (f.isDirectory()) {
-                    ret.add(f);
-                } else {
-                    if (filter.accept(dir, f.getName())) {
-                        ret.add(f);
-                    }
-                }
-            }
-        }
-        return ret.toArray(new File[0]);
     }
 
     /** Deletes the node at the given path, and any children it may have. If the node does not exist this does nothing */
