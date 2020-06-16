@@ -87,7 +87,10 @@ public interface ModelContext {
             return 0.9999;
         }
 
-        String docprocLoadBalancerType();
+        // TODO Remove when 7.238 is last
+        default String docprocLoadBalancerType() {
+            return "adaptive";
+        }
 
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();

@@ -33,7 +33,7 @@ public class LoadBalancerTestCase {
     }
 
     private static void assertIllegalArgument(String clusterName, String recipient, String expectedMessage) {
-        LegacyLoadBalancer policy = new LegacyLoadBalancer(clusterName);
+        LoadBalancer policy = new AdaptiveLoadBalancer(clusterName);
         try {
             fail("Expected exception, got index " + policy.getIndex(recipient) + ".");
         } catch (IllegalArgumentException e) {
@@ -44,9 +44,9 @@ public class LoadBalancerTestCase {
     @Test
     public void testLoadBalancerCreation() {
         LoadBalancerPolicy lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing");
-        assertTrue(lbp.getLoadBalancer() instanceof LegacyLoadBalancer);
+        assertTrue(lbp.getLoadBalancer() instanceof AdaptiveLoadBalancer);
         lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing;type=legacy");
-        assertTrue(lbp.getLoadBalancer() instanceof LegacyLoadBalancer);
+        assertTrue(lbp.getLoadBalancer() instanceof AdaptiveLoadBalancer);
         lbp = new LoadBalancerPolicy("cluster=docproc/cluster.mobile.indexing;session=chain.mobile.indexing;type=adaptive");
         assertTrue(lbp.getLoadBalancer() instanceof AdaptiveLoadBalancer);
     }
@@ -110,64 +110,6 @@ public class LoadBalancerTestCase {
         assertEquals(1019, weights.get(2).pending());
     }
 
-    @Test
-    public void testLegacyLoadBalancer() {
-        LoadBalancer lb = new LegacyLoadBalancer("foo");
-
-        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
-                                                   new Mirror.Entry("foo/1/default", "tcp/bar:2"),
-                                                   new Mirror.Entry("foo/2/default", "tcp/bar:3"));
-        List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
-
-        {
-            for (int i = 0; i < 99; i++) {
-                LoadBalancer.Node node = lb.getRecipient(entries);
-                assertEquals("foo/" + (i % 3) + "/default" , node.entry.getName());
-            }
-
-            assertEquals(33, weights.get(0).sent());
-            assertEquals(33, weights.get(1).sent());
-            assertEquals(33, weights.get(2).sent());
-
-            weights.get(0).reset();
-            weights.get(1).reset();
-            weights.get(2).reset();
-        }
-
-        {
-            // Simulate that one node is overloaded. It returns busy twice as often as the others.
-            for (int i = 0; i < 100; i++) {
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/0/default", "tcp/bar:1"), weights.get(0)), true);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/0/default", "tcp/bar:1"), weights.get(0)), false);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/0/default", "tcp/bar:1"), weights.get(0)), false);
-
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/2/default", "tcp/bar:3"), weights.get(2)), true);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/2/default", "tcp/bar:3"), weights.get(2)), false);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/2/default", "tcp/bar:3"), weights.get(2)), false);
-
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/1/default", "tcp/bar:2"), weights.get(1)), true);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/1/default", "tcp/bar:2"), weights.get(1)), true);
-                lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/1/default", "tcp/bar:2"), weights.get(1)), false);
-            }
-
-            assertEquals(421, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(0)).weight / ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
-            assertEquals(100, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
-            assertEquals(421, (int)(100 * ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(2)).weight / ((LegacyLoadBalancer.LegacyNodeMetrics)weights.get(1)).weight));
-        }
-
-
-        assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/1/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/2/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/2/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/2/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/2/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-        assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
-    }
-
     private void verifyLoadBalancerOneItemOnly(LoadBalancer lb) {
 
         List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
@@ -181,7 +123,6 @@ public class LoadBalancerTestCase {
     }
     @Test
     public void testLoadBalancerOneItemOnly() {
-        verifyLoadBalancerOneItemOnly(new LegacyLoadBalancer("foo"));
         verifyLoadBalancerOneItemOnly(new AdaptiveLoadBalancer("foo"));
     }
 }

@@ -150,23 +150,20 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
                 String policy = policy(docproc);
 
                 for (DocprocChain chain : docproc.getChains().allChains().allComponents()) {
-                    addChainHop(table, cluster.getConfigId(), policy, chain, cluster.getDocprocLoadbalancerType());
+                    addChainHop(table, cluster.getConfigId(), policy, chain);
                 }
             }
         }
     }
 
-    private static void addChainHop(RoutingTableSpec table, String configId, String policy, DocprocChain chain, String docprocLoadBalancerType) {
+    private static void addChainHop(RoutingTableSpec table, String configId, String policy, DocprocChain chain) {
         final StringBuilder selector = new StringBuilder();
         if (policy != null) {
             selector.append(configId).append("/").append(policy).append("/").append(chain.getSessionName());
         } else {
             selector.append("[LoadBalancer:cluster=").append(configId)
-                    .append(";session=").append(chain.getSessionName());
-            if ((docprocLoadBalancerType != null) && ! docprocLoadBalancerType.isEmpty()) {
-                selector.append(";type=").append(docprocLoadBalancerType);
-            }
-            selector.append("]");
+                    .append(";session=").append(chain.getSessionName())
+                    .append("]");
         }
         table.addHop(new HopSpec(chain.getServiceName(), selector.toString()));
     }
