@@ -64,6 +64,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
         synchronized (monitor) {
             nextContext = null; // Reset any previous context and wait for the next one
             isWaitingForNextContext = true;
+            monitor.notify();
             Duration untilNextContext = Duration.ZERO;
             while (setAndGetIsFrozen(wantFrozen) ||
                     nextContext == null ||
@@ -110,9 +111,13 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     }
 
     /** FOR TESTING ONLY */
-    boolean isWaitingForNextContext() {
+    void waitUntilWaitingForNextContext() {
         synchronized (monitor) {
-            return isWaitingForNextContext;
+            while (!isWaitingForNextContext) {
+                try {
+                    monitor.wait();
+                } catch (InterruptedException ignored) { }
+            }
         }
     }
 }

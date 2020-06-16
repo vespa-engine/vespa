@@ -33,7 +33,7 @@ public class NodeAgentContextManagerTest {
         assertSame(initialContext, manager.currentContext());
 
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
         assertFalse(async.isCompleted());
 
         NodeAgentContext context2 = generateContext();
@@ -46,7 +46,7 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void returns_no_earlier_than_at_given_time() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
 
         NodeAgentContext context1 = generateContext();
         Instant returnAt = clock.instant().plusMillis(500);
@@ -61,7 +61,7 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_one_is_scheduled() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
         assertFalse(async.isCompleted());
 
         NodeAgentContext context1 = generateContext();
@@ -75,7 +75,7 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_interrupt() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
         assertFalse(async.isCompleted());
 
         manager.interrupt();
@@ -92,7 +92,7 @@ public class NodeAgentContextManagerTest {
         // Generate new context and get it from the supplier, this completes the unfreeze
         NodeAgentContext context1 = generateContext();
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
         manager.scheduleTickWith(context1, clock.instant());
         assertSame(context1, async.awaitResult().response.get());
 
@@ -116,7 +116,7 @@ public class NodeAgentContextManagerTest {
             Thread.sleep(200); // Simulate running NodeAgent::converge
             return context;
         });
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
 
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
@@ -130,23 +130,15 @@ public class NodeAgentContextManagerTest {
         assertFalse(asyncScheduler.isCompleted()); // Still waiting for consumer to converge to frozen
 
         AsyncExecutor<NodeAgentContext> asyncConsumer2 = new AsyncExecutor<>(manager::nextContext);
-        waitUntilWaitingForNextContext();
+        manager.waitUntilWaitingForNextContext();
         assertFalse(asyncConsumer2.isCompleted()); // Waiting for next context
-        assertTrue(asyncScheduler.isCompleted()); // While consumer is waiting, it has converged to frozen
+        asyncScheduler.awaitResult(); // We should be able to converge to frozen now
 
         // Interrupt manager to end asyncConsumer2
         manager.interrupt();
         asyncConsumer2.awaitResult();
 
         assertEquals(Optional.of(true), asyncScheduler.response);
-    }
-
-    private void waitUntilWaitingForNextContext() {
-        while (!manager.isWaitingForNextContext()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException ignored) { }
-        }
     }
 
     private static NodeAgentContext generateContext() {
