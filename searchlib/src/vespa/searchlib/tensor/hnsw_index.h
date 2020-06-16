@@ -131,7 +131,7 @@ protected:
         PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
     PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
-    LinkArray filter_valid_docids(const LinkArrayRef &docids);
+    LinkArray filter_valid_docids(uint32_t level, const LinkArrayRef &docids, uint32_t me);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
