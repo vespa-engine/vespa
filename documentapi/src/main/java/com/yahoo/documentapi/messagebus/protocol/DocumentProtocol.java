@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionSpecification;
@@ -147,7 +146,6 @@ public class DocumentProtocol implements Protocol {
     /**
      * Test and set condition (selection) failed.
      */
-    @Beta
     public static final int ERROR_TEST_AND_SET_CONDITION_FAILED = ErrorCode.APP_FATAL_ERROR + 1013;
 
     /**
