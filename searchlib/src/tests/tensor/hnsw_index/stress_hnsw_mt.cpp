@@ -99,19 +99,18 @@ void read_vector_file(MallocPointVector *p) {
 
 class MyDocVectorStore : public DocVectorAccess {
 private:
-    using Vector = std::vector<float>;
-    std::vector<Vector> _vectors;
-
+    MallocPointVector *_vectors;
 public:
-    MyDocVectorStore() : _vectors() {}
+    MyDocVectorStore() {
+        _vectors = aligned_alloc_pv(NUM_POSSIBLE_DOCS);
+    }
     MyDocVectorStore& set(uint32_t docid, ConstVectorRef vec) {
-        if (docid >= _vectors.size()) {
-            _vectors.resize(docid + 1);
-        }
-        _vectors[docid] = Vector(vec.begin(), vec.end());
+        assert(docid < NUM_POSSIBLE_DOCS);
+        memcpy(&_vectors[docid], vec.cbegin(), sizeof(MallocPointVector));
         return *this;
     }
     vespalib::tensor::TypedCells get_vector(uint32_t docid) const override {
+        assert(docid < NUM_POSSIBLE_DOCS);
         ConstVectorRef ref(_vectors[docid]);
         return vespalib::tensor::TypedCells(ref);
     }
@@ -283,7 +282,6 @@ public:
         index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
                                             std::make_unique<InvLogLevelGenerator>(m),
                                             HnswIndex::Config(2*m, m, 200, true));
-        vectors.set(NUM_POSSIBLE_DOCS, loaded_vectors[0]);
     }
     size_t get_rnd(size_t size) {
         return rng.nextUniform() * size;
