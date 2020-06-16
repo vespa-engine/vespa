@@ -36,10 +36,10 @@
         </dependency>
 
         <!-- compile -->
-        <dependency>
+        <dependency> <!-- TODO(bjorncs): share junit version number with test-runner implementation -->
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.4.2</version> <!-- NOTE: This version must match the string in all ExportPackage annotations -->
+            <version>5.6.2</version> <!-- NOTE: This version must match the string in all ExportPackage annotations -->
             <scope>compile</scope>
         </dependency>
     </dependencies>
