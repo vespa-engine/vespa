@@ -8,7 +8,7 @@
     <name>Vespa Cloud tenant CD implementation</name>
     <description>Test library implementation for Vespa Cloud applications.</description>
     <url>https://github.com/vespa-engine</url>
-    <packaging>jar</packaging>
+    <packaging>container-plugin</packaging>
 
     <parent>
         <groupId>com.yahoo.vespa</groupId>
@@ -18,39 +18,57 @@
     </parent>
 
     <dependencies>
+        <!-- provided scope -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd-api</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>security-utils</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>config-provisioning</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
+        <!-- compile scope -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-auth</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>hosted-api</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <attachBundleArtifact>true</attachBundleArtifact>
+                    <bundleClassifierName>deploy</bundleClassifierName>
+                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>
