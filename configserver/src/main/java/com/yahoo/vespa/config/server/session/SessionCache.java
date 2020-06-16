@@ -16,9 +16,7 @@ public class SessionCache<SESSIONTYPE extends Session> {
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
     public synchronized void addSession(SESSIONTYPE session) {
-        if (sessions.containsKey(session.getSessionId()))
-            throw new IllegalArgumentException("There already exists a session with id '" + session.getSessionId() + "'");
-        sessions.put(session.getSessionId(), session);
+        sessions.putIfAbsent(session.getSessionId(), session);
     }
 
     synchronized void removeSession(long id) {
