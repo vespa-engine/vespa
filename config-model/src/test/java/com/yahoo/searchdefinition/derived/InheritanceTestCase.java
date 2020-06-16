@@ -22,6 +22,7 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests inheritance
@@ -68,8 +69,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
             DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
-            assertEquals(17, dc.datatype().size());
-            assertNotNull(structType("child.body", dc));
+            assertEquals(13, dc.datatype().size());
+            assertNull(structType("child.body", dc));
             DocumentmanagerConfig.Datatype.Structtype childHeader = structType("child.header", dc);
             assertEquals(childHeader.field(0).name(), "foo");
             assertEquals(childHeader.field(1).name(), "bar");

@@ -118,14 +118,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         doc.setId(documentId);
 
         Struct h = doc.getHeader();
-        Struct b = doc.getBody();
         h.clear();
-        b.clear();
         if ((content & 0x2) != 0) {
-            readHeaderBody(h, b);
+            readHeaderBody(h);
         }
         if ((content & 0x4) != 0) {
-            readHeaderBody(b, h);
+            readHeaderBody(h);
         }
 
         if (dataLength != (position() - dataPos)) {
@@ -326,7 +324,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         buf = bigBuf;
     }
 
-    private void readHeaderBody(Struct primary, Struct alternate) {
+    private void readHeaderBody(Struct primary) {
         primary.setVersion(version);
 
         if (version < 8) {
@@ -371,24 +369,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         buf = GrowableByteBuffer.wrap(destination);
 
         StructDataType priType = primary.getDataType();
-        StructDataType altType = alternate.getDataType();
         for (int i=0; i<numberOfFields; ++i) {
             int posBefore = position();
-            Struct s = null;
             Integer f_id = fieldIdsAndLengths.get(i).first;
             Field structField = priType.getField(f_id);
             if (structField != null) {
-                s = primary;
-            } else {
-                structField = altType.getField(f_id);
-                if (structField != null) {
-                  s = alternate;
-                }
-            }
-            if (s != null) {
               FieldValue value = structField.getDataType().createFieldValue();
               value.deserialize(structField, this);
-              s.setFieldValue(structField, value);
+              primary.setFieldValue(structField, value);
             }
             //jump to beginning of next field:
             position(posBefore + fieldIdsAndLengths.get(i).second.intValue());

@@ -586,9 +586,6 @@ void compression(SDDocumentType document, String name) :
         if (name == null || name.equals("header")) {
             document.getDocumentType().contentStruct().setCompressionConfig(cfg);
         }
-        if (name == null || name.equals("body")) {
-            document.getDocumentType().getBodyType().setCompressionConfig(cfg);
-        }
     }
 }
 

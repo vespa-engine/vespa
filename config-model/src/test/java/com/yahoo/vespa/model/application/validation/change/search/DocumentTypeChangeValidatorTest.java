@@ -201,7 +201,6 @@ public class DocumentTypeChangeValidatorTest {
         return new NewDocumentType(
                 new NewDocumentType.Name("mydoc"),
                 headerfields,
-                new StructDataType("bodyfields"),
                 new FieldSets(),
                 Collections.emptySet(),
                 Collections.emptySet());

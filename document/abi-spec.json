@@ -426,7 +426,9 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, com.yahoo.document.StructDataType)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType)",
+      "public void <init>(java.lang.String, com.yahoo.document.StructDataType, java.util.Set)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType, java.util.Set)",
       "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.document.DocumentType clone()",

@@ -88,7 +88,7 @@ datatype[].documenttype[].inherits[].version int default=0
 datatype[].documenttype[].headerstruct int
 
 ## Specify a document field id. Must be unique within the document type.
-datatype[].documenttype[].bodystruct int
+datatype[].documenttype[].bodystruct int default=0
 
 ## Field sets
 datatype[].documenttype[].fieldsets{}.fields[] string

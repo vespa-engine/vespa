@@ -142,14 +142,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
     @SuppressWarnings("deprecation")
     private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
         StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
-        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");
-        for (Field field : body.getFields()) {
-            field.setHeader(false);
-        }
         var importedFields = doc.importedfield().stream()
                 .map(f -> f.name())
                 .collect(Collectors.toUnmodifiableSet());
-        DocumentType type = new DocumentType(doc.name(), header, body, importedFields);
+        DocumentType type = new DocumentType(doc.name(), header, importedFields);
         for (Object j : doc.inherits()) {
             DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
                     (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;
