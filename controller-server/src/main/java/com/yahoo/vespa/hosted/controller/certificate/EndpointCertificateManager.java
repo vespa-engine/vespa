@@ -321,6 +321,7 @@ public class EndpointCertificateManager {
     }
 
     /** Create a common name based on a hash of the ApplicationId. This should always be less than 64 characters long. */
+    @SuppressWarnings("UnstableApiUsage")
     private static String commonNameHashOf(ApplicationId application, SystemName system) {
         var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
         var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
