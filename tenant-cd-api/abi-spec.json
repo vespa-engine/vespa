@@ -1,0 +1,116 @@
+{
+  "ai.vespa.hosted.cd.Deployment": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract ai.vespa.hosted.cd.Endpoint endpoint(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.Endpoint": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.net.URI uri()",
+      "public abstract java.net.http.HttpResponse send(java.net.http.HttpRequest$Builder, java.net.http.HttpResponse$BodyHandler)",
+      "public java.net.http.HttpResponse send(java.net.http.HttpRequest$Builder)",
+      "public abstract java.net.http.HttpRequest$Builder request(java.lang.String, java.util.Map)",
+      "public java.net.http.HttpRequest$Builder request(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.IntegrationTest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.ProductionTest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.StagingSetup": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.StagingTest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.SystemTest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.TestRuntime": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public static ai.vespa.hosted.cd.TestRuntime get()",
+      "public abstract ai.vespa.hosted.cd.Deployment deploymentToTest()"
+    ],
+    "fields": []
+  }
+}
