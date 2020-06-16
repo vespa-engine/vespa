@@ -167,10 +167,11 @@ public class DeploymentTrigger {
     public JobId reTrigger(ApplicationId applicationId, JobType jobType) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
-        DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
-        JobStatus jobStatus = status.jobs().get(new JobId(applicationId, jobType)).get();
-        Versions versions = jobStatus.lastTriggered().get().versions();
+        JobStatus jobStatus = jobs.jobStatus(new JobId(applicationId, jobType));
+        Versions versions = jobStatus.lastTriggered()
+                                     .orElseThrow(() -> new IllegalArgumentException(job + " has never been triggered"))
+                                     .versions();
         trigger(deploymentJob(instance, versions, jobType, jobStatus, clock.instant()));
         return job;
     }
