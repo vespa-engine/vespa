@@ -23,7 +23,7 @@ public class Auth0Credentials extends Credentials {
     }
 
     /** The set of roles set in the auth0 cookie, extracted by CloudAccessControlRequests. */
-    public Set<Role> getRoles() {
+    public Set<Role> getRolesFromCookie() {
         return roles;
     }
 
