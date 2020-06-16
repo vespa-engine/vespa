@@ -17,6 +17,10 @@ struct CallOp1 {
 };
 
 template <typename T> struct InlineOp1;
+template <> struct InlineOp1<Cube> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return (a * a * a); }
+};
 template <> struct InlineOp1<Exp> {
     InlineOp1(op1_t) {}
     template <typename A> constexpr auto operator()(A a) const { return exp(a); }
@@ -29,6 +33,10 @@ template <> struct InlineOp1<Sqrt> {
     InlineOp1(op1_t) {}
     template <typename A> constexpr auto operator()(A a) const { return std::sqrt(a); }
 };
+template <> struct InlineOp1<Square> {
+    InlineOp1(op1_t) {}
+    template <typename A> constexpr auto operator()(A a) const { return (a * a); }
+};
 template <> struct InlineOp1<Tanh> {
     InlineOp1(op1_t) {}
     template <typename A> constexpr auto operator()(A a) const { return std::tanh(a); }
@@ -37,12 +45,16 @@ template <> struct InlineOp1<Tanh> {
 struct TypifyOp1 {
     template <typename T> using Result = TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(op1_t value, F &&f) {
-        if (value == Exp::f) {
+        if (value == Cube::f) {
+            return f(Result<InlineOp1<Cube>>());
+        } else if (value == Exp::f) {
             return f(Result<InlineOp1<Exp>>());
         } else if (value == Inv::f) {
             return f(Result<InlineOp1<Inv>>());
         } else if (value == Sqrt::f) {
             return f(Result<InlineOp1<Sqrt>>());
+        } else if (value == Square::f) {
+            return f(Result<InlineOp1<Square>>());
         } else if (value == Tanh::f) {
             return f(Result<InlineOp1<Tanh>>());
         } else {

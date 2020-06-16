@@ -22,7 +22,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     Stash              &stash;
     const TensorEngine &tensor_engine;
     const NodeTypes    &types;
-    std::vector<tensor_function::Node::CREF> stack;
+    std::vector<TensorFunction::CREF> stack;
 
     TensorFunctionBuilder(Stash &stash_in, const TensorEngine &tensor_engine_in, const NodeTypes &types_in)
         : stash(stash_in), tensor_engine(tensor_engine_in), types(types_in), stack() {}
@@ -94,7 +94,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_create(const TensorCreate &node) {
         assert(stack.size() >= node.num_children());
-        std::map<TensorSpec::Address, tensor_function::Node::CREF> spec;
+        std::map<TensorSpec::Address, TensorFunction::CREF> spec;
         for (size_t idx = node.num_children(); idx-- > 0; ) {
             spec.emplace(node.get_child_address(idx), stack.back());
             stack.pop_back();
@@ -115,8 +115,8 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_peek(const TensorPeek &node) {
         assert(stack.size() >= node.num_children());
-        const tensor_function::Node &param = stack[stack.size()-node.num_children()];
-        std::map<vespalib::string, std::variant<TensorSpec::Label, tensor_function::Node::CREF>> spec;
+        const TensorFunction &param = stack[stack.size()-node.num_children()];
+        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
         for (auto pos = node.dim_list().rbegin(); pos != node.dim_list().rend(); ++pos) {
             if (pos->second.is_expr()) {
                 spec.emplace(pos->first, stack.back());

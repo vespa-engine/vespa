@@ -68,6 +68,18 @@ TEST(InlineOperationTest, op1_lambdas_are_recognized) {
     //-------------------------------------------
     EXPECT_EQ(as_op1("1/a"),        &Inv::f);
     EXPECT_EQ(as_op1("1.0/a"),      &Inv::f);
+    EXPECT_EQ(as_op1("a*a"),        &Square::f);
+    EXPECT_EQ(as_op1("a^2"),        &Square::f);
+    EXPECT_EQ(as_op1("a^2.0"),      &Square::f);
+    EXPECT_EQ(as_op1("pow(a,2)"),   &Square::f);
+    EXPECT_EQ(as_op1("pow(a,2.0)"), &Square::f);
+    EXPECT_EQ(as_op1("a*a*a"),      &Cube::f);
+    EXPECT_EQ(as_op1("(a*a)*a"),    &Cube::f);
+    EXPECT_EQ(as_op1("a*(a*a)"),    &Cube::f);
+    EXPECT_EQ(as_op1("a^3"),        &Cube::f);
+    EXPECT_EQ(as_op1("a^3.0"),      &Cube::f);
+    EXPECT_EQ(as_op1("pow(a,3)"),   &Cube::f);
+    EXPECT_EQ(as_op1("pow(a,3.0)"), &Cube::f);
 }
 
 TEST(InlineOperationTest, op1_lambdas_are_recognized_with_different_parameter_names) {
@@ -76,7 +88,7 @@ TEST(InlineOperationTest, op1_lambdas_are_recognized_with_different_parameter_na
 }
 
 TEST(InlineOperationTest, non_op1_lambdas_are_not_recognized) {
-    EXPECT_FALSE(lookup_op1(*Function::parse({"a"}, "a*a")).has_value());
+    EXPECT_FALSE(lookup_op1(*Function::parse({"a"}, "a*a+3")).has_value());
     EXPECT_FALSE(lookup_op1(*Function::parse({"a", "b"}, "a+b")).has_value());
 }
 
@@ -170,6 +182,19 @@ TEST(InlineOperationTest, parameter_swap_wrapper_works) {
 
 //-----------------------------------------------------------------------------
 
+TEST(InlineOperationTest, op1_cube_is_inlined) {
+    TypifyOp1::resolve(Cube::f, [](auto t)
+                       {
+                           using T = typename decltype(t)::type;
+                           bool type_ok = std::is_same_v<T,InlineOp1<Cube>>;
+                           op1_t ref = Cube::f;
+                           EXPECT_TRUE(type_ok);
+                           test_op1<T>(ref, 2.0, 8.0);
+                           test_op1<T>(ref, 3.0, 27.0);
+                           test_op1<T>(ref, 7.0, 343.0);
+                       });
+}
+
 TEST(InlineOperationTest, op1_exp_is_inlined) {
     TypifyOp1::resolve(Exp::f, [](auto t)
                        {
@@ -206,6 +231,19 @@ TEST(InlineOperationTest, op1_sqrt_is_inlined) {
                            test_op1<T>(ref, 2.0, sqrt(2.0));
                            test_op1<T>(ref, 4.0, sqrt(4.0));
                            test_op1<T>(ref, 64.0, sqrt(64.0));
+                       });
+}
+
+TEST(InlineOperationTest, op1_square_is_inlined) {
+    TypifyOp1::resolve(Square::f, [](auto t)
+                       {
+                           using T = typename decltype(t)::type;
+                           bool type_ok = std::is_same_v<T,InlineOp1<Square>>;
+                           op1_t ref = Square::f;
+                           EXPECT_TRUE(type_ok);
+                           test_op1<T>(ref, 2.0, 4.0);
+                           test_op1<T>(ref, 3.0, 9.0);
+                           test_op1<T>(ref, 7.0, 49.0);
                        });
 }
 

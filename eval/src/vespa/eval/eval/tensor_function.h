@@ -52,6 +52,7 @@ class Tensor;
  **/
 struct TensorFunction
 {
+    using CREF = std::reference_wrapper<const TensorFunction>;
     TensorFunction(const TensorFunction &) = delete;
     TensorFunction &operator=(const TensorFunction &) = delete;
     TensorFunction(TensorFunction &&) = delete;
@@ -132,7 +133,6 @@ class Node : public TensorFunction
 private:
     ValueType _result_type;
 public:
-    using CREF = std::reference_wrapper<const Node>;
     Node(const ValueType &result_type_in) : _result_type(result_type_in) {}
     const ValueType &result_type() const final override { return _result_type; }
 };
@@ -310,7 +310,7 @@ class Create : public Node
 private:
     std::map<TensorSpec::Address, Child> _spec;
 public:
-    Create(const ValueType &result_type_in, const std::map<TensorSpec::Address, Node::CREF> &spec_in)
+    Create(const ValueType &result_type_in, const std::map<TensorSpec::Address, TensorFunction::CREF> &spec_in)
         : Super(result_type_in), _spec()
     {
         for (const auto &cell: spec_in) {
@@ -359,8 +359,8 @@ private:
     Child _param;
     std::map<vespalib::string, MyLabel> _spec;
 public:
-    Peek(const ValueType &result_type_in, const Node &param,
-         const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec)
+    Peek(const ValueType &result_type_in, const TensorFunction &param,
+         const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec)
         : Super(result_type_in), _param(param), _spec()
     {
         for (const auto &dim: spec) {
@@ -369,7 +369,7 @@ public:
                            [&](const TensorSpec::Label &label) {
                                _spec.emplace(dim.first, label);
                            },
-                           [&](const Node::CREF &ref) {
+                           [&](const TensorFunction::CREF &ref) {
                                _spec.emplace(dim.first, ref.get());
                            }
                        }, dim.second);
@@ -432,18 +432,18 @@ public:
 
 //-----------------------------------------------------------------------------
 
-const Node &const_value(const Value &value, Stash &stash);
-const Node &inject(const ValueType &type, size_t param_idx, Stash &stash);
-const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
-const Node &map(const Node &child, map_fun_t function, Stash &stash);
-const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
-const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
-const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
-const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
-const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
-const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);
-const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
-const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);
+const TensorFunction &const_value(const Value &value, Stash &stash);
+const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash);
+const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
+const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash);
+const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
+const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
+const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash);
+const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address, TensorFunction::CREF> &spec, Stash &stash);
+const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
+const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash);
+const TensorFunction &rename(const TensorFunction &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
+const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash);
 
 } // namespace vespalib::eval::tensor_function
 } // namespace vespalib::eval

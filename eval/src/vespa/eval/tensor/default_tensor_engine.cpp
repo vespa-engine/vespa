@@ -20,6 +20,7 @@
 #include "dense/dense_lambda_function.h"
 #include "dense/dense_simple_join_function.h"
 #include "dense/dense_number_join_function.h"
+#include "dense/dense_pow_as_map_optimizer.h"
 #include "dense/dense_simple_map_function.h"
 #include "dense/vector_from_doubles_function.h"
 #include "dense/dense_tensor_create_function.h"
@@ -295,6 +296,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
             child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
             child.set(DenseLambdaFunction::optimize(child.get(), stash));
             child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
+            child.set(DensePowAsMapOptimizer::optimize(child.get(), stash));
             child.set(DenseSimpleMapFunction::optimize(child.get(), stash));
             child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));
             child.set(DenseNumberJoinFunction::optimize(child.get(), stash));

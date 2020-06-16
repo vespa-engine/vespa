@@ -50,6 +50,8 @@ struct Sigmoid { static double f(double a); };
 struct Elu { static double f(double a); };
 //-----------------------------------------------------------------------------
 struct Inv { static double f(double a); };
+struct Square { static double f(double a); };
+struct Cube { static double f(double a); };
 
 using op1_t = double (*)(double);
 using op2_t = double (*)(double, double);

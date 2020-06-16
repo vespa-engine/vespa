@@ -38,7 +38,7 @@ struct EvalCtx {
         ictx = std::make_unique<InterpretedFunction::Context>(*ifun);
         return ifun->eval(*ictx, SimpleObjectParams(params));
     }
-    const TensorFunction &compile(const tensor_function::Node &expr) {
+    const TensorFunction &compile(const TensorFunction &expr) {
         return engine.optimize(expr, stash);
     }
     Value::UP make_double(double value) {
@@ -391,15 +391,15 @@ TEST("require that if_node works") {
 
 TEST("require that if_node result is mutable only when both children produce mutable results") {
     Stash stash;
-    const Node &cond = inject(DoubleValue::double_type(), 0, stash);
-    const Node &a = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
-    const Node &b = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
-    const Node &c = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
-    const Node &tmp = concat(a, b, "x", stash); // will be mutable
-    const Node &if_con_con = if_node(cond, c, c, stash);
-    const Node &if_mut_con = if_node(cond, tmp, c, stash);
-    const Node &if_con_mut = if_node(cond, c, tmp, stash);
-    const Node &if_mut_mut = if_node(cond, tmp, tmp, stash);
+    const TensorFunction &cond = inject(DoubleValue::double_type(), 0, stash);
+    const TensorFunction &a = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
+    const TensorFunction &b = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
+    const TensorFunction &c = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
+    const TensorFunction &tmp = concat(a, b, "x", stash); // will be mutable
+    const TensorFunction &if_con_con = if_node(cond, c, c, stash);
+    const TensorFunction &if_mut_con = if_node(cond, tmp, c, stash);
+    const TensorFunction &if_con_mut = if_node(cond, c, tmp, stash);
+    const TensorFunction &if_mut_mut = if_node(cond, tmp, tmp, stash);
     EXPECT_EQUAL(if_con_con.result_type(), c.result_type());
     EXPECT_EQUAL(if_con_mut.result_type(), c.result_type());
     EXPECT_EQUAL(if_mut_con.result_type(), c.result_type());
@@ -412,13 +412,13 @@ TEST("require that if_node result is mutable only when both children produce mut
 
 TEST("require that if_node gets expected result type") {
     Stash stash;
-    const Node &a = inject(DoubleValue::double_type(), 0, stash);
-    const Node &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
-    const Node &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
-    const Node &d = inject(ValueType::from_spec("error"), 0, stash);
-    const Node &if_same = if_node(a, b, b, stash);
-    const Node &if_different = if_node(a, b, c, stash);
-    const Node &if_with_error = if_node(a, b, d, stash);
+    const TensorFunction &a = inject(DoubleValue::double_type(), 0, stash);
+    const TensorFunction &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
+    const TensorFunction &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
+    const TensorFunction &d = inject(ValueType::from_spec("error"), 0, stash);
+    const TensorFunction &if_same = if_node(a, b, b, stash);
+    const TensorFunction &if_different = if_node(a, b, c, stash);
+    const TensorFunction &if_with_error = if_node(a, b, d, stash);
     EXPECT_EQUAL(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
     EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("error"));
     EXPECT_EQUAL(if_with_error.result_type(), ValueType::from_spec("error"));
@@ -426,10 +426,10 @@ TEST("require that if_node gets expected result type") {
 
 TEST("require that push_children works") {
     Stash stash;
-    std::vector<Node::Child::CREF> refs;
-    const Node &a = inject(DoubleValue::double_type(), 0, stash);
-    const Node &b = inject(DoubleValue::double_type(), 1, stash);
-    const Node &c = const_value(stash.create<DoubleValue>(1.0), stash);
+    std::vector<TensorFunction::Child::CREF> refs;
+    const TensorFunction &a = inject(DoubleValue::double_type(), 0, stash);
+    const TensorFunction &b = inject(DoubleValue::double_type(), 1, stash);
+    const TensorFunction &c = const_value(stash.create<DoubleValue>(1.0), stash);
     a.push_children(refs);
     b.push_children(refs);
     c.push_children(refs);
