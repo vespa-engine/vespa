@@ -219,8 +219,11 @@ doc_type
       }
     ;
 
+ /* We allow most otherwise reserved tokens to be used as identifiers. */
 ident
     : IDENTIFIER { $$ = $1; }
+    | USER       { $$ = $1; }
+    | GROUP      { $$ = $1; }
     | SCHEME     { $$ = $1; }
     | TYPE       { $$ = $1; }
     | NAMESPACE  { $$ = $1; }
