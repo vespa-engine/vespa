@@ -584,12 +584,17 @@ public class RoutingPoliciesTest {
     public void config_server_routing_policy() {
         var tester = new RoutingPoliciesTester();
         var app = SystemApplication.configServer.id();
+        RecordName name = RecordName.from("cfg.prod.us-west-1.test.vip");
+        tester.controllerTester().nameService().add(new Record(Record.Type.A, name, RecordData.from("192.0.2.1")));
 
         tester.provisionLoadBalancers(1, app, zone1);
         tester.routingPolicies().refresh(app, DeploymentSpec.empty, zone1);
         new NameServiceDispatcher(tester.tester.controller(), Duration.ofDays(1), Integer.MAX_VALUE).run();
 
-        assertEquals(Set.of("cfg.prod.us-west-1.test.vip"), tester.recordNames());
+        List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
+        assertEquals(1, records.size());
+        assertEquals(RecordData.from("lb-0--hosted-vespa:zone-config-servers:default--prod.us-west-1."),
+                     records.get(0).data());
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
