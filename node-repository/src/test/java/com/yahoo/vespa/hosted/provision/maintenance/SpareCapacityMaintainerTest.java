@@ -173,9 +173,9 @@ public class SpareCapacityMaintainerTest {
     }
 
     @Test
-    public void testTooManyMovesAreNeeded() {
+    public void testTooManyIterationsAreNeeded() {
         // 6 nodes must move to the next host, which is more than the max limit
-        var tester = new SpareCapacityMaintainerTester();
+        var tester = new SpareCapacityMaintainerTester(5);
 
         tester.addHosts(2, new NodeResources(10, 100, 1000, 1));
         tester.addHosts(1, new NodeResources(9, 90, 900, 0.9));
@@ -233,6 +233,10 @@ public class SpareCapacityMaintainerTest {
         private int nodeIndex = 0;
 
         private SpareCapacityMaintainerTester() {
+            this(1000_000);
+        }
+
+        private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             nodeRepository = new NodeRepository(flavors,
                                                 new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
@@ -242,7 +246,7 @@ public class SpareCapacityMaintainerTest {
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true, false);
             deployer = new MockDeployer(nodeRepository);
-            maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofMinutes(1));
+            maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofMinutes(1), maxIterations);
         }
 
         private void addHosts(int count, NodeResources resources) {
