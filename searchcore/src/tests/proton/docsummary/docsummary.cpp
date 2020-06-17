@@ -662,10 +662,11 @@ void
 addField(Schema & s,
          const std::string &name,
          Schema::DataType dtype,
-         Schema::CollectionType ctype)
+         Schema::CollectionType ctype,
+         const std::string& tensor_spec = "")
 {
-    s.addSummaryField(Schema::SummaryField(name, dtype, ctype));
-    s.addAttributeField(Schema::AttributeField(name, dtype, ctype));
+    s.addSummaryField(Schema::SummaryField(name, dtype, ctype, tensor_spec));
+    s.addAttributeField(Schema::AttributeField(name, dtype, ctype, tensor_spec));
 }
 
 
@@ -682,7 +683,7 @@ Test::requireThatAttributesAreUsed()
     addField(s, "bg", schema::DataType::INT32, CollectionType::WEIGHTEDSET);
     addField(s, "bh", schema::DataType::FLOAT, CollectionType::WEIGHTEDSET);
     addField(s, "bi", schema::DataType::STRING, CollectionType::WEIGHTEDSET);
-    addField(s, "bj", schema::DataType::TENSOR, CollectionType::SINGLE);
+    addField(s, "bj", schema::DataType::TENSOR, CollectionType::SINGLE, "tensor(x{},y{})");
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
