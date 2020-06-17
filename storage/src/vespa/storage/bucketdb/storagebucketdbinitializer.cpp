@@ -462,13 +462,13 @@ namespace {
               _next(), _alreadySet(0) {}
 
         StorBucketDatabase::Decision operator()(
-                uint64_t revBucket, StorBucketDatabase::Entry& entry)
+                uint64_t revBucket, const StorBucketDatabase::Entry& entry)
         {
             BucketId bucket(BucketId::keyToBucketId(revBucket));
             if (bucket == _iterator) {
                 //LOG(spam, "Ignoring bucket %s as it has value of current "
                 //          "iterator", bucket.toString().c_str());
-                return StorBucketDatabase::CONTINUE;
+                return StorBucketDatabase::Decision::CONTINUE;
             }
             _iterator = bucket;
             if (entry.disk != _disk) {
@@ -487,10 +487,10 @@ namespace {
                     LOG(spam, "Aborting iterating for disk %u as we have "
                               "enough results. Leaving iterator at %s",
                         uint32_t(_disk), _iterator.toString().c_str());
-                    return StorBucketDatabase::ABORT;
+                    return StorBucketDatabase::Decision::ABORT;
                 }
             }
-            return StorBucketDatabase::CONTINUE;
+            return StorBucketDatabase::Decision::CONTINUE;
         }
     };
 }
@@ -513,9 +513,10 @@ StorageBucketDBInitializer::sendReadBucketInfo(spi::PartitionId disk, document::
     NextBucketOnDiskFinder finder(disk, state._databaseIterator, count);
     LOG(spam, "Iterating bucket db further. Starting at iterator %s",
         state._databaseIterator.toString().c_str());
-    _system.getBucketDatabase(bucketSpace).all(finder,
-                                "StorageBucketDBInitializer::readBucketInfo",
-                                state._databaseIterator.stripUnused().toKey());
+    _system.getBucketDatabase(bucketSpace).for_each(
+            std::ref(finder),
+            "StorageBucketDBInitializer::readBucketInfo",
+            state._databaseIterator.stripUnused().toKey());
     if (finder._alreadySet > 0) {
         _metrics._infoSetByLoad.inc(finder._alreadySet);
         _state._infoSetByLoad += finder._alreadySet;

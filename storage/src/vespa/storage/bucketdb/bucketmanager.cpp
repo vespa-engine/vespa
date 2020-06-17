@@ -116,12 +116,12 @@ namespace {
             : _state(*distribution, systemState),
               _result(result),
               _factory(factory),
-              _storageDistribution(distribution)
+              _storageDistribution(std::move(distribution))
         {
         }
 
         StorBucketDatabase::Decision operator()(uint64_t bucketId,
-                                                StorBucketDatabase::Entry& data)
+                                                const StorBucketDatabase::Entry& data)
         {
             document::BucketId b(document::BucketId::keyToBucketId(bucketId));
             try{
@@ -155,7 +155,7 @@ namespace {
                       .getDistributionConfigHash().c_str(),
                       _state.getClusterState().toString().c_str());
             }
-            return StorBucketDatabase::CONTINUE;
+            return StorBucketDatabase::Decision::CONTINUE;
         }
 
     };
@@ -180,7 +180,7 @@ namespace {
 
         StorBucketDatabase::Decision operator()(
                 document::BucketId::Type bucketId,
-                StorBucketDatabase::Entry& data)
+                const StorBucketDatabase::Entry& data)
         {
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
@@ -202,7 +202,7 @@ namespace {
                 }
             }
 
-            return StorBucketDatabase::CONTINUE;
+            return StorBucketDatabase::Decision::CONTINUE;
         };
 
         void add(const MetricsUpdater& rhs) {
@@ -242,7 +242,7 @@ BucketManager::updateMetrics(bool updateDocCount)
         MetricsUpdater total(diskCount);
         for (auto& space : _component.getBucketSpaceRepo()) {
             MetricsUpdater m(diskCount);
-            space.second->bucketDatabase().chunkedAll(m, "BucketManager::updateMetrics");
+            space.second->bucketDatabase().for_each_chunked(std::ref(m), "BucketManager::updateMetrics");
             total.add(m);
             if (updateDocCount) {
                 auto bm = _metrics->bucket_spaces.find(space.first);
@@ -338,10 +338,10 @@ namespace {
     class BucketDBDumper {
         vespalib::XmlOutputStream& _xos;
     public:
-        BucketDBDumper(vespalib::XmlOutputStream& xos) : _xos(xos) {}
+        explicit BucketDBDumper(vespalib::XmlOutputStream& xos) : _xos(xos) {}
 
         StorBucketDatabase::Decision operator()(
-                uint64_t bucketId, StorBucketDatabase::Entry& info)
+                uint64_t bucketId, const StorBucketDatabase::Entry& info)
         {
             using namespace vespalib::xml;
             document::BucketId bucket(
@@ -356,7 +356,7 @@ namespace {
             info.getBucketInfo().printXml(_xos);
             _xos << XmlAttribute("disk", info.disk);
             _xos << XmlEndTag();
-            return StorBucketDatabase::CONTINUE;
+            return StorBucketDatabase::Decision::CONTINUE;
         };
     };
 }
@@ -378,8 +378,8 @@ BucketManager::reportStatus(std::ostream& out,
             xmlReporter << XmlTag("bucket-space")
                         << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
-            _component.getBucketSpaceRepo().get(space.first).bucketDatabase().chunkedAll(
-                    dumper, "BucketManager::reportStatus");
+            _component.getBucketSpaceRepo().get(space.first).bucketDatabase().for_each_chunked(
+                    std::ref(dumper), "BucketManager::reportStatus");
             xmlReporter << XmlEndTag();
         }
         xmlReporter << XmlEndTag();
@@ -655,12 +655,12 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
         DistributorInfoGatherer<false> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(

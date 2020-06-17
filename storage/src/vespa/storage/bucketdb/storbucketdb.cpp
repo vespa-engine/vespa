@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storbucketdb.h"
+#include "btree_lockable_map.h"
 #include "judymultimap.hpp"
+#include "lockablemap.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.bucketdb.stor_bucket_db");
+
+using document::BucketId;
 
 namespace storage {
 namespace bucketdb {
@@ -16,15 +20,15 @@ print(std::ostream& out, bool, const std::string&) const
     out << info << ", disk " << disk;
 }
 
-bool StorageBucketInfo::operator == (const StorageBucketInfo & b) const {
+bool StorageBucketInfo::operator==(const StorageBucketInfo& b) const {
     return disk == b.disk;
 }
 
-bool StorageBucketInfo::operator != (const StorageBucketInfo & b) const {
+bool StorageBucketInfo::operator!=(const StorageBucketInfo& b) const {
     return !(*this == b);
 }
 
-bool StorageBucketInfo::operator < (const StorageBucketInfo & b) const {
+bool StorageBucketInfo::operator<(const StorageBucketInfo& b) const {
     return disk < b.disk;
 }
 
@@ -34,7 +38,16 @@ operator<<(std::ostream& out, const StorageBucketInfo& info) {
     return out;
 }
 
+std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_default_db() {
+    return std::make_unique<BTreeLockableMap<StorageBucketInfo>>();
+    //return std::make_unique<LockableMap<JudyMultiMap<StorageBucketInfo>>>();
+}
+
 } // bucketdb
+
+StorBucketDatabase::StorBucketDatabase()
+    : _impl(bucketdb::make_default_db())
+{}
 
 void
 StorBucketDatabase::insert(const document::BucketId& bucket,
@@ -43,26 +56,14 @@ StorBucketDatabase::insert(const document::BucketId& bucket,
 {
     assert(entry.disk != 0xff);
     bool preExisted;
-#if __WORDSIZE == 64
-    return LockableMap<JudyMultiMap<Entry> >::insert(
-                bucket.toKey(), entry, clientId, preExisted);
-#else
-    return LockableMap<StdMapWrapper<document::BucketId::Type, Entry> >::insert(
-            bucket.toKey(), entry, clientId, preExisted);
-#endif
+    return _impl->insert(bucket.toKey(), entry, clientId, false, preExisted);
 }
 
 bool
 StorBucketDatabase::erase(const document::BucketId& bucket,
                           const char* clientId)
 {
-#if __WORDSIZE == 64
-    return LockableMap<JudyMultiMap<Entry> >::erase(
-            bucket.stripUnused().toKey(), clientId);
-#else
-    return LockableMap<StdMapWrapper<document::BucketId::Type, Entry> >::erase(
-            bucket.stripUnused().toKey(), clientId);
-#endif
+    return _impl->erase(bucket.stripUnused().toKey(), clientId, false);
 }
 
 StorBucketDatabase::WrappedEntry
@@ -71,16 +72,60 @@ StorBucketDatabase::get(const document::BucketId& bucket,
                         Flag flags)
 {
     bool createIfNonExisting = (flags & CREATE_IF_NONEXISTING);
-    bool lockIfNonExisting = (flags & LOCK_IF_NONEXISTING_AND_NOT_CREATING);
-#if __WORDSIZE == 64
-    return LockableMap<JudyMultiMap<Entry> >::get(
-                bucket.stripUnused().toKey(), clientId, createIfNonExisting,
-                lockIfNonExisting);
-#else
-    return LockableMap<StdMapWrapper<document::BucketId::Type, Entry> >::get(
-                bucket.stripUnused().toKey(), clientId,
-                createIfNonExisting, lockIfNonExisting);
-#endif
+    return _impl->get(bucket.stripUnused().toKey(), clientId, createIfNonExisting);
+}
+
+size_t StorBucketDatabase::size() const {
+    return _impl->size();
+}
+
+size_t StorBucketDatabase::getMemoryUsage() const {
+    return _impl->getMemoryUsage();
+}
+
+void StorBucketDatabase::showLockClients(vespalib::asciistream& out) const {
+    _impl->showLockClients(out);
+}
+
+StorBucketDatabase::EntryMap
+StorBucketDatabase::getAll(const BucketId& bucketId, const char* clientId) {
+    return _impl->getAll(bucketId, clientId);
+}
+
+StorBucketDatabase::EntryMap
+StorBucketDatabase::getContained(const BucketId& bucketId, const char* clientId) {
+    return _impl->getContained(bucketId, clientId);
+}
+
+bool StorBucketDatabase::isConsistent(const WrappedEntry& entry) {
+    return _impl->isConsistent(entry);
+}
+
+void StorBucketDatabase::for_each_chunked(
+        std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
+        const char* clientId,
+        vespalib::duration yieldTime,
+        uint32_t chunkSize)
+{
+    _impl->for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
+}
+
+void StorBucketDatabase::for_each_mutable(
+        std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
+        const char* clientId,
+        const key_type& first,
+        const key_type& last)
+{
+    _impl->for_each_mutable(std::move(func), clientId, first, last);
+}
+
+void StorBucketDatabase::for_each(
+        std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
+        const char* clientId,
+        const key_type& first,
+        const key_type& last)
+{
+    _impl->for_each(std::move(func), clientId, first, last);
 }
 
 template class JudyMultiMap<bucketdb::StorageBucketInfo>;

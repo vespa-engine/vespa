@@ -1,38 +1,28 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * A map wrapper, adding locking to the map entries. It provides the
- * following:
- *
- *   - Guarantees thread safety.
- *   - Each returned value is given within a wrapper. As long as the
- *     wrapper for the value exist, this entry is locked in the map.
- *     This does not prevent other values from being used. Wrappers can
- *     be copied. Reference counting ensures value is locked until last
- *     wrapper copy dies.
- *   - Built in function for iterating taking a functor. Halts when
- *     encountering locked values.
- */
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "abstract_bucket_map.h"
-#include <map>
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include "storagebucketinfo.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <map>
+#include <memory>
 #include <mutex>
 #include <condition_variable>
 #include <cassert>
+#include <iosfwd>
 
-namespace storage {
+namespace storage::bucketdb {
 
-template <typename Map>
-class LockableMap
-    : public bucketdb::AbstractBucketMap<typename Map::mapped_type>
-{
+template <typename DataStoreTraitsT> class GenericBTreeBucketDatabase;
+
+template <typename T>
+class BTreeLockableMap : public AbstractBucketMap<T> {
+    struct ValueTraits;
 public:
-    using ParentType   = bucketdb::AbstractBucketMap<typename Map::mapped_type>;
+    using ParentType   = AbstractBucketMap<T>;
     using WrappedEntry = typename ParentType::WrappedEntry;
     using key_type     = typename ParentType::key_type;
     using mapped_type  = typename ParentType::mapped_type;
@@ -41,57 +31,39 @@ public:
     using Decision     = typename ParentType::Decision;
     using BucketId     = document::BucketId;
 
-    LockableMap();
-    ~LockableMap();
-    bool operator==(const LockableMap& other) const;
-    bool operator!=(const LockableMap& other) const {
+    BTreeLockableMap();
+    ~BTreeLockableMap();
+
+    bool operator==(const BTreeLockableMap& other) const;
+    bool operator!=(const BTreeLockableMap& other) const {
         return ! (*this == other);
     }
-    bool operator<(const LockableMap& other) const;
+    bool operator<(const BTreeLockableMap& other) const;
     size_t size() const noexcept override;
     size_t getMemoryUsage() const noexcept override;
     bool empty() const noexcept override;
-    void swap(LockableMap&);
+    void swap(BTreeLockableMap&);
 
     WrappedEntry get(const key_type& key, const char* clientId, bool createIfNonExisting) override;
     WrappedEntry get(const key_type& key, const char* clientId) {
         return get(key, clientId, false);
     }
-
-    bool erase(const key_type& key, const char* clientId, bool haslock) override;
+    bool erase(const key_type& key, const char* clientId, bool has_lock) override;
     void insert(const key_type& key, const mapped_type& value,
-                const char* clientId, bool haslock, bool& preExisted) override;
+                const char* client_id, bool has_lock, bool& pre_existed) override;
 
-    bool erase(const key_type& key, const char* clientId)
-        { return erase(key, clientId, false); }
+    bool erase(const key_type& key, const char* client_id) {
+        return erase(key, client_id, false);
+    }
     void insert(const key_type& key, const mapped_type& value,
-                const char* clientId, bool& preExisted)
-        { return insert(key, value, clientId, false, preExisted); }
+                const char* client_id, bool& pre_existed) {
+        return insert(key, value, client_id, false, pre_existed);
+    }
     void clear();
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    /**
-     * Returns all buckets in the bucket database that can contain the given
-     * bucket. Usually, there should be only one such bucket, but in the case
-     * of inconsistent splitting, there may be more than one.
-     */
     EntryMap getContained(const BucketId& bucketId, const char* clientId) override;
-
-    /**
-     * Returns all buckets in the bucket database that can contain the given
-     * bucket, and all buckets that that bucket contains.
-     */
     EntryMap getAll(const BucketId& bucketId, const char* clientId) override;
-
-    /**
-     * Returns true iff bucket has no superbuckets or sub-buckets in the
-     * database. Usage assumption is that any operation that can cause the
-     * bucket to become inconsistent will require taking its lock, so by
-     * requiring the lock to be provided here we avoid race conditions.
-     */
     bool isConsistent(const WrappedEntry& entry) override;
-
     void showLockClients(vespalib::asciistream & out) const override;
 
 private:
@@ -104,7 +76,7 @@ private:
         LockIdSet();
         ~LockIdSet();
         void print(std::ostream& out, bool verbose, const std::string& indent) const;
-        bool exist(const LockId& lid) const { return this->find(lid) != Hash::end(); }
+        bool exists(const LockId & lid) const { return this->find(lid) != Hash::end(); }
         size_t getMemoryUsage() const;
     };
 
@@ -124,9 +96,9 @@ private:
         WaiterMap _map;
     };
 
-    Map               _map;
     mutable std::mutex      _lock;
     std::condition_variable _cond;
+    std::unique_ptr<GenericBTreeBucketDatabase<ValueTraits>> _impl;
     LockIdSet         _lockedKeys;
     LockWaiters       _lockWaiters;
 
@@ -147,53 +119,31 @@ private:
                      const key_type& last) override;
 
     void do_for_each_chunked(std::function<Decision(uint64_t, mapped_type&)> func,
-                             const char* clientId,
-                             vespalib::duration yieldTime,
-                             uint32_t chunkSize) override;
+                             const char* client_id,
+                             vespalib::duration yield_time,
+                             uint32_t chunk_size) override;
 
     /**
-     * Process up to `chunkSize` bucket database entries from--and possibly
+     * Process up to `chunk_size` bucket database entries from--and possibly
      * including--the bucket pointed to by `key`.
      *
      * Returns true if additional chunks may be processed after the call to
      * this function has returned, false if iteration has completed or if
-     * `functor` returned an abort-decision.
+     * `func` returned an abort-decision.
      *
      * Modifies `key` in-place to point to the next key to process for the next
      * invocation of this function.
      */
     bool processNextChunk(std::function<Decision(uint64_t, mapped_type&)>& func,
                           key_type& key,
-                          const char* clientId,
-                          uint32_t chunkSize);
+                          const char* client_id,
+                          uint32_t chunk_size);
 
     /**
      * Returns the given bucket, its super buckets and its sub buckets.
      */
     void getAllWithoutLocking(const BucketId& bucket,
                               std::vector<BucketId::Type>& keys);
-
-    /**
-     * Retrieves the most specific bucket id (highest used bits) that matches
-     * the given bucket.
-     *
-     * If a match is found, result is set to the bucket id found, and keyResult
-     * is set to the corresponding key (reversed)
-     *
-     * If not found, nextKey is set to the key after one that could have
-     * matched and we return false.
-     */
-    bool getMostSpecificMatch(const BucketId& bucket,
-                              BucketId& result,
-                              BucketId::Type& keyResult,
-                              BucketId::Type& nextKey);
-
-    /**
-     * Finds all buckets that can contain the given bucket, except for the
-     * bucket itself (that is, its super buckets)
-     */
-    void getAllContaining(const BucketId& bucket,
-                          std::vector<BucketId::Type>& keys);
 
     /**
      * Find the given list of keys in the map and add them to the map of
@@ -205,5 +155,4 @@ private:
                            std::unique_lock<std::mutex> &guard);
 };
 
-} // storage
-
+}

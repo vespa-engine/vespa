@@ -31,7 +31,7 @@ public:
     void forEachBucket(Functor &functor,
                        const char *clientId) const {
         for (const auto &elem : _map) {
-            elem.second->bucketDatabase().all(functor, clientId);
+            elem.second->bucketDatabase().for_each(std::ref(functor), clientId);
         }
     }
 
@@ -39,7 +39,7 @@ public:
     void forEachBucketChunked(Functor &functor,
                               const char *clientId) const {
         for (const auto &elem : _map) {
-            elem.second->bucketDatabase().chunkedAll(functor, clientId);
+            elem.second->bucketDatabase().for_each_chunked(std::ref(functor), clientId);
         }
     }
 

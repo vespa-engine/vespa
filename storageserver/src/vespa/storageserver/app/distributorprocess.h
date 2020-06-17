@@ -12,7 +12,7 @@
 
 namespace storage {
 
-class DistributorProcess : public Process {
+class DistributorProcess final : public Process {
     DistributorNodeContext _context;
     DistributorNode::NeedActiveState _activeFlag;
     bool _use_btree_database;
@@ -23,7 +23,7 @@ class DistributorProcess : public Process {
             _visitDispatcherConfigHandler;
 
 public:
-    DistributorProcess(const config::ConfigUri & configUri);
+    explicit DistributorProcess(const config::ConfigUri & configUri);
     ~DistributorProcess() override;
 
     void shutdown() override;

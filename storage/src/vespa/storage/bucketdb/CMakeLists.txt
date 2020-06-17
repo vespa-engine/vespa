@@ -2,11 +2,13 @@
 vespa_add_library(storage_bucketdb OBJECT
     SOURCES
     btree_bucket_database.cpp
+    btree_lockable_map.cpp
     bucketcopy.cpp
     bucketdatabase.cpp
     bucketinfo.cpp
     bucketmanager.cpp
     bucketmanagermetrics.cpp
+    generic_btree_bucket_database.cpp
     judyarray.cpp
     lockablemap.cpp
     mapbucketdatabase.cpp

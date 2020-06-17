@@ -36,8 +36,8 @@ protected:
     ServiceLayerNodeContext _context;
 
 public:
-    ServiceLayerProcess(const config::ConfigUri & configUri);
-    ~ServiceLayerProcess();
+    explicit ServiceLayerProcess(const config::ConfigUri & configUri);
+    ~ServiceLayerProcess() override;
 
     void shutdown() override;
 

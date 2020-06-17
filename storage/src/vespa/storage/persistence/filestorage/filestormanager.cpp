@@ -848,7 +848,7 @@ namespace {
         StorBucketDatabase::Decision operator()(document::BucketId::Type, StorBucketDatabase::Entry& data)
         {
             data.info.setActive(false);
-            return StorBucketDatabase::UPDATE;
+            return StorBucketDatabase::Decision::UPDATE;
         }
     };
 }
@@ -870,7 +870,8 @@ FileStorManager::updateState()
         if (contentBucketSpace.getNodeUpInLastNodeStateSeenByProvider() && !nodeUp) {
             LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database for bucket space %s", bucketSpace.toString().c_str());
             Deactivator deactivator;
-            contentBucketSpace.bucketDatabase().all(deactivator, "FileStorManager::updateState");
+            contentBucketSpace.bucketDatabase().for_each_mutable(
+                    std::ref(deactivator), "FileStorManager::updateState");
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(nodeUp);
         spi::ClusterState spiState(*derivedClusterState, _component.getIndex(), *contentBucketSpace.getDistribution());

@@ -84,8 +84,6 @@ private:
                                         const document::BucketId& bucket,
                                         std::vector<Entry>& entries) const;
 
-    static vespalib::datastore::ArrayStoreConfig make_default_array_store_config();
-
     class ReadGuardImpl : public ReadGuard {
         const BTreeBucketDatabase* _db;
         GenerationHandler::Guard   _guard;

@@ -1,51 +1,84 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class StorageBucketInfo
- * \ingroup bucketdb
- *
- * \brief An entry in the storage bucket database.
- *
- * \class StorBucketDatabase
- * \ingroup bucketdb
- *
- * \brief The storage bucket database.
- */
 #pragma once
 
-#include "judymultimap.h"
-#include "lockablemap.h"
-#include "stdmapwrapper.h"
+#include "abstract_bucket_map.h"
 #include "storagebucketinfo.h"
 #include <vespa/storageapi/defs.h>
+#include <memory>
 
 namespace storage {
 
-
-class StorBucketDatabase
-#if __WORDSIZE == 64
-    : public LockableMap<JudyMultiMap<bucketdb::StorageBucketInfo> >
-#else
-# warning Bucket database cannot use Judy on non-64 bit platforms
-    : public LockableMap<StdMapWrapper<document::BucketId::Type, bucketdb::StorageBucketInfo> >
-#endif
-{
+class StorBucketDatabase {
+    std::unique_ptr<bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>> _impl;
 public:
+    using Entry        = bucketdb::StorageBucketInfo;
+    using key_type     = bucketdb::AbstractBucketMap<Entry>::key_type;
+    using Decision     = bucketdb::AbstractBucketMap<Entry>::Decision;
+    using WrappedEntry = bucketdb::AbstractBucketMap<Entry>::WrappedEntry;
+    using EntryMap     = bucketdb::AbstractBucketMap<Entry>::EntryMap;
+    using BucketId     = document::BucketId;
+
     enum Flag {
         NONE = 0,
-        CREATE_IF_NONEXISTING = 1,
-        LOCK_IF_NONEXISTING_AND_NOT_CREATING = 2
+        CREATE_IF_NONEXISTING = 1
     };
-    typedef bucketdb::StorageBucketInfo Entry;
 
-    StorBucketDatabase() {};
+    StorBucketDatabase();
 
     void insert(const document::BucketId&, const bucketdb::StorageBucketInfo&,
                 const char* clientId);
 
     bool erase(const document::BucketId&, const char* clientId);
 
-    WrappedEntry get(const document::BucketId& bucket, const char* clientId,
-                     Flag flags = NONE);
+    WrappedEntry get(const document::BucketId& bucket, const char* clientId, Flag flags = NONE);
+
+    size_t size() const;
+
+    /**
+     * Returns all buckets in the bucket database that can contain the given
+     * bucket, and all buckets that that bucket contains.
+     */
+    EntryMap getAll(const BucketId& bucketId, const char* clientId);
+
+    /**
+     * Returns all buckets in the bucket database that can contain the given
+     * bucket. Usually, there should be only one such bucket, but in the case
+     * of inconsistent splitting, there may be more than one.
+     */
+    EntryMap getContained(const BucketId& bucketId, const char* clientId);
+
+    /**
+     * Iterate over the entire database contents, holding the global database
+     * mutex for `chunkSize` processed entries at a time, yielding the current
+     * thread between each such such to allow other threads to get a chance
+     * at acquiring a bucket lock.
+     */
+    void for_each_chunked(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
+                          const char* clientId,
+                          vespalib::duration yieldTime = 10us,
+                          uint32_t chunkSize = bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>::DEFAULT_CHUNK_SIZE);
+
+    void for_each_mutable(std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
+                          const char* clientId,
+                          const key_type& first = key_type(),
+                          const key_type& last = key_type() - 1);
+
+    void for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
+                  const char* clientId,
+                  const key_type& first = key_type(),
+                  const key_type& last = key_type() - 1);
+
+    /**
+     * Returns true iff bucket has no superbuckets or sub-buckets in the
+     * database. Usage assumption is that any operation that can cause the
+     * bucket to become inconsistent will require taking its lock, so by
+     * requiring the lock to be provided here we avoid race conditions.
+     */
+    bool isConsistent(const WrappedEntry& entry);
+
+    size_t getMemoryUsage() const;
+    void showLockClients(vespalib::asciistream & out) const;
+
 };
 
 } // storage

@@ -139,11 +139,11 @@ typedef std::map<document::BucketId, BucketData> DiskData;
 struct BucketInfoLogger {
     std::map<PartitionId, DiskData>& map;
 
-    BucketInfoLogger(std::map<PartitionId, DiskData>& m)
+    explicit BucketInfoLogger(std::map<PartitionId, DiskData>& m)
         : map(m) {}
 
     StorBucketDatabase::Decision operator()(
-            uint64_t revBucket, StorBucketDatabase::Entry& entry)
+            uint64_t revBucket, const StorBucketDatabase::Entry& entry)
     {
         document::BucketId bucket(
                 document::BucketId::keyToBucketId(revBucket));
@@ -152,14 +152,14 @@ struct BucketInfoLogger {
         DiskData& ddata(map[entry.disk]);
         BucketData& bdata(ddata[bucket]);
         bdata.info = entry.getBucketInfo();
-        return StorBucketDatabase::CONTINUE;
+        return StorBucketDatabase::Decision::CONTINUE;
     }
 };
 std::map<PartitionId, DiskData>
 createMapFromBucketDatabase(StorBucketDatabase& db) {
     std::map<PartitionId, DiskData> result;
     BucketInfoLogger infoLogger(result);
-    db.all(infoLogger, "createmap");
+    db.for_each(std::ref(infoLogger), "createmap");
     return result;
 }
 // Create data we want to have in this test
@@ -551,8 +551,8 @@ struct DatabaseInsertCallback : MessageCallback
                     BucketData d;
                     StorBucketDatabase::WrappedEntry entry(
                             _database.get(bid, "DatabaseInsertCallback::onMessage",
-                                    StorBucketDatabase::LOCK_IF_NONEXISTING_AND_NOT_CREATING));
-                    if (entry.exist()) {
+                                    StorBucketDatabase::CREATE_IF_NONEXISTING));
+                    if (entry.preExisted()) {
                         _errors << "db entry for " << bid << " already existed";
                     }
                     if (i < 5) {
