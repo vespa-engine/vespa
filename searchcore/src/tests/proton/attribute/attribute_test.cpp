@@ -781,12 +781,18 @@ class MockDenseTensorAttribute : public DenseTensorAttribute {
 public:
     mutable size_t prepare_set_tensor_cnt;
     mutable size_t complete_set_tensor_cnt;
+    size_t clear_doc_cnt;
 
     MockDenseTensorAttribute(vespalib::stringref name, const AVConfig& cfg)
         : DenseTensorAttribute(name, cfg),
           prepare_set_tensor_cnt(0),
-          complete_set_tensor_cnt(0)
+          complete_set_tensor_cnt(0),
+          clear_doc_cnt(0)
     {}
+    uint32_t clearDoc(DocId docid) override {
+        ++clear_doc_cnt;
+        return DenseTensorAttribute::clearDoc(docid);
+    }
     std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const Tensor& tensor) const override {
         ++prepare_set_tensor_cnt;
         return std::make_unique<MockPrepareResult>(docid, tensor);
@@ -842,32 +848,88 @@ TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separat
     EXPECT_EQ("t2", ctx[2].getFields()[0].getAttribute().getName());
 }
 
-TEST_F(AttributeWriterTest, handles_put_in_two_phases_when_specified_for_tensor_attribute)
+class TwoPhasePutTest : public AttributeWriterTest {
+public:
+    Schema schema;
+    DocBuilder builder;
+    std::shared_ptr<MockDenseTensorAttribute> attr;
+    std::unique_ptr<Tensor> tensor;
+
+    TwoPhasePutTest()
+        : AttributeWriterTest(),
+          schema(createTensorSchema(dense_tensor)),
+          builder(schema),
+          attr()
+    {
+        setup(2);
+        attr = make_mock_tensor_attribute("a1", true);
+        add_attribute(attr);
+        AttributeManager::padAttribute(*attr, 4);
+        attr->clear_doc_cnt = 0;
+        tensor = make_tensor(TensorSpec(dense_tensor)
+                                     .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+    }
+    void expect_tensor_attr_calls(size_t exp_prepare_cnt,
+                                  size_t exp_complete_cnt,
+                                  size_t exp_clear_doc_cnt = 0) {
+        EXPECT_EQ(exp_prepare_cnt, attr->prepare_set_tensor_cnt);
+        EXPECT_EQ(exp_complete_cnt, attr->complete_set_tensor_cnt);
+        EXPECT_EQ(exp_clear_doc_cnt, attr->clear_doc_cnt);
+    }
+    Document::UP make_doc() {
+        return createTensorPutDoc(builder, *tensor);
+    }
+    Document::UP make_no_field_doc() {
+        return builder.startDocument("id:ns:searchdocument::1").endDocument();
+    }
+    Document::UP make_no_tensor_doc() {
+        return builder.startDocument("id:ns:searchdocument::1").
+                startAttributeField("a1").
+                addTensor(std::unique_ptr<vespalib::tensor::Tensor>()).endField().endDocument();
+    }
+};
+
+TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute)
 {
-    setup(2);
-    auto a1 = make_mock_tensor_attribute("a1", true);
-    add_attribute(a1);
-    Schema schema = createTensorSchema(dense_tensor);
-    DocBuilder builder(schema);
-    auto tensor = make_tensor(TensorSpec(dense_tensor)
-                                      .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
-    auto doc = createTensorPutDoc(builder, *tensor);
+    auto doc = make_doc();
 
     put(1, *doc, 1);
-    EXPECT_EQ(1, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(1, a1->complete_set_tensor_cnt);
+    expect_tensor_attr_calls(1, 1);
     assertExecuteHistory({1, 0});
 
     put(2, *doc, 2);
-    EXPECT_EQ(2, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(2, a1->complete_set_tensor_cnt);
+    expect_tensor_attr_calls(2, 2);
     assertExecuteHistory({1, 0, 0, 0});
 
     put(3, *doc, 3);
-    EXPECT_EQ(3, a1->prepare_set_tensor_cnt);
-    EXPECT_EQ(3, a1->complete_set_tensor_cnt);
+    expect_tensor_attr_calls(3, 3);
     // Note that the prepare step is executed round-robin between the 2 threads.
     assertExecuteHistory({1, 0, 0, 0, 1, 0});
+}
+
+TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute)
+{
+    auto doc = make_doc();
+    attr->commit(7, 7);
+    put(7, *doc, 1);
+    expect_tensor_attr_calls(0, 0);
+    assertExecuteHistory({1, 0});
+}
+
+TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set)
+{
+    auto doc = make_no_field_doc();
+    put(1, *doc, 1);
+    expect_tensor_attr_calls(0, 0, 1);
+    assertExecuteHistory({1, 0});
+}
+
+TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
+{
+    auto doc = make_no_tensor_doc();
+    put(1, *doc, 1);
+    expect_tensor_attr_calls(0, 0, 1);
+    assertExecuteHistory({1, 0});
 }
 
 
