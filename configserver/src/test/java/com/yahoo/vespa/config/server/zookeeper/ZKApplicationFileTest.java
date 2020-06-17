@@ -24,7 +24,7 @@ public class ZKApplicationFileTest extends ApplicationFileTest {
     private void feed(ConfigCurator zk, File dirToFeed) {
         assertTrue(dirToFeed.isDirectory());
         String appPath = "/0";
-        zk.feedZooKeeper(dirToFeed, appPath + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
+        ZKApplicationPackageTest.feedZooKeeper(zk, dirToFeed, appPath + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
         zk.putData(appPath, ZKApplicationPackage.fileRegistryNode, "dummyfiles");
     }
 

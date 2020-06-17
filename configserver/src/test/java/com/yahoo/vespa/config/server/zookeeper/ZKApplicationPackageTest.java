@@ -22,9 +22,12 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -37,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ZKApplicationPackageTest {
 
+    private static final FilenameFilter acceptsAllFileNameFilter = (dir, name) -> true;
     private static final String APP = "src/test/apps/zkapp";
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
@@ -97,7 +101,7 @@ public class ZKApplicationPackageTest {
 
     private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
         assertTrue(dirToFeed.isDirectory());
-        zk.feedZooKeeper(dirToFeed, "/0" + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
+        feedZooKeeper(zk, dirToFeed, "/0" + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
         String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"id\":\"foo:foo:default\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
         zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
         zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
@@ -114,5 +118,64 @@ public class ZKApplicationPackageTest {
             );
         }
     }
+
+    /**
+     * Takes for instance the dir /app  and puts the contents into the given ZK path. Ignores files starting with dot,
+     * and dirs called CVS.
+     *
+     * @param dir            directory which holds the summary class part files
+     * @param path           zookeeper path
+     * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
+     * @param recurse        recurse subdirectories
+     */
+    static void feedZooKeeper(ConfigCurator zk, File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
+        try {
+            if (filenameFilter == null) {
+                filenameFilter = acceptsAllFileNameFilter;
+            }
+            if (!dir.isDirectory()) {
+                throw new IllegalArgumentException(dir + " is not a directory");
+            }
+            for (File file : listFiles(dir, filenameFilter)) {
+                if (file.getName().startsWith(".")) continue; //.svn , .git ...
+                if ("CVS".equals(file.getName())) continue;
+                if (file.isFile()) {
+                    String contents = IOUtils.readFile(file);
+                    zk.putData(path, file.getName(), contents);
+                } else if (recurse && file.isDirectory()) {
+                    zk.createNode(path, file.getName());
+                    feedZooKeeper(zk, file, path + '/' + file.getName(), filenameFilter, recurse);
+                }
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Exception feeding ZooKeeper at path " + path, e);
+        }
+    }
+
+    /**
+     * Same as normal listFiles, but use the filter only for normal files
+     *
+     * @param dir    directory to list files in
+     * @param filter A FilenameFilter which decides which files in dir are listed
+     * @return an array of Files
+     */
+    protected static File[] listFiles(File dir, FilenameFilter filter) {
+        File[] rawList = dir.listFiles();
+        List<File> ret = new ArrayList<>();
+        if (rawList != null) {
+            for (File f : rawList) {
+                if (f.isDirectory()) {
+                    ret.add(f);
+                } else {
+                    if (filter.accept(dir, f.getName())) {
+                        ret.add(f);
+                    }
+                }
+            }
+        }
+        return ret.toArray(new File[0]);
+    }
+
 
 }

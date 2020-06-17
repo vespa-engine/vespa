@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-
 /**
  * Model with two services, one that does not have a state port
  *
@@ -45,22 +43,6 @@ public class MockModel implements Model {
         return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
     }
 
-    // TODO: Move to caller
-    static MockModel createClusterController(String hostname, int statePort) {
-        ServiceInfo container = createServiceInfo(
-                hostname,
-                "foo", // name
-                CLUSTERCONTROLLER_CONTAINER.serviceName,
-                ClusterSpec.Type.container,
-                statePort,
-                "state http external query");
-        ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "storagenode", "storagenode",
-                ClusterSpec.Type.content, 1234, "rpc");
-        HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
-
-        return new MockModel(Collections.singleton(hostInfo));
-    }
-
     static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {
         Set<HostInfo> hostInfos = new HashSet<>();
         hostnames.forEach(hostname -> {
@@ -71,7 +53,7 @@ public class MockModel implements Model {
         return new MockModel(hostInfos);
     }
 
-    static private ServiceInfo createServiceInfo(
+    static ServiceInfo createServiceInfo(
             String hostname,
             String name,
             String type,
@@ -121,4 +103,5 @@ public class MockModel implements Model {
     public AllocatedHosts allocatedHosts() {
         throw new UnsupportedOperationException();
     }
+
 }
