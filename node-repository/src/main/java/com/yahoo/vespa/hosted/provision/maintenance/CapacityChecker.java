@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 
 import java.util.*;
 import java.util.function.Function;
@@ -95,7 +96,8 @@ public class CapacityChecker {
         if (hosts.size() == 0) return Optional.empty();
 
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
-                                                        .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                                                        .sorted(this::hostMitigationOrder)
+//                                                        .sorted(Comparator.comparingInt(Map.Entry::getValue))
                                                         .map(Map.Entry::getKey)
                                                         .collect(Collectors.toList());
 
@@ -111,6 +113,13 @@ public class CapacityChecker {
         }
 
         throw new IllegalStateException("No path to failure found. This should be impossible!");
+    }
+
+    private int hostMitigationOrder(Map.Entry<Node, Integer> entry1, Map.Entry<Node, Integer> entry2) {
+        int result = Integer.compare(entry1.getValue(), entry2.getValue());
+        if (result != 0) return result;
+        // Mitigate the largest hosts first
+        return NodeResourceComparator.defaultOrder().compare(entry2.getKey().resources(), entry1.getKey().resources());
     }
 
     private Map<String, Node> constructHostnameToNodeMap(List<Node> nodes) {

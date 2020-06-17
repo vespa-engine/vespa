@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -92,6 +91,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private Move moveTowardsSpareFor(Node node) {
+        System.out.println("Trying to find mitigation for " + node);
         NodeList allNodes = nodeRepository().list();
         // Allocation will assign the two most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
@@ -108,6 +108,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                 shortestMitigation = mitigation;
         }
         if (shortestMitigation == null || shortestMitigation.isEmpty()) return Move.empty();
+        System.out.println("Shortest mitigation to create spare for " + node + ":\n  " + shortestMitigation);
         return shortestMitigation.get(0);
     }
 
@@ -137,11 +138,12 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             if (movesLeft == 0) return null;
 
             List<Move> shortest = null;
-            for (var i = Subsets(hostCapacity.allNodes().childrenOf(host), movesLeft); i.hasNext(); ) {
+            for (var i = subsets(hostCapacity.allNodes().childrenOf(host), movesLeft); i.hasNext(); ) {
                 List<Node> childrenToMove = i.next();
                 if ( ! addResourcesOf(childrenToMove, freeCapacity).satisfies(node.resources())) continue;
                 List<Move> moves = move(childrenToMove, host, hosts, movesMade, movesLeft);
                 if (moves == null) continue;
+
                 if (shortest == null || moves.size() < shortest.size())
                     shortest = moves;
             }
@@ -165,6 +167,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         private List<Move> move(Node node, Node host, List<Node> hosts, List<Move> movesMade, int movesLeft) {
             List<Move> shortest = null;
             for (Node target : hosts) {
+                if (target.equals(host)) continue;
                 List<Move> childMoves = makeRoomFor(node, target, hosts, movesMade, movesLeft - 1);
                 if (childMoves == null) continue;
                 if (shortest == null || shortest.size() > childMoves.size() + 1) {
@@ -181,7 +184,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             return resources;
         }
 
-        private Iterator<List<Node>> Subsets(NodeList nodes, int maxLength) {
+        private Iterator<List<Node>> subsets(NodeList nodes, int maxLength) {
             return new SubsetIterator(nodes.asList(), maxLength);
         }
 

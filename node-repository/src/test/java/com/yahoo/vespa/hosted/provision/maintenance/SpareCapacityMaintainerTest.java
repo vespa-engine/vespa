@@ -95,7 +95,7 @@ public class SpareCapacityMaintainerTest {
     }
 
     @Test
-    public void testMoveIsNeededToHaveSpares() {
+    public void testMoveIsNeeded() {
         // Moving application id 1 and 2 to the same nodes frees up spares for application 0
         var tester = new SpareCapacityMaintainerTester();
         tester.addHosts(6, new NodeResources(10, 100, 1000, 1));
@@ -112,6 +112,76 @@ public class SpareCapacityMaintainerTest {
         assertEquals(1, tester.deployer.redeployments);
         assertEquals(1, tester.nodeRepository.list().retired().size());
         assertEquals(1, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    @Test
+    public void testMultipleMovesAreNeeded() {
+        // Moving application id 1 and 2 to the same nodes frees up spares for application 0
+        // so that it can be moved from size 12 to size 10 hosts, clearing up spare room for the size 12 application
+        var tester = new SpareCapacityMaintainerTester();
+        tester.addHosts(4, new NodeResources(12, 120, 1200, 1.2));
+        tester.addHosts(4, new NodeResources(10, 100, 1000, 1));
+        tester.addNodes(0, 2, new NodeResources(10, 100, 1000, 1.0), 0);
+        tester.addNodes(1, 2, new NodeResources(12, 120, 1200, 1.2), 2);
+        tester.addNodes(2, 2, new NodeResources(5, 50, 500, 0.5), 4);
+        tester.addNodes(3, 2, new NodeResources(5, 50, 500, 0.5), 6);
+        tester.maintainer.maintain();
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(1, tester.nodeRepository.list().retired().size());
+        assertEquals(1, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    @Test
+    public void testMultipleNodesMustMoveFromOneHost() {
+        // By moving the 4 small nodes from host 2 we free up sufficient space on the third host to act as a spare for
+        // application 0
+        var tester = new SpareCapacityMaintainerTester();
+
+        tester.addHosts(2, new NodeResources(10, 100, 1000, 1));
+        tester.addNodes(0, 2, new NodeResources(10, 100, 1000, 1.0), 0);
+
+        tester.addHosts(1, new NodeResources(16, 160, 1600, 1.6));
+        tester.addNodes(1, 1, new NodeResources(1, 10, 100, 0.1), 2);
+        tester.addNodes(2, 1, new NodeResources(1, 10, 100, 0.1), 2);
+        tester.addNodes(3, 1, new NodeResources(1, 10, 100, 0.1), 2);
+        tester.addNodes(4, 1, new NodeResources(1, 10, 100, 0.1), 2);
+        tester.addNodes(5, 1, new NodeResources(2, 20, 200, 2.0), 2);
+        tester.addNodes(6, 1, new NodeResources(2, 20, 200, 2.0), 2);
+        tester.addNodes(7, 1, new NodeResources(2, 20, 200, 2.0), 2);
+
+        tester.addHosts(5, new NodeResources(2, 20, 200, 2.0));
+
+        tester.maintainer.maintain();
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(1, tester.nodeRepository.list().retired().size());
+        assertEquals(1, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    @Test
+    public void testTooManyMovesAreNeeded() {
+        // 6 nodes must move to the next host, which is more than the max limit
+        var tester = new SpareCapacityMaintainerTester();
+
+        tester.addHosts(2, new NodeResources(10, 100, 1000, 1));
+        tester.addHosts(1, new NodeResources(9, 90, 900, 0.9));
+        tester.addHosts(1, new NodeResources(8, 80, 800, 0.8));
+        tester.addHosts(1, new NodeResources(7, 70, 700, 0.7));
+        tester.addHosts(1, new NodeResources(6, 60, 600, 0.6));
+        tester.addHosts(1, new NodeResources(5, 50, 500, 0.5));
+        tester.addHosts(1, new NodeResources(4, 40, 400, 0.4));
+
+        tester.addNodes(0, 1, new NodeResources(10, 100, 1000, 1.0), 0);
+        tester.addNodes(1, 1, new NodeResources( 9, 90, 900, 0.9), 1);
+        tester.addNodes(2, 1, new NodeResources( 8, 80, 800, 0.8), 2);
+        tester.addNodes(3, 1, new NodeResources( 7, 70, 700, 0.7), 3);
+        tester.addNodes(4, 1, new NodeResources( 6, 60, 600, 0.6), 4);
+        tester.addNodes(5, 1, new NodeResources( 5, 50, 500, 0.5), 5);
+        tester.addNodes(6, 1, new NodeResources( 4, 40, 400, 0.4), 6);
+
+        tester.maintainer.maintain();
+        assertEquals(0, tester.deployer.redeployments);
+        assertEquals(0, tester.nodeRepository.list().retired().size());
+        assertEquals(0, tester.metric.values.get("spareHostCapacity"));
     }
 
     private static class SpareCapacityMaintainerTester {
