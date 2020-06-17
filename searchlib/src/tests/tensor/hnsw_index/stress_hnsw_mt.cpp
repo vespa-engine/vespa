@@ -144,16 +144,29 @@ public:
     using PrepUP = std::unique_ptr<PrepareResult>;
     using ReadGuard = GenerationHandler::Guard;
 
-    struct CompleteAddTask : vespalib::Executor::Task {
+    // union of data required by tasks
+    struct TaskBase : vespalib::Executor::Task {
         Stressor &parent;
         uint32_t docid;
         ConstVectorRef vec;
         PrepUP prepare_result;
+        ReadGuard read_guard;
 
-        CompleteAddTask(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r)
-            : parent(p), docid(d), vec(v), prepare_result(std::move(r))
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r, ReadGuard g)
+            : parent(p), docid(d), vec(v), prepare_result(std::move(r)), read_guard(g)
         {}
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, ReadGuard g)
+            : TaskBase(p, d, v, PrepUP(), g) {}
+        TaskBase(Stressor &p, uint32_t d, ReadGuard g)
+            : TaskBase(p, d, ConstVectorRef(), PrepUP(), g) {}
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r)
+            : TaskBase(p, d, v, std::move(r), ReadGuard()) {}
+        TaskBase(Stressor &p, uint32_t d)
+            : TaskBase(p, d, ConstVectorRef(), PrepUP(), ReadGuard()) {}
+    };
 
+    struct CompleteAddTask : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             parent.vectors.set(docid, vec);
             parent.index->complete_add_document(docid, std::move(prepare_result));
@@ -162,16 +175,8 @@ public:
         }
     };
 
-    struct TwoPhaseAddTask  : vespalib::Executor::Task {
-        Stressor &parent;
-        uint32_t docid;
-        ConstVectorRef vec;
-        GenerationHandler::Guard read_guard;
-
-        TwoPhaseAddTask(Stressor &p, uint32_t d, ConstVectorRef v, ReadGuard r)
-            : parent(p), docid(d), vec(v), read_guard(r)
-        {}
-
+    struct TwoPhaseAddTask  : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             auto v = vespalib::tensor::TypedCells(vec);
             auto up = parent.index->prepare_add_document(docid, v, read_guard);
@@ -184,14 +189,8 @@ public:
         }
     };
 
-    struct CompleteRemoveTask : vespalib::Executor::Task {
-        Stressor &parent;
-        uint32_t docid;
-
-        CompleteRemoveTask(Stressor &p, uint32_t d)
-            : parent(p), docid(d)
-        {}
-
+    struct CompleteRemoveTask : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             parent.index->remove_document(docid);
             parent.existing_ids->clearBit(docid);
@@ -199,15 +198,8 @@ public:
         }
     };
 
-    struct TwoPhaseRemoveTask : vespalib::Executor::Task {
-        Stressor &parent;
-        uint32_t docid;
-        GenerationHandler::Guard read_guard;
-
-        TwoPhaseRemoveTask(Stressor &p, uint32_t d, ReadGuard r)
-            : parent(p), docid(d), read_guard(r)
-        {}
-
+    struct TwoPhaseRemoveTask : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             auto task = std::make_unique<CompleteRemoveTask>(parent, docid);
             auto r = parent.write_thread.execute(std::move(task));
@@ -218,16 +210,8 @@ public:
         }
     };
 
-    struct CompleteUpdateTask : vespalib::Executor::Task {
-        Stressor &parent;
-        uint32_t docid;
-        ConstVectorRef vec;
-        std::unique_ptr<PrepareResult> prepare_result;
-
-        CompleteUpdateTask(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r)
-            : parent(p), docid(d), vec(v), prepare_result(std::move(r))
-        {}
-
+    struct CompleteUpdateTask : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             parent.index->remove_document(docid);
             parent.vectors.set(docid, vec);
@@ -237,16 +221,8 @@ public:
         }
     };
 
-    struct TwoPhaseUpdateTask : vespalib::Executor::Task {
-        Stressor &parent;
-        uint32_t docid;
-        ConstVectorRef vec;
-        GenerationHandler::Guard read_guard;
-
-        TwoPhaseUpdateTask(Stressor &p, uint32_t d, ConstVectorRef v, ReadGuard r)
-            : parent(p), docid(d), vec(v), read_guard(r)
-        {}
-
+    struct TwoPhaseUpdateTask : TaskBase {
+        using TaskBase::TaskBase;
         void run() override {
             auto v = vespalib::tensor::TypedCells(vec);
             auto up = parent.index->prepare_add_document(docid, v, read_guard);
