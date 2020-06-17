@@ -233,7 +233,7 @@ public class SpareCapacityMaintainerTest {
         private int nodeIndex = 0;
 
         private SpareCapacityMaintainerTester() {
-            this(1000_000);
+            this(1000);
         }
 
         private SpareCapacityMaintainerTester(int maxIterations) {
@@ -246,7 +246,7 @@ public class SpareCapacityMaintainerTest {
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true, false);
             deployer = new MockDeployer(nodeRepository);
-            maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofMinutes(1), maxIterations);
+            maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
         }
 
         private void addHosts(int count, NodeResources resources) {

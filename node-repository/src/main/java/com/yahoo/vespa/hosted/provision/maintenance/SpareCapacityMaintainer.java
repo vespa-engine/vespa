@@ -47,7 +47,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                                    Metric metric,
                                    Duration interval) {
         this(deployer, nodeRepository, metric, interval,
-             1_000_000 // Should take a couple of seconds
+             10_000 // Should take less than a few minutes
         );
     }
 
@@ -164,8 +164,6 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             if (iterations++ > maxIterations)
                 return null;
 
-            if ((iterations % 1000) == 0)
-                System.out.println("  Iteration " + iterations);
             if ( ! host.resources().satisfies(node.resources())) return null;
             NodeResources freeCapacity = freeCapacityWith(movesMade, host);
             if (freeCapacity.satisfies(node.resources())) return List.of();
@@ -181,8 +179,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                     shortest = moves;
             }
             if (shortest == null) return null;
-            List<Move> total = append(movesMade, shortest);
-            return total;
+            return append(movesMade, shortest);
         }
 
         private List<Move> move(List<Node> nodes, Node host, List<Node> hosts, List<Move> movesConsidered, List<Move> movesMade) {
