@@ -12,7 +12,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <vector>
@@ -352,6 +351,10 @@ TEST_F(Stressor, stress)
         gen_operation();
         if (i % 1000 == 0) {
             fprintf(stderr, "generating operations %d / %d\n", i, NUM_OPS);
+            auto r = write_thread.execute(vespalib::makeLambdaTask([&]() {
+                        EXPECT_TRUE(index->check_link_symmetry());
+            }));
+            EXPECT_EQ(bool(r), false);
         }
     }
     fprintf(stderr, "waiting for queued operations...\n");
@@ -359,6 +362,7 @@ TEST_F(Stressor, stress)
     write_thread.sync();
     in_progress->invalidateCachedCount();
     EXPECT_EQ(in_progress->countTrueBits(), 0);
+    EXPECT_TRUE(index->check_link_symmetry());
     fprintf(stderr, "all done.\n");
 }
 

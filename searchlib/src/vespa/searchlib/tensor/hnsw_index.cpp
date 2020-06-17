@@ -620,6 +620,8 @@ HnswIndex::check_link_symmetry() const
                     auto neighbor_links = _graph.get_link_array(neighbor_docid, level);
                     if (! has_link_to(neighbor_links, docid)) {
                         all_sym = false;
+                        LOG(warning, "check_link_symmetry: docid %zu links to %u on level %u, but no backlink",
+                            docid, neighbor_docid, level);
                     }
                 }
                 ++level;
