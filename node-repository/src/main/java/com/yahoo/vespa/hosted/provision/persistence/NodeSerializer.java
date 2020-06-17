@@ -386,15 +386,16 @@ public class NodeSerializer {
             case "operator" : return Agent.operator;
             case "application" : return Agent.application;
             case "system" : return Agent.system;
-            case "NodeFailer" : return Agent.NodeFailer;
-            case "Rebalancer" : return Agent.Rebalancer;
             case "DirtyExpirer" : return Agent.DirtyExpirer;
+            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
             case "FailedExpirer" : return Agent.FailedExpirer;
             case "InactiveExpirer" : return Agent.InactiveExpirer;
+            case "NodeFailer" : return Agent.NodeFailer;
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
+            case "Rebalancer" : return Agent.Rebalancer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
-            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
             case "RetiringUpgrader" : return Agent.RetiringUpgrader;
+            case "SpareCapacityMaintainer": return Agent.SpareCapacityMaintainer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -403,15 +404,16 @@ public class NodeSerializer {
             case operator : return "operator";
             case application : return "application";
             case system : return "system";
-            case NodeFailer : return "NodeFailer";
-            case Rebalancer : return "Rebalancer";
             case DirtyExpirer : return "DirtyExpirer";
+            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
             case FailedExpirer : return "FailedExpirer";
             case InactiveExpirer : return "InactiveExpirer";
+            case NodeFailer : return "NodeFailer";
             case ProvisionedExpirer : return "ProvisionedExpirer";
+            case Rebalancer : return "Rebalancer";
             case ReservationExpirer : return "ReservationExpirer";
-            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
             case RetiringUpgrader: return "RetiringUpgrader";
+            case SpareCapacityMaintainer: return "SpareCapacityMaintainer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

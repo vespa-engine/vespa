@@ -32,7 +32,7 @@ public abstract class Item implements Cloneable {
 
     /**
      * The definitions in Item.ItemType must match the ones in
-     * searchlib/src/searchlib/parsequery/parse.h
+     * searchlib/src/vespa/searchlib/parsequery/parse.h
      */
     public static enum ItemType {
         OR(0),

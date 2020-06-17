@@ -206,20 +206,24 @@ public class CapacityChecker {
         var containedAllocations = collateAllocations(nodechildren);
         var resourceMap = new HashMap<>(availableResources);
         List<Node> validAllocationTargets = allHosts.stream()
-                .filter(h -> !hostsToRemove.contains(h))
-                .collect(Collectors.toList());
-        if (validAllocationTargets.size() == 0) {
+                                                    .filter(h -> !hostsToRemove.contains(h))
+                                                    .collect(Collectors.toList());
+        if (validAllocationTargets.size() == 0)
             return Optional.of(HostRemovalFailure.none());
-        }
 
         allocationHistory = new AllocationHistory();
         for (var host : hostsToRemove) {
             Optional<Node> unallocatedNode = tryAllocateNodes(nodechildren.get(host),
-                    validAllocationTargets, resourceMap, containedAllocations, true);
+                                                              validAllocationTargets,
+                                                              resourceMap,
+                                                              containedAllocations,
+                                                              true);
 
             if (unallocatedNode.isPresent()) {
                 AllocationFailureReasonList failures = collateAllocationFailures(unallocatedNode.get(),
-                        validAllocationTargets, resourceMap, containedAllocations);
+                                                                                 validAllocationTargets,
+                                                                                 resourceMap,
+                                                                                 containedAllocations);
                 return Optional.of(HostRemovalFailure.create(host, unallocatedNode.get(), failures));
             }
         }
@@ -332,6 +336,11 @@ public class CapacityChecker {
         public List<Node> hostsCausingFailure;
         public HostRemovalFailure failureReason;
 
+        @Override
+        public String toString() {
+            return "failure path: " + failureReason + " upon removing " + hostsCausingFailure;
+        }
+
     }
 
     /**
@@ -346,17 +355,15 @@ public class CapacityChecker {
         public AllocationFailureReasonList allocationFailures;
 
         public static HostRemovalFailure none() {
-            return new HostRemovalFailure(
-                    Optional.empty(),
-                    Optional.empty(),
-                    new AllocationFailureReasonList(List.of()));
+            return new HostRemovalFailure(Optional.empty(),
+                                          Optional.empty(),
+                                          new AllocationFailureReasonList(List.of()));
         }
 
         public static HostRemovalFailure create(Node host, Node tenant, AllocationFailureReasonList failureReasons) {
-            return new HostRemovalFailure(
-                    Optional.of(host),
-                    Optional.of(tenant),
-                    failureReasons);
+            return new HostRemovalFailure(Optional.of(host),
+                                          Optional.of(tenant),
+                                          failureReasons);
         }
 
         private HostRemovalFailure(Optional<Node> host, Optional<Node> tenant, AllocationFailureReasonList allocationFailures) {
@@ -367,7 +374,7 @@ public class CapacityChecker {
 
         @Override
         public String toString() {
-            if (host.isEmpty() || tenant.isEmpty()) return "No removal candidates exists.";
+            if (host.isEmpty() || tenant.isEmpty()) return "No removal candidates exists";
             return String.format(
                     "Failure to remove host %s" +
                     "\n\tNo new host found for tenant %s:" +

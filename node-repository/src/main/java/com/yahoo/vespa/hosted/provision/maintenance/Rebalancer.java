@@ -46,7 +46,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
         NodeList allNodes = nodeRepository().list();
         updateSkewMetric(allNodes);
         if ( ! zoneIsStable(allNodes)) return;
-        findBestMove(allNodes).execute(Agent.Rebalancer, deployer, metric, nodeRepository());
+        findBestMove(allNodes).execute(true, Agent.Rebalancer, deployer, metric, nodeRepository());
    }
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */

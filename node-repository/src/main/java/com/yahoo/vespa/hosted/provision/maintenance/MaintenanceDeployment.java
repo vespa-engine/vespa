@@ -147,9 +147,12 @@ class MaintenanceDeployment implements Closeable {
         /**
          * Try to deploy to make this move.
          *
+         * @param verifyTarget true to only make this move if the node ends up at the expected target host,
+         *                     false if we should perform it as long as it moves from the source host
          * @return true if the move was done, false if it couldn't be
          */
-        public boolean execute(Agent agent, Deployer deployer, Metric metric, NodeRepository nodeRepository) {
+        public boolean execute(boolean verifyTarget,
+                               Agent agent, Deployer deployer, Metric metric, NodeRepository nodeRepository) {
             if (isEmpty()) return false;
             ApplicationId application = node.allocation().get().owner();
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository)) {
@@ -161,16 +164,19 @@ class MaintenanceDeployment implements Closeable {
                 Optional<Node> expectedNewNode = Optional.empty();
                 try {
                     if ( ! deployment.prepare()) return false;
-                    expectedNewNode =
-                            nodeRepository.getNodes(application, Node.State.reserved).stream()
-                                          .filter(n -> !n.hostname().equals(node.hostname()))
-                                          .filter(n -> n.allocation().get().membership().cluster().id().equals(node.allocation().get().membership().cluster().id()))
-                                          .findAny();
-                    if (expectedNewNode.isEmpty()) return false;
-                    if ( ! expectedNewNode.get().hasParent(toHost.hostname())) return false;
+                    if (verifyTarget) {
+                        expectedNewNode =
+                                nodeRepository.getNodes(application, Node.State.reserved).stream()
+                                              .filter(n -> !n.hostname().equals(node.hostname()))
+                                              .filter(n -> n.allocation().get().membership().cluster().id().equals(node.allocation().get().membership().cluster().id()))
+                                              .findAny();
+                        if (expectedNewNode.isEmpty()) return false;
+                        if (!expectedNewNode.get().hasParent(toHost.hostname())) return false;
+                    }
                     if ( ! deployment.activate()) return false;
 
-                    log.info(agent + " redeployed " + application + " to " + this);
+                    log.info(agent + " redeployed " + application + " to " +
+                             ( verifyTarget ? this : "move " + (node.hostname() + " from " + fromHost)));
                     return true;
                 }
                 finally {

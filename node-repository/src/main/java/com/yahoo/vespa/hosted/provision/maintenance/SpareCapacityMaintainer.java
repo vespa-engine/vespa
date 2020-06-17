@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -68,16 +69,20 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             int spareHostCapacity = failurePath.get().hostsCausingFailure.size() - 1;
             if (spareHostCapacity == 0) {
                 Move move = findMitigatingMove(failurePath.get());
-                boolean success = move.execute(Agent.SpareCapacityMaintainer, deployer, metric, nodeRepository());
-                if (success) {
-                    // This may strictly be a (noble) lie: We succeeded in taking one step to mitigate,
-                    // but not necessarily *all* steps needed to justify adding 1 to spare capacity.
-                    // However, we alert on this being 0 and we don't want to do that as long as we're not stuck.
+                if (moving(move)) {
+                    // We succeeded or are in the process of taking a step to mitigate.
+                    // Report with the assumption this will eventually succeed to avoid alerting before we're stuck
                     spareHostCapacity++;
                 }
             }
             metric.set("spareHostCapacity", spareHostCapacity, null);
         }
+    }
+
+    private boolean moving(Move move) {
+        if (move.isEmpty()) return false;
+        if (move.node().allocation().get().membership().retired()) return true; // Move already in progress
+        return move.execute(false, Agent.SpareCapacityMaintainer, deployer, metric, nodeRepository());
     }
 
     private Move findMitigatingMove(CapacityChecker.HostFailurePath failurePath) {
@@ -237,9 +242,10 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         @Override
         public List<Node> next() {
-            next = null;
             if ( ! hasNext()) throw new IllegalStateException("No more elements");
-            return next;
+            var current = next;
+            next = null;
+            return current;
         }
 
         private boolean hasOneAtPosition(int position, int number) {

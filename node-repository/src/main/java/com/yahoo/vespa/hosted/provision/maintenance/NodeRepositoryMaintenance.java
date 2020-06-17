@@ -168,25 +168,24 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone) {
-            failGrace = Duration.ofMinutes(30);
-            periodicRedeployInterval = Duration.ofMinutes(30);
-            // Don't redeploy in test environments
-            redeployMaintainerInterval = Duration.ofMinutes(1);
-            operatorChangeRedeployInterval = Duration.ofMinutes(1);
-            failedExpirerInterval = Duration.ofMinutes(10);
-            provisionedExpiry = Duration.ofHours(4);
-            spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
-            metricsInterval = Duration.ofMinutes(1);
-            infrastructureProvisionInterval = Duration.ofMinutes(1);
-            throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpirerInterval = Duration.ofMinutes(5);
-            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
-            dynamicProvisionerInterval = Duration.ofMinutes(5);
-            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
-            rebalancerInterval = Duration.ofMinutes(40);
-            nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             autoscalingInterval = Duration.ofMinutes(5);
+            dynamicProvisionerInterval = Duration.ofMinutes(5);
+            failedExpirerInterval = Duration.ofMinutes(10);
+            failGrace = Duration.ofMinutes(30);
+            infrastructureProvisionInterval = Duration.ofMinutes(1);
+            loadBalancerExpirerInterval = Duration.ofMinutes(5);
+            metricsInterval = Duration.ofMinutes(1);
+            nodeMetricsCollectionInterval = Duration.ofMinutes(1);
+            operatorChangeRedeployInterval = Duration.ofMinutes(1);
+            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
+            periodicRedeployInterval = Duration.ofMinutes(30);
+            provisionedExpiry = Duration.ofHours(4);
+            rebalancerInterval = Duration.ofMinutes(40);
+            redeployMaintainerInterval = Duration.ofMinutes(1);
+            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
             scalingSuggestionsInterval = Duration.ofMinutes(31);
+            spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
+            throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

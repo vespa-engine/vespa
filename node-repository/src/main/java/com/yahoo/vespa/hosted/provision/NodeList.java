@@ -32,7 +32,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes which are retired */
     public NodeList retired() {
-        return matching(node -> node.allocation().get().membership().retired());
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().retired());
     }
 
     /** Returns the subset of nodes that are being deprovisioned */
@@ -42,7 +42,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes which are removable */
     public NodeList removable() {
-        return matching(node -> node.allocation().get().isRemovable());
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().isRemovable());
     }
 
     /** Returns the subset of nodes having exactly the given resources */
@@ -144,6 +144,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes that are in any of the given state(s) */
     public NodeList state(Collection<Node.State> nodeStates) {
         return matching(node -> nodeStates.contains(node.state()));
+    }
+
+    /** Returns the subset of nodes in the active state */
+    public NodeList active() {
+        return matching(node -> node.state()== Node.State.active);
+    }
+
+    /** Returns the subset of nodes which wantToRetire set true */
+    public NodeList wantToRetire() {
+        return matching((node -> node.status().wantToRetire()));
     }
 
     /** Returns the parent nodes of the given child nodes */
