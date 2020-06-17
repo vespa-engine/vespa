@@ -1,25 +1,26 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <chrono>
+#include <cstdlib>
+#include <future>
+#include <vector>
+
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
-#include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
-
-#include <vector>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <chrono>
-#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("stress_hnsw_mt");
@@ -140,49 +141,50 @@ public:
 
     using PrepUP = std::unique_ptr<PrepareResult>;
     using ReadGuard = GenerationHandler::Guard;
+    using PrepareFuture = std::future<PrepUP>;
 
     // union of data required by tasks
     struct TaskBase : vespalib::Executor::Task {
         Stressor &parent;
         uint32_t docid;
         ConstVectorRef vec;
-        PrepUP prepare_result;
+        PrepareFuture prepare_future;
         ReadGuard read_guard;
 
-        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r, ReadGuard g)
-            : parent(p), docid(d), vec(v), prepare_result(std::move(r)), read_guard(g)
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepareFuture f, ReadGuard g)
+            : parent(p), docid(d), vec(v), prepare_future(std::move(f)), read_guard(g)
         {}
-        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, ReadGuard g)
-            : TaskBase(p, d, v, PrepUP(), g) {}
-        TaskBase(Stressor &p, uint32_t d, ReadGuard g)
-            : TaskBase(p, d, ConstVectorRef(), PrepUP(), g) {}
-        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepUP r)
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, ReadGuard g) // prepare add
+            : TaskBase(p, d, v, PrepareFuture(), g) {}
+        TaskBase(Stressor &p, uint32_t d, ConstVectorRef v, PrepareFuture r) // complete add+update
             : TaskBase(p, d, v, std::move(r), ReadGuard()) {}
-        TaskBase(Stressor &p, uint32_t d)
-            : TaskBase(p, d, ConstVectorRef(), PrepUP(), ReadGuard()) {}
+        TaskBase(Stressor &p, uint32_t d) // complete remove
+            : TaskBase(p, d, ConstVectorRef(), PrepareFuture(), ReadGuard()) {}
+
+        ~TaskBase() {}
+    };
+
+    struct PrepareAddTask  : TaskBase {
+        using TaskBase::TaskBase;
+        std::promise<PrepUP> result_promise;
+        auto get_result_future() {
+            return result_promise.get_future();
+        }
+        void run() override {
+            auto v = vespalib::tensor::TypedCells(vec);
+            auto up = parent.index->prepare_add_document(docid, v, read_guard);
+            result_promise.set_value(std::move(up));
+        }
     };
 
     struct CompleteAddTask : TaskBase {
         using TaskBase::TaskBase;
         void run() override {
+            auto prepare_result = prepare_future.get();
             parent.vectors.set(docid, vec);
             parent.index->complete_add_document(docid, std::move(prepare_result));
             parent.existing_ids->setBit(docid);
             parent.commit(docid);
-        }
-    };
-
-    struct TwoPhaseAddTask  : TaskBase {
-        using TaskBase::TaskBase;
-        void run() override {
-            auto v = vespalib::tensor::TypedCells(vec);
-            auto up = parent.index->prepare_add_document(docid, v, read_guard);
-            auto task = std::make_unique<CompleteAddTask>(parent, docid, vec, std::move(up));
-            auto r = parent.write_thread.execute(std::move(task));
-            if (r) {
-                fprintf(stderr, "Failed posting complete add task!");
-                abort();
-            }
         }
     };
 
@@ -195,41 +197,15 @@ public:
         }
     };
 
-    struct TwoPhaseRemoveTask : TaskBase {
-        using TaskBase::TaskBase;
-        void run() override {
-            auto task = std::make_unique<CompleteRemoveTask>(parent, docid);
-            auto r = parent.write_thread.execute(std::move(task));
-            if (r) {
-                fprintf(stderr, "Failed posting complete remove task!");
-                abort();
-            }
-        }
-    };
-
     struct CompleteUpdateTask : TaskBase {
         using TaskBase::TaskBase;
         void run() override {
+            auto prepare_result = prepare_future.get();
             parent.index->remove_document(docid);
             parent.vectors.set(docid, vec);
             parent.index->complete_add_document(docid, std::move(prepare_result));
             EXPECT_EQ(parent.existing_ids->testBit(docid), true);
             parent.commit(docid);
-        }
-    };
-
-    struct TwoPhaseUpdateTask : TaskBase {
-        using TaskBase::TaskBase;
-        void run() override {
-            auto v = vespalib::tensor::TypedCells(vec);
-            auto up = parent.index->prepare_add_document(docid, v, read_guard);
-            EXPECT_EQ(bool(up), true);
-            auto task = std::make_unique<CompleteUpdateTask>(parent, docid, vec, std::move(up));
-            auto r = parent.write_thread.execute(std::move(task));
-            if (r) {
-                fprintf(stderr, "Failed posting complete remove task!");
-                abort();
-            }
         }
     };
 
@@ -262,22 +238,27 @@ public:
         size_t vec_num = get_rnd(loaded_vectors.size());
         ConstVectorRef vec = loaded_vectors[vec_num];
         auto guard = take_read_guard();
-        auto task = std::make_unique<TwoPhaseAddTask>(*this, docid, vec, guard);
-        auto r = multi_prepare_workers.execute(std::move(task));
+        auto prepare_task = std::make_unique<PrepareAddTask>(*this, docid, vec, guard);
+        auto complete_task = std::make_unique<CompleteAddTask>(*this, docid, vec, prepare_task->get_result_future());
+        auto r = multi_prepare_workers.execute(std::move(prepare_task));
+        ASSERT_EQ(bool(r), false);
+        r = write_thread.execute(std::move(complete_task));
         ASSERT_EQ(bool(r), false);
     }
     void remove_document(uint32_t docid) {
-        auto guard = take_read_guard();
-        auto task = std::make_unique<TwoPhaseRemoveTask>(*this, docid, guard);
-        auto r = multi_prepare_workers.execute(std::move(task));
+        auto task = std::make_unique<CompleteRemoveTask>(*this, docid);
+        auto r = write_thread.execute(std::move(task));
         ASSERT_EQ(bool(r), false);
     }
     void update_document(uint32_t docid) {
         size_t vec_num = get_rnd(loaded_vectors.size());
         ConstVectorRef vec = loaded_vectors[vec_num];
         auto guard = take_read_guard();
-        auto task = std::make_unique<TwoPhaseUpdateTask>(*this, docid, vec, guard);
-        auto r = multi_prepare_workers.execute(std::move(task));
+        auto prepare_task = std::make_unique<PrepareAddTask>(*this, docid, vec, guard);
+        auto complete_task = std::make_unique<CompleteUpdateTask>(*this, docid, vec, prepare_task->get_result_future());
+        auto r = multi_prepare_workers.execute(std::move(prepare_task));
+        ASSERT_EQ(bool(r), false);
+        r = write_thread.execute(std::move(complete_task));
         ASSERT_EQ(bool(r), false);
     }
     void commit(uint32_t docid) {
