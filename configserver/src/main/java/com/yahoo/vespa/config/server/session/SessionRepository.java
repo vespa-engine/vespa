@@ -398,7 +398,7 @@ public class SessionRepository {
      */
     public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
                                       TimeoutBudget timeoutBudget, Optional<Long> activeSessionId) {
-        return create(applicationDirectory, applicationId, activeSessionId.orElse(nonExistingActiveSession), false, timeoutBudget);
+        return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 
     public RemoteSession createRemoteSession(long sessionId) {
@@ -417,14 +417,15 @@ public class SessionRepository {
                                                  File configApplicationDir,
                                                  ApplicationId applicationId,
                                                  long sessionId,
-                                                 long currentlyActiveSessionId,
+                                                 Optional<Long> currentlyActiveSessionId,
                                                  boolean internalRedeploy) {
         long deployTimestamp = System.currentTimeMillis();
         String user = System.getenv("USER");
         if (user == null) {
             user = "unknown";
         }
-        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSessionId);
+        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
+                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSession));
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
@@ -457,7 +458,7 @@ public class SessionRepository {
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
-        long activeSessionId = getActiveSessionId(existingApplicationId);
+        Optional<Long> activeSessionId = getActiveSessionId(existingApplicationId);
         logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
@@ -471,7 +472,7 @@ public class SessionRepository {
         return session;
     }
 
-    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSessionId,
+    private LocalSession create(File applicationFile, ApplicationId applicationId, Optional<Long> currentlyActiveSessionId,
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
@@ -489,7 +490,7 @@ public class SessionRepository {
      * It does not wait for session being created on other servers
      */
     private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId,
-                                            long sessionId, long currentlyActiveSessionId) {
+                                            long sessionId, Optional<Long> currentlyActiveSessionId) {
         try {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
@@ -501,7 +502,7 @@ public class SessionRepository {
     }
 
     private ApplicationPackage createApplicationPackage(File applicationFile, ApplicationId applicationId,
-                                                        long sessionId, long currentlyActiveSessionId,
+                                                        long sessionId, Optional<Long> currentlyActiveSessionId,
                                                         boolean internalRedeploy) throws IOException {
         File userApplicationDir = getSessionAppDir(sessionId);
         IOUtils.copyDirectory(applicationFile, userApplicationDir);
@@ -554,18 +555,16 @@ public class SessionRepository {
             return Optional.of(createLocalSession(sessionDir,
                                                   applicationId,
                                                   sessionId,
-                                                  applicationRepo.activeSessionOf(applicationId).orElse(nonExistingActiveSession)));
+                                                  applicationRepo.activeSessionOf(applicationId)));
         }
         return Optional.empty();
     }
 
-    // Return Optional instead of faking it with nonExistingActiveSession
-    private long getActiveSessionId(ApplicationId applicationId) {
+    private Optional<Long> getActiveSessionId(ApplicationId applicationId) {
         List<ApplicationId> applicationIds = applicationRepo.activeApplications();
-        if (applicationIds.contains(applicationId)) {
-            return applicationRepo.requireActiveSessionOf(applicationId);
-        }
-        return nonExistingActiveSession;
+        return applicationIds.contains(applicationId)
+                ? Optional.of(applicationRepo.requireActiveSessionOf(applicationId))
+                : Optional.empty();
     }
 
     private long getNextSessionId() {
