@@ -179,7 +179,7 @@ public class MockDeployer implements Deployer {
             redeployments++;
             lastDeployTimes.put(applicationId, clock.instant());
 
-            for (Node node : nodeRepository.list().owner(applicationId).active().wantToRetire().asList())
+            for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList())
                 nodeRepository.write(node.retire(nodeRepository.clock().instant()), nodeRepository.lock(node));
         }
 
