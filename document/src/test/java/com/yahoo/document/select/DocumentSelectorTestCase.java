@@ -67,6 +67,8 @@ public class DocumentSelectorTestCase {
         manager.registerDocumentType(new DocumentType("andornot"));
         manager.registerDocumentType(new DocumentType("idid"));
         manager.registerDocumentType(new DocumentType("usergroup"));
+        manager.registerDocumentType(new DocumentType("user"));
+        manager.registerDocumentType(new DocumentType("group"));
     }
 
     @Test
@@ -131,6 +133,8 @@ public class DocumentSelectorTestCase {
         assertParse(null, "false or false_t or falsetype");
         assertParse(null, "true or and_t or andtype");
         assertParse(null, "true or or_t or ortype");
+        assertParse(null, "user or group");
+        assertParse(null, "user.foo or group.bar");
     }
 
     @Test
