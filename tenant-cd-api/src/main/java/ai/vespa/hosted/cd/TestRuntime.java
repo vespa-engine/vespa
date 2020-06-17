@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.cd;
 
+import ai.vespa.cloud.Zone;
+
 import java.util.ServiceLoader;
 
 /**
@@ -16,4 +18,7 @@ public interface TestRuntime {
     }
 
     Deployment deploymentToTest();
+
+    Zone zone();
+
 }
