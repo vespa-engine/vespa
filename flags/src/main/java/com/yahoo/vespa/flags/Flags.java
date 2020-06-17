@@ -70,7 +70,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag USE_NEW_VESPA_RPMS = defineFeatureFlag(
-            "use-new-vespa-rpms", false,
+            "use-new-vespa-rpms", true,
             "Whether to use the new vespa-rpms YUM repo when upgrading/downgrading.  The vespa-version " +
             "when fetching the flag value is the wanted version of the host.",
             "Takes effect when upgrading or downgrading host admin to a different version.",
