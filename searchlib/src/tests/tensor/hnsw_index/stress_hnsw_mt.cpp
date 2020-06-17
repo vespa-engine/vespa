@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
@@ -9,8 +9,6 @@
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
@@ -29,14 +27,12 @@ LOG_SETUP("stress_hnsw_mt");
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using namespace search::tensor;
-using namespace vespalib::slime;
-using vespalib::Slime;
 using search::BitVector;
 
 #define NUM_DIMS 128
-#define NUM_POSSIBLE_V 100000
-#define NUM_POSSIBLE_DOCS 10000
-#define NUM_OPS 50000
+#define NUM_POSSIBLE_V 1000000
+#define NUM_POSSIBLE_DOCS 30000
+#define NUM_OPS 1000000
 
 class RndGen {
 private:
