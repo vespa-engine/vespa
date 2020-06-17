@@ -129,16 +129,16 @@ struct HnswGraph {
     EntryNode get_entry_node() const {
         EntryNode entry;
         while (true) {
-	    uint64_t value = get_entry_atomic();
-	    entry.docid = (uint32_t)value;
-	    entry.node_ref = get_node_ref(entry.docid);
-	    entry.level = (int32_t)(value >> 32);
+            uint64_t value = get_entry_atomic();
+            entry.docid = (uint32_t)value;
+            entry.node_ref = get_node_ref(entry.docid);
+            entry.level = (int32_t)(value >> 32);
             if ((entry.docid == 0)
                 && (entry.level == -1)
                 && ! entry.node_ref.valid())
             {
                 // invalid in every way
-	        return entry;
+                return entry;
             }
             if ((entry.docid > 0)
                 && (entry.level > -1)
@@ -146,7 +146,7 @@ struct HnswGraph {
                 && (get_entry_atomic() == value))
             {
                 // valid in every way
-	        return entry;
+                return entry;
             }
         }
     }
