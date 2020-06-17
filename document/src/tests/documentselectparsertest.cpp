@@ -76,6 +76,12 @@ namespace {
 void DocumentSelectParserTest::SetUp()
 {
     DocumenttypesConfigBuilderHelper builder(TestDocRepo::getDefaultConfig());
+    builder.document(1234567, "with_imported",
+                     Struct("with_imported.header"),
+                     Struct("with_imported.body"))
+                     .imported_field("my_imported_field");
+    // Additional document types with names that are (or include) identifiers
+    // that lex to specific tokens.
     builder.document(535424777, "notandor",
                      Struct("notandor.header"), Struct("notandor.body"));
     builder.document(1348665801, "ornotand",
@@ -87,10 +93,10 @@ void DocumentSelectParserTest::SetUp()
     builder.document(-1673092522, "usergroup",
                      Struct("usergroup.header"),
                      Struct("usergroup.body"));
-    builder.document(1234567, "with_imported",
-                     Struct("with_imported.header"),
-                     Struct("with_imported.body"))
-                     .imported_field("my_imported_field");
+    builder.document(875463456, "user",
+                     Struct("user.header"), Struct("user.body"));
+    builder.document(567463442, "group",
+                     Struct("group.header"), Struct("group.body"));
     _repo = std::make_unique<DocumentTypeRepo>(builder.config());
 
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);
@@ -442,6 +448,8 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     verifyParse("andornot");
     verifyParse("idid");
     verifyParse("usergroup");
+    verifyParse("user");
+    verifyParse("group");
 }
 
 TEST_F(DocumentSelectParserTest, testParseBranches)
@@ -463,6 +471,7 @@ TEST_F(DocumentSelectParserTest, testParseBranches)
     verifyParse("not andornot");
     verifyParse("idid or not usergroup");
     verifyParse("not(andornot or idid)", "not (andornot or idid)");
+    verifyParse("not user or not group");
 }
 
 template <typename ContainsType>
@@ -1438,6 +1447,14 @@ TEST_F(DocumentSelectParserTest, test_ambiguous_field_spec_expression_is_handled
     EXPECT_EQ("(!= (FIELD testdoctype1 foo) null)"s, parse_to_tree("(testdoctype1.foo)"));
     EXPECT_EQ("(AND (!= (FIELD testdoctype1 foo) null) (!= (FIELD testdoctype1 bar) null))"s,
                          parse_to_tree("(testdoctype1.foo) AND (testdoctype1.bar)"));
+}
+
+TEST_F(DocumentSelectParserTest, special_tokens_are_allowed_as_freestanding_identifier_names) {
+    createDocs();
+    EXPECT_EQ("(NOT (DOCTYPE user))", parse_to_tree("not user"));
+    EXPECT_EQ("(== (ID id.user) (FIELD user user))", parse_to_tree("id.user == user.user"));
+    EXPECT_EQ("(NOT (DOCTYPE group))", parse_to_tree("not group"));
+    EXPECT_EQ("(== (ID id.group) (FIELD group group))", parse_to_tree("id.group == group.group"));
 }
 
 TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node)
