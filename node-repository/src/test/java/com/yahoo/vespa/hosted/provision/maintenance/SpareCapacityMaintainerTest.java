@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvid
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -193,6 +194,30 @@ public class SpareCapacityMaintainerTest {
         tester.addNodes(6, 1, new NodeResources( 4, 40, 400, 0.4), 6);
 
         tester.maintainer.maintain();
+        assertEquals(0, tester.deployer.redeployments);
+        assertEquals(0, tester.nodeRepository.list().retired().size());
+        assertEquals(0, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    /** Microbenchmark */
+    @Test
+    @Ignore
+    public void testLargeNodeRepo() {
+        // Completely fill 200 hosts with 2000 nodes
+        int hosts = 200;
+        var tester = new SpareCapacityMaintainerTester();
+        tester.addHosts(hosts, new NodeResources(100, 1000, 10000, 10));
+        int hostOffset = 0;
+        for (int i = 0; i < 200; i++) {
+            int applicationSize = 10;
+            int resourceSize = 10;
+            tester.addNodes(i, applicationSize, new NodeResources(resourceSize, resourceSize * 10, resourceSize * 100, 0.1), hostOffset);
+            hostOffset = (hostOffset + applicationSize) % hosts;
+        }
+        long startTime = System.currentTimeMillis();
+        tester.maintainer.maintain();
+        long totalTime = System.currentTimeMillis() - startTime;
+        System.out.println("Complete in " + ( totalTime / 1000) + " seconds");
         assertEquals(0, tester.deployer.redeployments);
         assertEquals(0, tester.nodeRepository.list().retired().size());
         assertEquals(0, tester.metric.values.get("spareHostCapacity"));

@@ -13,8 +13,11 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -35,8 +38,7 @@ import java.util.stream.Collectors;
  */
 public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
-    private static final int maxMoves = 5;
-
+    private static final int maxIterations = 5; // Should take a couple of seconds
     private final Deployer deployer;
     private final Metric metric;
 
@@ -99,7 +101,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         CapacitySolver capacitySolver = new CapacitySolver(hostCapacity);
         List<Move> shortestMitigation = null;
         for (Node spareHost : spareHosts) {
-            List<Move> mitigation = capacitySolver.makeRoomFor(node, spareHost, hosts, List.of(), maxMoves);
+            List<Move> mitigation = capacitySolver.makeRoomFor(node, spareHost, hosts, List.of(), maxIterations);
             if (mitigation == null) continue;
             if (shortestMitigation == null || shortestMitigation.size() > mitigation.size())
                 shortestMitigation = mitigation;
@@ -110,11 +112,15 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private static class CapacitySolver {
 
+        private int iterations = 0;
         private final HostCapacity hostCapacity;
 
         CapacitySolver(HostCapacity hostCapacity) {
             this.hostCapacity = hostCapacity;
         }
+
+        /** The map of subproblem solutions already found. */
+        private Map<SolutionKey, Solution> solutions = new HashMap<>();
 
         /**
          * Finds the shortest sequence of moves which makes room for the given node on the given host,
@@ -128,6 +134,22 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
          *         or null if no sequence could be found
          */
         List<Move> makeRoomFor(Node node, Node host, List<Node> hosts, List<Move> movesMade, int movesLeft) {
+            SolutionKey solutionKey = new SolutionKey(node, host, movesMade);
+            Solution solution = solutions.get(solutionKey);
+            if (solution == null || (solution.isNone() && solution.movesLeft() < movesLeft)) {
+                List<Move> moves = findRoomFor(node, host, hosts, movesMade, movesLeft);
+                solution = new Solution(moves, movesLeft);
+                solutions.put(solutionKey, solution);
+            }
+            if (solution.isNone() || solution.moves().size() > movesLeft)
+                return null;
+            return solution.moves();
+        }
+
+        private List<Move> findRoomFor(Node node, Node host, List<Node> hosts, List<Move> movesMade, int movesLeft) {
+            iterations++;
+            if ((iterations % 1000) == 0)
+                System.out.println("  Iteration " + iterations);
             if ( ! host.resources().satisfies(node.resources())) return null;
             NodeResources freeCapacity = freeCapacityWith(movesMade, host);
             if (freeCapacity.satisfies(node.resources())) return List.of();
@@ -203,6 +225,58 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             return resources;
         }
+
+    }
+
+    private static class SolutionKey {
+
+        private final Node node;
+        private final Node host;
+        private final List<Move> movesMade;
+
+        private final int hash;
+
+        public SolutionKey(Node node, Node host, List<Move> movesMade) {
+            this.node = node;
+            this.host = host;
+            this.movesMade = movesMade;
+
+            hash = Objects.hash(node, host, movesMade);
+        }
+
+        @Override
+        public int hashCode() { return hash; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o == null || o.getClass() != this.getClass()) return false;
+
+            SolutionKey other = (SolutionKey)o;
+            if ( ! other.node.equals(this.node)) return false;
+            if ( ! other.host.equals(this.host)) return false;
+            if ( ! other.movesMade.equals(this.movesMade)) return false;
+            return true;
+        }
+
+    }
+
+    private static class Solution {
+
+        /** The moves of this solution, or null if there is none */
+        private final List<Move> moves;
+
+        /** The number of moves considered when finding (or not finding) this solution */
+        private final int movesLeft;
+
+        public Solution(List<Move> moves, int movesLeft) {
+            this.moves = moves;
+            this.movesLeft = movesLeft;
+        }
+
+        public List<Move> moves() { return moves; }
+        public int movesLeft() { return movesLeft; }
+        public boolean isNone() { return moves == null; }
 
     }
 

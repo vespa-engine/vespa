@@ -7,6 +7,8 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
+
+import java.util.Objects;
 import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -204,6 +206,22 @@ class MaintenanceDeployment implements Closeable {
         }
 
         public boolean isEmpty() { return node == null; }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(node, fromHost, toHost);
+        }
+
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o == null || o.getClass() != this.getClass()) return false;
+
+            Move other = (Move)o;
+            if ( ! Objects.equals(other.node, this.node)) return false;
+            if ( ! Objects.equals(other.fromHost, this.fromHost)) return false;
+            if ( ! Objects.equals(other.toHost, this.toHost)) return false;
+            return true;
+        }
 
         @Override
         public String toString() {
