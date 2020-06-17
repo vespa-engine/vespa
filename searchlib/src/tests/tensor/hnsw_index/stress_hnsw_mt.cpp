@@ -129,6 +129,7 @@ private:
     } loaded_vectors;
 public:
     BitVector::UP in_progress;
+    std::mutex in_progress_lock;
     BitVector::UP existing_ids;
     RndGen rng;
     MyDocVectorStore vectors;
@@ -241,7 +242,7 @@ public:
           gen_handler(),
           index(),
           multi_prepare_workers(10, 128*1024, 50),
-          write_thread(1, 128*1024, 15)
+          write_thread(1, 128*1024, 500)
     {
         loaded_vectors.load();
     }
@@ -284,28 +285,31 @@ public:
         gen_handler.incGeneration();
         gen_handler.updateFirstUsedGeneration();
         index->trim_hold_lists(gen_handler.getFirstUsedGeneration());
+        std::lock_guard<std::mutex> guard(in_progress_lock);
         in_progress->clearBit(docid);
         // printf("commit: %u\n", docid);
     }
     void gen_operation() {
-        do {
-            uint32_t docid = get_rnd(NUM_POSSIBLE_DOCS);
-            if (in_progress->testBit(docid)) continue;
-            in_progress->setBit(docid);
-            if (existing_ids->testBit(docid)) {
-                if (get_rnd(100) < 70) {
-                    // printf("start remove op: %u\n", docid);
-                    remove_document(docid);
-                } else {
-                    // printf("start update op: %u\n", docid);
-                    update_document(docid);
-                }
-            } else {
-                // printf("start add op: %u\n", docid);
-                add_document(docid);
+        uint32_t docid = get_rnd(NUM_POSSIBLE_DOCS);
+        {
+            std::lock_guard<std::mutex> guard(in_progress_lock);
+            while (in_progress->testBit(docid)) {
+                docid = get_rnd(NUM_POSSIBLE_DOCS);
             }
-            return;
-        } while (true);
+            in_progress->setBit(docid);
+        }
+        if (existing_ids->testBit(docid)) {
+            if (get_rnd(100) < 70) {
+                // printf("start remove op: %u\n", docid);
+                remove_document(docid);
+            } else {
+                // printf("start update op: %u\n", docid);
+                update_document(docid);
+            }
+        } else {
+            // printf("start add op: %u\n", docid);
+            add_document(docid);
+        }
     }
     GenerationHandler::Guard take_read_guard() {
         return gen_handler.takeGuard();
