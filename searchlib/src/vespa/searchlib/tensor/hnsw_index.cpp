@@ -335,7 +335,7 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
 }
 
 HnswIndex::LinkArray 
-HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me)
+HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_docid)
 {
     LinkArray valid;
     valid.reserve(neighbors.size());
@@ -343,8 +343,9 @@ HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neig
         uint32_t docid = neighbor.first;
         HnswGraph::NodeRef node_ref = neighbor.second;
         if (_graph.still_valid(docid, node_ref)) {
+            assert(docid != self_docid);
             auto levels = _graph.get_level_array(node_ref);
-            if ((docid != me) && (level < levels.size())) {
+            if (level < levels.size()) {
                 valid.push_back(docid);     
             }
         }
