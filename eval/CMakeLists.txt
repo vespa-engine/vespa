@@ -19,6 +19,7 @@ vespa_define_module(
     src/tests/eval/gbdt
     src/tests/eval/inline_operation
     src/tests/eval/interpreted_function
+    src/tests/eval/multiply_add
     src/tests/eval/node_tools
     src/tests/eval/node_types
     src/tests/eval/param_usage
