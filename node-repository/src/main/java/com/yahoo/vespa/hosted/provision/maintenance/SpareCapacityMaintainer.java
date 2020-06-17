@@ -307,7 +307,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
             // find next
             while (++i < 1<<nodes.size()) {
-                int ones = onesIn(i);
+                int ones = Integer.bitCount(i);
                 if (ones > maxLength) continue;
 
                 next = new ArrayList<>(ones);
@@ -330,15 +330,6 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         private boolean hasOneAtPosition(int position, int number) {
             return (number & (1 << position)) > 0;
-        }
-
-        private int onesIn(int number) {
-            int ones = 0;
-            for (int position = 0; Math.pow(2, position) <= number; position++) {
-                if (hasOneAtPosition(position, number))
-                    ones++;
-            }
-            return ones;
         }
 
     }
