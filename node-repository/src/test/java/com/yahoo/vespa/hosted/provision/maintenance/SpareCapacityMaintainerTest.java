@@ -136,7 +136,26 @@ public class SpareCapacityMaintainerTest {
         // By moving the 4 small nodes from host 2 we free up sufficient space on the third host to act as a spare for
         // application 0
         var tester = new SpareCapacityMaintainerTester();
+        setupMultipleHosts(tester, 5);
 
+        tester.maintainer.maintain();
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(1, tester.nodeRepository.list().retired().size());
+        assertEquals(1, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    @Test
+    public void testMultipleNodesMustMoveFromOneHostButInsufficientCapacity() {
+        var tester = new SpareCapacityMaintainerTester();
+        setupMultipleHosts(tester, 4);
+
+        tester.maintainer.maintain();
+        assertEquals(0, tester.deployer.redeployments);
+        assertEquals(0, tester.nodeRepository.list().retired().size());
+        assertEquals(0, tester.metric.values.get("spareHostCapacity"));
+    }
+
+    private void setupMultipleHosts(SpareCapacityMaintainerTester tester, int smallNodeCount) {
         tester.addHosts(2, new NodeResources(10, 100, 1000, 1));
         tester.addNodes(0, 2, new NodeResources(10, 100, 1000, 1.0), 0);
 
@@ -149,12 +168,7 @@ public class SpareCapacityMaintainerTest {
         tester.addNodes(6, 1, new NodeResources(2, 20, 200, 2.0), 2);
         tester.addNodes(7, 1, new NodeResources(2, 20, 200, 2.0), 2);
 
-        tester.addHosts(5, new NodeResources(2, 20, 200, 2.0));
-
-        tester.maintainer.maintain();
-        assertEquals(1, tester.deployer.redeployments);
-        assertEquals(1, tester.nodeRepository.list().retired().size());
-        assertEquals(1, tester.metric.values.get("spareHostCapacity"));
+        tester.addHosts(smallNodeCount, new NodeResources(2, 20, 200, 2.0));
     }
 
     @Test

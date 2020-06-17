@@ -97,7 +97,6 @@ public class CapacityChecker {
 
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
                                                         .sorted(this::hostMitigationOrder)
-//                                                        .sorted(Comparator.comparingInt(Map.Entry::getValue))
                                                         .map(Map.Entry::getKey)
                                                         .collect(Collectors.toList());
 
