@@ -5,6 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.dns;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -22,11 +23,11 @@ public class MemoryNameService implements NameService {
         return Collections.unmodifiableSet(records);
     }
 
-    private void add(Record record) {
-        if (records.stream().anyMatch(r -> r.type().equals(record.type()) &&
-                                           r.name().equals(record.name()) &&
-                                           r.data().equals(record.data()))) {
-            throw new IllegalArgumentException("Record already exists: " + record);
+    public void add(Record record) {
+        Optional<Record> conflict = records.stream().filter(r -> conflicts(r, record)).findFirst();
+        if (conflict.isPresent()) {
+            throw new AssertionError("'" + record + "' conflicts with existing record '" +
+                                     conflict.get() + "'");
         }
         records.add(record);
     }
@@ -45,8 +46,9 @@ public class MemoryNameService implements NameService {
                              .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
-        removeRecords(records);
-        records.forEach(this::add);
+        records.stream()
+               .filter(r -> !this.records.contains(r))
+               .forEach(this::add);
         return records;
     }
 
@@ -106,6 +108,17 @@ public class MemoryNameService implements NameService {
     @Override
     public void removeRecords(List<Record> records) {
         this.records.removeAll(records);
+    }
+
+    /**
+     * Returns whether record r1 and r2 can co-exist in a name service. This attempts to enforce the same constraints as
+     * most real name services.
+     */
+    private static boolean conflicts(Record r1, Record r2) {
+        if (!r1.name().equals(r2.name())) return false;               // Distinct names never conflict
+        if (r1.type() == Record.Type.ALIAS && r1.type() == r2.type()) // ALIAS records only require distinct data
+            return r1.data().equals(r2.data());
+        return true;                                                  // Anything else is considered a conflict
     }
 
 }
