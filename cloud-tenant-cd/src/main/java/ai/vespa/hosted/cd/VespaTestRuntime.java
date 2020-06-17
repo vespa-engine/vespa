@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.cd;
 
+import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
@@ -26,17 +27,11 @@ public class VespaTestRuntime implements TestRuntime {
             this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
     }
 
-//    In use ?
-//    /** Returns a copy of this runtime, with the given endpoint authenticator. */
-//    public TestRuntime with(EndpointAuthenticator authenticator) {
-//        return new TestRuntime(config, authenticator);
-//    }
-
-    /** Returns the full id of the application this is testing. */
-    public ApplicationId application() { return config.application(); }
-
-    /** Returns the zone of the deployment this is testing. */
-    public ZoneId zone() { return config.zone(); }
+    @Override
+    public Zone zone() {
+        return new Zone(
+                ai.vespa.cloud.Environment.valueOf(config.zone().environment().name()),
+                config.zone().region().value()); }
 
     /** Returns the deployment this is testing. */
     @Override

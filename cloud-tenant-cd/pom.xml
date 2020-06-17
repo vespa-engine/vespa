@@ -37,6 +37,12 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>hosted-zone-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- compile scope -->
         <dependency>
@@ -48,6 +54,12 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>hosted-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
