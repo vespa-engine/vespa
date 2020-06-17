@@ -87,11 +87,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
     private Move findMitigatingMove(CapacityChecker.HostFailurePath failurePath) {
         Optional<Node> nodeWhichCantMove = failurePath.failureReason.tenant;
         if (nodeWhichCantMove.isEmpty()) return Move.empty();
-        return moveTowardsSpareFor(nodeWhichCantMove.get());
-    }
 
-    private Move moveTowardsSpareFor(Node node) {
-        System.out.println("Trying to find mitigation for " + node);
+        Node node = nodeWhichCantMove.get();
         NodeList allNodes = nodeRepository().list();
         // Allocation will assign the two most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
@@ -108,7 +105,6 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                 shortestMitigation = mitigation;
         }
         if (shortestMitigation == null || shortestMitigation.isEmpty()) return Move.empty();
-        System.out.println("Shortest mitigation to create spare for " + node + ":\n  " + shortestMitigation);
         return shortestMitigation.get(0);
     }
 
