@@ -72,10 +72,10 @@ HnswIndex::max_links_for_level(uint32_t level) const
 }
 
 bool
-HnswIndex::have_closer_distance(HnswCandidate candidate, const LinkArrayRef& result) const
+HnswIndex::have_closer_distance(HnswCandidate candidate, const HnswCandidateVector& result) const
 {
-    for (uint32_t result_docid : result) {
-        double dist = calc_distance(candidate.docid, result_docid);
+    for (const auto & neighbor : result) {
+        double dist = calc_distance(candidate.docid, neighbor.docid);
         if (dist < candidate.distance) {
             return true;
         }
@@ -91,7 +91,7 @@ HnswIndex::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_
     SelectResult result;
     for (const auto & candidate : sorted) {
         if (result.used.size() < max_links) {
-            result.used.push_back(candidate.docid);
+            result.used.push_back(candidate);
         } else {
             result.unused.push_back(candidate.docid);
         }
@@ -114,7 +114,7 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
             result.unused.push_back(candidate.docid);
             continue;
         }
-        result.used.push_back(candidate.docid);
+        result.used.push_back(candidate);
         if (result.used.size() == max_links) {
             while (!nearest.empty()) {
                 candidate = nearest.top();
@@ -148,7 +148,12 @@ HnswIndex::shrink_if_needed(uint32_t docid, uint32_t level)
             neighbors.emplace_back(neighbor_docid, dist);
         }
         auto split = select_neighbors(neighbors, max_links);
-        _graph.set_link_array(docid, level, split.used);
+        LinkArray new_links;
+        new_links.reserve(split.used.size());
+        for (const auto & neighbor : split.used) {
+            new_links.push_back(neighbor.docid);
+        }
+        _graph.set_link_array(docid, level, new_links);
         for (uint32_t removed_docid : split.unused) {
             remove_link_to(removed_docid, docid, level);
         }
@@ -314,29 +319,34 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
     while (search_level >= 0) {
         search_layer(input_vector, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
-        auto use = neighbors.used;
-        op.connections[search_level].assign(use.begin(), use.end());
+        op.connections[search_level].reserve(neighbors.used.size());
+        for (const auto & neighbor : neighbors.used) {
+            auto neighbor_levels = _graph.get_level_array(neighbor.node_ref);
+            if (size_t(search_level) < neighbor_levels.size()) {
+                op.connections[search_level].emplace_back(neighbor.docid, neighbor.node_ref);
+            } else {
+                LOG(warning, "in prepare_add(%u), selected neighbor %u is missing level %d (has %zu levels)",
+                    docid, neighbor.docid, search_level, neighbor_levels.size());
+            }
+        }
         --search_level;
     }
     return op;
 }
 
 HnswIndex::LinkArray 
-HnswIndex::filter_valid_docids(uint32_t level, const LinkArrayRef &docids, uint32_t me)
+HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me)
 {
     LinkArray valid;
-    valid.reserve(docids.size());
-    for (uint32_t docid : docids) {
-        if (docid == me) {
-            continue;
-        }
-        auto node_ref = _graph.node_refs[docid].load_acquire();
-        if (! node_ref.valid()) {
-            continue;
-        }
-        auto levels = _graph.get_level_array(node_ref);
-        if (level < levels.size()) {
-            valid.push_back(docid);     
+    valid.reserve(neighbors.size());
+    for (const auto & neighbor : neighbors) {
+        uint32_t docid = neighbor.first;
+        HnswGraph::NodeRef node_ref = neighbor.second;
+        if (_graph.still_valid(docid, node_ref)) {
+            auto levels = _graph.get_level_array(node_ref);
+            if ((docid != me) && (level < levels.size())) {
+                valid.push_back(docid);     
+            }
         }
     }
     return valid;
