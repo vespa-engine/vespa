@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 
 import java.util.ArrayList;
@@ -10,6 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,12 +40,14 @@ public class NameServiceQueue {
         return Collections.unmodifiableCollection(requests);
     }
 
-    /** Returns a copy of this containing only the n most recent requests */
+    /** Returns a copy of this containing the last n requests */
     public NameServiceQueue last(int n) {
-        requireNonNegative(n);
-        if (requests.size() <= n) return this;
-        List<NameServiceRequest> requests = new ArrayList<>(this.requests);
-        return new NameServiceQueue(requests.subList(requests.size() - n, requests.size()));
+        return resize(n, (requests) -> requests.subList(requests.size() - n, requests.size()));
+    }
+
+    /** Returns a copy of this containing the first n requests */
+    public NameServiceQueue first(int n) {
+        return resize(n, (requests) -> requests.subList(0, n));
     }
 
     /** Returns a copy of this with given request queued according to priority */
@@ -58,6 +61,7 @@ public class NameServiceQueue {
         return queue;
     }
 
+    /** Returns a copy of this with given request added */
     public NameServiceQueue with(NameServiceRequest request) {
         return with(request, Priority.normal);
     }
@@ -89,6 +93,13 @@ public class NameServiceQueue {
     @Override
     public String toString() {
         return requests.toString();
+    }
+
+    private NameServiceQueue resize(int n, UnaryOperator<List<NameServiceRequest>> resizer) {
+        requireNonNegative(n);
+        if (requests.size() <= n) return this;
+        List<NameServiceRequest> requests = new ArrayList<>(this.requests);
+        return new NameServiceQueue(resizer.apply(requests));
     }
 
     private static void requireNonNegative(int n) {

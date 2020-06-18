@@ -45,7 +45,7 @@ public class NameServiceDispatcher extends ControllerMaintainer {
             var remaining = queue.dispatchTo(nameService, requestCount);
             if (queue == remaining) return; // Queue unchanged
 
-            var dispatched = queue.last(requestCount);
+            var dispatched = queue.first(requestCount);
             if (!dispatched.requests().isEmpty()) {
                 log.log(Level.INFO, "Dispatched name service request(s) in " +
                                        Duration.between(instant, clock.instant()) +
