@@ -84,7 +84,7 @@ public final class PrepareParams {
         private boolean verbose = false;
         private boolean isBootstrap = false;
         private ApplicationId applicationId = ApplicationId.defaultId();
-        private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
+        private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
         private List<ContainerEndpoint> containerEndpoints = null;
         private Optional<String> tlsSecretsKeyName = Optional.empty();
