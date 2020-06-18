@@ -47,21 +47,10 @@ public abstract class Message extends Routable {
         }
     }
 
-    /**
-     * <p>Return the route of this routable.</p>
-     *
-     * @return The route.
-     */
-    public Route getRoute() {
-        return route;
-    }
+    /** Returns the route of this routable */
+    public Route getRoute() { return route; }
 
-    /**
-     * <p>Set a new route for this routable.</p>
-     *
-     * @param route The new route.
-     * @return This, to allow chaining.
-     */
+    /** Sets a new route for this routable */
     public Message setRoute(Route route) {
         this.route = new Route(route);
         return this;
@@ -157,11 +146,9 @@ public abstract class Message extends Routable {
     }
 
     /**
-     * <p>Returns the identifier used to order messages. Any two messages that have the same sequence id are ensured to
+     * Returns the identifier used to order messages. Any two messages that have the same sequence id are ensured to
      * arrive at the recipient in the order they were sent by the client. This value is only respected if the {@link
-     * #hasSequenceId()} method returns true.</p>
-     *
-     * @return The sequence identifier.
+     * #hasSequenceId()} method returns true.
      */
     public long getSequenceId() {
         return 0;

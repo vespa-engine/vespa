@@ -42,6 +42,7 @@ public class DocumentSelectorTestCase {
         type.addField("hfloat", DataType.FLOAT);
         type.addField("hstring", DataType.STRING);
         type.addField("content", DataType.STRING);
+        type.addField("truth", DataType.BOOL);
 
         StructDataType mystruct = new StructDataType("mystruct");
         mystruct.addField(new Field("key", DataType.INT));
@@ -89,6 +90,7 @@ public class DocumentSelectorTestCase {
         assertParse("music_.artist = \"*\"");
         assertParse("music_foo.artist = \"*\"");
         assertParse("music_foo_.artist = \"*\"");
+        assertParse("truth");
         assertParse("(4 + 3) > 0", "(4+3) > 0");
         assertParse("1 + 1 > 0", "1 +1 > 0");
         assertParse("1 + -1 > 0", "1 + -1 > 0");

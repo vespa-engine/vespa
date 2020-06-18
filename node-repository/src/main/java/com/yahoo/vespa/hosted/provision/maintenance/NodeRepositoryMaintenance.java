@@ -47,7 +47,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final InfrastructureProvisioner infrastructureProvisioner;
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
-    private final CapacityReportMaintainer capacityReportMaintainer;
+    private final SpareCapacityMaintainer spareCapacityMaintainer;
     private final OsUpgradeActivator osUpgradeActivator;
     private final Rebalancer rebalancer;
     private final NodeMetricsDbMaintainer nodeMetricsDbMaintainer;
@@ -88,7 +88,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
-        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, defaults.capacityReportInterval);
+        spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
         rebalancer = new Rebalancer(deployer, nodeRepository, metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
@@ -110,7 +110,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.close();
         dirtyExpirer.close();
         nodeRebooter.close();
-        capacityReportMaintainer.close();
+        spareCapacityMaintainer.close();
         provisionedExpirer.close();
         metricsReporter.close();
         infrastructureProvisioner.close();
@@ -153,7 +153,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration failedExpirerInterval;
         private final Duration dirtyExpiry;
         private final Duration provisionedExpiry;
-        private final Duration capacityReportInterval;
+        private final Duration spareCapacityMaintenanceInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
@@ -168,25 +168,24 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone) {
-            failGrace = Duration.ofMinutes(30);
-            periodicRedeployInterval = Duration.ofMinutes(30);
-            // Don't redeploy in test environments
-            redeployMaintainerInterval = Duration.ofMinutes(1);
-            operatorChangeRedeployInterval = Duration.ofMinutes(1);
-            failedExpirerInterval = Duration.ofMinutes(10);
-            provisionedExpiry = Duration.ofHours(4);
-            capacityReportInterval = Duration.ofMinutes(10);
-            metricsInterval = Duration.ofMinutes(1);
-            infrastructureProvisionInterval = Duration.ofMinutes(1);
-            throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpirerInterval = Duration.ofMinutes(5);
-            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
-            dynamicProvisionerInterval = Duration.ofMinutes(5);
-            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
-            rebalancerInterval = Duration.ofMinutes(40);
-            nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             autoscalingInterval = Duration.ofMinutes(5);
+            dynamicProvisionerInterval = Duration.ofMinutes(5);
+            failedExpirerInterval = Duration.ofMinutes(10);
+            failGrace = Duration.ofMinutes(30);
+            infrastructureProvisionInterval = Duration.ofMinutes(1);
+            loadBalancerExpirerInterval = Duration.ofMinutes(5);
+            metricsInterval = Duration.ofMinutes(1);
+            nodeMetricsCollectionInterval = Duration.ofMinutes(1);
+            operatorChangeRedeployInterval = Duration.ofMinutes(1);
+            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
+            periodicRedeployInterval = Duration.ofMinutes(30);
+            provisionedExpiry = Duration.ofHours(4);
+            rebalancerInterval = Duration.ofMinutes(40);
+            redeployMaintainerInterval = Duration.ofMinutes(1);
+            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
             scalingSuggestionsInterval = Duration.ofMinutes(31);
+            spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
+            throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

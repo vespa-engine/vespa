@@ -45,6 +45,7 @@ import java.util.stream.IntStream;
  * @author mgimle
  */
 public class CapacityCheckerTester {
+
     public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
 
     // Components with state
@@ -129,7 +130,7 @@ public class CapacityCheckerTester {
                 childModel.parentHostname = Optional.of(hostname);
 
                 Node childNode = createNodeFromModel(childModel);
-                childResources.add(childNode.flavor().resources());
+                childResources.add(childNode.resources());
                 hosts.add(childNode);
             }
 
@@ -138,8 +139,7 @@ public class CapacityCheckerTester {
                     .mapToObj(n -> String.format("%04X::%04X", hostindex, n))
                     .collect(Collectors.toSet());
 
-            NodeResources nr = containingNodeResources(childResources,
-                    excessCapacity);
+            NodeResources nr = containingNodeResources(childResources, excessCapacity);
             Node node = nodeRepository.createNode(hostname, hostname,
                                                   new IP.Config(Set.of("::"), availableIps), Optional.empty(),
                                                   new Flavor(nr), Optional.empty(), NodeType.host);
@@ -159,7 +159,8 @@ public class CapacityCheckerTester {
             Set<String> availableIps = IntStream.range(0, ips)
                     .mapToObj(n -> String.format("%04X::%04X", hostid, n))
                     .collect(Collectors.toSet());
-            Node node = nodeRepository.createNode(hostname, hostname,
+            Node node = nodeRepository.createNode(hostname,
+                                                  hostname,
                                                   new IP.Config(Set.of("::"), availableIps), Optional.empty(),
                                                   new Flavor(capacity), Optional.empty(), NodeType.host);
             hosts.add(node);
@@ -175,8 +176,8 @@ public class CapacityCheckerTester {
 
         );
         createNodes(childrenPerHost, numDistinctChildren, childResources,
-                numHosts, hostExcessCapacity, hostExcessIps,
-                numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps);
+                    numHosts, hostExcessCapacity, hostExcessIps,
+                    numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps);
     }
     void createNodes(int childrenPerHost, int numDistinctChildren, List<NodeResources> childResources,
                      int numHosts, NodeResources hostExcessCapacity, int hostExcessIps,
@@ -264,10 +265,11 @@ public class CapacityCheckerTester {
             owner = ApplicationId.from(nodeModel.owner.tenant, nodeModel.owner.application, nodeModel.owner.instance);
         }
 
-        NodeResources.DiskSpeed diskSpeed;
-        NodeResources nr = new NodeResources(nodeModel.minCpuCores, nodeModel.minMainMemoryAvailableGb,
-                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000,
-                nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
+        NodeResources nr = new NodeResources(nodeModel.minCpuCores,
+                                             nodeModel.minMainMemoryAvailableGb,
+                                             nodeModel.minDiskAvailableGb,
+                                             nodeModel.bandwidth * 1000,
+                                             nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
@@ -275,7 +277,7 @@ public class CapacityCheckerTester {
                                               nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
 
         if (membership != null) {
-            return node.allocate(owner, membership, node.flavor().resources(), Instant.now());
+            return node.allocate(owner, membership, node.resources(), Instant.now());
         } else {
             return node;
         }

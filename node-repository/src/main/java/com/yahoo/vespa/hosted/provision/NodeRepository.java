@@ -102,7 +102,7 @@ public class NodeRepository extends AbstractComponent {
     private final DockerImages dockerImages;
     private final JobControl jobControl;
     private final Applications applications;
-    private final boolean canProvisionHostsWhenRequired;
+    private final boolean canProvisionHosts;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -136,7 +136,7 @@ public class NodeRepository extends AbstractComponent {
                           NameResolver nameResolver,
                           DockerImage dockerImage,
                           boolean useCuratorClientCache,
-                          boolean canProvisionHostsWhenRequired) {
+                          boolean canProvisionHosts) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -149,7 +149,7 @@ public class NodeRepository extends AbstractComponent {
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
         this.applications = new Applications(db);
-        this.canProvisionHostsWhenRequired = canProvisionHostsWhenRequired;
+        this.canProvisionHosts = canProvisionHosts;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
@@ -800,16 +800,14 @@ public class NodeRepository extends AbstractComponent {
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
-        if ( canProvisionHostsWhenRequired())
+        if ( canProvisionHosts())
             return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
         else
             return host.state() == State.active;
     }
 
-    /** Returns whether this has the ability to conjure hosts when required */
-    public boolean canProvisionHostsWhenRequired() {
-        return canProvisionHostsWhenRequired;
-    }
+    /** Returns whether this repository can provision hosts on demand */
+    public boolean canProvisionHosts() { return canProvisionHosts; }
 
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }

@@ -60,7 +60,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, nodes.size());
-        assertEquals(dockerResources, nodes.asList().get(0).flavor().resources());
+        assertEquals(dockerResources, nodes.asList().get(0).resources());
 
         // Upgrade Vespa version on nodes
         Version upgradedWantedVespaVersion = Version.fromString("6.40");
@@ -70,7 +70,7 @@ public class DockerProvisioningTest {
         tester.activate(application1, new HashSet<>(upgradedHosts));
         NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, upgradedNodes.size());
-        assertEquals(dockerResources, upgradedNodes.asList().get(0).flavor().resources());
+        assertEquals(dockerResources, upgradedNodes.asList().get(0).resources());
         assertEquals(hosts, upgradedHosts);
     }
 

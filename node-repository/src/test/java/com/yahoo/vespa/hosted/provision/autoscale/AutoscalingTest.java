@@ -383,7 +383,7 @@ public class AutoscalingTest {
 
         @Override
         public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            return node.flavor().resources();
+            return node.resources();
         }
 
         @Override

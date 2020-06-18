@@ -425,7 +425,7 @@ public class DynamicDockerAllocationTest {
         );
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
-        Node node1aAllocation = node1a.allocate(id, clusterMembership1, node1a.flavor().resources(), Instant.now());
+        Node node1aAllocation = node1a.allocate(id, clusterMembership1, node1a.resources(), Instant.now());
 
         tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation), Agent.system);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));

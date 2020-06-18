@@ -10,6 +10,9 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Clock;
@@ -27,18 +30,22 @@ import java.util.stream.Collectors;
  */
 public class MockDeployer implements Deployer {
 
+    // For actual deploy mode
     private final NodeRepositoryProvisioner provisioner;
     private final Map<ApplicationId, ApplicationContext> applications;
-    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
+    // For mock deploy anything, changing wantToRetire to retired only
+    private final NodeRepository nodeRepository;
 
     /** The number of redeployments done to this */
     public int redeployments = 0;
 
+    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock();
 
     private boolean failActivate = false;
 
+    /** Create a mock deployer which returns empty on every deploy request. */
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
@@ -46,15 +53,30 @@ public class MockDeployer implements Deployer {
     }
 
     /**
-     * Create a mock deployer which contains a substitute for an application repository, fullfilled to
+     * Create a mock deployer which returns a deployment on every request,
+     * and fulfills it by not actually deploying but only changing any wantToRetire nodes
+     * for the application to retired.
+     */
+    public MockDeployer(NodeRepository nodeRepository) {
+        this.provisioner = null;
+        this.applications = Map.of();
+        this.nodeRepository = nodeRepository;
+
+        this.clock = nodeRepository.clock();
+    }
+
+    /**
+     * Create a mock deployer which contains a substitute for an application repository, filled to
      * be able to call provision with the right parameters.
      */
     public MockDeployer(NodeRepositoryProvisioner provisioner,
                         Clock clock,
                         Map<ApplicationId, ApplicationContext> applications) {
         this.provisioner = provisioner;
-        this.clock = clock;
         this.applications = new HashMap<>(applications);
+        this.nodeRepository = null;
+
+        this.clock = clock;
     }
 
     public ReentrantLock lock() { return lock; }
@@ -74,9 +96,13 @@ public class MockDeployer implements Deployer {
             throw new RuntimeException(e);
         }
         try {
-            return Optional.ofNullable(applications.get(id))
-                           .map(application -> new MockDeployment(provisioner, application));
-        } finally {
+            if (provisioner != null)
+                return Optional.ofNullable(applications.get(id))
+                                .map(application -> new MockDeployment(provisioner, application));
+            else
+                return Optional.of(new RetiringOnlyMockDeployment(nodeRepository, id));
+        }
+        finally {
             lock.unlock();
         }
     }
@@ -128,6 +154,33 @@ public class MockDeployer implements Deployer {
                 t.commit();
                 lastDeployTimes.put(application.id, clock.instant());
             }
+        }
+
+        @Override
+        public void restart(HostFilter filter) {}
+
+    }
+
+    public class RetiringOnlyMockDeployment implements Deployment {
+
+        private final NodeRepository nodeRepository;
+        private final ApplicationId applicationId;
+
+        private RetiringOnlyMockDeployment(NodeRepository nodeRepository, ApplicationId applicationId) {
+            this.nodeRepository = nodeRepository;
+            this.applicationId = applicationId;
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void activate() {
+            redeployments++;
+            lastDeployTimes.put(applicationId, clock.instant());
+
+            for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList())
+                nodeRepository.write(node.retire(nodeRepository.clock().instant()), nodeRepository.lock(node));
         }
 
         @Override

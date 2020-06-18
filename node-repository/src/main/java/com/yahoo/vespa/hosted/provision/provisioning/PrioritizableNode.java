@@ -126,7 +126,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     double skewWithoutThis() { return skewWith(zeroResources); }
 
     /** Returns the allocation skew of the parent of this after adding this node to it */
-    double skewWithThis() { return skewWith(node.flavor().resources()); }
+    double skewWithThis() { return skewWith(node.resources()); }
 
     private double skewWith(NodeResources resources) {
         if (parent.isEmpty()) return 0;

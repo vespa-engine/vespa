@@ -150,9 +150,9 @@ public class InPlaceResizeProvisionTest {
         assertEquals(6, appNodes.size()); // 4 nodes with large resources + 2 retired nodes with medium resources
         appNodes.forEach(node -> {
             if (node.allocation().get().membership().retired())
-                assertEquals(new NodeResources(4, 8, 160, 1, fast, local), node.flavor().resources());
+                assertEquals(new NodeResources(4, 8, 160, 1, fast, local), node.resources());
             else
-                assertEquals(new NodeResources(8, 16, 320, 1, fast, local), node.flavor().resources());
+                assertEquals(new NodeResources(8, 16, 320, 1, fast, local), node.resources());
             initialHostnames.remove(node.hostname());
         });
         assertTrue("All initial nodes should still be allocated to the application", initialHostnames.isEmpty());
@@ -254,7 +254,7 @@ public class InPlaceResizeProvisionTest {
 
     private void assertSizeAndResources(NodeList nodes, int size, NodeResources resources) {
         assertEquals(size, nodes.size());
-        nodes.forEach(n -> assertEquals(resources, n.flavor().resources()));
+        nodes.forEach(n -> assertEquals(resources, n.resources()));
     }
 
     private NodeList listCluster(ClusterSpec cluster) {

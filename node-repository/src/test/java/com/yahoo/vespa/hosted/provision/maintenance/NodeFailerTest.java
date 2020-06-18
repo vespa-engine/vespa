@@ -301,9 +301,9 @@ public class NodeFailerTest {
 
         // Two ready nodes and a ready docker node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.flavor().resources().equals(newNodeResources)).findFirst().get();
+        Node dockerNode = ready.stream().filter(node -> node.resources().equals(newNodeResources)).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> ! node.flavor().resources().equals(newNodeResources))
+                               .filter(node -> ! node.resources().equals(newNodeResources))
                                .collect(Collectors.toList());
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         tester.failer.run();

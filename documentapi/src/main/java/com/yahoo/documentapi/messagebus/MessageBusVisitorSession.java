@@ -690,7 +690,6 @@ public class MessageBusVisitorSession implements VisitorSession {
     private void markSessionCompleted() {
         // 'done' is only ever written when token mutex is held, so safe to check
         // outside of completionMonitor lock.
-        assert(!done) : "Session was marked as completed more than once";
         log.log(Level.FINE, "Visitor session '" + sessionName + "' has completed");
         if (params.getLocalDataHandler() != null) {
             params.getLocalDataHandler().onDone();

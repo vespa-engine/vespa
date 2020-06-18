@@ -36,15 +36,16 @@ public class NodeHistory {
         operator,
         application,
         system,
-        NodeFailer,
-        Rebalancer,
         DirtyExpirer,
+        DynamicProvisioningMaintainer,
         FailedExpirer,
         InactiveExpirer,
+        NodeFailer,
         ProvisionedExpirer,
+        Rebalancer,
         ReservationExpirer,
-        DynamicProvisioningMaintainer,
-        RetiringUpgrader
+        RetiringUpgrader,
+        SpareCapacityMaintainer
     }
 
 }

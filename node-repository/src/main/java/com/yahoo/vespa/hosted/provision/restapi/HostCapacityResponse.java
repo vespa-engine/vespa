@@ -20,6 +20,7 @@ import java.util.Optional;
  * @author mgimle
  */
 public class HostCapacityResponse extends HttpResponse {
+
     private final StringBuilder text;
     private final Slime slime;
     private final CapacityChecker capacityChecker;
@@ -128,7 +129,7 @@ public class HostCapacityResponse extends HttpResponse {
         );
         failurePath.failureReason.tenant.ifPresent(tenant -> {
             object.setString("failedTenant", tenant.hostname());
-            object.setString("failedTenantResources", tenant.flavor().resources().toString());
+            object.setString("failedTenantResources", tenant.resources().toString());
             tenant.allocation().ifPresent(allocation ->
                     object.setString("failedTenantAllocation", allocation.toString())
             );

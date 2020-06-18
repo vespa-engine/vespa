@@ -42,14 +42,12 @@ class MessageFactory {
         message.setTimeReceivedNow();
         message.setTimeRemaining(requestMsg.getTimeRemainingNow());
         message.getTrace().setLevel(requestMsg.getTrace().getLevel());
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Created '" + message.getClass().getName() +
-                                    "', route = '" + message.getRoute() +
-                                    "', priority = '" + message.getPriority().name() +
-                                    "', load type = '" + message.getLoadType() +
-                                    "', trace level = '" + message.getTrace().getLevel() +
-                                    "', time remaining = '" + message.getTimeRemaining() + "'.");
-        }
+        log.log(Level.FINE, () -> "Created '" + message.getClass().getName() +
+                                  "', route = '" + message.getRoute() +
+                                  "', priority = '" + message.getPriority().name() +
+                                  "', load type = '" + message.getLoadType() +
+                                  "', trace level = '" + message.getTrace().getLevel() +
+                                  "', time remaining = '" + message.getTimeRemaining() + "'.");
         return message;
     }
 

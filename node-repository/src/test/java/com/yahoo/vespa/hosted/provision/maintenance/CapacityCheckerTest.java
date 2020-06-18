@@ -29,6 +29,7 @@ public class CapacityCheckerTest {
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
+        assertEquals(5, failurePath.get().hostsCausingFailure.size());
     }
 
     @Test

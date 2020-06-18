@@ -75,9 +75,8 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
 
     @Override
     public void skip() {
-        if (deserialized.get()) {
-            throw new IllegalStateException("Can not skip processing after deserialization.");
-        }
+        if (deserialized.get())
+            throw new IllegalStateException("Can not skip processing after deserialization");
         dispatchRequest(requestMsg, request.getUri().getPath(), responseHandler);
     }
 
@@ -91,10 +90,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
                 }
             }
         }
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Forwarding " + messages.size() + " messages from " + processings.size() +
-                                    " processings.");
-        }
+        log.log(Level.FINE, () ->"Forwarding " + messages.size() + " messages from " + processings.size() + " processings.");
         if (messages.isEmpty()) {
             dispatchResponse(Response.Status.OK);
             return;
@@ -102,10 +98,10 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         long inputSequenceId = requestMsg.getSequenceId();
         ResponseMerger responseHandler = new ResponseMerger(requestMsg, messages.size(), this);
         for (Message message : messages) {
-            // See comment for internalNoThrottledSource.
-            dispatchRequest(message, (inputSequenceId == message.getSequenceId())
-                            ? getUri().getPath()
-                            : "/" + internalNoThrottledSource,
+            // See comment for internalNoThrottledSource
+            dispatchRequest(message,
+                            message.getSequenceId() == inputSequenceId ? getUri().getPath()
+                                                                       : "/" + internalNoThrottledSource,
                             responseHandler);
         }
     }
@@ -177,7 +173,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         ResponseDispatch.newInstance(new MbusResponse(status, requestMsg.createReply())).dispatch(this);
     }
 
-    private void dispatchRequest(final Message msg, final String uriPath, final ResponseHandler handler) {
+    private void dispatchRequest(Message msg, String uriPath, ResponseHandler handler) {
         try {
             new RequestDispatch() {
 
@@ -197,15 +193,10 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         }
     }
 
-    private static MessageFactory newMessageFactory(final DocumentMessage msg) {
-        if (msg == null) {
-            return null;
-        }
-        final Route route = msg.getRoute();
-        if (route == null || !route.hasHops()) {
-            return null;
-        }
-        return new MessageFactory(msg);
+    private static MessageFactory newMessageFactory(DocumentMessage message) {
+        if (message == null) return null;
+        if (message.getRoute() == null || ! message.getRoute().hasHops()) return null;
+        return new MessageFactory(message);
     }
 
     private static URI resolveUri(String path) {

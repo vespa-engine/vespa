@@ -116,20 +116,15 @@ public class Request extends AbstractResource {
         setUri(uri);
     }
 
-    /**
-     * <p>Returns the {@link Container} for which this Request was created.</p>
-     *
-     * @return The container instance.
-     */
+    /** Returns the {@link Container} for which this Request was created */
     public Container container() {
         return parent != null ? parent.container() : container;
     }
 
     /**
-     * <p>Returns the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
-     * RequestHandler} for this Request.</p>
+     * Returns the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
+     * RequestHandler} for this Request
      *
-     * @return The resource identifier.
      * @see #setUri(URI)
      */
     public URI getUri() {
@@ -137,12 +132,12 @@ public class Request extends AbstractResource {
     }
 
     /**
-     * <p>Sets the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
+     * Sets the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
      * RequestHandler} for this Request. Because access to the URI is not guarded by any lock, any changes made after
-     * calling {@link #connect(ResponseHandler)} might never become visible to other threads.</p>
+     * calling {@link #connect(ResponseHandler)} might never become visible to other threads.
      *
-     * @param uri The URI to set.
-     * @return This, to allow chaining.
+     * @param uri the URI to set
+     * @return this, to allow chaining
      * @see #getUri()
      */
     public Request setUri(URI uri) {
@@ -151,22 +146,22 @@ public class Request extends AbstractResource {
     }
 
     /**
-     * <p>Returns whether or not this Request was created by a {@link ServerProvider}. The value of this is used by
-     * {@link Container#resolveHandler(Request)} to decide whether to match against server- or client-bindings.</p>
+     * Returns whether or not this Request was created by a {@link ServerProvider}. The value of this is used by
+     * {@link Container#resolveHandler(Request)} to decide whether to match against server- or client-bindings.
      *
-     * @return True, if this is a server request.
+     * @return true, if this is a server request
      */
     public boolean isServerRequest() {
         return serverRequest;
     }
 
     /**
-     * <p>Sets whether or not this Request was created by a {@link ServerProvider}. The constructor that accepts a
+     * Sets whether or not this Request was created by a {@link ServerProvider}. The constructor that accepts a
      * {@link CurrentContainer} sets this to <em>true</em>, whereas the constructor that accepts a parent Request sets
-     * this to <em>false</em>.</p>
+     * this to <em>false</em>.
      *
-     * @param serverRequest Whether or not this is a server request.
-     * @return This, to allow chaining.
+     * @param serverRequest whether or not this is a server request
+     * @return this, to allow chaining
      * @see #isServerRequest()
      */
     public Request setServerRequest(boolean serverRequest) {
@@ -175,13 +170,13 @@ public class Request extends AbstractResource {
     }
 
     /**
-     * <p>Returns the last resolved {@link BindingMatch}, or null if none has been resolved yet. This is set
+     * Returns the last resolved {@link BindingMatch}, or null if none has been resolved yet. This is set
      * automatically when calling the {@link Container#resolveHandler(Request)} method. The BindingMatch object holds
      * information about the match of this Request's {@link #getUri() URI} to the {@link UriPattern} of the resolved
      * {@link RequestHandler}. It allows you to reflect on the parts of the URI that were matched by wildcards in the
-     * UriPattern.</p>
+     * UriPattern.
      *
-     * @return The last resolved BindingMatch, or null.
+     * @return the last resolved BindingMatch, or null
      * @see #setBindingMatch(BindingMatch)
      * @see Container#resolveHandler(Request)
      */
