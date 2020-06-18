@@ -49,6 +49,9 @@ public class AnalyzeBundle {
             PublicPackages pp = publicPackages(jarFile);
             exports.addAll(pp.exports);
             globals.addAll(pp.globals);
+
+            // TODO: remove and clean up everything related to global packages.
+            if (! pp.globals.isEmpty()) throw new RuntimeException("Found global packages in bundle " + jarFile.getAbsolutePath());
         }
         return new PublicPackages(exports, globals);
     }
