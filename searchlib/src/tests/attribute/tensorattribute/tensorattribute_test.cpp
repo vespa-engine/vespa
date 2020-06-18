@@ -33,8 +33,8 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
-using search::queryeval::NearestNeighborBlueprint;
 using search::queryeval::GlobalFilter;
+using search::queryeval::NearestNeighborBlueprint;
 using search::tensor::DefaultNearestNeighborIndexFactory;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DocVectorAccess;
@@ -44,6 +44,7 @@ using search::tensor::HnswNode;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::NearestNeighborIndexFactory;
 using search::tensor::NearestNeighborIndexSaver;
+using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
@@ -97,6 +98,12 @@ public:
     }
 };
 
+class MockPrepareResult : public PrepareResult {
+public:
+    uint32_t docid;
+    MockPrepareResult(uint32_t docid_in) : docid(docid_in) {}
+};
+
 class MockNearestNeighborIndex : public NearestNeighborIndex {
 private:
     using Entry = std::pair<uint32_t, DoubleVector>;
@@ -105,6 +112,8 @@ private:
     const DocVectorAccess& _vectors;
     EntryVector _adds;
     EntryVector _removes;
+    mutable EntryVector _prepare_adds;
+    EntryVector _complete_adds;
     generation_t _transfer_gen;
     generation_t _trim_gen;
     mutable size_t _memory_usage_cnt;
@@ -115,6 +124,8 @@ public:
         : _vectors(vectors),
           _adds(),
           _removes(),
+          _prepare_adds(),
+          _complete_adds(),
           _transfer_gen(std::numeric_limits<generation_t>::max()),
           _trim_gen(std::numeric_limits<generation_t>::max()),
           _memory_usage_cnt(0),
@@ -124,6 +135,8 @@ public:
     void clear() {
         _adds.clear();
         _removes.clear();
+        _prepare_adds.clear();
+        _complete_adds.clear();
     }
     int get_index_value() const {
         return _index_value;
@@ -134,10 +147,13 @@ public:
     void expect_empty_add() const {
         EXPECT_TRUE(_adds.empty());
     }
+    void expect_entry(uint32_t exp_docid, const DoubleVector& exp_vector, const EntryVector& entries) const {
+        EXPECT_EQUAL(1u, entries.size());
+        EXPECT_EQUAL(exp_docid, entries.back().first);
+        EXPECT_EQUAL(exp_vector, entries.back().second);
+    }
     void expect_add(uint32_t exp_docid, const DoubleVector& exp_vector) const {
-        EXPECT_EQUAL(1u, _adds.size());
-        EXPECT_EQUAL(exp_docid, _adds.back().first);
-        EXPECT_EQUAL(exp_vector, _adds.back().second);
+        expect_entry(exp_docid, exp_vector, _adds);
     }
     void expect_adds(const EntryVector &exp_adds) const {
         EXPECT_EQUAL(exp_adds, _adds);
@@ -146,9 +162,13 @@ public:
         EXPECT_TRUE(_removes.empty());
     }
     void expect_remove(uint32_t exp_docid, const DoubleVector& exp_vector) const {
-        EXPECT_EQUAL(1u, _removes.size());
-        EXPECT_EQUAL(exp_docid, _removes.back().first);
-        EXPECT_EQUAL(exp_vector, _removes.back().second);
+        expect_entry(exp_docid, exp_vector, _removes);
+    }
+    void expect_prepare_add(uint32_t exp_docid, const DoubleVector& exp_vector) const {
+        expect_entry(exp_docid, exp_vector, _prepare_adds);
+    }
+    void expect_complete_add(uint32_t exp_docid, const DoubleVector& exp_vector) const {
+        expect_entry(exp_docid, exp_vector, _complete_adds);
     }
     generation_t get_transfer_gen() const { return _transfer_gen; }
     generation_t get_trim_gen() const { return _trim_gen; }
@@ -158,14 +178,21 @@ public:
         auto vector = _vectors.get_vector(docid).typify<double>();
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
-    std::unique_ptr<search::tensor::PrepareResult> prepare_add_document(uint32_t,
-            vespalib::tensor::TypedCells,
-            vespalib::GenerationHandler::Guard) const override {
-        return std::unique_ptr<search::tensor::PrepareResult>();
+    std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
+                                                        vespalib::tensor::TypedCells vector,
+                                                        vespalib::GenerationHandler::Guard guard) const override {
+        (void) guard;
+        auto d_vector = vector.typify<double>();
+        _prepare_adds.emplace_back(docid, DoubleVector(d_vector.begin(), d_vector.end()));
+        return std::make_unique<MockPrepareResult>(docid);
     }
     void complete_add_document(uint32_t docid,
-                               std::unique_ptr<search::tensor::PrepareResult>) override {
-        add_document(docid);
+                               std::unique_ptr<PrepareResult> prepare_result) override {
+        auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
+        assert(mock_result);
+        EXPECT_EQUAL(docid, mock_result->docid);
+        auto vector = _vectors.get_vector(docid).typify<double>();
+        _complete_adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     void remove_document(uint32_t docid) override {
         auto vector = _vectors.get_vector(docid).typify<double>();
@@ -340,6 +367,16 @@ struct Fixture {
 
     void set_tensor(uint32_t docid, const TensorSpec &spec) {
         set_tensor_internal(docid, *createTensor(spec));
+    }
+
+    std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const TensorSpec& spec) const {
+        return _tensorAttr->prepare_set_tensor(docid, *createTensor(spec));
+    }
+
+    void complete_set_tensor(uint32_t docid, const TensorSpec& spec, std::unique_ptr<PrepareResult> prepare_result) {
+        ensureSpace(docid);
+        _tensorAttr->complete_set_tensor(docid, *createTensor(spec), std::move(prepare_result));
+        _attr->commit();
     }
 
     void set_empty_tensor(uint32_t docid) {
@@ -685,6 +722,30 @@ TEST_F("setTensor() updates nearest neighbor index", DenseTensorAttributeMockInd
     f.set_tensor(1, vec_2d(7, 9));
     index.expect_remove(1, {3, 5});
     index.expect_add(1, {7, 9});
+}
+
+TEST_F("nearest neighbor index can be updated in two phases", DenseTensorAttributeMockIndex)
+{
+    auto& index = f.mock_index();
+    {
+        auto vec_a = vec_2d(3, 5);
+        auto prepare_result = f.prepare_set_tensor(1, vec_a);
+        index.expect_prepare_add(1, {3, 5});
+        f.complete_set_tensor(1, vec_a, std::move(prepare_result));
+        f.assertGetTensor(vec_a, 1);
+        index.expect_complete_add(1, {3, 5});
+    }
+    index.clear();
+    {
+        // Replaces previous value.
+        auto vec_b = vec_2d(7, 9);
+        auto prepare_result = f.prepare_set_tensor(1, vec_b);
+        index.expect_prepare_add(1, {7, 9});
+        f.complete_set_tensor(1, vec_b, std::move(prepare_result));
+        index.expect_remove(1, {3, 5});
+        f.assertGetTensor(vec_b, 1);
+        index.expect_complete_add(1, {7, 9});
+    }
 }
 
 TEST_F("clearDoc() updates nearest neighbor index", DenseTensorAttributeMockIndex)
