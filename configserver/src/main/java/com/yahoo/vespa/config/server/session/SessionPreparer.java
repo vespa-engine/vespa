@@ -126,10 +126,10 @@ public class SessionPreparer {
         Preparation preparation = new Preparation(hostValidator, logger, params, currentActiveApplicationSet,
                                                   tenantPath, serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
 
-        // Note: Done before pre-processing, requires that to be done by users of the distributed package
+        preparation.preprocess();
+
         var distributedApplicationPackage = preparation.distributeApplicationPackage();
 
-        preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
