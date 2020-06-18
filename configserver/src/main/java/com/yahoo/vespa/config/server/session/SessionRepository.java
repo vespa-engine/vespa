@@ -555,7 +555,7 @@ public class SessionRepository {
             return Optional.of(createLocalSession(sessionDir,
                                                   applicationId,
                                                   sessionId,
-                                                  applicationRepo.activeSessionOf(applicationId)));
+                                                  getActiveSessionId(applicationId)));
         }
         return Optional.empty();
     }

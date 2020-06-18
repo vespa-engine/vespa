@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 
 /**
  * The process of deploying an application.
- * Deployments are created by a {@link ApplicationRepository}.
+ * Deployments are created by an {@link ApplicationRepository}.
  * Instances of this are not multithread safe.
  *
  * @author Ulf Lilleengen
@@ -138,7 +138,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
 
-
             RemoteSession previousActiveSession;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 validateSessionStatus(session);
@@ -156,13 +155,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             }
 
             session.waitUntilActivated(timeoutBudget);
-
-            log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() +
-                                   " activated successfully using " +
-                                   (hostProvisioner.isPresent() ? hostProvisioner.get().getClass().getSimpleName() : "no host provisioner") +
-                                   ". Config generation " + session.getMetaData().getGeneration() +
-                                   (previousActiveSession != null ? ". Activated session based on previous active session " + previousActiveSession.getSessionId() : "") +
-                                   ". File references used: " + applicationRepository.getFileReferences(applicationId));
+            log.log(Level.INFO, session.logPre() + "activated successfully using " +
+                                hostProvisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
+                                ". Config generation " + session.getMetaData().getGeneration() +
+                                (previousActiveSession != null ? ". Based on previous active session " + previousActiveSession.getSessionId() : "") +
+                                ". File references: " + applicationRepository.getFileReferences(applicationId));
         }
     }
 

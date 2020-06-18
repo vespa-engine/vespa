@@ -438,15 +438,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<String> fileReferencesInUse = new HashSet<>();
         // Intentionally skip applications that we for some reason do not find
         // or that we fail to get file references for (they will be retried on the next run)
-        for (var application : listApplications()) {
+        for (var applicationId : listApplications()) {
             try {
-                Optional<Application> app = getOptionalApplication(application);
+                Optional<Application> app = getOptionalApplication(applicationId);
                 if (app.isEmpty()) continue;
                 fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
                                                    .map(FileReference::value)
                                                    .collect(Collectors.toSet()));
             } catch (Exception e) {
-                log.log(Level.WARNING, "Getting file references in use for '" + application + "' failed", e);
+                log.log(Level.WARNING, "Getting file references in use for '" + applicationId + "' failed", e);
             }
         }
         log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
@@ -502,6 +502,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
+    // Will return Optional.empty() if getting application fails (instead of throwing an exception)
     private Optional<Application> getOptionalApplication(ApplicationId applicationId) {
         try {
             return Optional.of(getApplication(applicationId));
