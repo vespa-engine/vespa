@@ -204,7 +204,7 @@ public class InMemoryProvisioner implements HostProvisioner {
                     .findFirst();
             if (hostResources.isEmpty()) {
                 if (canFail)
-                    throw new IllegalArgumentException("Insufficient capacity of for " + requestedResources);
+                    throw new IllegalArgumentException("Insufficient capacity for " + requestedResources);
                 else
                     break; // ¯\_(ツ)_/¯
             }
