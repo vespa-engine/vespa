@@ -120,9 +120,8 @@ public class SessionRepository {
 
     public synchronized void addSession(LocalSession session) {
         localSessionCache.addSession(session);
-        Path sessionsPath = TenantRepository.getSessionsPath(session.getTenantName());
         long sessionId = session.getSessionId();
-        Curator.FileCache fileCache = curator.createFileCache(sessionsPath.append(String.valueOf(sessionId)).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         localSessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this, zkWatcherExecutor));
     }
 
@@ -319,8 +318,7 @@ public class SessionRepository {
     public void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding session to SessionRepository: " + sessionId);
         RemoteSession session = createRemoteSession(sessionId);
-        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
-        Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         fileCache.addListener(this::nodeChanged);
         loadSessionIfActive(session);
         addRemoteSession(session);
@@ -571,10 +569,13 @@ public class SessionRepository {
         return new SessionCounter(componentRegistry.getConfigCurator(), tenantName).nextSessionId();
     }
 
-    private Path getSessionPath(long sessionId) {
+    public Path getSessionPath(long sessionId) {
         return sessionsPath.append(String.valueOf(sessionId));
     }
 
+    Path getSessionStatePath(long sessionId) {
+        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+    }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();

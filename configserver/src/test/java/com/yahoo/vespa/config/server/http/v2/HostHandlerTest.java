@@ -38,8 +38,9 @@ import java.util.Collections;
  */
 // TODO: Try to move testing to ApplicationRepositoryTest and avoid all the low-level setup code here
 public class HostHandlerTest {
+
     private static final String urlPrefix = "http://myhost:14000/application/v2/host/";
-    private static File testApp = new File("src/test/apps/app");
+    private static final File testApp = new File("src/test/apps/app");
 
     private HostHandler handler;
     private final static TenantName mytenant = TenantName.from("mytenant");
@@ -55,7 +56,7 @@ public class HostHandlerTest {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();
-        tenant.getSessionRepo().addRemoteSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
+        tenant.getSessionRepository().addRemoteSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
     }
 
     @Before

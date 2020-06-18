@@ -66,10 +66,6 @@ public class Tenant implements TenantHandlerProvider {
         return requestHandler;
     }
 
-    public SessionRepository getSessionRepo() {
-        return sessionRepository;
-    }
-
     public TenantName getName() {
         return name;
     }
