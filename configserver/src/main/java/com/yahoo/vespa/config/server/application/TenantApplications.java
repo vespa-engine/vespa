@@ -131,7 +131,7 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
     public Optional<Long> activeSessionOf(ApplicationId id) {
         String data = curator.getData(applicationPath(id)).map(Utf8::toString)
-                             .orElseThrow(() -> new NotFoundException("No such application id: '" + id + "'"));
+                             .orElseThrow(() -> new NotFoundException("No active session found for application id: '" + id + "'"));
         return data.isEmpty() ? Optional.empty() : Optional.of(Long.parseLong(data));
     }
 
