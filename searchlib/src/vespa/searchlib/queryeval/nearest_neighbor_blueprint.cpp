@@ -53,13 +53,14 @@ struct ConvertCellsSelector
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::DenseTensorAttribute& attr_tensor,
                                                    std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits)
+                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits, double brute_force_limit)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
       _target_num_hits(target_num_hits),
       _approximate(approximate),
       _explore_additional_hits(explore_additional_hits),
+      _brute_force_limit(brute_force_limit),
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
       _found_hits(),

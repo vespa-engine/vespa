@@ -9,10 +9,17 @@ FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, v
       _doom(_clock, softDoom, hardDoom, false),
       _attributeContext(context),
       _query_tensor_name(),
-      _query_tensor()
+      _query_tensor(),
+      _attribute_blueprint_params()
 {
 }
 
 FakeRequestContext::~FakeRequestContext() = default;
+
+const search::attribute::AttributeBlueprintParams&
+FakeRequestContext::get_attribute_blueprint_params() const
+{
+    return _attribute_blueprint_params;
+}
 
 }

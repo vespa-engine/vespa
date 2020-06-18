@@ -204,6 +204,13 @@ namespace matching {
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
+
+    struct NearestNeighborBruteForceLimit {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
 }
 
 namespace softtimeout {

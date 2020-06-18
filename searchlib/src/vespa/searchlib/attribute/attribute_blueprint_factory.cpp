@@ -5,6 +5,7 @@
 #include "i_document_weight_attribute.h"
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
+#include "attribute_blueprint_params.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchlib/common/location.h>
@@ -655,7 +656,8 @@ public:
                                                                         std::move(dense_query_tensor_up),
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
-                                                                        n.get_explore_additional_hits()));
+                                                                        n.get_explore_additional_hits(),
+                                                                        getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
     }
 };
 
