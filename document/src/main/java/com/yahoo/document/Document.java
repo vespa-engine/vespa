@@ -205,22 +205,7 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public Iterator<Map.Entry<Field, FieldValue>> iterator() {
-        return new Iterator<>() {
-
-            private Iterator<Map.Entry<Field, FieldValue>> headerIt = header.iterator();
-
-            public boolean hasNext() {
-                return headerIt.hasNext();
-            }
-
-            public Map.Entry<Field, FieldValue> next() {
-                return  headerIt.next();
-            }
-
-            public void remove() {
-                headerIt.remove();
-            }
-        };
+        return header.iterator();
     }
 
     public String toString() {

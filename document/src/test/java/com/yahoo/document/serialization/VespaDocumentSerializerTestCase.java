@@ -68,7 +68,7 @@ public class VespaDocumentSerializerTestCase {
 
         CompressionFixture() {
             docType = new DocumentType("map_of_structs");
-            docType.getHeaderType().setCompressionConfig(new CompressionConfig(CompressionType.LZ4));
+            docType.contentStruct().setCompressionConfig(new CompressionConfig(CompressionType.LZ4));
 
             nestedType = new StructDataType("nested_type");
             nestedType.addField(new Field("str", DataType.STRING));

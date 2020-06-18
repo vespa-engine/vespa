@@ -437,7 +437,6 @@
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.StructDataType contentStruct()",
       "public com.yahoo.document.StructDataType getHeaderType()",
-      "public com.yahoo.document.StructDataType getBodyType()",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
       "public boolean isA(java.lang.String)",
       "public void addField(com.yahoo.document.Field)",

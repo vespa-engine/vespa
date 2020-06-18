@@ -144,12 +144,6 @@ public class DocumentType extends StructuredDataType {
         return contentStruct();
     }
 
-    @Deprecated // TODO: Remove on Vespa 8
-    /** @deprecated use contentStruct instead */
-    public StructDataType getBodyType() {
-        return null;
-    }
-
     @Override
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         seenTypes.add(this);
@@ -473,24 +467,7 @@ public class DocumentType extends StructuredDataType {
      * @return An iterator for iterating the fields in this documenttype.
      */
     public Iterator<Field> fieldIteratorThisTypeOnly() {
-        return new Iterator<>() {
-            Iterator<Field> headerIt = headerType.getFields().iterator();
-
-            public boolean hasNext() {
-                return headerIt.hasNext();
-            }
-
-            public Field next() {
-                return headerIt.next();
-            }
-
-
-            public void remove() {
-                if (headerIt != null) {
-                    headerIt.remove();
-                }
-            }
-        };
+        return headerType.getFields().iterator();
     }
 
     public boolean equals(Object o) {
