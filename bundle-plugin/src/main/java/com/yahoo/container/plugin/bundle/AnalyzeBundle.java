@@ -53,7 +53,7 @@ public class AnalyzeBundle {
         return new PublicPackages(exports, globals);
     }
 
-    public static PublicPackages publicPackages(File jarFile) {
+    static PublicPackages publicPackages(File jarFile) {
         try {
             Optional<Manifest> jarManifest = JarFiles.getManifest(jarFile);
             if (jarManifest.isPresent()) {
