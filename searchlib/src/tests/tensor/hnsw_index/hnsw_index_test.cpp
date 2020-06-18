@@ -600,8 +600,8 @@ TEST_F(TwoPhaseTest, two_phase_add)
     complete_add(7, std::move(up));
 
     // 1 filtered out because it was removed
-    // TODO: 5 filtered out because it was updated
-    expect_levels(7, {{2}, {4,5}});
+    // 5 filtered out because it was updated
+    expect_levels(7, {{2}, {4}});
 }
 
 
