@@ -18,7 +18,7 @@ documenttype[].version int default=0
 documenttype[].headerstruct int
 
 ## Specify a document field id. Must be unique within the document type.
-documenttype[].bodystruct int
+documenttype[].bodystruct int default=0
 
 ## Specify a document type to inherit (id)
 documenttype[].inherits[].id int

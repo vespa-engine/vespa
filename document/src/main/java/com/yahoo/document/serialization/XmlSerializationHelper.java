@@ -55,7 +55,6 @@ public class XmlSerializationHelper {
             xml.addAttribute("lastmodifiedtime", lastModified);
         }
         doc.getHeader().printXml(xml);
-        doc.getBody().printXml(xml);
     }
 
     public static void printDoubleXml(DoubleFieldValue d, XmlStream xml) {

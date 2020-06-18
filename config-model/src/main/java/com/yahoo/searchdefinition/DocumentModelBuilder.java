@@ -338,7 +338,6 @@ public class DocumentModelBuilder {
         Map<StructDataType, String> structInheritance = new HashMap<>();
         NewDocumentType dt = new NewDocumentType(new NewDocumentType.Name(sdoc.getName()),
                                                  sdoc.getDocumentType().contentStruct(),
-                                                 sdoc.getDocumentType().getBodyType(),
                                                  sdoc.getFieldSets(),
                                                  convertDocumentReferencesToNames(sdoc.getDocumentReferences()),
                                                  convertTemporaryImportedFieldsToNames(sdoc.getTemporaryImportedFields()));
@@ -391,7 +390,6 @@ public class DocumentModelBuilder {
             }
         }
         handleStruct(dt, sdoc.getDocumentType().contentStruct());
-        handleStruct(dt, sdoc.getDocumentType().getBodyType());
 
         extractDataTypesFromFields(dt, sdoc.fieldSet());
         return dt;

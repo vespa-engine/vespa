@@ -178,8 +178,8 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
-      "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()",
       "public static java.util.List toValues(java.util.Collection)",
       "public static java.util.Map toValueMap(java.util.Map)",

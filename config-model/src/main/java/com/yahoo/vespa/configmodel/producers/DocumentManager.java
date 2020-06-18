@@ -94,8 +94,7 @@ public class DocumentManager {
             builder.documenttype(doc);
             doc.
                 name(dt.getName()).
-                headerstruct(dt.contentStruct().getId()).
-                bodystruct(dt.getBodyType().getId());
+                headerstruct(dt.contentStruct().getId());
             for (DocumentType inherited : dt.getInheritedTypes()) {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
             }
@@ -105,8 +104,7 @@ public class DocumentManager {
             builder.documenttype(doc);
             doc.
                 name(dt.getName()).
-                headerstruct(dt.getHeader().getId()).
-                bodystruct(dt.getBody().getId());
+                headerstruct(dt.getHeader().getId());
             for (NewDocumentType inherited : dt.getInherited()) {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
             }

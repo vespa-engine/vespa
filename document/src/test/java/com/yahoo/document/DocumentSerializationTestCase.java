@@ -116,18 +116,15 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
             {
                 doc.getDataType().contentStruct().setCompressionConfig(noncomp);
-                doc.getDataType().getBodyType().setCompressionConfig(noncomp);
                 FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-uncompressed.dat", false);
                 doc.serialize(fout);
                 fout.close();
             }
             {
                 doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
-                doc.getDataType().getBodyType().setCompressionConfig(lz4comp);
                 FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-lz4-9.dat", false);
                 doc.serialize(fout);
                 doc.getDataType().contentStruct().setCompressionConfig(noncomp);
-                doc.getDataType().getBodyType().setCompressionConfig(noncomp);
                 fout.close();
             }
         }

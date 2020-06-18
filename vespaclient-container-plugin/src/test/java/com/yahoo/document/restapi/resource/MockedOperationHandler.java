@@ -33,7 +33,7 @@ public class MockedOperationHandler implements OperationHandler {
     @SuppressWarnings("deprecation")
     public void put(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         log.append("PUT: " + data.getDocument().getId());
-        log.append(data.getDocument().getBody().toString());
+        log.append(data.getDocument().getHeader().toString());
     }
 
     @Override
