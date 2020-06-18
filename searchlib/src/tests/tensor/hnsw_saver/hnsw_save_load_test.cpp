@@ -37,7 +37,7 @@ using V = std::vector<uint32_t>;
 void populate(HnswGraph &graph) {
     // no 0
     graph.make_node_for_document(1, 1);
-    graph.make_node_for_document(2, 2);
+    auto er = graph.make_node_for_document(2, 2);
     // no 3
     graph.make_node_for_document(4, 2);
     graph.make_node_for_document(5, 0);
@@ -49,7 +49,7 @@ void populate(HnswGraph &graph) {
     graph.set_link_array(6, 0, V{1, 2, 4});
     graph.set_link_array(2, 1, V{4});
     graph.set_link_array(4, 1, V{2});
-    graph.set_entry_node({2, 1});
+    graph.set_entry_node({2, er, 1});
 }
 
 void modify(HnswGraph &graph) {
@@ -63,7 +63,7 @@ void modify(HnswGraph &graph) {
     graph.set_link_array(4, 1, V{7});
     graph.set_link_array(7, 1, V{4});
 
-    graph.set_entry_node({4, 1});
+    graph.set_entry_node({4, graph.get_node_ref(4), 1});
 }
 
 

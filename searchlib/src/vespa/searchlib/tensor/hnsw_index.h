@@ -91,10 +91,11 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswCandidate candidate, const LinkArrayRef& curr_result) const;
+    bool have_closer_distance(HnswCandidate candidate, const HnswCandidateVector& curr_result) const;
     struct SelectResult {
-        LinkArray used;
+        HnswCandidateVector used;
         LinkArray unused;
+        ~SelectResult() {}
     };
     SelectResult select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     SelectResult select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
@@ -123,7 +124,8 @@ protected:
     struct PreparedAddDoc : public PrepareResult {
         uint32_t docid;
         int32_t max_level;
-        std::vector<LinkArray> connections;
+        using Links = std::vector<std::pair<uint32_t, HnswGraph::NodeRef>>;
+        std::vector<Links> connections;
         PreparedAddDoc(uint32_t docid_in, int32_t max_level_in)
           : docid(docid_in), max_level(max_level_in), connections(max_level+1)
         {}
@@ -131,7 +133,7 @@ protected:
         PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
     PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
-    LinkArray filter_valid_docids(const LinkArrayRef &docids);
+    LinkArray filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
