@@ -17,6 +17,9 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
+#include <vespa/vespalib/data/input.h>
+#include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/generationhandler.h>
@@ -25,10 +28,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP("stress_hnsw_mt");
 
+using namespace search::tensor;
+using namespace vespalib::slime;
+using search::BitVector;
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
-using namespace search::tensor;
-using search::BitVector;
+using vespalib::Slime;
 
 #define NUM_DIMS 128
 #define NUM_POSSIBLE_V 1000000
@@ -241,14 +246,14 @@ public:
         auto prepare_task = std::make_unique<PrepareAddTask>(*this, docid, vec, guard);
         auto complete_task = std::make_unique<CompleteAddTask>(*this, docid, vec, prepare_task->get_result_future());
         auto r = multi_prepare_workers.execute(std::move(prepare_task));
-        ASSERT_EQ(bool(r), false);
+        ASSERT_EQ(r.get(), nullptr);
         r = write_thread.execute(std::move(complete_task));
-        ASSERT_EQ(bool(r), false);
+        ASSERT_EQ(r.get(), nullptr);
     }
     void remove_document(uint32_t docid) {
         auto task = std::make_unique<CompleteRemoveTask>(*this, docid);
         auto r = write_thread.execute(std::move(task));
-        ASSERT_EQ(bool(r), false);
+        ASSERT_EQ(r.get(), nullptr);
     }
     void update_document(uint32_t docid) {
         size_t vec_num = get_rnd(loaded_vectors.size());
@@ -257,9 +262,9 @@ public:
         auto prepare_task = std::make_unique<PrepareAddTask>(*this, docid, vec, guard);
         auto complete_task = std::make_unique<CompleteUpdateTask>(*this, docid, vec, prepare_task->get_result_future());
         auto r = multi_prepare_workers.execute(std::move(prepare_task));
-        ASSERT_EQ(bool(r), false);
+        ASSERT_EQ(r.get(), nullptr);
         r = write_thread.execute(std::move(complete_task));
-        ASSERT_EQ(bool(r), false);
+        ASSERT_EQ(r.get(), nullptr);
     }
     void commit(uint32_t docid) {
         index->transfer_hold_lists(gen_handler.getCurrentGeneration());
@@ -298,6 +303,19 @@ public:
     MemoryUsage memory_usage() const {
         return index->memory_usage();
     }
+    uint32_t count_in_progress() {
+        std::lock_guard<std::mutex> guard(in_progress_lock);
+        in_progress->invalidateCachedCount();
+        return in_progress->countTrueBits();
+    }
+    std::string json_state() {
+        Slime actualSlime;
+        SlimeInserter inserter(actualSlime);
+        index->get_state(inserter);
+        vespalib::SimpleBuffer buf;
+        vespalib::slime::JsonFormat::encode(actualSlime, buf, false);
+        return buf.get().make_string();
+    }
 };
 
 
@@ -307,19 +325,23 @@ TEST_F(Stressor, stress)
     for (int i = 0; i < NUM_OPS; ++i) {
         gen_operation();
         if (i % 1000 == 0) {
-            fprintf(stderr, "generating operations %d / %d\n", i, NUM_OPS);
+            uint32_t cnt = count_in_progress();
+            fprintf(stderr, "generating operations %d / %d; in progress: %u ops\n",
+                    i, NUM_OPS, cnt);
             auto r = write_thread.execute(vespalib::makeLambdaTask([&]() {
                         EXPECT_TRUE(index->check_link_symmetry());
             }));
-            EXPECT_EQ(bool(r), false);
+            EXPECT_EQ(r.get(), nullptr);
         }
     }
     fprintf(stderr, "waiting for queued operations...\n");
     multi_prepare_workers.sync();
     write_thread.sync();
-    in_progress->invalidateCachedCount();
-    EXPECT_EQ(in_progress->countTrueBits(), 0);
+    EXPECT_EQ(count_in_progress(), 0);
     EXPECT_TRUE(index->check_link_symmetry());
+    fprintf(stderr, "HNSW index state after test:\n%s\n", json_state().c_str());
+    existing_ids->invalidateCachedCount();
+    fprintf(stderr, "Expected valid nodes: %u\n", existing_ids->countTrueBits());
     fprintf(stderr, "all done.\n");
 }
 
