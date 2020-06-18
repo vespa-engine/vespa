@@ -90,7 +90,7 @@ class GraphImporter {
             case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
             case "div":         return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
             case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu(attributes.get("alpha").orElse(eluAlpha).asDouble()));
-            case "erf":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());  // approximation until we have erf in backend.
+            case "erf":         return new Map(modelName, nodeName, inputs, ScalarFunctions.erf());
             case "equal":       return new Join(modelName, nodeName, inputs, ScalarFunctions.equal());
             case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
             case "expand":      return new Expand(modelName, nodeName, inputs);

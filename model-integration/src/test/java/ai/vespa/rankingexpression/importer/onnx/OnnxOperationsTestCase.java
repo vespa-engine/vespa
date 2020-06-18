@@ -67,6 +67,9 @@ public class OnnxOperationsTestCase {
         assertEval("leakyrelu", x, evaluate("max(0.01 * x, x)", x));
         assertEval("leakyrelu", x, evaluate("max(0.001 * x, x)", x), createAttribute("alpha", 0.001f));
 
+        x = evaluate("tensor(d0[7]):[-40.0, -0.5, -0.1, 0.0, 0.1, 0.5, 40.0]");
+        assertEval("erf", x, evaluate("erf(x)", x));
+
         x = evaluate("tensor(d0[3]):[0.01, 1.0, 10.0]");
         assertEval("log", x, evaluate("log(x)", x));
         assertEval("sqrt", x, evaluate("sqrt(x)", x));
