@@ -105,6 +105,9 @@ public class Gather extends IntermediateOperation {
 
     private ExpressionNode createSliceExpression(List<Slice.DimensionValue<Reference>> dimensionValues, String referenceName) {
         TensorFunction<Reference> inputIndices = new TensorFunctionNode.ExpressionTensorFunction(new ReferenceNode(referenceName));
+        if (dimensionValues.isEmpty()) {
+            return new TensorFunctionNode(inputIndices);
+        }
         Slice<Reference> sliceIndices = new Slice<>(inputIndices, dimensionValues);
         return new TensorFunctionNode(sliceIndices);
     }

@@ -2,11 +2,15 @@
 
 package ai.vespa.rankingexpression.importer.onnx;
 
+import ai.vespa.rankingexpression.importer.operations.ConstantOfShape;
+import ai.vespa.rankingexpression.importer.operations.Expand;
 import ai.vespa.rankingexpression.importer.operations.Gather;
+import ai.vespa.rankingexpression.importer.operations.OnnxConstant;
 import ai.vespa.rankingexpression.importer.operations.OnnxCast;
 import ai.vespa.rankingexpression.importer.operations.Gemm;
 import ai.vespa.rankingexpression.importer.operations.ConcatReduce;
 import ai.vespa.rankingexpression.importer.operations.OnnxConcat;
+import ai.vespa.rankingexpression.importer.operations.Range;
 import ai.vespa.rankingexpression.importer.operations.Reduce;
 import ai.vespa.rankingexpression.importer.operations.Select;
 import ai.vespa.rankingexpression.importer.operations.Slice;
@@ -81,11 +85,15 @@ class GraphImporter {
             case "cast":        return new OnnxCast(modelName, nodeName, inputs, attributes);
             case "ceil":        return new Map(modelName, nodeName, inputs, ScalarFunctions.ceil());
             case "concat":      return new OnnxConcat(modelName, nodeName, inputs, attributes);
+            case "constant":    return new OnnxConstant(modelName, nodeName, inputs, attributes);
+            case "constantofshape": return new ConstantOfShape(modelName, nodeName, inputs, attributes);
             case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
             case "div":         return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
             case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu(attributes.get("alpha").orElse(eluAlpha).asDouble()));
+            case "erf":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());  // approximation until we have erf in backend.
             case "equal":       return new Join(modelName, nodeName, inputs, ScalarFunctions.equal());
             case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
+            case "expand":      return new Expand(modelName, nodeName, inputs);
             case "floor":       return new Map(modelName, nodeName, inputs, ScalarFunctions.floor());
             case "gather":      return new Gather(modelName, nodeName, inputs, attributes);
             case "gemm":        return new Gemm(modelName, nodeName, inputs, attributes);
@@ -100,6 +108,7 @@ class GraphImporter {
             case "mul":         return new Join(modelName, nodeName, inputs, ScalarFunctions.multiply());
             case "neg":         return new Map(modelName, nodeName, inputs, ScalarFunctions.neg());
             case "pow":         return new Join(modelName, nodeName, inputs, ScalarFunctions.pow());
+            case "range":       return new Range(modelName, nodeName, inputs);
             case "reshape":     return new Reshape(modelName, nodeName, inputs, attributes);
             case "reducel1":    return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.abs(), null);
             case "reducel2":    return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.square(), ScalarFunctions.sqrt());
