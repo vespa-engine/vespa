@@ -65,6 +65,7 @@ TEST(InlineOperationTest, op1_lambdas_are_recognized) {
     EXPECT_EQ(as_op1("relu(a)"),    &Relu::f);
     EXPECT_EQ(as_op1("sigmoid(a)"), &Sigmoid::f);
     EXPECT_EQ(as_op1("elu(a)"),     &Elu::f);
+    EXPECT_EQ(as_op1("erf(a)"),     &Erf::f);
     //-------------------------------------------
     EXPECT_EQ(as_op1("1/a"),        &Inv::f);
     EXPECT_EQ(as_op1("1.0/a"),      &Inv::f);

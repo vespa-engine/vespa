@@ -48,6 +48,7 @@ struct IsNan { static double f(double a); };
 struct Relu { static double f(double a); };
 struct Sigmoid { static double f(double a); };
 struct Elu { static double f(double a); };
+struct Erf { static double f(double a); };
 //-----------------------------------------------------------------------------
 struct Inv { static double f(double a); };
 struct Square { static double f(double a); };

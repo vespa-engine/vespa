@@ -100,6 +100,8 @@ void generate_tensor_map(TestBuilder &dst) {
     generate_op1_map("relu(a)", operation::Relu::f, Sub2(Div16(N())), dst);
     generate_op1_map("sigmoid(a)", operation::Sigmoid::f, Sub2(Div16(N())), dst);
     generate_op1_map("elu(a)", operation::Elu::f, Sub2(Div16(N())), dst);
+    // TODO(havardpe): add erf when supported by Java
+    // generate_op1_map("erf(a)", operation::Erf::f, Sub2(Div16(N())), dst);
     generate_op1_map("a in [1,5,7,13,42]", MyIn::f, N(), dst);
     generate_map_expr("map(a,f(a)((a+1)*2))", MyOp::f, Div16(N()), dst);
 }
