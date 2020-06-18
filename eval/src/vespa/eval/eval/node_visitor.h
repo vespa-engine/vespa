@@ -83,6 +83,7 @@ struct NodeVisitor {
     virtual void visit(const nodes::Relu         &) = 0;
     virtual void visit(const nodes::Sigmoid      &) = 0;
     virtual void visit(const nodes::Elu          &) = 0;
+    virtual void visit(const nodes::Erf          &) = 0;
 
     virtual ~NodeVisitor() {}
 };
@@ -150,6 +151,7 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Relu         &) override {}
     void visit(const nodes::Sigmoid      &) override {}
     void visit(const nodes::Elu          &) override {}
+    void visit(const nodes::Erf          &) override {}
 };
 
 } // namespace vespalib::eval

@@ -35,6 +35,7 @@ vespalib::string name_of(map_fun_t fun) {
     if (fun == operation::Relu::f) return "relu";
     if (fun == operation::Sigmoid::f) return "sigmoid";
     if (fun == operation::Elu::f) return "elu";
+    if (fun == operation::Erf::f) return "erf";
     return "[other map function]";
 }
 

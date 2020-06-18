@@ -644,6 +644,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Elu &) override {
         make_call_1("vespalib_eval_elu");
     }
+    void visit(const Erf &) override {
+        make_call_1("erf");
+    }
 };
 
 FunctionBuilder::~FunctionBuilder() { }
