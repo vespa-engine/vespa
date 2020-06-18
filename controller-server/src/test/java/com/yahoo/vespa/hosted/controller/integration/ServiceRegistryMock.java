@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.NoopApplicationRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanController;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
@@ -59,6 +60,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final ApplicationRoleService applicationRoleService = new NoopApplicationRoleService();
+    private final PlanController planController = (tenantName) -> null;
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -199,6 +201,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public EndpointCertificateMock endpointCertificateMock() {
         return endpointCertificateMock;
+    }
+
+    @Override
+    public PlanController planController() {
+        return planController;
     }
 
 }
