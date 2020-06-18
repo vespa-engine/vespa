@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -56,12 +57,11 @@ import static org.mockito.Mockito.when;
  */
 public class ApplicationHandlerTest {
 
-    private static File testApp = new File("src/test/apps/app");
+    private static final File testApp = new File("src/test/apps/app");
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
-    private final static TenantName foobar = TenantName.from("foobar");
-    private final static ApplicationId myTenantApplicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-    private final static ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(TenantName.defaultName()).build();
+    private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
+    private final static ApplicationId applicationId = ApplicationId.from(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
     private final static MockTesterClient testerClient = new MockTesterClient();
     private final static NullMetric metric = new NullMetric();
     private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
@@ -70,13 +70,14 @@ public class ApplicationHandlerTest {
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
-    private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
+    private final MockStateApiFactory stateApiFactory = new MockStateApiFactory();
     private OrchestratorMock orchestrator;
 
     @Before
     public void setup() {
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().provisioner(provisioner).build();
         tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository(tenantRepository,
@@ -96,8 +97,8 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testDelete() throws Exception {
+        TenantName foobar = TenantName.from("foobar");
         tenantRepository.addTenant(foobar);
-        tenantRepository.addTenant(mytenantName);
 
         {
             applicationRepository.deploy(testApp, prepareParams(applicationId));
