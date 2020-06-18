@@ -61,7 +61,6 @@ public enum RoleDefinition {
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,
                   Policy.tenantManager,
-                  Policy.tenantDelete,
                   Policy.applicationManager,
                   Policy.paymentInstrumentRead,
                   Policy.paymentInstrumentUpdate,

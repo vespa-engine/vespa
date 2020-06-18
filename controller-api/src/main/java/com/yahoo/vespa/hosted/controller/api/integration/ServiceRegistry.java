@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanController;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
@@ -76,7 +75,5 @@ public interface ServiceRegistry {
     ApplicationRoleService applicationRoleService();
 
     SystemMonitor systemMonitor();
-
-    PlanController planController();
 
 }

@@ -8,8 +8,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanController;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -36,13 +34,11 @@ public class CloudAccessControl implements AccessControl {
 
     private final UserManagement userManagement;
     private final BooleanFlag enablePublicSignup;
-    private final PlanController planController;
 
     @Inject
-    public CloudAccessControl(UserManagement userManagement, FlagSource flagSource, ServiceRegistry serviceRegistry) {
+    public CloudAccessControl(UserManagement userManagement, FlagSource flagSource) {
         this.userManagement = userManagement;
         this.enablePublicSignup = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
-        planController = serviceRegistry.planController();
     }
 
     @Override
@@ -101,15 +97,10 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
-        if(!(allowedByPrivilegedRole((Auth0Credentials) credentials) || isTrial(tenant)))
-            throw new ForbiddenException("Please contact the Vespa team for assistance in deleting non-trial tenants");
+        // TODO: allow only if 0 resources, 0 balance
 
         for (TenantRole role : Roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
-    }
-
-    private boolean isTrial(TenantName tenant) {
-        return planController.getPlan(tenant).id().equals("trial");
     }
 
     @Override
