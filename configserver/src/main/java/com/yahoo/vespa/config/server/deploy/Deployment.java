@@ -63,10 +63,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** The (optional) Athenz domain this application should use */
     private final Optional<AthenzDomain> athenzDomain;
 
-    private boolean prepared = false;
-    
     /** Whether this model should be validated (only takes effect if prepared=false) */
-    private boolean validate;
+    private final boolean validate;
+
+    private boolean prepared = false;
 
     private boolean ignoreSessionStaleFailure = false;
 

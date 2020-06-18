@@ -20,6 +20,7 @@ import java.util.Optional;
  * system ({@link LocalSession}s) and sessions working on zookeeper {@link RemoteSession}s.
  *
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public abstract class Session implements Comparable<Session>  {
 
@@ -32,6 +33,7 @@ public abstract class Session implements Comparable<Session>  {
         this.sessionId = sessionId;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
     }
+
     /**
      * Retrieve the session id for this session.
      * @return the session id.

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import java.util.Optional;
 import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ReloadHandler;
@@ -16,49 +17,62 @@ import java.util.logging.Logger;
  * The session must be in the session repo.
  *
  * @author Vegard Havdal
+ * @author hmusum
  */
-public class RemoteSessionStateWatcher {
+public class SessionStateWatcher {
 
-    private static final Logger log = Logger.getLogger(RemoteSessionStateWatcher.class.getName());
+    private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
     private final ReloadHandler reloadHandler;
-    private final RemoteSession session;
+    private final RemoteSession remoteSession;
+    private final Optional<LocalSession> localSession;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
+    private final SessionRepository sessionRepository;
 
-    RemoteSessionStateWatcher(Curator.FileCache fileCache,
-                              ReloadHandler reloadHandler,
-                              RemoteSession session,
-                              MetricUpdater metrics,
-                              Executor zkWatcherExecutor) {
+    SessionStateWatcher(Curator.FileCache fileCache,
+                        ReloadHandler reloadHandler,
+                        RemoteSession remoteSession,
+                        Optional<LocalSession> localSession,
+                        MetricUpdater metrics,
+                        Executor zkWatcherExecutor,
+                        SessionRepository sessionRepository) {
         this.fileCache = fileCache;
         this.reloadHandler = reloadHandler;
-        this.session = session;
+        this.remoteSession = remoteSession;
+        this.localSession = localSession;
         this.metrics = metrics;
         this.fileCache.start();
         this.fileCache.addListener(this::nodeChanged);
         this.zkWatcherExecutor = zkWatcherExecutor;
+        this.sessionRepository = sessionRepository;
     }
 
     private void sessionChanged(Session.Status status) {
-        log.log(Level.FINE, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
+        long sessionId = remoteSession.getSessionId();
+        log.log(Level.FINE, remoteSession.logPre() + "Session change: Session " + remoteSession.getSessionId() + " changed status to " + status);
 
         // valid for NEW -> PREPARE transitions, not ACTIVATE -> PREPARE.
         if (status.equals(Session.Status.PREPARE)) {
-            log.log(Level.FINE, session.logPre() + "Loading prepared session: " + session.getSessionId());
-            session.loadPrepared();
+            log.log(Level.FINE, remoteSession.logPre() + "Loading prepared session: " + remoteSession.getSessionId());
+            remoteSession.loadPrepared();
         } else if (status.equals(Session.Status.ACTIVATE)) {
-            session.makeActive(reloadHandler);
+            remoteSession.makeActive(reloadHandler);
         } else if (status.equals(Session.Status.DEACTIVATE)) {
-            session.deactivate();
+            remoteSession.deactivate();
         } else if (status.equals(Session.Status.DELETE)) {
-            session.deactivate();
+            remoteSession.deactivate();
+            log.log(Level.INFO, remoteSession.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
+            localSession.ifPresent(localSession1 -> {
+                 log.log(Level.FINE, remoteSession.logPre() + "Deleting session " + sessionId);
+                 sessionRepository.deleteLocalSession(localSession.get());
+             });
         }
     }
 
     public long getSessionId() {
-        return session.getSessionId();
+        return remoteSession.getSessionId();
     }
 
     public void close() {
@@ -71,7 +85,7 @@ public class RemoteSessionStateWatcher {
 
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
-            Session.Status currentStatus = session.getStatus();
+            Session.Status currentStatus = remoteSession.getStatus();
             Session.Status newStatus = Session.Status.NONE;
             try {
                 ChildData node = fileCache.getCurrentData();
@@ -80,7 +94,7 @@ public class RemoteSessionStateWatcher {
                     sessionChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, session.logPre() + "Error handling session change from " + currentStatus.name() +
+                log.log(Level.WARNING, remoteSession.logPre() + "Error handling session change from " + currentStatus.name() +
                                        " to " + newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
