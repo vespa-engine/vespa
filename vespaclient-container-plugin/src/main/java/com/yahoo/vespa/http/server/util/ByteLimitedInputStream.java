@@ -13,6 +13,7 @@ public class ByteLimitedInputStream extends InputStream {
 
     private final InputStream wrappedStream;
     private int remaining;
+    private int remainingWhenMarked;
 
     public ByteLimitedInputStream(InputStream wrappedStream, int limit) {
         this.wrappedStream = wrappedStream;
@@ -76,6 +77,23 @@ public class ByteLimitedInputStream extends InputStream {
         while (remaining > 0) {
             skip(remaining);
         }
+    }
+
+    @Override
+    public synchronized void mark(int readlimit) {
+        wrappedStream.mark(readlimit);
+        remainingWhenMarked = remaining;
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        wrappedStream.reset();
+        remaining = remainingWhenMarked;
+    }
+
+    @Override
+    public boolean markSupported() {
+        return wrappedStream.markSupported();
     }
 
 }
