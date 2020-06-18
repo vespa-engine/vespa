@@ -33,7 +33,7 @@ public class HostCapacity {
     public NodeList allNodes() { return allNodes; }
 
     /**
-     * Spare hosts are the two hosts in the system with the most free capacity.
+     * Spare hosts are the hosts in the system with the most free capacity.
      *
      * We do not count retired or inactive nodes as used capacity (as they could have been
      * moved to create space for the spare node in the first place).
