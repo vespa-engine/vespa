@@ -155,7 +155,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             }
 
             session.waitUntilActivated(timeoutBudget);
-            log.log(Level.INFO, session.logPre() + "activated successfully using " +
+            log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
                                 hostProvisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
                                 ". Config generation " + session.getMetaData().getGeneration() +
                                 (previousActiveSession != null ? ". Based on previous active session " + previousActiveSession.getSessionId() : "") +
