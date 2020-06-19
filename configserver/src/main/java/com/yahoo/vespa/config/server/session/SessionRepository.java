@@ -487,9 +487,9 @@ public class SessionRepository {
      * This method is used when creating a session based on a remote session and the distributed application package
      * It does not wait for session being created on other servers
      */
-    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId,
-                                            long sessionId, Optional<Long> currentlyActiveSessionId) {
+    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
+            Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
@@ -527,7 +527,7 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
             log.log(Level.FINE, "Local session for session id " + sessionId + " already exists");
             return Optional.of(createSessionFromId(sessionId));
@@ -550,10 +550,9 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
-            return Optional.of(createLocalSession(sessionDir,
-                                                  applicationId,
-                                                  sessionId,
-                                                  getActiveSessionId(applicationId)));
+            LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
+            addSession(localSession);
+            return Optional.of(localSession);
         }
         return Optional.empty();
     }
