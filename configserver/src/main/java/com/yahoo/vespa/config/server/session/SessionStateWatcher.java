@@ -63,9 +63,9 @@ public class SessionStateWatcher {
         } else if (status.equals(Session.Status.DELETE)) {
             remoteSession.deactivate();
             log.log(Level.INFO, remoteSession.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
-            localSession.ifPresent(localSession1 -> {
-                 log.log(Level.FINE, remoteSession.logPre() + "Deleting session " + sessionId);
-                 sessionRepository.deleteLocalSession(localSession.get());
+            localSession.ifPresent(session -> {
+                 log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
+                 sessionRepository.deleteLocalSession(session);
              });
         }
     }
