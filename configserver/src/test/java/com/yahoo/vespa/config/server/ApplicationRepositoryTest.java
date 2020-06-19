@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -303,16 +304,15 @@ public class ApplicationRepositoryTest {
     public void delete() {
         TenantName tenantName = applicationId().tenant();
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        SessionRepository sessionRepository = tenant.getSessionRepository();
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            LocalSession applicationData = sessionRepository.getLocalSession(sessionId);
+            LocalSession applicationData = tenant.getSessionRepository().getLocalSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(sessionRepository.getLocalSession(sessionId));
+            assertNotNull(tenant.getSessionRepo().getLocalSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
+            String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)).getAbsolute();
             assertTrue(configCurator.exists(sessionNode));
             TenantFileSystemDirs tenantFileSystemDirs = tenant.getApplicationRepo().getTenantFileSystemDirs();
             File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
@@ -321,8 +321,8 @@ public class ApplicationRepositoryTest {
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(sessionRepository.getLocalSession(sessionId));
-            assertNull(sessionRepository.getLocalSession(sessionId));
+            assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
+            assertNull(tenant.getSessionRepo().getLocalSession(sessionId));
             assertTrue(provisioner.removed);
             assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId);
@@ -364,7 +364,7 @@ public class ApplicationRepositoryTest {
             // A new delete should cleanup and be successful
             RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
             assertNull(activeSession);
-            assertNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
+            assertNull(tenant.getSessionRepo().getLocalSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
