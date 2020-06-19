@@ -337,6 +337,7 @@ TOKEN :
 | < MAXLINKSPERNODE: "max-links-per-node" >
 | < DISTANCEMETRIC: "distance-metric" >
 | < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
+| < MULTITHREADEDINDEXING: "multi-threaded-indexing" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -1841,7 +1842,8 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
 }
 {
     ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
-      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); } )
+      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTITHREADEDINDEXING> { params.setMultiThreadedIndexing(true); } )
 }
 
 /**
