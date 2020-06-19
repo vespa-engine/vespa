@@ -522,6 +522,15 @@ public class SelectTestCase {
     }
 
     @Test
+    public void testNearestNeighbor() {
+        assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
+                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,approximate=true,targetHits=0}");
+
+        assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37} }}",
+                "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,hnsw.exploreAdditionalHits=0,approximate=true,targetHits=37}");
+    }
+
+    @Test
     public void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "WAND(100) a:A b:B");

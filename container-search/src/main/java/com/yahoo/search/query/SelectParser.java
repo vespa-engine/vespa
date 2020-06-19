@@ -415,7 +415,7 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         String field = children.get(0).asString();
-        String property = children.get(0).asString();
+        String property = children.get(1).asString();
         NearestNeighborItem item = new NearestNeighborItem(field, property);
         Inspector annotations = getAnnotations(value);
         if (annotations != null){
