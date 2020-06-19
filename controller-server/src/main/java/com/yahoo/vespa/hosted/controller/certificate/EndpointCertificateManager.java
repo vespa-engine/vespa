@@ -13,6 +13,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashSet;
 import java.util.logging.Level;
 
@@ -270,6 +271,8 @@ public class EndpointCertificateManager {
                         throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is not yet valid");
                     if (now.isAfter(notAfter))
                         throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate has expired");
+                    if(now.plus(1, ChronoUnit.WEEKS).isAfter(notAfter))
+                        throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate expires in less than one week");
                     if (notAfter.isBefore(firstExpiry)) firstExpiry = notAfter;
                 }
 
