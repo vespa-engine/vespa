@@ -10,7 +10,9 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -42,7 +44,6 @@ public class SessionRepositoryTest {
     private MockCurator curator;
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
-    private SessionRepository sessionRepository;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -70,7 +71,6 @@ public class SessionRepositoryTest {
                                                           new SessionHandlerTest.MockProvisioner(),
                                                           new OrchestratorMock(),
                                                           Clock.systemUTC());
-        sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
 
     @Test
@@ -78,6 +78,7 @@ public class SessionRepositoryTest {
         setup();
         long firstSessionId = deploy();
         long secondSessionId = deploy();
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
         assertNotNull(sessionRepository.getLocalSession(firstSessionId));
         assertNotNull(sessionRepository.getLocalSession(secondSessionId));
         assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
@@ -95,6 +96,7 @@ public class SessionRepositoryTest {
 
         long firstSessionId = deploy();
         long secondSessionId = deploy();
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
         assertNotNull(sessionRepository.getLocalSession(firstSessionId));
         assertNotNull(sessionRepository.getLocalSession(secondSessionId));
         assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
@@ -128,6 +130,7 @@ public class SessionRepositoryTest {
         com.yahoo.path.Path session = TenantRepository.getSessionsPath(tenantName).append("" + sessionId);
         curator.delete(session);
         assertSessionRemoved(sessionId);
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
         assertNull(sessionRepository.getRemoteSession(sessionId));
     }
 
@@ -142,18 +145,21 @@ public class SessionRepositoryTest {
         TenantName mytenant = TenantName.from("mytenant");
         curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
         tenantRepository.addTenant(mytenant);
+        Tenant tenant = tenantRepository.getTenant(mytenant);
         curator.create(TenantRepository.getSessionsPath(mytenant));
+        SessionRepository sessionRepository = tenant.getSessionRepo();
         assertThat(sessionRepository.getRemoteSessions().size(), is(0));
-        createSession(sessionId, true);
+        createSession(sessionId, true, mytenant);
         assertThat(sessionRepository.getRemoteSessions().size(), is(1));
     }
 
     private void createSession(long sessionId, boolean wait) {
-        createSession(sessionId, wait, sessionRepository);
+        createSession(sessionId, wait, tenantName);
     }
 
-    private void createSession(long sessionId, boolean wait, SessionRepository sessionRepository) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionRepository.getSessionPath(sessionId));
+    private void createSession(long sessionId, boolean wait, TenantName tenantName) {
+        com.yahoo.path.Path sessionsPath = TenantRepository.getSessionsPath(tenantName);
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath.append(String.valueOf(sessionId)));
         zkc.createNewSession(Instant.now());
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
@@ -162,13 +168,14 @@ public class SessionRepositoryTest {
     }
 
     private void assertStatusChange(long sessionId, Session.Status status) throws Exception {
-        com.yahoo.path.Path statePath = sessionRepository.getSessionStatePath(sessionId);
+        com.yahoo.path.Path statePath = TenantRepository.getSessionsPath(tenantName).append("" + sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
         curator.create(statePath);
         curator.framework().setData().forPath(statePath.getAbsolute(), Utf8.toBytes(status.toString()));
         assertRemoteSessionStatus(sessionId, status);
     }
 
     private void assertSessionRemoved(long sessionId) {
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
         waitFor(p -> sessionRepository.getRemoteSession(sessionId) == null, sessionId);
         assertNull(sessionRepository.getRemoteSession(sessionId));
     }
@@ -178,6 +185,7 @@ public class SessionRepositoryTest {
     }
 
     private void assertRemoteSessionStatus(long sessionId, Session.Status status) {
+        SessionRepository sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
         waitFor(p -> sessionRepository.getRemoteSession(sessionId) != null &&
                      sessionRepository.getRemoteSession(sessionId).getStatus() == status, sessionId);
         assertNotNull(sessionRepository.getRemoteSession(sessionId));
