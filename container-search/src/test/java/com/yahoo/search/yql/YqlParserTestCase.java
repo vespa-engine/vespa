@@ -513,7 +513,7 @@ public class YqlParserTestCase {
     public void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
                 "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
-        assertParse("select foo from bar where [ {\"scoreThreshold\": 13.3, \"targetNumHits\": 7, " +
+        assertParse("select foo from bar where [ {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
                     "\"thresholdBoostFactor\": 2.3} ]wand(description, {\"a\":1, \"b\":2});",
                     "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
     }
@@ -550,11 +550,11 @@ public class YqlParserTestCase {
     @Test
     public void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
-                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,approximate=true,targetNumHits=0}");
-        assertParse("select foo from bar where [{\"targetNumHits\": 37}]nearestNeighbor(semantic_embedding, my_vector);",
-                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,approximate=true,targetNumHits=37}");
-        assertParse("select foo from bar where [{\"approximate\": false, \"hnsw.exploreAdditionalHits\": 8, \"targetNumHits\": 3}]nearestNeighbor(semantic_embedding, my_vector);",
-                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,approximate=false,targetNumHits=3}");
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,approximate=true,targetHits=0}");
+        assertParse("select foo from bar where [{\"targetHits\": 37}]nearestNeighbor(semantic_embedding, my_vector);",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,approximate=true,targetHits=37}");
+        assertParse("select foo from bar where [{\"approximate\": false, \"hnsw.exploreAdditionalHits\": 8, \"targetHits\": 3}]nearestNeighbor(semantic_embedding, my_vector);",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,approximate=false,targetHits=3}");
     }
 
     @Test
@@ -597,7 +597,7 @@ public class YqlParserTestCase {
     public void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\");",
                     "WAND(100) a:A b:B");
-        assertParse("select foo from bar where [{\"targetNumHits\": 37}]weakAnd(a contains \"A\", " +
+        assertParse("select foo from bar where [{\"targetHits\": 37}]weakAnd(a contains \"A\", " +
                     "b contains \"B\");",
                     "WAND(37) a:A b:B");
 

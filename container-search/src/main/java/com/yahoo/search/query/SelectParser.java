@@ -16,6 +16,7 @@ import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
@@ -93,14 +94,17 @@ public class SelectParser implements Parser {
     private static final String ACCENT_DROP = "accentDrop";
     private static final String ALTERNATIVES = "alternatives";
     private static final String AND_SEGMENTING = "andSegmenting";
+    private static final String APPROXIMATE = "approximate";
     private static final String DISTANCE = "distance";
     private static final String DOT_PRODUCT = "dotProduct";
     private static final String EQUIV = "equiv";
     private static final String FILTER = "filter";
     private static final String HIT_LIMIT = "hitLimit";
+    private static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     private static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     private static final String LABEL = "label";
     private static final String NEAR = "near";
+    private static final String NEAREST_NEIGHBOR = "nearestNeighbor";
     private static final String NORMALIZE_CASE = "normalizeCase";
     private static final String ONEAR = "onear";
     private static final String PHRASE = "phrase";
@@ -114,6 +118,7 @@ public class SelectParser implements Parser {
     private static final String STEM = "stem";
     private static final String SUBSTRING = "substring";
     private static final String SUFFIX = "suffix";
+    private static final String TARGET_HITS = "targetHits";
     private static final String TARGET_NUM_HITS = "targetNumHits";
     private static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     private static final String UNIQUE_ID = "id";
@@ -130,7 +135,7 @@ public class SelectParser implements Parser {
     private static final String CONTAINS = "contains";
     private static final String MATCHES = "matches";
     private static final String CALL = "call";
-    private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, PREDICATE, RANK, WEAK_AND);
+    private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
 
     public SelectParser(ParserEnvironment environment) {
         indexFacts = environment.getIndexFacts();
@@ -259,6 +264,8 @@ public class SelectParser implements Parser {
                 return buildWeightedSet(key, value);
             case DOT_PRODUCT:
                 return buildDotProduct(key, value);
+            case NEAREST_NEIGHBOR:
+                return buildNearestNeighbor(key, value);
             case PREDICATE:
                 return buildPredicate(key, value);
             case RANK:
@@ -266,7 +273,7 @@ public class SelectParser implements Parser {
             case WEAK_AND:
                 return buildWeakAnd(key, value);
             default:
-                throw newUnexpectedArgumentException(key, DOT_PRODUCT, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
+                throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
         }
     }
 
@@ -403,6 +410,38 @@ public class SelectParser implements Parser {
         return orItem;
     }
 
+    private Item buildNearestNeighbor(String key, Inspector value) {
+
+        HashMap<Integer, Inspector> children = childMap(value);
+        Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
+        String field = children.get(0).asString();
+        String property = children.get(0).asString();
+        NearestNeighborItem item = new NearestNeighborItem(field, property);
+        Inspector annotations = getAnnotations(value);
+        if (annotations != null){
+            annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
+                if (TARGET_HITS.equals(annotation_name)){
+                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                }
+                if (TARGET_NUM_HITS.equals(annotation_name)){
+                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                }
+                if (HNSW_EXPLORE_ADDITIONAL_HITS.equals(annotation_name)) {
+                    int hnswExploreAdditionalHits = (int)(annotation_value.asDouble());
+                    item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);                    
+                }
+                if (APPROXIMATE.equals(annotation_name)) {
+                    boolean allowApproximate = annotation_value.asBool();
+                    item.setAllowApproximate(allowApproximate);
+                }
+                if (LABEL.equals(annotation_name)) {
+                    item.setLabel(annotation_value.asString());
+                }
+            });
+        }
+        return item;
+    }
+
     private CompositeItem buildWeakAnd(String key, Inspector value) {
         WeakAndItem weakAnd = new WeakAndItem();
         addItemsFromInspector(weakAnd, value);
@@ -410,6 +449,9 @@ public class SelectParser implements Parser {
 
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
+                if (TARGET_HITS.equals(annotation_name)){
+                    weakAnd.setN((int)(annotation_value.asDouble()));
+                }
                 if (TARGET_NUM_HITS.equals(annotation_name)){
                     weakAnd.setN((int)(annotation_value.asDouble()));
                 }
@@ -662,7 +704,10 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = childMap(value);
 
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
-        Integer target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_TARGET_NUM_HITS);
+        Integer target_num_hits= getIntegerAnnotation(TARGET_HITS, annotations, null);
+        if (target_num_hits == null) {
+            target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_TARGET_NUM_HITS);
+        }
 
         WandItem out = new WandItem(children.get(0).asString(), target_num_hits);
 

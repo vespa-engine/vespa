@@ -869,7 +869,8 @@
       "public java.lang.String getName()",
       "public int getTermCount()",
       "public int encode(java.nio.ByteBuffer)",
-      "protected void appendBodyString(java.lang.StringBuilder)"
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields": []
   },

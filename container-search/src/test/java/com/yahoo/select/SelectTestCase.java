@@ -473,7 +473,7 @@ public class SelectTestCase {
     public void testWand() {
         assertParse("{ \"wand\": [\"description\", { \"a\": 1, \"b\": 2 }] }",
                 "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
-        assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetNumHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
+        assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
                 "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
     }
 
@@ -525,7 +525,7 @@ public class SelectTestCase {
     public void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "WAND(100) a:A b:B");
-        assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetNumHits\": 37} }}",
+        assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetHits\": 37} }}",
                 "WAND(37) a:A b:B");
 
         QueryTree tree = parseWhere("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"scoreThreshold\": 41}}}");
