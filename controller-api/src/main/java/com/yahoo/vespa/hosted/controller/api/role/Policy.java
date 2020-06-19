@@ -166,7 +166,12 @@ enum Policy {
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
                                     .on(PathGroup.hostedAccountant)
-                                    .in(SystemName.PublicCd));
+                                    .in(SystemName.PublicCd)),
+
+    /** Listing endpoint certificate request info */
+    endpointCertificateRequestInfo(Privilege.grant(Action.read)
+            .on(PathGroup.endpointCertificateRequestInfo)
+            .in(SystemName.all()));
 
     private final Set<Privilege> privileges;
 
