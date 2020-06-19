@@ -206,7 +206,7 @@ namespace matching {
     };
 
     /**
-     * Proparty to control fallback to brute force search for nearest
+     * Property to control fallback to brute force search for nearest
      * neighbor query terms.  If the ratio of candidates in the global
      * filter (which tracks the documents that can match the query
      * based on the other parts of the query) is less than this limit
