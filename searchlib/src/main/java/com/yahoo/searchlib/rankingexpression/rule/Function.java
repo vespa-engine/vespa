@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
+import com.yahoo.tensor.functions.ScalarFunctions;
+
 import java.io.Serializable;
 
 import static java.lang.Math.*;
@@ -36,6 +38,7 @@ public enum Function implements Serializable {
     sqrt      { public double evaluate(double x, double y) { return sqrt(x); } },
     tan       { public double evaluate(double x, double y) { return tan(x); } },
     tanh      { public double evaluate(double x, double y) { return tanh(x); } },
+    erf       { public double evaluate(double x, double y) { return ScalarFunctions.Erf.erf(x); } },
 
     atan2(2)  { public double evaluate(double x, double y) { return atan2(x,y); } },
     fmod(2)   { public double evaluate(double x, double y) { return x % y; } },

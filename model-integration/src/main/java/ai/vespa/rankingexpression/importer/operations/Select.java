@@ -78,14 +78,12 @@ public class Select extends IntermediateOperation {
         List<TensorType.Dimension> aDimensions = inputs.get(1).type().get().dimensions();
         List<TensorType.Dimension> bDimensions = inputs.get(2).type().get().dimensions();
 
-        String aDim0 = aDimensions.get(0).name();
-        String aDim1 = aDimensions.get(1).name();
-        String bDim0 = bDimensions.get(0).name();
-        String bDim1 = bDimensions.get(1).name();
-
         // These tensors should have the same dimension names
-        renamer.addConstraint(aDim0, bDim0, DimensionRenamer.Constraint.equal(false), this);
-        renamer.addConstraint(aDim1, bDim1, DimensionRenamer.Constraint.equal(false), this);
+        for (int i = 0; i < aDimensions.size(); ++i) {
+            String aDim = aDimensions.get(i).name();
+            String bDim = bDimensions.get(i).name();
+            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(false), this);
+        }
     }
 
     @Override
