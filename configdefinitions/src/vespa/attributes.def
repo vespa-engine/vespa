@@ -41,3 +41,5 @@ attribute[].index.hnsw.maxlinkspernode int default=16
 # Deprecated: Remove on Vespa 8 or before when possible.
 attribute[].index.hnsw.distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES } default=EUCLIDEAN
 attribute[].index.hnsw.neighborstoexploreatinsert int default=200
+# Whether multi-threaded indexing is enabled for this hnsw index.
+attribute[].index.hnsw.multithreadedindexing bool default=false

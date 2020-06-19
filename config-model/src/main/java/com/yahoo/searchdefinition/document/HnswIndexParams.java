@@ -16,10 +16,12 @@ public class HnswIndexParams {
 
     private final Optional<Integer> maxLinksPerNode;
     private final Optional<Integer> neighborsToExploreAtInsert;
+    private final Optional<Boolean> multiThreadedIndexing;
 
     public static class Builder {
         private Optional<Integer> maxLinksPerNode = Optional.empty();
         private Optional<Integer> neighborsToExploreAtInsert = Optional.empty();
+        private Optional<Boolean> multiThreadedIndexing = Optional.empty();
 
         public void setMaxLinksPerNode(int value) {
             maxLinksPerNode = Optional.of(value);
@@ -27,20 +29,26 @@ public class HnswIndexParams {
         public void setNeighborsToExploreAtInsert(int value) {
             neighborsToExploreAtInsert = Optional.of(value);
         }
+        public void setMultiThreadedIndexing(boolean value) {
+            multiThreadedIndexing = Optional.of(value);
+        }
         public HnswIndexParams build() {
-            return new HnswIndexParams(maxLinksPerNode, neighborsToExploreAtInsert);
+            return new HnswIndexParams(maxLinksPerNode, neighborsToExploreAtInsert, multiThreadedIndexing);
         }
     }
 
     public HnswIndexParams() {
         this.maxLinksPerNode = Optional.empty();
         this.neighborsToExploreAtInsert = Optional.empty();
+        this.multiThreadedIndexing = Optional.empty();
     }
 
     public HnswIndexParams(Optional<Integer> maxLinksPerNode,
-                           Optional<Integer> neighborsToExploreAtInsert) {
+                           Optional<Integer> neighborsToExploreAtInsert,
+                           Optional<Boolean> multiThreadedIndexing) {
         this.maxLinksPerNode = maxLinksPerNode;
         this.neighborsToExploreAtInsert = neighborsToExploreAtInsert;
+        this.multiThreadedIndexing = multiThreadedIndexing;
     }
 
     /**
@@ -51,7 +59,8 @@ public class HnswIndexParams {
         if (! other.isPresent()) return this;
         HnswIndexParams rhs = other.get();
         return new HnswIndexParams(rhs.maxLinksPerNode.or(() ->  maxLinksPerNode),
-                rhs.neighborsToExploreAtInsert.or(() ->  neighborsToExploreAtInsert));
+                rhs.neighborsToExploreAtInsert.or(() ->  neighborsToExploreAtInsert),
+                rhs.multiThreadedIndexing.or(() -> multiThreadedIndexing));
     }
 
     public int maxLinksPerNode() {
@@ -60,5 +69,9 @@ public class HnswIndexParams {
 
     public int neighborsToExploreAtInsert() {
         return neighborsToExploreAtInsert.orElse(DEFAULT_NEIGHBORS_TO_EXPLORE_AT_INSERT);
+    }
+
+    public boolean multiThreadedIndexing() {
+        return multiThreadedIndexing.orElse(false);
     }
 }

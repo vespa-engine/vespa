@@ -9,6 +9,7 @@ search test {
         hnsw {
           max-links-per-node: 32
           neighbors-to-explore-at-insert: 300
+          multi-threaded-indexing
         }
       }
     }
