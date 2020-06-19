@@ -205,6 +205,13 @@ namespace matching {
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
+    /**
+     * Proparty to control fallback to brute force search for nearest
+     * neighbor query terms.  If the ratio of candidates in the global
+     * filter (which tracks the documents that can match the query
+     * based on the other parts of the query) is less than this limit
+     * then use brute force search.
+     **/
     struct NearestNeighborBruteForceLimit {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
