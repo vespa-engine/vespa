@@ -3,10 +3,12 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcore/proton/matching/requestcontext.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
+using search::attribute::AttributeBlueprintParams;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeFunctor;
 using search::attribute::IAttributeVector;
@@ -45,7 +47,7 @@ public:
           _doom(_clock, vespalib::steady_time(), vespalib::steady_time(), false),
           _attr_ctx(),
           _props(),
-          _request_ctx(_doom, _attr_ctx, _props),
+          _request_ctx(_doom, _attr_ctx, _props, AttributeBlueprintParams()),
           _query_tensor(DefaultTensorEngine::ref().from_spec(TensorSpec("tensor(x[2])")
                                                                      .add({{"x", 0}}, 3).add({{"x", 1}}, 5)))
     {

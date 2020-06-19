@@ -59,6 +59,7 @@ private:
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
     double                   _softTimeoutFactor;
+    double                   _nearest_neighbor_brute_force_limit;
 
 
 public:
@@ -364,6 +365,9 @@ public:
     double getSoftTimeoutTailCost() const { return _softTimeoutTailCost; }
     void setSoftTimeoutFactor(double v) { _softTimeoutFactor = v; }
     double getSoftTimeoutFactor() const { return _softTimeoutFactor; }
+
+    void set_nearest_neighbor_brute_force_limit(double v) { _nearest_neighbor_brute_force_limit = v; }
+    double get_nearest_neighbor_brute_force_limit() const { return _nearest_neighbor_brute_force_limit; }
 
     /**
      * This method may be used to indicate that certain features

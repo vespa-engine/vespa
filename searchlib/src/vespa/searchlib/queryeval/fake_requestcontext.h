@@ -7,6 +7,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/vespalib/util/doom.h>
 #include <limits>
@@ -42,12 +43,15 @@ public:
         _query_tensor = std::make_unique<vespalib::eval::TensorSpec>(tensor_spec);
     }
 
+    const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override;
+
 private:
     vespalib::Clock _clock;
     const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
     vespalib::string _query_tensor_name;
     std::unique_ptr<vespalib::eval::TensorSpec> _query_tensor;
+    search::attribute::AttributeBlueprintParams _attribute_blueprint_params;
 };
 
 }

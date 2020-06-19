@@ -24,6 +24,7 @@ private:
     uint32_t _target_num_hits;
     bool _approximate;
     uint32_t _explore_additional_hits;
+    double _brute_force_limit;
     search::tensor::DistanceFunction::UP _fallback_dist_fun;
     const search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
@@ -35,7 +36,7 @@ public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::DenseTensorAttribute& attr_tensor,
                              std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                             uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits);
+                             uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits, double brute_force_limit);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
     ~NearestNeighborBlueprint();

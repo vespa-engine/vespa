@@ -893,7 +893,7 @@ public:
             field,
             as_dense_tensor(),
             createDenseTensor(vec_2d(17, 42)),
-            3, true, 5);
+            3, true, 5, 0.05);
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
         EXPECT_TRUE(bp->may_approximate());
         return bp;

@@ -9,6 +9,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
@@ -19,6 +20,7 @@ using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
+using search::attribute::AttributeBlueprintParams;
 
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
@@ -62,6 +64,12 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
                            DiversityMinGroups::lookup(rankProperties, rankSetup.getDiversityMinGroups()),
                            DiversityCutoffFactor::lookup(rankProperties, rankSetup.getDiversityCutoffFactor()),
                            AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())));
+}
+
+AttributeBlueprintParams
+extractAttributeBlueprintParams(const RankSetup& rank_setup, const Properties &rankProperties)
+{
+    return AttributeBlueprintParams(NearestNeighborBruteForceLimit::lookup(rankProperties, rank_setup.get_nearest_neighbor_brute_force_limit()));
 }
 
 } // namespace proton::matching::<unnamed>
@@ -161,7 +169,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(doom, attributeContext, rankProperties),
+      _requestContext(doom, attributeContext, rankProperties, extractAttributeBlueprintParams(rankSetup, rankProperties)),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
