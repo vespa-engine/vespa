@@ -811,18 +811,18 @@ public:
 const vespalib::string dense_tensor = "tensor(x[2])";
 
 AVConfig
-get_tensor_config(bool allow_multi_threaded_indexing)
+get_tensor_config(bool multi_threaded_indexing)
 {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec(dense_tensor));
-    cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, allow_multi_threaded_indexing));
+    cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, multi_threaded_indexing));
     return cfg;
 }
 
 std::shared_ptr<MockDenseTensorAttribute>
-make_mock_tensor_attribute(const vespalib::string& name, bool allow_multi_threaded_indexing)
+make_mock_tensor_attribute(const vespalib::string& name, bool multi_threaded_indexing)
 {
-    auto cfg = get_tensor_config(allow_multi_threaded_indexing);
+    auto cfg = get_tensor_config(multi_threaded_indexing);
     return std::make_shared<MockDenseTensorAttribute>(name, cfg);
 }
 

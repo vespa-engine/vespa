@@ -90,7 +90,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     if (cfg.index.hnsw.enabled) {
         retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
                                                      cfg.index.hnsw.neighborstoexploreatinsert,
-                                                     dm));
+                                                     dm, cfg.index.hnsw.multithreadedindexing));
     }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
