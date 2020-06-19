@@ -51,12 +51,14 @@ public class LoadBalancerProvisioner {
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
     private final BooleanFlag provisionConfigServerLoadBalancer;
+    private final BooleanFlag provisionControllerLoadBalancer;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
         this.provisionConfigServerLoadBalancer = Flags.CONFIGSERVER_PROVISION_LB.bindTo(flagSource);
+        this.provisionControllerLoadBalancer = Flags.CONTROLLER_PROVISION_LB.bindTo(flagSource);
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
@@ -147,11 +149,12 @@ public class LoadBalancerProvisioner {
         db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
     }
 
-    // TODO(mpolden): Inline when feature flag is removed
+    // TODO(mpolden): Inline when feature flags are removed
     private boolean canForwardTo(NodeType type, ClusterSpec cluster) {
         boolean canForwardTo = service.canForwardTo(type, cluster.type());
-        if (canForwardTo && type == NodeType.config) {
-            return provisionConfigServerLoadBalancer.value();
+        if (canForwardTo) {
+            if (type == NodeType.config) return provisionConfigServerLoadBalancer.value();
+            if (type == NodeType.controller) return provisionControllerLoadBalancer.value();
         }
         return canForwardTo;
     }
@@ -206,6 +209,8 @@ public class LoadBalancerProvisioner {
                                  .owner(application);
         if (nodes.stream().anyMatch(node -> node.type() == NodeType.config)) {
             nodes = nodes.nodeType(NodeType.config).type(ClusterSpec.Type.admin);
+        } else if (nodes.stream().anyMatch(node -> node.type() == NodeType.controller)) {
+            nodes = nodes.nodeType(NodeType.controller).container();
         } else {
             nodes = nodes.nodeType(NodeType.tenant).container();
         }
