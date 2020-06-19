@@ -282,6 +282,13 @@ public class Flags {
             ZONE_ID
     );
 
+    public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
+            "controller-provision-lb", false,
+            "Provision load balancer for controller cluster",
+            "Takes effect when controller application is redeployed",
+            ZONE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

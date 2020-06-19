@@ -230,6 +230,21 @@ public class LoadBalancerProvisionerTest {
         assertEquals(cluster, lbs.get().get(0).id().cluster());
     }
 
+    @Test
+    public void provision_load_balancer_controller_cluster() {
+        flagSource.withBooleanFlag(Flags.CONTROLLER_PROVISION_LB.id(), true);
+        ApplicationId controllerApp = ApplicationId.from("hosted-vespa", "controller", "default");
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(controllerApp).asList();
+        var cluster = ClusterSpec.Id.from("zone-config-servers");
+        var nodes = prepare(controllerApp, Capacity.fromRequiredNodeType(NodeType.controller), false,
+                            clusterRequest(ClusterSpec.Type.container, cluster));
+        assertEquals(1, lbs.get().size());
+        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
+        tester.activate(controllerApp, nodes);
+        assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
+        assertEquals(cluster, lbs.get().get(0).id().cluster());
+    }
+
     private void dirtyNodesOf(ApplicationId application) {
         tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
