@@ -103,7 +103,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 modelVersion,
                 wantedNodeVespaVersion);
 
-        log.log(Level.FINE, "Create and validate model " + modelVersion + " for " + applicationId);
+
+        log.log(properties.zone().system().isCd() ? Level.INFO : Level.FINE,
+                "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " + modelOf(modelVersion));
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, validationParameters);

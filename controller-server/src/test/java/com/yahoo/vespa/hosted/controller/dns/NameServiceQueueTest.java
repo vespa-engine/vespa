@@ -74,13 +74,21 @@ public class NameServiceQueueTest {
         assertTrue(queue.requests().isEmpty());
         assertTrue("Removed " + r1, nameService.findRecords(Record.Type.CNAME, r1.name()).isEmpty());
 
-        // Keep n most recent requests
+        // Keep n last requests
         queue = queue.with(req1).with(req2).with(req3).with(req4).with(req6)
                      .last(2);
         assertEquals(List.of(req4, req6), List.copyOf(queue.requests()));
         assertSame(queue, queue.last(2));
         assertSame(queue, queue.last(10));
         assertTrue(queue.last(0).requests().isEmpty());
+
+        // Keep n first requests
+        queue = NameServiceQueue.EMPTY.with(req1).with(req2).with(req3).with(req4).with(req6)
+                                      .first(3);
+        assertEquals(List.of(req1, req2, req3), List.copyOf(queue.requests()));
+        assertSame(queue, queue.first(3));
+        assertSame(queue, queue.first(10));
+        assertTrue(queue.first(0).requests().isEmpty());
     }
 
 }

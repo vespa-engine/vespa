@@ -13,13 +13,14 @@ HnswGraph::HnswGraph()
     links(HnswIndex::make_default_link_store_config()),
     entry_docid_and_level()
 {
+    node_refs.ensure_size(1, AtomicEntryRef());
     EntryNode entry;
     set_entry_node(entry);
 }
 
 HnswGraph::~HnswGraph() {}
 
-void
+HnswGraph::NodeRef
 HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
 {
     node_refs.ensure_size(docid + 1, AtomicEntryRef());
@@ -29,15 +30,23 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
     vespalib::Array<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
     node_refs[docid].store_release(node_ref);
+    return node_ref;
 }
 
 void
 HnswGraph::remove_node_for_document(uint32_t docid)
 {
     auto node_ref = node_refs[docid].load_acquire();
-    nodes.remove(node_ref);
+    assert(node_ref.valid());
+    auto levels = nodes.get(node_ref);
     vespalib::datastore::EntryRef invalid;
     node_refs[docid].store_release(invalid);
+    // Ensure data referenced through the old ref can be recycled:
+    nodes.remove(node_ref);
+    for (size_t i = 0; i < levels.size(); ++i) {
+        auto old_links_ref = levels[i].load_acquire();
+        links.remove(old_links_ref);
+    }
 }
 
 void     
@@ -47,6 +56,7 @@ HnswGraph::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& ne
     auto node_ref = node_refs[docid].load_acquire();
     assert(node_ref.valid());
     auto levels = nodes.get_writable(node_ref);
+    assert(level < levels.size());
     auto old_links_ref = levels[level].load_acquire();
     levels[level].store_release(new_links_ref);
     links.remove(old_links_ref);

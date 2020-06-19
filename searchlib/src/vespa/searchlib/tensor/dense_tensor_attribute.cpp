@@ -5,6 +5,7 @@
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute.hpp"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
@@ -18,6 +19,7 @@ LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 using search::attribute::LoadUtils;
 using vespalib::eval::ValueType;
 using vespalib::slime::ObjectInserter;
+using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
 
@@ -77,6 +79,15 @@ can_use_index_save_file(const search::attribute::Config &config, const search::a
 }
 
 void
+DenseTensorAttribute::internal_set_tensor(DocId docid, const Tensor& tensor)
+{
+    checkTensorType(tensor);
+    consider_remove_from_index(docid);
+    EntryRef ref = _denseTensorStore.setTensor(tensor);
+    setTensorRef(docid, ref);
+}
+
+void
 DenseTensorAttribute::consider_remove_from_index(DocId docid)
 {
     if (_index && _refVector[docid].valid()) {
@@ -126,15 +137,32 @@ DenseTensorAttribute::clearDoc(DocId docId)
 void
 DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
-    checkTensorType(tensor);
-    consider_remove_from_index(docId);
-    EntryRef ref = _denseTensorStore.setTensor(tensor);
-    setTensorRef(docId, ref);
+    internal_set_tensor(docId, tensor);
     if (_index) {
         _index->add_document(docId);
     }
 }
 
+std::unique_ptr<PrepareResult>
+DenseTensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) const
+{
+    if (_index) {
+        const auto* view = dynamic_cast<const DenseTensorView*>(&tensor);
+        assert(view);
+        return _index->prepare_add_document(docid, view->cellsRef(), getGenerationHandler().takeGuard());
+    }
+    return std::unique_ptr<PrepareResult>();
+}
+
+void
+DenseTensorAttribute::complete_set_tensor(DocId docid, const Tensor& tensor,
+                                          std::unique_ptr<PrepareResult> prepare_result)
+{
+    internal_set_tensor(docid, tensor);
+    if (_index) {
+        _index->complete_add_document(docid, std::move(prepare_result));
+    }
+}
 
 std::unique_ptr<Tensor>
 DenseTensorAttribute::getTensor(DocId docId) const

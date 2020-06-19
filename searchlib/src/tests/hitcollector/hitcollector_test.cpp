@@ -55,7 +55,7 @@ void checkResult(const ResultSet & rs, const std::vector<RankedHit> & exp)
 
         for (uint32_t i = 0; i < exp.size(); ++i) {
             EXPECT_EQUAL(rh[i]._docId, exp[i]._docId);
-            EXPECT_EQUAL(rh[i]._rankValue, exp[i]._rankValue);
+            EXPECT_EQUAL(rh[i]._rankValue + 1.0, exp[i]._rankValue + 1.0);
         }
     } else {
         ASSERT_TRUE(rs.getArray() == nullptr);
@@ -328,7 +328,7 @@ TEST("testScaling") {
         finalScores[3] = 300;
         finalScores[4] = 400;
 
-        testScaling(initScores, std::move(finalScores), exp);
+        TEST_DO(testScaling(initScores, std::move(finalScores), exp));
     }
     { // scale down and adjust up
         exp[0]._rankValue = 200; // scaled
@@ -342,7 +342,7 @@ TEST("testScaling") {
         finalScores[3] = 500;
         finalScores[4] = 600;
 
-        testScaling(initScores, std::move(finalScores), exp);
+        TEST_DO(testScaling(initScores, std::move(finalScores), exp));
     }
     { // scale up and adjust down
 
@@ -357,7 +357,7 @@ TEST("testScaling") {
         finalScores[3] = 3250;
         finalScores[4] = 4500;
 
-        testScaling(initScores, std::move(finalScores), exp);
+        TEST_DO(testScaling(initScores, std::move(finalScores), exp));
     }
     { // minimal scale (second phase range = 0 (4 - 4) -> 1)
         exp[0]._rankValue = 1; // scaled
@@ -371,7 +371,7 @@ TEST("testScaling") {
         finalScores[3] = 4;
         finalScores[4] = 4;
 
-        testScaling(initScores, std::move(finalScores), exp);
+        TEST_DO(testScaling(initScores, std::move(finalScores), exp));
     }
     { // minimal scale (first phase range = 0 (4000 - 4000) -> 1)
         std::vector<feature_t> is(initScores);
@@ -387,7 +387,7 @@ TEST("testScaling") {
         finalScores[3] = 400;
         finalScores[4] = 500;
 
-        testScaling(is, std::move(finalScores), exp);
+        TEST_DO(testScaling(is, std::move(finalScores), exp));
     }
 }
 

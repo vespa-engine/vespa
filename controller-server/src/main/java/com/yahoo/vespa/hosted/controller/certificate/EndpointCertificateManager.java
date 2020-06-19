@@ -6,7 +6,6 @@ import com.google.common.io.BaseEncoding;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -51,7 +50,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
@@ -323,10 +321,10 @@ public class EndpointCertificateManager {
     }
 
     /** Create a common name based on a hash of the ApplicationId. This should always be less than 64 characters long. */
+    @SuppressWarnings("UnstableApiUsage")
     private static String commonNameHashOf(ApplicationId application, SystemName system) {
         var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
         var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
         return 'v' + base32encoded + Endpoint.dnsSuffix(system);
     }
-
 }

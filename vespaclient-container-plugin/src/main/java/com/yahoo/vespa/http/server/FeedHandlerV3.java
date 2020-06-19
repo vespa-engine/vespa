@@ -84,7 +84,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
                 clientFeederByClientId.put(clientId,
                                            new ClientFeederV3(retainSource(sessionCache, sourceSessionParams),
-                                                              new FeedReaderFactory(),
+                                                              new FeedReaderFactory(true), //TODO make error debugging configurable
                                                               docTypeManager,
                                                               clientId,
                                                               metric,

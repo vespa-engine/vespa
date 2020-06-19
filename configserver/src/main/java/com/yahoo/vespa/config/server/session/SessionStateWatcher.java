@@ -51,7 +51,6 @@ public class SessionStateWatcher {
 
     private void sessionChanged(Session.Status status) {
         long sessionId = remoteSession.getSessionId();
-        log.log(Level.FINE, remoteSession.logPre() + "Session change: Session " + remoteSession.getSessionId() + " changed status to " + status);
 
         // valid for NEW -> PREPARE transitions, not ACTIVATE -> PREPARE.
         if (status.equals(Session.Status.PREPARE)) {
@@ -91,6 +90,8 @@ public class SessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Session.Status.parse(Utf8.toString(node.getData()));
+                    log.log(Level.FINE, remoteSession.logPre() + "Session change: Remote session " + remoteSession.getSessionId() +
+                                        " changed status from " + currentStatus.name() + " to " + newStatus.name());
                     sessionChanged(newStatus);
                 }
             } catch (Exception e) {

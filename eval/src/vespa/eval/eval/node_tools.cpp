@@ -180,6 +180,7 @@ struct CopyNode : NodeTraverser, NodeVisitor {
     void visit(const Relu         &node) override { copy_call(node); }
     void visit(const Sigmoid      &node) override { copy_call(node); }
     void visit(const Elu          &node) override { copy_call(node); }
+    void visit(const Erf          &node) override { copy_call(node); }
 
     // traverse nodes
     bool open(const Node &) override { return !error; }

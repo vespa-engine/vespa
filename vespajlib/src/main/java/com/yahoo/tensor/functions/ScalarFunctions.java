@@ -50,6 +50,7 @@ public class ScalarFunctions {
     public static DoubleUnaryOperator square() { return new Square(); }
     public static DoubleUnaryOperator tan() { return new Tan(); }
     public static DoubleUnaryOperator tanh() { return new Tanh(); }
+    public static DoubleUnaryOperator erf() { return new Erf(); }
 
     public static DoubleUnaryOperator elu() { return new Elu(); }
     public static DoubleUnaryOperator elu(double alpha) { return new Elu(alpha); }
@@ -330,6 +331,30 @@ public class ScalarFunctions {
         public String toString() { return "f(a)(tanh(a))"; }
     }
 
+    public static class Erf implements DoubleUnaryOperator {
+        @Override
+        public double applyAsDouble(double operand) { return erf(operand); }
+        @Override
+        public String toString() { return "f(a)(erf(a))"; }
+
+        // Use Horner's method
+        // From https://introcs.cs.princeton.edu/java/21function/ErrorFunction.java.html
+        public static double erf(double v) {
+            double t = 1.0 / (1.0 + 0.5 * Math.abs(v));
+            double ans = 1 - t * Math.exp(-v*v - 1.26551223 +
+                                           t * ( 1.00002368 +
+                                           t * ( 0.37409196 +
+                                           t * ( 0.09678418 +
+                                           t * (-0.18628806 +
+                                           t * ( 0.27886807 +
+                                           t * (-1.13520398 +
+                                           t * ( 1.48851587 +
+                                           t * (-0.82215223 +
+                                           t * ( 0.17087277))))))))));
+            if (v >= 0) return  ans;
+            else        return -ans;
+        }
+    }
 
     // Variable-length operators -----------------------------------------------------------------------------
 

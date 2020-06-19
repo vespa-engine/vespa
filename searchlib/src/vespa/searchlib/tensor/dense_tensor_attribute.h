@@ -23,6 +23,7 @@ private:
     DenseTensorStore _denseTensorStore;
     std::unique_ptr<NearestNeighborIndex> _index;
 
+    void internal_set_tensor(DocId docid, const Tensor& tensor);
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage memory_usage() const override;
 
@@ -33,6 +34,8 @@ public:
     // Implements AttributeVector and ITensorAttribute
     uint32_t clearDoc(DocId docId) override;
     void setTensor(DocId docId, const Tensor &tensor) override;
+    std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const Tensor& tensor) const override;
+    void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result) override;
     std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     bool onLoad() override;

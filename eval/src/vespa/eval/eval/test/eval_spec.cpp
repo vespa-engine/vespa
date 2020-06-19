@@ -151,6 +151,7 @@ EvalSpec::add_function_call_cases() {
     add_rule({"a", -1.0, 1.0}, "relu(a)", [](double a){ return std::max(a, 0.0); });
     add_rule({"a", -1.0, 1.0}, "sigmoid(a)", [](double a){ return 1.0 / (1.0 + std::exp(-1.0 * a)); });
     add_rule({"a", -1.0, 1.0}, "elu(a)", [](double a){ return (a < 0) ? std::exp(a)-1 : a; });
+    add_rule({"a", -1.0, 1.0}, "erf(a)", [](double a){ return std::erf(a); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "atan2(a,b)", [](double a, double b){ return std::atan2(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "ldexp(a,b)", [](double a, double b){ return std::ldexp(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "pow(a,b)", [](double a, double b){ return std::pow(a, b); });
@@ -162,11 +163,11 @@ EvalSpec::add_function_call_cases() {
 void
 EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "map(a,f(x)(sin(x)))", [](double x){ return std::sin(x); });
-    add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x+x*3))", [](double x){ return (x + (x * 3)); });
+    add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x*x*3))", [](double x){ return ((x * x) * 3); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y*3))", [](double x, double y){ return (x + (y * 3)); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x*y*3))", [](double x, double y){ return ((x * y) * 3); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x+y*3))", [](double x, double y){ return (x + (y * 3)); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x*y*3))", [](double x, double y){ return ((x * y) * 3); });
     add_rule({"a", -1.0, 1.0}, "reduce(a,avg)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,count)", [](double){ return 1.0; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
