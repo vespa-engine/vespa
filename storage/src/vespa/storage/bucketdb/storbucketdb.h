@@ -23,7 +23,7 @@ public:
         CREATE_IF_NONEXISTING = 1
     };
 
-    StorBucketDatabase();
+    explicit StorBucketDatabase(bool use_btree_db = false);
 
     void insert(const document::BucketId&, const bucketdb::StorageBucketInfo&,
                 const char* clientId);

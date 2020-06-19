@@ -26,7 +26,7 @@ private:
 
 public:
     using UP = std::unique_ptr<ContentBucketSpace>;
-    ContentBucketSpace(document::BucketSpace bucketSpace);
+    explicit ContentBucketSpace(document::BucketSpace bucketSpace, bool use_btree_db = false);
 
     document::BucketSpace bucketSpace() const noexcept { return _bucketSpace; }
     StorBucketDatabase &bucketDatabase() { return _bucketDatabase; }

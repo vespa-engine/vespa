@@ -9,9 +9,9 @@ namespace storage {
 
 using vespalib::IllegalStateException;
 
-ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl()
+ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl(bool use_btree_db)
     : _diskCount(0),
-      _bucketSpaceRepo()
+      _bucketSpaceRepo(use_btree_db)
 { }
 
 void

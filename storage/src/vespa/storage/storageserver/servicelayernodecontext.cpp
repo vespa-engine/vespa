@@ -4,9 +4,8 @@
 
 namespace storage {
 
-ServiceLayerNodeContext::ServiceLayerNodeContext(
-        framework::Clock::UP clock)
-    : StorageNodeContext(StorageComponentRegisterImpl::UP(new ServiceLayerComponentRegisterImpl),
+ServiceLayerNodeContext::ServiceLayerNodeContext(framework::Clock::UP clock, bool use_btree_db)
+    : StorageNodeContext(std::make_unique<ServiceLayerComponentRegisterImpl>(use_btree_db),
                          std::move(clock)),
       _componentRegister(dynamic_cast<ComponentRegister&>(StorageNodeContext::getComponentRegister()))
 {

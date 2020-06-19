@@ -38,15 +38,23 @@ operator<<(std::ostream& out, const StorageBucketInfo& info) {
     return out;
 }
 
-std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_default_db() {
+namespace {
+
+std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_legacy_db_impl() {
+    return std::make_unique<LockableMap<JudyMultiMap<StorageBucketInfo>>>();
+}
+
+std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_btree_db_impl() {
     return std::make_unique<BTreeLockableMap<StorageBucketInfo>>();
-    //return std::make_unique<LockableMap<JudyMultiMap<StorageBucketInfo>>>();
+}
+
 }
 
 } // bucketdb
 
-StorBucketDatabase::StorBucketDatabase()
-    : _impl(bucketdb::make_default_db())
+StorBucketDatabase::StorBucketDatabase(bool use_btree_db)
+    : _impl(use_btree_db ? bucketdb::make_btree_db_impl()
+                         : bucketdb::make_legacy_db_impl())
 {}
 
 void
