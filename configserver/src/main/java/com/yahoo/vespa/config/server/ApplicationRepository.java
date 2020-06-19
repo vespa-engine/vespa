@@ -490,7 +490,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
-            RemoteSession session = tenant.getSessionRepo().getRemoteSession(sessionId);
+            RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
             if (session == null) throw new NotFoundException("Remote session " + sessionId + " not found");
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
@@ -528,7 +528,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = tenantRepository.getTenant(applicationId.tenant()).getSessionRepo();
+        SessionRepository sessionRepository = tenantRepository.getTenant(applicationId.tenant()).getSessionRepository();
         Instant end = Instant.now().plus(waitTime);
         do {
             if (sessionRepository.getRemoteSession(sessionId) == null) return true;
@@ -690,7 +690,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         return tenantRepository.getAllTenants()
                 .stream()
-                .map(tenant -> tenant.getSessionRepo().deleteExpiredRemoteSessions(clock, expiryTime))
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, expiryTime))
                 .mapToInt(i -> i)
                 .sum();
     }
@@ -765,7 +765,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
-        RemoteSession session = tenant.getSessionRepo().getRemoteSession(sessionId);
+        RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
@@ -816,7 +816,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private RemoteSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
-            return tenant.getSessionRepo().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
+            return tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }
