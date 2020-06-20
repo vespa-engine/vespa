@@ -68,9 +68,9 @@ public class DeploymentSpec {
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
-        if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
+        if (totalDelaySeconds > Duration.ofHours(48).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
-                                               " but max 24 hours is allowed");
+                                               " but max 48 hours is allowed");
     }
 
     /** Throws an IllegalArgumentException if any instance has a looser upgrade policy than the previous */
