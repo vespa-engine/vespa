@@ -10,7 +10,6 @@ import com.yahoo.vespa.curator.recipes.CuratorCounter;
  * Distributed global generation counter for the super model.
  *
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public class SuperModelGenerationCounter implements GenerationCounter {
 

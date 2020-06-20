@@ -23,7 +23,6 @@ import java.io.StringReader;
  * reloading of config as well.
  *
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public class SuperModelController {
 

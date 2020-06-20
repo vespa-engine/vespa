@@ -2,9 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 /**
- * No resource found
- * @author musum
- * @since 6.55
+ * @author hmusum
  */
 public class NotFoundException extends IllegalArgumentException {
     public NotFoundException(String s) {
