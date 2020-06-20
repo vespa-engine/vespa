@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionProvider;
 
 import java.io.File;
