@@ -2,12 +2,9 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.8
  */
 public class MockTenantListener implements TenantListener {
     TenantName tenantCreatedName;
@@ -30,4 +27,5 @@ public class MockTenantListener implements TenantListener {
     public void onTenantsLoaded() {
         tenantsLoaded = true;
     }
+
 }

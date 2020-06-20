@@ -101,9 +101,4 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
         return this;
     }
 
-    @Override
-    public ReloadHandler getReloadHandler() {
-        return this;
-    }
-
 }
