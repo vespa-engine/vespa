@@ -101,6 +101,18 @@ function(vespa_add_target_system_dependency TARGET PACKAGE_NAME)
     endif()
 endfunction()
 
+function(vespa_add_source_target TARGET)
+    cmake_parse_arguments(
+        ARG
+        ""
+        ""
+        "DEPENDS"
+        ${ARGN}
+    )
+    add_custom_target(${TARGET} DEPENDS ${ARG_DEPENDS})
+    __add_source_target_to_module(${TARGET})
+endfunction()
+
 function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     # Generate config-<name>.cpp and config-<name>.h from <name>.def
     # Destination directory is always where generate_config is called (or, in the case of out-of-source builds, in the build-tree parallel)
@@ -134,6 +146,7 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
         OUTPUT ${CONFIG_H_PATH} ${CONFIG_CPP_PATH}
         COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_PARENT_DIR} -Dconfig.lang=cpp -Dconfig.subdir=${CONFIG_DEST_DIRNAME} -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+        COMMENT "Generating cpp config for ${CONFIG_NAME} in ${CMAKE_CURRENT_SOURCE_DIR}"
         MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
         )
 
@@ -148,6 +161,7 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     # Needed to be able to do a #include <config-<name>.h> for this target
     # This is used within some unit tests
     target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_DIR})
+    vespa_add_source_target("configgen_${TARGET}_${CONFIG_NAME}" DEPENDS ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 endfunction()
 
 function(vespa_add_library TARGET)
@@ -495,6 +509,10 @@ endfunction()
 
 function(__add_test_target_to_module TARGET)
     set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_TEST_TARGETS ${TARGET})
+endfunction()
+
+function(__add_source_target_to_module TARGET)
+    set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_SOURCE_TARGETS ${TARGET})
 endfunction()
 
 macro(__handle_test_targets)
