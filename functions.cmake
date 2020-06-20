@@ -150,6 +150,10 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
         MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
         )
 
+    if (TARGET ${TARGET}_object)
+        # Generated config is in implicit object library
+        set(TARGET "${TARGET}_object")
+    endif()
     # Add generated to sources for target
     target_sources(${TARGET} PRIVATE ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 
@@ -164,6 +168,19 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     vespa_add_source_target("configgen_${TARGET}_${CONFIG_NAME}" DEPENDS ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 endfunction()
 
+macro(__split_sources_list)
+    unset(SOURCE_FILES)
+    unset(NON_TARGET_SOURCE_FILES)
+    unset(TARGET_SOURCE_FILES)
+    if(ARG_SOURCES)
+        set(SOURCE_FILES ${ARG_SOURCES})
+        set(TARGET_SOURCE_FILES ${ARG_SOURCES})
+        set(NON_TARGET_SOURCE_FILES ${ARG_SOURCES})
+        list(FILTER TARGET_SOURCE_FILES INCLUDE REGEX "TARGET_OBJECTS:")
+        list(FILTER NON_TARGET_SOURCE_FILES EXCLUDE REGEX "TARGET_OBJECTS:")
+    endif()
+endmacro()
+
 function(vespa_add_library TARGET)
     cmake_parse_arguments(ARG
         "STATIC;OBJECT;INTERFACE;TEST"
@@ -172,13 +189,12 @@ function(vespa_add_library TARGET)
         ${ARGN})
 
     __check_target_parameters()
-
-    if(ARG_SOURCES)
-        set(SOURCE_FILES ${ARG_SOURCES})
-    else()
+    __split_sources_list()
+    if(NOT ARG_SOURCES)
         # In the case where no source files are given, we include an empty source file to suppress a warning from CMake
         # This way, config-only libraries will not generate lots of build warnings
         set(SOURCE_FILES "${CMAKE_SOURCE_DIR}/empty.cpp")
+        set(NON_TARGET_SOURCE_FILES ${SOURCE_FILES})
     endif()
 
     if(ARG_OBJECT)
@@ -191,7 +207,13 @@ function(vespa_add_library TARGET)
         set(SOURCE_FILES)
     endif()
 
-    add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} ${SOURCE_FILES})
+    if (ARG_OBJECT OR ARG_INTERFACE OR TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} ${SOURCE_FILES})
+    else()
+        set(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY True)
+        add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} $<TARGET_OBJECTS:${TARGET}_object> ${TARGET_SOURCE_FILES})
+    endif()
     __add_dependencies_to_target()
 
     __handle_test_targets()
@@ -207,6 +229,11 @@ function(vespa_add_library TARGET)
 
     __add_target_to_module(${TARGET})
     __export_include_directories(${TARGET})
+    if(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+      unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+      vespa_add_library(${TARGET}_object OBJECT SOURCES ${NON_TARGET_SOURCE_FILES} DEPENDS ${ARG_DEPENDS})
+      add_dependencies(${TARGET} ${TARGET}_object)
+    endif()
 endfunction()
 
 function(__install_header_files)
@@ -237,7 +264,14 @@ function(vespa_add_executable TARGET)
         ${ARGN})
 
     __check_target_parameters()
-    add_executable(${TARGET} ${ARG_SOURCES})
+    __split_sources_list()
+    if(TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        add_executable(${TARGET} ${ARG_SOURCES})
+    else()
+        set(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY True)
+        add_executable(${TARGET} $<TARGET_OBJECTS:${TARGET}_object> ${TARGET_SOURCE_FILES})
+    endif()
     __add_dependencies_to_target()
 
     __handle_test_targets()
@@ -252,6 +286,11 @@ function(vespa_add_executable TARGET)
 
     __add_target_to_module(${TARGET})
     __export_include_directories(${TARGET})
+    if(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        vespa_add_library(${TARGET}_object OBJECT SOURCES ${NON_TARGET_SOURCE_FILES} DEPENDS ${ARG_DEPENDS})
+        add_dependencies(${TARGET} ${TARGET}_object)
+    endif()
 endfunction()
 
 macro(vespa_define_module)
