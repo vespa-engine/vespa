@@ -405,7 +405,7 @@ public class DeploymentSpecTest {
                     "      <upgrade policy='canary'/>" +
                     "      <prod>" +
                     "         <region active='true'>us-west-1</region>" +
-                    "         <delay hours='23'/>" +
+                    "         <delay hours='47'/>" +
                     "         <region active='true'>us-central-1</region>" +
                     "         <delay minutes='59' seconds='61'/>" +
                     "         <region active='true'>us-east-3</region>" +
@@ -418,7 +418,7 @@ public class DeploymentSpecTest {
         }
         catch (IllegalArgumentException e) {
             // success
-            assertEquals("The total delay specified is PT24H1S but max 24 hours is allowed", e.getMessage());
+            assertEquals("The total delay specified is PT48H1S but max 48 hours is allowed", e.getMessage());
         }
     }
 
