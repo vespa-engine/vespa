@@ -1,11 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd;
+package ai.vespa.hosted.cd.impl;
 
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
-import ai.vespa.hosted.cd.http.HttpDeployment;
+import ai.vespa.hosted.cd.Deployment;
+import ai.vespa.hosted.cd.TestRuntime;
+import ai.vespa.hosted.cd.impl.http.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -20,11 +22,22 @@ public class VespaTestRuntime implements TestRuntime {
     private final TestConfig config;
     private final Deployment deploymentToTest;
 
+    /*
+     * Used when executing tests locally
+     */
     public VespaTestRuntime() {
-            String configPath = System.getProperty("vespa.test.config");
-            TestConfig config = configPath != null ? fromFile(configPath) : fromController();
-            this.config = config;
-            this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
+            this(configFromPropertyOrController());
+    }
+
+    /*
+     * Used when executing tests from using Vespa test framework in container
+     */
+    public VespaTestRuntime(byte[] config) {
+        this(fromByteArray(config));
+    }
+    private VespaTestRuntime(TestConfig config) {
+        this.config = config;
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
     }
 
     @Override
@@ -37,6 +50,11 @@ public class VespaTestRuntime implements TestRuntime {
     @Override
     public Deployment deploymentToTest() { return deploymentToTest; }
 
+    private static TestConfig configFromPropertyOrController() {
+        String configPath = System.getProperty("vespa.test.config");
+        return configPath != null ? fromFile(configPath) : fromController();
+    }
+
     private static TestConfig fromFile(String path) {
         try {
             return TestConfig.fromJson(Files.readAllBytes(Paths.get(path)));
@@ -44,6 +62,10 @@ public class VespaTestRuntime implements TestRuntime {
         catch (Exception e) {
             throw new IllegalArgumentException("Failed reading config from '" + path + "'!", e);
         }
+    }
+
+    private static TestConfig fromByteArray(byte[] config) {
+        return TestConfig.fromJson(config);
     }
 
     private static TestConfig fromController() {
