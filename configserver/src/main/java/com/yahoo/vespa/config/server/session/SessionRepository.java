@@ -600,6 +600,8 @@ public class SessionRepository {
         return getLocalSessions().toString();
     }
 
+    public ReloadHandler getReloadHandler() { return reloadHandler; }
+
     private static class FileTransaction extends AbstractTransaction {
 
         public static FileTransaction from(FileOperation operation) {

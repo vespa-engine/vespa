@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.SessionRepository;
@@ -30,31 +29,19 @@ public class Tenant implements TenantHandlerProvider {
     private final SessionRepository sessionRepository;
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
-    private final ReloadHandler reloadHandler;
     private final Curator curator;
 
     Tenant(TenantName name,
            SessionRepository sessionRepository,
            RequestHandler requestHandler,
-           ReloadHandler reloadHandler,
            TenantApplications applicationRepo,
            Curator curator) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
-        this.reloadHandler = reloadHandler;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
         this.curator = curator;
-    }
-
-    /**
-     * The reload handler for this
-     *
-     * @return handler
-     */
-    public ReloadHandler getReloadHandler() {
-        return reloadHandler;
     }
 
     /**

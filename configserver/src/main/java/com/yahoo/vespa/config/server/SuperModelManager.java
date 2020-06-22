@@ -43,7 +43,7 @@ public class SuperModelManager implements SuperModelProvider {
     private final GenerationCounter generationCounter;
 
     // The initial set of applications to be deployed on bootstrap.
-    private Optional<Set<ApplicationId>> bootstrapApplicationSet = Optional.empty();
+    private final Optional<Set<ApplicationId>> bootstrapApplicationSet = Optional.empty();
 
     @Inject
     public SuperModelManager(ConfigserverConfig configserverConfig,
