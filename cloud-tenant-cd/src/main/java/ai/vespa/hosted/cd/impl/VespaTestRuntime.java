@@ -8,26 +8,17 @@ import ai.vespa.hosted.api.TestConfig;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.TestRuntime;
 import ai.vespa.hosted.cd.impl.http.HttpDeployment;
-import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.cd.impl.CloudTenantCdConfig;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author mortent
  */
-public class VespaTestRuntime extends AbstractComponent implements TestRuntime {
+public class VespaTestRuntime implements TestRuntime {
     private final TestConfig config;
     private final Deployment deploymentToTest;
 
@@ -41,10 +32,8 @@ public class VespaTestRuntime extends AbstractComponent implements TestRuntime {
     /*
      * Used when executing tests from using Vespa test framework in container
      */
-    @Inject
-    public VespaTestRuntime(CloudTenantCdConfig c) {
-
-        this(fromVespaConfig(c));
+    public VespaTestRuntime(byte[] config) {
+        this(fromByteArray(config));
     }
     private VespaTestRuntime(TestConfig config) {
         this.config = config;
@@ -75,6 +64,10 @@ public class VespaTestRuntime extends AbstractComponent implements TestRuntime {
         }
     }
 
+    private static TestConfig fromByteArray(byte[] config) {
+        return TestConfig.fromJson(config);
+    }
+
     private static TestConfig fromController() {
         ControllerHttpClient controller = new ai.vespa.hosted.auth.ApiAuthenticator().controller();
         ApplicationId id = Properties.application();
@@ -82,32 +75,5 @@ public class VespaTestRuntime extends AbstractComponent implements TestRuntime {
         ZoneId zone = Properties.region().map(region -> ZoneId.from(environment, region))
                 .orElseGet(() -> controller.defaultZone(environment));
         return controller.testConfig(id, zone);
-    }
-
-    private static TestConfig fromVespaConfig(CloudTenantCdConfig config) {
-        Map<ZoneId, Map<String, URI>> deployments = new HashMap<>();
-        Map<ZoneId, List<String>> contentClusters = new HashMap<>();
-        for (Map.Entry<String, CloudTenantCdConfig.Zones> entry : config.zones().entrySet()) {
-            ZoneId zoneId = ZoneId.from(entry.getKey());
-
-            Map<String, URI> zoneDeployments = entry.getValue().deployments().entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> URI.create(e.getValue())));
-
-            deployments.put(zoneId, zoneDeployments);
-
-            contentClusters.put(zoneId, entry.getValue().contentClusters());
-        }
-        return new TestConfig(
-                ApplicationId.fromFullString(config.application()),
-                ZoneId.from(config.zone()),
-                SystemName.from(config.systemName()),
-                config.isCi(),
-                deployments,
-                contentClusters);
-    }
-
-    @Override
-    public void deconstruct() {
-        super.deconstruct();
     }
 }

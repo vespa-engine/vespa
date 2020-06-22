@@ -4,6 +4,6 @@
  * @author mortent
  */
 @ExportPackage
-package com.yahoo.vespa.hosted.cd.impl;
+package ai.vespa.hosted.cd.internal;
 
 import com.yahoo.osgi.annotation.ExportPackage;

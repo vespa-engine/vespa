@@ -2,28 +2,23 @@
 package ai.vespa.hosted.cd.internal;
 
 import ai.vespa.hosted.cd.TestRuntime;
-import com.yahoo.component.AbstractComponent;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author mortent
  */
-public class TestRuntimeProvider extends AbstractComponent {
+public interface TestRuntimeProvider  {
 
-    private static final AtomicReference<TestRuntime> testRuntime = new AtomicReference<>();
+    static final AtomicReference<TestRuntime> testRuntime = new AtomicReference<>();
 
-    public TestRuntimeProvider(TestRuntime testRuntime) {
+    void initialize(byte[] config);
+
+    default void updateReference(TestRuntime testRuntime) {
         TestRuntimeProvider.testRuntime.set(testRuntime);
     }
 
     public static TestRuntime getTestRuntime() {
         return testRuntime.get();
-    }
-
-    @Override
-    public void deconstruct() {
-        super.deconstruct();
-        testRuntime.set(null);
     }
 }
