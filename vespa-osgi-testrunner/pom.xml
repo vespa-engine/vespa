@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
-            <version>7-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -60,8 +60,14 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd-api</artifactId>
-            <version>7-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>hosted-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -7,6 +7,7 @@ import org.osgi.framework.BundleReference;
 
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.logging.Logger;
 
 /**
  * The place to obtain environment-dependent configuration for test of a Vespa deployment.
@@ -15,18 +16,16 @@ import java.util.ServiceLoader;
  * @author mortent
  */
 public interface TestRuntime {
+    static final Logger logger = Logger.getLogger(TestRuntime.class.getName());
     static TestRuntime get() {
         var classloader = TestRuntime.class.getClassLoader();
 
-        System.out.println("classloader.toString() = " + classloader.toString());
-        System.out.println("classloader.getClass().toString() = " + classloader.getClass().toString());
-
         if (classloader instanceof BundleReference) {
-            System.out.println("Loading Test runtime from osgi component");
+            logger.info("Loading Test runtime from TestRuntimeProvider");
             return Optional.ofNullable(TestRuntimeProvider.getTestRuntime())
                     .orElseThrow(() -> new RuntimeException("Component graph not ready, retrying"));
         } else {
-            System.out.println("Loading Test runtime from service loader");
+            logger.info("Loading Test runtime from ServiceLoader");
             ServiceLoader<TestRuntime> serviceLoader = ServiceLoader.load(TestRuntime.class, TestRuntime.class.getClassLoader());
             return serviceLoader.findFirst().orElseThrow(() -> new RuntimeException("No TestRuntime implementation found"));
         }

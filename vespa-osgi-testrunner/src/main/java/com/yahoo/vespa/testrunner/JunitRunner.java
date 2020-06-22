@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
+import ai.vespa.hosted.api.TestDescriptor;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.exception.ExceptionUtils;
@@ -13,7 +14,6 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
-import org.junit.platform.launcher.LauncherConstants;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherConfig;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
@@ -63,7 +63,7 @@ public class JunitRunner extends AbstractComponent {
     }
 
     public TestDescriptor loadTestDescriptor(Bundle bundle) {
-        URL resource = bundle.getEntry("META-INF/testClasses.json");
+        URL resource = bundle.getEntry(TestDescriptor.DEFAULT_FILENAME);
         TestDescriptor testDescriptor;
         try {
             var jsonDescriptor = IOUtils.readAll(resource.openStream(), Charset.defaultCharset()).trim();
@@ -71,7 +71,7 @@ public class JunitRunner extends AbstractComponent {
             logger.info( "Test classes in bundle :" + testDescriptor.toString());
             return testDescriptor;
         } catch (IOException e) {
-            throw new RuntimeException("Could not load META-INF/testClasses.json [" + e.getMessage() + "]");
+            throw new RuntimeException("Could not load " + TestDescriptor.DEFAULT_FILENAME + " [" + e.getMessage() + "]");
         }
     }
 
@@ -99,8 +99,6 @@ public class JunitRunner extends AbstractComponent {
                 .selectors(
                         testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList())
                 )
-                .configurationParameter(LauncherConstants.CAPTURE_STDERR_PROPERTY_NAME,"true")
-                .configurationParameter(LauncherConstants.CAPTURE_STDOUT_PROPERTY_NAME,"true")
                 .build();
 
         var launcherConfig = LauncherConfig.builder()

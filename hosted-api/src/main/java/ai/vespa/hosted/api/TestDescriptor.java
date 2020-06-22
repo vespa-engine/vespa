@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.testrunner;
+package ai.vespa.hosted.api;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
  * @author mortent
  */
 public class TestDescriptor {
+    public static final String DEFAULT_FILENAME = "META-INF/ai.vespa/testDescriptor.json";
+
     private final Map<TestCategory, List<String>> configuredTestClasses;
     private final String version;
 
