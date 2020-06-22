@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
-import java.util.logging.Level;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -14,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -78,7 +78,7 @@ public class NameServiceForwarder {
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }
-            log.log(Level.INFO, "Queueing name service request: " + request);
+            log.log(Level.FINE, "Queueing name service request: " + request);
             db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
         }
     }
