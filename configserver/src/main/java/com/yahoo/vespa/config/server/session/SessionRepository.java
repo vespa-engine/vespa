@@ -120,9 +120,8 @@ public class SessionRepository {
 
     public synchronized void addSession(LocalSession session) {
         localSessionCache.addSession(session);
-        Path sessionsPath = TenantRepository.getSessionsPath(session.getTenantName());
         long sessionId = session.getSessionId();
-        Curator.FileCache fileCache = curator.createFileCache(sessionsPath.append(String.valueOf(sessionId)).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         localSessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this, zkWatcherExecutor));
     }
 
@@ -319,8 +318,7 @@ public class SessionRepository {
     public void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding session to SessionRepository: " + sessionId);
         RemoteSession session = createRemoteSession(sessionId);
-        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
-        Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         fileCache.addListener(this::nodeChanged);
         loadSessionIfActive(session);
         addRemoteSession(session);
@@ -489,9 +487,9 @@ public class SessionRepository {
      * This method is used when creating a session based on a remote session and the distributed application package
      * It does not wait for session being created on other servers
      */
-    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId,
-                                            long sessionId, Optional<Long> currentlyActiveSessionId) {
+    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
+            Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
@@ -529,7 +527,7 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
             log.log(Level.FINE, "Local session for session id " + sessionId + " already exists");
             return Optional.of(createSessionFromId(sessionId));
@@ -552,10 +550,9 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
-            return Optional.of(createLocalSession(sessionDir,
-                                                  applicationId,
-                                                  sessionId,
-                                                  getActiveSessionId(applicationId)));
+            LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
+            addSession(localSession);
+            return Optional.of(localSession);
         }
         return Optional.empty();
     }
@@ -571,10 +568,13 @@ public class SessionRepository {
         return new SessionCounter(componentRegistry.getConfigCurator(), tenantName).nextSessionId();
     }
 
-    private Path getSessionPath(long sessionId) {
+    public Path getSessionPath(long sessionId) {
         return sessionsPath.append(String.valueOf(sessionId));
     }
 
+    Path getSessionStatePath(long sessionId) {
+        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+    }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
