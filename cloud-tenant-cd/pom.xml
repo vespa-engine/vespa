@@ -43,6 +43,12 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- compile scope -->
         <dependency>
@@ -66,6 +72,19 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <!-- TODO: Make config class plugin work with other packageprefix. Below does not work-->
+                    <groupId>com.yahoo.vespa</groupId>
+                    <artifactId>config-class-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <packagePrefix>ai.vespa</packagePrefix>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>com.yahoo.vespa</groupId>

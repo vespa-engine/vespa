@@ -40,6 +40,13 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <!-- required to inject component from test implementation -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>component</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- compile -->
         <dependency> <!-- TODO(bjorncs): share junit version number with test-runner implementation -->

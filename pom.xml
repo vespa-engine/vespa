@@ -139,6 +139,7 @@
         <module>vespa-hadoop</module>
         <module>vespa-http-client</module>
         <module>vespa-maven-plugin</module>
+        <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
         <module>vespa_feed_perf</module>
         <module>vespa_jersey2</module>
