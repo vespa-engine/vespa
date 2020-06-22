@@ -16,56 +16,34 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 /**
- * "Public package" in this context means a package that is either exported or declared as "Global-Package"
- * in a bundle's manifest.
+ * Static utilities for analyzing jar files.
  *
  * @author Tony Vaagenes
  * @author ollivir
+ * @author gjoranv
  */
 public class AnalyzeBundle {
-    public static class PublicPackages {
-        public final List<Export> exports;
-        public final List<String> globals;
 
-        PublicPackages(List<Export> exports, List<String> globals) {
-            this.exports = exports;
-            this.globals = globals;
-        }
-
-        public Set<String> exportedPackageNames() {
-            return exports.stream()
-                    .map(Export::getPackageNames)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-        }
-
-    }
-
-    public static PublicPackages publicPackagesAggregated(Collection<File> jarFiles) {
+    public static List<Export> exportedPackagesAggregated(Collection<File> jarFiles) {
         List<Export> exports = new ArrayList<>();
-        List<String> globals = new ArrayList<>();
 
         for (File jarFile : jarFiles) {
-            PublicPackages pp = publicPackages(jarFile);
-            exports.addAll(pp.exports);
-            globals.addAll(pp.globals);
-
-            // TODO: remove and clean up everything related to global packages.
-            if (! pp.globals.isEmpty()) throw new RuntimeException("Found global packages in bundle " + jarFile.getAbsolutePath());
+            var exported = exportedPackages(jarFile);
+            exports.addAll(exported);
         }
-        return new PublicPackages(exports, globals);
+        return exports;
     }
 
-    static PublicPackages publicPackages(File jarFile) {
+    static List<Export> exportedPackages(File jarFile) {
         try {
             Optional<Manifest> jarManifest = JarFiles.getManifest(jarFile);
             if (jarManifest.isPresent()) {
                 Manifest manifest = jarManifest.get();
                 if (isOsgiManifest(manifest)) {
-                    return new PublicPackages(parseExports(manifest), parseGlobals(manifest));
+                    return parseExports(manifest);
                 }
             }
-            return new PublicPackages(Collections.emptyList(), Collections.emptyList());
+            return Collections.emptyList();
         } catch (Exception e) {
             throw new RuntimeException(String.format("Invalid manifest in bundle '%s'", jarFile.getPath()), e);
         }
@@ -75,24 +53,10 @@ public class AnalyzeBundle {
         return JarFiles.getManifest(jarFile).flatMap(AnalyzeBundle::getBundleSymbolicName);
     }
 
-    private static List<Export> parseExportsFromAttribute(Manifest manifest, String attributeName) {
-        return getMainAttributeValue(manifest, attributeName).map(ExportPackageParser::parseExports).orElseGet(() -> new ArrayList<>());
-    }
-
     private static List<Export> parseExports(Manifest jarManifest) {
-        return parseExportsFromAttribute(jarManifest, "Export-Package");
-    }
-
-    private static List<String> parseGlobals(Manifest manifest) {
-        List<Export> globals = parseExportsFromAttribute(manifest, "Global-Package");
-
-        for (Export export : globals) {
-            if (export.getParameters().isEmpty() == false) {
-                throw new RuntimeException("Parameters not valid for Global-Package.");
-            }
-        }
-
-        return globals.stream().flatMap(g -> g.getPackageNames().stream()).collect(Collectors.toList());
+        return getMainAttributeValue(jarManifest, "Export-Package")
+                .map(ExportPackageParser::parseExports)
+                .orElseGet(ArrayList::new);
     }
 
     private static Optional<String> getMainAttributeValue(Manifest manifest, String attributeName) {
