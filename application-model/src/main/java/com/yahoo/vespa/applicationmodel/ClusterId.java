@@ -11,6 +11,7 @@ import java.util.Objects;
 public class ClusterId {
 
     public static final ClusterId CONFIG_SERVER = new ClusterId("zone-config-servers");
+    public static final ClusterId CONTROLLER = new ClusterId("controller");
 
     private final String id;
 

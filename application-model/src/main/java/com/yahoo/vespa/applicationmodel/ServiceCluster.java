@@ -51,11 +51,24 @@ public class ServiceCluster {
         return applicationInstance.get();
     }
 
-    public boolean isConfigServerCluster() {
-        return Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
+    public boolean isConfigServerClusterLike() {
+        // config server
+        if (Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
                 Objects.equals(applicationInstance.map(ApplicationInstance::applicationInstanceId), Optional.of(ApplicationInstanceId.CONFIG_SERVER)) &&
                 Objects.equals(clusterId, ClusterId.CONFIG_SERVER) &&
-                Objects.equals(serviceType, ServiceType.CONFIG_SERVER);
+                Objects.equals(serviceType, ServiceType.CONFIG_SERVER)) {
+            return true;
+        }
+
+        // controller
+        if (Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
+                Objects.equals(applicationInstance.map(ApplicationInstance::applicationInstanceId), Optional.of(ApplicationInstanceId.CONTROLLER)) &&
+                Objects.equals(clusterId, ClusterId.CONTROLLER) &&
+                Objects.equals(serviceType, ServiceType.CONTROLLER)) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
