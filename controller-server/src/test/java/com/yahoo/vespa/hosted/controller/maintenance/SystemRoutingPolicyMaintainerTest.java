@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -41,13 +39,7 @@ public class SystemRoutingPolicyMaintainerTest {
                                                                               LoadBalancer.State.active,
                                                                               Optional.of("dns-zone-1"))));
 
-        // Nothing happens without feature flag
-        updater.run();
-        dispatcher.run();
-        assertEquals(Set.of(), tester.nameService().records());
-
         // Record is created
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.CONFIGSERVER_PROVISION_LB.id(), true);
         updater.run();
         dispatcher.run();
         Set<Record> records = tester.nameService().records();

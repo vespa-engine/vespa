@@ -97,8 +97,8 @@ public class AclProvisioningTest {
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
-        // Trusted nodes is all tenant nodes, all proxy nodes and all config servers
-        assertAcls(List.of(tenantNodes, proxyNodes, configServers), nodeAcls);
+        // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
+        assertAcls(List.of(tenantNodes, proxyNodes, configServers), Set.of("10.2.3.0/24", "10.4.5.0/24"), nodeAcls);
     }
 
     @Test

@@ -276,7 +276,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag CONFIGSERVER_PROVISION_LB = defineFeatureFlag(
-            "configserver-provision-lb", false,
+            "configserver-provision-lb", true,
             "Provision load balancer for config server cluster",
             "Takes effect when zone-config-servers application is redeployed",
             ZONE_ID
