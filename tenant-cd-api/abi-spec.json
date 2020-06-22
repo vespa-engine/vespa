@@ -112,6 +112,8 @@
       "public abstract ai.vespa.hosted.cd.Deployment deploymentToTest()",
       "public abstract ai.vespa.cloud.Zone zone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.util.logging.Logger logger"
+    ]
   }
 }
