@@ -4,7 +4,6 @@ package ai.vespa.hosted.plugin;
 import ai.vespa.hosted.api.TestDescriptor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -20,7 +19,7 @@ import java.util.stream.Stream;
  *
  * @author bjorncs
  */
-@Mojo(name = "generateTestDescriptor", threadSafe = true, defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES)
+@Mojo(name = "generateTestDescriptor", threadSafe = true)
 public class GenerateTestDescriptorMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true)
