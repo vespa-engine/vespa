@@ -441,6 +441,7 @@ fi
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/application-preprocessor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar
+%{_prefix}/lib/jars/cloud-tenant-cd-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-apps-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-apputil-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-core-jar-with-dependencies.jar
@@ -460,7 +461,9 @@ fi
 %{_prefix}/lib/jars/searchlib.jar
 %{_prefix}/lib/jars/searchlib-jar-with-dependencies.jar
 %{_prefix}/lib/jars/service-monitor-jar-with-dependencies.jar
+%{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa_feed_perf-jar-with-dependencies.jar
+%{_prefix}/lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-testrunner-components.jar
 %{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
