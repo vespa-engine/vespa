@@ -40,7 +40,9 @@ public class NodeRepositoryTester {
                                             Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true, false);
+                                            true,
+                                            false,
+                                            0);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

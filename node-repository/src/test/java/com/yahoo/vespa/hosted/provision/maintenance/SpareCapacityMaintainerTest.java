@@ -137,7 +137,7 @@ public class SpareCapacityMaintainerTest {
         // By moving the 4 small nodes from host 2 we free up sufficient space on the third host to act as a spare for
         // application 0
         var tester = new SpareCapacityMaintainerTester();
-        setupMultipleHosts(tester, 5);
+        setupMultipleHosts(tester, 4);
 
         tester.maintainer.maintain();
         assertEquals(1, tester.deployer.redeployments);
@@ -148,7 +148,7 @@ public class SpareCapacityMaintainerTest {
     @Test
     public void testMultipleNodesMustMoveFromOneHostButInsufficientCapacity() {
         var tester = new SpareCapacityMaintainerTester();
-        setupMultipleHosts(tester, 4);
+        setupMultipleHosts(tester, 3);
 
         tester.maintainer.maintain();
         assertEquals(0, tester.deployer.redeployments);
@@ -244,7 +244,10 @@ public class SpareCapacityMaintainerTest {
                                                 new ManualClock(),
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),
                                                 new MockNameResolver().mockAnyLookup(),
-                                                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true, false);
+                                                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                true,
+                                                false,
+                                                1);
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
         }
