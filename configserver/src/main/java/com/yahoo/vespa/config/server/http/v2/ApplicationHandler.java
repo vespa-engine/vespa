@@ -15,13 +15,16 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
+import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -151,7 +154,11 @@ public class ApplicationHandler extends HttpHandler {
             }
         }
 
-        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
+        Tenant tenant = applicationRepository.getTenant(applicationId);
+        Optional<ApplicationSet> applicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
+        return new GetApplicationResponse(Response.Status.OK,
+                                          applicationRepository.getApplicationGeneration(applicationId),
+                                          applicationSet.get().getAllVersions(applicationId));
     }
 
     @Override
@@ -309,9 +316,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static class GetApplicationResponse extends JSONResponse {
-        GetApplicationResponse(int status, long generation) {
+        GetApplicationResponse(int status, long generation, List<Version> modelVersions) {
             super(status);
             object.setLong("generation", generation);
+            Cursor modelVersionArray = object.setArray("modelVersions");
+            modelVersions.forEach(version -> modelVersionArray.addString(version.toFullString()));
         }
     }
 

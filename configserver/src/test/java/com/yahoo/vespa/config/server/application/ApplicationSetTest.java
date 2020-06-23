@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.component.Version;
@@ -21,8 +22,8 @@ import static org.junit.Assert.assertEquals;
 public class ApplicationSetTest {
 
     private ApplicationSet applicationSet;
-    private List<Version> vespaVersions = new ArrayList<>();
-    private List<Application> applications = new ArrayList<>();
+    private final List<Version> vespaVersions = new ArrayList<>();
+    private final List<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {
@@ -48,6 +49,13 @@ public class ApplicationSetTest {
     public void testGetForVersionOrLatestThrows() {
         applicationSet = ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2)));
         applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
+    }
+
+    @Test
+    public void testGetAllVersions() {
+        applicationSet = ApplicationSet.fromList(applications);
+        assertEquals(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")),
+                     applicationSet.getAllVersions(ApplicationId.defaultId()));
     }
 
     private Application createApplication(Version version) {

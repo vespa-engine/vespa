@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import java.util.Optional;
@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * The session must be in the session repo.
  *
  * @author Vegard Havdal
+ * @author hmusum
  */
 public class SessionStateWatcher {
 
@@ -42,8 +43,8 @@ public class SessionStateWatcher {
         this.remoteSession = remoteSession;
         this.localSession = localSession;
         this.metrics = metrics;
-        this.fileCache.start();
         this.fileCache.addListener(this::nodeChanged);
+        this.fileCache.start();
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.sessionRepository = sessionRepository;
     }
