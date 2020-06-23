@@ -93,7 +93,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     private String makeQuery(String attributeTensor, String queryTensor) {
-        return "select * from sources * where [{\"targetNumHits\":1}]nearestNeighbor(" + attributeTensor + ", " + queryTensor + ");";
+        return "select * from sources * where [{\"targetHits\":1}]nearestNeighbor(" + attributeTensor + ", " + queryTensor + ");";
     }
 
     @Test
@@ -139,7 +139,7 @@ public class ValidateNearestNeighborTestCase {
         r.append(",queryTensorName=").append(qt);
         r.append(",hnsw.exploreAdditionalHits=0");
         r.append(",approximate=true");
-        r.append(",targetNumHits=").append(th);
+        r.append(",targetHits=").append(th);
         r.append("} ").append(errmsg);
         return r.toString();
     }
@@ -149,7 +149,7 @@ public class ValidateNearestNeighborTestCase {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector);";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetNumHits 0: Must be >= 1"), r);
+        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetHits 0: Must be >= 1"), r);
     }
 
     @Test

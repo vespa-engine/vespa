@@ -2075,6 +2075,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ScalarFunctions$Erf": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleUnaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public double applyAsDouble(double)",
+      "public java.lang.String toString()",
+      "public static double erf(double)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ScalarFunctions$Exp": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -2506,6 +2522,7 @@
       "public static java.util.function.DoubleUnaryOperator square()",
       "public static java.util.function.DoubleUnaryOperator tan()",
       "public static java.util.function.DoubleUnaryOperator tanh()",
+      "public static java.util.function.DoubleUnaryOperator erf()",
       "public static java.util.function.DoubleUnaryOperator elu()",
       "public static java.util.function.DoubleUnaryOperator elu(double)",
       "public static java.util.function.DoubleUnaryOperator leakyrelu()",

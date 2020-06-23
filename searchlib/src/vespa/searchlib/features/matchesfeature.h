@@ -7,25 +7,6 @@
 namespace search::features {
 
 /**
- * Implements the executor for the matches feature for index and
- * attribute fields.
- */
-class MatchesExecutor : public fef::FeatureExecutor
-{
-private:
-    std::vector<fef::TermFieldHandle> _handles;
-    const fef::MatchData             *_md;
-
-    void handle_bind_match_data(const fef::MatchData &md) override;
-
-public:
-    MatchesExecutor(uint32_t fieldId,
-                    const fef::IQueryEnvironment &env,
-                    uint32_t begin, uint32_t end);
-    void execute(uint32_t docId) override;
-};
-
-/**
  * Implements the blueprint for the matches executor.
  *
  * matches(name)

@@ -14,7 +14,7 @@
     <component id="com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl" bundle="zookeeper-server" />
     <component id="com.yahoo.vespa.config.server.rpc.RpcServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ConfigServerDB" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.session.FileDistributionFactory" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelGenerationCounter" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelManager" bundle="configserver" />

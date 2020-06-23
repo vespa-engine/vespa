@@ -71,7 +71,9 @@ public class RetiredExpirerTest {
                                                                      zone,
                                                                      new MockNameResolver().mockAnyLookup(),
                                                                      DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                                     true, false);
+                                                                     true,
+                                                                     false,
+                                                                     0);
     private final NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 

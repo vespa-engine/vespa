@@ -115,6 +115,7 @@ TOKEN :
     <SQRT: "sqrt"> |
     <TAN: "tan"> |
     <TANH: "tanh"> |
+    <ERF: "erf"> |
 
     <ATAN2: "atan2"> |
     <FMOD: "fmod"> |
@@ -727,7 +728,8 @@ Function unaryFunctionName() : { }
     <SQUARE>  { return Function.square;  } |
     <SQRT>    { return Function.sqrt;    } |
     <TAN>     { return Function.tan;     } |
-    <TANH>    { return Function.tanh;    }
+    <TANH>    { return Function.tanh;    } |
+    <ERF>     { return Function.erf;     }
 }
 
 Function binaryFunctionName() : { }

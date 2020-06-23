@@ -297,11 +297,14 @@ AttributeManagerTest::testConfigConvert()
         a.index.hnsw.enabled = true;
         a.index.hnsw.maxlinkspernode = 32;
         a.index.hnsw.neighborstoexploreatinsert = 300;
+        a.index.hnsw.multithreadedindexing = true;
         auto out = ConfigConverter::convert(a);
         EXPECT_TRUE(out.hnsw_index_params().has_value());
-        EXPECT_EQUAL(32u, out.hnsw_index_params().value().max_links_per_node());
-        EXPECT_EQUAL(300u, out.hnsw_index_params().value().neighbors_to_explore_at_insert());
-        EXPECT_TRUE(out.hnsw_index_params().value().distance_metric() == dm_out);
+        const auto& params = out.hnsw_index_params().value();
+        EXPECT_EQUAL(32u, params.max_links_per_node());
+        EXPECT_EQUAL(300u, params.neighbors_to_explore_at_insert());
+        EXPECT_TRUE(params.distance_metric() == dm_out);
+        EXPECT_TRUE(params.multi_threaded_indexing());
     }
     { // hnsw index params (disabled)
         CACA a;

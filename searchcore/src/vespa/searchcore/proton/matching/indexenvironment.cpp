@@ -61,7 +61,8 @@ IndexEnvironment::insertField(const search::fef::FieldInfo &field)
     _fields.push_back(field);
 }
 
-IndexEnvironment::IndexEnvironment(const search::index::Schema &schema,
+IndexEnvironment::IndexEnvironment(uint32_t distributionKey,
+                                   const search::index::Schema &schema,
                                    const search::fef::Properties &props,
                                    const IConstantValueRepo &constantValueRepo)
     : _tableManager(),
@@ -69,7 +70,8 @@ IndexEnvironment::IndexEnvironment(const search::index::Schema &schema,
       _fieldNames(),
       _fields(),
       _motivation(UNKNOWN),
-      _constantValueRepo(constantValueRepo)
+      _constantValueRepo(constantValueRepo),
+      _distributionKey(distributionKey)
 {
     _tableManager.addFactory(std::make_shared<search::fef::FunctionTableFactory>(256));
     extractFields(schema);

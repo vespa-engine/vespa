@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
@@ -37,6 +39,7 @@ public class ExportPackages {
         public List<Parameter> getParameters() {
             return parameters;
         }
+
     }
 
     public static class Parameter {
@@ -55,6 +58,13 @@ public class ExportPackages {
         public String getValue() {
             return value;
         }
+    }
+
+    public static Set<String> packageNames(Collection<Export> exports) {
+        return exports.stream()
+                .map(Export::getPackageNames)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     public static Map<String, Export> exportsByPackageName(Collection<Export> exports) {

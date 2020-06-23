@@ -7,7 +7,6 @@ import com.yahoo.security.SignatureUtils;
 import java.io.InputStream;
 import java.net.http.HttpRequest;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
@@ -45,7 +44,6 @@ public class RequestSigner {
         this.signer = SignatureUtils.createSigner(privateKey, SHA256_WITH_ECDSA);
         this.keyId = keyId;
         this.base64PemPublicKey = Base64.getEncoder().encodeToString(KeyUtils.toPem(KeyUtils.extractPublicKey(privateKey)).getBytes(UTF_8));
-        PublicKey key = KeyUtils.extractPublicKey(privateKey);
         this.clock = clock;
     }
 
@@ -71,28 +69,6 @@ public class RequestSigner {
             request.setHeader("X-Content-Hash", contentHash);
             request.setHeader("X-Key-Id", keyId);
             request.setHeader("X-Key", base64PemPublicKey);
-            request.setHeader("X-Authorization", signature);
-
-            request.method(method.name(), HttpRequest.BodyPublishers.ofInputStream(data));
-            return request.build();
-        }
-        catch (SignatureException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    // TODO jonmv: Simulates old clients — remove shortly (2 Oct 2019).
-    public HttpRequest legacySigned(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
-        try {
-            String timestamp = clock.instant().toString();
-            String contentHash = Base64.getEncoder().encodeToString(sha256Digest(data::get));
-            byte[] canonicalMessage = Signatures.canonicalMessageOf(method.name(), request.copy().build().uri(), timestamp, contentHash);
-            signer.update(canonicalMessage);
-            String signature = Base64.getEncoder().encodeToString(signer.sign());
-
-            request.setHeader("X-Timestamp", timestamp);
-            request.setHeader("X-Content-Hash", contentHash);
-            request.setHeader("X-Key-Id", keyId);
             request.setHeader("X-Authorization", signature);
 
             request.method(method.name(), HttpRequest.BodyPublishers.ofInputStream(data));

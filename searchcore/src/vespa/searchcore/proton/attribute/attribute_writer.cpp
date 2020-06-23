@@ -40,7 +40,7 @@ use_two_phase_put_for_attribute(const AttributeVector& attr)
     const auto& cfg = attr.getConfig();
     if (cfg.basicType() == search::attribute::BasicType::Type::TENSOR &&
         cfg.hnsw_index_params().has_value() &&
-        cfg.hnsw_index_params().value().allow_multi_threaded_indexing())
+        cfg.hnsw_index_params().value().multi_threaded_indexing())
     {
         return true;
     }

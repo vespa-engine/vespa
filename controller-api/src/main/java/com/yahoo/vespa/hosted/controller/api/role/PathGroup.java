@@ -219,8 +219,10 @@ enum PathGroup {
     /** Paths used for invoice management */
     hostedAccountant(PathPrefix.api,
             "/billing/v1/invoice/{*}",
-            "/billing/v1/billing");
+            "/billing/v1/billing"),
 
+    /** Path used for listing endpoint certificate request info */
+    endpointCertificateRequestInfo(PathPrefix.none, "/certificateRequests/");
 
     final List<String> pathSpecs;
     final PathPrefix prefix;

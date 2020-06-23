@@ -5,7 +5,6 @@ package com.yahoo.vespa.config.server;
  * Indicates that a config definition (typically a def file schema) was unknown to the config server
  * 
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class UnknownConfigDefinitionException extends IllegalArgumentException {
     public UnknownConfigDefinitionException(String s) {

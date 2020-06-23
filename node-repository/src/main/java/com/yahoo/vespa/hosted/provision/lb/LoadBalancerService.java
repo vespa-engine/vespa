@@ -31,7 +31,8 @@ public interface LoadBalancerService {
     /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
     default boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
         return (nodeType == NodeType.tenant && clusterType.isContainer()) ||
-               (nodeType == NodeType.config && clusterType == ClusterSpec.Type.admin);
+               (nodeType == NodeType.config && clusterType == ClusterSpec.Type.admin) ||
+               (nodeType == NodeType.controller && clusterType.isContainer());
     }
 
     /** Load balancer protocols */

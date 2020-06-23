@@ -64,7 +64,9 @@ public class MockNodeRepository extends NodeRepository {
               Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-              true, false);
+              true,
+              false,
+              0);
         this.flavors = flavors;
 
         curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");

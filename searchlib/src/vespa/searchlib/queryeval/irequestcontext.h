@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
+namespace search::attribute { struct AttributeBlueprintParams; }
 namespace search::attribute { class IAttributeVector; }
 namespace vespalib::eval { struct Value; }
 namespace vespalib { class Doom; }
@@ -36,6 +37,8 @@ public:
      * Returns nullptr if the tensor is not found or if it is not a tensor.
      */
     virtual std::unique_ptr<vespalib::eval::Value> get_query_tensor(const vespalib::string& tensor_name) const = 0;
+
+    virtual const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const = 0;
 };
 
 }

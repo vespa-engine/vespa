@@ -53,13 +53,14 @@ struct ConvertCellsSelector
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::DenseTensorAttribute& attr_tensor,
                                                    std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits)
+                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits, double brute_force_limit)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
       _target_num_hits(target_num_hits),
       _approximate(approximate),
       _explore_additional_hits(explore_additional_hits),
+      _brute_force_limit(brute_force_limit),
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
       _found_hits(),
@@ -97,15 +98,20 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
             LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
-            if (max_hits * 10 < est_hits) {
-                LOG(debug, "too many hits filtered out, consider using brute force implementation");
+            double max_hit_ratio = static_cast<double>(max_hits) / est_hits;
+            if (max_hit_ratio < _brute_force_limit) {
+                _approximate = false;
+                LOG(debug, "too many hits filtered out, using brute force implementation");
+            } else {
+                est_hits = std::min(est_hits, max_hits);
             }
-            est_hits = std::min(est_hits, max_hits);
         }
-        est_hits = std::min(est_hits, _target_num_hits);
-        setEstimate(HitEstimate(est_hits, false));
-        perform_top_k();
-        LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
+        if (_approximate) {
+            est_hits = std::min(est_hits, _target_num_hits);
+            setEstimate(HitEstimate(est_hits, false));
+            perform_top_k();
+            LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
+        }
     }
 }
 

@@ -61,7 +61,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _diversityCutoffStrategy("loose"),
       _softTimeoutEnabled(false),
       _softTimeoutTailCost(0.1),
-      _softTimeoutFactor(0.5)
+      _softTimeoutFactor(0.5),
+      _nearest_neighbor_brute_force_limit(0.05)
 { }
 
 RankSetup::~RankSetup() = default;
@@ -104,6 +105,7 @@ RankSetup::configure()
     setSoftTimeoutEnabled(softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(softtimeout::TailCost::lookup(_indexEnv.getProperties()));
     setSoftTimeoutFactor(softtimeout::Factor::lookup(_indexEnv.getProperties()));
+    set_nearest_neighbor_brute_force_limit(matching::NearestNeighborBruteForceLimit::lookup(_indexEnv.getProperties()));
 }
 
 void

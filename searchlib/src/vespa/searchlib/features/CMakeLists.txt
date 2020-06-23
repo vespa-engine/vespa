@@ -63,6 +63,7 @@ vespa_add_library(searchlib_features OBJECT
     termfeature.cpp
     terminfofeature.cpp
     text_similarity_feature.cpp
+    uniquefeature.cpp
     utils.cpp
     valuefeature.cpp
     weighted_set_parser.cpp

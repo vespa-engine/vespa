@@ -176,7 +176,8 @@ RankManager::Snapshot::setup(const RankManager & rm, const RankProfilesConfig & 
     return setup(rm);
 }
 
-void RankManager::notify(const vsm::VSMConfigSnapshot & snap)
+void
+RankManager::notify(const vsm::VSMConfigSnapshot & snap)
 {
     configureRankProfiles(*snap.getConfig<RankProfilesConfig>());
 }
@@ -187,7 +188,7 @@ RankManager::configureRankProfiles(const RankProfilesConfig & cfg)
 {
     LOG(debug, "configureRankProfiles(): Size of cfg rankprofiles: %zd", cfg.rankprofile.size());
 
-    std::unique_ptr<Snapshot> snapshot(new Snapshot());
+    auto snapshot = std::make_unique<Snapshot>();
     if (snapshot->setup(*this, cfg)) {
         _snapshot.set(snapshot.release());
         _snapshot.latch(); // switch to the new config object

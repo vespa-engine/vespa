@@ -60,6 +60,7 @@ public:
     void hintFeatureMotivation(FeatureMotivation) const override {}
     void hintFieldAccess(uint32_t) const override {}
     void hintAttributeAccess(const string &) const override {}
+    uint32_t getDistributionKey() const override { return 3; }
 
     /** Returns a reference to the properties map of this. */
     Properties &getProperties() { return _properties; }
@@ -76,7 +77,7 @@ public:
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
+    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
 
     void addConstantValue(const vespalib::string &name,
                           vespalib::eval::ValueType type,

@@ -48,7 +48,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                                    Duration interval) {
         this(deployer, nodeRepository, metric, interval,
              10_000 // Should take less than a few minutes
-        );
+            );
     }
 
     public SpareCapacityMaintainer(Deployer deployer,
@@ -80,8 +80,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         if (failurePath.isPresent()) {
             int spareHostCapacity = failurePath.get().hostsCausingFailure.size() - 1;
             if (spareHostCapacity == 0) {
-                Move move = findMitigatingMove(failurePath.get());
-                if (moving(move)) {
+                List<Move> mitigation = findMitigation(failurePath.get());
+                if (execute(mitigation)) {
                     // We succeeded or are in the process of taking a step to mitigate.
                     // Report with the assumption this will eventually succeed to avoid alerting before we're stuck
                     spareHostCapacity++;
@@ -91,22 +91,29 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    private boolean moving(Move move) {
-        if (move.isEmpty()) return false;
-        if (move.node().allocation().get().membership().retired()) return true; // Move already in progress
-        return move.execute(false, Agent.SpareCapacityMaintainer, deployer, metric, nodeRepository());
+    private boolean execute(List<Move> mitigation) {
+        if (mitigation.isEmpty()) {
+            log.warning("Out of spare capacity. No mitigation could be found");
+            return false;
+        }
+        Move firstMove = mitigation.get(0);
+        if (firstMove.node().allocation().get().membership().retired()) return true; // Already in progress
+        boolean success = firstMove.execute(false, Agent.SpareCapacityMaintainer, deployer, metric, nodeRepository());
+        log.info("Out of spare capacity. Mitigation plan: " + mitigation + ". First move successful: " + success);
+        return success;
     }
 
-    private Move findMitigatingMove(CapacityChecker.HostFailurePath failurePath) {
+    private List<Move> findMitigation(CapacityChecker.HostFailurePath failurePath) {
         Optional<Node> nodeWhichCantMove = failurePath.failureReason.tenant;
-        if (nodeWhichCantMove.isEmpty()) return Move.empty();
+        if (nodeWhichCantMove.isEmpty()) return List.of();
 
         Node node = nodeWhichCantMove.get();
         NodeList allNodes = nodeRepository().list();
-        // Allocation will assign the two most empty nodes as "spares", which will not be allocated on
+        // Allocation will assign the spareCount most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
         HostCapacity hostCapacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
-        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.hosts().satisfies(node.resources()).asList(), 2);
+        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.hosts().satisfies(node.resources()).asList(),
+                                                           nodeRepository().spareCount());
         List<Node> hosts = allNodes.hosts().except(spareHosts).asList();
 
         CapacitySolver capacitySolver = new CapacitySolver(hostCapacity, maxIterations);
@@ -117,8 +124,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             if (shortestMitigation == null || shortestMitigation.size() > mitigation.size())
                 shortestMitigation = mitigation;
         }
-        if (shortestMitigation == null || shortestMitigation.isEmpty()) return Move.empty();
-        return shortestMitigation.get(0);
+        if (shortestMitigation == null || shortestMitigation.isEmpty()) return List.of();
+        return shortestMitigation;
     }
 
     private static class CapacitySolver {

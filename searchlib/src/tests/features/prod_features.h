@@ -39,6 +39,7 @@ public:
     void testRankingExpression();
     void testTerm();
     void testTermDistance();
+    void testUnique();
     static void testUtils();
 
     static void setupForDotProductTest(FtFeatureTest & ft);

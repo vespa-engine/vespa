@@ -226,8 +226,8 @@ public class TenantRepository {
                                                                     componentRegistry.getFlagSource(),
                                                                     componentRegistry.getSessionPreparer());
         log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler,
-                                   reloadHandler, applicationRepo, componentRegistry.getCurator());
+        Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler, applicationRepo,
+                                   componentRegistry.getCurator());
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
     }
@@ -258,7 +258,7 @@ public class TenantRepository {
     }
 
     /**
-     * Writes the tenants that should always be present into ZooKeeper. Will not fail if the node
+     * Creates the tenants that should always be present into ZooKeeper. Will not fail if the node
      * already exists, as this is OK and might happen when several config servers start at the
      * same time and try to call this method.
      */

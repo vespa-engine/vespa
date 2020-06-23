@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -65,6 +66,9 @@ public class OnnxOperationsTestCase {
         assertEval("selu", x, evaluate("map(x, f(a)(1.0 * if(a >= 0, a, 1.5 * (exp(a) - 1))))", x), createAttributes().attr("gamma", 1.0f).attr("alpha", 1.5f).build());
         assertEval("leakyrelu", x, evaluate("max(0.01 * x, x)", x));
         assertEval("leakyrelu", x, evaluate("max(0.001 * x, x)", x), createAttribute("alpha", 0.001f));
+
+        x = evaluate("tensor(d0[7]):[-40.0, -0.5, -0.1, 0.0, 0.1, 0.5, 40.0]");
+        assertEval("erf", x, evaluate("erf(x)", x));
 
         x = evaluate("tensor(d0[3]):[0.01, 1.0, 10.0]");
         assertEval("log", x, evaluate("log(x)", x));
@@ -405,9 +409,14 @@ public class OnnxOperationsTestCase {
 
     @Test
     public void testGather1() throws ParseException {
-        // 1 dim input, 1 dim indices
+        // 1 dim input, 0 dim indices
         Tensor x = evaluate("tensor(d0[6]):[1,2,3,4,5,6]");
-        Tensor y = evaluate("tensor(d0[3]):[0,2,4]");
+        Tensor y = evaluate("tensor():[0]");
+        assertEval("gather", x, y, evaluate("tensor():[1]"));
+
+        // 1 dim input, 1 dim indices
+        x = evaluate("tensor(d0[6]):[1,2,3,4,5,6]");
+        y = evaluate("tensor(d0[3]):[0,2,4]");
         assertEval("gather", x, y, evaluate("tensor(d0[3]):[1,3,5]"));
 
         // 2 dim input, 1 dim indices - axis 0
@@ -533,6 +542,60 @@ public class OnnxOperationsTestCase {
         assertEval("split", x, evaluate("tensor(d0[2],d1[1]):[3,6]"), createAttribute("axis", 1), 2);
     }
 
+    @Test
+    public void testRange11() throws ParseException {
+        Tensor start = evaluate("tensor():[3]");
+        Tensor limit = evaluate("tensor():[9]");
+        Tensor delta = evaluate("tensor():[3]");
+        assertEval("range", start, limit, delta, evaluate("tensor(d0[2]):[3,6]"));
+
+        start = evaluate("tensor():[10]");
+        limit = evaluate("tensor():[4]");
+        delta = evaluate("tensor():[-2]");
+        assertEval("range", start, limit, delta, evaluate("tensor(d0[3]):[10,8,6]"));
+        assertEval("range", start, limit, delta, evaluate("tensor(d0[3]):[10,8,6]"));
+    }
+
+    @Test
+    public void testConstant12() throws ParseException {
+        assertEval("constant", evaluate("tensor(d0[3]):[1,2,3]"), createAttribute("value", evaluate("tensor(d0[3]):[1,2,3]")));
+        assertEval("constant", evaluate("tensor<float>():[313.0]"), createAttribute("value_float", 313.0f));
+        assertEval("constant", evaluate("tensor():[42]"), createAttribute("value_int", 42));
+    }
+
+    @Test
+    public void testConstantOfShape9() throws ParseException {
+        Tensor shape = evaluate("tensor(d0[3]):[1,2,3]");
+        assertEval("constantofshape", shape, evaluate("tensor(d0[1],d1[2],d2[3]):[0,0,0,0,0,0]"));
+        assertEval("constantofshape", shape, evaluate("tensor<float>(d0[1],d1[2],d2[3]):[1,1,1,1,1,1]"), createAttribute("value", evaluate("tensor<float>(d0[1]):[1]")));
+    }
+
+    @Test
+    public void testExpand8() throws ParseException {
+        Tensor input = evaluate("tensor(d0[3],d1[1]):[1,2,3]");
+        Tensor shape = evaluate("tensor(d0[2]):[3,4]");
+        assertEval("expand", input, shape, evaluate("tensor(d0[3],d1[4]):[1,1,1,1,2,2,2,2,3,3,3,3]"));
+        shape = evaluate("tensor(d0[3]):[2,1,4]");
+        assertEval("expand", input, shape, evaluate("tensor(d0[2],d1[3],d2[4]):[1,1,1,1,2,2,2,2,3,3,3,3,1,1,1,1,2,2,2,2,3,3,3,3]"));
+    }
+
+    @Test
+    public void testJoinWithSameInput() throws ParseException {
+        Tensor x = evaluate("tensor(d0[2],d1[3]):[1,2,3,4,5,6]");
+        String opName = "mul";
+
+        Context context = new MapContext(DoubleValue.NaN);
+        List<IntermediateOperation> inputs = new ArrayList<>();
+        inputs.add(addInput(inputs, context, x, "x"));
+        IntermediateOperation op = mapOperation(opName, inputs, modelName, opName, createAttributes().build(), 0);
+        optimizeAndRename(opName, op);
+
+        Tensor result = evaluate(op);
+        Tensor expected = evaluate("tensor(d0[2],d1[3]):[1,4,9,16,25,36]");
+        assertEquals(expected, result);
+        assertEquals(expected.type(), result.type());
+    }
+
     private Tensor evaluate(String expr) throws ParseException {
         return evaluate(expr, null, null, null);
     }
@@ -556,6 +619,10 @@ public class OnnxOperationsTestCase {
     private Tensor evaluate(IntermediateOperation op) {
         Tensor tensor = op.evaluateAsConstant(op.type().get()).asTensor();
         return renameToStandardType(op, tensor);
+    }
+
+    private void assertEval(String opName, Tensor expected, AttributeConverter attr) {
+        assertEval(opName, null, null, null, null, null, expected, attr, 0);
     }
 
     private void assertEval(String opName, Tensor x, Tensor expected) {
@@ -618,12 +685,13 @@ public class OnnxOperationsTestCase {
         return inputs;
     }
 
-    private void addInput(List<IntermediateOperation> inputs, Context context, Tensor x, String name) {
-        if (x == null) return;
+    private IntermediateOperation addInput(List<IntermediateOperation> inputs, Context context, Tensor x, String name) {
+        if (x == null) return null;
         context.put(name, new TensorValue(x));
         IntermediateOperation op = new Constant(modelName, name, OrderedTensorType.fromSpec(x.type().toString()));
         op.setConstantValueFunction(type -> new TensorValue(convertTypeAfterRename(x, type)));
         inputs.add(op);
+        return op;
     }
 
     Tensor convertTypeAfterRename(Tensor tensor, OrderedTensorType type) {
@@ -667,6 +735,10 @@ public class OnnxOperationsTestCase {
         return new Attributes().attr(name, vals).build();
     }
 
+    static AttributeConverter createAttribute(String name, Tensor val) {
+        return new Attributes().attr(name, val).build();
+    }
+
     static Attributes createAttributes() {
         return new Attributes();
     }
@@ -700,9 +772,14 @@ public class OnnxOperationsTestCase {
 
         Attributes attr(String name, Tensor tensor) {
             Onnx.TensorProto.Builder builder = Onnx.TensorProto.newBuilder();
-            builder.setDataType(Onnx.TensorProto.DataType.DOUBLE);;
             tensor.type().dimensions().forEach(d -> builder.addDims(d.size().get()));
-            tensor.valueIterator().forEachRemaining(builder::addDoubleData);
+            if (tensor.type().valueType() == TensorType.Value.FLOAT) {
+                builder.setDataType(Onnx.TensorProto.DataType.FLOAT);
+                tensor.valueIterator().forEachRemaining(d -> builder.addFloatData(d.floatValue()));
+            } else {
+                builder.setDataType(Onnx.TensorProto.DataType.DOUBLE);
+                tensor.valueIterator().forEachRemaining(builder::addDoubleData);
+            }
             Onnx.TensorProto val = builder.build();
             nodeBuilder.addAttribute(Onnx.AttributeProto.newBuilder().setName(name).setType(TENSOR).setT(val).build());
             return this;

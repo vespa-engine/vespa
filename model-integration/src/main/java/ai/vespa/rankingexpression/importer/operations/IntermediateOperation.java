@@ -312,6 +312,14 @@ public abstract class IntermediateOperation {
         return -1;
     }
 
+    /** Removes outputs if they point to the same operation */
+    public void removeDuplicateOutputsTo(IntermediateOperation op) {
+        int last, first = outputs.indexOf(op);
+        while (first >= 0 && (last = outputs.lastIndexOf(op)) > first) {
+            outputs.remove(last);
+        }
+    }
+
     /**
      * Returns the largest value type among the input value types.
      * This should only be called after it has been verified that input types are available.

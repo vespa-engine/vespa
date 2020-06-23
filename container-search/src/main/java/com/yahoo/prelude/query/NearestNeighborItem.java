@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.compress.IntegerCompressor;
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 
@@ -83,7 +84,17 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append(",queryTensorName=").append(queryTensorName);
         buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
         buffer.append(",approximate=").append(approximate);
-        buffer.append(",targetNumHits=").append(targetNumHits).append("}");
+        buffer.append(",targetHits=").append(targetNumHits).append("}");
+    }
+
+    @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        discloser.addProperty("field", field);
+        discloser.addProperty("queryTensorName", queryTensorName);
+        discloser.addProperty("hnsw.exploreAdditionalHits", hnswExploreAdditionalHits);
+        discloser.addProperty("approximate", approximate);
+        discloser.addProperty("targetHits", targetNumHits);
     }
 
 }

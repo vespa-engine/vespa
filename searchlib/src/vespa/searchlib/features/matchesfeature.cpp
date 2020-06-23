@@ -11,6 +11,27 @@ using namespace search::fef;
 
 namespace search::features {
 
+namespace {
+
+/**
+ * Implements the executor for the matches feature for index and
+ * attribute fields.
+ */
+class MatchesExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData *_md;
+
+    void handle_bind_match_data(const fef::MatchData &md) override;
+
+public:
+    MatchesExecutor(uint32_t fieldId,
+                    const fef::IQueryEnvironment &env,
+                    uint32_t begin, uint32_t end);
+
+    void execute(uint32_t docId) override;
+};
+
 MatchesExecutor::MatchesExecutor(uint32_t fieldId,
                                  const search::fef::IQueryEnvironment &env,
                                  uint32_t begin, uint32_t end)
@@ -27,8 +48,7 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
 }
 
 void
-MatchesExecutor::execute(uint32_t docId)
-{
+MatchesExecutor::execute(uint32_t docId) {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
@@ -41,9 +61,10 @@ MatchesExecutor::execute(uint32_t docId)
 }
 
 void
-MatchesExecutor::handle_bind_match_data(const MatchData &md)
-{
+MatchesExecutor::handle_bind_match_data(const MatchData &md) {
     _md = &md;
+}
+
 }
 
 MatchesBlueprint::MatchesBlueprint() :

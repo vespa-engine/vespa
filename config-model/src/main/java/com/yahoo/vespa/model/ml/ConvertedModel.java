@@ -553,9 +553,10 @@ public class ConvertedModel {
         if (node instanceof ReferenceNode) {
             ReferenceNode referenceNode = (ReferenceNode)node;
             if (referenceNode.getOutput() == null) { // function references cannot specify outputs
-                names.add(referenceNode.getName());
-                if (model.functions().containsKey(referenceNode.getName())) {
-                    addFunctionNamesIn(RankingExpression.from(model.functions().get(referenceNode.getName())).getRoot(), names, model);
+                if (names.add(referenceNode.getName())) {
+                    if (model.functions().containsKey(referenceNode.getName())) {
+                        addFunctionNamesIn(RankingExpression.from(model.functions().get(referenceNode.getName())).getRoot(), names, model);
+                    }
                 }
             }
         }
