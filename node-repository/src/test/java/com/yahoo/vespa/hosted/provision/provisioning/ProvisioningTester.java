@@ -91,8 +91,7 @@ public class ProvisioningTester {
                               Orchestrator orchestrator,
                               HostProvisioner hostProvisioner,
                               LoadBalancerServiceMock loadBalancerService,
-                              FlagSource flagSource,
-                              int spareCount) {
+                              FlagSource flagSource) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
@@ -105,8 +104,7 @@ public class ProvisioningTester {
                                                  nameResolver,
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true,
-                                                 provisionServiceProvider.getHostProvisioner().isPresent(),
-                                                 spareCount);
+                                                 provisionServiceProvider.getHostProvisioner().isPresent());
         this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
@@ -543,7 +541,6 @@ public class ProvisioningTester {
         private HostProvisioner hostProvisioner;
         private LoadBalancerServiceMock loadBalancerService;
         private FlagSource flagSource;
-        private int spareCount = 0;
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -601,11 +598,6 @@ public class ProvisioningTester {
             return this;
         }
 
-        public Builder spareCount(int spareCount) {
-            this.spareCount = spareCount;
-            return this;
-        }
-
         public ProvisioningTester build() {
             Orchestrator orchestrator = Optional.ofNullable(this.orchestrator)
                     .orElseGet(() -> {
@@ -626,8 +618,7 @@ public class ProvisioningTester {
                                           orchestrator,
                                           hostProvisioner,
                                           Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
-                                          Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                                          spareCount);
+                                          Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }
 
         private static FlavorsConfig asConfig(List<Flavor> flavors) {

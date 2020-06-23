@@ -61,9 +61,7 @@ public class OperatorChangeApplicationMaintainerTest {
                                                  zone,
                                                  new MockNameResolver().mockAnyLookup(),
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                 true,
-                                                 false,
-                                                 0);
+                                                 true, false);
         this.fixture = new Fixture(zone, nodeRepository);
 
         createReadyNodes(15, this.fixture.nodeResources, nodeRepository);

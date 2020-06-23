@@ -60,11 +60,7 @@ public class DynamicDockerAllocationTest {
      */
     @Test
     public void relocate_nodes_from_spare_hosts() {
-        int spareCount = 1;
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
-                                                                    .flavorsConfig(flavorsConfig())
-                                                                    .spareCount(spareCount)
-                                                                    .build();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         tester.deployZoneApp();
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
@@ -93,7 +89,7 @@ public class DynamicDockerAllocationTest {
                 hostsWithChildren.add(node.parentHostname().get());
             }
         }
-        assertEquals(4 - spareCount, hostsWithChildren.size());
+        assertEquals(4 - tester.provisioner().getSpareCapacityProd(), hostsWithChildren.size());
 
     }
 

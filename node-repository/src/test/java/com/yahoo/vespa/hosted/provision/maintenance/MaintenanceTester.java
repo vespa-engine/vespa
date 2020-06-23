@@ -40,9 +40,7 @@ public class MaintenanceTester {
                                                                     zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                                    true,
-                                                                    false,
-                                                                    0);
+                                                                    true, false);
 
     public MaintenanceTester() {
         curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

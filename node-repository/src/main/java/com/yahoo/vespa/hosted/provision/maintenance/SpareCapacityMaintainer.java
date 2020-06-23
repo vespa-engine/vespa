@@ -48,7 +48,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                                    Duration interval) {
         this(deployer, nodeRepository, metric, interval,
              10_000 // Should take less than a few minutes
-            );
+        );
     }
 
     public SpareCapacityMaintainer(Deployer deployer,
@@ -109,11 +109,10 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         Node node = nodeWhichCantMove.get();
         NodeList allNodes = nodeRepository().list();
-        // Allocation will assign the spareCount most empty nodes as "spares", which will not be allocated on
+        // Allocation will assign the two most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
         HostCapacity hostCapacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
-        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.hosts().satisfies(node.resources()).asList(),
-                                                           nodeRepository().spareCount());
+        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.hosts().satisfies(node.resources()).asList(), 2);
         List<Node> hosts = allNodes.hosts().except(spareHosts).asList();
 
         CapacitySolver capacitySolver = new CapacitySolver(hostCapacity, maxIterations);
