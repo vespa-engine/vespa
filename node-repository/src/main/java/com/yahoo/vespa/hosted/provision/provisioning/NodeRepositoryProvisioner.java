@@ -46,6 +46,8 @@ import java.util.logging.Logger;
 public class NodeRepositoryProvisioner implements Provisioner {
 
     private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
+    private static final int SPARE_CAPACITY_PROD = 0;
+    private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
@@ -67,13 +69,12 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService, flagSource));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     nodeRepository.spareCount(),
+                                     zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                                      provisionServiceProvider.getHostProvisioner(),
                                      flagSource,
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
-
 
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
@@ -131,6 +132,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         nodeRepository.deactivate(application, transaction);
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
     }
+
+    int getSpareCapacityProd() { return SPARE_CAPACITY_PROD; }
 
     /**
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
