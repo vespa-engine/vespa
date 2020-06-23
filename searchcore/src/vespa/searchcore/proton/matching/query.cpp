@@ -199,10 +199,11 @@ Query::fetchPostings()
 }
 
 void
-Query::handle_global_filters(uint32_t docid_limit)
+Query::handle_global_filters(uint32_t docid_limit, double global_filter_limit)
 {
     using search::queryeval::GlobalFilter;
-    if (_blueprint->getState().want_global_filter()) {
+    double estimated_hit_ratio = _blueprint->getState().hit_ratio(docid_limit);
+    if (_blueprint->getState().want_global_filter() && estimated_hit_ratio >= global_filter_limit) {
         auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
         bool strict = true;
         auto filter_iterator = _blueprint->createFilterSearch(strict, constraint);
