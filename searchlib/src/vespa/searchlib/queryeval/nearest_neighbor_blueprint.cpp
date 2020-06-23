@@ -98,15 +98,20 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
             LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
-            if (max_hits * 10 < est_hits) {
-                LOG(debug, "too many hits filtered out, consider using brute force implementation");
+            double max_hit_ratio = static_cast<double>(max_hits) / est_hits;
+            if (max_hit_ratio < _brute_force_limit) {
+                _approximate = false;
+                LOG(debug, "too many hits filtered out, using brute force implementation");
+            } else {
+                est_hits = std::min(est_hits, max_hits);
             }
-            est_hits = std::min(est_hits, max_hits);
         }
-        est_hits = std::min(est_hits, _target_num_hits);
-        setEstimate(HitEstimate(est_hits, false));
-        perform_top_k();
-        LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
+        if (_approximate) {
+            est_hits = std::min(est_hits, _target_num_hits);
+            setEstimate(HitEstimate(est_hits, false));
+            perform_top_k();
+            LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
+        }
     }
 }
 
