@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -19,11 +21,13 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -40,6 +44,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -67,6 +72,7 @@ public class ApplicationHandlerTest {
     private final static NullMetric metric = new NullMetric();
     private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
+    private static final Version vespaVersion = Version.fromString("7.8.9");
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
@@ -76,7 +82,11 @@ public class ApplicationHandlerTest {
 
     @Before
     public void setup() {
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().provisioner(provisioner).build();
+        List<ModelFactory> modelFactories = List.of(DeployTester.createModelFactory(vespaVersion));
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .provisioner(provisioner)
+                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+                .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
@@ -150,9 +160,14 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testGet() throws Exception {
-        long sessionId = applicationRepository.deploy(testApp, prepareParams(applicationId)).sessionId();
-        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, true, "7.164.0");
-        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, false, "7.164.0");
+        PrepareParams prepareParams = new PrepareParams.Builder()
+                .applicationId(applicationId)
+                .vespaVersion(vespaVersion)
+                .build();
+        long sessionId = applicationRepository.deploy(testApp, prepareParams).sessionId();
+
+        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, true, vespaVersion);
+        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, false, vespaVersion);
     }
 
     @Test
@@ -317,7 +332,7 @@ public class ApplicationHandlerTest {
     }
 
     private void assertApplicationResponse(ApplicationId applicationId, Zone zone, long expectedGeneration,
-                                           boolean fullAppIdInUrl, String expectedVersion) throws IOException {
+                                           boolean fullAppIdInUrl, Version expectedVersion) throws IOException {
         assertApplicationResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedGeneration, expectedVersion);
     }
 
@@ -334,11 +349,11 @@ public class ApplicationHandlerTest {
         return url;
     }
 
-    private void assertApplicationResponse(String url, long expectedGeneration, String expectedVersion) throws IOException {
+    private void assertApplicationResponse(String url, long expectedGeneration, Version expectedVersion) throws IOException {
         HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         String renderedString = SessionHandlerTest.getRenderedString(response);
-        assertEquals("{\"generation\":" + expectedGeneration + ",\"modelVersions\":[\"" + expectedVersion + "\"]}", renderedString);
+        assertEquals("{\"generation\":" + expectedGeneration + ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
     }
 
     private void assertApplicationExists(ApplicationId applicationId, Zone zone) throws IOException {
