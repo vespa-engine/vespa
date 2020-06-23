@@ -887,13 +887,13 @@ public:
         return std::unique_ptr<QueryTensor>(tensor);
     }
 
-    std::unique_ptr<NearestNeighborBlueprint> make_blueprint() {
+    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {
         search::queryeval::FieldSpec field("foo", 0, 0);
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
             as_dense_tensor(),
             createDenseTensor(vec_2d(17, 42)),
-            3, true, 5, 0.05);
+            3, true, 5, brute_force_limit);
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
         EXPECT_TRUE(bp->may_approximate());
         return bp;
@@ -936,6 +936,18 @@ TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
     bp->set_global_filter(*weak_filter);
     EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
     EXPECT_TRUE(bp->may_approximate());
+}
+
+TEST_F("NN blueprint handles strong filter triggering brute force search", NearestNeighborBlueprintFixture)
+{
+    auto bp = f.make_blueprint(0.2);
+    auto filter = search::BitVector::create(11);
+    filter->setBit(3);
+    filter->invalidateCachedCount();
+    auto strong_filter = GlobalFilter::create(std::move(filter));
+    bp->set_global_filter(*strong_filter);
+    EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
+    EXPECT_FALSE(bp->may_approximate());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

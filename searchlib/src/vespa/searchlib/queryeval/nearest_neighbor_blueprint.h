@@ -23,6 +23,7 @@ private:
     std::unique_ptr<vespalib::tensor::DenseTensorView> _query_tensor;
     uint32_t _target_num_hits;
     bool _approximate;
+    bool _use_brute_force;
     uint32_t _explore_additional_hits;
     double _brute_force_limit;
     search::tensor::DistanceFunction::UP _fallback_dist_fun;
@@ -44,7 +45,7 @@ public:
     const vespalib::tensor::DenseTensorView& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     void set_global_filter(const GlobalFilter &global_filter) override;
-    bool may_approximate() const { return _approximate; }
+    bool may_approximate() const { return _approximate && !_use_brute_force; }
 
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;
