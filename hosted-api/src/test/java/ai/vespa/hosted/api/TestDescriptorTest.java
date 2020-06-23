@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
+import com.yahoo.test.json.JsonTestHelper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +67,21 @@ public class TestDescriptorTest {
 
         var productionTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.productiontest);
         Assertions.assertIterableEquals(List.of("ai.vespa.test.ProductionTest1", "ai.vespa.test.ProductionTest2"), productionTests);
+    }
+
+    @Test
+    public void generatesCorrectJson() {
+        String json = "{\n" +
+                "  \"version\": \"1.0\",\n" +
+                "  \"configuredTests\": {\n" +
+                "    \"systemTests\": [\n" +
+                "      \"ai.vespa.test.SystemTest1\",\n" +
+                "      \"ai.vespa.test.SystemTest2\"\n" +
+                "    ]\n" +
+                "  " +
+                "  }\n" +
+                "}\n";
+        var descriptor = TestDescriptor.fromJsonString(json);
+        JsonTestHelper.assertJsonEquals(json, descriptor.toJson());
     }
 }
