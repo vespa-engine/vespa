@@ -1575,8 +1575,6 @@ Test::testUnique()
         StringList params, in, out;
         FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
         FT_DUMP_EMPTY(_factory, "unique");
-
-        EXPECT_TRUE(assertMatches(0, "x", "a", "matches(foo)"));
     }
     FtFeatureTest ft(_factory, "unique");
     ASSERT_TRUE(ft.setup());

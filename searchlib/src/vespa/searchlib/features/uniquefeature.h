@@ -7,7 +7,7 @@
 namespace search::features {
 
 /**
- * Implements the blueprint for the unique .
+ * Implements the blueprint for the unique rank feature.
  *
  * This will compute a globally unique id based on lid and distribution key.
  * Cheap way to get deterministic ordering

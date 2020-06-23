@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "uniquefeature.h"
 #include <vespa/vespalib/util/stash.h>
@@ -42,8 +42,7 @@ UniqueBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisito
 }
 
 bool
-UniqueBlueprint::setup(const IIndexEnvironment & env,
-                        const ParameterList & )
+UniqueBlueprint::setup(const IIndexEnvironment & env, const ParameterList & )
 {
     _distributionKey = env.getDistributionKey();
     describeOutput("out", "Returns (lid << 16) | distributionKey");
