@@ -81,6 +81,9 @@ public:
 
     const std::set<vespalib::string> & getHintedDumpAttributes() const { return _dumpAttributes; }
 
+    //TODO Wire in proper distribution key
+    uint32_t getDistributionKey() const override { return 0; }
+
 };
 
 } // namespace streaming

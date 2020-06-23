@@ -14,7 +14,7 @@ ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri & configUri)
 {
 }
 
-ServiceLayerProcess::~ServiceLayerProcess() {}
+ServiceLayerProcess::~ServiceLayerProcess() = default;
 
 void
 ServiceLayerProcess::shutdown()
@@ -26,7 +26,7 @@ ServiceLayerProcess::shutdown()
 void
 ServiceLayerProcess::createNode()
 {
-    _externalVisitors["searchvisitor"].reset(new streaming::SearchVisitorFactory(_configUri));
+    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri);
     setupProvider();
     _node = std::make_unique<ServiceLayerNode>(_configUri, _context, *this, getProvider(), _externalVisitors);
     _node->init();

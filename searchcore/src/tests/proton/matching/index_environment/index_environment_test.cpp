@@ -42,7 +42,7 @@ struct Fixture {
     Fixture(Schema::UP schema_)
         : repo(),
           schema(std::move(schema_)),
-          env(*schema, Properties(), repo)
+          env(7, *schema, Properties(), repo)
     {
     }
     const FieldInfo *assertField(size_t idx,
@@ -82,6 +82,11 @@ TEST_F("require that document meta store is always extracted in index environmen
 {
     ASSERT_EQUAL(1u, f.env.getNumFields());
     TEST_DO(f.assertHiddenAttributeField(0, "[documentmetastore]", DataType::RAW, CollectionType::SINGLE));
+}
+
+TEST_F("require that distribution key is visible in index environment", Fixture(buildEmptySchema()))
+{
+    ASSERT_EQUAL(7u, f.env.getDistributionKey());
 }
 
 TEST_F("require that imported attribute fields are extracted in index environment", Fixture(buildSchema()))

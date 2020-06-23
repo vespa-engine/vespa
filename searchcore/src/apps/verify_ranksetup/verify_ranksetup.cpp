@@ -79,7 +79,7 @@ App::verify(const search::index::Schema &schema,
             const search::fef::Properties &props,
             const IConstantValueRepo &repo)
 {
-    proton::matching::IndexEnvironment indexEnv(schema, props, repo);
+    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo);
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);

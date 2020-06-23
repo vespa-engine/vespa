@@ -100,7 +100,7 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
                  QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, uint32_t distributionKey)
-    : _indexEnv(schema, props, constantValueRepo),
+    : _indexEnv(distributionKey, schema, props, constantValueRepo),
       _blueprintFactory(),
       _rankSetup(),
       _viewResolver(ViewResolver::createFromSchema(schema)),
