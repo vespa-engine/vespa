@@ -8,6 +8,7 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -103,6 +104,7 @@ public class NodeRepository extends AbstractComponent {
     private final JobControl jobControl;
     private final Applications applications;
     private final boolean canProvisionHosts;
+    private final int spareCount;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -121,7 +123,8 @@ public class NodeRepository extends AbstractComponent {
              zone,
              new DnsNameResolver(),
              DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(),
-             provisionServiceProvider.getHostProvisioner().isPresent());
+             provisionServiceProvider.getHostProvisioner().isPresent(),
+             zone.environment() == Environment.prod ? 1 : 0);
     }
 
     /**
@@ -136,7 +139,8 @@ public class NodeRepository extends AbstractComponent {
                           NameResolver nameResolver,
                           DockerImage dockerImage,
                           boolean useCuratorClientCache,
-                          boolean canProvisionHosts) {
+                          boolean canProvisionHosts,
+                          int spareCount) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -150,6 +154,7 @@ public class NodeRepository extends AbstractComponent {
         this.jobControl = new JobControl(db);
         this.applications = new Applications(db);
         this.canProvisionHosts = canProvisionHosts;
+        this.spareCount = spareCount;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
@@ -191,6 +196,9 @@ public class NodeRepository extends AbstractComponent {
     }
 
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
+
+    /** The number of nodes we should ensure has free capacity for node failures whenever possible */
+    public int spareCount() { return spareCount; }
 
     // ---------------- Query API ----------------------------------------------------------------
 
