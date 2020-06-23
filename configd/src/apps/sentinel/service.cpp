@@ -73,7 +73,6 @@ Service::reconfigure(const SentinelConfig::Service& config)
     _config = new SentinelConfig::Service(config);
 
     if ((_state == READY) || (_state == FINISHED) || (_state == RESTARTING)) {
-        resetRestartPenalty();
         if (_isAutomatic) {
             LOG(debug, "%s: Restarting due to new config", name().c_str());
             start();
