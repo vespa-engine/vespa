@@ -1,1 +1,4 @@
-This is the API needed to access the Vespa System. 
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+# Documentapi
+
+Convenience dependency for users developing document clients for Vespa.
