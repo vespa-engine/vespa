@@ -227,11 +227,13 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
     NearestPriQ candidates;
     uint32_t doc_id_limit = _graph.node_refs.size();
     if (filter) {
-        assert(filter->size() >= doc_id_limit);
+        doc_id_limit = std::min(filter->size(), doc_id_limit);
     }
     auto visited = _visited_set_pool.get(doc_id_limit);
     for (const auto &entry : best_neighbors.peek()) {
-        assert(entry.docid < doc_id_limit);
+        if (entry.docid >= doc_id_limit) {
+            continue;
+        }
         candidates.push(entry);
         visited.mark(entry.docid);
         if (filter && !filter->testBit(entry.docid)) {
