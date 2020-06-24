@@ -63,7 +63,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -101,7 +100,7 @@ public class ApplicationRepositoryTest {
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
     private final static TenantName tenant3 = TenantName.from("test3");
-    private final static Clock clock = Clock.systemUTC();
+    private final static ManualClock clock = new ManualClock(Instant.now());
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
@@ -133,6 +132,7 @@ public class ApplicationRepositoryTest {
                                             .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                                             .build())
                 .flagSource(flagSource)
+                .clock(clock)
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
@@ -245,29 +245,6 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deleteUnusedTenants() {
-        // Set clock to epoch plus hour, as mock curator will always return epoch as creation time
-        Instant now = ManualClock.at("1970-01-01T01:00:00");
-
-        // 3 tenants exist, tenant1 and tenant2 has applications deployed:
-        deployApp(testApp);
-        deployApp(testApp, new PrepareParams.Builder().applicationId(applicationId(tenant2)).build());
-
-        // Should not be deleted, not old enough
-        Duration ttlForUnusedTenant = Duration.ofHours(1);
-        assertTrue(applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).isEmpty());
-        // Should be deleted
-        ttlForUnusedTenant = Duration.ofMillis(1);
-        assertEquals(tenant3, applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).iterator().next());
-
-        // Delete app used by tenant1, tenant2 still has an application
-        applicationRepository.delete(applicationId());
-        Set<TenantName> tenantsDeleted = applicationRepository.deleteUnusedTenants(Duration.ofMillis(1), now);
-        assertTrue(tenantsDeleted.contains(tenant1));
-        assertFalse(tenantsDeleted.contains(tenant2));
-    }
-
-    @Test
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
 
@@ -372,7 +349,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testDeletingInactiveSessions() throws IOException {
-        ManualClock clock = new ManualClock(Instant.now());
         ConfigserverConfig configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
