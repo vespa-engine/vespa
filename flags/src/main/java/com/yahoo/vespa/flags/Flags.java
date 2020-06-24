@@ -221,12 +221,6 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
-    public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
-            "phrase-segmenting", false,
-            "Should 'implicit phrases' in queries we parsed to a phrase or and?",
-            "Takes effect on redeploy",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
             "publish-direct-routing-endpoint", true,
             "Whether an application should receive a directly routed endpoint in its endpoint list",
