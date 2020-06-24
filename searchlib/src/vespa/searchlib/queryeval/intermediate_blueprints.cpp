@@ -84,18 +84,11 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
 
 /** utility for operators that degrade to AND when creating filter */
 SearchIterator::UP createAndFilter(const IntermediateBlueprint &self,
+                                   const std::vector<Blueprint *>& children,
                                    bool strict, Blueprint::FilterConstraint constraint)
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(self.childCnt());
-    for (size_t i = 0; i < self.childCnt(); ++i) {
-        bool child_strict = strict && (i == 0);
-        auto search = self.getChild(i).createFilterSearch(child_strict, constraint);
-        sub_searches.push_back(std::move(search));
-    }
-    UnpackInfo unpack_info;
-    auto search = AndSearch::create(std::move(sub_searches), strict, unpack_info);
-    search->estimate(self.getState().estimate().estHits);
+    auto search = Blueprint::create_and_filter(children, strict, constraint);
+    static_cast<AndSearch &>(*search).estimate(self.getState().estimate().estHits);
     return search;
 }
 
@@ -292,7 +285,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    return createAndFilter(*this, strict, constraint);
+    return createAndFilter(*this, get_children(), strict, constraint);
 }
 
 double
@@ -492,7 +485,7 @@ SearchIterator::UP
 NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
     if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return createAndFilter(*this, strict, constraint);
+        return createAndFilter(*this, get_children(), strict, constraint);
     } else {
         return std::make_unique<EmptySearch>();
     }
@@ -552,7 +545,7 @@ SearchIterator::UP
 ONearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
     if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return createAndFilter(*this, strict, constraint);
+        return createAndFilter(*this, get_children(), strict, constraint);
     } else {
         return std::make_unique<EmptySearch>();
     }

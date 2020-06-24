@@ -208,6 +208,9 @@ public:
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
     virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
 
+    static std::unique_ptr<SearchIterator> create_and_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
+    static std::unique_ptr<SearchIterator> create_or_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
+
     // for debug dumping
     vespalib::string asString() const;
     vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
@@ -273,6 +276,8 @@ protected:
     virtual bool isPositive(size_t index) const { (void) index; return true; }
 
     bool should_do_termwise_eval(const UnpackInfo &unpack, double match_limit) const;
+
+    const Children& get_children() const { return _children; }
 
 public:
     typedef std::vector<size_t> IndexList;
