@@ -49,6 +49,12 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vdslib</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>zkfacade</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

@@ -14,6 +14,12 @@
   <version>7-SNAPSHOT</version>
   <dependencies>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vdslib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <scope>provided</scope>
@@ -27,12 +33,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>messagebus</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vdslib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
