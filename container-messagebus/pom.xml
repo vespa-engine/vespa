@@ -46,7 +46,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>documentapi</artifactId>
+      <artifactId>container-documentapi</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
