@@ -289,16 +289,17 @@ HnswIndex::~HnswIndex() = default;
 void
 HnswIndex::add_document(uint32_t docid)
 {
-    PreparedAddDoc op = internal_prepare_add(docid, get_vector(docid));
+    vespalib::GenerationHandler::Guard no_guard_needed;
+    PreparedAddDoc op = internal_prepare_add(docid, get_vector(docid), no_guard_needed);
     internal_complete_add(docid, op);
 }
 
 HnswIndex::PreparedAddDoc
-HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector) const
+HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespalib::GenerationHandler::Guard read_guard) const
 {
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
-    PreparedAddDoc op(docid, level);
+    PreparedAddDoc op(docid, level, read_guard);
     auto entry = _graph.get_entry_node();
     if (entry.docid == 0) {
         // graph has no entry point
@@ -379,8 +380,7 @@ HnswIndex::prepare_add_document(uint32_t docid,
         // to ensure they are linked together:
         return std::unique_ptr<PrepareResult>();
     }
-    PreparedAddDoc op = internal_prepare_add(docid, vector);
-    (void) read_guard; // must keep guard until this point
+    PreparedAddDoc op = internal_prepare_add(docid, vector, read_guard);
     return std::make_unique<PreparedAddDoc>(std::move(op));
 }
 
