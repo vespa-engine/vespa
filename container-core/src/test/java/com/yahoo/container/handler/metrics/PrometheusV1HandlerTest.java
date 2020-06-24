@@ -5,28 +5,22 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.container.handler.metrics.PrometheusV1Handler.consumerQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class PrometheusV1HandlerTest {
 
@@ -48,6 +42,14 @@ public class PrometheusV1HandlerTest {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(80);
+
+    private static String getFileContents(String filename) {
+        InputStream in = PrometheusV1HandlerTest.class.getClassLoader().getResourceAsStream(filename);
+        if (in == null) {
+            throw new RuntimeException("File not found: " + filename);
+        }
+        return new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
+    }
 
     @Before
     public void setup() {
@@ -115,13 +117,5 @@ public class PrometheusV1HandlerTest {
 
     private String getResponseAsString(String consumer) {
         return testDriver.sendRequest(VALUES_URI + consumerQuery(consumer)).readAll();
-    }
-
-    private static String getFileContents(String filename) {
-        InputStream in = PrometheusV1HandlerTest.class.getClassLoader().getResourceAsStream(filename);
-        if (in == null) {
-            throw new RuntimeException("File not found: " + filename);
-        }
-        return new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
     }
 }

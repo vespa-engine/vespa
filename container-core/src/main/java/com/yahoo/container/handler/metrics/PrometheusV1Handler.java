@@ -37,6 +37,20 @@ public class PrometheusV1Handler extends HttpHandlerBase {
         metricsProxyUri = "http://localhost:+" + config.metricsPort() + config.metricsApiPath();
     }
 
+    private static CloseableHttpClient createHttpClient() {
+        return VespaHttpClientBuilder.create()
+                .setUserAgent("application-prometheus-retriever")
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
+                        .setSocketTimeout(HTTP_SOCKET_TIMEOUT)
+                        .build())
+                .build();
+    }
+
+    static String consumerQuery(String consumer) {
+        return (consumer == null || consumer.isEmpty()) ? "" : "?consumer=" + consumer;
+    }
+
     @Override
     protected Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
         if (apiPath.matches(V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH)));
@@ -53,22 +67,6 @@ public class PrometheusV1Handler extends HttpHandlerBase {
             log.warning(String.format("Unable to retrieve prometheus metrics from %s: %s", metricsProxyUri, Exceptions.toMessageString(e)));
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
-    }
-
-
-
-    private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create()
-                .setUserAgent("application-prometheus-retriever")
-                .setDefaultRequestConfig(RequestConfig.custom()
-                                                .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
-                                                .setSocketTimeout(HTTP_SOCKET_TIMEOUT)
-                                                .build())
-                .build();
-    }
-
-    static String consumerQuery(String consumer) {
-        return (consumer == null || consumer.isEmpty()) ? "" : "?consumer=" + consumer;
     }
 
 }
