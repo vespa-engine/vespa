@@ -20,8 +20,10 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -146,7 +148,7 @@ public class TenantRepository {
     public synchronized void addTenant(TenantName tenantName, RequestHandler requestHandler,
                                        ReloadHandler reloadHandler) {
         writeTenantPath(tenantName);
-        createTenant(tenantName, requestHandler, reloadHandler);
+        createTenant(tenantName, componentRegistry.getClock().instant(), requestHandler, reloadHandler);
     }
 
      private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
@@ -162,14 +164,14 @@ public class TenantRepository {
                 zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));
         for (TenantName tenantName : allTenants)
             if ( ! tenants.containsKey(tenantName))
-                zkWatcherExecutor.execute(tenantName, () -> createTenant(tenantName));
+                zkWatcherExecutor.execute(tenantName, () -> bootstrapTenant(tenantName));
         metricUpdater.setTenants(tenants.size());
     }
 
     private void bootstrapTenants() {
         // Keep track of tenants created
         Map<TenantName, Future<?>> futures = new HashMap<>();
-        readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> createTenant(t))));
+        readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> bootstrapTenant(t))));
 
         // Wait for all tenants to be created
         Set<TenantName> failed = new HashSet<>();
@@ -197,12 +199,21 @@ public class TenantRepository {
         }
     }
 
-    protected void createTenant(TenantName tenantName) {
-        createTenant(tenantName, null, null);
+    // Use when bootstrapping an existing tenant based on ZooKeeper data
+    protected void bootstrapTenant(TenantName tenantName) {
+        createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName), null, null);
+    }
+
+    public Instant readCreatedTimeFromZooKeeper(TenantName tenantName) {
+        Optional<Stat> stat = curator.getStat(getTenantPath(tenantName));
+        if (stat.isPresent())
+            return Instant.ofEpochMilli(stat.get().getCtime());
+        else
+            return componentRegistry.getClock().instant();
     }
 
     // Creates tenant and all its dependencies. This also includes loading active applications
-    private void createTenant(TenantName tenantName, RequestHandler requestHandler, ReloadHandler reloadHandler) {
+    private void createTenant(TenantName tenantName, Instant created, RequestHandler requestHandler, ReloadHandler reloadHandler) {
         if (tenants.containsKey(tenantName)) return;
 
         TenantApplications applicationRepo =
@@ -223,9 +234,8 @@ public class TenantRepository {
                                                                     applicationRepo, reloadHandler,
                                                                     componentRegistry.getFlagSource(),
                                                                     componentRegistry.getSessionPreparer());
-        log.log(Level.INFO, "Creating tenant '" + tenantName + "'");
-        Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler, applicationRepo,
-                                   componentRegistry.getCurator());
+        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
+        Tenant tenant = new Tenant(tenantName, sessionRepository, requestHandler, applicationRepo, created);
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
     }

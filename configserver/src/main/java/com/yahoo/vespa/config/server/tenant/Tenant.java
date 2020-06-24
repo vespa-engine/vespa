@@ -6,11 +6,8 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.curator.Curator;
-import org.apache.zookeeper.data.Stat;
 
 import java.time.Instant;
-import java.util.Optional;
 
 /**
  * Contains all tenant-level components for a single tenant, dealing with editing sessions and
@@ -29,19 +26,19 @@ public class Tenant implements TenantHandlerProvider {
     private final SessionRepository sessionRepository;
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
-    private final Curator curator;
+    private final Instant created;
 
     Tenant(TenantName name,
            SessionRepository sessionRepository,
            RequestHandler requestHandler,
            TenantApplications applicationRepo,
-           Curator curator) {
+           Instant created) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
-        this.curator = curator;
+        this.created = created;
     }
 
     /**
@@ -73,11 +70,7 @@ public class Tenant implements TenantHandlerProvider {
     }
 
     public Instant getCreatedTime() {
-        Optional<Stat> stat = curator.getStat(path);
-        if (stat.isPresent())
-            return Instant.ofEpochMilli(stat.get().getCtime());
-        else
-            return Instant.now();
+        return created;
     }
 
     @Override

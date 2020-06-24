@@ -202,7 +202,7 @@ public class TenantRepositoryTest {
         }
 
         @Override
-        public void createTenant(TenantName tenantName) {
+        public void bootstrapTenant(TenantName tenantName) {
             throw new RuntimeException("Failed to create: " + tenantName);
         }
     }
