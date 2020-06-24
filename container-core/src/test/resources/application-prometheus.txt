@@ -1,0 +1,187 @@
+# HELP memory_virt
+# TYPE memory_virt untyped
+memory_virt{metrictype="system",instance="container-clustercontroller",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 1.32902912E9 1592994757000
+memory_virt{metrictype="system",instance="distributor",vespaVersion="7.241.12",vespa_service="vespa_distributor",} 3.14052608E8 1592994757000
+memory_virt{metrictype="system",instance="logd",vespaVersion="7.241.12",vespa_service="vespa_logd",} 1.10235648E8 1592994757000
+memory_virt{metrictype="system",instance="container",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 3.97027328E9 1592994757000
+memory_virt{metrictype="system",instance="configserver",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+memory_virt{metrictype="system",instance="slobrok",vespaVersion="7.241.12",vespa_service="vespa_slobrok",} 1.0084352E8 1592994757000
+memory_virt{metrictype="system",instance="metricsproxy-container",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 1.340411904E9 1592994757000
+memory_virt{metrictype="system",instance="logserver",vespaVersion="7.241.12",vespa_service="vespa_logserver",} 8.68052992E8 1592994757000
+memory_virt{metrictype="system",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 5.22543104E8 1592994757000
+memory_virt{metrictype="system",instance="config-sentinel",vespaVersion="7.241.12",vespa_service="vespa_config_sentinel",} 0.0 1592994757000
+# HELP memory_rss
+# TYPE memory_rss untyped
+memory_rss{metrictype="system",instance="container-clustercontroller",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 2.70897152E8 1592994757000
+memory_rss{metrictype="system",instance="distributor",vespaVersion="7.241.12",vespa_service="vespa_distributor",} 1.2064768E8 1592994757000
+memory_rss{metrictype="system",instance="logd",vespaVersion="7.241.12",vespa_service="vespa_logd",} 1.5269888E7 1592994757000
+memory_rss{metrictype="system",instance="container",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 2.087968768E9 1592994757000
+memory_rss{metrictype="system",instance="configserver",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+memory_rss{metrictype="system",instance="slobrok",vespaVersion="7.241.12",vespa_service="vespa_slobrok",} 1.37216E7 1592994757000
+memory_rss{metrictype="system",instance="metricsproxy-container",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 3.36617472E8 1592994757000
+memory_rss{metrictype="system",instance="logserver",vespaVersion="7.241.12",vespa_service="vespa_logserver",} 8.347648E7 1592994757000
+memory_rss{metrictype="system",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 2.62201344E8 1592994757000
+memory_rss{metrictype="system",instance="config-sentinel",vespaVersion="7.241.12",vespa_service="vespa_config_sentinel",} 0.0 1592994757000
+# HELP cpu
+# TYPE cpu untyped
+cpu{metrictype="system",instance="container-clustercontroller",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 1.3109978150036417 1592994757000
+cpu{metrictype="system",instance="distributor",vespaVersion="7.241.12",vespa_service="vespa_distributor",} 21.12163146394756 1592994757000
+cpu{metrictype="system",instance="logd",vespaVersion="7.241.12",vespa_service="vespa_logd",} 0.8375819373634378 1592994757000
+cpu{metrictype="system",instance="container",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 55.6081573197378 1592994757000
+cpu{metrictype="system",instance="configserver",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+cpu{metrictype="system",instance="slobrok",vespaVersion="7.241.12",vespa_service="vespa_slobrok",} 1.5659140568099053 1592994757000
+cpu{metrictype="system",instance="metricsproxy-container",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 7.847778587035688 1592994757000
+cpu{metrictype="system",instance="logserver",vespaVersion="7.241.12",vespa_service="vespa_logserver",} 0.29133284777858703 1592994757000
+cpu{metrictype="system",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 89.29351784413693 1592994757000
+cpu{metrictype="system",instance="config-sentinel",vespaVersion="7.241.12",vespa_service="vespa_config_sentinel",} 0.0 1592994757000
+# HELP jdisc_gc_ms_average
+# TYPE jdisc_gc_ms_average untyped
+jdisc_gc_ms_average{metrictype="standard",instance="container-clustercontroller",gcName="G1OldGeneration",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 0.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="container-clustercontroller",gcName="G1YoungGeneration",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 5.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="container",gcName="G1YoungGeneration",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 102.66666666666667 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="container",gcName="G1OldGeneration",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="configserver",gcName="G1OldGeneration",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="configserver",gcName="G1YoungGeneration",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="metricsproxy-container",gcName="G1OldGeneration",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 0.0 1592994757000
+jdisc_gc_ms_average{metrictype="standard",instance="metricsproxy-container",gcName="G1YoungGeneration",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 101.16666666666667 1592994757000
+# HELP mem_heap_free_average
+# TYPE mem_heap_free_average untyped
+mem_heap_free_average{metrictype="standard",instance="container-clustercontroller",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 2.5538901333333332E7 1592994757000
+mem_heap_free_average{metrictype="standard",instance="container",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 1.0780672786666667E9 1592994757000
+mem_heap_free_average{metrictype="standard",instance="configserver",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 1.0005135066666667E8 1592994757000
+mem_heap_free_average{metrictype="standard",instance="metricsproxy-container",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 5.4257342666666664E7 1592994757000
+# HELP http_status_2xx_rate
+# TYPE http_status_2xx_rate untyped
+http_status_2xx_rate{metrictype="standard",instance="container-clustercontroller",scheme="http",httpMethod="GET",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 0.2169161202049023 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="container",scheme="http",httpMethod="GET",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.2169161202049023 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="container",scheme="http",httpMethod="POST",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 126.69570005506333 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="configserver",scheme="http",httpMethod="POST",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="configserver",scheme="http",httpMethod="PUT",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="configserver",scheme="http",httpMethod="GET",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.2169161202049023 1592994757000
+http_status_2xx_rate{metrictype="standard",instance="metricsproxy-container",scheme="http",httpMethod="GET",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 0.4672039512105588 1592994757000
+# HELP serverActiveThreads_average
+# TYPE serverActiveThreads_average untyped
+serverActiveThreads_average{metrictype="standard",instance="container-clustercontroller",threadpool="default-pool",clustername="cluster-controllers",vespaVersion="7.241.12",vespa_service="vespa_container_clustercontroller",} 0.0 1592994757000
+serverActiveThreads_average{metrictype="standard",instance="container",threadpool="default-pool",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.882943143812709 1592994757000
+serverActiveThreads_average{metrictype="standard",instance="configserver",threadpool="default-pool",vespaVersion="7.241.12",vespa_service="vespa_configserver",} 0.0 1592994757000
+serverActiveThreads_average{metrictype="standard",instance="metricsproxy-container",threadpool="default-pool",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 0.17558528428093645 1592994757000
+# HELP vespa_container_clustercontroller_status status of service
+# TYPE vespa_container_clustercontroller_status untyped
+vespa_container_clustercontroller_status 1.0 1592994757000
+# HELP vespa_distributor_status status of service
+# TYPE vespa_distributor_status untyped
+vespa_distributor_status 1.0 1592994757000
+# HELP vespa_logd_status status of service
+# TYPE vespa_logd_status untyped
+vespa_logd_status 1.0 1592994757000
+# HELP feed_operations_rate
+# TYPE feed_operations_rate untyped
+feed_operations_rate{metrictype="standard",instance="container",api="vespa.http.server",operation="PUT",status="OK",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 14.33314978892393 1592994757000
+# HELP degraded_queries_rate
+# TYPE degraded_queries_rate untyped
+degraded_queries_rate{metrictype="standard",instance="container",chain="vespa",reason="timeout",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.0 1592994757000
+# HELP query_latency_average
+# TYPE query_latency_average untyped
+query_latency_average{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 10.47007722007722 1592994757000
+# HELP query_latency_99percentile
+# TYPE query_latency_99percentile untyped
+query_latency_99percentile{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 20.0625 1592994757000
+# HELP query_latency_95percentile
+# TYPE query_latency_95percentile untyped
+query_latency_95percentile{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 14.0 1592994757000
+# HELP failed_queries_rate
+# TYPE failed_queries_rate untyped
+failed_queries_rate{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.0 1592994757000
+# HELP totalhits_per_query_average
+# TYPE totalhits_per_query_average untyped
+totalhits_per_query_average{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 80486.80487216594 1592994757000
+# HELP hits_per_query_average
+# TYPE hits_per_query_average untyped
+hits_per_query_average{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 10.0 1592994757000
+# HELP queries_rate
+# TYPE queries_rate untyped
+queries_rate{metrictype="standard",instance="container",chain="vespa",endpoint="vespa:8080",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 69.17955648996346 1592994757000
+# HELP http_status_5xx_rate
+# TYPE http_status_5xx_rate untyped
+http_status_5xx_rate{metrictype="standard",instance="container",scheme="http",httpMethod="POST",clustername="container",vespaVersion="7.241.12",vespa_service="vespa_container",} 0.0 1592994757000
+# HELP vespa_container_status status of service
+# TYPE vespa_container_status untyped
+vespa_container_status 1.0 1592994757000
+# HELP vespa_configserver_status status of service
+# TYPE vespa_configserver_status untyped
+vespa_configserver_status 1.0 1592994757000
+# HELP vespa_slobrok_status status of service
+# TYPE vespa_slobrok_status untyped
+vespa_slobrok_status 1.0 1592994757000
+# HELP http_status_4xx_rate
+# TYPE http_status_4xx_rate untyped
+http_status_4xx_rate{metrictype="standard",instance="metricsproxy-container",scheme="http",httpMethod="GET",clustername="metrics",vespaVersion="7.241.12",vespa_service="vespa_metricsproxy_container",} 0.0333717108007542 1592994757000
+# HELP vespa_metricsproxy_container_status status of service
+# TYPE vespa_metricsproxy_container_status untyped
+vespa_metricsproxy_container_status 1.0 1592994757000
+# HELP vespa_logserver_status status of service
+# TYPE vespa_logserver_status untyped
+vespa_logserver_status 1.0 1592994757000
+# HELP content_proton_documentdb_matching_docs_reranked_rate
+# TYPE content_proton_documentdb_matching_docs_reranked_rate untyped
+content_proton_documentdb_matching_docs_reranked_rate{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+# HELP content_proton_documentdb_memory_usage_allocated_bytes_last
+# TYPE content_proton_documentdb_memory_usage_allocated_bytes_last untyped
+content_proton_documentdb_memory_usage_allocated_bytes_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 6.8761983E7 1592994757000
+# HELP content_proton_transactionlog_disk_usage_last
+# TYPE content_proton_transactionlog_disk_usage_last untyped
+content_proton_transactionlog_disk_usage_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 6.309212E7 1592994757000
+# HELP content_proton_documentdb_matching_rank_profile_rerank_time_average
+# TYPE content_proton_documentdb_matching_rank_profile_rerank_time_average untyped
+content_proton_documentdb_matching_rank_profile_rerank_time_average{metrictype="standard",instance="searchnode",rankProfile="unranked",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+content_proton_documentdb_matching_rank_profile_rerank_time_average{metrictype="standard",instance="searchnode",rankProfile="default",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+content_proton_documentdb_matching_rank_profile_rerank_time_average{metrictype="standard",instance="searchnode",rankProfile="rank_albums",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+# HELP content_proton_documentdb_matching_rank_profile_query_latency_average
+# TYPE content_proton_documentdb_matching_rank_profile_query_latency_average untyped
+content_proton_documentdb_matching_rank_profile_query_latency_average{metrictype="standard",instance="searchnode",rankProfile="unranked",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+content_proton_documentdb_matching_rank_profile_query_latency_average{metrictype="standard",instance="searchnode",rankProfile="default",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.009290520205479453 1592994757000
+content_proton_documentdb_matching_rank_profile_query_latency_average{metrictype="standard",instance="searchnode",rankProfile="rank_albums",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+# HELP content_proton_documentdb_matching_rank_profile_query_setup_time_average
+# TYPE content_proton_documentdb_matching_rank_profile_query_setup_time_average untyped
+content_proton_documentdb_matching_rank_profile_query_setup_time_average{metrictype="standard",instance="searchnode",rankProfile="unranked",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+content_proton_documentdb_matching_rank_profile_query_setup_time_average{metrictype="standard",instance="searchnode",rankProfile="default",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 1.215175146771037E-4 1592994757000
+content_proton_documentdb_matching_rank_profile_query_setup_time_average{metrictype="standard",instance="searchnode",rankProfile="rank_albums",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+# HELP content_proton_documentdb_matching_docs_matched_rate
+# TYPE content_proton_documentdb_matching_docs_matched_rate untyped
+content_proton_documentdb_matching_docs_matched_rate{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 5432054.766666 1592994757000
+# HELP content_proton_documentdb_documents_active_last
+# TYPE content_proton_documentdb_documents_active_last untyped
+content_proton_documentdb_documents_active_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 168555.0 1592994757000
+# HELP content_proton_documentdb_documents_ready_last
+# TYPE content_proton_documentdb_documents_ready_last untyped
+content_proton_documentdb_documents_ready_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 168555.0 1592994757000
+# HELP content_proton_documentdb_documents_total_last
+# TYPE content_proton_documentdb_documents_total_last untyped
+content_proton_documentdb_documents_total_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 168555.0 1592994757000
+# HELP content_proton_documentdb_disk_usage_last
+# TYPE content_proton_documentdb_disk_usage_last untyped
+content_proton_documentdb_disk_usage_last{metrictype="standard",instance="searchnode",documenttype="music",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 1.6730912E7 1592994757000
+# HELP content_proton_resource_usage_disk_average
+# TYPE content_proton_resource_usage_disk_average untyped
+content_proton_resource_usage_disk_average{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.1499305740116017 1592994757000
+# HELP content_proton_resource_usage_memory_average
+# TYPE content_proton_resource_usage_memory_average untyped
+content_proton_resource_usage_memory_average{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.03144565639149851 1592994757000
+# HELP content_proton_resource_usage_feeding_blocked_last
+# TYPE content_proton_resource_usage_feeding_blocked_last untyped
+content_proton_resource_usage_feeding_blocked_last{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.0 1592994757000
+# HELP content_proton_search_protocol_query_latency_average
+# TYPE content_proton_search_protocol_query_latency_average untyped
+content_proton_search_protocol_query_latency_average{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 0.00963089464285714 1592994757000
+# HELP content_proton_search_protocol_docsum_latency_average
+# TYPE content_proton_search_protocol_docsum_latency_average untyped
+content_proton_search_protocol_docsum_latency_average{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 5.308496575342462E-4 1592994757000
+# HELP content_proton_search_protocol_docsum_requested_documents_rate
+# TYPE content_proton_search_protocol_docsum_requested_documents_rate untyped
+content_proton_search_protocol_docsum_requested_documents_rate{metrictype="standard",instance="searchnode",clustername="music",vespaVersion="7.241.12",vespa_service="vespa_searchnode",} 681.333333 1592994757000
+# HELP vespa_searchnode_status status of service
+# TYPE vespa_searchnode_status untyped
+vespa_searchnode_status 1.0 1592994757000
+# HELP vespa_config_sentinel_status status of service
+# TYPE vespa_config_sentinel_status untyped
+vespa_config_sentinel_status 1.0 1592994757000
