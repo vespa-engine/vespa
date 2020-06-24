@@ -63,7 +63,6 @@ sleepTimeWhenRedeployingFails long default=30
 
 # Features (to be overridden in configserver-config.xml if needed)
 buildMinimalSetOfConfigModels bool default=true
-throwIfBootstrappingTenantRepoFails bool default=true
 
 # Unused, remove in Vespa 8
 throwIfActiveSessionCannotBeLoaded bool default=true

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -20,7 +21,8 @@ public class TenantsMaintainerTest {
 
     @Test
     public void deleteTenantWithNoApplications() {
-        MaintainerTester tester = new MaintainerTester();
+        ManualClock clock = new ManualClock("2020-06-01T00:00:00");
+        MaintainerTester tester = new MaintainerTester(clock);
         TenantRepository tenantRepository = tester.tenantRepository();
         ApplicationRepository applicationRepository = tester.applicationRepository();
         File applicationPackage = new File("src/test/apps/app");
@@ -36,7 +38,8 @@ public class TenantsMaintainerTest {
         assertNotNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
-        new TenantsMaintainer(applicationRepository, tester.curator(), Duration.ofDays(1)).run();
+        clock.advance(TenantsMaintainer.defaultTtlForUnusedTenant.plus(Duration.ofDays(1)));
+        new TenantsMaintainer(applicationRepository, tester.curator(), Duration.ofDays(1), clock).run();
         tenantRepository.updateTenants();
 
         // One tenant should now have been deleted
@@ -59,4 +62,5 @@ public class TenantsMaintainerTest {
     private ApplicationId applicationId(TenantName tenantName) {
         return ApplicationId.from(tenantName, ApplicationName.from("foo"), InstanceName.defaultName());
     }
+
 }

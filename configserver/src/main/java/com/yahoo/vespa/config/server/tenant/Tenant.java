@@ -6,11 +6,8 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.curator.Curator;
-import org.apache.zookeeper.data.Stat;
 
 import java.time.Instant;
-import java.util.Optional;
 
 /**
  * Contains all tenant-level components for a single tenant, dealing with editing sessions and
@@ -29,19 +26,19 @@ public class Tenant implements TenantHandlerProvider {
     private final SessionRepository sessionRepository;
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
-    private final Curator curator;
+    private final Instant created;
 
     Tenant(TenantName name,
            SessionRepository sessionRepository,
            RequestHandler requestHandler,
            TenantApplications applicationRepo,
-           Curator curator) {
+           Instant created) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
-        this.curator = curator;
+        this.created = created;
     }
 
     /**
@@ -72,16 +69,8 @@ public class Tenant implements TenantHandlerProvider {
         return applicationRepo;
     }
 
-    public Curator getCurator() {
-        return curator;
-    }
-
     public Instant getCreatedTime() {
-        Optional<Stat> stat = curator.getStat(path);
-        if (stat.isPresent())
-            return Instant.ofEpochMilli(stat.get().getCtime());
-        else
-            return Instant.now();
+        return created;
     }
 
     @Override
@@ -101,16 +90,11 @@ public class Tenant implements TenantHandlerProvider {
     /**
      * Closes any watchers, thread pools that may react to changes in tenant state,
      * and removes any session data in filesystem and zookeeper.
-     * Called by watchers as a reaction to {@link #delete()}.
+     * Called by watchers as a reaction to deleting a tenant.
      */
     void close() {
         applicationRepo.close();                // Closes watchers.
         sessionRepository.close();              // Closes watchers, clears memory, and deletes local files and ZK session state.
-    }
-
-    /** Deletes the tenant tree from ZooKeeper (application and session status for the tenant) and triggers {@link #close()}. */
-    void delete() {
-        curator.delete(path);                   // Deletes tenant ZK tree: applications and sessions.
     }
 
 }

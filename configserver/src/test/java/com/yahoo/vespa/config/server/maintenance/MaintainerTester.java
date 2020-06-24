@@ -10,15 +10,20 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
+import java.time.Clock;
+
 class MaintainerTester {
 
     private final Curator curator;
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
-    MaintainerTester() {
+    MaintainerTester(Clock clock) {
         curator = new MockCurator();
-        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
+        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .clock(clock)
+                .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           new SessionHandlerTest.MockProvisioner(),

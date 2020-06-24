@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 
+import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 
 /**
  * Removes unused tenants (has no applications and was created more than 7 days ago)
@@ -14,19 +14,19 @@ import java.time.Instant;
  */
 public class TenantsMaintainer extends ConfigServerMaintainer {
 
+    static final Duration defaultTtlForUnusedTenant = Duration.ofDays(7);
+
     private final Duration ttlForUnusedTenant;
+    private final Clock clock;
 
-    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
-        this(applicationRepository, curator, interval, Duration.ofDays(7));
-    }
-
-    private TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Duration ttlForUnusedTenant) {
+    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Clock clock) {
         super(applicationRepository, curator, interval, interval);
-        this.ttlForUnusedTenant = ttlForUnusedTenant;
+        this.ttlForUnusedTenant = defaultTtlForUnusedTenant;
+        this.clock = clock;
     }
 
     @Override
     protected void maintain() {
-        applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, Instant.now());
+        applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
     }
 }
