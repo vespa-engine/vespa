@@ -299,7 +299,7 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespali
 {
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
-    PreparedAddDoc op(docid, level, read_guard);
+    PreparedAddDoc op(docid, level, std::move(read_guard));
     auto entry = _graph.get_entry_node();
     if (entry.docid == 0) {
         // graph has no entry point
@@ -380,7 +380,7 @@ HnswIndex::prepare_add_document(uint32_t docid,
         // to ensure they are linked together:
         return std::unique_ptr<PrepareResult>();
     }
-    PreparedAddDoc op = internal_prepare_add(docid, vector, read_guard);
+    PreparedAddDoc op = internal_prepare_add(docid, vector, std::move(read_guard));
     return std::make_unique<PreparedAddDoc>(std::move(op));
 }
 

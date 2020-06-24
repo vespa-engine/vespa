@@ -134,7 +134,7 @@ protected:
         std::vector<Links> connections;
         PreparedAddDoc(uint32_t docid_in, int32_t max_level_in, ReadGuard read_guard_in)
           : docid(docid_in), max_level(max_level_in),
-            read_guard(read_guard_in),
+            read_guard(std::move(read_guard_in)),
             connections(max_level+1)
         {}
         ~PreparedAddDoc() = default;
