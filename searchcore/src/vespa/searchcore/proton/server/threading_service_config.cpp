@@ -28,13 +28,17 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
 namespace {
 
 uint32_t
-calculateIndexingThreads(uint32_t cfgIndexingThreads, double concurrency, const HwInfo::Cpu &cpuInfo)
+calculateIndexingThreads(const ProtonConfig::Indexing & indexing, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
-    // We are capping at 12 threads to reduce cost of waking up threads
-    // to achieve a better throughput.
-    // TODO: Fix this in a simpler/better way.
-    double scaledCores = std::min(12.0, cpuInfo.cores() * concurrency);
-    uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), cfgIndexingThreads);
+    double scaledCores = cpuInfo.cores() * concurrency;
+    if (indexing.optimize != ProtonConfig::Indexing::Optimize::ADAPTIVE) {
+        // We are capping at 12 threads to reduce cost of waking up threads
+        // to achieve a better throughput.
+        // TODO: Fix this in a simpler/better way.
+        scaledCores = std::min(12.0, scaledCores);
+    }
+
+    uint32_t indexingThreads = std::max((int32_t)std::ceil(scaledCores / 3), indexing.threads);
     return std::max(indexingThreads, 1u);
 }
 
@@ -54,7 +58,7 @@ selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
 ThreadingServiceConfig
 ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
-    uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing.threads, concurrency, cpuInfo);
+    uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
                                   (cfg.indexing.semiunboundtasklimit / indexingThreads),
                                   selectOptimization(cfg.indexing.optimize),
