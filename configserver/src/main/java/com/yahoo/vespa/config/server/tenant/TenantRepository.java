@@ -441,4 +441,6 @@ public class TenantRepository {
         return locksPath.append(tenantName.value());
     }
 
+    public Curator getCurator() { return curator; }
+
 }

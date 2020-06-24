@@ -72,10 +72,6 @@ public class Tenant implements TenantHandlerProvider {
         return applicationRepo;
     }
 
-    public Curator getCurator() {
-        return curator;
-    }
-
     public Instant getCreatedTime() {
         Optional<Stat> stat = curator.getStat(path);
         if (stat.isPresent())

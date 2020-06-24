@@ -431,7 +431,7 @@ public class ApplicationRepositoryTest {
         var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
                 .applicationRoles(ApplicationRoles.fromString("hostRole","containerRole")).build();
         deployApp(testApp, prepareParams);
-        var approlesStore = new ApplicationRolesStore(tenant.getCurator(), tenant.getPath());
+        var approlesStore = new ApplicationRolesStore(tenantRepository.getCurator(), tenant.getPath());
         var appRoles = approlesStore.readApplicationRoles(applicationId);
 
         // App roles present after deploy
