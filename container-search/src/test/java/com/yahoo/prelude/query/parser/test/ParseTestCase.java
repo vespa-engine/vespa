@@ -1679,8 +1679,8 @@ public class ParseTestCase {
         // "first" "second" and "third" are segments in the test language
         Item item = tester.parseQuery("name:\"firstsecondthird\"", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
 
-        assertTrue(item instanceof AndSegmentItem);
-        AndSegmentItem segment = (AndSegmentItem) item;
+        assertTrue(item instanceof PhraseSegmentItem);
+        PhraseSegmentItem segment = (PhraseSegmentItem) item;
 
         assertEquals(3, segment.getItemCount());
         assertEquals("name:first", segment.getItem(0).toString());
