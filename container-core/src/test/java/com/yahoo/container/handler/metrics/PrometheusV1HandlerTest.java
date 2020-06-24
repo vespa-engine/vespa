@@ -5,6 +5,8 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
@@ -18,6 +20,7 @@ import org.junit.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.container.handler.metrics.PrometheusV1Handler.consumerQuery;
@@ -37,14 +40,14 @@ public class PrometheusV1HandlerTest {
 
     private static final String TEST_FILE = "application-prometheus.txt";
     private static final String RESPONSE = getFileContents(TEST_FILE);
-    private static final String CPU_METRIC = "cpu.util";
-    private static final String REPLACED_CPU_METRIC = "replaced_cpu_util";
+    private static final String CPU_METRIC = "cpu";
+    private static final String REPLACED_CPU_METRIC = "cpu.util";
     private static final String CUSTOM_CONSUMER = "custom-consumer";
 
     private static RequestHandlerTestDriver testDriver;
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
+    public WireMockRule wireMockRule = new WireMockRule(80);
 
     @Before
     public void setup() {
@@ -66,6 +69,12 @@ public class PrometheusV1HandlerTest {
         wireMockRule.stubFor(get(urlPathEqualTo(MOCK_METRICS_PATH))
                 .withQueryParam("consumer", equalTo(CUSTOM_CONSUMER))
                 .willReturn(aResponse().withBody(myConsumerResponse)));
+
+//        wireMockRule.stubFor(get(urlEqualTo("/prometheus/v1/values"))
+//            .willReturn(aResponse()
+//            .withStatus(200)
+//            .withHeader("Content-Type", "text/plain")
+//            .withBody(RESPONSE)));
     }
 
     @Test
