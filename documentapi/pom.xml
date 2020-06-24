@@ -14,9 +14,9 @@
   <version>7-SNAPSHOT</version>
   <dependencies>
     <dependency>
+      <!-- Needed because 'document' uses guava collections -->
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>

@@ -13,11 +13,17 @@
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
   <dependencies>
+
+    <!-- compile scope -->
+
     <dependency>
+      <!-- This pulls vdslib into container-core and hence container-dev and container -->
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vdslib</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <!-- provided scope -->
 
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -73,6 +79,8 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- test scope -->
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -83,7 +91,9 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
