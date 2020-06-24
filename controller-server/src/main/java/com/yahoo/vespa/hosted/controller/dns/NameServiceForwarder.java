@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.curator.Lock;
@@ -45,8 +45,8 @@ public class NameServiceForwarder {
 
     /** Create or update an ALIAS record with given name and targets */
     public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
-        var records = targets.stream().map(AliasTarget::asData)
-                             .map(data -> new Record(Record.Type.ALIAS, name, data))
+        var records = targets.stream()
+                             .map(target -> new Record(Record.Type.ALIAS, name, target.pack()))
                              .collect(Collectors.toList());
         forward(new CreateRecords(records), priority);
     }
