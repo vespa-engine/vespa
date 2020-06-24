@@ -82,7 +82,6 @@ public class TenantRepository {
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
-    private final boolean throwExceptionIfBootstrappingFails;
 
     /**
      * Creates a new tenant repository
@@ -105,7 +104,6 @@ public class TenantRepository {
         this.componentRegistry = componentRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
-        this.throwExceptionIfBootstrappingFails = configserverConfig.throwIfBootstrappingTenantRepoFails();
         this.curator = componentRegistry.getCurator();
         metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
@@ -187,7 +185,7 @@ public class TenantRepository {
             }
         }
 
-        if (failed.size() > 0 && throwExceptionIfBootstrappingFails)
+        if (failed.size() > 0)
             throw new RuntimeException("Could not create all tenants when bootstrapping, failed to create: " + failed);
 
         metricUpdater.setTenants(tenants.size());

@@ -170,15 +170,10 @@ public class TenantRepositoryTest {
     public void testFailingBootstrap() throws IOException {
         tenantRepository.close(); // stop using the one setup in Before method
 
-        // No exception if config is false
-        boolean throwIfBootstrappingTenantRepoFails = false;
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
-
         // Should get exception if config is true
-        throwIfBootstrappingTenantRepoFails = true;
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry());
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -190,13 +185,12 @@ public class TenantRepositoryTest {
                               .checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
-    private GlobalComponentRegistry createComponentRegistry(boolean throwIfBootstrappingTenantRepoFails) throws IOException {
+    private GlobalComponentRegistry createComponentRegistry() throws IOException {
         return new TestComponentRegistry.Builder()
                 .curator(new MockCurator())
                 .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                   .throwIfBootstrappingTenantRepoFails(throwIfBootstrappingTenantRepoFails)
-                                                                   .configDefinitionsDir(temporaryFolder.newFolder("configdefs" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())
-                                                                   .configServerDBDir(temporaryFolder.newFolder("configserverdb" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())))
+                                                                   .configDefinitionsDir(temporaryFolder.newFolder("configdefs").getAbsolutePath())
+                                                                   .configServerDBDir(temporaryFolder.newFolder("configserverdb").getAbsolutePath())))
                 .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")))
                 .build();
     }
