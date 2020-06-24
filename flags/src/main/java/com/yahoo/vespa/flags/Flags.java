@@ -289,6 +289,13 @@ public class Flags {
             ZONE_ID
     );
 
+    public static final UnboundIntFlag TENANT_NODE_QUOTA = defineIntFlag(
+            "tenant-node-quota", 5,
+            "The number of nodes a tenant is allowed to request",
+            "Takes effect on next deployment",
+            APPLICATION_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
