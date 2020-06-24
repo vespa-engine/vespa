@@ -406,13 +406,18 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    /** Words for phrases also permits numerals as words */
-    private Item phraseWord(String indexName, boolean insidePhrase) {
+    /**
+     * Words for phrases also permits numerals as words
+     *
+     * @param quoted whether we are consuming text within quoted
+     * @param insidePhrase whether we are consuming additional items for an existing phrase
+     */
+    private Item phraseWord(String indexName, boolean quoted, boolean insidePhrase) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            item = word(indexName);
+            item = word(indexName, quoted);
 
             if (item == null && tokens.currentIs(NUMBER)) {
                 Token t = tokens.next();
@@ -434,10 +439,12 @@ abstract class StructuredParser extends AbstractParser {
 
     /**
      * Returns a WordItem if this is a non CJK query,
-     * a WordItem or PhraseSegmentItem if this is a CJK query,
+     * a WordItem or SegmentItem if this is a CJK query,
      * null if the current item is not a word
+     *
+     * @param quoted whether this token is inside quotes
      */
-    private Item word(String indexName) {
+    private Item word(String indexName, boolean quoted) {
         int position = tokens.getPosition();
         Item item = null;
 
@@ -452,7 +459,7 @@ abstract class StructuredParser extends AbstractParser {
             if (submodes.url) {
                 item = new WordItem(word, true);
             } else {
-                item = segment(indexName, word);
+                item = segment(indexName, word, quoted);
             }
 
             if (submodes.url || submodes.site) {
@@ -539,7 +546,7 @@ abstract class StructuredParser extends AbstractParser {
                 quoted = !quoted;
             }
 
-            Item word = phraseWord(indexName, (firstWord != null) || (composite != null));
+            Item word = phraseWord(indexName, quoted, (firstWord != null) || (composite != null));
 
             if (word == null) {
                 if (tokens.skipMultiple(QUOTE)) {

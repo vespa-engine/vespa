@@ -23,8 +23,7 @@ public class PhraseParser extends AbstractParser {
     /**
      * Ignores everything but words and numbers
      *
-     * @return a phrase item if several words/numbers was found,
-     *         a word item if only one was found
+     * @return a phrase item if several words/numbers was found, a word item if only one was found
      */
     private Item forcedPhrase() {
         Item firstWord = null;
@@ -38,7 +37,7 @@ public class PhraseParser extends AbstractParser {
             }
             // Note, this depends on segment never creating AndItems when quoted
             // (the second argument) is true.
-            Item newWord = segment(null, token);
+            Item newWord = segment(null, token, true);
 
             if (firstWord == null) { // First pass
                 firstWord = newWord;
