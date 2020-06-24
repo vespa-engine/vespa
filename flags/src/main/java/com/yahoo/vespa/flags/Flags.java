@@ -228,7 +228,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
-            "publish-direct-routing-endpoint", false,
+            "publish-direct-routing-endpoint", true,
             "Whether an application should receive a directly routed endpoint in its endpoint list",
             "Takes effect immediately",
             APPLICATION_ID);

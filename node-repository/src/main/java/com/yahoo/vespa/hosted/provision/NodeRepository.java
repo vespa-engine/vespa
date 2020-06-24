@@ -8,7 +8,6 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -124,7 +123,7 @@ public class NodeRepository extends AbstractComponent {
              new DnsNameResolver(),
              DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(),
              provisionServiceProvider.getHostProvisioner().isPresent(),
-             zone.environment() == Environment.prod ? 1 : 0);
+             zone.environment().isProduction() && provisionServiceProvider.getHostProvisioner().isEmpty() ? 1 : 0);
     }
 
     /**

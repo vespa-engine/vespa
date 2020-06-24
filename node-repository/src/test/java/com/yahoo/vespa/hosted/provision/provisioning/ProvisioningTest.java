@@ -265,7 +265,6 @@ public class ProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
 
         tester.makeReadyHosts(12, small);
-        tester.makeReadyHosts(16, large);
         tester.deployZoneApp();
 
         // deploy
@@ -275,6 +274,9 @@ public class ProvisioningTest {
         // redeploy with reduced size (to cause us to have retired nodes before switching resources)
         SystemState state2 = prepare(application1, 2, 2, 3, 3, small, tester);
         tester.activate(application1, state2.allHosts);
+
+        tester.makeReadyHosts(16, large);
+        tester.deployZoneApp();
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);
@@ -286,6 +288,27 @@ public class ProvisioningTest {
                      4 + 4, tester.getNodes(application1, Node.State.active).retired().type(ClusterSpec.Type.content).resources(small).size());
         assertEquals("No large content nodes are retired",
                      0, tester.getNodes(application1, Node.State.active).retired().resources(large).size());
+    }
+
+    @Test
+    public void host_flavors_at_least_twice_as_large_as_preferred() {
+        NodeResources small = new NodeResources(1, 4, 10, 0.3);
+        NodeResources large = new NodeResources(8, 8, 40, 0.3);
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        ApplicationId application1 = tester.makeApplicationId();
+
+        tester.makeReadyHosts(12, small);
+        tester.makeReadyHosts(12, large);
+        tester.deployZoneApp();
+
+        // deploy
+        SystemState state1 = prepare(application1, 2, 2, 4, 4, small, tester);
+        tester.activate(application1, state1.allHosts);
+
+        tester.nodeRepository().getNodes(application1)
+              .forEach(n -> assertEquals(large, tester.nodeRepository().getNode(n.parentHostname().get()).get().resources()));
     }
 
     @Test
