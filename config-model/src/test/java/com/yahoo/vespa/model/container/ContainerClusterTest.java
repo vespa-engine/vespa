@@ -4,16 +4,19 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -24,13 +27,19 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Simon Thoresen Hult
@@ -258,6 +267,41 @@ public class ContainerClusterTest {
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
         assertFalse(config.enabled());
     }
+
+    @Test
+    public void requireThatBundlesForTesterApplicationAreInstalled() {
+        List<String> expectedOnpremBundles =
+                List.of("vespa-testrunner-components-jar-with-dependencies.jar",
+                        "vespa-osgi-testrunner-jar-with-dependencies.jar",
+                        "tenant-cd-api-jar-with-dependencies.jar");
+        verifyTesterApplicationInstalledBundles(Zone.defaultZone(), expectedOnpremBundles);
+        
+        List<String> expectedPublicBundles = new ArrayList<>(expectedOnpremBundles);
+        expectedPublicBundles.add("cloud-tenant-cd-jar-with-dependencies.jar");
+        Zone publicZone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
+        verifyTesterApplicationInstalledBundles(publicZone, expectedPublicBundles);
+        
+    }
+
+    private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {
+        ApplicationId appId = ApplicationId.from("tenant", "application", "instance-t");
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setHostedVespa(true)
+                        .setApplicationId(appId))
+                .zone(zone).build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
+        BundlesConfig.Builder bundleBuilder = new BundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<String> installedBundles = bundleBuilder.build().bundle().stream().map(FileReference::value).collect(Collectors.toList());
+
+        assertEquals(expectedBundleNames.size(), installedBundles.size());
+        assertThat(installedBundles, containsInAnyOrder(
+                expectedBundleNames.stream().map(CoreMatchers::endsWith).collect(Collectors.toList())
+        ));
+    }
+
 
     private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
         ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa());
