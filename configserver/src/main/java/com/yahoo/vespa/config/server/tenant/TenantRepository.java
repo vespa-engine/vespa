@@ -303,7 +303,9 @@ public class TenantRepository {
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
 
         log.log(Level.INFO, "Deleting tenant '" + name + "'");
-        tenants.get(name).delete();
+        // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
+        // and triggers Tenant.close().
+        curator.delete(tenants.get(name).getPath());
     }
 
     private synchronized void closeTenant(TenantName name) {
