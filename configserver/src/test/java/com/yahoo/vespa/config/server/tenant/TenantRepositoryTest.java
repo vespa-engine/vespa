@@ -186,7 +186,8 @@ public class TenantRepositoryTest {
     }
 
     private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenantName)));
+        assertNotNull(globalComponentRegistry.getCurator().framework()
+                              .checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
     private GlobalComponentRegistry createComponentRegistry(boolean throwIfBootstrappingTenantRepoFails) throws IOException {

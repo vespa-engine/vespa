@@ -316,11 +316,6 @@ public class TenantRepository {
         tenant.close();
     }
 
-    // For unit testing
-    String tenantZkPath(TenantName tenant) {
-        return getTenantPath(tenant).getAbsolute();
-    }
-    
     /**
      * A helper to format a log preamble for messages with a tenant and app id
      * @param app the app
