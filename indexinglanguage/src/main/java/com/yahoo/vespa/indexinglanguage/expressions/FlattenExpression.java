@@ -24,6 +24,7 @@ public final class FlattenExpression extends Expression {
     public FlattenExpression() {
         super(DataType.STRING);
     }
+
     @Override
     protected void doExecute(ExecutionContext ctx) {
         StringFieldValue input = (StringFieldValue)ctx.getValue();
