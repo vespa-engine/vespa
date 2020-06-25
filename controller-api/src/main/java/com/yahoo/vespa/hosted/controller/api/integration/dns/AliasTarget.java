@@ -57,7 +57,12 @@ public abstract class AliasTarget {
 
     /** Unpack target from given record data */
     public static AliasTarget unpack(RecordData data) {
-        return LatencyAliasTarget.unpack(data);
+        String[] parts = data.asString().split("/");
+        switch (parts[0]) {
+            case "latency": return LatencyAliasTarget.unpack(data);
+            case "weighted": return WeightedAliasTarget.unpack(data);
+        }
+        throw new IllegalArgumentException("Unknown alias type '" + parts[0] + "'");
     }
 
 }
