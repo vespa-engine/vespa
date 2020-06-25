@@ -65,10 +65,10 @@ public final class NGramExpression extends Expression {
 
             // annotate gram as a word term
             String gramString = gram.extractFrom(input.getString());
-            typedSpan(gram.getStart(), gram.getLength(), TokenType.ALPHABETIC, spanList).
+            typedSpan(gram.getStart(), gram.getCodePointCount(), TokenType.ALPHABETIC, spanList).
                     annotate(LinguisticsAnnotator.lowerCaseTermAnnotation(gramString, gramString));
 
-            lastPosition = gram.getStart() + gram.getLength();
+            lastPosition = gram.getStart() + gram.getCodePointCount();
         }
         // handle punctuation at the end
         if (lastPosition < input.toString().length()) {
