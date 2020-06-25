@@ -161,13 +161,17 @@ FilterAttributeManager::getFlushedSerialNum(const vespalib::string &name) const
     return 0;
 }
 
-
 vespalib::ISequencedTaskExecutor &
 FilterAttributeManager::getAttributeFieldWriter() const
 {
     return _mgr->getAttributeFieldWriter();
 }
 
+vespalib::ThreadExecutor&
+FilterAttributeManager::get_shared_executor() const
+{
+    return _mgr->get_shared_executor();
+}
 
 search::AttributeVector *
 FilterAttributeManager::getWritableAttribute(const vespalib::string &name) const

@@ -225,6 +225,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -237,17 +238,18 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(std::make_shared<AttributeFactory>()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
 }
-
 
 AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const IAttributeFactory::SP &factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
@@ -261,6 +263,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(factory),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
@@ -280,6 +283,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _factory(currMgr._factory),
       _interlock(currMgr._interlock),
       _attributeFieldWriter(currMgr._attributeFieldWriter),
+      _shared_executor(currMgr._shared_executor),
       _hwInfo(currMgr._hwInfo),
       _importedAttributes()
 {
@@ -539,6 +543,11 @@ AttributeManager::getAttributeFieldWriter() const
     return _attributeFieldWriter;
 }
 
+vespalib::ThreadExecutor&
+AttributeManager::get_shared_executor() const
+{
+    return _shared_executor;
+}
 
 AttributeVector *
 AttributeManager::getWritableAttribute(const vespalib::string &name) const
@@ -550,13 +559,11 @@ AttributeManager::getWritableAttribute(const vespalib::string &name) const
     return itr->second.getAttribute().get();
 }
 
-
 const std::vector<AttributeVector *> &
 AttributeManager::getWritableAttributes() const
 {
     return _writableAttributes;
 }
-
 
 void
 AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const

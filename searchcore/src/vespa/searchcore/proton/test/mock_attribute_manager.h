@@ -14,13 +14,15 @@ private:
     std::vector<search::AttributeVector*> _writables;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
     vespalib::ISequencedTaskExecutor* _writer;
+    vespalib::ThreadExecutor* _shared;
 
 public:
     MockAttributeManager()
         : _mock(),
           _writables(),
           _importedAttributes(),
-          _writer()
+          _writer(),
+          _shared()
     {}
 
     search::AttributeVector::SP addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
@@ -28,11 +30,12 @@ public:
         _writables.push_back(attr.get());
         return attr;
     }
-
     void set_writer(vespalib::ISequencedTaskExecutor& writer) {
         _writer = &writer;
     }
-
+    void set_shared_executor(vespalib::ThreadExecutor& shared) {
+        _shared = &shared;
+    }
     search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
         return _mock.getAttribute(name);
     }
@@ -68,6 +71,10 @@ public:
     vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
         assert(_writer != nullptr);
         return *_writer;
+    }
+    vespalib::ThreadExecutor& get_shared_executor() const override {
+        assert(_shared != nullptr);
+        return *_shared;
     }
     search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override {
         auto attr = getAttribute(name);

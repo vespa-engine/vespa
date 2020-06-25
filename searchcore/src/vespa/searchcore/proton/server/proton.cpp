@@ -102,8 +102,8 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 }
 
 size_t
-deriveCompactionCompressionThreads(const ProtonConfig &proton,
-                                   const HwInfo::Cpu &cpuInfo) {
+derive_shared_threads(const ProtonConfig &proton,
+                      const HwInfo::Cpu &cpuInfo) {
     size_t scaledCores = (size_t)std::ceil(cpuInfo.cores() * proton.feeding.concurrency);
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
@@ -301,7 +301,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024, index_warmup_executor);
 
-    const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
+    const size_t sharedThreads = derive_shared_threads(protonConfig, hwInfo.cpu());
     _sharedExecutor = std::make_shared<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_sharedExecutor);
     InitializeThreads initializeThreads;
