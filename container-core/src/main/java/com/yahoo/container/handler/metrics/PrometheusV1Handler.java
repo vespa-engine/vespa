@@ -1,5 +1,9 @@
 package com.yahoo.container.handler.metrics;
 
+import ai.vespa.metricsproxy.http.TextResponse;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
+import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -11,11 +15,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 
@@ -61,12 +69,22 @@ public class PrometheusV1Handler extends HttpHandlerBase {
     private HttpResponse valuesResponse(String consumer) {
         try {
             String uri = metricsProxyUri + consumerQuery(consumer);
-            String metricsString = httpClient.execute(new HttpGet(uri), new BasicResponseHandler());
-            return new StringResponse(metricsString);
+            String metricsJson = httpClient.execute(new HttpGet(uri), new BasicResponseHandler());
+            return new TextResponse(200, convertToPrometheus(metricsJson));
         } catch (IOException e) {
             log.warning(String.format("Unable to retrieve prometheus metrics from %s: %s", metricsProxyUri, Exceptions.toMessageString(e)));
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    private String convertToPrometheus(String metricsJson) {
+        return PrometheusUtil.toPrometheusModel(
+                GenericJsonUtil
+                        .toMetricsPackets(metricsJson)
+                        .stream()
+                        .map(MetricsPacket.Builder::build)
+                        .collect(Collectors.toList()))
+                .serialize();
     }
 
 }

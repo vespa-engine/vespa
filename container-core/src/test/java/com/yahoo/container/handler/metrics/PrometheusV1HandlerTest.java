@@ -32,7 +32,7 @@ public class PrometheusV1HandlerTest {
     // Mock applicationmetrics api
     private static final String MOCK_METRICS_PATH = "/node0";
 
-    private static final String TEST_FILE = "application-prometheus.txt";
+    private static final String TEST_FILE = "application-metrics.json";
     private static final String RESPONSE = getFileContents(TEST_FILE);
     private static final String CPU_METRIC = "cpu";
     private static final String REPLACED_CPU_METRIC = "cpu.util";
@@ -67,16 +67,11 @@ public class PrometheusV1HandlerTest {
                 .willReturn(aResponse().withBody(RESPONSE)));
 
         // Add a slightly different response for a custom consumer.
-        String myConsumerResponse = RESPONSE.replaceAll(CPU_METRIC, REPLACED_CPU_METRIC);
+        String myConsumerResponse = RESPONSE.replace(CPU_METRIC, REPLACED_CPU_METRIC);
         wireMockRule.stubFor(get(urlPathEqualTo(MOCK_METRICS_PATH))
                 .withQueryParam("consumer", equalTo(CUSTOM_CONSUMER))
                 .willReturn(aResponse().withBody(myConsumerResponse)));
 
-//        wireMockRule.stubFor(get(urlEqualTo("/prometheus/v1/values"))
-//            .willReturn(aResponse()
-//            .withStatus(200)
-//            .withHeader("Content-Type", "text/plain")
-//            .withBody(RESPONSE)));
     }
 
     @Test
@@ -107,7 +102,7 @@ public class PrometheusV1HandlerTest {
     }
 
     @Test
-    public void consumer_is_propagated_to_metrics_proxy_api() throws JSONException {
+    public void consumer_is_propagated_to_metrics_proxy_api() {
         String response = getResponseAsString(CUSTOM_CONSUMER);
 
         assertTrue(response.contains(REPLACED_CPU_METRIC));
