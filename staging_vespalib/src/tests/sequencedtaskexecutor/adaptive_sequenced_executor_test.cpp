@@ -99,7 +99,7 @@ TEST_F("require that task with different component ids are not serialized", Fixt
         std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
         EXPECT_EQUAL(0, tv->_val);
         f._threads.execute(0, [&]() { usleep(2000); tv->modify(0, 14); });
-        f._threads.execute(2, [&]() { tv->modify(14, 42); });
+        f._threads.execute(1, [&]() { tv->modify(14, 42); });
         tv->wait(2);
         if (tv->_fail != 1) {
              continue;
@@ -238,13 +238,9 @@ TEST("require that you get correct number of executors") {
 TEST("require that you distribute well") {
     AdaptiveSequencedExecutor seven(7, 1, 0, 10);
     EXPECT_EQUAL(7u, seven.getNumExecutors());
-    EXPECT_EQUAL(97u, seven.getComponentHashSize());
-    EXPECT_EQUAL(0u, seven.getComponentEffectiveHashSize());
     for (uint32_t id=0; id < 1000; id++) {
-        EXPECT_EQUAL((id%97)%7, seven.getExecutorId(id).getId());
+        EXPECT_EQUAL(id%7, seven.getExecutorId(id).getId());
     }
-    EXPECT_EQUAL(97u, seven.getComponentHashSize());
-    EXPECT_EQUAL(97u, seven.getComponentEffectiveHashSize());
 }
 
 }
