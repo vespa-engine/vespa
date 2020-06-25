@@ -37,6 +37,7 @@ TEST(DistanceFunctionsTest, gives_expected_score)
 
     auto euclid = make_distance_function(DistanceMetric::Euclidean, ct);
     auto angular = make_distance_function(DistanceMetric::Angular, ct);
+    auto innerproduct = make_distance_function(DistanceMetric::InnerProduct, ct);
 
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
@@ -54,23 +55,43 @@ TEST(DistanceFunctionsTest, gives_expected_score)
     double a12 = angular->calc(t(p1), t(p2));
     double a13 = angular->calc(t(p1), t(p3));
     double a23 = angular->calc(t(p2), t(p3));
-    EXPECT_EQ(a12, 1.0);
-    EXPECT_EQ(a13, 1.0);
-    EXPECT_EQ(a23, 1.0);
+    EXPECT_DOUBLE_EQ(a12, 0.5);
+    EXPECT_DOUBLE_EQ(a13, 0.5);
+    EXPECT_DOUBLE_EQ(a23, 0.5);
     double a14 = angular->calc(t(p1), t(p4));
     double a24 = angular->calc(t(p2), t(p4));
-    EXPECT_EQ(a14, 0.5);
-    EXPECT_EQ(a24, 0.5);
+    EXPECT_FLOAT_EQ(a14, 0.25);
+    EXPECT_FLOAT_EQ(a24, 0.25);
     double a34 = angular->calc(t(p3), t(p4));
-    EXPECT_GT(a34, 0.999999 - 0.707107);
-    EXPECT_LT(a34, 1.000001 - 0.707107);
+    EXPECT_FLOAT_EQ(a34, (1.0 - 0.707107)*0.5);
 
     double a25 = angular->calc(t(p2), t(p5));
-    EXPECT_EQ(a25, 2.0);
+    EXPECT_DOUBLE_EQ(a25, 1.0);
 
     double a44 = angular->calc(t(p4), t(p4));
     EXPECT_GE(a44, 0.0);
     EXPECT_LT(a44, 0.000001);
+
+    double i12 = innerproduct->calc(t(p1), t(p2));
+    double i13 = innerproduct->calc(t(p1), t(p3));
+    double i23 = innerproduct->calc(t(p2), t(p3));
+    EXPECT_DOUBLE_EQ(i12, 1.0);
+    EXPECT_DOUBLE_EQ(i13, 1.0);
+    EXPECT_DOUBLE_EQ(i23, 1.0);
+    double i14 = innerproduct->calc(t(p1), t(p4));
+    double i24 = innerproduct->calc(t(p2), t(p4));
+    EXPECT_DOUBLE_EQ(i14, 0.5);
+    EXPECT_DOUBLE_EQ(i24, 0.5);
+    double i34 = innerproduct->calc(t(p3), t(p4));
+    EXPECT_FLOAT_EQ(i34, 1.0 - 0.707107);
+
+    double i25 = innerproduct->calc(t(p2), t(p5));
+    EXPECT_DOUBLE_EQ(i25, 2.0);
+
+    double i44 = innerproduct->calc(t(p4), t(p4));
+    EXPECT_GE(i44, 0.0);
+    EXPECT_LT(i44, 0.000001);
+
 }
 
 TEST(GeoDegreesTest, gives_expected_score)

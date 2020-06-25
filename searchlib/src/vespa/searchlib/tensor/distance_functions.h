@@ -54,12 +54,53 @@ template class SquaredEuclideanDistance<float>;
 template class SquaredEuclideanDistance<double>;
 
 /**
- * Calculates angular distance between vectors with assumed norm 1.
+ * Calculates angular distance between vectors
  */
 template <typename FloatType>
 class AngularDistance : public DistanceFunction {
 public:
     AngularDistance()
+        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
+    {}
+    double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const override {
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        auto a = &lhs_vector[0];
+        auto b = &rhs_vector[0];
+        double a_norm_sq = _computer.dotProduct(a, a, sz);
+        double b_norm_sq = _computer.dotProduct(b, b, sz);
+        double dot_product = _computer.dotProduct(a, b, sz);
+        double div = sqrt(a_norm_sq * b_norm_sq);
+        double cosine_similarity = (div > 0) ? (dot_product / div) : 0.0; // [-1, 1]
+        double score = (1.0 - cosine_similarity) * 0.5; // [1, 0]
+        return score;
+    }
+    double to_rawscore(double distance) const override {
+        double score = 1.0 - distance;
+        return score;
+    }
+    double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
+                           const vespalib::tensor::TypedCells& rhs,
+                           double /*limit*/) const override
+    {
+        return calc(lhs, rhs);
+    }
+
+    const vespalib::hwaccelrated::IAccelrated & _computer;
+};
+
+template class AngularDistance<float>;
+template class AngularDistance<double>;
+
+/**
+ * Calculates angular distance between vectors with assumed norm 1.
+ */
+template <typename FloatType>
+class InnerProductDistance : public DistanceFunction {
+public:
+    InnerProductDistance()
         : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
     {}
     double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const override {
@@ -84,8 +125,8 @@ public:
     const vespalib::hwaccelrated::IAccelrated & _computer;
 };
 
-template class AngularDistance<float>;
-template class AngularDistance<double>;
+template class InnerProductDistance<float>;
+template class InnerProductDistance<double>;
 
 /**
  * Calculates great-circle distance between Latitude/Longitude pairs,

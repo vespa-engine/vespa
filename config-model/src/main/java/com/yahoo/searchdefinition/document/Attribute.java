@@ -39,7 +39,7 @@ import java.util.Set;
  */
 public final class Attribute implements Cloneable, Serializable {
 
-    public enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES }
+    public enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT }
 
     // Remember to change hashCode and equals when you add new fields
 
