@@ -47,6 +47,7 @@ public:
     void pruneRemovedFields(search::SerialNum serialNum) override;
     const IAttributeFactory::SP &getFactory() const override;
     vespalib::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
+    vespalib::ThreadExecutor& get_shared_executor() const override;
 
     search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
     const std::vector<search::AttributeVector *> & getWritableAttributes() const override;

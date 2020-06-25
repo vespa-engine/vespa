@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_populator_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_populator_test");
 
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
@@ -62,6 +64,7 @@ struct Fixture
     DirectoryHandler _testDir;
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     std::unique_ptr<AttributePopulator> _pop;
@@ -70,10 +73,10 @@ struct Fixture
         : _testDir(TEST_DIR),
           _fileHeader(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo(),
-          _mgr(new AttributeManager(TEST_DIR, "test.subdb",
-                  TuneFileAttributes(),
-                                    _fileHeader, _attributeFieldWriter, _hwInfo)),
+          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
+                                    _fileHeader, _attributeFieldWriter, _shared, _hwInfo)),
           _pop(),
           _ctx()
     {

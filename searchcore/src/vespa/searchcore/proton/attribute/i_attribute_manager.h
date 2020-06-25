@@ -14,7 +14,10 @@ namespace search { class IDestructorCallback;}
 
 namespace search::attribute { class IAttributeFunctor; }
 
-namespace vespalib { class ISequencedTaskExecutor; }
+namespace vespalib {
+    class ISequencedTaskExecutor;
+    class ThreadExecutor;
+}
 
 namespace proton {
 
@@ -73,6 +76,8 @@ struct IAttributeManager : public search::IAttributeManager
     virtual const IAttributeFactory::SP &getFactory() const = 0;
 
     virtual vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const = 0;
+
+    virtual vespalib::ThreadExecutor& get_shared_executor() const = 0;
 
     /*
      * Get pointer to named writable attribute.  If attribute isn't

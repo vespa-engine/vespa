@@ -44,6 +44,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
@@ -573,6 +574,7 @@ public:
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo                 _hwInfo;
     proton::AttributeManager::SP _baseMgr;
     FilterAttributeManager _filterMgr;
@@ -581,11 +583,13 @@ public:
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo(),
           _baseMgr(new proton::AttributeManager(test_dir, "test.subdb",
                                                 TuneFileAttributes(),
                                                 _fileHeaderContext,
                                                 _attributeFieldWriter,
+                                                _shared,
                                                 _hwInfo)),
           _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr)
     {

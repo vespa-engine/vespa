@@ -246,6 +246,7 @@ struct BaseFixture
     test::DirectoryHandler   _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo                   _hwInfo;
     BaseFixture();
     BaseFixture(const HwInfo &hwInfo);
@@ -256,12 +257,14 @@ BaseFixture::BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo()
 { }
 BaseFixture::BaseFixture(const HwInfo &hwInfo)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo(hwInfo)
 {}
 BaseFixture::~BaseFixture() = default;
@@ -289,7 +292,7 @@ struct AttributeManagerFixture
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
       _m(*_msp)
 {}
 AttributeManagerFixture::~AttributeManagerFixture() = default;

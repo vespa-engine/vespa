@@ -11,11 +11,12 @@
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_reprocessing_initializer_test");
@@ -54,6 +55,7 @@ struct MyConfig
 {
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
@@ -87,10 +89,10 @@ struct MyConfig
 MyConfig::MyConfig()
     : _fileHeaderContext(),
       _attributeFieldWriter(),
+      _shared(1, 128 * 1024),
       _hwInfo(),
       _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                _fileHeaderContext,
-                                _attributeFieldWriter, _hwInfo)),
+                                _fileHeaderContext, _attributeFieldWriter, _shared, _hwInfo)),
       _schema()
 {}
 MyConfig::~MyConfig() = default;
@@ -132,6 +134,7 @@ public:
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     MyConfig _oldCfg;
@@ -143,10 +146,10 @@ public:
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo(),
-          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                    _fileHeaderContext,
-                                    _attributeFieldWriter, _hwInfo)),
+          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+                                    _attributeFieldWriter, _shared, _hwInfo)),
           _oldCfg(),
           _newCfg(),
           _inspector(_oldCfg, _newCfg),

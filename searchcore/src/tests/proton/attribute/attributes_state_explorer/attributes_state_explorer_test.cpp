@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchcore/proton/attribute/attribute_manager_explorer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/searchcore/proton/test/attribute_vectors.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributes_state_explorer_test");
@@ -30,6 +31,7 @@ struct Fixture
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    vespalib::ThreadStackExecutor _shared;
     HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     AttributeManagerExplorer _explorer;
@@ -37,10 +39,12 @@ struct Fixture
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(1, 128 * 1024),
           _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
                                     _attributeFieldWriter,
+                                    _shared,
                                     _hwInfo)),
           _explorer(_mgr)
     {

@@ -69,6 +69,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                _fileHeaderContext,
                                                _writeService.attributeFieldWriter(),
+                                               _writeService.shared(),
                                                attrFactory,
                                                _hwInfo);
     return std::make_shared<AttributeManagerInitializer>(configSerialNum,
