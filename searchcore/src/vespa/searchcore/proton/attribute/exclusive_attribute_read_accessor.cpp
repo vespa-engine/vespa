@@ -51,7 +51,7 @@ ExclusiveAttributeReadAccessor::takeGuard()
 {
     GateSP entranceGate = std::make_shared<Gate>();
     GateSP exitGate = std::make_shared<Gate>();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(_attribute->getNamePrefix()),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attribute->getNamePrefix()),
                                   [this, entranceGate, exitGate]() { attributeWriteBlockingTask(_attribute, entranceGate, exitGate); });
     entranceGate->await();
     return std::make_unique<Guard>(*_attribute, exitGate);
