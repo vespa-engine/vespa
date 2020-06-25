@@ -7,7 +7,6 @@ import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.TestRuntime;
-import ai.vespa.hosted.cd.impl.http.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -37,7 +36,7 @@ public class VespaTestRuntime implements TestRuntime {
     }
     private VespaTestRuntime(TestConfig config) {
         this.config = config;
-        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
+        this.deploymentToTest = new CloudDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
     }
 
     @Override

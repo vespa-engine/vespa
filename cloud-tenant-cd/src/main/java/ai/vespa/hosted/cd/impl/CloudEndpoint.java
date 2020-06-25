@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.impl.http;
+package ai.vespa.hosted.cd.impl;
 
 import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.cd.Endpoint;
@@ -19,17 +19,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A remote endpoint in a {@link HttpDeployment} of a Vespa application, reachable over HTTP.
+ * A remote endpoint in a {@link CloudDeployment} of a Vespa application, reachable over HTTP.
  *
  * @author jonmv
  */
-public class HttpEndpoint implements Endpoint {
+class CloudEndpoint implements Endpoint {
 
     private final URI endpoint;
     private final HttpClient client;
     private final EndpointAuthenticator authenticator;
 
-    public HttpEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
+    CloudEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
         this.endpoint = requireNonNull(endpoint);
         this.authenticator = requireNonNull(authenticator);
         SSLParameters sslParameters = new SSLParameters();
