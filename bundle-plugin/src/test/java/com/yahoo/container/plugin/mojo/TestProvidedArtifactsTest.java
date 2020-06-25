@@ -3,8 +3,9 @@ package com.yahoo.container.plugin.mojo;
 
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +15,6 @@ import java.util.TreeMap;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
@@ -53,14 +53,12 @@ public class TestProvidedArtifactsTest {
     }
 
     private static Artifact createArtifact(String artifactId, String... dependents) {
-        Artifact artifact = Mockito.mock(Artifact.class);
-        when(artifact.getArtifactId()).thenReturn(artifactId);
-        when(artifact.getGroupId()).thenReturn(GROUP_ID);
+        Artifact artifact = new DefaultArtifact(GROUP_ID, artifactId, "1.0", "test", "jar", "deploy", new DefaultArtifactHandler("jar"));
         List<String> dependencyTrail = new ArrayList<>();
         dependencyTrail.add(fullId("bundle-plugin"));
         Arrays.stream(dependents).forEach(dependent -> dependencyTrail.add(fullId(dependent)));
         dependencyTrail.add(fullId(artifactId));
-        when(artifact.getDependencyTrail()).thenReturn(dependencyTrail);
+        artifact.setDependencyTrail(dependencyTrail);
         return artifact;
     }
 
