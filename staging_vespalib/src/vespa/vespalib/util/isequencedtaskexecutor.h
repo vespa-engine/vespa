@@ -37,10 +37,10 @@ public:
      * @param componentId   component id
      * @return              executor id
      */
-    ExecutorId getExecutorId(uint64_t componentId) const;
+    virtual ExecutorId getExecutorId(uint64_t componentId) const;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorId(vespalib::stringref componentId) const;
+    ExecutorId getExecutorIdFromName(vespalib::stringref componentId) const;
 
     /**
      * Schedule a task to run after all previously scheduled tasks with

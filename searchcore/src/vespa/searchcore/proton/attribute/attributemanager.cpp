@@ -63,7 +63,9 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(attr->getNamePrefix()));
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter,
+                                                                    attributeFieldWriter.getExecutorIdFromName(
+                                                                            attr->getNamePrefix()));
     const vespalib::string &name = attr->getName();
     auto dir = diskLayout.createAttributeDir(name);
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
@@ -564,7 +566,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
             continue;
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
-        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });
     }
 }
@@ -577,7 +579,7 @@ AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_pt
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
     vespalib::string attrName = attrsp->getNamePrefix();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrName),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 

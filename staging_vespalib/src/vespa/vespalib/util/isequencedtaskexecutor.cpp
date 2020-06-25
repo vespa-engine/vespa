@@ -23,7 +23,7 @@ ISequencedTaskExecutor::ISequencedTaskExecutor(uint32_t numExecutors)
 ISequencedTaskExecutor::~ISequencedTaskExecutor() = default;
 
 ISequencedTaskExecutor::ExecutorId
-ISequencedTaskExecutor::getExecutorId(vespalib::stringref componentId) const {
+ISequencedTaskExecutor::getExecutorIdFromName(vespalib::stringref componentId) const {
     vespalib::hash<vespalib::stringref> hashfun;
     return getExecutorId(hashfun(componentId));
 }

@@ -18,7 +18,8 @@ std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
-        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, kindOfWatermark, taskLimit);
+        size_t num_strands = std::min(taskLimit, threads*32);
+        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit);
     } else {
         auto executors = std::make_unique<std::vector<std::unique_ptr<SyncableThreadExecutor>>>();
         executors->reserve(threads);

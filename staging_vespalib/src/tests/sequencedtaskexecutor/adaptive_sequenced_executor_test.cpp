@@ -63,6 +63,8 @@ public:
     }
 };
 
+vespalib::stringref ZERO("0");
+
 TEST_F("testExecute", Fixture) {
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
     EXPECT_EQUAL(0, tv->_val);
@@ -118,8 +120,8 @@ TEST_F("require that task with same string component id are serialized", Fixture
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
     EXPECT_EQUAL(0, tv->_val);
     auto test2 = [&]() { tv->modify(14, 42); };
-    f._threads.execute(f._threads.getExecutorId("0"), [&]() { usleep(2000); tv->modify(0, 14); });
-    f._threads.execute(f._threads.getExecutorId("0"), test2);
+    f._threads.execute(f._threads.getExecutorIdFromName(ZERO), [&]() { usleep(2000); tv->modify(0, 14); });
+    f._threads.execute(f._threads.getExecutorIdFromName(ZERO), test2);
     tv->wait(2);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
@@ -136,8 +138,8 @@ int detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int t
     for (tryCnt = 0; tryCnt < tryLimit; ++tryCnt) {
         std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
         EXPECT_EQUAL(0, tv->_val);
-        f._threads.execute(f._threads.getExecutorId("0"), [&]() { usleep(2000); tv->modify(0, 14); });
-        f._threads.execute(f._threads.getExecutorId(altComponentId), [&]() { tv->modify(14, 42); });
+        f._threads.execute(f._threads.getExecutorIdFromName(ZERO), [&]() { usleep(2000); tv->modify(0, 14); });
+        f._threads.execute(f._threads.getExecutorIdFromName(altComponentId), [&]() { tv->modify(14, 42); });
         tv->wait(2);
         if (tv->_fail != 1) {
              continue;
@@ -156,10 +158,10 @@ vespalib::string makeAltComponentId(Fixture &f)
 {
     int tryCnt = 0;
     char altComponentId[20];
-    ISequencedTaskExecutor::ExecutorId executorId0 = f._threads.getExecutorId("0");
+    ISequencedTaskExecutor::ExecutorId executorId0 = f._threads.getExecutorIdFromName(ZERO);
     for (tryCnt = 1; tryCnt < 100; ++tryCnt) {
         sprintf(altComponentId, "%d", tryCnt);
-        if (f._threads.getExecutorId(altComponentId) == executorId0) {
+        if (f._threads.getExecutorIdFromName(altComponentId) == executorId0) {
             break;
         }
     }

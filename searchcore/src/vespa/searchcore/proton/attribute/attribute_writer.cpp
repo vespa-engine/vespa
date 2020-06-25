@@ -281,7 +281,7 @@ public:
 
 FieldContext::FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr)
     :  _name(attr->getName()),
-       _executorId(writer.getExecutorId(attr->getNamePrefix())),
+       _executorId(writer.getExecutorIdFromName(attr->getNamePrefix())),
        _attr(attr),
        _use_two_phase_put(use_two_phase_put_for_attribute(*attr))
 {
@@ -645,7 +645,7 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
 void AttributeWriter::setupAttriuteMapping() {
     for (auto attr : getWritableAttributes()) {
         vespalib::stringref name = attr->getName();
-        _attrMap[name] = AttrWithId(attr, _attributeFieldWriter.getExecutorId(attr->getNamePrefix()));
+        _attrMap[name] = AttrWithId(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
     }    
 }
 
