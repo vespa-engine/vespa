@@ -13,9 +13,13 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
+#include <gmock/gmock.h>
 #include <chrono>
 #include <thread>
 #include <fstream>
+
+using namespace ::testing;
 
 namespace storage::lib {
 
@@ -1141,6 +1145,108 @@ TEST(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
         std::vector<uint16_t> expected({3});
         EXPECT_EQ(expected, actual);
     }
+}
+
+TEST(DistributionTest, wildcard_top_level_distribution_gives_expected_node_results) {
+    std::string raw_config = R"(redundancy 2
+initial_redundancy 2
+ensure_primary_persisted true
+ready_copies 2
+active_per_leaf_group false
+distributor_auto_ownership_transfer_on_whole_group_down true
+group[0].index "invalid"
+group[0].name "invalid"
+group[0].capacity 5
+group[0].partitions "*"
+group[1].index "0"
+group[1].name "switch0"
+group[1].capacity 3
+group[1].partitions ""
+group[1].nodes[0].index 0
+group[1].nodes[0].retired false
+group[1].nodes[1].index 1
+group[1].nodes[1].retired false
+group[1].nodes[2].index 2
+group[1].nodes[2].retired false
+group[2].index "1"
+group[2].name "switch1"
+group[2].capacity 2
+group[2].partitions ""
+group[2].nodes[0].index 3
+group[2].nodes[0].retired false
+group[2].nodes[1].index 4
+group[2].nodes[1].retired false
+disk_distribution "MODULO_BID"
+)";
+    Distribution distr(raw_config);
+    ClusterState state("version:1 distributor:5 storage:5");
+
+    auto nodes_of = [&](uint32_t bucket){
+        std::vector<uint16_t> actual;
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, bucket), actual);
+        return actual;
+    };
+
+    EXPECT_THAT(nodes_of(1), ElementsAre(0, 2));
+    EXPECT_THAT(nodes_of(2), ElementsAre(2, 0));
+    EXPECT_THAT(nodes_of(3), ElementsAre(4, 3));
+    EXPECT_THAT(nodes_of(4), ElementsAre(3, 4));
+    EXPECT_THAT(nodes_of(5), ElementsAre(4, 3));
+    EXPECT_THAT(nodes_of(6), ElementsAre(1, 0));
+    EXPECT_THAT(nodes_of(7), ElementsAre(2, 0));
+}
+
+namespace {
+
+std::string generate_config_with_n_1node_groups(int n_groups) {
+    std::ostringstream config_os;
+    std::ostringstream partition_os;
+    for (int i = 0; i < n_groups - 1; ++i) {
+        partition_os << "1|";
+    }
+    partition_os << '*';
+    config_os << "redundancy " << n_groups << "\n"
+              << "initial_redundancy " << n_groups << "\n"
+              << "ensure_primary_persisted true\n"
+              << "ready_copies " << n_groups << "\n"
+              << "active_per_leaf_group true\n"
+              << "distributor_auto_ownership_transfer_on_whole_group_down true\n"
+              << "group[0].index \"invalid\"\n"
+              << "group[0].name \"invalid\"\n"
+              << "group[0].capacity " << n_groups << "\n"
+              << "group[0].partitions \"" << partition_os.str() << "\"\n";
+
+    for (int i = 0; i < n_groups; ++i) {
+        int g = i + 1;
+        config_os << "group[" << g << "].index \"" << i << "\"\n"
+                  << "group[" << g << "].name \"group" << g << "\"\n"
+                  << "group[" << g << "].capacity 1\n"
+                  << "group[" << g << "].partitions \"\"\n"
+                  << "group[" << g << "].nodes[0].index \"" << i << "\"\n"
+                  << "group[" << g << "].nodes[0].retired false\n";
+    }
+    return config_os.str();
+}
+
+std::string generate_state_with_n_nodes_up(int n_nodes) {
+    std::ostringstream state_os;
+    state_os << "version:1 bits:8 distributor:" << n_nodes << " storage:" << n_nodes;
+    return state_os.str();
+}
+
+}
+
+TEST(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
+    const int n_groups = 150;
+    Distribution distr(generate_config_with_n_1node_groups(n_groups));
+    ClusterState state(generate_state_with_n_nodes_up(n_groups));
+
+    std::vector<uint16_t> actual;
+    uint32_t bucket = 0;
+    auto min_time = vespalib::BenchmarkTimer::benchmark([&]{
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, (bucket++ & 0xffffU)), actual);
+    }, 5.0);
+    fprintf(stderr, "%.10f seconds\n", min_time);
 }
 
 }
