@@ -373,6 +373,12 @@ HnswIndex::prepare_add_document(uint32_t docid,
             TypedCells vector,
             vespalib::GenerationHandler::Guard read_guard) const
 {
+    uint32_t max_nodes = _graph.node_refs.size();
+    if (max_nodes < _cfg.min_size_before_two_phase()) {
+        // the first documents added will do all work in write thread
+        // to ensure they are linked together:
+        return std::unique_ptr<PrepareResult>();
+    }
     PreparedAddDoc op = internal_prepare_add(docid, vector);
     (void) read_guard; // must keep guard until this point
     return std::make_unique<PreparedAddDoc>(std::move(op));
@@ -385,7 +391,11 @@ HnswIndex::complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> 
     if (prepared && (prepared->docid == docid)) {
         internal_complete_add(docid, *prepared);
     } else {
-        LOG(warning, "complete_add_document called with invalid prepare_result");
+        // we expect this for the first documents added, so no warning for them
+        if (_graph.node_refs.size() > 1.25 * _cfg.min_size_before_two_phase()) {
+            LOG(warning, "complete_add_document(%u) called with invalid prepare_result %s/%u",
+                docid, (prepared ? "valid ptr" : "nullptr"), (prepared ? prepared->docid : 0u));
+        }
         // fallback to normal add
         add_document(docid);
     }

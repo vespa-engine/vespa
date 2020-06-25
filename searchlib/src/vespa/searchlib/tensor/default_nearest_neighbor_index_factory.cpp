@@ -36,6 +36,7 @@ DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
     HnswIndex::Config cfg(m * 2,
                           m,
                           params.neighbors_to_explore_at_insert(),
+                          10000,
                           true);
     return std::make_unique<HnswIndex>(vectors,
                                        make_distance_function(params.distance_metric(), cell_type),
