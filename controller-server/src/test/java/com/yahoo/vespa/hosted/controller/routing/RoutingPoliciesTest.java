@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.google.common.collect.Sets;
@@ -247,7 +247,7 @@ public class RoutingPoliciesTest {
 
         var endpoint = "r0.app1.tenant1.global.vespa.oath.cloud";
         assertEquals(endpoint + " points to c0 in all regions",
-                     List.of("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     List.of("latency/lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
                      tester.aliasDataOf(endpoint));
         assertTrue("No rotations assigned", context.application().instances().values().stream()
                                                    .map(Instance::rotations)
@@ -699,7 +699,7 @@ public class RoutingPoliciesTest {
                                  .map(Endpoint::dnsName)
                                  .orElse("<none>");
             var zoneTargets = Arrays.stream(zone)
-                                    .map(z -> "lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
+                                    .map(z -> "latency/lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
                                               z.value() + "/dns-zone-1/" + z.value())
                                     .collect(Collectors.toSet());
             assertEquals("Global endpoint " + endpoint + " points to expected zones", zoneTargets,

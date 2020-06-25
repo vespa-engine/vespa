@@ -1,9 +1,9 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -27,19 +27,17 @@ public class NameServiceQueueTest {
         var nameService = new MemoryNameService();
         var r1 = new Record(Record.Type.CNAME, RecordName.from("cname.vespa.oath.cloud"), RecordData.from("example.com"));
         var r2 = new Record(Record.Type.TXT, RecordName.from("txt.example.com"), RecordData.from("text"));
-        var r3 = List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"), RecordData.from("alias1/dns-zone-01/prod.us-north-1")),
-                         new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"), RecordData.from("alias2/dns-zone-02/prod.us-north-2")));
+        var r3 = List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
+                                    new LatencyAliasTarget(HostName.from("alias1"),
+                                                           "dns-zone-01",
+                                                           ZoneId.from("prod", "us-north-1")).pack()),
+                         new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
+                                    new LatencyAliasTarget(HostName.from("alias2"),
+                                                           "dns-zone-02",
+                                                           ZoneId.from("prod", "us-north-2")).pack()));
         var req1 = new CreateRecord(r1);
         var req2 = new CreateRecords(List.of(r2));
-        var req3 = new CreateRecords(List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                                        new AliasTarget(HostName.from("alias1"),
-                                                                        "dns-zone-01",
-                                                                        ZoneId.from("prod", "us-north-1")).asData()),
-                                             new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                                        new AliasTarget(HostName.from("alias2"),
-                                                                        "dns-zone-02",
-                                                                        ZoneId.from("prod", "us-north-2")).asData()))
-        );
+        var req3 = new CreateRecords(r3);
         var req4 = new RemoveRecords(r3.get(0).type(), r3.get(0).name());
         var req5 = new RemoveRecords(r2.type(), r2.data());
         var req6 = new RemoveRecords(Record.Type.CNAME, r1.data());
