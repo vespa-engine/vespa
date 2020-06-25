@@ -3,6 +3,8 @@
 find_package(Protobuf REQUIRED)
 protobuf_generate_cpp(searchlib_engine_PROTOBUF_SRCS searchlib_engine_PROTOBUF_HDRS ../../../../src/protobuf/search_protocol.proto)
 
+vespa_add_source_target(protobufgen_searchlib_engine DEPENDS ${searchlib_engine_PROTOBUF_SRCS} ${searchlib_engine_PROTOBUF_HDRS})
+
 # protoc-generated files emit compiler warnings that we normally treat as errors.
 if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
   set_source_files_properties(${searchlib_engine_PROTOBUF_SRCS}

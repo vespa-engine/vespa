@@ -160,3 +160,6 @@ __create_module_targets(TARGETS "module")
 
 # Create module targets with name ${MODULE}+test depending on every test target defined within that module
 __create_module_targets(TEST_TARGETS "test")
+
+# Create module targets with name ${MODULE}+source depending on every source target defined within that module
+__create_module_targets(SOURCE_TARGETS "source")

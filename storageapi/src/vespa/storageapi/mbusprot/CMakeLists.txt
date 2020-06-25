@@ -7,6 +7,8 @@ PROTOBUF_GENERATE_CPP(storageapi_PROTOBUF_SRCS storageapi_PROTOBUF_HDRS
     protobuf/visiting.proto
     protobuf/maintenance.proto)
 
+vespa_add_source_target(protobufgen_storageapi_mbusprot DEPENDS ${storageapi_PROTOBUF_SRCS} ${storageapi_PROTOBUF_HDRS})
+
 # protoc-generated files emit compiler warnings that we normally treat as errors.
 # Instead of rolling our own compiler plugin we'll pragmatically disable the noise.
 if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
