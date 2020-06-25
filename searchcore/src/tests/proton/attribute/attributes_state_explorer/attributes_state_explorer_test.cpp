@@ -10,8 +10,8 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributes_state_explorer_test");
@@ -20,6 +20,7 @@ using namespace proton;
 using namespace proton::test;
 using search::AttributeVector;
 using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
@@ -31,7 +32,7 @@ struct Fixture
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     AttributeManagerExplorer _explorer;
@@ -39,7 +40,7 @@ struct Fixture
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
-          _shared(1, 128 * 1024),
+          _shared(),
           _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,

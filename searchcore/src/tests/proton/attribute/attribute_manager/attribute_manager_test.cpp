@@ -34,6 +34,7 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -54,6 +55,7 @@ using proton::test::AttributeUtils;
 using proton::test::createInt32Attribute;
 using proton::test::Int32Attribute;
 using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 using search::TuneFileAttributes;
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
@@ -153,7 +155,7 @@ struct BaseFixture
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo                 _hwInfo;
     BaseFixture();
     ~BaseFixture();
@@ -167,7 +169,7 @@ BaseFixture::BaseFixture()
     : _dirHandler(test_dir),
       _fileHeaderContext(),
       _attributeFieldWriter(),
-      _shared(1, 128 * 1024),
+      _shared(),
       _hwInfo()
 {
 }

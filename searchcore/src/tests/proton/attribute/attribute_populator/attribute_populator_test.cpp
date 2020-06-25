@@ -9,8 +9,8 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -19,6 +19,7 @@ LOG_SETUP("attribute_populator_test");
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
 using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 using namespace document;
 using namespace proton;
 using namespace search;
@@ -64,7 +65,7 @@ struct Fixture
     DirectoryHandler _testDir;
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     std::unique_ptr<AttributePopulator> _pop;
@@ -73,7 +74,7 @@ struct Fixture
         : _testDir(TEST_DIR),
           _fileHeader(),
           _attributeFieldWriter(),
-          _shared(1, 128 * 1024),
+          _shared(),
           _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeader, _attributeFieldWriter, _shared, _hwInfo)),

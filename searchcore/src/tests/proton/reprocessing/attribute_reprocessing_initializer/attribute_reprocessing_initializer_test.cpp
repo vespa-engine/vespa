@@ -15,8 +15,8 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_reprocessing_initializer_test");
@@ -31,6 +31,7 @@ using search::attribute::Config;
 using search::index::schema::DataType;
 using search::test::DirectoryHandler;
 using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -55,7 +56,7 @@ struct MyConfig
 {
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
@@ -89,7 +90,7 @@ struct MyConfig
 MyConfig::MyConfig()
     : _fileHeaderContext(),
       _attributeFieldWriter(),
-      _shared(1, 128 * 1024),
+      _shared(),
       _hwInfo(),
       _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                 _fileHeaderContext, _attributeFieldWriter, _shared, _hwInfo)),
@@ -134,7 +135,7 @@ public:
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     MyConfig _oldCfg;
@@ -146,7 +147,7 @@ public:
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
-          _shared(1, 128 * 1024),
+          _shared(),
           _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                     _attributeFieldWriter, _shared, _hwInfo)),
