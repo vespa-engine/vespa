@@ -345,7 +345,6 @@ namespace {
         const Group* _group;
         double _score;
 
-        ScoredGroup() : _group(nullptr), _score(0) {}
         ScoredGroup(const Group* group, double score)
             : _group(group), _score(score) {}
 
@@ -425,36 +424,40 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
                              std::vector<ResultGroup>& results) const
 {
     if (parent.isLeafGroup()) {
-        results.emplace_back(parent, redundancy);
+        results.push_back(ResultGroup(parent, redundancy));
         return;
     }
-    const Group::Distribution& redundancyArray = parent.getDistribution(redundancy);
-    std::vector<ScoredGroup> tmpResults;
-    tmpResults.reserve(redundancyArray.size());
-    uint32_t seed = getGroupSeed(bucket, clusterState, parent);
+    const Group::Distribution& redundancyArray(
+            parent.getDistribution(redundancy));
+    std::vector<ScoredGroup> tmpResults(redundancyArray.size(),
+                                        ScoredGroup(0, 0));
+    uint32_t seed(getGroupSeed(bucket, clusterState, parent));
     RandomGen random(seed);
     uint32_t currentIndex = 0;
-    const auto& subGroups = parent.getSubGroups();
-    for (const auto& g : subGroups) {
-        while (g.first < currentIndex++) {
-            random.nextDouble();
-        }
+    const std::map<uint16_t, Group*>& subGroups(parent.getSubGroups());
+    for (std::map<uint16_t, Group*>::const_iterator it = subGroups.begin();
+         it != subGroups.end(); ++it)
+    {
+        while (it->first < currentIndex++) random.nextDouble();
         double score = random.nextDouble();
-        if (g.second->getCapacity() != 1) {
-            // Capacity shouldn't possibly be 0.
-            // Verified in Group::setCapacity()
-            score = std::pow(score, 1.0 / g.second->getCapacity().getValue());
+        if (it->second->getCapacity() != 1) {
+                // Capacity shouldn't possibly be 0.
+                // Verified in Group::setCapacity()
+            score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
         }
-        tmpResults.emplace_back(g.second, score);
+        if (score > tmpResults.back()._score) {
+            tmpResults.push_back(ScoredGroup(it->second, score));
+            std::sort(tmpResults.begin(), tmpResults.end());
+            tmpResults.pop_back();
+        }
     }
-    std::sort(tmpResults.begin(), tmpResults.end());
-    if (tmpResults.size() > redundancy) {
-        tmpResults.resize(redundancy);
+    while (tmpResults.back()._group == nullptr) {
+        tmpResults.pop_back();
     }
     for (uint32_t i=0, n=tmpResults.size(); i<n; ++i) {
         ScoredGroup& group(tmpResults[i]);
-        // This should never happen. Config should verify that each group
-        // has enough groups beneath them.
+            // This should never happen. Config should verify that each group
+            // has enough groups beneath them.
         assert(group._group != nullptr);
         getIdealGroups(bucket, clusterState, *group._group,
                        redundancyArray[i], results);

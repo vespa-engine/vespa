@@ -13,7 +13,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
 #include <chrono>
 #include <thread>
 #include <fstream>
@@ -1142,59 +1141,6 @@ TEST(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
         std::vector<uint16_t> expected({3});
         EXPECT_EQ(expected, actual);
     }
-}
-
-namespace {
-
-std::string generate_config_with_n_1node_groups(int n_groups) {
-    std::ostringstream config_os;
-    std::ostringstream partition_os;
-    for (int i = 0; i < n_groups - 1; ++i) {
-        partition_os << "1|";
-    }
-    partition_os << '*';
-    config_os << "redundancy " << n_groups << "\n"
-              << "initial_redundancy " << n_groups << "\n"
-              << "ensure_primary_persisted true\n"
-              << "ready_copies " << n_groups << "\n"
-              << "active_per_leaf_group true\n"
-              << "distributor_auto_ownership_transfer_on_whole_group_down true\n"
-              << "group[0].index \"invalid\"\n"
-              << "group[0].name \"invalid\"\n"
-              << "group[0].capacity " << n_groups << "\n"
-              << "group[0].partitions \"" << partition_os.str() << "\"\n";
-
-    for (int i = 0; i < n_groups; ++i) {
-        int g = i + 1;
-        config_os << "group[" << g << "].index \"" << i << "\"\n"
-                  << "group[" << g << "].name \"group" << g << "\"\n"
-                  << "group[" << g << "].capacity 1\n"
-                  << "group[" << g << "].partitions \"\"\n"
-                  << "group[" << g << "].nodes[0].index \"" << i << "\"\n"
-                  << "group[" << g << "].nodes[0].retired false\n";
-    }
-    return config_os.str();
-}
-
-std::string generate_state_with_n_nodes_up(int n_nodes) {
-    std::ostringstream state_os;
-    state_os << "version:1 bits:8 distributor:" << n_nodes << " storage:" << n_nodes;
-    return state_os.str();
-}
-
-}
-
-TEST(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
-    const int n_groups = 150;
-    Distribution distr(generate_config_with_n_1node_groups(n_groups));
-    ClusterState state(generate_state_with_n_nodes_up(n_groups));
-
-    std::vector<uint16_t> actual;
-    uint32_t bucket = 0;
-    auto min_time = vespalib::BenchmarkTimer::benchmark([&]{
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, (bucket++ & 0xffffU)), actual);
-    }, 5.0);
-    fprintf(stderr, "%.10f seconds\n", min_time);
 }
 
 }
