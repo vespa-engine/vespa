@@ -27,8 +27,7 @@ public:
           _type(type)
     {
     }
-
-    ~FlushTargetFilter() { }
+    ~FlushTargetFilter();
 
     bool match(const IFlushTarget::SP &flushTarget) const {
         const vespalib::string &targetName = flushTarget->getName();
@@ -45,6 +44,8 @@ public:
     }
 };
 
+FlushTargetFilter::~FlushTargetFilter() = default;
+
 FlushTargetFilter syncFilter(FLUSH_TARGET_NAME_PREFIX, IFlushTarget::Type::SYNC);
 FlushTargetFilter shrinkFilter(SHRINK_TARGET_NAME_PREFIX, IFlushTarget::Type::GC);
 
@@ -57,9 +58,9 @@ FilterAttributeManager::acceptAttribute(const vespalib::string &name) const
 }
 
 FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttributes,
-                                               const IAttributeManager::SP &mgr)
+                                               IAttributeManager::SP mgr)
     : _acceptedAttributes(acceptedAttributes),
-      _mgr(mgr)
+      _mgr(std::move(mgr))
 {
     // Assume that list of attributes in mgr doesn't change
     for (const auto attr : _mgr->getWritableAttributes()) {

@@ -75,12 +75,8 @@ reconfigureMatchView(const Matchers::SP &matchers,
                      const IAttributeManager::SP &attrMgr)
 {
     SearchView::SP curr = _searchView.get();
-    MatchView::SP matchView(new MatchView(matchers,
-                                          indexSearchable,
-                                          attrMgr,
-                                          curr->getSessionManager(),
-                                          curr->getDocumentMetaStore(),
-                                          curr->getDocIdLimit()));
+    auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, curr->getSessionManager(),
+                                                 curr->getDocumentMetaStore(), curr->getDocIdLimit());
     reconfigureSearchView(matchView);
 }
 
@@ -126,7 +122,7 @@ Matchers::UP
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
                                              const RankProfilesConfig &cfg)
 {
-    Matchers::UP newMatchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
+    auto newMatchers = std::make_unique<Matchers>(_clock, _queryLimiter, _constantValueRepo);
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
         search::fef::Properties properties;
@@ -222,11 +218,11 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         attrMgr = newAttrMgr;
         shouldMatchViewChange = true;
 
-        IAttributeWriter::SP newAttrWriter(new AttributeWriter(newAttrMgr));
+        auto newAttrWriter = std::make_shared<AttributeWriter>(newAttrMgr);
         attrWriter = newAttrWriter;
         shouldFeedViewChange = true;
-        initializer.reset(createAttributeReprocessingInitializer(newConfig, newAttrMgr,
-                                                                 oldConfig, oldAttrMgr, _subDbName, attrSpec.getCurrentSerialNum()).release());
+        initializer = createAttributeReprocessingInitializer(newConfig, newAttrMgr, oldConfig, oldAttrMgr,
+                                                             _subDbName, attrSpec.getCurrentSerialNum());
     } else if (params.shouldAttributeWriterChange()) {
         attrWriter = std::make_shared<AttributeWriter>(attrMgr);
         shouldFeedViewChange = true;

@@ -186,11 +186,8 @@ FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer
 {
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);
-    return IReprocessingTask::UP(new ReprocessDocumentsTask(initializer,
-            getSummaryManager(),
-            docTypeRepo,
-            getSubDbName(),
-            docIdLimit));
+    return std::make_unique<ReprocessDocumentsTask>(initializer, getSummaryManager(), docTypeRepo,
+                                                    getSubDbName(), docIdLimit);
 }
 
 FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
@@ -234,8 +231,8 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 {
     // Called by executor thread
     (void) sessionManager;
-    _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
-    IAttributeWriter::SP writer(new AttributeWriter(getAndResetInitAttributeManager()));
+    _iSearchView.set(std::make_shared<EmptySearchView>());
+    auto writer = std::make_shared<AttributeWriter>(getAndResetInitAttributeManager());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(writer, configSnapshot);
