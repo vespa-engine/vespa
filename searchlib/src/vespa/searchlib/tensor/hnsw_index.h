@@ -126,17 +126,22 @@ protected:
                                          const BitVector *filter, uint32_t explore_k) const;
 
     struct PreparedAddDoc : public PrepareResult {
+        using ReadGuard = vespalib::GenerationHandler::Guard;
         uint32_t docid;
         int32_t max_level;
+        ReadGuard read_guard;
         using Links = std::vector<std::pair<uint32_t, HnswGraph::NodeRef>>;
         std::vector<Links> connections;
-        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in)
-          : docid(docid_in), max_level(max_level_in), connections(max_level+1)
+        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in, ReadGuard read_guard_in)
+          : docid(docid_in), max_level(max_level_in),
+            read_guard(std::move(read_guard_in)),
+            connections(max_level+1)
         {}
         ~PreparedAddDoc() = default;
         PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
-    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
+    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector,
+                                        vespalib::GenerationHandler::Guard read_guard) const;
     LinkArray filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
