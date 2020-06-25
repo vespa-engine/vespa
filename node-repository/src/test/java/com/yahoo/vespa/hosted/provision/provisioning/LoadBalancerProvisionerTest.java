@@ -217,7 +217,6 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancer_config_server_cluster() {
-        flagSource.withBooleanFlag(Flags.CONFIGSERVER_PROVISION_LB.id(), true);
         ApplicationId configServerApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(configServerApp).asList();
         var cluster = ClusterSpec.Id.from("zone-config-servers");

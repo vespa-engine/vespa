@@ -50,14 +50,12 @@ public class LoadBalancerProvisioner {
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
-    private final BooleanFlag provisionConfigServerLoadBalancer;
     private final BooleanFlag provisionControllerLoadBalancer;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
-        this.provisionConfigServerLoadBalancer = Flags.CONFIGSERVER_PROVISION_LB.bindTo(flagSource);
         this.provisionControllerLoadBalancer = Flags.CONTROLLER_PROVISION_LB.bindTo(flagSource);
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
@@ -149,11 +147,10 @@ public class LoadBalancerProvisioner {
         db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
     }
 
-    // TODO(mpolden): Inline when feature flags are removed
+    // TODO(mpolden): Inline when feature flag is removed
     private boolean canForwardTo(NodeType type, ClusterSpec cluster) {
         boolean canForwardTo = service.canForwardTo(type, cluster.type());
         if (canForwardTo) {
-            if (type == NodeType.config) return provisionConfigServerLoadBalancer.value();
             if (type == NodeType.controller) return provisionControllerLoadBalancer.value();
         }
         return canForwardTo;
