@@ -12,9 +12,10 @@
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/threadexecutor.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -607,8 +608,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
             assert(wc.getFields().size() == 1);
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, wc.getFields()[0], extractor);
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, immediateCommit, onWriteDone);
-            // We use the local docid to create an executor id to round-robin between the threads.
-            _attributeFieldWriter.executeTask(_attributeFieldWriter.getExecutorId(lid), std::move(prepare_task));
+            _shared_executor.execute(std::move(prepare_task));
             _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(complete_task));
         } else {
             if (allAttributes || wc.hasStructFieldAttribute()) {
@@ -633,6 +633,7 @@ AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, bool immed
 AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
     : _mgr(std::move(mgr)),
       _attributeFieldWriter(_mgr->getAttributeFieldWriter()),
+      _shared_executor(_mgr->get_shared_executor()),
       _writeContexts(),
       _dataType(nullptr),
       _hasStructFieldAttribute(false),

@@ -42,9 +42,9 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
@@ -79,6 +79,7 @@ using search::tensor::TensorAttribute;
 using search::test::DirectoryHandler;
 using std::string;
 using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 using vespalib::SequencedTaskExecutorObserver;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
@@ -122,12 +123,12 @@ fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64
 
 const std::shared_ptr<IDestructorCallback> emptyCallback;
 
-
 class AttributeWriterTest : public ::testing::Test {
 public:
     DirectoryHandler _dirHandler;
     std::unique_ptr<ForegroundTaskExecutor> _attributeFieldWriterReal;
     std::unique_ptr<SequencedTaskExecutorObserver> _attributeFieldWriter;
+    ForegroundThreadExecutor _shared;
     std::shared_ptr<MockAttributeManager> _mgr;
     std::unique_ptr<AttributeWriter> _aw;
 
@@ -135,6 +136,7 @@ public:
         : _dirHandler(test_dir),
           _attributeFieldWriterReal(),
           _attributeFieldWriter(),
+          _shared(),
           _mgr(),
           _aw()
     {
@@ -147,6 +149,7 @@ public:
         _attributeFieldWriter = std::make_unique<SequencedTaskExecutorObserver>(*_attributeFieldWriterReal);
         _mgr = std::make_shared<MockAttributeManager>();
         _mgr->set_writer(*_attributeFieldWriter);
+        _mgr->set_shared_executor(_shared);
         allocAttributeWriter();
     }
     void allocAttributeWriter() {
@@ -574,7 +577,7 @@ public:
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    vespalib::ThreadStackExecutor _shared;
+    ForegroundThreadExecutor _shared;
     HwInfo                 _hwInfo;
     proton::AttributeManager::SP _baseMgr;
     FilterAttributeManager _filterMgr;
@@ -583,7 +586,7 @@ public:
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
-          _shared(1, 128 * 1024),
+          _shared(),
           _hwInfo(),
           _baseMgr(new proton::AttributeManager(test_dir, "test.subdb",
                                                 TuneFileAttributes(),
@@ -891,6 +894,11 @@ public:
                 startAttributeField("a1").
                 addTensor(std::unique_ptr<vespalib::tensor::Tensor>()).endField().endDocument();
     }
+    void expect_shared_executor_tasks(size_t exp_accepted_tasks) {
+        auto stats = _shared.getStats();
+        EXPECT_EQ(exp_accepted_tasks, stats.acceptedTasks);
+        EXPECT_EQ(0, stats.rejectedTasks);
+    }
 };
 
 TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute)
@@ -899,16 +907,13 @@ TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attr
 
     put(1, *doc, 1);
     expect_tensor_attr_calls(1, 1);
-    assertExecuteHistory({1, 0});
+    expect_shared_executor_tasks(1);
+    assertExecuteHistory({0});
 
     put(2, *doc, 2);
     expect_tensor_attr_calls(2, 2);
-    assertExecuteHistory({1, 0, 0, 0});
-
-    put(3, *doc, 3);
-    expect_tensor_attr_calls(3, 3);
-    // Note that the prepare step is executed round-robin between the 2 threads.
-    assertExecuteHistory({1, 0, 0, 0, 1, 0});
+    expect_shared_executor_tasks(2);
+    assertExecuteHistory({0, 0});
 }
 
 TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute)
@@ -917,7 +922,8 @@ TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_a
     attr->commit(7, 7);
     put(7, *doc, 1);
     expect_tensor_attr_calls(0, 0);
-    assertExecuteHistory({1, 0});
+    expect_shared_executor_tasks(1);
+    assertExecuteHistory({0});
 }
 
 TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set)
@@ -925,7 +931,8 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set)
     auto doc = make_no_field_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
-    assertExecuteHistory({1, 0});
+    expect_shared_executor_tasks(1);
+    assertExecuteHistory({0});
 }
 
 TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
@@ -933,7 +940,8 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
     auto doc = make_no_tensor_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
-    assertExecuteHistory({1, 0});
+    expect_shared_executor_tasks(1);
+    assertExecuteHistory({0});
 }
 
 
