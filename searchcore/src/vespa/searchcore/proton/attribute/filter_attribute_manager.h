@@ -28,7 +28,7 @@ private:
 
 public:
     FilterAttributeManager(const AttributeSet &acceptedAttributes,
-                           const IAttributeManager::SP &mgr);
+                           IAttributeManager::SP mgr);
     ~FilterAttributeManager() override;
 
     // Implements search::IAttributeManager
