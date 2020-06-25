@@ -1,4 +1,79 @@
+from typing import List, Mapping, Optional
+
 import docker
+
+from vespa.json_serialization import ToJson, FromJson
+
+
+class Document(object):
+    def __init__(self) -> None:
+        """
+        Object representing a Vespa document.
+
+        """
+        self.fields = []
+
+    def add_fields(self, *fields):
+        """
+        Add Fields to the document.
+
+        :param fields: fields to be added
+        :return:
+        """
+        self.fields.extend(list(fields))
+
+
+class Field(ToJson, FromJson["Field"]):
+    def __init__(
+        self,
+        name: str,
+        type: str,
+        indexing: Optional[List[str]] = None,
+        index: Optional[List[str]] = None,
+    ) -> None:
+        """
+        Object representing a Vespa document field.
+
+        :param name: Field name.
+        :param type: Field data type.
+        :param indexing: Configures how to process data of a field during indexing.
+        :param index: Sets index parameters. Content in fields with index are normalized and tokenized by default.
+        """
+        self.name = name
+        self.type = type
+        self.indexing = indexing
+        self.index = index
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "Field":
+        return Field(
+            name=mapping["name"],
+            type=mapping["type"],
+            indexing=mapping.get("indexing", None),
+            index=mapping.get("index", None),
+        )
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {"name": self.name, "type": self.type}
+        if self.indexing is not None:
+            map.update(indexing=self.indexing)
+        if self.index is not None:
+            map.update(index=self.index)
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            self.name == other.name
+            and self.type == other.type
+            and self.indexing == other.indexing
+            and self.index == other.index
+        )
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
 
 
 class ApplicationPackage(object):
@@ -21,16 +96,20 @@ class ApplicationPackage(object):
         :return:
         """
         client = docker.from_env()
-        self.container = client.containers.run(
-            "vespaengine/vespa",
-            detach=True,
-            mem_limit=container_memory,
-            name=self.name,
-            hostname=self.name,
-            privileged=True,
-            volumes={self.disk_folder: {"bind": "/app", "mode": "rw"}},
-            ports={8080: 8080, 19112: 19112},
-        )
+        if self.container is None:
+            try:
+                self.container = client.containers.get(self.name)
+            except docker.errors.NotFound:
+                self.container = client.containers.run(
+                    "vespaengine/vespa",
+                    detach=True,
+                    mem_limit=container_memory,
+                    name=self.name,
+                    hostname=self.name,
+                    privileged=True,
+                    volumes={self.disk_folder: {"bind": "/app", "mode": "rw"}},
+                    ports={8080: 8080, 19112: 19112},
+                )
 
     def check_configuration_server(self) -> bool:
         """
@@ -39,7 +118,8 @@ class ApplicationPackage(object):
         :return: True if configuration server is running.
         """
         return (
-            self.container.exec_run(
+            self.container is not None
+            and self.container.exec_run(
                 "bash -c 'curl -s --head http://localhost:19071/ApplicationStatus'"
             )
             .output.decode("utf-8")
@@ -47,7 +127,8 @@ class ApplicationPackage(object):
             == "HTTP/1.1 200 OK"
         )
 
-    def deploy_application(self):
-        return self.container.exec_run(
+    def deploy_locally(self):
+        deployment = self.container.exec_run(
             "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
         )
+        return deployment.output.decode("utf-8").split("\n")
