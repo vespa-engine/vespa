@@ -4,3 +4,6 @@ namespace=container.handler.metrics
 
 metricsPort int
 metricsApiPath string
+
+prometheusPort int
+prometheusApiPath string
