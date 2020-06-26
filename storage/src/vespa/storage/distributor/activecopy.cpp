@@ -126,9 +126,9 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     typedef std::vector<uint16_t> IndexList;
     std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
-        groups = distribution.splitNodesIntoLeafGroups(validNodesWithCopy);
+        groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
     } else {
-        groups.push_back(validNodesWithCopy);
+        groups.push_back(std::move(validNodesWithCopy));
     }
     std::vector<ActiveCopy> result;
     for (uint32_t i=0; i<groups.size(); ++i) {
@@ -165,8 +165,8 @@ ActiveList::print(std::ostream& out, bool verbose,
 bool
 ActiveList::contains(uint16_t node) const
 {
-    for (uint32_t i=0; i<_v.size(); ++i) {
-        if (node == _v[i]._nodeIndex) return true;
+    for (const auto & candadate : _v) {
+        if (node == candadate._nodeIndex) return true;
     }
     return false;
 }

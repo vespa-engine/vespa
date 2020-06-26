@@ -669,20 +669,18 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
 {
     std::vector<IndexList> result;
     std::map<uint16_t, IndexList> nodes;
-    for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
-        const Group* group(_nodeGraph->getGroupForNode(nodeList[i]));
+    for (uint16_t node : nodeList) {
+        const Group* group(_nodeGraph->getGroupForNode(node));
         if (group == nullptr) {
             LOGBP(warning, "Node %u is not assigned to a group. "
-                           "Should not happen?", nodeList[i]);
+                           "Should not happen?", node);
         } else {
             assert(group->isLeafGroup());
-            nodes[group->getIndex()].push_back(nodeList[i]);
+            nodes[group->getIndex()].push_back(node);
         }
     }
-    for (std::map<uint16_t, IndexList>::const_iterator it(nodes.begin());
-         it != nodes.end(); ++it)
-    {
-        result.push_back(it->second);
+    for (const auto & node : nodes) {
+        result.push_back(node.second);
     }
     return result;
 }

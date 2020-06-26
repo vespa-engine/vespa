@@ -39,11 +39,9 @@ Group::Group(uint16_t index, vespalib::stringref name,
 
 Group::~Group()
 {
-    for (std::map<uint16_t, Group*>::iterator it = _subGroups.begin();
-         it != _subGroups.end(); ++it)
-    {
-        delete it->second;
-        it->second = 0;
+    for (auto & subGroup : _subGroups) {
+        delete subGroup.second;
+        subGroup.second = 0;
     }
 }
 
@@ -75,8 +73,8 @@ Group::print(std::ostream& out, bool verbose,
     }
     if (_distributionSpec.size() == 0) {
         out << ", nodes( ";
-        for (uint32_t i = 0; i < _nodes.size(); i++) {
-            out << _nodes[i] << " ";
+        for (auto node : _nodes) {
+            out << node << " ";
         }
         out << ")";
     }
@@ -88,10 +86,9 @@ Group::print(std::ostream& out, bool verbose,
     out << ") {";
 
     if (_subGroups.size()>0) {
-        for (std::map<uint16_t, Group*>::const_iterator it = _subGroups.begin();
-             it != _subGroups.end(); ++it) {
+        for (const auto & subGroup : _subGroups) {
             out  << "\n" << indent << "  ";
-            it->second->print(out, verbose, indent + "  ");
+            subGroup.second->print(out, verbose, indent + "  ");
         }
     }
 
@@ -110,8 +107,7 @@ Group::addSubGroup(Group::UP group)
         throw vespalib::IllegalArgumentException(
                 "Cannot add null group.", VESPA_STRLOC);
     }
-    std::map<uint16_t, Group*>::const_iterator it(
-            _subGroups.find(group->getIndex()));
+    auto it =_subGroups.find(group->getIndex());
     if (it != _subGroups.end()) {
         throw vespalib::IllegalArgumentException(
                 "Another subgroup with same index is already added.",
@@ -154,26 +150,22 @@ Group::getGroupForNode(uint16_t nodeIdx) const
         }
     }
 
-    for (std::map<uint16_t, Group*>::const_iterator iter = _subGroups.begin();
-         iter != _subGroups.end();
-         ++iter) {
-        const Group* g = iter->second->getGroupForNode(nodeIdx);
-        if (g != NULL) {
+    for (const auto & subGroup : _subGroups) {
+        const Group* g = subGroup.second->getGroupForNode(nodeIdx);
+        if (g != nullptr) {
             return g;
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void
 Group::calculateDistributionHashValues(uint32_t parentHash)
 {
     _distributionHash = parentHash ^ (1664525L * _index + 1013904223L);
-    for (std::map<uint16_t, Group*>::iterator it = _subGroups.begin();
-         it != _subGroups.end(); ++it)
-    {
-        it->second->calculateDistributionHashValues(_distributionHash);
+    for (const auto & subGroup : _subGroups) {
+        subGroup.second->calculateDistributionHashValues(_distributionHash);
     }
 }
 
