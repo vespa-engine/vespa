@@ -110,18 +110,18 @@ public class FileFinder {
      * @return true iff anything was matched and deleted
      */
     public boolean deleteRecursively(TaskContext context) {
-        final int limit = 20;
+        final int maxNumberOfDeletedPathsToLog = 20;
         int[] numDeleted = { 0 };
         List<Path> deletedPaths = new ArrayList<>();
 
         try {
             forEach(attributes -> {
                 if (attributes.unixPath().deleteRecursively()) {
-                    if (numDeleted[0]++ <= limit) deletedPaths.add(attributes.path());
+                    if (numDeleted[0]++ <= maxNumberOfDeletedPathsToLog) deletedPaths.add(attributes.path());
                 }
             });
         } finally {
-            if (numDeleted[0] > limit) {
+            if (numDeleted[0] > maxNumberOfDeletedPathsToLog) {
                 context.log(logger, "Deleted " + numDeleted[0] + " paths under " + basePath);
             } else if (deletedPaths.size() > 0) {
                 List<Path> paths = deletedPaths.stream()
