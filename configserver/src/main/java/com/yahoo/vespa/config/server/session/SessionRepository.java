@@ -325,11 +325,13 @@ public class SessionRepository {
         loadSessionIfActive(remoteSession);
         addRemoteSession(remoteSession);
         Optional<LocalSession> localSession = Optional.empty();
-        if (distributeApplicationPackage.value()) {
+        if (distributeApplicationPackage())
             localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-            localSession.ifPresent(this::addSession);
-        }
         addWatcher(sessionId, fileCache, remoteSession, localSession);
+    }
+
+    private boolean distributeApplicationPackage() {
+        return distributeApplicationPackage.value();
     }
 
     private void sessionRemoved(long sessionId) {
@@ -464,7 +466,7 @@ public class SessionRepository {
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
-        if (distributeApplicationPackage.value() && existingSession.getApplicationPackageReference() != null) {
+        if (distributeApplicationPackage() && existingSession.getApplicationPackageReference() != null) {
             session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         }
         session.setVespaVersion(existingSession.getVespaVersion());
@@ -542,7 +544,8 @@ public class SessionRepository {
     }
 
     /**
-     * Returns a new session instance for the given session id.
+     * Returns a new local session for the given session id if it does not already exist.
+     * Will also add the session to the local session cache if necessary
      */
     public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
