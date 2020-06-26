@@ -3,7 +3,12 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
+import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
+import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 import com.google.inject.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
@@ -16,9 +21,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toMetricsPackets;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
 
@@ -29,8 +37,11 @@ import static com.yahoo.jdisc.Response.Status.OK;
  */
 public class ApplicationMetricsHandler extends HttpHandlerBase {
 
-    public static final String V1_PATH = "/applicationmetrics/v1";
-    public static final String VALUES_PATH = V1_PATH + "/values";
+    public static final String V1_METRICS = "/applicationmetrics/v1";
+    public static final String METRICS_VALUES_PATH = V1_METRICS + "/values";
+
+    public static final String V1_PROMETHEUS = "/applicationprometheus/v1";
+    public static final String PROMETHEUS_VALUES_PATH = V1_PROMETHEUS + "/values";
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
@@ -46,8 +57,12 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
-        if (apiPath.matches(V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH)));
-        if (apiPath.matches(VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
+        if (apiPath.matches(V1_METRICS)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH)));
+        if (apiPath.matches(METRICS_VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
+
+        if (apiPath.matches(V1_PROMETHEUS)) return Optional.of(resourceListResponse(requestUri, List.of(PROMETHEUS_VALUES_PATH)));
+        if (apiPath.matches(PROMETHEUS_VALUES_PATH)) return Optional.of(applicationPrometheusResponse(consumer));
+
         return Optional.empty();
     }
 
@@ -62,6 +77,18 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
             log.log(Level.WARNING, "Got exception when retrieving metrics:", e);
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    private TextResponse applicationPrometheusResponse(String requestedConsumer) {
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
+        var metricsByNode = metricsRetriever.getMetrics(consumer);
+
+
+        return new TextResponse(200, PrometheusUtil.toPrometheusModel(toGenericApplicationModel(metricsByNode).nodes.stream()
+                .flatMap(element -> GenericJsonUtil.toMetricsPackets(element).stream()
+                        .map(MetricsPacket.Builder::build))
+                .collect(Collectors.toList()))
+        .serialize());
     }
 
 }

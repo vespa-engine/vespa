@@ -13,7 +13,6 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
-import com.yahoo.container.handler.metrics.PrometheusV1Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -59,10 +58,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public static final String METRICS_V2_HANDLER_BINDING_1 = "http://*" + MetricsV2Handler.V2_PATH;
     public static final String METRICS_V2_HANDLER_BINDING_2 = METRICS_V2_HANDLER_BINDING_1 + "/*";
 
-    public static final String PROMETHEUS_V1_HANDLER_CLASS = PrometheusV1Handler.class.getName();
-    public static final String PROMETHEUS_V1_HANDLER_BINDING_1 = "http://*" + PrometheusV1Handler.V1_PATH;
-    public static final String PROMETHEUS_V1_HANDLER_BINDING_2 = PROMETHEUS_V1_HANDLER_BINDING_1 + "/*";
-
     public static final int heapSizePercentageOfTotalNodeMemory = 60;
     public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
 
@@ -94,7 +89,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider");
         addMetricsV2Handler();
-        addPrometheusV1Handler();
         addTestrunnerComponentsIfTester(deployState);
     }
 
@@ -126,13 +120,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(METRICS_V2_HANDLER_CLASS, null, null, null));
         handler.addServerBindings(METRICS_V2_HANDLER_BINDING_1, METRICS_V2_HANDLER_BINDING_2);
-        addComponent(handler);
-    }
-
-    public void addPrometheusV1Handler() {
-        Handler<AbstractConfigProducer<?>> handler = new Handler<>(
-                new ComponentModel(PROMETHEUS_V1_HANDLER_CLASS, null, null, null));
-        handler.addServerBindings(PROMETHEUS_V1_HANDLER_BINDING_1, PROMETHEUS_V1_HANDLER_BINDING_2);
         addComponent(handler);
     }
 
@@ -227,7 +214,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(MetricsProxyApiConfig.Builder builder) {
         builder.metricsPort(MetricsProxyContainer.BASEPORT)
-                .metricsApiPath(ApplicationMetricsHandler.VALUES_PATH);
+                .metricsApiPath(ApplicationMetricsHandler.METRICS_VALUES_PATH);
     }
 
     @Override
