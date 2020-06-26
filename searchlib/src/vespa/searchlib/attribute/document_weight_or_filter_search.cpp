@@ -53,7 +53,7 @@ DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
         _children.seek(0, docId);
     }
     uint32_t min_doc_id = _children.get_docid(0);
-    for (unsigned int i = 1; min_doc_id > docId && i < _children.size(); ++i) {
+    for (uint16_t i = 1; min_doc_id > docId && i < _children.size(); ++i) {
         if (_children.get_docid(i) < docId) {
             _children.seek(i, docId);
         }
