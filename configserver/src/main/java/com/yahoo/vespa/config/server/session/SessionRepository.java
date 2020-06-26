@@ -599,7 +599,7 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    public void addWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
+    private void addWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
         // Remote session will always be present in an existing state watcher, but local session might not
         if (sessionStateWatchers.containsKey(sessionId)) {
             localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
