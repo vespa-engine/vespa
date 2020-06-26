@@ -6,6 +6,8 @@
 #include "emptysearch.h"
 #include "full_search.h"
 #include "field_spec.hpp"
+#include "andsearch.h"
+#include "orsearch.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -130,6 +132,38 @@ Blueprint::createFilterSearch(bool /*strict*/, FilterConstraint constraint) cons
         LOG_ASSERT(constraint == FilterConstraint::LOWER_BOUND);
         return std::make_unique<EmptySearch>();
     }
+}
+
+namespace {
+
+template <typename Op>
+std::unique_ptr<SearchIterator>
+create_op_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    MultiSearch::Children sub_searches;
+    sub_searches.reserve(children.size());
+    for (size_t i = 0; i < children.size(); ++i) {
+        bool child_strict = strict && (std::is_same_v<Op,AndSearch> ? (i == 0) : true);
+        auto search = children[i]->createFilterSearch(child_strict, constraint);
+        sub_searches.push_back(std::move(search));
+    }
+    UnpackInfo unpack_info;
+    auto search = Op::create(std::move(sub_searches), strict, unpack_info);
+    return search;
+}
+
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_and_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    return create_op_filter<AndSearch>(children, strict, constraint);
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_or_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    return create_op_filter<OrSearch>(children, strict, constraint);
 }
 
 vespalib::string

@@ -2,6 +2,7 @@
 
 #include "weighted_set_term_blueprint.h"
 #include "weighted_set_term_search.h"
+#include "orsearch.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
@@ -54,6 +55,12 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
         children[i] = _terms[i]->createSearch(*md, true).release();
     }
     return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _weights, std::move(md)));
+}
+
+SearchIterator::UP
+WeightedSetTermBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return create_or_filter(_terms, strict, constraint);
 }
 
 void
