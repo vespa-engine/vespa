@@ -23,16 +23,15 @@ public:
     SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor);
     ~SequencedTaskExecutorObserver() override;
 
+    ExecutorId getExecutorId(uint64_t componentId) const override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
+    void setTaskLimit(uint32_t taskLimit) override;
+    vespalib::ExecutorStats getStats() override;
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
     uint32_t getSyncCnt() const { return _syncCnt; }
     std::vector<uint32_t> getExecuteHistory();
-
-    void setTaskLimit(uint32_t taskLimit) override;
-
-    vespalib::ExecutorStats getStats() override;
 };
 
 } // namespace search

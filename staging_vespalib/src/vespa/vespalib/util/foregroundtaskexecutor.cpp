@@ -39,4 +39,9 @@ vespalib::ExecutorStats ForegroundTaskExecutor::getStats() {
     return vespalib::ExecutorStats(vespalib::ExecutorStats::QueueSizeT(0) , _accepted.load(std::memory_order_relaxed), 0);
 }
 
+ISequencedTaskExecutor::ExecutorId
+ForegroundTaskExecutor::getExecutorId(uint64_t componentId) const {
+    return ExecutorId(componentId%getNumExecutors());
+}
+
 } // namespace search
