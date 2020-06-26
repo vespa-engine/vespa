@@ -11,8 +11,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class RedundancyGroupDistribution : public document::Printable {
     std::vector<uint16_t> _values;
@@ -47,5 +46,4 @@ private:
             uint16_t redundancy, const std::vector<uint16_t>& maxValues);
 };
 
-} // lib
-} // storage
+}
