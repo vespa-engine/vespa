@@ -99,6 +99,7 @@ namespace {
                        const std::vector<uint16_t>& idealState,
                        std::vector<ActiveCopy>& result)
     {
+        result.reserve(nodeIndexes.size());
         for (uint16_t nodeIndex : nodeIndexes) {
             result.emplace_back(nodeIndex, e, idealState);
         }
@@ -131,13 +132,14 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
         groups.push_back(std::move(validNodesWithCopy));
     }
     std::vector<ActiveCopy> result;
+    result.reserve(groups.size());
     for (uint32_t i=0; i<groups.size(); ++i) {
         std::vector<ActiveCopy> entries;
         buildNodeList(e, groups[i], idealState, entries);
         DEBUG(std::cerr << "Finding active for group " << entries << "\n");
         auto best = std::min_element(entries.begin(), entries.end(), ActiveStateOrder());
         DEBUG(std::cerr << "Best copy " << *best << "\n");
-        result.push_back(ActiveCopy(*best));
+        result.emplace_back(*best);
     }
     return ActiveList(std::move(result));
 }

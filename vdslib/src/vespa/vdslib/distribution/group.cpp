@@ -144,8 +144,8 @@ Group::setNodes(const std::vector<uint16_t>& nodes)
 const Group*
 Group::getGroupForNode(uint16_t nodeIdx) const
 {
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (_nodes[i] == nodeIdx) {
+    for (auto node : _nodes) {
+        if (node == nodeIdx) {
             return this;
         }
     }
