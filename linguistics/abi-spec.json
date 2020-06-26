@@ -337,8 +337,9 @@
     "methods": [
       "public void <init>(int, int)",
       "public int getStart()",
-      "public int getLength()",
+      "public int getCodePointCount()",
       "public java.lang.String extractFrom(java.lang.String)",
+      "public java.lang.String extractFrom(com.yahoo.language.process.GramSplitter$UnicodeString)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
