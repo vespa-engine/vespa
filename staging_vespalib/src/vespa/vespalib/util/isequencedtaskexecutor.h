@@ -37,7 +37,7 @@ public:
      * @param componentId   component id
      * @return              executor id
      */
-    virtual ExecutorId getExecutorId(uint64_t componentId) const;
+    virtual ExecutorId getExecutorId(uint64_t componentId) const = 0;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
     ExecutorId getExecutorIdFromName(vespalib::stringref componentId) const;
@@ -98,16 +98,9 @@ public:
     void execute(ExecutorId id, FunctionType &&function) {
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
-    /**
-     * For testing only
-     */
-    uint32_t getComponentHashSize() const { return _component2Id.size(); }
-    uint32_t getComponentEffectiveHashSize() const { return _nextId; }
+
 private:
-    mutable std::vector<uint8_t> _component2Id;
-    mutable std::mutex           _mutex;
     uint32_t                     _numExecutors;
-    mutable uint32_t             _nextId;
 };
 
 }

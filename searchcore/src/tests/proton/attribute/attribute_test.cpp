@@ -775,7 +775,7 @@ TEST_F(AttributeWriterTest, spreads_write_over_2_write_contexts)
 TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts)
 {
     setup(8);
-    putAttributes(*this, {0, 1, 2});
+    putAttributes(*this, {0, 1, 3});
 }
 
 struct MockPrepareResult : public PrepareResult {
@@ -805,7 +805,7 @@ public:
         return std::make_unique<MockPrepareResult>(docid, tensor);
     }
 
-    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result) override {
+    void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result) override {
         ++complete_set_tensor_cnt;
         assert(prepare_result);
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
