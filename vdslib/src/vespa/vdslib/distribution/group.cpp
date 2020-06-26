@@ -41,7 +41,7 @@ Group::~Group()
 {
     for (auto & subGroup : _subGroups) {
         delete subGroup.second;
-        subGroup.second = 0;
+        subGroup.second = nullptr;
     }
 }
 
