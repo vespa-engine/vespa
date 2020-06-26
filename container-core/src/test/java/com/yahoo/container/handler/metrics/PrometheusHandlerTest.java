@@ -56,10 +56,12 @@ public class PrometheusHandlerTest {
     @Before
     public void setup() {
         setupWireMock();
-        var handler = new MetricsV2Handler(Executors.newSingleThreadExecutor(),
+        var handler = new PrometheusHandler(Executors.newSingleThreadExecutor(),
                 new MetricsProxyApiConfig.Builder()
-                        .metricsPort(wireMockRule.port())
-                        .metricsApiPath(MOCK_METRICS_PATH)
+                        .prometheusPort(wireMockRule.port())
+                        .prometheusApiPath(MOCK_METRICS_PATH)
+                        .metricsPort(0)
+                        .metricsApiPath("/Not/In/Use")
                         .build());
         testDriver = new RequestHandlerTestDriver(handler);
 
@@ -89,7 +91,6 @@ public class PrometheusHandlerTest {
         assertEquals(VALUES_URI, valuesUri.getString("url"));
     }
 
-    @Ignore
     @Test
     public void visually_inspect_values_response() throws Exception {
         String response = testDriver.sendRequest(VALUES_URI).readAll();

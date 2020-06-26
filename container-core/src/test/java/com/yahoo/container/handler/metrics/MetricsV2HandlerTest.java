@@ -60,6 +60,8 @@ public class MetricsV2HandlerTest {
                                            new MetricsProxyApiConfig.Builder()
                                                    .metricsPort(wireMockRule.port())
                                                    .metricsApiPath(MOCK_METRICS_PATH)
+                                                   .prometheusPort(0)
+                                                   .prometheusApiPath("Not/In/Use")
                                                    .build());
         testDriver = new RequestHandlerTestDriver(handler);
     }
