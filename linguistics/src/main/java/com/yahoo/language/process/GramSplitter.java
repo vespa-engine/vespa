@@ -49,12 +49,12 @@ public class GramSplitter {
         private final CharacterClasses characterClasses;
 
         /** Text to split */
-        private final String input;
+        private final UnicodeString input;
 
-        /** Gram size */
+        /** Gram size in code points */
         private final int n;
 
-        /** Current index */
+        /** Current position in the string */
         private int i = 0;
 
         /** Whether the last thing that happened was being on a separator (including the start of the string) */
@@ -64,7 +64,7 @@ public class GramSplitter {
         private Gram nextGram = null;
 
         public GramSplitterIterator(String input, int n, CharacterClasses characterClasses) {
-            this.input = input;
+            this.input = new UnicodeString(input);
             this.n = n;
             this.characterClasses = characterClasses;
         }
@@ -90,38 +90,40 @@ public class GramSplitter {
         private Gram findNext() {
             // Skip to next word character
             while (i < input.length() && !characterClasses.isLetterOrDigit(input.codePointAt(i))) {
-                i++;
+                i = input.next(i);
                 isFirstAfterSeparator = true;
             }
             if (i >= input.length()) return null;
 
-            String gram = input.substring(i, Math.min(i + n, input.length()));
-            int nonWordChar = indexOfNonWordChar(gram);
+            UnicodeString gram = input.substring(i, n);
+            int nonWordChar = indexOfNonWordCodepoint(gram);
             if (nonWordChar == 0) throw new RuntimeException("Programming error");
 
             if (nonWordChar > 0)
-                gram = gram.substring(0, nonWordChar);
+                gram = new UnicodeString(gram.toString().substring(0, nonWordChar));
 
-            if (gram.length() == n) { // normal case: got a full length gram
-                i++;
+            if (gram.codePointCount() == n) { // normal case: got a full length gram
+                Gram g = new Gram(i, gram.codePointCount());
+                i = input.next(i);
                 isFirstAfterSeparator = false;
-                return new Gram(i - 1, gram.length());
+                return g;
             }
             else { // gram is too short due either to a non-word separator or end of string
                 if (isFirstAfterSeparator) { // make a gram anyway
-                    i++;
+                    Gram g = new Gram(i, gram.codePointCount());
+                    i = input.next(i);
                     isFirstAfterSeparator = false;
-                    return new Gram(i - 1, gram.length());
+                    return g;
                 } else { // skip to next
-                    i += gram.length() + 1;
+                    i = input.skip(gram.codePointCount() + 1, i);
                     isFirstAfterSeparator = true;
                     return findNext();
                 }
             }
         }
 
-        private int indexOfNonWordChar(String s) {
-            for (int i = 0; i < s.length(); i++) {
+        private int indexOfNonWordCodepoint(UnicodeString s) {
+            for (int i = 0; i < s.length(); i = s.next(i)) {
                 if ( ! characterClasses.isLetterOrDigit(s.codePointAt(i)))
                     return i;
             }
@@ -151,24 +153,29 @@ public class GramSplitter {
      */
     public static final class Gram {
 
-        private int start, length;
+        private int start, codePointCount;
 
-        public Gram(int start, int length) {
+        public Gram(int start, int codePointCount) {
             this.start = start;
-            this.length = length;
+            this.codePointCount = codePointCount;
         }
 
         public int getStart() {
             return start;
         }
 
-        public int getLength() {
-            return length;
+        public int getCodePointCount() {
+            return codePointCount;
         }
 
         /** Returns this gram as a string from the input string */
         public String extractFrom(String input) {
-            return input.substring(start, start + length);
+            return extractFrom(new UnicodeString(input));
+        }
+
+        /** Returns this gram as a string from the input string */
+        public String extractFrom(UnicodeString input) {
+            return input.substring(start, codePointCount).toString();
         }
 
         @Override
@@ -177,7 +184,7 @@ public class GramSplitter {
             if ( ! (o instanceof Gram)) return false;
 
             Gram gram = (Gram)o;
-            if (length != gram.length) return false;
+            if (codePointCount != gram.codePointCount) return false;
             if (start != gram.start) return false;
             return true;
         }
@@ -185,9 +192,63 @@ public class GramSplitter {
         @Override
         public int hashCode() {
             int result = start;
-            result = 31 * result + length;
+            result = 31 * result + codePointCount;
             return result;
         }
+
+    }
+
+    /**
+     * A string wrapper with some convenience methods for dealing with UTF-16 surrogate pairs
+     * (a crime against humanity for which we'll be negatively impacted for at least the next million years).
+     */
+    private static class UnicodeString {
+
+        private final String s;
+
+        public UnicodeString(String s) {
+            this.s = s;
+        }
+
+        /** Substring in code point space */
+        public UnicodeString substring(int start, int codePoints) {
+            int offset = s.offsetByCodePoints(start, Math.min(codePoints, s.codePointCount(start, s.length())));
+            if (offset < 0)
+                return new UnicodeString(s.substring(start));
+            else
+                return new UnicodeString(s.substring(start, offset));
+        }
+
+        /** Returns the position count code points after start (which may be past the end of the string) */
+        public int skip(int codePointCount, int start) {
+            int index = start;
+            for (int i = 0; i < codePointCount; i++) {
+                index = next(index);
+                if (index > s.length()) break;
+            }
+            return index;
+        }
+
+        /** Returns the index of the next code point after start (which may be past the end of the string) */
+        public int next(int index) {
+            int next = index + 1;
+            if (next < s.length() && Character.isLowSurrogate(s.charAt(next)))
+                next++;
+            return next;
+        }
+
+        /** Returns the number of positions (not code points) in this */
+        public int length() { return s.length(); }
+
+        /** Returns the number of code points in this */
+        public int codePointCount() { return s.codePointCount(0, s.length()); }
+
+        public int codePointAt(int index) {
+            return s.codePointAt(index);
+        }
+
+        @Override
+        public String toString() { return s; }
 
     }
 

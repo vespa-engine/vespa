@@ -4,9 +4,9 @@ package com.yahoo.language.process;
 import com.yahoo.language.simple.SimpleLinguistics;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -113,6 +113,30 @@ public class GramSplitterTestCase {
                                   "\u7345\u9069\u5e02]");
     }
 
+    @Test
+    public void testSurrogatePairs() {
+        // A surrogate pair representing a code point in the "letter" class
+        String s = "\uD800\uDC00";
+
+        assertGramSplits(s, 1, s);
+        assertGramSplits(s, 2, s);
+        assertGramSplits(s + s, 1, s, s);
+        assertGramSplits(s + s, 2, s + s);
+        assertGramSplits(s + s, 3, s + s);
+        assertGramSplits(s + "   " + s + s + "   " + s, 1, s, s, s, s);
+        assertGramSplits(s + "   " + s + s + "   " + s, 2, s, s + s, s);
+        assertGramSplits(s + "   " + s + s + "   " + s, 3, s, s + s, s);
+        assertGramSplits(" " + s + "   " + s + s + "   " + s + " ", 1, s, s, s, s);
+        assertGramSplits(" " + s + "   " + s + s + "   " + s + " ", 2, s, s + s, s);
+        assertGramSplits(" " + s + "   " + s + s + "   " + s + " ", 3, s, s + s, s);
+        assertGramSplits("  " + s + "   " + s + s + "   " + s + "  ", 1, s, s, s, s);
+        assertGramSplits("  " + s + "   " + s + s + "   " + s + "  ", 2, s, s + s, s);
+        assertGramSplits("  " + s + "   " + s + s + "   " + s + "  ", 3, s, s + s, s);
+        assertGramSplits(s + "  " + s + " " + s, 4, s, s, s);
+        assertGramSplits(s + s + s + s, 3, s + s + s, s + s + s);
+        assertGramSplits(s + s + s + s + " " + s, 3, s + s + s, s + s + s, s);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidSplitSize() {
         gramSplitter.split("en", 0);
@@ -128,23 +152,27 @@ public class GramSplitterTestCase {
         String text = "en gul bille sang";
         Iterator<GramSplitter.Gram> grams = gramSplitter.split(text, 3);
 
-        assertThat(grams.next().extractFrom(text), is("en"));
+        assertEquals("en", grams.next().extractFrom(text));
         assertTrue(grams.hasNext());
         assertTrue(grams.hasNext());
-        assertThat(grams.next().extractFrom(text), is("gul"));
-        assertThat(grams.next().extractFrom(text), is("bil"));
-        assertThat(grams.next().extractFrom(text), is("ill"));
-        assertThat(grams.next().extractFrom(text), is("lle"));
+        assertEquals("gul", grams.next().extractFrom(text));
+        assertEquals("bil", grams.next().extractFrom(text));
+        assertEquals("ill", grams.next().extractFrom(text));
+        assertEquals("lle", grams.next().extractFrom(text));
         assertTrue(grams.hasNext());
         assertTrue(grams.hasNext());
-        assertThat(grams.next().extractFrom(text), is("san"));
-        assertThat(grams.next().extractFrom(text), is("ang"));
+        assertEquals("san", grams.next().extractFrom(text));
+        assertEquals("ang", grams.next().extractFrom(text));
         assertFalse(grams.hasNext());
         assertFalse(grams.hasNext());
     }
 
+    private void assertGramSplits(String input, int gramSize, String ... expected) {
+        assertEquals(Arrays.asList(expected), gramSplitter.split(input, gramSize).toExtractedList());
+    }
+
     private void assertGramSplit(String input, int gramSize, String expected) {
-        assertThat(gramSplitter.split(input, gramSize).toExtractedList().toString(), is(expected));
+        assertEquals(expected, gramSplitter.split(input, gramSize).toExtractedList().toString());
     }
 
 }
