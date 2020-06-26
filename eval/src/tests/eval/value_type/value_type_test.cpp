@@ -266,6 +266,20 @@ TEST("require that dimension names can be obtained") {
     EXPECT_EQUAL(type("tensor<float>(y[10],x[30],z{})").dimension_names(), str_list({"x", "y", "z"}));
 }
 
+TEST("require that nontrivial dimensions can be obtained") {
+    auto my_check = [](const auto &list)
+                    {
+                        ASSERT_EQUAL(list.size(), 2u);
+                        EXPECT_EQUAL(list[0].name, "x");
+                        EXPECT_EQUAL(list[0].size, 10u);
+                        EXPECT_EQUAL(list[1].name, "y");
+                        EXPECT_TRUE(list[1].is_mapped());
+                    };
+    EXPECT_TRUE(type("double").nontrivial_dimensions().empty());
+    TEST_DO(my_check(type("tensor(x[10],y{})").nontrivial_dimensions()));
+    TEST_DO(my_check(type("tensor(a[1],b[1],x[10],y{},z[1])").nontrivial_dimensions()));
+}
+
 TEST("require that dimension index can be obtained") {
     EXPECT_EQUAL(type("error").dimension_index("x"), ValueType::Dimension::npos);
     EXPECT_EQUAL(type("double").dimension_index("x"), ValueType::Dimension::npos);

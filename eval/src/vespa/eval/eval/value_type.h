@@ -33,6 +33,7 @@ public:
         bool operator!=(const Dimension &rhs) const { return !(*this == rhs); }
         bool is_mapped() const { return (size == npos); }
         bool is_indexed() const { return (size != npos); }
+        bool is_trivial() const { return (size == 1); }
     };
 
 private:
@@ -61,6 +62,7 @@ public:
     bool is_dense() const;
     size_t dense_subspace_size() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
+    std::vector<Dimension> nontrivial_dimensions() const;
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
     bool operator==(const ValueType &rhs) const {
