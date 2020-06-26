@@ -50,9 +50,6 @@ public:
     const vespalib::hwaccelrated::IAccelrated & _computer;
 };
 
-template class SquaredEuclideanDistance<float>;
-template class SquaredEuclideanDistance<double>;
-
 /**
  * Calculates angular distance between vectors
  */
@@ -71,14 +68,20 @@ public:
         auto b = &rhs_vector[0];
         double a_norm_sq = _computer.dotProduct(a, a, sz);
         double b_norm_sq = _computer.dotProduct(b, b, sz);
+        double squared_norms = a_norm_sq * b_norm_sq;
         double dot_product = _computer.dotProduct(a, b, sz);
-        double div = sqrt(a_norm_sq * b_norm_sq);
-        double cosine_similarity = (div > 0) ? (dot_product / div) : 0.0; // [-1, 1]
-        double score = (1.0 - cosine_similarity) * 0.5; // [1, 0]
-        return score;
+        double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
+        double cosine_similarity = dot_product / div;
+        double distance = 1.0 - cosine_similarity; // in range [0,2]
+        return distance;
     }
     double to_rawscore(double distance) const override {
-        double score = 1.0 - distance;
+        double cosine_similarity = 1.0 - distance;
+        // should be in in range [-1,1] but roundoff may cause problems:
+        cosine_similarity = std::min(1.0, cosine_similarity);
+        cosine_similarity = std::max(-1.0, cosine_similarity);
+        double angle_distance = acos(cosine_similarity); // in range [0,pi]
+        double score = 1.0 / (1.0 + angle_distance);
         return score;
     }
     double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
@@ -90,9 +93,6 @@ public:
 
     const vespalib::hwaccelrated::IAccelrated & _computer;
 };
-
-template class AngularDistance<float>;
-template class AngularDistance<double>;
 
 /**
  * Calculates angular distance between vectors with assumed norm 1.
@@ -124,9 +124,6 @@ public:
 
     const vespalib::hwaccelrated::IAccelrated & _computer;
 };
-
-template class InnerProductDistance<float>;
-template class InnerProductDistance<double>;
 
 /**
  * Calculates great-circle distance between Latitude/Longitude pairs,
@@ -179,8 +176,5 @@ public:
     }
 
 };
-
-template class GeoDegreesDistance<float>;
-template class GeoDegreesDistance<double>;
 
 }

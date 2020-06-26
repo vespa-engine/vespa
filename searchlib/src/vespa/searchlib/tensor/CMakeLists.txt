@@ -6,6 +6,7 @@ vespa_add_library(searchlib_tensor OBJECT
     dense_tensor_attribute_saver.cpp
     dense_tensor_store.cpp
     distance_function_factory.cpp
+    distance_functions.cpp
     generic_tensor_attribute.cpp
     generic_tensor_attribute_saver.cpp
     generic_tensor_store.cpp
