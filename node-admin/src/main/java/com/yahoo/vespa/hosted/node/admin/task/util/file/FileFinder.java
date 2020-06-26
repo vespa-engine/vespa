@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.io.IOException;
@@ -111,18 +112,18 @@ public class FileFinder {
      */
     public boolean deleteRecursively(TaskContext context) {
         final int maxNumberOfDeletedPathsToLog = 20;
-        int[] numDeleted = { 0 };
+        MutableInteger numDeleted = new MutableInteger(0);
         List<Path> deletedPaths = new ArrayList<>();
 
         try {
             forEach(attributes -> {
                 if (attributes.unixPath().deleteRecursively()) {
-                    if (numDeleted[0]++ <= maxNumberOfDeletedPathsToLog) deletedPaths.add(attributes.path());
+                    if (numDeleted.next() <= maxNumberOfDeletedPathsToLog) deletedPaths.add(attributes.path());
                 }
             });
         } finally {
-            if (numDeleted[0] > maxNumberOfDeletedPathsToLog) {
-                context.log(logger, "Deleted " + numDeleted[0] + " paths under " + basePath);
+            if (numDeleted.get() > maxNumberOfDeletedPathsToLog) {
+                context.log(logger, "Deleted " + numDeleted.get() + " paths under " + basePath);
             } else if (deletedPaths.size() > 0) {
                 List<Path> paths = deletedPaths.stream()
                         .map(basePath::relativize)
