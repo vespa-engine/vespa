@@ -625,6 +625,8 @@ public class ControllerTest {
         // Create application
         var context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("dev", "us-east-1");
+        tester.controllerTester().zoneRegistry()
+                .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
 
         // Deploy
         tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
@@ -633,6 +635,14 @@ public class ControllerTest {
         assertTrue("No job status added",
                    context.instanceJobs().isEmpty());
         assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context.application().deploymentSpec());
+
+        // Verify zone supports shared layer 4 and shared routing methods
+        Set<RoutingMethod> routingMethods = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
+                .asList()
+                .stream()
+                .map(Endpoint::routingMethod)
+                .collect(Collectors.toSet());
+        assertEquals(routingMethods, Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4));
     }
 
     @Test
