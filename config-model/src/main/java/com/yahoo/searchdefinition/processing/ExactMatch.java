@@ -58,14 +58,13 @@ public class ExactMatch extends Processor {
             field.addQueryCommand("word");
         } else { // exact
             String exactTerminator = DEFAULT_EXACT_TERMINATOR;
-            if (field.getMatching().getExactMatchTerminator() != null &&
-                ! field.getMatching().getExactMatchTerminator().equals(""))
-            {
+            if (field.getMatching().getExactMatchTerminator() != null
+                && ! field.getMatching().getExactMatchTerminator().equals("")) {
                 exactTerminator = field.getMatching().getExactMatchTerminator();
             } else {
                 warn(search, field,
-                     "With 'exact' matching, an exact-terminator is needed (using \""
-                     + exactTerminator +"\" as terminator)");
+                     "With 'exact' matching, an exact-terminator is needed " +
+                     "(using '" + exactTerminator +"' as terminator)");
             }
             field.addQueryCommand("exact " + exactTerminator);
 
@@ -103,6 +102,7 @@ public class ExactMatch extends Processor {
             }
             return exp;
         }
+
     }
 
 }
