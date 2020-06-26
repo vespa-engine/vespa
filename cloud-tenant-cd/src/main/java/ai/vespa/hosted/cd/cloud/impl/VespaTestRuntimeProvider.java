@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.impl;
+package ai.vespa.hosted.cd.cloud.impl;
 
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.yahoo.component.AbstractComponent;

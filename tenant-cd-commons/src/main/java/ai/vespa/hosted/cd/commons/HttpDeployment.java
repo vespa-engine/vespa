@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.impl.http;
+package ai.vespa.hosted.cd.commons;
 
-import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.Endpoint;
 

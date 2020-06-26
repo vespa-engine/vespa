@@ -1,5 +1,5 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.auth;
+package ai.vespa.hosted.cd.commons;
 
 import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.SystemName;
@@ -26,12 +26,12 @@ import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
  *
  * @author jonmv
  */
-public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthenticator {
+public class DefaultEndpointAuthenticator implements EndpointAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(EndpointAuthenticator.class.getName());
+    private static final Logger logger = Logger.getLogger(DefaultEndpointAuthenticator.class.getName());
 
     /** Don't touch. */
-    public EndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
+    public DefaultEndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
 
     /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files

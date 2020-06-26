@@ -1,13 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.impl;
+package ai.vespa.hosted.cd.cloud.impl;
 
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.ControllerHttpClient;
+import ai.vespa.hosted.api.DefaultApiAuthenticator;
+import ai.vespa.hosted.cd.commons.DefaultEndpointAuthenticator;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.TestRuntime;
-import ai.vespa.hosted.cd.impl.http.HttpDeployment;
+import ai.vespa.hosted.cd.commons.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -37,7 +39,7 @@ public class VespaTestRuntime implements TestRuntime {
     }
     private VespaTestRuntime(TestConfig config) {
         this.config = config;
-        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new DefaultEndpointAuthenticator(config.system()));
     }
 
     @Override
@@ -69,7 +71,7 @@ public class VespaTestRuntime implements TestRuntime {
     }
 
     private static TestConfig fromController() {
-        ControllerHttpClient controller = new ai.vespa.hosted.auth.ApiAuthenticator().controller();
+        ControllerHttpClient controller = new DefaultApiAuthenticator().controller();
         ApplicationId id = Properties.application();
         Environment environment = Properties.environment().orElse(Environment.dev);
         ZoneId zone = Properties.region().map(region -> ZoneId.from(environment, region))

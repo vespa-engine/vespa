@@ -53,12 +53,6 @@
         <!-- compile scope -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-auth</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>hosted-api</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
@@ -66,6 +60,12 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-provisioning</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd-commons</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
