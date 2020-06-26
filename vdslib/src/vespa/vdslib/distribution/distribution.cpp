@@ -39,6 +39,7 @@ VESPA_IMPLEMENT_EXCEPTION(TooFewBucketBitsInUseException, vespalib::Exception);
 Distribution::Distribution()
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
+      _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
@@ -55,6 +56,7 @@ Distribution::Distribution()
 Distribution::Distribution(const Distribution& d)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
+      _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
@@ -69,7 +71,7 @@ Distribution::Distribution(const Distribution& d)
 Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) :
     _cfg(std::move(cfg))
 { }
-Distribution::ConfigWrapper::~ConfigWrapper() { }
+Distribution::ConfigWrapper::~ConfigWrapper() = default;
 
 Distribution::Distribution(const ConfigWrapper & config) :
     Distribution(config.get())
@@ -78,6 +80,7 @@ Distribution::Distribution(const ConfigWrapper & config) :
 Distribution::Distribution(const vespa::config::content::StorDistributionConfig & config)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
+      _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
@@ -93,6 +96,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
 Distribution::Distribution(const vespalib::string& serialized)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
+      _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
@@ -113,7 +117,7 @@ Distribution::operator=(const Distribution& d)
     return *this;
 }
 
-Distribution::~Distribution() { }
+Distribution::~Distribution() = default;
 
 namespace {
     using ConfigDiskDistribution = vespa::config::content::StorDistributionConfig::DiskDistribution;
@@ -142,34 +146,35 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
 {
     typedef vespa::config::content::StorDistributionConfig::Group ConfigGroup;
     std::unique_ptr<Group> nodeGraph;
+    std::vector<const Group *> node2Group;
     for (uint32_t i=0, n=config.group.size(); i<n; ++i) {
         const ConfigGroup& cg(config.group[i]);
         std::vector<uint16_t> path;
-        if (nodeGraph.get() != nullptr) {
+        if (nodeGraph) {
             path = DistributionConfigUtil::getGroupPath(cg.index);
         }
         bool isLeafGroup = (cg.nodes.size() > 0);
-        std::unique_ptr<Group> group;
         uint16_t index = (path.empty() ? 0 : path.back());
-        if (isLeafGroup) {
-            group.reset(new Group(index, cg.name));
-        } else {
-            group.reset(new Group(
-                    index, cg.name,
-                    Group::Distribution(cg.partitions), config.redundancy));
-        }
+        std::unique_ptr<Group> group = (isLeafGroup)
+                ? std::make_unique<Group>(index, cg.name)
+                : std::make_unique<Group>(index, cg.name, Group::Distribution(cg.partitions), config.redundancy);
         group->setCapacity(cg.capacity);
         if (isLeafGroup) {
             std::vector<uint16_t> nodes(cg.nodes.size());
             for (uint32_t j=0, m=nodes.size(); j<m; ++j) {
-                nodes[j] = cg.nodes[j].index;
+                uint16_t nodeIndex = cg.nodes[j].index;
+                nodes[j] = nodeIndex;
+                if (node2Group.size() <= nodeIndex) {
+                    node2Group.resize(nodeIndex + 1);
+                }
+                node2Group[nodeIndex] = group.get();
             }
             group->setNodes(nodes);
         }
         if (path.empty()) {
             nodeGraph = std::move(group);
         } else {
-            assert(nodeGraph.get() != nullptr);
+            assert(nodeGraph);
             Group* parent = nodeGraph.get();
             for (uint32_t j=0; j<path.size() - 1; ++j) {
                 parent = parent->getSubGroups()[path[j]];
@@ -177,7 +182,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
             parent->addSubGroup(std::move(group));
         }
     }
-    if (nodeGraph.get() == nullptr) {
+    if ( ! nodeGraph) {
         throw vespalib::IllegalStateException(
             "Got config that didn't seem to specify even a root group. Must "
             "have a root group at minimum:\n"
@@ -185,6 +190,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     }
     nodeGraph->calculateDistributionHashValues();
     _nodeGraph = std::move(nodeGraph);
+    _node2Group = std::move(node2Group);
     _redundancy = config.redundancy;
     _initialRedundancy = config.initialRedundancy;
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
@@ -670,7 +676,7 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
     std::vector<IndexList> result;
     std::map<uint16_t, IndexList> nodes;
     for (auto node : nodeList) {
-        const Group* group(_nodeGraph->getGroupForNode(node));
+        const Group* group(_node2Group[node]);
         if (group == nullptr) {
             LOGBP(warning, "Node %u is not assigned to a group. "
                            "Should not happen?", node);

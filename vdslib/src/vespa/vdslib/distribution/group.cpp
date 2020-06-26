@@ -103,7 +103,7 @@ Group::addSubGroup(Group::UP group)
                 "Cannot add sub groups to a group without a valid distribution",
                 VESPA_STRLOC);
     }
-    if (!group.get()) {
+    if (!group) {
         throw vespalib::IllegalArgumentException(
                 "Cannot add null group.", VESPA_STRLOC);
     }
