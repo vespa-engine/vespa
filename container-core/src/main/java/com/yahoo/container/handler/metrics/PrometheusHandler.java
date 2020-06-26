@@ -34,7 +34,7 @@ public class PrometheusHandler extends HttpHandlerBase{
     protected PrometheusHandler(Executor executor,
                                 MetricsProxyApiConfig config) {
         super(executor);
-        prometheusProxyUri = "http://localhost:" + config.prometheusPort() + config.prometheusApiPath();
+        prometheusProxyUri = "http://localhost:" + config.metricsPort() + config.metricsApiPath();
     }
 
     @Override
