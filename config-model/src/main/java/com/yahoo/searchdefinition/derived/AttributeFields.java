@@ -248,8 +248,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             ib.hnsw.enabled(true);
             ib.hnsw.maxlinkspernode(params.maxLinksPerNode());
             ib.hnsw.neighborstoexploreatinsert(params.neighborsToExploreAtInsert());
-            var dm = AttributesConfig.Attribute.Index.Hnsw.Distancemetric.Enum.valueOf(dma.toString());
-            ib.hnsw.distancemetric(dm);
             ib.hnsw.multithreadedindexing(params.multiThreadedIndexing());
             aaB.index(ib);
         }
