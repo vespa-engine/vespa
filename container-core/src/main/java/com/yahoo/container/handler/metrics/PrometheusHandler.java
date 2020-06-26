@@ -47,10 +47,10 @@ public class PrometheusHandler extends HttpHandlerBase{
     private HttpResponse valuesResponse(String consumer) {
         try {
             String uri = prometheusProxyUri + consumerQuery(consumer);
-            String prometheusText = httpClient.execute(new HttpGet(uri), new BasicResponseHandler())
+            String prometheusText = httpClient.execute(new HttpGet(uri), new BasicResponseHandler());
             return new StringResponse(prometheusText);
         } catch (IOException e) {
-            log.warning("Unable to retrieve metrics from " + metricsProxyUri + ": " + Exceptions.toMessageString(e));
+            log.warning("Unable to retrieve metrics from " + prometheusProxyUri + ": " + Exceptions.toMessageString(e));
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
