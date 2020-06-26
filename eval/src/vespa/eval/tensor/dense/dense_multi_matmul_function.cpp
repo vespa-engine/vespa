@@ -20,6 +20,9 @@ using eval::Aggr;
 using namespace eval::tensor_function;
 using namespace eval::operation;
 
+using Dim = ValueType::Dimension;
+using DimList = std::vector<Dim>;
+
 namespace {
 
 void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t param) {
@@ -77,45 +80,37 @@ InterpretedFunction::op_function my_select(CellType cell_type) {
 struct CommonDim {
     bool valid;
     bool inner;
-    CommonDim(const ValueType &type, const vespalib::string &dim)
+    CommonDim(const DimList &list, const vespalib::string &dim)
         : valid(true), inner(false)
     {
-        size_t size = type.dimensions().size();
-        if (type.dimensions()[size - 1].name == dim) {
+        if (list[list.size() - 1].name == dim) {
             inner = true;
-        } else if (type.dimensions()[size - 2].name != dim) {
+        } else if (list[list.size() - 2].name != dim) {
             valid = false;
         }
     }
-    const ValueType::Dimension &get(const ValueType &type) const {
-        size_t size = type.dimensions().size();
-        return type.dimensions()[size - (inner ? 1 : 2)];
+    const Dim &get(const DimList &dims) const {
+        return dims[dims.size() - (inner ? 1 : 2)];
     }
-    const ValueType::Dimension &get(const TensorFunction &expr) const {
-        return get(expr.result_type());
-    }
-    const ValueType::Dimension &inv(const ValueType &type) const {
-        size_t size = type.dimensions().size();
-        return type.dimensions()[size - (inner ? 2 : 1)];
-    }
-    const ValueType::Dimension &inv(const TensorFunction &expr) const {
-        return inv(expr.result_type());
+    const Dim &inv(const DimList &dims) const {
+        return dims[dims.size() - (inner ? 2 : 1)];
     }
 };
 
-// Currently, non-matmul dimensions are required to be identical. This
-// restriction is added to reduce complexity and might be removed in
-// the future if/when a relevant use-case arises.
+// Currently, non-matmul dimensions are required to be identical
+// (after trivial dimensions are ignored). This restriction is added
+// to reduce complexity and might be removed in the future if/when a
+// relevant use-case arises.
 struct DimPrefix {
     bool valid;
     size_t size;
-    DimPrefix(const ValueType &a, const ValueType &b)
+    DimPrefix(const DimList &a, const DimList &b)
         : valid(true), size(1)
     {
-        if (a.dimensions().size() == b.dimensions().size()) {
-            for (size_t i = 0; i < (a.dimensions().size() - 2); ++i) {
-                if (a.dimensions()[i] == b.dimensions()[i]) {
-                    size *= a.dimensions()[i].size;
+        if (a.size() == b.size()) {
+            for (size_t i = 0; i < (a.size() - 2); ++i) {
+                if (a[i] == b[i]) {
+                    size *= a[i].size;
                 } else {
                     valid = false;
                 }
@@ -126,20 +121,22 @@ struct DimPrefix {
     }
 };
 
-bool check_input_type(const ValueType &type) {
+bool check_input_type(const ValueType &type, const DimList &relevant) {
     return (type.is_dense() &&
-            (type.dimensions().size() >= 2) &&
+            (relevant.size() >= 2) &&
             ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
 }
 
 bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::string &reduce_dim) {
-    if (check_input_type(a) && check_input_type(b) && (a.cell_type() == b.cell_type())) {
-        CommonDim cd_a(a, reduce_dim);
-        CommonDim cd_b(b, reduce_dim);
-        DimPrefix prefix(a, b);
+    auto dims_a = a.nontrivial_dimensions();
+    auto dims_b = b.nontrivial_dimensions();
+    if (check_input_type(a, dims_a) && check_input_type(b, dims_b) && (a.cell_type() == b.cell_type())) {
+        CommonDim cd_a(dims_a, reduce_dim);
+        CommonDim cd_b(dims_b, reduce_dim);
+        DimPrefix prefix(dims_a, dims_b);
         return (cd_a.valid && cd_b.valid && prefix.valid &&
-                (b.dimension_index(cd_a.inv(a).name) == ValueType::Dimension::npos) &&
-                (a.dimension_index(cd_b.inv(b).name) == ValueType::Dimension::npos));
+                (b.dimension_index(cd_a.inv(dims_a).name) == Dim::npos) &&
+                (a.dimension_index(cd_b.inv(dims_b).name) == Dim::npos));
     }
     return false;
 }
@@ -147,13 +144,15 @@ bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::str
 const TensorFunction &create_multi_matmul(const TensorFunction &a, const TensorFunction &b,
                                           const vespalib::string &reduce_dim, const ValueType &result_type, Stash &stash)
 {
-    CommonDim cd_a(a.result_type(), reduce_dim);
-    CommonDim cd_b(b.result_type(), reduce_dim);
-    DimPrefix prefix(a.result_type(), b.result_type());
-    size_t a_size = cd_a.inv(a).size;
-    size_t b_size = cd_b.inv(b).size;
-    size_t common_size = cd_a.get(a).size;
-    bool a_is_lhs = (cd_a.inv(a).name < cd_b.inv(b).name);
+    auto dims_a = a.result_type().nontrivial_dimensions();
+    auto dims_b = b.result_type().nontrivial_dimensions();
+    CommonDim cd_a(dims_a, reduce_dim);
+    CommonDim cd_b(dims_b, reduce_dim);
+    DimPrefix prefix(dims_a, dims_b);
+    size_t a_size = cd_a.inv(dims_a).size;
+    size_t b_size = cd_b.inv(dims_b).size;
+    size_t common_size = cd_a.get(dims_a).size;
+    bool a_is_lhs = (cd_a.inv(dims_a).name < cd_b.inv(dims_b).name);
     if (a_is_lhs) {
         return stash.create<DenseMultiMatMulFunction>(result_type, a, b, a_size, common_size, b_size, prefix.size, cd_a.inner, cd_b.inner);
     } else {

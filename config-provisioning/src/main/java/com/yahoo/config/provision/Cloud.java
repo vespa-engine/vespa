@@ -36,7 +36,7 @@ public class Cloud {
         return dynamicProvisioning;
     }
 
-    /** Returns wheter this allows different applications to share the same host */
+    /** Returns whether this allows different applications to share the same host */
     public boolean allowHostSharing() {
         return allowHostSharing;
     }

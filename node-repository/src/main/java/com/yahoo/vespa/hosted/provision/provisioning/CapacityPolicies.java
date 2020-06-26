@@ -19,12 +19,8 @@ public class CapacityPolicies {
 
     private final Zone zone;
 
-    /* Deployments must match 1-to-1 the advertised resources of a physical host */
-    private final boolean isUsingAdvertisedResources;
-
     public CapacityPolicies(NodeRepository nodeRepository) {
         this.zone = nodeRepository.zone();
-        this.isUsingAdvertisedResources = zone.getCloud().dynamicProvisioning();
     }
 
     public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
@@ -64,14 +60,14 @@ public class CapacityPolicies {
                 // Use small logserver in dev system
                 return new NodeResources(0.1, 1, 10, 0.3);
             }
-            return isUsingAdvertisedResources ?
-                    new NodeResources(0.5, 4, 50, 0.3) :
-                    new NodeResources(0.5, 2, 50, 0.3);
+            return zone.getCloud().allowHostSharing() ?
+                   new NodeResources(0.5, 2, 50, 0.3) :
+                   new NodeResources(0.5, 4, 50, 0.3);
         }
 
-        return isUsingAdvertisedResources ?
-                new NodeResources(2.0, 8, 50, 0.3) :
-                new NodeResources(1.5, 8, 50, 0.3);
+        return zone.getCloud().allowHostSharing() ?
+                new NodeResources(1.5, 8, 50, 0.3) :
+                new NodeResources(2.0, 8, 50, 0.3);
     }
 
     /**

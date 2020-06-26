@@ -275,18 +275,18 @@ public class Flags {
             CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag CONFIGSERVER_PROVISION_LB = defineFeatureFlag(
-            "configserver-provision-lb", true,
-            "Provision load balancer for config server cluster",
-            "Takes effect when zone-config-servers application is redeployed",
-            ZONE_ID
-    );
-
     public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
             "controller-provision-lb", false,
             "Provision load balancer for controller cluster",
             "Takes effect when controller application is redeployed",
             ZONE_ID
+    );
+
+    public static final UnboundIntFlag TENANT_NODE_QUOTA = defineIntFlag(
+            "tenant-node-quota", 5,
+            "The number of nodes a tenant is allowed to request",
+            "Takes effect on next deployment",
+            APPLICATION_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

@@ -18,7 +18,10 @@ class Artifacts {
         private final List<Artifact> jarArtifactsProvided;
         private final List<Artifact> nonJarArtifacts;
 
-        private ArtifactSet(List<Artifact> jarArtifactsToInclude, List<Artifact> jarArtifactsProvided, List<Artifact> nonJarArtifacts) {
+        private ArtifactSet(
+                List<Artifact> jarArtifactsToInclude,
+                List<Artifact> jarArtifactsProvided,
+                List<Artifact> nonJarArtifacts) {
             this.jarArtifactsToInclude = jarArtifactsToInclude;
             this.jarArtifactsProvided = jarArtifactsProvided;
             this.nonJarArtifacts = nonJarArtifacts;
@@ -37,19 +40,24 @@ class Artifacts {
         }
     }
 
-    static ArtifactSet getArtifacts(MavenProject project) {
+    static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, false, null); }
 
+    static ArtifactSet getArtifacts(MavenProject project, boolean includeTestArtifacts, String testProvidedConfig) {
+        TestProvidedArtifacts testProvidedArtifacts = TestProvidedArtifacts.from(project.getArtifactMap(), testProvidedConfig);
         List<Artifact> jarArtifactsToInclude = new ArrayList<>();
         List<Artifact> jarArtifactsProvided = new ArrayList<>();
         List<Artifact> nonJarArtifactsToInclude = new ArrayList<>();
         List<Artifact> nonJarArtifactsProvided = new ArrayList<>();
-
         for (Artifact artifact : project.getArtifacts()) {
             if ("jar".equals(artifact.getType())) {
-                if (Artifact.SCOPE_COMPILE.equals(artifact.getScope())) {
+                if (includeTestArtifacts && testProvidedArtifacts.isTestProvided(artifact)) {
+                    jarArtifactsProvided.add(artifact);
+                } else if (Artifact.SCOPE_COMPILE.equals(artifact.getScope())) {
                     jarArtifactsToInclude.add(artifact);
                 } else if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope())) {
                     jarArtifactsProvided.add(artifact);
+                } else if (includeTestArtifacts && Artifact.SCOPE_TEST.equals(artifact.getScope())) {
+                    jarArtifactsToInclude.add(artifact);
                 }
             } else {
                 if (Artifact.SCOPE_COMPILE.equals(artifact.getScope())) {
@@ -64,6 +72,6 @@ class Artifacts {
     }
 
     static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
-        return getArtifacts(project).getJarArtifactsToInclude();
+        return getArtifacts(project, false, null).getJarArtifactsToInclude();
     }
 }

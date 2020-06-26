@@ -59,8 +59,8 @@ public class Sequencer implements MessageHandler, ReplyHandler {
      * queued for later sending due to sequencing restrictions. This method also sets the sequence id as message
      * context.
      *
-     * @param msg The message to filter.
-     * @return True if the message was consumed.
+     * @param msg the message to filter
+     * @return true if the message was consumed
      */
     private boolean filter(Message msg) {
         long seqId = msg.getSequenceId();

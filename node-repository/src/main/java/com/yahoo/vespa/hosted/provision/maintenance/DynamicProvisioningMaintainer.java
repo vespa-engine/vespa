@@ -110,7 +110,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /**
      * Provision the nodes necessary to satisfy given capacity.
      *
-     * @return Excess hosts that can safely be deprovisioned, if any.
+     * @return excess hosts that can safely be deprovisioned, if any
      */
     private List<Node> provision(List<NodeResources> capacity, NodeList nodes) {
         List<Node> existingHosts = availableHostsOf(nodes);

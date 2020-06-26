@@ -4,12 +4,15 @@
 #include "adaptive_sequenced_executor.h"
 #include "singleexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/stllike/hashtable.h>
+#include <cassert>
 
 namespace vespalib {
 
 namespace {
 
 constexpr uint32_t stackSize = 128 * 1024;
+constexpr uint8_t MAGIC = 255;
 
 }
 
@@ -18,7 +21,8 @@ std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
-        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, kindOfWatermark, taskLimit);
+        size_t num_strands = std::min(taskLimit, threads*32);
+        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit);
     } else {
         auto executors = std::make_unique<std::vector<std::unique_ptr<SyncableThreadExecutor>>>();
         executors->reserve(threads);
@@ -41,8 +45,12 @@ SequencedTaskExecutor::~SequencedTaskExecutor()
 
 SequencedTaskExecutor::SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executors)
     : ISequencedTaskExecutor(executors->size()),
-      _executors(std::move(executors))
+      _executors(std::move(executors)),
+      _component2Id(vespalib::hashtable_base::getModuloStl(getNumExecutors()*8), MAGIC),
+      _mutex(),
+      _nextId(0)
 {
+    assert(getNumExecutors() < 256);
 }
 
 void
@@ -84,6 +92,21 @@ SequencedTaskExecutor::getStats()
         accumulatedStats += executor->getStats();
     }
     return accumulatedStats;
+}
+
+ISequencedTaskExecutor::ExecutorId
+SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
+    uint32_t shrunkId = componentId % _component2Id.size();
+    uint8_t executorId = _component2Id[shrunkId];
+    if (executorId == MAGIC) {
+        std::lock_guard guard(_mutex);
+        if (_component2Id[shrunkId] == MAGIC) {
+            _component2Id[shrunkId] = _nextId % getNumExecutors();
+            _nextId++;
+        }
+        executorId = _component2Id[shrunkId];
+    }
+    return ExecutorId(executorId);
 }
 
 } // namespace search

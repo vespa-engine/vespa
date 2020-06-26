@@ -791,7 +791,7 @@ Test::requireThatAttributesAreUsed()
     search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
     auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 
-    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(bjAttr->getNamePrefix()),
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
                                  [&]() {
                                      bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
                                                      .add({{"x", "a"}, {"y", "b"}}, 4)));

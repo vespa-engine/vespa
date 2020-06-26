@@ -63,7 +63,9 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(attr->getNamePrefix()));
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter,
+                                                                    attributeFieldWriter.getExecutorIdFromName(
+                                                                            attr->getNamePrefix()));
     const vespalib::string &name = attr->getName();
     auto dir = diskLayout.createAttributeDir(name);
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
@@ -223,6 +225,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -235,17 +238,18 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(std::make_shared<AttributeFactory>()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
 }
-
 
 AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const IAttributeFactory::SP &factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
@@ -259,6 +263,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(factory),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
@@ -278,6 +283,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _factory(currMgr._factory),
       _interlock(currMgr._interlock),
       _attributeFieldWriter(currMgr._attributeFieldWriter),
+      _shared_executor(currMgr._shared_executor),
       _hwInfo(currMgr._hwInfo),
       _importedAttributes()
 {
@@ -537,6 +543,11 @@ AttributeManager::getAttributeFieldWriter() const
     return _attributeFieldWriter;
 }
 
+vespalib::ThreadExecutor&
+AttributeManager::get_shared_executor() const
+{
+    return _shared_executor;
+}
 
 AttributeVector *
 AttributeManager::getWritableAttribute(const vespalib::string &name) const
@@ -548,13 +559,11 @@ AttributeManager::getWritableAttribute(const vespalib::string &name) const
     return itr->second.getAttribute().get();
 }
 
-
 const std::vector<AttributeVector *> &
 AttributeManager::getWritableAttributes() const
 {
     return _writableAttributes;
 }
-
 
 void
 AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
@@ -564,7 +573,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
             continue;
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
-        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });
     }
 }
@@ -577,7 +586,7 @@ AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_pt
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
     vespalib::string attrName = attrsp->getNamePrefix();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrName),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 

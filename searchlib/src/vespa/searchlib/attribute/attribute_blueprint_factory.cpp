@@ -6,6 +6,7 @@
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
 #include "attribute_blueprint_params.h"
+#include "document_weight_or_filter_search.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchlib/common/location.h>
@@ -342,7 +343,21 @@ public:
         }
         return SearchType::create(*tfmda[0], _weights, std::move(iterators));
     }
+
+    std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
+
+template <typename SearchType>
+std::unique_ptr<SearchIterator>
+DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
+{
+    std::vector<DocumentWeightIterator> iterators;
+    iterators.reserve(_terms.size());
+    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+        _attr.create(r.posting_idx, iterators);
+    }
+    return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+}
 
 //-----------------------------------------------------------------------------
 

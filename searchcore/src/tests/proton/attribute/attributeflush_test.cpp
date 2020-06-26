@@ -8,13 +8,14 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -246,6 +247,7 @@ struct BaseFixture
     test::DirectoryHandler   _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
+    ForegroundThreadExecutor _shared;
     HwInfo                   _hwInfo;
     BaseFixture();
     BaseFixture(const HwInfo &hwInfo);
@@ -256,12 +258,14 @@ BaseFixture::BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(),
           _hwInfo()
 { }
 BaseFixture::BaseFixture(const HwInfo &hwInfo)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(),
           _hwInfo(hwInfo)
 {}
 BaseFixture::~BaseFixture() = default;
@@ -289,7 +293,7 @@ struct AttributeManagerFixture
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
       _m(*_msp)
 {}
 AttributeManagerFixture::~AttributeManagerFixture() = default;

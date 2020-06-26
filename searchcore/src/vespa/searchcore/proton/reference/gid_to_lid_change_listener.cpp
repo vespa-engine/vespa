@@ -11,7 +11,7 @@ GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor 
                                                const vespalib::string &name,
                                                const vespalib::string &docTypeName)
     : _attributeFieldWriter(attributeFieldWriter),
-      _executorId(_attributeFieldWriter.getExecutorId(attr->getNamePrefix())),
+      _executorId(_attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix())),
       _attr(std::move(attr)),
       _refCount(refCount),
       _name(name),

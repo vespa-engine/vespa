@@ -71,16 +71,9 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool>;
 
 //-----------------------------------------------------------------------------
 
-std::vector<ValueType::Dimension> strip_trivial(const std::vector<ValueType::Dimension> &dim_list) {
-    std::vector<ValueType::Dimension> result;
-    std::copy_if(dim_list.begin(), dim_list.end(), std::back_inserter(result),
-                 [](const auto &dim){ return (dim.size != 1); });
-    return result;
-}
-
 std::optional<Inner> detect_simple_expand(const TensorFunction &lhs, const TensorFunction &rhs) {
-    std::vector<ValueType::Dimension> a = strip_trivial(lhs.result_type().dimensions());
-    std::vector<ValueType::Dimension> b = strip_trivial(rhs.result_type().dimensions());
+    std::vector<ValueType::Dimension> a = lhs.result_type().nontrivial_dimensions();
+    std::vector<ValueType::Dimension> b = rhs.result_type().nontrivial_dimensions();
     if (a.empty() || b.empty()) {
         return std::nullopt;
     } else if (a.back().name < b.front().name) {

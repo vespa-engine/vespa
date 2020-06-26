@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -125,7 +126,7 @@ public class RoutingPolicies {
             for (var policy : routeEntry.getValue()) {
                 if (policy.dnsZone().isEmpty()) continue;
                 if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
-                var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
+                var target = new LatencyAliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
                 var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
                 // Remove target zone if global routing status is set out at:
                 // - zone level (ZoneRoutingPolicy)
@@ -361,7 +362,7 @@ public class RoutingPolicies {
         public void removeRecords(Record.Type type, RecordName name) {}
 
         @Override
-        public void createAlias(RecordName name, Set<AliasTarget> target) {}
+        public void createAlias(RecordName name, Set<AliasTarget> targets) {}
 
         @Override
         public void createCname(RecordName name, RecordData data) {}

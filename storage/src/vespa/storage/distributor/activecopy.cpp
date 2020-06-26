@@ -99,6 +99,7 @@ namespace {
                        const std::vector<uint16_t>& idealState,
                        std::vector<ActiveCopy>& result)
     {
+        result.reserve(nodeIndexes.size());
         for (uint16_t nodeIndex : nodeIndexes) {
             result.emplace_back(nodeIndex, e, idealState);
         }
@@ -126,18 +127,19 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     typedef std::vector<uint16_t> IndexList;
     std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
-        groups = distribution.splitNodesIntoLeafGroups(validNodesWithCopy);
+        groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
     } else {
-        groups.push_back(validNodesWithCopy);
+        groups.push_back(std::move(validNodesWithCopy));
     }
     std::vector<ActiveCopy> result;
+    result.reserve(groups.size());
     for (uint32_t i=0; i<groups.size(); ++i) {
         std::vector<ActiveCopy> entries;
         buildNodeList(e, groups[i], idealState, entries);
         DEBUG(std::cerr << "Finding active for group " << entries << "\n");
         auto best = std::min_element(entries.begin(), entries.end(), ActiveStateOrder());
         DEBUG(std::cerr << "Best copy " << *best << "\n");
-        result.push_back(ActiveCopy(*best));
+        result.emplace_back(*best);
     }
     return ActiveList(std::move(result));
 }
@@ -165,8 +167,8 @@ ActiveList::print(std::ostream& out, bool verbose,
 bool
 ActiveList::contains(uint16_t node) const
 {
-    for (uint32_t i=0; i<_v.size(); ++i) {
-        if (node == _v[i]._nodeIndex) return true;
+    for (const auto & candadate : _v) {
+        if (node == candadate._nodeIndex) return true;
     }
     return false;
 }

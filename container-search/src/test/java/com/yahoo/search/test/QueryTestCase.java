@@ -1037,7 +1037,7 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("myfield:\"it s fine\"", query.getModel().getQueryTree().toString());
+        assertEquals("myfield:\"'it s' fine\"", query.getModel().getQueryTree().toString());
     }
 
     @Test

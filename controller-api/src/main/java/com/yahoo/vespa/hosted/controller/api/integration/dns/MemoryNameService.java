@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 
@@ -43,7 +43,7 @@ public class MemoryNameService implements NameService {
     public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
         var records = targets.stream()
                              .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                             .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
+                             .map(d -> new Record(Record.Type.ALIAS, name, d.pack()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         records.stream()
@@ -80,7 +80,7 @@ public class MemoryNameService implements NameService {
                           if (record.type() == type) {
                               if (type == Record.Type.ALIAS) {
                                   // Unpack ALIAS record and compare FQDN of data part
-                                  return RecordData.fqdn(AliasTarget.from(record.data()).name().value())
+                                  return RecordData.fqdn(AliasTarget.unpack(record.data()).name().value())
                                                    .equals(data);
                               }
                               return record.data().equals(data);
@@ -111,7 +111,7 @@ public class MemoryNameService implements NameService {
     }
 
     /**
-     * Returns whether record r1 and r2 can co-exist in a name service. This attempts to enforce the same constraints as
+     * Returns whether record r1 and r2 are in conflict. This attempts to enforce the same constraints a
      * most real name services.
      */
     private static boolean conflicts(Record r1, Record r2) {
