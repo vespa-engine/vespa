@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -36,15 +37,14 @@ public class Endpoint {
     private final RoutingMethod routingMethod;
     private final boolean tls;
 
-    private Endpoint(String name, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy,
-                     RoutingMethod routingMethod) {
+    private Endpoint(String name, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy, RoutingMethod routingMethod) {
         Objects.requireNonNull(name, "name must be non-null");
         Objects.requireNonNull(zones, "zones must be non-null");
         Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
-        if (scope == Scope.zone && zones.size() != 1) {
-            throw new IllegalArgumentException("A single zone must be given for zone-scoped endpoints");
+        if ((scope == Scope.zone || scope == Scope.weighted) && zones.size() != 1) {
+            throw new IllegalArgumentException("A single zone must be given for " + scope + "-scoped endpoints");
         }
         this.name = name;
         this.url = url;
@@ -189,8 +189,10 @@ public class Endpoint {
     private static String scopePart(Scope scope, List<ZoneId> zones, boolean legacy) {
         if (scope == Scope.global) return "global";
         var zone = zones.get(0);
-        if (!legacy && zone.environment().isProduction()) return zone.region().value(); // Skip prod environment for non-legacy endpoints
-        return zone.region().value() + "." + zone.environment().value();
+        var region = zone.region().value();
+        if (scope == Scope.weighted) region += "-w";
+        if (!legacy && zone.environment().isProduction()) return region; // Skip prod environment for non-legacy endpoints
+        return region + "." + zone.environment().value();
     }
 
     private static String instancePart(ApplicationId application, String separator) {
@@ -241,6 +243,21 @@ public class Endpoint {
         return part.substring(Math.max(0, part.length() - 63));
     }
 
+    /** Returns the given region without availability zone */
+    private static RegionName effectiveRegion(RegionName region) {
+        if (region.value().isEmpty()) return region;
+        String value = region.value();
+        char lastChar = value.charAt(value.length() - 1);
+        if (lastChar >= 'a' && lastChar <= 'z') { // Remove availability zone
+            value = value.substring(0, value.length() - 1);
+        }
+        return RegionName.from(value);
+    }
+
+    private static ZoneId effectiveZone(ZoneId zone) {
+        return ZoneId.from(zone.environment(), effectiveRegion(zone.region()));
+    }
+
     /** An endpoint's scope */
     public enum Scope {
 
@@ -249,6 +266,9 @@ public class Endpoint {
 
         /** Endpoint points to a single zone */
         zone,
+
+        /** Endpoint points to a single region */
+        weighted,
 
     }
 
@@ -385,6 +405,16 @@ public class Endpoint {
         /** Sets the routing method for this */
         public EndpointBuilder routingMethod(RoutingMethod method) {
             this.routingMethod = method;
+            return this;
+        }
+
+        /** Make this a weighted endpoint */
+        public EndpointBuilder weighted() {
+            if (scope != Scope.zone && scope != Scope.weighted) {
+                throw new IllegalArgumentException("Endpoint must target zone before making it weighted");
+            }
+            this.scope = Scope.weighted;
+            this.zones = List.of(effectiveZone(zones.get(0)));
             return this;
         }
 
