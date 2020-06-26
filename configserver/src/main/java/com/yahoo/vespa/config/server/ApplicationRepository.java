@@ -483,6 +483,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
 
+    public Tenant getTenant(ApplicationId applicationId) {
+        return tenantRepository.getTenant(applicationId.tenant());
+    }
+
     private Application getApplication(ApplicationId applicationId) {
         return getApplication(applicationId, Optional.empty());
     }

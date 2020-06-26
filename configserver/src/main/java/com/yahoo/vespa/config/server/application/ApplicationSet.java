@@ -96,4 +96,12 @@ public final class ApplicationSet {
         return new ArrayList<>(applications.values());
     }
 
+    public List<Version> getAllVersions(ApplicationId applicationId) {
+        return applications.values().stream()
+                .filter(application -> application.getId().equals(applicationId))
+                .map(Application::getVespaVersion)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
 }

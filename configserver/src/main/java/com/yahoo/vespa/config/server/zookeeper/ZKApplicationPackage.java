@@ -42,7 +42,7 @@ import java.util.Optional;
  */
 public class ZKApplicationPackage implements ApplicationPackage {
 
-    private ZKApplication zkApplication;
+    private final ZKApplication zkApplication;
 
     private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;

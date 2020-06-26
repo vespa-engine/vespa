@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -19,11 +21,13 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -40,8 +44,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,6 +72,7 @@ public class ApplicationHandlerTest {
     private final static NullMetric metric = new NullMetric();
     private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
+    private static final Version vespaVersion = Version.fromString("7.8.9");
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
@@ -75,7 +82,11 @@ public class ApplicationHandlerTest {
 
     @Before
     public void setup() {
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().provisioner(provisioner).build();
+        List<ModelFactory> modelFactories = List.of(DeployTester.createModelFactory(vespaVersion));
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .provisioner(provisioner)
+                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+                .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
@@ -149,9 +160,14 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testGet() throws Exception {
-        long sessionId = applicationRepository.deploy(testApp, prepareParams(applicationId)).sessionId();
-        assertApplicationGeneration(applicationId, Zone.defaultZone(), sessionId, true);
-        assertApplicationGeneration(applicationId, Zone.defaultZone(), sessionId, false);
+        PrepareParams prepareParams = new PrepareParams.Builder()
+                .applicationId(applicationId)
+                .vespaVersion(vespaVersion)
+                .build();
+        long sessionId = applicationRepository.deploy(testApp, prepareParams).sessionId();
+
+        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, true, vespaVersion);
+        assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, false, vespaVersion);
     }
 
     @Test
@@ -196,7 +212,7 @@ public class ApplicationHandlerTest {
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
     }
 
@@ -229,7 +245,7 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/logs?from=100&to=200";
         ApplicationHandler mockHandler = createApplicationHandler();
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
 
         assertEquals("log line", getRenderedString(response));
@@ -240,7 +256,7 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/status";
         ApplicationHandler mockHandler = createApplicationHandler();
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         assertEquals("OK", getRenderedString(response));
     }
@@ -251,7 +267,7 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/log?after=1234";
         ApplicationHandler mockHandler = createApplicationHandler();
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         assertEquals("log", getRenderedString(response));
     }
@@ -273,7 +289,7 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/ready";
         ApplicationHandler mockHandler = createApplicationHandler();
-        HttpRequest testRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET);
+        HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
     }
@@ -315,13 +331,14 @@ public class ApplicationHandlerTest {
         }
     }
 
-    private void assertApplicationGeneration(ApplicationId applicationId, Zone zone, long expectedGeneration, boolean fullAppIdInUrl) throws IOException {
-        assertApplicationGeneration(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedGeneration);
+    private void assertApplicationResponse(ApplicationId applicationId, Zone zone, long expectedGeneration,
+                                           boolean fullAppIdInUrl, Version expectedVersion) throws IOException {
+        assertApplicationResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedGeneration, expectedVersion);
     }
 
     private void assertSuspended(boolean expectedValue, ApplicationId application, Zone zone) throws IOException {
         String restartUrl = toUrlPath(application, zone, true) + "/suspended";
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, GET));
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"suspended\":" + expectedValue + "}");
     }
 
@@ -332,24 +349,28 @@ public class ApplicationHandlerTest {
         return url;
     }
 
-    private void assertApplicationGeneration(String url, long expectedGeneration) throws IOException {
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"generation\":" + expectedGeneration + "}");
+    private void assertApplicationResponse(String url, long expectedGeneration, Version expectedVersion) throws IOException {
+        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
+        assertEquals(200, response.getStatus());
+        String renderedString = SessionHandlerTest.getRenderedString(response);
+        assertEquals("{\"generation\":" + expectedGeneration + ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
     }
 
     private void assertApplicationExists(ApplicationId applicationId, Zone zone) throws IOException {
-        String tenantName = applicationId == null ? null : applicationId.tenant().value();
-        String expected = applicationId == null ? "[]" : "[\"http://myhost:14000/application/v2/tenant/" + tenantName + "/application/" + applicationId.application().value() +
-                "/environment/" + zone.environment().value() +
-                "/region/" + zone.region().value() +
-                "/instance/" + applicationId.instance().value() + "\"]";
+        String tenantName = applicationId.tenant().value();
+        String expected = "[\"http://myhost:14000/application/v2/tenant/" +
+                          tenantName + "/application/" + applicationId.application().value() +
+                          "/environment/" + zone.environment().value() +
+                          "/region/" + zone.region().value() +
+                          "/instance/" + applicationId.instance().value() + "\"]";
         ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                                                       tenantRepository,
                                                                                       Zone.defaultZone());
-        ListApplicationsHandlerTest.assertResponse(listApplicationsHandler, "http://myhost:14000/application/v2/tenant/" + tenantName + "/application/",
+        ListApplicationsHandlerTest.assertResponse(listApplicationsHandler,
+                                                   "http://myhost:14000/application/v2/tenant/" + tenantName + "/application/",
                                                    Response.Status.OK,
                                                    expected,
-                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET);
+                                                   GET);
     }
 
     private void restart(ApplicationId application, Zone zone) throws IOException {
@@ -360,13 +381,13 @@ public class ApplicationHandlerTest {
 
     private void converge(ApplicationId application, Zone zone) throws IOException {
         String convergeUrl = toUrlPath(application, zone, true) + "/serviceconverge";
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(convergeUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(convergeUrl, GET));
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
     }
 
     private HttpResponse fileDistributionStatus(ApplicationId application, Zone zone) {
         String restartUrl = toUrlPath(application, zone, true) + "/filedistributionstatus";
-        return createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        return createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, GET));
     }
 
     private static class MockStateApiFactory implements ConfigConvergenceChecker.StateApiFactory {

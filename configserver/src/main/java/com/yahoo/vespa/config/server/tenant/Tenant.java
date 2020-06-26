@@ -93,8 +93,8 @@ public class Tenant implements TenantHandlerProvider {
      * Called by watchers as a reaction to deleting a tenant.
      */
     void close() {
-        applicationRepo.close();                // Closes watchers.
-        sessionRepository.close();              // Closes watchers, clears memory, and deletes local files and ZK session state.
+        applicationRepo.close();   // Closes watchers.
+        sessionRepository.close(); // Closes watchers, clears memory, and deletes local files and ZK session state.
     }
 
 }
