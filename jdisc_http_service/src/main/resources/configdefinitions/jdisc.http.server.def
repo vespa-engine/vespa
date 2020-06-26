@@ -38,3 +38,6 @@ jmx.enabled                           bool   default = false
 
 # Listen port for the JMX server.
 jmx.listenPort                        int    default = 1099
+
+# Paths that should be reported with monitoring dimensions where applicable
+metric.monitoringHandlerPaths[]       string

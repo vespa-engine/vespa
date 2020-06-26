@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
+    private final List<String> monitoringHandlerPaths;
 
     public static enum HttpMethod {
         GET, PATCH, POST, PUT, DELETE, OPTIONS, HEAD, OTHER
@@ -43,20 +44,28 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         HTTP, HTTPS, OTHER
     }
 
+    public enum RequestType {
+        READ, WRITE, MONITORING
+    }
+
     private static final String[] HTTP_RESPONSE_GROUPS = { Metrics.RESPONSES_1XX, Metrics.RESPONSES_2XX, Metrics.RESPONSES_3XX,
             Metrics.RESPONSES_4XX, Metrics.RESPONSES_5XX, Metrics.RESPONSES_401, Metrics.RESPONSES_403};
 
     private final AtomicLong inFlight = new AtomicLong();
-    private final LongAdder statistics[][][];
+    private final LongAdder statistics[][][][];
 
-    public HttpResponseStatisticsCollector() {
+    public HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths) {
         super();
-        statistics = new LongAdder[HttpScheme.values().length][HttpMethod.values().length][];
+        this.monitoringHandlerPaths = monitoringHandlerPaths;
+        statistics = new LongAdder[HttpScheme.values().length][HttpMethod.values().length][][];
         for (int scheme = 0; scheme < HttpScheme.values().length; ++scheme) {
             for (int method = 0; method < HttpMethod.values().length; method++) {
-                statistics[scheme][method] = new LongAdder[HTTP_RESPONSE_GROUPS.length];
+                statistics[scheme][method] = new LongAdder[HTTP_RESPONSE_GROUPS.length][];
                 for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                    statistics[scheme][method][group] = new LongAdder();
+                    statistics[scheme][method][group] = new LongAdder[RequestType.values().length];
+                    for (int requestType = 0 ; requestType < RequestType.values().length; requestType++) {
+                        statistics[scheme][method][group][requestType] = new LongAdder();
+                    }
                 }
             }
         }
@@ -117,9 +126,11 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         if (group >= 0) {
             HttpScheme scheme = getScheme(request);
             HttpMethod method = getMethod(request);
-            statistics[scheme.ordinal()][method.ordinal()][group].increment();
+            RequestType requestType = getRequestType(request);
+
+            statistics[scheme.ordinal()][method.ordinal()][group][requestType.ordinal()].increment();
             if (group == 5 || group == 6) { // if 401/403, also increment 4xx
-                statistics[scheme.ordinal()][method.ordinal()][3].increment();
+                statistics[scheme.ordinal()][method.ordinal()][3][requestType.ordinal()].increment();
             }
         }
 
@@ -184,6 +195,18 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         }
     }
 
+    private RequestType getRequestType(Request request) {
+        String path = request.getRequestURI();
+        for (String monitoringHandlerPath : monitoringHandlerPaths) {
+            if (path.startsWith(monitoringHandlerPath)) return RequestType.MONITORING;
+        }
+        if ("GET".equals(request.getMethod())) {
+            return RequestType.READ;
+        } else {
+            return RequestType.WRITE;
+        }
+    }
+
     public List<StatisticsEntry> takeStatistics() {
         var ret = new ArrayList<StatisticsEntry>();
         for (HttpScheme scheme : HttpScheme.values()) {
@@ -191,9 +214,11 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             for (HttpMethod method : HttpMethod.values()) {
                 int methodIndex = method.ordinal();
                 for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                    long value = statistics[schemeIndex][methodIndex][group].sumThenReset();
-                    if (value > 0) {
-                        ret.add(new StatisticsEntry(scheme.name().toLowerCase(), method.name(), HTTP_RESPONSE_GROUPS[group], value));
+                    for (RequestType type : RequestType.values()) {
+                        long value = statistics[schemeIndex][methodIndex][group][type.ordinal()].sumThenReset();
+                        if (value > 0) {
+                            ret.add(new StatisticsEntry(scheme.name().toLowerCase(), method.name(), HTTP_RESPONSE_GROUPS[group], type.name().toLowerCase(), value));
+                        }
                     }
                 }
             }
@@ -239,13 +264,15 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         public final String scheme;
         public final String method;
         public final String name;
+        public final String requestType;
         public final long value;
 
 
-        public StatisticsEntry(String scheme, String method, String name, long value) {
+        public StatisticsEntry(String scheme, String method, String name, String requestType, long value) {
             this.scheme = scheme;
             this.method = method;
             this.name = name;
+            this.requestType = requestType;
             this.value = value;
         }
     }
