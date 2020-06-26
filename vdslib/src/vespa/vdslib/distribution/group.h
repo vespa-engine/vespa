@@ -19,8 +19,7 @@
 
 namespace vespalib { class asciistream; }
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class IdealGroup;
 class SystemState;
@@ -101,6 +100,4 @@ public:
     vespalib::string getDistributionConfigHash() const;
 };
 
-} // lib
-} // storage
-
+}
