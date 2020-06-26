@@ -117,6 +117,7 @@ public:
     AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
                               size_t max_waiting, size_t max_pending);
     ~AdaptiveSequencedExecutor() override;
+    ExecutorId getExecutorId(uint64_t component) const override;
     void executeTask(ExecutorId id, Task::UP task) override;
     void sync() override;
     void setTaskLimit(uint32_t task_limit) override;

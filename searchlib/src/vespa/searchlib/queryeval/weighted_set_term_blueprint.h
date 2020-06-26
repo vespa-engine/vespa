@@ -34,6 +34,7 @@ public:
     void addTerm(Blueprint::UP term, int32_t weight);
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
 private:

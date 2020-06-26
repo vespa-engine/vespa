@@ -72,6 +72,10 @@ enum PathGroup {
                       PathPrefix.api,
                       "/billing/v1/tenant/{tenant}/instrument/{*}"),
 
+    billingPlan(Matcher.tenant,
+            PathPrefix.api,
+            "/billing/v1/tenant/{tenant}/plan/{*}"),
+
     billingList(Matcher.tenant,
                 PathPrefix.api,
                 "/billing/v1/tenant/{tenant}/billing/{*}"),

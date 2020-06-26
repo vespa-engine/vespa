@@ -1,73 +1,68 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Objects;
 
 /**
- * Represents the target of an ALIAS record.
+ * The target of an {@link Record.Type#ALIAS} record. Contains record fields unique to aliases.
  *
  * @author mpolden
  */
-public class AliasTarget {
+public abstract class AliasTarget {
 
     private final HostName name;
     private final String dnsZone;
-    private final ZoneId zone;
+    private final String id;
 
-    public AliasTarget(HostName name, String dnsZone, ZoneId zone) {
+    public AliasTarget(HostName name, String dnsZone, String id) {
         this.name = Objects.requireNonNull(name, "name must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
-        this.zone = Objects.requireNonNull(zone, "zone must be non-null");
+        this.id = Objects.requireNonNull(id, "id must be non-null");
     }
 
-    /** DNS name of this */
-    public HostName name() {
+    /** A unique identifier of this record within the ALIAS record group */
+    public String id() {
+        return id;
+    }
+
+    /** DNS name this points to */
+    public final HostName name() {
         return name;
     }
 
-    /** DNS zone of this */
-    public String dnsZone() {
+    /** The DNS zone this belongs to */
+    public final String dnsZone() {
         return dnsZone;
     }
 
-    /** The zone where this exists */
-    public ZoneId zone() {
-        return zone;
-    }
-
     /** Returns the fields in this encoded as record data */
-    public RecordData asData() {
-        return RecordData.from(name.value() + "/" + dnsZone + "/" + zone.value());
-    }
+    public abstract RecordData pack();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AliasTarget that = (AliasTarget) o;
-        return name.equals(that.name);
+        AliasTarget alias = (AliasTarget) o;
+        return name.equals(alias.name) &&
+               dnsZone.equals(alias.dnsZone) &&
+               id.equals(alias.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(name, dnsZone, id);
     }
 
-    @Override
-    public String toString() {
-        return String.format("rotation target %s [zone: %s] in %s", name, dnsZone, zone);
-    }
-
-    public static AliasTarget from(RecordData data) {
-        var parts = data.asString().split("/");
-        if (parts.length != 3) {
-            throw new IllegalArgumentException("Expected data to be on format [hostname]/[DNS zone]/[zone], but got " +
-                                               data.asString());
+    /** Unpack target from given record data */
+    public static AliasTarget unpack(RecordData data) {
+        String[] parts = data.asString().split("/");
+        switch (parts[0]) {
+            case "latency": return LatencyAliasTarget.unpack(data);
+            case "weighted": return WeightedAliasTarget.unpack(data);
         }
-        return new AliasTarget(HostName.from(parts[0]), parts[1], ZoneId.from(parts[2]));
+        throw new IllegalArgumentException("Unknown alias type '" + parts[0] + "'");
     }
 
 }

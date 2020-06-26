@@ -39,21 +39,25 @@ public:
         uint32_t _max_links_at_level_0;
         uint32_t _max_links_on_inserts;
         uint32_t _neighbors_to_explore_at_construction;
+        uint32_t _min_size_before_two_phase;
         bool _heuristic_select_neighbors;
 
     public:
         Config(uint32_t max_links_at_level_0_in,
                uint32_t max_links_on_inserts_in,
                uint32_t neighbors_to_explore_at_construction_in,
+               uint32_t min_size_before_two_phase_in,
                bool heuristic_select_neighbors_in)
             : _max_links_at_level_0(max_links_at_level_0_in),
               _max_links_on_inserts(max_links_on_inserts_in),
               _neighbors_to_explore_at_construction(neighbors_to_explore_at_construction_in),
+              _min_size_before_two_phase(min_size_before_two_phase_in),
               _heuristic_select_neighbors(heuristic_select_neighbors_in)
         {}
         uint32_t max_links_at_level_0() const { return _max_links_at_level_0; }
         uint32_t max_links_on_inserts() const { return _max_links_on_inserts; }
         uint32_t neighbors_to_explore_at_construction() const { return _neighbors_to_explore_at_construction; }
+        uint32_t min_size_before_two_phase() const { return _min_size_before_two_phase; }
         bool heuristic_select_neighbors() const { return _heuristic_select_neighbors; }
     };
 
@@ -122,17 +126,22 @@ protected:
                                          const BitVector *filter, uint32_t explore_k) const;
 
     struct PreparedAddDoc : public PrepareResult {
+        using ReadGuard = vespalib::GenerationHandler::Guard;
         uint32_t docid;
         int32_t max_level;
+        ReadGuard read_guard;
         using Links = std::vector<std::pair<uint32_t, HnswGraph::NodeRef>>;
         std::vector<Links> connections;
-        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in)
-          : docid(docid_in), max_level(max_level_in), connections(max_level+1)
+        PreparedAddDoc(uint32_t docid_in, int32_t max_level_in, ReadGuard read_guard_in)
+          : docid(docid_in), max_level(max_level_in),
+            read_guard(std::move(read_guard_in)),
+            connections(max_level+1)
         {}
         ~PreparedAddDoc() = default;
         PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
-    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector) const;
+    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector,
+                                        vespalib::GenerationHandler::Guard read_guard) const;
     LinkArray filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:

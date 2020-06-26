@@ -82,7 +82,7 @@ public:
         level_generator = generator.get();
         index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
                                             std::move(generator),
-                                            HnswIndex::Config(5, 2, 10, heuristic_select_neighbors));
+                                            HnswIndex::Config(5, 2, 10, 0, heuristic_select_neighbors));
     }
     void add_document(uint32_t docid, uint32_t max_level = 0) {
         level_generator->level = max_level;

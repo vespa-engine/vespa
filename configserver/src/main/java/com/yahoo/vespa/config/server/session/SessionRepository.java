@@ -41,6 +41,8 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -323,11 +325,13 @@ public class SessionRepository {
         loadSessionIfActive(remoteSession);
         addRemoteSession(remoteSession);
         Optional<LocalSession> localSession = Optional.empty();
-        if (distributeApplicationPackage.value()) {
+        if (distributeApplicationPackage())
             localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-            localSession.ifPresent(this::addSession);
-        }
         addWatcher(sessionId, fileCache, remoteSession, localSession);
+    }
+
+    private boolean distributeApplicationPackage() {
+        return distributeApplicationPackage.value();
     }
 
     private void sessionRemoved(long sessionId) {
@@ -462,7 +466,7 @@ public class SessionRepository {
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
-        if (distributeApplicationPackage.value() && existingSession.getApplicationPackageReference() != null) {
+        if (distributeApplicationPackage() && existingSession.getApplicationPackageReference() != null) {
             session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         }
         session.setVespaVersion(existingSession.getVespaVersion());
@@ -504,7 +508,7 @@ public class SessionRepository {
                                                         long sessionId, Optional<Long> currentlyActiveSessionId,
                                                         boolean internalRedeploy) throws IOException {
         File userApplicationDir = getSessionAppDir(sessionId);
-        IOUtils.copyDirectory(applicationFile, userApplicationDir);
+        copyApp(applicationFile, userApplicationDir);
         ApplicationPackage applicationPackage = createApplication(applicationFile,
                                                                   userApplicationDir,
                                                                   applicationId,
@@ -513,6 +517,20 @@ public class SessionRepository {
                                                                   internalRedeploy);
         applicationPackage.writeMetaData();
         return applicationPackage;
+    }
+
+    private void copyApp(File sourceDir, File destinationDir) throws IOException {
+        if (destinationDir.exists())
+            throw new RuntimeException("Destination dir " + destinationDir + " already exists");
+        if (! sourceDir.isDirectory())
+            throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
+
+        // Copy app it atomically: Copy to default tmp dir and move to destination
+        java.nio.file.Path tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
+        log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
+        IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
+        log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+        Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
     }
 
     /**
@@ -526,7 +544,8 @@ public class SessionRepository {
     }
 
     /**
-     * Returns a new session instance for the given session id.
+     * Returns a new local session for the given session id if it does not already exist.
+     * Will also add the session to the local session cache if necessary
      */
     public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {

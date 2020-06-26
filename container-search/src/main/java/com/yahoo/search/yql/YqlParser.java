@@ -173,6 +173,7 @@ public class YqlParser implements Parser {
     static final String STEM = "stem";
     static final String SUBSTRING = "substring";
     static final String SUFFIX = "suffix";
+    static final String TARGET_HITS = "targetHits";
     static final String TARGET_NUM_HITS = "targetNumHits";
     static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     static final String UNIQUE_ID = "id";
@@ -418,8 +419,12 @@ public class YqlParser implements Parser {
         String field = fetchFieldRead(args.get(0));
         String property = fetchFieldRead(args.get(1));
         NearestNeighborItem item = new NearestNeighborItem(field, property);
-        Integer targetNumHits = getAnnotation(ast, TARGET_NUM_HITS,
+        Integer targetNumHits = getAnnotation(ast, TARGET_HITS,
                 Integer.class, null, "desired minimum hits to produce");
+        if (targetNumHits == null) {
+            targetNumHits = getAnnotation(ast, TARGET_NUM_HITS,
+                Integer.class, null, "desired minimum hits to produce");
+        }
         if (targetNumHits != null) {
             item.setTargetNumHits(targetNumHits);
         }
@@ -504,9 +509,13 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        WandItem out = new WandItem(getIndex(args.get(0)), getAnnotation(ast,
-                TARGET_NUM_HITS, Integer.class, DEFAULT_TARGET_NUM_HITS,
-                "desired number of hits to accumulate in wand"));
+        Integer targetNumHits = getAnnotation(ast, TARGET_HITS,
+                Integer.class, null, "desired number of hits to accumulate in wand");
+        if (targetNumHits == null) {
+            targetNumHits = getAnnotation(ast, TARGET_NUM_HITS,
+                Integer.class, DEFAULT_TARGET_NUM_HITS, "desired number of hits to accumulate in wand");
+        }
+        WandItem out = new WandItem(getIndex(args.get(0)), targetNumHits);
         Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
                                               "min score for hit inclusion");
         if (scoreThreshold != null) {
@@ -1028,8 +1037,12 @@ public class YqlParser implements Parser {
 
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
-        Integer targetNumHits = getAnnotation(spec, TARGET_NUM_HITS,
+        Integer targetNumHits = getAnnotation(spec, TARGET_HITS,
                 Integer.class, null, "desired minimum hits to produce");
+        if (targetNumHits == null) {
+            targetNumHits = getAnnotation(spec, TARGET_NUM_HITS,
+                Integer.class, null, "desired minimum hits to produce");
+        }
         if (targetNumHits != null) {
             weakAnd.setN(targetNumHits);
         }

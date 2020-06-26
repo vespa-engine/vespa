@@ -14,11 +14,8 @@ class SyncableThreadExecutor;
  */
 class SequencedTaskExecutor final : public ISequencedTaskExecutor
 {
-    using Stats = vespalib::ExecutorStats;
-    std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> _executors;
-
-    SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 public:
+    using Stats = vespalib::ExecutorStats;
     using ISequencedTaskExecutor::getExecutorId;
     using OptimizeFor = vespalib::Executor::OptimizeFor;
 
@@ -26,6 +23,7 @@ public:
 
     void setTaskLimit(uint32_t taskLimit) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
+    ExecutorId getExecutorId(uint64_t componentId) const override;
     void sync() override;
     Stats getStats() override;
 
@@ -35,6 +33,19 @@ public:
      */
     static std::unique_ptr<ISequencedTaskExecutor>
     create(uint32_t threads, uint32_t taskLimit = 1000, OptimizeFor optimize = OptimizeFor::LATENCY, uint32_t kindOfWatermark = 0, duration reactionTime = 10ms);
+    /**
+     * For testing only
+     */
+    uint32_t getComponentHashSize() const { return _component2Id.size(); }
+    uint32_t getComponentEffectiveHashSize() const { return _nextId; }
+private:
+    SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
+
+    std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> _executors;
+    mutable std::vector<uint8_t> _component2Id;
+    mutable std::mutex           _mutex;
+    mutable uint32_t             _nextId;
+
 };
 
 } // namespace search

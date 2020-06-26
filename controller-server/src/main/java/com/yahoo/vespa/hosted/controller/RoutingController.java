@@ -264,6 +264,7 @@ public class RoutingController {
     private boolean canRouteDirectlyTo(DeploymentId deploymentId, Application application) {
         if (controller.system().isPublic()) return true; // Public always supports direct routing
         if (controller.system().isCd()) return true; // CD deploys directly so we cannot enforce all requirements below
+        if(deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones does not include any use cases where direct routing is not supported
 
         // Check Athenz service presence. The test framework uses this identity when sending requests to the
         // deployment's container(s).

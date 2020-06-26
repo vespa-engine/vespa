@@ -97,7 +97,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
         /** Returns an error message if this is invalid, or null if it is valid */
         private String validate(NearestNeighborItem item) {
             if (item.getTargetNumHits() < 1)
-                return item + " has invalid targetNumHits " + item.getTargetNumHits() + ": Must be >= 1";
+                return item + " has invalid targetHits " + item.getTargetNumHits() + ": Must be >= 1";
 
             String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
             Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);

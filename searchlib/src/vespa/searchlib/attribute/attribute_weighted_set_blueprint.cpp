@@ -9,6 +9,8 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
 
 
 namespace search {
@@ -180,6 +182,21 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
             return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
         }
     }
+}
+
+queryeval::SearchIterator::UP
+AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    (void) constraint;
+    std::vector<std::unique_ptr<queryeval::SearchIterator>> children;
+    children.reserve(_contexts.size());
+    for (auto& context : _contexts) {
+        auto wrapper = std::make_unique<search::queryeval::FilterWrapper>(1);
+        wrapper->wrap(context->createIterator(wrapper->tfmda()[0], strict));
+        children.emplace_back(std::move(wrapper));
+    }
+    search::queryeval::UnpackInfo unpack_info;
+    return search::queryeval::OrSearch::create(std::move(children), strict, unpack_info);
 }
 
 void

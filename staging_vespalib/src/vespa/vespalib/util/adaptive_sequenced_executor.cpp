@@ -256,6 +256,11 @@ AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor()
     assert(_worker_stack.empty());
 }
 
+ISequencedTaskExecutor::ExecutorId
+AdaptiveSequencedExecutor::getExecutorId(uint64_t component) const {
+    return ExecutorId(component % _strands.size());
+}
+
 void
 AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
 {

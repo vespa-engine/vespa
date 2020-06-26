@@ -185,6 +185,17 @@ ValueType::dense_subspace_size() const
     return size;
 }
 
+std::vector<ValueType::Dimension>
+ValueType::nontrivial_dimensions() const {
+    std::vector<ValueType::Dimension> result;
+    for (const auto &dim: dimensions()) {
+        if (!dim.is_trivial()) {
+            result.push_back(dim);
+        }
+    }
+    return result;
+}
+
 size_t
 ValueType::dimension_index(const vespalib::string &name) const {
     return my_dimension_index(_dimensions, name);

@@ -16,7 +16,10 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -46,8 +49,6 @@ import java.util.logging.Logger;
 public class NodeRepositoryProvisioner implements Provisioner {
 
     private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
-    private static final int SPARE_CAPACITY_PROD = 0;
-    private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
@@ -57,6 +58,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
     private final NodeResourceLimits nodeResourceLimits;
+    private final IntFlag tenantNodeQuota;
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
@@ -69,12 +71,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService, flagSource));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
+                                     nodeRepository.spareCount(),
                                      provisionServiceProvider.getHostProvisioner(),
                                      flagSource,
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
+        this.tenantNodeQuota = Flags.TENANT_NODE_QUOTA.bindTo(flagSource);
     }
+
 
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
@@ -133,8 +137,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
     }
 
-    int getSpareCapacityProd() { return SPARE_CAPACITY_PROD; }
-
     /**
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
      * and updates the application store with the received min and max.
@@ -187,7 +189,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         if (application.tenant().value().hashCode() == 3857)        return requestedNodes <= 60;
         if (application.tenant().value().hashCode() == -1271827001) return requestedNodes <= 75;
-        return requestedNodes <= 5;
+
+        return requestedNodes <= tenantNodeQuota.with(FetchVector.Dimension.APPLICATION_ID, application.tenant().value()).value();
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {

@@ -56,26 +56,31 @@ public class CJKSearcher extends Searcher {
             AndItem replacement = new AndItem();
             for (ListIterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
                 Item item = i.next();
-                if (item instanceof WordItem) replacement.addItem(item);
-                else if (item instanceof PhraseSegmentItem) {
+                if (item instanceof WordItem)
+                    replacement.addItem(item);
+                else if (item instanceof PhraseSegmentItem)
                     replacement.addItem(new AndSegmentItem((PhraseSegmentItem) item));
-                }
-                else replacement.addItem(item); // should never run, but hey... just convert and hope it's OK :)
+                else
+                    replacement.addItem(item); // should never get here
             }
             return replacement;
-        } else if (root instanceof PhraseSegmentItem) {
+        }
+        else if (root instanceof PhraseSegmentItem) {
             PhraseSegmentItem asSegment = (PhraseSegmentItem) root;
-            if (asSegment.isExplicit() || hasOverlappingTokens(asSegment)) return root;
-            else return new AndSegmentItem(asSegment);
-        } else if (root instanceof SegmentItem) {
+            if (asSegment.isExplicit() || hasOverlappingTokens(asSegment))
+                return root;
+            else
+                return new AndSegmentItem(asSegment);
+        }
+        else if (root instanceof SegmentItem) {
             return root; // avoid descending into AndSegmentItems and similar
-        } else if (root instanceof CompositeItem) {
+        }
+        else if (root instanceof CompositeItem) {
             for (ListIterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
                 Item item = i.next();
                 Item transformedItem = transform(item);
-                if (item != transformedItem) {
+                if (item != transformedItem)
                     i.set(transformedItem);
-                }
             }
             return root;
         }
@@ -96,8 +101,7 @@ public class CJKSearcher extends Searcher {
      * We have overlapping tokens (see
      * com.yahoo.prelude.querytransform.test.CJKSearcherTestCase
      * .testCjkQueryWithOverlappingTokens and ParseTestCase for an explanation)
-     * if the sum of length of tokens is greater than the lenght of the original
-     * word
+     * if the sum of length of tokens is greater than the length of the original word
      */
     private boolean hasOverlappingTokens(PhraseSegmentItem segments) {
         int segmentsLength=0;

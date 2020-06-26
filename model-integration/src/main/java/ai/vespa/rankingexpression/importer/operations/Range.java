@@ -51,7 +51,7 @@ public class Range extends IntermediateOperation {
         delta = getConstantInput(2, "delta");
         elements = (long) Math.ceil((limit - start) / delta);
 
-        OrderedTensorType type = new OrderedTensorType.Builder()
+        OrderedTensorType type = new OrderedTensorType.Builder(inputs.get(0).type().get().type().valueType())
                 .add(TensorType.Dimension.indexed(vespaName(), elements))
                 .build();
         return type;

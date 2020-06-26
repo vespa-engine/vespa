@@ -123,13 +123,11 @@ public class Request extends AbstractResource {
 
     /**
      * Returns the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
-     * RequestHandler} for this Request
+     * RequestHandler} for this Request.
      *
      * @see #setUri(URI)
      */
-    public URI getUri() {
-        return uri;
-    }
+    public URI getUri() { return uri; }
 
     /**
      * Sets the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link

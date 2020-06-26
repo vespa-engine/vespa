@@ -234,7 +234,7 @@ public:
         uint32_t m = 16;
         index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
                                             std::make_unique<InvLogLevelGenerator>(m),
-                                            HnswIndex::Config(2*m, m, 200, true));
+                                            HnswIndex::Config(2*m, m, 200, 10, true));
     }
     size_t get_rnd(size_t size) {
         return rng.nextUniform() * size;

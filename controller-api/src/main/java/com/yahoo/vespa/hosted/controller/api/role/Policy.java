@@ -158,6 +158,11 @@ enum Policy {
                                     .on(PathGroup.billingToken)
                                     .in(SystemName.PublicCd)),
 
+    /** Ability to update tenant payment instrument */
+    planUpdate(Privilege.grant(Action.update)
+            .on(PathGroup.billingPlan)
+            .in(SystemName.PublicCd)),
+
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
                                     .on(PathGroup.billingList)

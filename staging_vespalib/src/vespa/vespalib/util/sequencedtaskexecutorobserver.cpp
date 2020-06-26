@@ -49,4 +49,9 @@ vespalib::ExecutorStats SequencedTaskExecutorObserver::getStats() {
     return _executor.getStats();
 }
 
+ISequencedTaskExecutor::ExecutorId
+SequencedTaskExecutorObserver::getExecutorId(uint64_t componentId) const {
+    return _executor.getExecutorId(componentId);
+}
+
 } // namespace search

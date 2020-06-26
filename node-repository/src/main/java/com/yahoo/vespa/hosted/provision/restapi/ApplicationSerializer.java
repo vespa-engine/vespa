@@ -35,16 +35,17 @@ public class ApplicationSerializer {
     }
 
     private static void clustersToSlime(Collection<Cluster> clusters, List<Node> applicationNodes, Cursor clustersObject) {
-        clusters.forEach(cluster -> toSlime(cluster, applicationNodes, clustersObject.setObject(cluster.id().value())));
+        clusters.forEach(cluster -> toSlime(cluster, applicationNodes, clustersObject));
     }
 
-    private static void toSlime(Cluster cluster, List<Node> applicationNodes, Cursor clusterObject) {
+    private static void toSlime(Cluster cluster, List<Node> applicationNodes, Cursor clustersObject) {
         List<Node> nodes = NodeList.copyOf(applicationNodes).not().retired().cluster(cluster.id()).asList();
         if (nodes.isEmpty()) return;
 
         int groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).resources());
 
+        Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
         toSlime(cluster.maxResources(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));

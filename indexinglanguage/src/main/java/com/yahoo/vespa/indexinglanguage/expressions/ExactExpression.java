@@ -27,24 +27,30 @@ public final class ExactExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext ctx) {
         StringFieldValue input = (StringFieldValue)ctx.getValue();
-        if (input.getString().isEmpty()) {
-            return;
-        }
+        if (input.getString().isEmpty()) return;
+
         StringFieldValue output = input.clone();
         ctx.setValue(output);
 
         String prev = output.getString();
         String next = toLowerCase(prev);
 
-        SpanList root = new SpanList();
-        SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS, root);
+        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
+        SpanList root;
+        if (tree == null) {
+            root = new SpanList();
+            tree = new SpanTree(SpanTrees.LINGUISTICS, root);
+            output.setSpanTree(tree);
+        }
+        else {
+            root = (SpanList)tree.getRoot();
+        }
         SpanNode node = new Span(0, prev.length());
         tree.annotate(node, new Annotation(AnnotationTypes.TERM,
                                            next.equals(prev) ? null : new StringFieldValue(next)));
         tree.annotate(node, new Annotation(AnnotationTypes.TOKEN_TYPE,
                                            new IntegerFieldValue(TokenType.ALPHABETIC.getValue())));
         root.add(node);
-        output.setSpanTree(tree);
     }
 
     @Override

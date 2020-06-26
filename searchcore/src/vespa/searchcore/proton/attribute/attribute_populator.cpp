@@ -18,8 +18,8 @@ class PopulateDoneContext : public IDestructorCallback
 {
     std::shared_ptr<document::Document> _doc;
 public:
-    PopulateDoneContext(const std::shared_ptr<document::Document> &doc)
-        : _doc(doc)
+    PopulateDoneContext(std::shared_ptr<document::Document> doc)
+        : _doc(std::move(doc))
     {
     }
     ~PopulateDoneContext() override = default;
@@ -40,6 +40,7 @@ AttributePopulator::getNames() const
     std::vector<search::AttributeGuard> attrs;
     _writer.getAttributeManager()->getAttributeList(attrs);
     std::vector<vespalib::string> names;
+    names.reserve(attrs.size());
     for (const search::AttributeGuard &attr : attrs) {
         names.push_back(_subDbName + ".attribute." + attr->getName());
     }

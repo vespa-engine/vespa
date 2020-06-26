@@ -26,6 +26,7 @@ const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add_dense({{"A", 2}, {"B", 1}, {"C", 3}, {"a", 2}, {"d", 3}})  // inner/inner
+        .add_dense({{"A", 2}, {"B", 1}, {"C", 3}, {"D", 1}, {"a", 2}, {"c", 1}, {"d", 3}, {"e", 1}}) // inner/inner, extra dims
         .add_dense({{"B", 1}, {"C", 3}, {"a", 2}, {"d", 3}})            // inner/inner, missing A
         .add_dense({{"A", 1}, {"a", 2}, {"d", 3}})                      // inner/inner, single mat
         .add_dense({{"A", 2}, {"D", 3}, {"a", 2}, {"b", 1}, {"c", 3}})  // inner/inner, inverted
@@ -107,6 +108,11 @@ TEST("require that multi matmul must have matching dimension prefix") {
 TEST("require that multi matmul must have inner nesting of matmul dimensions") {
     TEST_DO(verify_not_optimized("reduce(A2D3a2b1c3*B5D3a2b1c3,sum,D)"));
     TEST_DO(verify_not_optimized("reduce(B5D3a2b1c3*A2D3a2b1c3,sum,D)"));
+}
+
+TEST("require that multi matmul ignores trivial dimensions") {
+    TEST_DO(verify_optimized("reduce(A2B1C3D1a2c1d3e1*A2B1C3b5d3,sum,d)", 2, 3, 5, 6, true, true));
+    TEST_DO(verify_optimized("reduce(A2B1C3b5d3*A2B1C3D1a2c1d3e1,sum,d)", 2, 3, 5, 6, true, true));
 }
 
 TEST("require that multi matmul function can be debug dumped") {

@@ -103,6 +103,11 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
                                                                           other.parent.get().flavor().resources().storageType());
             if (storageCostDifference != 0)
                 return storageCostDifference;
+
+            // Prefer hosts that are at least twice the size of this node
+            // (utilization is more even if one application does not dominate the host)
+            if ( lessThanHalfTheHost(this) && ! lessThanHalfTheHost(other)) return -1;
+            if ( ! lessThanHalfTheHost(this) && lessThanHalfTheHost(other)) return 1;
         }
 
         int hostPriority = Double.compare(this.skewWithThis() - this.skewWithoutThis(),
@@ -127,6 +132,15 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     /** Returns the allocation skew of the parent of this after adding this node to it */
     double skewWithThis() { return skewWith(node.resources()); }
+
+    private boolean lessThanHalfTheHost(PrioritizableNode node) {
+        var n = node.node.resources();
+        var h = node.parent.get().resources();
+        if (h.vcpu()     < n.vcpu()     * 2) return false;
+        if (h.memoryGb() < n.memoryGb() * 2) return false;
+        if (h.diskGb()   < n.diskGb()   * 2) return false;
+        return true;
+    }
 
     private double skewWith(NodeResources resources) {
         if (parent.isEmpty()) return 0;

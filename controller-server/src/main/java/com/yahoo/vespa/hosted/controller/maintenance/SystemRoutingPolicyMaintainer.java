@@ -2,9 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
@@ -19,11 +16,8 @@ import java.time.Duration;
  */
 public class SystemRoutingPolicyMaintainer extends ControllerMaintainer {
 
-    private final BooleanFlag featureFlag;
-
     public SystemRoutingPolicyMaintainer(Controller controller, Duration interval) {
         super(controller, interval);
-        this.featureFlag = Flags.CONFIGSERVER_PROVISION_LB.bindTo(controller.flagSource());
     }
 
     @Override
@@ -31,7 +25,6 @@ public class SystemRoutingPolicyMaintainer extends ControllerMaintainer {
         for (var zone : controller().zoneRegistry().zones().all().ids()) {
             for (var application : SystemApplication.values()) {
                 if (!application.hasEndpoint()) continue;
-                if (!featureFlag.with(FetchVector.Dimension.ZONE_ID, zone.value()).value()) continue;
                 controller().routing().policies().refresh(application.id(), DeploymentSpec.empty, zone);
             }
         }

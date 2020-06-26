@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.Sets;
@@ -11,6 +11,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -623,6 +625,8 @@ public class ControllerTest {
         // Create application
         var context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("dev", "us-east-1");
+        tester.controllerTester().zoneRegistry()
+                .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
 
         // Deploy
         tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
@@ -631,6 +635,14 @@ public class ControllerTest {
         assertTrue("No job status added",
                    context.instanceJobs().isEmpty());
         assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context.application().deploymentSpec());
+
+        // Verify zone supports shared layer 4 and shared routing methods
+        Set<RoutingMethod> routingMethods = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
+                .asList()
+                .stream()
+                .map(Endpoint::routingMethod)
+                .collect(Collectors.toSet());
+        assertEquals(routingMethods, Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4));
     }
 
     @Test
@@ -813,7 +825,8 @@ public class ControllerTest {
                 // The 'east' global endpoint, pointing to zone 2 with exclusive routing
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3/dns-zone-1/prod.us-east-3")),
+                           new LatencyAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                                                  "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
                 new Record(Record.Type.CNAME,
