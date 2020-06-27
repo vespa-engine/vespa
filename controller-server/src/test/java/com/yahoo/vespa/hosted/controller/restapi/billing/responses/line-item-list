@@ -1,9 +1,0 @@
-{
-    "lineItems":[
-        {
-            "id":"line-item-id",
-            "description":"some description",
-            "amount":"123.45"
-        }
-    ]
-}
