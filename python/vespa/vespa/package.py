@@ -5,24 +5,6 @@ import docker
 from vespa.json_serialization import ToJson, FromJson
 
 
-class Document(object):
-    def __init__(self) -> None:
-        """
-        Object representing a Vespa document.
-
-        """
-        self.fields = []
-
-    def add_fields(self, *fields):
-        """
-        Add Fields to the document.
-
-        :param fields: fields to be added
-        :return:
-        """
-        self.fields.extend(list(fields))
-
-
 class Field(ToJson, FromJson["Field"]):
     def __init__(
         self,
@@ -71,6 +53,73 @@ class Field(ToJson, FromJson["Field"]):
             and self.indexing == other.indexing
             and self.index == other.index
         )
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+
+
+class Document(ToJson, FromJson["Document"]):
+    def __init__(self, fields: Optional[List[Field]] = None) -> None:
+        """
+        Object representing a Vespa document.
+
+        """
+        if not fields:
+            fields = []
+
+        self.fields = fields
+
+    def add_fields(self, *fields: Field):
+        """
+        Add Fields to the document.
+
+        :param fields: fields to be added
+        :return:
+        """
+        self.fields.extend(list(fields))
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "Document":
+        return Document(fields=[FromJson.map(field) for field in mapping.get("fields")])
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {"fields": [field.to_envelope for field in self.fields]}
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.fields == other.fields
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+
+
+class FieldSet(ToJson, FromJson["FieldSet"]):
+    def __init__(self, name: str, fields: List[str]) -> None:
+        """
+        A fieldset groups fields together for searching.
+
+        :param name: Name of the fieldset
+        :param fields: Field names to be included in the fieldset.
+        """
+        self.name = name
+        self.fields = fields
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "FieldSet":
+        return FieldSet(name=mapping["name"], fields=mapping["fields"])
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {"name": self.name, "fields": self.fields}
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name and self.fields == other.fields
 
     def __repr__(self):
         return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
