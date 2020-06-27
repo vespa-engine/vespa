@@ -5,6 +5,8 @@
 #include <vespa/searchlib/attribute/document_weight_or_filter_search.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/common/bitvector.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 
 using PostingList = search::attribute::PostingListTraits<int32_t>::PostingStoreBase;
 using Iterator = search::attribute::PostingListTraits<int32_t>::const_iterator;
@@ -20,7 +22,7 @@ class DocumentWeightOrFilterSearchTest : public ::testing::Test {
     std::vector<EntryRef> _trees;
     uint32_t _range_start;
     uint32_t _range_end;
-protected:
+public:
     DocumentWeightOrFilterSearchTest();
     ~DocumentWeightOrFilterSearchTest();
     void inc_generation();
@@ -46,6 +48,13 @@ protected:
             adds.emplace_back(KeyData(key, 1));
         }
         _postings.apply(_trees[idx], &*adds.begin(), &*adds.end(), &*removes.begin(), &*removes.end());
+    }
+
+    void clear_tree(size_t idx) {
+        if (idx < _trees.size()) {
+            _postings.clear(_trees[idx]);
+            _trees[idx] = EntryRef();
+        }
     }
 
     std::unique_ptr<SearchIterator> make_iterator() const {
@@ -198,6 +207,55 @@ TEST_F(DocumentWeightOrFilterSearchTest, taat_and_hits_into_ranged)
     auto bv = tobv({13, 14});
     make_iterator()->and_hits_into(*bv, get_range_start());
     expect_result(frombv(*bv), { 14 });
+}
+
+namespace {
+
+class Verifier : public search::test::SearchIteratorVerifier {
+    DocumentWeightOrFilterSearchTest &_test;
+public:
+    Verifier(DocumentWeightOrFilterSearchTest &test, int num_trees)
+        : _test(test)
+    {
+        std::vector<std::vector<uint32_t>> trees(num_trees);
+        uint32_t tree_id = 0;
+        for (const auto doc_id : getExpectedDocIds()) {
+            trees[tree_id++ % trees.size()].emplace_back(doc_id);
+        }
+        tree_id = 0;
+        for (const auto &tree : trees) {
+            _test.add_tree(tree_id++, tree);
+        }
+        _test.inc_generation();
+    }
+    ~Verifier() {
+        for (uint32_t tree_id = 0; tree_id < _test.num_trees(); ++tree_id) {
+            _test.clear_tree(tree_id);
+        }
+        _test.inc_generation();
+    }
+    std::unique_ptr<SearchIterator> create(bool) const override {
+        return _test.make_iterator();
+    }
+
+};
+
+TEST_F(DocumentWeightOrFilterSearchTest, iterator_conformance)
+{
+    {
+        Verifier verifier(*this, 1);
+        verifier.verify();
+    }
+    {
+        Verifier verifier(*this, 2);
+        verifier.verify();
+    }
+    {
+        Verifier verifier(*this, 3);
+        verifier.verify();
+    }
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

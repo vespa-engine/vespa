@@ -2,7 +2,14 @@
 
 #include "searchiteratorverifier.h"
 #include "initrange.h"
+#ifdef ENABLE_GTEST_MIGRATION
+#include <vespa/vespalib/gtest/gtest.h>
+#define TEST_DO(x) x
+#define EXPECT_EQUAL EXPECT_EQ
+#define ASSERT_EQUAL ASSERT_EQ
+#else
 #include <vespa/vespalib/testkit/test_kit.h>
+#endif
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <vespa/searchlib/queryeval/termwise_search.h>
