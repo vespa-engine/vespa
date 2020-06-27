@@ -87,19 +87,24 @@ public class Gather extends IntermediateOperation {
             addSliceDimension(dataSliceDimensions, dataType.dimensions().get(i).name(), i);
         }
 
-        List<Slice.DimensionValue<Reference>> indicesSliceDimensions = new ArrayList<>();
-        for (int i = 0; i < indicesType.rank(); ++i) {
-            addSliceDimension(indicesSliceDimensions, indicesType.dimensions().get(i).name(), axis + i);
+        if (indicesType.rank() == 0 && indices.isConstant()) {
+            ExpressionNode indexExpression = new ConstantNode(new DoubleValue(indices.getConstantValue().get().asDouble()));
+            addSliceDimension(dataSliceDimensions, dataType.dimensions().get(axis).name(), indexExpression);
+        } else {
+            List<Slice.DimensionValue<Reference>> indicesSliceDimensions = new ArrayList<>();
+            for (int i = 0; i < indicesType.rank(); ++i) {
+                addSliceDimension(indicesSliceDimensions, indicesType.dimensions().get(i).name(), axis + i);
+            }
+            ExpressionNode sliceExpression = createSliceExpression(indicesSliceDimensions, indicesFunctionName);
+            ExpressionNode indexExpression = createIndexExpression(dataType, sliceExpression);
+            addSliceDimension(dataSliceDimensions, dataType.dimensions().get(axis).name(), indexExpression);
         }
-        ExpressionNode sliceExpression = createSliceExpression(indicesSliceDimensions, indicesFunctionName);
-        ExpressionNode indexExpression = createIndexExpression(dataType, sliceExpression);
-        addSliceDimension(dataSliceDimensions, dataType.dimensions().get(axis).name(), indexExpression);
 
         for (int i = axis + 1; i < dataType.rank(); ++i) {
             addSliceDimension(dataSliceDimensions, dataType.dimensions().get(i).name(), i + indicesType.rank() - 1);
         }
 
-        sliceExpression = createSliceExpression(dataSliceDimensions, dataFunctionName);
+        ExpressionNode sliceExpression = createSliceExpression(dataSliceDimensions, dataFunctionName);
         return Generate.bound(type.type(), wrapScalar(sliceExpression));
     }
 
