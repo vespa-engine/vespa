@@ -67,7 +67,6 @@ public enum RoleDefinition {
                   Policy.paymentInstrumentUpdate,
                   Policy.paymentInstrumentDelete,
                   Policy.paymentInstrumentCreate,
-                  Policy.planUpdate,
                   Policy.billingInformationRead),
 
     /** Headless — the application specific role identified by deployment keys for production */

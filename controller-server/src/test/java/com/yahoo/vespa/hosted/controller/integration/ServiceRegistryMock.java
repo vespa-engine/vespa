@@ -12,14 +12,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.NoopApplicationRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanController;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
@@ -60,7 +60,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final ApplicationRoleService applicationRoleService = new NoopApplicationRoleService();
-    private final BillingController billingController = new MockBillingController();
+    private final PlanController planController = (tenantName) -> null;
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -187,11 +187,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return systemMonitor;
     }
 
-    @Override
-    public BillingController billingController() {
-        return billingController;
-    }
-
     public ConfigServerMock configServerMock() {
         return configServerMock;
     }
@@ -206,6 +201,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public EndpointCertificateMock endpointCertificateMock() {
         return endpointCertificateMock;
+    }
+
+    @Override
+    public PlanController planController() {
+        return planController;
     }
 
 }
