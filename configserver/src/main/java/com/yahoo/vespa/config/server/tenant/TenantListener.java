@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 
 /**
  * Interface for something that listens for created and deleted tenants.

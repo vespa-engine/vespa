@@ -16,7 +16,7 @@ import java.time.Instant;
  * @author vegardh
  * @author Ulf Lilleengen
  */
-public class Tenant implements TenantHandlerProvider {
+public class Tenant {
 
     static final String SESSIONS = "sessions";
     static final String APPLICATIONS = "applications";

@@ -40,7 +40,6 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.rpc.security.RpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.filedistribution.FileDownloader;
@@ -413,7 +412,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     Optional<RequestHandler> getRequestHandler(TenantName tenant) {
         return Optional.ofNullable(tenants.get(tenant))
-                .map(TenantHandlerProvider::getRequestHandler);
+                .map(Tenant::getRequestHandler);
     }
 
     void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
