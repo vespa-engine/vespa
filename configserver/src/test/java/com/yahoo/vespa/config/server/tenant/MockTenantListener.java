@@ -7,16 +7,13 @@ import com.yahoo.config.provision.TenantName;
  * @author Ulf Lilleengen
  */
 public class MockTenantListener implements TenantListener {
+
     TenantName tenantCreatedName;
-    TenantHandlerProvider provider;
     TenantName tenantDeletedName;
     boolean tenantsLoaded;
 
     @Override
-    public void onTenantCreate(TenantName tenantName, TenantHandlerProvider provider) {
-        this.tenantCreatedName = tenantName;
-        this.provider = provider;
-    }
+    public void onTenantCreate(Tenant tenant) { this.tenantCreatedName = tenant.getName(); }
 
     @Override
     public void onTenantDelete(TenantName tenantName) {

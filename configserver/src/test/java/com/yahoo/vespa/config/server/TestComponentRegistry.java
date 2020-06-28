@@ -170,6 +170,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
+        public Builder configDefinitionRepo(ConfigDefinitionRepo configDefinitionRepo) {
+            this.defRepo = configDefinitionRepo;
+            return this;
+        }
+
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));

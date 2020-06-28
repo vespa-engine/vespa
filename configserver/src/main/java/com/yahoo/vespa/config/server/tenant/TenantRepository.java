@@ -255,7 +255,7 @@ public class TenantRepository {
 
     private void notifyNewTenant(Tenant tenant) {
         for (TenantListener listener : tenantListeners) {
-            listener.onTenantCreate(tenant.getName(), tenant);
+            listener.onTenantCreate(tenant);
         }
     }
 

@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.rpc.security.RpcAuthorizer;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -83,7 +84,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private static final int JRT_RPC_TRANSPORT_THREADS = threadsToUse();
 
     private final Supervisor supervisor = new Supervisor(new Transport(JRT_RPC_TRANSPORT_THREADS));
-    private Spec spec;
+    private final Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
     private final boolean canReturnEmptySentinelConfig;
@@ -93,7 +94,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final DelayedConfigResponses delayedConfigResponses;
 
     private final HostRegistry<TenantName> hostRegistry;
-    private final Map<TenantName, TenantHandlerProvider> tenantProviders = new ConcurrentHashMap<>();
+    private final Map<TenantName, Tenant> tenants = new ConcurrentHashMap<>();
     private final Map<ApplicationId, ApplicationState> applicationStateMap = new ConcurrentHashMap<>();
     private final SuperModelRequestHandler superModelRequestHandler;
     private final MetricUpdater metrics;
@@ -395,7 +396,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
         Optional<RequestHandler> requestHandler = getRequestHandler(tenant);
         if (requestHandler.isEmpty()) {
-            String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
+            String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant '" + tenant  +
+                         "'. Request from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(Level.WARNING, msg);
@@ -410,7 +412,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     Optional<RequestHandler> getRequestHandler(TenantName tenant) {
-        return Optional.ofNullable(tenantProviders.get(tenant))
+        return Optional.ofNullable(tenants.get(tenant))
                 .map(TenantHandlerProvider::getRequestHandler);
     }
 
@@ -421,7 +423,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void onTenantDelete(TenantName tenant) {
         log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
-        tenantProviders.remove(tenant);
+        tenants.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);
     }
 
@@ -432,9 +434,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     @Override
-    public void onTenantCreate(TenantName tenant, TenantHandlerProvider tenantHandlerProvider) {
-        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
-        tenantProviders.put(tenant, tenantHandlerProvider);
+    public void onTenantCreate(Tenant tenant) {
+        tenants.put(tenant.getName(), tenant);
     }
 
     /** Returns true only after all tenants are loaded */
@@ -455,7 +456,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
-    class ChunkedFileReceiver implements FileServer.Receiver {
+    static class ChunkedFileReceiver implements FileServer.Receiver {
         Target target;
         ChunkedFileReceiver(Target target) {
             this.target = target;
