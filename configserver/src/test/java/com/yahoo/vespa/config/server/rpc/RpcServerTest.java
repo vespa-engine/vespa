@@ -52,7 +52,7 @@ public class RpcServerTest {
 
     @Test
     public void testRpcServer() throws IOException, SAXException, InterruptedException {
-        try (RpcTester tester = new RpcTester(temporaryFolder)) {
+        try (RpcTester tester = new RpcTester(ApplicationId.defaultId(), temporaryFolder)) {
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
@@ -79,7 +79,7 @@ public class RpcServerTest {
     @Test
     public void testEmptySentinelConfigWhenAppDeletedOnHostedVespa() throws IOException, InterruptedException {
         ConfigserverConfig.Builder configBuilder = new ConfigserverConfig.Builder().canReturnEmptySentinelConfig(true);
-        try (RpcTester tester = new RpcTester(temporaryFolder, configBuilder)) {
+        try (RpcTester tester = new RpcTester(ApplicationId.defaultId(), temporaryFolder, configBuilder)) {
             tester.rpcServer().onTenantDelete(TenantName.defaultName());
             tester.rpcServer().onTenantsLoaded();
             JRTClientConfigRequest clientReq = createSentinelRequest();

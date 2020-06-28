@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -58,21 +59,21 @@ public class RpcTester implements AutoCloseable {
     private Thread t;
     private Supervisor sup;
 
-    private List<Integer> allocatedPorts;
+    private final List<Integer> allocatedPorts;
 
     private final TemporaryFolder temporaryFolder;
     private final ConfigserverConfig configserverConfig;
 
-    RpcTester(TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
-        this(temporaryFolder, new ConfigserverConfig.Builder());
+    RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
+        this(applicationId, temporaryFolder, new ConfigserverConfig.Builder());
     }
 
-    RpcTester(TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
+    RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
         this.temporaryFolder = temporaryFolder;
         allocatedPorts = new ArrayList<>();
         int port = allocatePort();
         spec = createSpec(port);
-        tenantProvider = new MockTenantProvider();
+        tenantProvider = new MockTenantProvider(applicationId);
         generationCounter = new MemoryGenerationCounter();
         configBuilder.rpcport(port);
         configserverConfig = new ConfigserverConfig(configBuilder);

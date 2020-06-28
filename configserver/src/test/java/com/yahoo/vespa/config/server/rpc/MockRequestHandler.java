@@ -28,13 +28,15 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
 
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
     public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>();
+    private final ApplicationId applicationId;
     private final boolean pretendToHaveLoadedAnyApplication;
 
-    public MockRequestHandler() {
-        this(false);
+    public MockRequestHandler(ApplicationId applicationId) {
+        this(applicationId, false);
     }
 
-    public MockRequestHandler(boolean pretendToHaveLoadedAnyApplication) {
+    public MockRequestHandler(ApplicationId applicationId, boolean pretendToHaveLoadedAnyApplication) {
+        this.applicationId = applicationId;
         this.pretendToHaveLoadedAnyApplication = pretendToHaveLoadedAnyApplication;
     }
 
@@ -88,7 +90,7 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
 
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
-        return ApplicationId.defaultId();
+        return applicationId;
     }
 
     @Override
