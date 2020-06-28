@@ -13,11 +13,7 @@ public class MockTenantProvider implements TenantHandlerProvider {
     private final MockRequestHandler requestHandler;
 
     public MockTenantProvider(ApplicationId applicationId) {
-        this(applicationId, false);
-    }
-
-    public MockTenantProvider(ApplicationId applicationId, boolean pretendToHaveLoadedAnyApplication) {
-        this.requestHandler = new MockRequestHandler(applicationId, pretendToHaveLoadedAnyApplication);
+        this.requestHandler = new MockRequestHandler(applicationId);
     }
 
     @Override

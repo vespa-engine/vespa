@@ -29,15 +29,9 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
     public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>();
     private final ApplicationId applicationId;
-    private final boolean pretendToHaveLoadedAnyApplication;
 
     public MockRequestHandler(ApplicationId applicationId) {
-        this(applicationId, false);
-    }
-
-    public MockRequestHandler(ApplicationId applicationId, boolean pretendToHaveLoadedAnyApplication) {
         this.applicationId = applicationId;
-        this.pretendToHaveLoadedAnyApplication = pretendToHaveLoadedAnyApplication;
     }
 
     @Override
@@ -84,7 +78,6 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
 
     @Override
     public boolean hasApplication(ApplicationId appId, Optional<Version> vespaVersion) {
-        if (pretendToHaveLoadedAnyApplication) return true;
         return responses.containsKey(appId);
     }
 
