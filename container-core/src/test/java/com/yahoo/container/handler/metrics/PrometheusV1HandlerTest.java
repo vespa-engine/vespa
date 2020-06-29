@@ -97,15 +97,11 @@ public class PrometheusV1HandlerTest {
     }
 
     @Test
-    public void invalid_path_yields_error_response() {
+    public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(V1_URI + "/invalid").readAll();
-        try {
-            JSONObject root = new JSONObject(response);
-            assertTrue(root.has("error"));
-            assertTrue(root.getString("error" ).startsWith("No content"));
-        } catch (JSONException e) {
-            fail();
-        }
+        JSONObject root = new JSONObject(response);
+        assertTrue(root.has("error"));
+        assertTrue(root.getString("error" ).startsWith("No content"));
     }
 
     @Test
@@ -115,7 +111,7 @@ public class PrometheusV1HandlerTest {
     }
 
     @Test
-    public void consumer_is_propagated_to_metrics_proxy_api() throws JSONException {
+    public void consumer_is_propagated_to_metrics_proxy_api() {
         String response = testDriver.sendRequest(VALUES_URI + consumerQuery(CUSTOM_CONSUMER)).readAll();
 
         assertTrue(response.contains(REPLACED_CPU_METRIC));
