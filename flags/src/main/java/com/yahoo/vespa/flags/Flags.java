@@ -289,6 +289,12 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
+            "enable-public-only", false,
+            "Only access public hosts from container",
+            "Takes effect on next tick"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
