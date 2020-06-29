@@ -41,7 +41,7 @@ public class HttpGetConfigHandlerTest {
 
     @Before
     public void setUp() {
-        mockRequestHandler = new MockRequestHandler();
+        mockRequestHandler = new MockRequestHandler(ApplicationId.defaultId());
         mockRequestHandler.setAllConfigs(new HashSet<>() {{
             add(new ConfigKey<>("bar", "myid", "foo"));
         }} );

@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -24,18 +23,14 @@ import java.util.Set;
  *
  * @author Ulf Lilleengen
  */
-public class MockRequestHandler implements RequestHandler, ReloadHandler, TenantHandlerProvider {
+public class MockRequestHandler implements RequestHandler, ReloadHandler {
 
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
     public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>();
-    private final boolean pretendToHaveLoadedAnyApplication;
+    private final ApplicationId applicationId;
 
-    public MockRequestHandler() {
-        this(false);
-    }
-
-    public MockRequestHandler(boolean pretendToHaveLoadedAnyApplication) {
-        this.pretendToHaveLoadedAnyApplication = pretendToHaveLoadedAnyApplication;
+    public MockRequestHandler(ApplicationId applicationId) {
+        this.applicationId = applicationId;
     }
 
     @Override
@@ -82,13 +77,12 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
 
     @Override
     public boolean hasApplication(ApplicationId appId, Optional<Version> vespaVersion) {
-        if (pretendToHaveLoadedAnyApplication) return true;
         return responses.containsKey(appId);
     }
 
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
-        return ApplicationId.defaultId();
+        return applicationId;
     }
 
     @Override
@@ -96,9 +90,6 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
         return Set.of();
     }
 
-    @Override
-    public RequestHandler getRequestHandler() {
-        return this;
-    }
+    public RequestHandler getRequestHandler() { return this; }
 
 }

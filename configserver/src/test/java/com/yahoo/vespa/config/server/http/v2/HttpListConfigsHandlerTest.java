@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -39,7 +40,7 @@ public class HttpListConfigsHandlerTest {
 
     @Before
     public void setUp() {
-        mockRequestHandler = new MockRequestHandler();
+        mockRequestHandler = new MockRequestHandler(ApplicationId.defaultId());
         mockRequestHandler.setAllConfigs(new HashSet<>() {{
             add(new ConfigKey<>("bar", "conf/id", "foo"));
         }} );

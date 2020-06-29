@@ -525,7 +525,7 @@ public class SessionRepository {
         if (! sourceDir.isDirectory())
             throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
 
-        // Copy app it atomically: Copy to default tmp dir and move to destination
+        // Copy app atomically: Copy to a temp dir and move to destination
         java.nio.file.Path tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
         log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
         IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());

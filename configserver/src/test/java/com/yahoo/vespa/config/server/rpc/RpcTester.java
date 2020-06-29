@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -12,23 +13,28 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
 import com.yahoo.vespa.config.server.SuperModelManager;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
-import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,32 +56,46 @@ public class RpcTester implements AutoCloseable {
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
     private final String myHostname = HostName.getLocalhost();
     private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
-    private final MockTenantProvider tenantProvider;
     private final GenerationCounter generationCounter;
     private final Spec spec;
 
     private RpcServer rpcServer;
     private Thread t;
     private Supervisor sup;
+    private final ApplicationId applicationId;
+    private final TenantName tenantName;
+    private final TenantRepository tenantRepository;
 
-    private List<Integer> allocatedPorts;
-
+    private final ApplicationRepository applicationRepository;
+    private final List<Integer> allocatedPorts = new ArrayList<>();
     private final TemporaryFolder temporaryFolder;
     private final ConfigserverConfig configserverConfig;
 
-    RpcTester(TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
-        this(temporaryFolder, new ConfigserverConfig.Builder());
+    RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
+        this(applicationId, temporaryFolder, new ConfigserverConfig.Builder());
     }
 
-    RpcTester(TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
+    RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
         this.temporaryFolder = temporaryFolder;
-        allocatedPorts = new ArrayList<>();
+        this.applicationId = applicationId;
+        this.tenantName = applicationId.tenant();
         int port = allocatePort();
         spec = createSpec(port);
-        tenantProvider = new MockTenantProvider();
-        generationCounter = new MemoryGenerationCounter();
-        configBuilder.rpcport(port);
+        configBuilder.rpcport(port)
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath());
         configserverConfig = new ConfigserverConfig(configBuilder);
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .configDefinitionRepo(new TestConfigDefinitionRepo())
+                .configServerConfig(configserverConfig)
+                .build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(tenantName);
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          new SessionHandlerTest.MockProvisioner(),
+                                                          new OrchestratorMock(),
+                                                          Clock.systemUTC());
+        generationCounter = new MemoryGenerationCounter();
         createAndStartRpcServer();
         assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
     }
@@ -93,6 +113,9 @@ public class RpcTester implements AutoCloseable {
     }
 
     void createAndStartRpcServer() throws IOException {
+        HostRegistries hostRegistries = new HostRegistries();
+        hostRegistries.createApplicationHostRegistry(tenantName).update(applicationId, List.of("localhost"));
+        hostRegistries.getTenantHostRegistry().update(tenantName, List.of("localhost"));
         rpcServer = new RpcServer(configserverConfig,
                                   new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                                configserverConfig,
@@ -101,11 +124,13 @@ public class RpcTester implements AutoCloseable {
                                                                        Zone.defaultZone()   ,
                                                                        generationCounter,
                                                                        new InMemoryFlagSource())),
-                                  Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder()),
+                                  Metrics.createTestMetrics(),
+                                  hostRegistries,
+                                  hostLivenessTracker,
+                                  new FileServer(temporaryFolder.newFolder()),
                                   new NoopRpcAuthorizer(),
                                   new RpcRequestHandlerProvider());
-        rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
+        rpcServer.onTenantCreate(tenantRepository.getTenant(tenantName));
         t = new Thread(rpcServer);
         t.start();
         sup = new Supervisor(new Transport());
@@ -148,8 +173,8 @@ public class RpcTester implements AutoCloseable {
         return rpcServer;
     }
 
-    TenantHandlerProvider tenantProvider() {
-        return tenantProvider;
-    }
+    Tenant tenant() { return tenantRepository.getTenant(tenantName); }
+
+    public ApplicationRepository applicationRepository() { return applicationRepository; }
 
 }

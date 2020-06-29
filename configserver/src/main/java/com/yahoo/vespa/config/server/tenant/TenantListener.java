@@ -2,22 +2,19 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 
 /**
  * Interface for something that listens for created and deleted tenants.
  *
  * @author Ulf Lilleengen
- * @since 5.8
  */
 public interface TenantListener {
     /**
      * Called whenever a new tenant is created.
      *
-     * @param tenant name of newly created tenant.
-     * @param provider provider of request and reload handlers for new tenant.
+     * @param tenant newly created tenant.
      */
-    void onTenantCreate(TenantName tenant, TenantHandlerProvider provider);
+    void onTenantCreate(Tenant tenant);
 
     /**
      * Called whenever a tenant is deleted.
