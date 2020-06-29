@@ -86,23 +86,29 @@ namespace {
         }
     };
 
-    void buildValidNodeIndexList(BucketDatabase::Entry& e, std::vector<uint16_t>& result) {
+    std::vector<uint16_t>
+    buildValidNodeIndexList(BucketDatabase::Entry& e) {
+        std::vector<uint16_t> result;
+        result.reserve(e->getNodeCount());
         for (uint32_t i=0, n=e->getNodeCount(); i < n; ++i) {
             const BucketCopy& cp = e->getNodeRef(i);
             if (!cp.valid()) continue;
             result.push_back(cp.getNode());
         }
+        return result;
     }
 
-    void buildNodeList(BucketDatabase::Entry& e,
-                       const std::vector<uint16_t>& nodeIndexes,
-                       const std::vector<uint16_t>& idealState,
-                       std::vector<ActiveCopy>& result)
+    std::vector<ActiveCopy>
+    buildNodeList(BucketDatabase::Entry& e,
+                  const std::vector<uint16_t>& nodeIndexes,
+                  const std::vector<uint16_t>& idealState)
     {
+        std::vector<ActiveCopy> result;
         result.reserve(nodeIndexes.size());
         for (uint16_t nodeIndex : nodeIndexes) {
             result.emplace_back(nodeIndex, e, idealState);
         }
+        return result;
     }
 }
 
@@ -119,8 +125,7 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
                       BucketDatabase::Entry& e)
 {
     DEBUG(std::cerr << "Ideal state is " << idealState << "\n");
-    std::vector<uint16_t> validNodesWithCopy;
-    buildValidNodeIndexList(e, validNodesWithCopy);
+    std::vector<uint16_t> validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
@@ -134,8 +139,7 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     std::vector<ActiveCopy> result;
     result.reserve(groups.size());
     for (uint32_t i=0; i<groups.size(); ++i) {
-        std::vector<ActiveCopy> entries;
-        buildNodeList(e, groups[i], idealState, entries);
+        std::vector<ActiveCopy> entries = buildNodeList(e, groups[i], idealState);
         DEBUG(std::cerr << "Finding active for group " << entries << "\n");
         auto best = std::min_element(entries.begin(), entries.end(), ActiveStateOrder());
         DEBUG(std::cerr << "Best copy " << *best << "\n");

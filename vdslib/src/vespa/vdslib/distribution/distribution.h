@@ -33,8 +33,9 @@ public:
     enum DiskDistribution { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID };
 
 private:
-    std::vector<uint32_t> _distributionBitMasks;
-    std::unique_ptr<Group> _nodeGraph;
+    std::vector<uint32_t>      _distributionBitMasks;
+    std::unique_ptr<Group>     _nodeGraph;
+    std::vector<const Group *> _node2Group;
     uint16_t _redundancy;
     uint16_t _initialRedundancy;
     uint16_t _readyCopies;
