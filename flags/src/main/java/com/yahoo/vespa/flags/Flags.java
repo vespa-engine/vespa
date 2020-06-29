@@ -292,8 +292,7 @@ public class Flags {
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             "Only access public hosts from container",
-            "Takes effect on next tick",
-            ZONE_ID
+            "Takes effect on next tick"
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
