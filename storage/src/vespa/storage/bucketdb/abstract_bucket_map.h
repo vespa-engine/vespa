@@ -155,8 +155,8 @@ public:
     /**
      * Iterate over the entire database contents, holding the global database
      * mutex for `chunkSize` processed entries at a time, yielding the current
-     * thread between each such such to allow other threads to get a chance
-     * at acquiring a bucket lock.
+     * thread between each chunk to allow other threads to get a chance at
+     * acquiring a bucket lock.
      *
      * TODO deprecate in favor of snapshotting once fully on B-tree DB
      *

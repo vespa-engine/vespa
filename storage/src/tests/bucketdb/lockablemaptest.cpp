@@ -6,7 +6,6 @@
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".lockable_map_test");
@@ -79,11 +78,11 @@ TYPED_TEST(LockableMapTest, simple_usage) {
     EXPECT_EQ(false, preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
     EXPECT_EQ(false, preExisted);
-    EXPECT_THAT(map, SizeIs(3));
+    EXPECT_EQ(map.size(), 3);
 
     map.insert(11, A(4, 7, 0), "foo", preExisted);
     EXPECT_EQ(true, preExisted);
-    EXPECT_THAT(map, SizeIs(3));
+    EXPECT_EQ(map.size(), 3);
     EXPECT_FALSE(map.empty());
 
     // Access some elements
@@ -93,14 +92,14 @@ TYPED_TEST(LockableMapTest, simple_usage) {
 
     // Do removes
     EXPECT_EQ(map.erase(12, "foo"), 0);
-    EXPECT_THAT(map, SizeIs(3));
+    EXPECT_EQ(map.size(), 3);
 
     EXPECT_EQ(map.erase(14, "foo"), 1);
-    EXPECT_THAT(map, SizeIs(2));
+    EXPECT_EQ(map.size(), 2);
 
     EXPECT_EQ(map.erase(11, "foo"), 1);
     EXPECT_EQ(map.erase(16, "foo"), 1);
-    EXPECT_THAT(map, SizeIs(0));
+    EXPECT_EQ(map.size(), 0);
     EXPECT_TRUE(map.empty());
 }
 
@@ -721,7 +720,7 @@ TYPED_TEST(LockableMapTest, is_consistent) {
     }
 }
 
-TYPED_TEST(LockableMapTest, get_without_auto_create_does_implicitly_not_lock_bucket) {
+TYPED_TEST(LockableMapTest, get_without_auto_create_does_not_implicitly_lock_bucket) {
     TypeParam map;
     BucketId id(16, 0x00001);
 

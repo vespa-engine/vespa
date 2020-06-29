@@ -40,11 +40,11 @@ struct BTreeLockableMap<T>::ValueTraits {
     static ValueType make_invalid_value() {
         return ValueType();
     }
-    static uint64_t store_and_wrap_value(DataStoreType& store, const ValueType& value) noexcept {
+    static uint64_t wrap_and_store_value(DataStoreType& store, const ValueType& value) noexcept {
         return store.addEntry(value).ref();
     }
     static void remove_by_wrapped_value(DataStoreType& store, uint64_t value) noexcept {
-        store.freeElem(entry_ref_from_value(value), 1);
+        store.holdElem(entry_ref_from_value(value), 1);
     }
     static ValueType unwrap_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key, uint64_t value) {
         return store.getEntry(entry_ref_from_value(value));
@@ -142,9 +142,7 @@ template <typename T>
 size_t BTreeLockableMap<T>::getMemoryUsage() const noexcept {
     std::lock_guard guard(_lock);
     const auto impl_usage = _impl->memory_usage();
-    return (impl_usage.allocatedBytes() + impl_usage.usedBytes() +
-            impl_usage.deadBytes() + impl_usage.allocatedBytesOnHold() +
-            _lockedKeys.getMemoryUsage() +
+    return (impl_usage.allocatedBytes() + _lockedKeys.getMemoryUsage() +
             sizeof(std::mutex) + sizeof(std::condition_variable));
 }
 
@@ -218,7 +216,7 @@ void BTreeLockableMap<T>::insert(const key_type& key, const mapped_type& value,
 
 template <typename T>
 void BTreeLockableMap<T>::clear() {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _impl->clear();
 }
 
@@ -278,7 +276,7 @@ void BTreeLockableMap<T>::do_for_each_mutable(std::function<Decision(uint64_t, m
         if (findNextKey(key, val, clientId, guard) || key > last) {
             return;
         }
-        Decision d(func(const_cast<const key_type&>(key), val));
+        Decision d(func(key, val));
         if (handleDecision(key, val, d)) {
             return;
         }
@@ -299,7 +297,7 @@ void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const map
         if (findNextKey(key, val, clientId, guard) || key > last) {
             return;
         }
-        Decision d(func(const_cast<const key_type&>(key), val));
+        Decision d(func(key, val));
         assert(d == Decision::ABORT || d == Decision::CONTINUE);
         if (handleDecision(key, val, d)) {
             return;

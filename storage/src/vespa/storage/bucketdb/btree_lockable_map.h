@@ -18,6 +18,11 @@ namespace storage::bucketdb {
 
 template <typename DataStoreTraitsT> class GenericBTreeBucketDatabase;
 
+/*
+ * AbstractBucketMap implementation that uses a B-tree bucket database backing structure.
+ *
+ * Identical global and per-bucket locking semantics as LockableMap.
+ */
 template <typename T>
 class BTreeLockableMap : public AbstractBucketMap<T> {
     struct ValueTraits;

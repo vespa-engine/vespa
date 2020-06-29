@@ -186,7 +186,7 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(
         auto candidate = BucketId(BucketId::keyToBucketId(iter.getKey()));
         if (candidate.contains(bucket)) {
             assert(candidate.getUsedBits() >= bits);
-            func(iter.getKey(), entry_from_iterator(iter));
+            func(iter.getKey(), const_value_ref_from_valid_iterator(iter));
         }
         bits = next_parent_bit_seek_level(bits, candidate, bucket);
         const auto parent_key = BucketId(bits, bucket.getRawId()).toKey();
@@ -272,7 +272,7 @@ template <typename DataStoreTraitsT>
 bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update_by_raw_key(uint64_t bucket_key,
                                                                      const ValueType& new_entry)
 {
-    const auto new_value = DataStoreTraitsT::store_and_wrap_value(_store, new_entry);
+    const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, new_entry);
     auto iter = _tree.lowerBound(bucket_key);
     const bool pre_existed = (iter.valid() && (iter.getKey() == bucket_key));
     if (pre_existed) {
@@ -421,7 +421,7 @@ struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
     void insert_before_current(const BucketId& bucket_id, const ValueType& e) override {
         const uint64_t bucket_key = bucket_id.toKey();
         assert(bucket_key < _current_key);
-        const auto new_value = DataStoreTraitsT::store_and_wrap_value(_db.store(), e);
+        const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
         _builder.insert(bucket_key, new_value);
     }
 
@@ -450,7 +450,7 @@ struct BTreeTrailingInserter final : TrailingInserter<typename DataStoreTraitsT:
 
     void insert_at_end(const BucketId& bucket_id, const ValueType& e) override {
         const uint64_t bucket_key = bucket_id.toKey();
-        const auto new_value = DataStoreTraitsT::store_and_wrap_value(_db.store(), e);
+        const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
         _builder.insert(bucket_key, new_value);
     }
 };
@@ -475,7 +475,7 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::merge(MergingProcessor<ValueT
             assert(merger._valid_cached_value); // Must actually have been touched
             assert(merger._cached_value.valid());
             DataStoreTraitsT::remove_by_wrapped_value(_store, value);
-            const auto new_value = DataStoreTraitsT::store_and_wrap_value(_store, merger._cached_value);
+            const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, merger._cached_value);
             builder.insert(key, new_value);
         } else if (result == MergingProcessor<ValueType>::Result::Skip) {
             DataStoreTraitsT::remove_by_wrapped_value(_store, value);

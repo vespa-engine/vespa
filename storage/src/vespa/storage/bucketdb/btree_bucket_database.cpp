@@ -591,7 +591,7 @@ struct BTreeBucketDatabase2 {
         static ValueType make_invalid_value() {
             return Entry::createInvalid();
         }
-        static uint64_t store_and_wrap_value(DataStoreType& store, const Entry& entry) noexcept {
+        static uint64_t wrap_and_store_value(DataStoreType& store, const Entry& entry) noexcept {
             auto replicas_ref = store.add(entry.getBucketInfo().getRawNodes());
             return value_from(entry.getBucketInfo().getLastGarbageCollectionTime(), replicas_ref);
         }
