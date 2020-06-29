@@ -90,13 +90,13 @@ TEST_F(LogRequestTest, log_messages_are_converted_to_request)
 TEST_F(LogRequestTest, invalid_utf8_is_filtered)
 {
     messages.emplace_back(12345, "foo_host", 3, 5, "foo_service", "foo_component", Logger::info,
-        "valid: \xE2\x82\xAC and \xEF\xBF\xBA; invalid: \xCC surrogate \xED\xBF\xBF overlong \xC1\x81 end"
+        "valid: \xE2\x82\xAC and \xEF\xBF\xBA; semi-valid: \xED\xA0\xBD\xED\xB8\x80; invalid: \xCC surrogate \xED\xBF\xBF overlong \xC1\x81 end"
     );
     convert();
     EXPECT_EQ(1, proto.log_messages_size());
     expect_proto_log_message_equal(12345, "foo_host", 3, 5, "foo_service", "foo_component",
         ProtoLogLevel::LogMessage_Level_INFO,
-        "valid: \xE2\x82\xAC and \xEF\xBF\xBA; invalid: " FFFD " surrogate " FFFD " overlong " FFFD FFFD " end",
+        "valid: \xE2\x82\xAC and \xEF\xBF\xBA; semi-valid: " FFFD FFFD "; invalid: " FFFD " surrogate " FFFD " overlong " FFFD FFFD " end",
         proto.log_messages(0));
 }
 

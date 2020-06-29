@@ -66,10 +66,6 @@ ProtoConverter::log_message_to_proto(const LogMessage& message, ProtoLogMessage&
     vespalib::Utf8Writer writer(tmp);
     while (reader.hasMore()) {
         uint32_t ch = reader.getChar();
-        // surrogates not accepted
-        if (ch >= 0xD800 && ch <= 0xDFFF) {
-            ch = vespalib::Utf8::REPLACEMENT_CHAR;
-        }
         writer.putChar(ch);
     }
     std::string filtered_payload(tmp.c_str(), tmp.size());
