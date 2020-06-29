@@ -1904,6 +1904,7 @@
     ],
     "methods": [
       "public abstract java.lang.Double apply(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.util.Optional asTensorFunction()",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
@@ -2609,6 +2610,7 @@
       "public abstract com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public final com.yahoo.tensor.Tensor evaluate()",
       "public abstract java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public java.util.Optional asScalarFunction()",
       "public java.lang.String toString()"
     ],
     "fields": []
