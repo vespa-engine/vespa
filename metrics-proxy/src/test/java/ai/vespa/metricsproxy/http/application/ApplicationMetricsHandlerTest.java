@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.V1_METRICS;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -48,7 +48,7 @@ public class ApplicationMetricsHandlerTest {
 
     private static final String HOST = "localhost";
     private static final String URI_BASE = "http://" + HOST;
-    private static final String APP_METRICS_V1_URI = URI_BASE + V1_METRICS;
+    private static final String APP_METRICS_V1_URI = URI_BASE + METRICS_V1_PATH;
     private static final String APP_METRICS_VALUES_URI = URI_BASE + METRICS_VALUES_PATH;
 
     private static final String TEST_FILE = "generic-sample.json";

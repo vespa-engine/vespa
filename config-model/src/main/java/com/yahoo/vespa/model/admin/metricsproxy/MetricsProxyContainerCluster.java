@@ -117,7 +117,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
         addHttpHandler(YamasHandler.class, YamasHandler.V1_PATH);
 
-        addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.V1_METRICS);
+        addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.METRICS_V1_PATH);
         addMetricsProxyComponent(ApplicationMetricsRetriever.class);
 
         addTelegrafComponents();

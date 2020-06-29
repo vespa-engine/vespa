@@ -215,7 +215,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void getConfig(MetricsProxyApiConfig.Builder builder) {
         builder.metricsPort(MetricsProxyContainer.BASEPORT)
                 .metricsApiPath(ApplicationMetricsHandler.METRICS_VALUES_PATH)
-                .prometheusPort(MetricsProxyContainer.BASEPORT)
                 .prometheusApiPath(ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH);
     }
 

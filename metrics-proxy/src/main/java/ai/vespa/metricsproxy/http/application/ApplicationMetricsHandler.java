@@ -27,6 +27,7 @@ import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toMetricsPackets;
+import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
 
@@ -37,11 +38,11 @@ import static com.yahoo.jdisc.Response.Status.OK;
  */
 public class ApplicationMetricsHandler extends HttpHandlerBase {
 
-    public static final String V1_METRICS = "/applicationmetrics/v1";
-    public static final String METRICS_VALUES_PATH = V1_METRICS + "/values";
+    public static final String METRICS_V1_PATH = "/applicationmetrics/v1";
+    public static final String METRICS_VALUES_PATH = METRICS_V1_PATH + "/values";
 
-    public static final String V1_PROMETHEUS = "/applicationprometheus/v1";
-    public static final String PROMETHEUS_VALUES_PATH = V1_PROMETHEUS + "/values";
+    public static final String PROMETHEUS_V1_PATH = "/applicationprometheus/v1";
+    public static final String PROMETHEUS_VALUES_PATH = PROMETHEUS_V1_PATH + "/values";
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
@@ -57,10 +58,10 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
-        if (apiPath.matches(V1_METRICS)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH)));
+        if (apiPath.matches(METRICS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH)));
         if (apiPath.matches(METRICS_VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
 
-        if (apiPath.matches(V1_PROMETHEUS)) return Optional.of(resourceListResponse(requestUri, List.of(PROMETHEUS_VALUES_PATH)));
+        if (apiPath.matches(PROMETHEUS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(PROMETHEUS_VALUES_PATH)));
         if (apiPath.matches(PROMETHEUS_VALUES_PATH)) return Optional.of(applicationPrometheusResponse(consumer));
 
         return Optional.empty();
@@ -84,11 +85,12 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         var metricsByNode = metricsRetriever.getMetrics(consumer);
 
 
-        return new TextResponse(200, PrometheusUtil.toPrometheusModel(toGenericApplicationModel(metricsByNode).nodes.stream()
-                .flatMap(element -> GenericJsonUtil.toMetricsPackets(element).stream()
+        List<GenericJsonModel> genericNodes = toGenericApplicationModel(metricsByNode).nodes;
+        List<MetricsPacket> metricsForAllNodes = genericNodes.stream()
+                .flatMap(element -> toMetricsPackets(element).stream()
                         .map(MetricsPacket.Builder::build))
-                .collect(Collectors.toList()))
-        .serialize());
+                .collect(Collectors.toList());
+        return new TextResponse(200, toPrometheusModel(metricsForAllNodes).serialize());
     }
 
 }

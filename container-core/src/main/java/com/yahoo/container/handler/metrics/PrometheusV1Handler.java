@@ -20,7 +20,7 @@ import org.eclipse.jetty.server.Response;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 
-public class PrometheusHandler extends HttpHandlerBase{
+public class PrometheusV1Handler extends HttpHandlerBase{
 
     public static final String V1_PATH = "/prometheus/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
@@ -31,10 +31,10 @@ public class PrometheusHandler extends HttpHandlerBase{
     private final String prometheusProxyUri;
     private final HttpClient httpClient = createHttpClient();
 
-    protected PrometheusHandler(Executor executor,
-                                MetricsProxyApiConfig config) {
+    protected PrometheusV1Handler(Executor executor,
+                                  MetricsProxyApiConfig config) {
         super(executor);
-        prometheusProxyUri = "http://localhost:" + config.prometheusPort() + config.prometheusApiPath();
+        prometheusProxyUri = "http://localhost:" + config.metricsPort() + config.prometheusApiPath();
     }
 
     @Override
