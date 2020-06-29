@@ -10,13 +10,13 @@
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>documentapi</artifactId>
-  <packaging>container-plugin</packaging>
+  <packaging>jar</packaging>
   <version>7-SNAPSHOT</version>
   <dependencies>
     <dependency>
+      <!-- Needed because 'document' uses guava collections -->
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -78,11 +78,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
@@ -101,6 +96,19 @@
             <phase>generate-sources</phase>
             <goals>
               <goal>javacc</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>config-class-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>config-gen</id>
+            <goals>
+              <goal>config-gen</goal>
             </goals>
           </execution>
         </executions>
