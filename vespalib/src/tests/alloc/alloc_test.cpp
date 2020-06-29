@@ -8,6 +8,14 @@
 using namespace vespalib;
 using namespace vespalib::alloc;
 
+#ifndef __SANITIZE_ADDRESS__
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__
+#endif
+#endif
+#endif
+
 template <typename T>
 void
 testSwap(T & a, T & b)
@@ -192,6 +200,7 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
     TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, SZ));
 }
 
+#ifndef __SANITIZE_ADDRESS__
 TEST("mmap alloc can be extended if room") {
     Alloc dummy = Alloc::allocMMap(100);
     Alloc reserved = Alloc::allocMMap(100);
@@ -208,6 +217,7 @@ TEST("mmap alloc can not be extended if no room") {
 
     TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, 4096));
 }
+#endif
 #endif
 
 TEST("heap alloc can not be shrinked") {
