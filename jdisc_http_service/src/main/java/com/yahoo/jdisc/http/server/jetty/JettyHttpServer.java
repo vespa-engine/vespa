@@ -70,6 +70,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String PORT_DIMENSION = "serverPort";
         String METHOD_DIMENSION = "httpMethod";
         String SCHEME_DIMENSION = "scheme";
+        String REQUEST_TYPE_DIMENSION = "requestType";
 
         String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
         String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
@@ -255,7 +256,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(authEnforcer);
 
-        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector();
+        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths());
         statisticsCollector.setHandler(gzipHandler);
 
         StatisticsHandler statisticsHandler = newStatisticsHandler();
@@ -380,6 +381,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             Map<String, Object> dimensions = new HashMap<>();
             dimensions.put(Metrics.METHOD_DIMENSION, metricEntry.method);
             dimensions.put(Metrics.SCHEME_DIMENSION, metricEntry.scheme);
+            dimensions.put(Metrics.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
             metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
         }
     }

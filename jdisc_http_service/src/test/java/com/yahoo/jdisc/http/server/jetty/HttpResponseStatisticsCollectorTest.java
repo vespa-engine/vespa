@@ -35,7 +35,8 @@ import static org.hamcrest.Matchers.equalTo;
  */
 public class HttpResponseStatisticsCollectorTest {
     private Connector connector;
-    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector();
+    private List<String> monitoringPaths = List.of("/status.html");
+    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths);
     private int httpResponseCode = 500;
 
     @Test
@@ -98,6 +99,24 @@ public class HttpResponseStatisticsCollectorTest {
         assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
     }
 
+    @Test
+    public void statistics_include_request_type_dimension() throws Exception {
+        testRequest("http", 200, "GET", "/search");
+        testRequest("http", 200, "POST", "/feed");
+        testRequest("http", 200, "GET", "/status.html?foo=bar");
+
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "monitoring", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", Metrics.RESPONSES_2XX, "write", 1L);
+
+        testRequest("http", 200, "GET");
+
+        stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+
+    }
+
     @Before
     public void initializeCollector() throws Exception {
         Server server = new Server();
@@ -124,8 +143,11 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     private Request testRequest(String scheme, int responseCode, String httpMethod) throws Exception {
+        return testRequest(scheme, responseCode, httpMethod, "foo/bar");
+    }
+    private Request testRequest(String scheme, int responseCode, String httpMethod, String path) throws Exception {
         HttpChannel channel = new HttpChannel(connector, new HttpConfiguration(), null, new DummyTransport());
-        MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI(scheme + "://foo/bar"), HttpVersion.HTTP_1_1, new HttpFields());
+        MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI(scheme + "://" + path), HttpVersion.HTTP_1_1, new HttpFields());
         Request req = channel.getRequest();
         req.setMetaData(metaData);
 
@@ -140,6 +162,15 @@ public class HttpResponseStatisticsCollectorTest {
                 .mapToLong(entry -> entry.value)
                 .findAny()
                 .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s)", scheme, method, name)));
+        assertThat(value, equalTo(expectedValue));
+    }
+
+    private static void assertStatisticsEntryWithRequestTypePresent(List<StatisticsEntry> result, String scheme, String method, String name, String requestType, long expectedValue) {
+        long value = result.stream()
+                .filter(entry -> entry.method.equals(method) && entry.scheme.equals(scheme) && entry.name.equals(name) && entry.requestType.equals(requestType))
+                .mapToLong(entry -> entry.value)
+                .reduce(Long::sum)
+                .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
         assertThat(value, equalTo(expectedValue));
     }
 
