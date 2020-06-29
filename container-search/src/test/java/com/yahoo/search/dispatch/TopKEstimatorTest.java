@@ -3,6 +3,8 @@ package com.yahoo.search.dispatch;
 
 import org.junit.Test;
 
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 
 public class TopKEstimatorTest {
@@ -150,13 +152,13 @@ public class TopKEstimatorTest {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("Prob/Hits:"));
         for (double p : P) {
-            sb.append(String.format(" %1.10f", p));
+            sb.append(String.format(Locale.ENGLISH, " %1.10f", p));
         }
         sb.append("\n");
         for (int k : K) {
-            sb.append(String.format("%9d:", k));
+            sb.append(String.format(Locale.ENGLISH, "%9d:", k));
             for (double p : P) {
-                sb.append(String.format("%13.3f", (double)(estimator.estimateK(k, n, p)*n) / k));
+                sb.append(String.format(Locale.ENGLISH, "%13.3f", (double)(estimator.estimateK(k, n, p)*n) / k));
             }
             sb.append("\n");
         }
