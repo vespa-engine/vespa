@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -198,6 +199,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                         } else {
                             clearDownRecord(node, lock);
                         }
+                    }
+                    catch (UncheckedTimeoutException e) {
+                        // Ignore - node may be locked on this round due to deployment
                     }
                 });
     }
