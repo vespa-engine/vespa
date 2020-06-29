@@ -25,6 +25,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -157,6 +158,11 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
+        public Optional<TensorFunction<Reference>> asTensorFunction() {
+            return Optional.of(new ExpressionTensorFunction(expression));
+        }
+
+        @Override
         public String toString() {
             return toString(ExpressionToStringContext.empty);
         }
@@ -227,6 +233,11 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public TensorType type(TypeContext<Reference> context) {
             return expression.type(context);
+        }
+
+        @Override
+        public Optional<ScalarFunction<Reference>> asScalarFunction() {
+            return Optional.of(new ExpressionScalarFunction(expression));
         }
 
         @Override
