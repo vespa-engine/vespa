@@ -1614,6 +1614,7 @@
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public java.util.Optional asScalarFunction()",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public java.lang.String toString()",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
