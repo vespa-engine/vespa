@@ -29,20 +29,6 @@
       </exclusions>
     </dependency>
 
-    <dependency>
-      <!-- Compile scope to pull vdslib into container-core and hence container-disc and container-dev -->
-      <!-- TODO: move to container-core -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vdslib</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
   </dependencies>
 
   <build>
