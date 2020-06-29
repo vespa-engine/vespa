@@ -34,7 +34,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
-#include <vespa/searchlib/features/uniquefeature.h>
+#include <vespa/searchlib/features/global_sequence_feature.h>
 #include <vespa/searchlib/features/weighted_set_parser.hpp>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -1565,22 +1565,36 @@ Test::testMatchCount()
     }
 }
 
+uint64_t globalSequence(uint32_t docId, uint32_t distrKey) {
+    return (1ul << 48) - ((uint64_t(docId) << 16)| distrKey);
+}
+
+void verifySequence(uint64_t first, uint64_t second) {
+    ASSERT_GREATER(first, second);
+    ASSERT_GREATER(double(first), double(second));
+}
 void
 Test::testUnique()
 {
     {
-        UniqueBlueprint bp;
-        EXPECT_TRUE(assertCreateInstance(bp, "unique"));
+        GlobalSequenceBlueprint bp;
+        EXPECT_TRUE(assertCreateInstance(bp, "globalsequence"));
         FtFeatureTest ft(_factory, "");
         StringList params, in, out;
         FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
-        FT_DUMP_EMPTY(_factory, "unique");
+        FT_DUMP_EMPTY(_factory, "globalsequence");
     }
-    FtFeatureTest ft(_factory, "unique");
+    FtFeatureTest ft(_factory, "globalsequence");
     ASSERT_TRUE(ft.setup());
-    EXPECT_TRUE(ft.execute(0x10003,0, 1));
-    EXPECT_TRUE(ft.execute(0x70003,0, 7));
-
+    TEST_DO(verifySequence(globalSequence(1, 0), globalSequence(1,1)));
+    TEST_DO(verifySequence(globalSequence(1, 1), globalSequence(1,2)));
+    TEST_DO(verifySequence(globalSequence(1, 1), globalSequence(2,1)));
+    TEST_DO(verifySequence(globalSequence(2, 1), globalSequence(2,2)));
+    TEST_DO(verifySequence(globalSequence(2, 2), globalSequence(2,3)));
+    TEST_DO(verifySequence(globalSequence(2, 2), globalSequence(3,0)));
+    ASSERT_EQUAL(0xfffffffefffdul, (1ul << 48) - 0x10003l);
+    EXPECT_TRUE(ft.execute(0xfffffffefffdul, 0, 1));
+    EXPECT_TRUE(ft.execute(0xfffffff8fffdul, 0, 7));
 }
 
 void

@@ -14,12 +14,12 @@ namespace search::features {
  * It will change if documents change lid.
  */
 
-class UniqueBlueprint : public fef::Blueprint
+class GlobalSequenceBlueprint : public fef::Blueprint
 {
 private:
     uint32_t  _distributionKey;
 public:
-    UniqueBlueprint();
+    GlobalSequenceBlueprint();
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {

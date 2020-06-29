@@ -26,6 +26,7 @@ vespa_add_library(searchlib_features OBJECT
     flow_completeness_feature.cpp
     foreachfeature.cpp
     freshnessfeature.cpp
+    global_sequence_feature.cpp
     internal_max_reduce_prod_join_feature.cpp
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
@@ -63,7 +64,6 @@ vespa_add_library(searchlib_features OBJECT
     termfeature.cpp
     terminfofeature.cpp
     text_similarity_feature.cpp
-    uniquefeature.cpp
     utils.cpp
     valuefeature.cpp
     weighted_set_parser.cpp
