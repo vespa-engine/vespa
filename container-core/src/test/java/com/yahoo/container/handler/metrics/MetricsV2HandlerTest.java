@@ -60,6 +60,7 @@ public class MetricsV2HandlerTest {
                                            new MetricsProxyApiConfig.Builder()
                                                    .metricsPort(wireMockRule.port())
                                                    .metricsApiPath(MOCK_METRICS_PATH)
+                                                   .prometheusApiPath("Not/In/Use")
                                                    .build());
         testDriver = new RequestHandlerTestDriver(handler);
     }
@@ -132,7 +133,7 @@ public class MetricsV2HandlerTest {
         }
     }
 
-    private static String getFileContents(String filename) {
+    static String getFileContents(String filename) {
         InputStream in = MetricsV2HandlerTest.class.getClassLoader().getResourceAsStream(filename);
         if (in == null) {
             throw new RuntimeException("File not found: " + filename);
