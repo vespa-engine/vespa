@@ -28,11 +28,12 @@ public class Tenant {
     private final RequestHandler requestHandler;
     private final Instant created;
 
-    Tenant(TenantName name,
-           SessionRepository sessionRepository,
-           RequestHandler requestHandler,
-           TenantApplications applicationRepo,
-           Instant created) {
+    // Protected due to being subclassed in a system test
+    protected Tenant(TenantName name,
+                     SessionRepository sessionRepository,
+                     RequestHandler requestHandler,
+                     TenantApplications applicationRepo,
+                     Instant created) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
         this.requestHandler = requestHandler;
