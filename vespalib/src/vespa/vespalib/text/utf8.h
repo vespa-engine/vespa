@@ -155,7 +155,7 @@ protected:
         first_high_surrogate = 0xD800,
         last_high_surrogate = 0xDBFF,
         first_low_surrogate = 0xDC00,
-        last_low_surrogate = 0xDCFF
+        last_low_surrogate = 0xDFFF
     };
 };
 
