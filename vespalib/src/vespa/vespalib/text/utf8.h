@@ -321,9 +321,10 @@ public:
 /**
  * @brief Writer class that appends UTF-8 characters to a string
  **/
+template <typename Target>
 class Utf8Writer : public Utf8
 {
-    string &_target;
+    Target &_target;
 public:
     /**
      * construct a writer appending to the given string
@@ -331,7 +332,7 @@ public:
      * that the writer will append to.  Must be writable
      * and must be kept alive while the writer is active.
      **/
-    Utf8Writer(string &target) : _target(target) {}
+    Utf8Writer(Target &target) : _target(target) {}
 
     /**
      * append the given character to the target string.

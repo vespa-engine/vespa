@@ -175,8 +175,9 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
 }
 
 
-Utf8Writer&
-Utf8Writer::putChar(uint32_t codepoint)
+template <typename Target>
+Utf8Writer<Target>&
+Utf8Writer<Target>::putChar(uint32_t codepoint)
 {
     if (codepoint < 0x80) {
         _target.push_back((char)codepoint);
@@ -228,6 +229,9 @@ Utf8Writer::putChar(uint32_t codepoint)
     }
     return *this;
 }
+
+template class Utf8Writer<vespalib::string>;
+template class Utf8Writer<std::string>;
 
 
 } // namespace vespalib

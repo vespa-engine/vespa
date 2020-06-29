@@ -62,13 +62,12 @@ ProtoConverter::log_message_to_proto(const LogMessage& message, ProtoLogMessage&
     proto.set_level(convert_level(message.level()));
     const std::string &payload = message.payload();
     vespalib::Utf8Reader reader(payload.c_str(), payload.size());
-    vespalib::string tmp;
-    vespalib::Utf8Writer writer(tmp);
+    std::string filtered_payload;
+    vespalib::Utf8Writer writer(filtered_payload);
     while (reader.hasMore()) {
         uint32_t ch = reader.getChar();
         writer.putChar(ch);
     }
-    std::string filtered_payload(tmp.c_str(), tmp.size());
     proto.set_payload(filtered_payload);
 }
 
