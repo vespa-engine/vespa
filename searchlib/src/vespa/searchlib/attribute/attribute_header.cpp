@@ -27,6 +27,7 @@ const vespalib::string hnsw_distance_metric = "hnsw.distance_metric";
 const vespalib::string euclidean = "euclidean";
 const vespalib::string angular = "angular";
 const vespalib::string geodegrees = "geodegrees";
+const vespalib::string innerproduct = "innerproduct";
 const vespalib::string doc_id_limit_tag = "docIdLimit";
 const vespalib::string enumerated_tag = "enumerated";
 const vespalib::string unique_value_count_tag = "uniqueValueCount";
@@ -97,6 +98,7 @@ to_string(DistanceMetric metric)
         case DistanceMetric::Euclidean: return euclidean;
         case DistanceMetric::Angular: return angular;
         case DistanceMetric::GeoDegrees: return geodegrees;
+        case DistanceMetric::InnerProduct: return innerproduct;
     }
     throw vespalib::IllegalArgumentException("Unknown distance metric " + std::to_string(static_cast<int>(metric)));
 }

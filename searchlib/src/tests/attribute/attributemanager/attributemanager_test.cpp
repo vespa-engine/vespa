@@ -289,6 +289,12 @@ AttributeManagerTest::testConfigConvert()
         auto out = ConfigConverter::convert(a);
         EXPECT_TRUE(out.distance_metric() == DistanceMetric::GeoDegrees);
     }
+    { // distance metric (explicit)
+        CACA a;
+        a.distancemetric = AttributesConfig::Attribute::Distancemetric::INNERPRODUCT;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.distance_metric() == DistanceMetric::InnerProduct);
+    }
     { // hnsw index params (enabled)
         auto dm_in = AttributesConfig::Attribute::Distancemetric::ANGULAR;
         auto dm_out = DistanceMetric::Angular;
@@ -306,6 +312,7 @@ AttributeManagerTest::testConfigConvert()
         EXPECT_TRUE(params.distance_metric() == dm_out);
         EXPECT_TRUE(params.multi_threaded_indexing());
     }
+
     { // hnsw index params (disabled)
         CACA a;
         a.index.hnsw.enabled = false;

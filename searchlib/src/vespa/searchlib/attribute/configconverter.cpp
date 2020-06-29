@@ -85,6 +85,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::GEODEGREES:
             dm = DistanceMetric::GeoDegrees;
             break;
+        case CfgDm::INNERPRODUCT:
+            dm = DistanceMetric::InnerProduct;
+            break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {
