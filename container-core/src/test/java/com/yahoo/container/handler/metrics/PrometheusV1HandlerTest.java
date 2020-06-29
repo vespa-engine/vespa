@@ -26,6 +26,7 @@ import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery
 import static com.yahoo.container.handler.metrics.MetricsV2HandlerTest.getFileContents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -76,7 +77,7 @@ public class PrometheusV1HandlerTest {
     }
 
     @Test
-    public void v2_response_contains_values_uri() throws Exception {
+    public void v1_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V1_URI).readAll();
         JSONObject root = new JSONObject(response);
         assertTrue(root.has("resources"));
@@ -90,17 +91,21 @@ public class PrometheusV1HandlerTest {
 
     @Ignore
     @Test
-    public void visually_inspect_values_response() throws Exception {
+    public void visually_inspect_values_response() {
         String response = testDriver.sendRequest(VALUES_URI).readAll();
         System.out.println(response);
     }
 
     @Test
-    public void invalid_path_yields_error_response() throws Exception {
+    public void invalid_path_yields_error_response() {
         String response = testDriver.sendRequest(V1_URI + "/invalid").readAll();
-        JSONObject root = new JSONObject(response);
-        assertTrue(root.has("error"));
-        assertTrue(root.getString("error" ).startsWith("No content"));
+        try {
+            JSONObject root = new JSONObject(response);
+            assertTrue(root.has("error"));
+            assertTrue(root.getString("error" ).startsWith("No content"));
+        } catch (JSONException e) {
+            fail();
+        }
     }
 
     @Test

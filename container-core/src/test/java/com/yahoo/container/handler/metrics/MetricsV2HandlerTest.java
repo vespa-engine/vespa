@@ -133,7 +133,7 @@ public class MetricsV2HandlerTest {
         }
     }
 
-    public static String getFileContents(String filename) {
+    static String getFileContents(String filename) {
         InputStream in = MetricsV2HandlerTest.class.getClassLoader().getResourceAsStream(filename);
         if (in == null) {
             throw new RuntimeException("File not found: " + filename);

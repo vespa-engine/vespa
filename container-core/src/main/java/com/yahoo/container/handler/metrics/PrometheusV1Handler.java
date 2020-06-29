@@ -15,7 +15,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.eclipse.jetty.server.Response;
 
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
@@ -28,13 +27,13 @@ public class PrometheusV1Handler extends HttpHandlerBase{
     private static final int HTTP_CONNECT_TIMEOUT = 5000;
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
 
-    private final String prometheusProxyUri;
+    private final String metricsProxyUri;
     private final HttpClient httpClient = createHttpClient();
 
     protected PrometheusV1Handler(Executor executor,
                                   MetricsProxyApiConfig config) {
         super(executor);
-        prometheusProxyUri = "http://localhost:" + config.metricsPort() + config.prometheusApiPath();
+        metricsProxyUri = "http://localhost:" + config.metricsPort() + config.prometheusApiPath();
     }
 
     @Override
@@ -46,11 +45,11 @@ public class PrometheusV1Handler extends HttpHandlerBase{
 
     private HttpResponse valuesResponse(String consumer) {
         try {
-            String uri = prometheusProxyUri + consumerQuery(consumer);
+            String uri = metricsProxyUri + consumerQuery(consumer);
             String prometheusText = httpClient.execute(new HttpGet(uri), new BasicResponseHandler());
             return new StringResponse(prometheusText);
         } catch (IOException e) {
-            log.warning("Unable to retrieve metrics from " + prometheusProxyUri + ": " + Exceptions.toMessageString(e));
+            log.warning("Unable to retrieve metrics from " + metricsProxyUri + ": " + Exceptions.toMessageString(e));
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
