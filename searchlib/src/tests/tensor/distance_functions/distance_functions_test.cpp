@@ -31,13 +31,11 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
 }
 
 
-TEST(DistanceFunctionsTest, gives_expected_score)
+TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
 {
     auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
 
     auto euclid = make_distance_function(DistanceMetric::Euclidean, ct);
-    auto angular = make_distance_function(DistanceMetric::Angular, ct);
-    auto innerproduct = make_distance_function(DistanceMetric::InnerProduct, ct);
 
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
@@ -52,6 +50,21 @@ TEST(DistanceFunctionsTest, gives_expected_score)
     double d12 = euclid->calc(t(p1), t(p2));
     EXPECT_EQ(d12, 2.0);
     EXPECT_DOUBLE_EQ(euclid->to_rawscore(d12), 1.0/(1.0 + sqrt(2.0)));
+}
+
+TEST(DistanceFunctionsTest, angular_gives_expected_score)
+{
+    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+
+    auto angular = make_distance_function(DistanceMetric::Angular, ct);
+
+    std::vector<double> p0{0.0, 0.0, 0.0};
+    std::vector<double> p1{1.0, 0.0, 0.0};
+    std::vector<double> p2{0.0, 1.0, 0.0};
+    std::vector<double> p3{0.0, 0.0, 1.0};
+    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p6{1.0, 2.0, 2.0};
 
     constexpr double pi = 3.14159265358979323846;
     double a12 = angular->calc(t(p1), t(p2));
@@ -92,6 +105,21 @@ TEST(DistanceFunctionsTest, gives_expected_score)
     EXPECT_FLOAT_EQ(a16, 1.0 - (1.0/3.0));
     EXPECT_FLOAT_EQ(a26, 1.0 - (2.0/3.0));
     EXPECT_FLOAT_EQ(a36, 1.0 - (2.0/3.0));
+}
+
+TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
+{
+    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+
+    auto innerproduct = make_distance_function(DistanceMetric::InnerProduct, ct);
+
+    std::vector<double> p0{0.0, 0.0, 0.0};
+    std::vector<double> p1{1.0, 0.0, 0.0};
+    std::vector<double> p2{0.0, 1.0, 0.0};
+    std::vector<double> p3{0.0, 0.0, 1.0};
+    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p6{1.0, 2.0, 2.0};
 
     double i12 = innerproduct->calc(t(p1), t(p2));
     double i13 = innerproduct->calc(t(p1), t(p3));
@@ -112,7 +140,6 @@ TEST(DistanceFunctionsTest, gives_expected_score)
     double i44 = innerproduct->calc(t(p4), t(p4));
     EXPECT_GE(i44, 0.0);
     EXPECT_LT(i44, 0.000001);
-
 }
 
 TEST(GeoDegreesTest, gives_expected_score)
