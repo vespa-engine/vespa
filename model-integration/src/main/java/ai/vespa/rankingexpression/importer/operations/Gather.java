@@ -88,7 +88,12 @@ public class Gather extends IntermediateOperation {
         }
 
         if (indicesType.rank() == 0 && indices.isConstant()) {
-            ExpressionNode indexExpression = new ConstantNode(new DoubleValue(indices.getConstantValue().get().asDouble()));
+            double constantValue = indices.getConstantValue().get().asDouble();
+            ExpressionNode indexExpression = new ConstantNode(new DoubleValue(constantValue));
+            if (constantValue < 0) {
+                ExpressionNode axisSize = new ConstantNode(new DoubleValue(dataType.dimensions().get(axis).size().get()));
+                indexExpression = new EmbracedNode(new ArithmeticNode(indexExpression, ArithmeticOperator.PLUS, axisSize));
+            }
             addSliceDimension(dataSliceDimensions, dataType.dimensions().get(axis).name(), indexExpression);
         } else {
             List<Slice.DimensionValue<Reference>> indicesSliceDimensions = new ArrayList<>();
