@@ -125,6 +125,112 @@ class FieldSet(ToJson, FromJson["FieldSet"]):
         return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
 
 
+class RankProfile(ToJson, FromJson["RankProfile"]):
+    def __init__(self, name: str, first_phase: str) -> None:
+        """
+        Define a Vespa rank profile
+
+        :param name: Rank profile name.
+        :param first_phase: First phase ranking expression.
+        """
+        self.name = name
+        self.first_phase = first_phase
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "RankProfile":
+        return RankProfile(name=mapping["name"], first_phase=mapping["first_phase"])
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {"name": self.name, "first_phase": self.first_phase}
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name and self.first_phase == other.first_phase
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+
+
+class Schema(ToJson, FromJson["Schema"]):
+    def __init__(
+        self,
+        name: str,
+        document: Document,
+        fieldsets: Optional[List[FieldSet]] = None,
+        rank_profiles: Optional[List[RankProfile]] = None,
+    ) -> None:
+        """
+        Create a Vespa Schema.
+
+        :param name: Schema name.
+        :param document: Vespa document associated with the Schema.
+        :param fieldsets: A list of `FieldSet` associated with the Schema.
+        :param rank_profiles: A list of `RankProfile` associated with the Schema.
+        """
+        self.name = name
+        self.document = document
+
+        self.fieldsets = {}
+        if fieldsets is not None:
+            self.fieldsets = {fieldset.name: fieldset for fieldset in fieldsets}
+
+        self.rank_profiles = {}
+        if rank_profiles is not None:
+            self.rank_profiles = {
+                rank_profile.name: rank_profile for rank_profile in rank_profiles
+            }
+
+    def add_rank_profile(self, rank_profile: RankProfile) -> None:
+        """
+        Add a `RankProfile` to the `Schema`.
+        :param rank_profile: `RankProfile` to be added.
+        :return: None.
+        """
+        self.rank_profiles.update({rank_profile.name: rank_profile})
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "Schema":
+        return Schema(
+            name=mapping["name"],
+            document=FromJson.map(mapping["document"]),
+            fieldsets=[FromJson.map(fieldset) for fieldset in mapping["fieldsets"]],
+            rank_profiles=[
+                FromJson.map(rank_profile) for rank_profile in mapping["rank_profiles"]
+            ],
+        )
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {
+            "name": self.name,
+            "document": self.document.to_envelope,
+            "fieldsets": [
+                self.fieldsets[name].to_envelope for name in self.fieldsets.keys()
+            ],
+            "rank_profiles": [
+                self.rank_profiles[name].to_envelope
+                for name in self.rank_profiles.keys()
+            ],
+        }
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            self.name == other.name
+            and self.document == other.document
+            and self.fieldsets == other.fieldsets
+            and self.rank_profiles == other.rank_profiles
+        )
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+
+
 class ApplicationPackage(object):
     def __init__(self, name: str, disk_folder: str) -> None:
         """
