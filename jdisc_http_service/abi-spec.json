@@ -703,6 +703,7 @@
       "public com.yahoo.jdisc.http.ServerConfig$Builder maxWorkerThreads(int)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder stopTimeout(double)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder jmx(com.yahoo.jdisc.http.ServerConfig$Jmx$Builder)",
+      "public com.yahoo.jdisc.http.ServerConfig$Builder metric(com.yahoo.jdisc.http.ServerConfig$Metric$Builder)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -711,7 +712,8 @@
     ],
     "fields": [
       "public java.util.List filter",
-      "public com.yahoo.jdisc.http.ServerConfig$Jmx$Builder jmx"
+      "public com.yahoo.jdisc.http.ServerConfig$Jmx$Builder jmx",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder metric"
     ]
   },
   "com.yahoo.jdisc.http.ServerConfig$Filter$Builder": {
@@ -776,6 +778,39 @@
     ],
     "fields": []
   },
+  "com.yahoo.jdisc.http.ServerConfig$Metric$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder monitoringHandlerPaths(java.lang.String)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder monitoringHandlerPaths(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric build()"
+    ],
+    "fields": [
+      "public java.util.List monitoringHandlerPaths"
+    ]
+  },
+  "com.yahoo.jdisc.http.ServerConfig$Metric": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric$Builder)",
+      "public java.util.List monitoringHandlerPaths()",
+      "public java.lang.String monitoringHandlerPaths(int)"
+    ],
+    "fields": []
+  },
   "com.yahoo.jdisc.http.ServerConfig$Producer": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -813,7 +848,8 @@
       "public com.yahoo.jdisc.http.ServerConfig$Filter filter(int)",
       "public int maxWorkerThreads()",
       "public double stopTimeout()",
-      "public com.yahoo.jdisc.http.ServerConfig$Jmx jmx()"
+      "public com.yahoo.jdisc.http.ServerConfig$Jmx jmx()",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric metric()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",
