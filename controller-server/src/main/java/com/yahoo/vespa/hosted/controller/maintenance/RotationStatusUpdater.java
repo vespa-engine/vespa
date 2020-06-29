@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -69,11 +69,11 @@ public class RotationStatusUpdater extends ControllerMaintainer {
         try {
             pool.awaitTermination(30, TimeUnit.SECONDS);
             if (lastException.get() != null) {
-                log.log(Level.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: ",
+                log.log(Level.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: %s",
                                                      failures.get(),
                                                      attempts.get(),
-                                                     interval()),
-                        lastException.get());
+                                                     interval(),
+                                                     Exceptions.toMessageString(lastException.get())));
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
