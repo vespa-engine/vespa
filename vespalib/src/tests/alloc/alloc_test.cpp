@@ -200,6 +200,12 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
     TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, SZ));
 }
 
+/*
+ * The two following tests are disabled when address sanitizer is
+ * enabled since extra instrumentation code might trigger extra mmap
+ * or munmap calls, breaking some of the assumptions in the disabled
+ * tests.
+ */
 #ifndef __SANITIZE_ADDRESS__
 TEST("mmap alloc can be extended if room") {
     Alloc dummy = Alloc::allocMMap(100);
