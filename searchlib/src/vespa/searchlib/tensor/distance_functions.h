@@ -95,7 +95,8 @@ public:
 };
 
 /**
- * Calculates angular distance between vectors with assumed norm 1.
+ * Calculates inner-product "distance" between vectors with assumed norm 1.
+ * Should give same ordering as Angular distance, but is less expensive.
  */
 template <typename FloatType>
 class InnerProductDistance : public DistanceFunction {
