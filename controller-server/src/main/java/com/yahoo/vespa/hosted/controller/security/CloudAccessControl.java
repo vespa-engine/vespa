@@ -9,7 +9,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -36,13 +36,13 @@ public class CloudAccessControl implements AccessControl {
 
     private final UserManagement userManagement;
     private final BooleanFlag enablePublicSignup;
-    private final PlanController planController;
+    private final BillingController planController;
 
     @Inject
     public CloudAccessControl(UserManagement userManagement, FlagSource flagSource, ServiceRegistry serviceRegistry) {
         this.userManagement = userManagement;
         this.enablePublicSignup = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
-        planController = serviceRegistry.planController();
+        planController = serviceRegistry.billingController();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class CloudAccessControl implements AccessControl {
     }
 
     private boolean isTrial(TenantName tenant) {
-        return planController.getPlan(tenant).id().equals("trial");
+        return planController.getPlan(tenant).value().equals("trial");
     }
 
     @Override
