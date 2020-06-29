@@ -72,13 +72,23 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() {
+        return boundGenerator != null && boundGenerator.asTensorFunction().isPresent()
+               ? List.of(boundGenerator.asTensorFunction().get())
+               : List.of();
+    }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
-        if ( arguments.size() != 0)
-            throw new IllegalArgumentException("Generate must have 0 arguments, got " + arguments.size());
-        return this;
+        if ( arguments.size() > 1)
+            throw new IllegalArgumentException("Generate must have 0 or 1 arguments, got " + arguments.size());
+        if (arguments.isEmpty()) return this;
+
+        if (arguments.get(0).asScalarFunction().isEmpty())
+            throw new IllegalArgumentException("The argument to generate must be convertible to a tensor function, " +
+                                               "but got " + arguments.get(0));
+
+        return new Generate<>(type, null, arguments.get(0).asScalarFunction().get());
     }
 
     @Override

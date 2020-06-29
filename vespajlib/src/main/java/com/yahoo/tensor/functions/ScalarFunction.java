@@ -4,6 +4,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -15,6 +16,9 @@ public interface ScalarFunction<NAMETYPE extends Name> extends Function<Evaluati
 
     @Override
     Double apply(EvaluationContext<NAMETYPE> context);
+
+    /** Returns this as a tensor function, or empty if it cannot be represented as a tensor function */
+    default Optional<TensorFunction<NAMETYPE>> asTensorFunction() { return Optional.empty(); }
 
     default String toString(ToStringContext context) { return toString(); }
 
