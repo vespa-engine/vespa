@@ -44,6 +44,11 @@ public class LatencyAliasTarget extends AliasTarget {
         return Objects.hash(super.hashCode(), zone);
     }
 
+    @Override
+    public String toString() {
+        return "latency target for " + name() + "[id=" + id() + ",dnsZone=" + dnsZone() + "]";
+    }
+
     /** Unpack latency alias from given record data */
     public static LatencyAliasTarget unpack(RecordData data) {
         var parts = data.asString().split("/");

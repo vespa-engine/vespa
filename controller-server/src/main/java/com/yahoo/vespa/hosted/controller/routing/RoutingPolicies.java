@@ -3,9 +3,13 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -14,6 +18,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
@@ -42,10 +48,12 @@ public class RoutingPolicies {
 
     private final Controller controller;
     private final CuratorDb db;
+    private final BooleanFlag weightedDnsPerRegion;
 
     public RoutingPolicies(Controller controller) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.db = controller.curator();
+        this.weightedDnsPerRegion = Flags.WEIGHTED_DNS_PER_REGION.bindTo(controller.flagSource());
         try (var lock = db.lockRoutingPolicies()) { // Update serialized format
             for (var policy : db.readRoutingPolicies().entrySet()) {
                 db.writeRoutingPolicies(policy.getKey(), policy.getValue());
@@ -84,7 +92,7 @@ public class RoutingPolicies {
             removeGlobalDnsUnreferencedBy(allocation, lock);
             storePoliciesOf(allocation, lock);
             removePoliciesUnreferencedBy(allocation, lock);
-            updateGlobalDnsOf(get(allocation.deployment.applicationId()).values(), inactiveZones, lock);
+            updateGlobalDnsOf(application, get(allocation.deployment.applicationId()).values(), inactiveZones, lock);
         }
     }
 
@@ -93,9 +101,9 @@ public class RoutingPolicies {
         try (var lock = db.lockRoutingPolicies()) {
             db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, GlobalRouting.status(status, GlobalRouting.Agent.operator,
                                                                                        controller.clock().instant())));
-            var allPolicies = db.readRoutingPolicies();
-            for (var applicationPolicies : allPolicies.values()) {
-                updateGlobalDnsOf(applicationPolicies.values(), Set.of(), lock);
+            Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> allPolicies = db.readRoutingPolicies();
+            for (var kv : allPolicies.entrySet()) {
+                updateGlobalDnsOf(kv.getKey(), kv.getValue().values(), Set.of(), lock);
             }
         }
     }
@@ -112,12 +120,12 @@ public class RoutingPolicies {
                 newPolicies.put(policy.id(), newPolicy);
             }
             db.writeRoutingPolicies(deployment.applicationId(), newPolicies);
-            updateGlobalDnsOf(newPolicies.values(), Set.of(), lock);
+            updateGlobalDnsOf(deployment.applicationId(), newPolicies.values(), Set.of(), lock);
         }
     }
 
     /** Update global DNS record for given policies */
-    private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+    private void legacyUpdateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
         // Create DNS record for each routing ID
         var routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
@@ -154,6 +162,65 @@ public class RoutingPolicies {
                                                                                       RecordData.fqdn(t.name().value()),
                                                                                       Priority.normal));
         }
+    }
+
+    // TODO(mpolden): Remove and inline call to updateGlobalDnsOf when feature flag disappears
+    private void updateGlobalDnsOf(ApplicationId application, Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+        if (weightedDnsPerRegion.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value()) {
+            updateGlobalDnsOf(routingPolicies, inactiveZones, lock);
+        } else {
+            legacyUpdateGlobalDnsOf(routingPolicies, inactiveZones, lock);
+        }
+    }
+
+    /** Update global DNS record for given policies */
+    private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+        Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
+        for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
+            Map<LatencyAliasTarget, Set<AliasTarget>> targets = computeTargets(routeEntry.getValue(), inactiveZones);
+            // Create a weighted ALIAS per zone, pointing to all targets within that zone
+            targets.forEach(((latencyTarget, weightedTargets) -> {
+                controller.nameServiceForwarder().createAlias(RecordName.from(latencyTarget.name().value()),
+                                                              weightedTargets,
+                                                              Priority.normal);
+            }));
+            // Create global latency-based ALIAS pointing to each weighted ALIAS
+            var endpoints = controller.routing().endpointsOf(routeEntry.getKey().application())
+                                      .named(routeEntry.getKey().endpointId())
+                                      .not().requiresRotation();
+            Set<AliasTarget> latencyTargets = Collections.unmodifiableSet(targets.keySet());
+            endpoints.forEach(endpoint -> controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()),
+                                                                                        latencyTargets, Priority.normal));
+        }
+    }
+
+    /** Compute latency and associated weighted targets from given policies */
+    private Map<LatencyAliasTarget, Set<AliasTarget>> computeTargets(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
+        Map<LatencyAliasTarget, Set<AliasTarget>> targets = new LinkedHashMap<>();
+        RoutingMethod routingMethod = RoutingMethod.exclusive;
+        for (var policy : policies) {
+            if (policy.dnsZone().isEmpty()) continue;
+            if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
+            Endpoint weighted = policy.weightedEndpointIn(controller.system(), routingMethod);
+            LatencyAliasTarget latencyTarget = new LatencyAliasTarget(HostName.from(weighted.dnsName()),
+                                                                      policy.dnsZone().get(),
+                                                                      weighted.zones().get(0));
+            // Do not route to zone if global routing status is set out at:
+            // - zone level (ZoneRoutingPolicy)
+            // - deployment level (RoutingPolicy)
+            // - application package level (deployment.xml)
+            long weight = 1;
+            var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
+            if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
+                weight = 0; // A record with 0 weight will not received traffic. If all records within a group have 0
+                            // weight, traffic is routed to all records with equal probability.
+            }
+            var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
+                                                         policy.id().zone(), weight);
+            Set<AliasTarget> weightedTargets = targets.computeIfAbsent(latencyTarget, (k) -> new LinkedHashSet<>());
+            weightedTargets.add(weightedTarget);
+        }
+        return Collections.unmodifiableMap(targets);
     }
 
     /** Store routing policies for given load balancers */
