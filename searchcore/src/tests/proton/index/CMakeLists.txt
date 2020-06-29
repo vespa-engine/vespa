@@ -1,4 +1,5 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+find_package(GTest REQUIRED)
 vespa_add_executable(searchcore_indexmanager_test_app TEST
     SOURCES
     indexmanager_test.cpp
@@ -7,7 +8,7 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     searchcore_index
     searchcore_flushengine
     searchcore_pcommon
-    gtest
+    GTest::GTest
 )
 vespa_add_executable(searchcore_fusionrunner_test_app TEST
     SOURCES
@@ -28,7 +29,7 @@ vespa_add_executable(searchcore_indexcollection_test_app TEST
     indexcollection_test.cpp
     DEPENDS
     searchcore_index
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_index_test COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/index_test.sh 
                DEPENDS searchcore_indexmanager_test_app searchcore_fusionrunner_test_app searchcore_diskindexcleaner_test_app searchcore_indexcollection_test_app)

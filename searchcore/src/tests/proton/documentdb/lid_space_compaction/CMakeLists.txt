@@ -1,4 +1,5 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+find_package(GTest REQUIRED)
 vespa_add_executable(searchcore_lid_space_compaction_test_app TEST
     SOURCES
     lid_space_compaction_test.cpp
@@ -10,6 +11,6 @@ vespa_add_executable(searchcore_lid_space_compaction_test_app TEST
     searchcore_documentmetastore
     searchcore_bucketdb
     searchcore_pcommon
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_lid_space_compaction_test_app COMMAND searchcore_lid_space_compaction_test_app)
