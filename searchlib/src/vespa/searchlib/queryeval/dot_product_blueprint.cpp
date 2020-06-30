@@ -65,6 +65,12 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
     return DotProductSearch::create(children, *tfmda[0], childMatch, _weights, std::move(md));
 }
 
+SearchIterator::UP
+DotProductBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return create_or_filter(_terms, strict, constraint);
+}
+
 void
 DotProductBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
