@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proto_converter.h"
+#include <vespa/vespalib/text/utf8.h>
 
 using ns_log::LogMessage;
 using ns_log::Logger;
@@ -59,7 +60,7 @@ ProtoConverter::log_message_to_proto(const LogMessage& message, ProtoLogMessage&
     proto.set_service(message.service());
     proto.set_component(message.component());
     proto.set_level(convert_level(message.level()));
-    proto.set_payload(message.payload());
+    proto.set_payload(vespalib::Utf8::filter_invalid_sequences(message.payload()));
 }
 
 }
