@@ -62,7 +62,6 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
         int slashIndex=id.getName().lastIndexOf("/");
         if (slashIndex<1) return null;
         String parentName=id.getName().substring(0,slashIndex);
-        if (parentName.equals("")) return null;
 
         ComponentSpecification parentId=new ComponentSpecification(parentName,id.getVersionSpecification());
 

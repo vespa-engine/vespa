@@ -526,6 +526,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                       QueryProfileVisitor visitor,
                       DimensionBinding dimensionBinding,
                       QueryProfile owner) {
+        //System.out.println("    visiting " + this);
         visitor.onQueryProfile(this, dimensionBinding, owner, null);
         if (visitor.isDone()) return;
 
@@ -539,6 +540,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
         if (visitor.visitInherited())
             visitInherited(allowContent, visitor, dimensionBinding, owner);
+        //System.out.println("    done visiting " + this);
     }
 
     protected void visitVariants(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {

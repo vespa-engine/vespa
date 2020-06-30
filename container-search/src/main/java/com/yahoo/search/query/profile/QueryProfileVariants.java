@@ -30,7 +30,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
     private Map<String,FieldValues> fieldValuesByName = new HashMap<>();
 
     /** The inherited profiles for various dimensions settings - a set of fieldvalues of List&lt;QueryProfile&gt; */
-    private FieldValues inheritedProfiles =new FieldValues();
+    private FieldValues inheritedProfiles = new FieldValues();
 
     /**
      * Field and inherited profiles sorted by specificity used for all-value visiting.
@@ -105,10 +105,14 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         if (contentName != null) {
             if (type != null)
                 contentName = type.unalias(contentName);
+            //System.out.println("    accepting single value in " + this + " for local key " + contentName);
             acceptSingleValue(contentName, allowContent, visitor, dimensionBinding); // Special cased for performance
+            //System.out.println("    done accepting single value in " + this + " for local key " + contentName);
         }
         else {
+            //System.out.println("    accepting all values in " + this);
             acceptAllValues(allowContent, visitor, type, dimensionBinding);
+            //System.out.println("    done accepting all values in " + this);
         }
     }
 
@@ -144,7 +148,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
                 if (visitor.isDone()) return;
                 fieldIndex++;
             }
-            else if (inheritedProfileValue != null) { // Inherited is most specific at this point
+            else { // Inherited is most specific at this point
                 if (inheritedProfileValue.matches(dimensionBinding.getValues())) {
                     @SuppressWarnings("unchecked")
                     List<QueryProfile> inheritedProfileList = (List<QueryProfile>)inheritedProfileValue.getValue();

@@ -116,6 +116,20 @@ public class DimensionBinding {
     }
 
     /**
+     * Returns whether this is compatible with the given binding.
+     * Two bindings are compatible if the bind the same values of all shared keys.
+     */
+    public boolean isCompatibleWith(DimensionBinding other) {
+        for (String dimensionInOther : other.dimensions) {
+            String thisValue = this.getContext().get(dimensionInOther);
+            if (thisValue == null) continue;
+            if ( ! thisValue.equals(other.getContext().get(dimensionInOther)))
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * Combines this binding with another if compatible.
      * Two bindings are incompatible if
      * <ul>
@@ -162,7 +176,7 @@ public class DimensionBinding {
                 combined.add(d2.get(d2Index++));
             }
             else {
-                return null; // no independent and no agreement
+                return null; // not independent and no agreement
             }
         }
         if (d1Index < d1.size())

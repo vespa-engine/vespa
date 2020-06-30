@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
@@ -15,7 +14,6 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -31,18 +29,6 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class XmlReadingTestCase {
-
-    @Ignore
-    @Test
-    public void testTmp() {
-        QueryProfileRegistry registry =
-                new QueryProfileXMLReader().read("/Users/bratseth/development/slingstone/massmedia_serving/homerun/src/main/application/search/flattened");
-
-        long startTime = System.currentTimeMillis();
-        System.out.println("Compiling ...");
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
-        System.out.println("Done in " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
-    }
 
     @Test
     public void testValid() {
