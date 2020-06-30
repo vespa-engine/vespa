@@ -40,9 +40,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     public static final String METRICS_V1_PATH = "/applicationmetrics/v1";
     public static final String METRICS_VALUES_PATH = METRICS_V1_PATH + "/values";
-
-    public static final String PROMETHEUS_V1_PATH = "/applicationprometheus/v1";
-    public static final String PROMETHEUS_VALUES_PATH = PROMETHEUS_V1_PATH + "/values";
+    public static final String PROMETHEUS_VALUES_PATH = METRICS_V1_PATH + "/prometheus";
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
@@ -60,8 +58,6 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
         if (apiPath.matches(METRICS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH)));
         if (apiPath.matches(METRICS_VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
-
-        if (apiPath.matches(PROMETHEUS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(PROMETHEUS_VALUES_PATH)));
         if (apiPath.matches(PROMETHEUS_VALUES_PATH)) return Optional.of(applicationPrometheusResponse(consumer));
 
         return Optional.empty();

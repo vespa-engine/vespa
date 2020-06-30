@@ -1,6 +1,7 @@
 package com.yahoo.container.handler.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
+import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.StringResponse;
@@ -30,8 +31,9 @@ public class PrometheusV1Handler extends HttpHandlerBase{
     private final String metricsProxyUri;
     private final HttpClient httpClient = createHttpClient();
 
-    protected PrometheusV1Handler(Executor executor,
-                                  MetricsProxyApiConfig config) {
+    @Inject
+    public PrometheusV1Handler(Executor executor,
+                               MetricsProxyApiConfig config) {
         super(executor);
         metricsProxyUri = "http://localhost:" + config.metricsPort() + config.prometheusApiPath();
     }
