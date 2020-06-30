@@ -52,13 +52,14 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected void maintain() {
-        log.fine(() -> "Running");
         if (! distributeApplicationPackage.value()) return;
 
         try (var fileDownloader = new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
                 log.fine(() -> "Verifying application package for " + applicationId);
                 RemoteSession session = applicationRepository.getActiveSession(applicationId);
+                if (session == null) continue;  // App might be deleted after call to listApplications()
+
                 FileReference applicationPackage = session.getApplicationPackageReference();
                 long sessionId = session.getSessionId();
                 log.fine(() -> "Verifying application package file reference " + applicationPackage + " for session " + sessionId);
@@ -84,7 +85,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         if (sessionRepository.getLocalSession(sessionId) == null)
             sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
-
 
     private boolean missingOnDisk(FileReference applicationPackageReference) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(downloadDirectory);
