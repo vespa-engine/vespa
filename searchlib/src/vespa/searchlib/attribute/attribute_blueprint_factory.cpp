@@ -416,8 +416,20 @@ public:
                         .setDocIdLimit(get_docid_limit()),
                 _weights, _terms, _attr, strict);
     }
+    std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
     bool always_needs_unpack() const override { return true; }
 };
+
+std::unique_ptr<SearchIterator>
+DirectWandBlueprint::createFilterSearch(bool, FilterConstraint) const
+{
+    std::vector<DocumentWeightIterator> iterators;
+    iterators.reserve(_terms.size());
+    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+        _attr.create(r.posting_idx, iterators);
+    }
+    return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+}
 
 //-----------------------------------------------------------------------------
 

@@ -102,6 +102,12 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                                                std::move(childrenMatchData)), strict));
 }
 
+std::unique_ptr<SearchIterator>
+ParallelWeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return create_or_filter(_terms, strict, constraint);
+}
+
 void
 ParallelWeakAndBlueprint::fetchPostings(const ExecuteInfo & execInfo)
 {
