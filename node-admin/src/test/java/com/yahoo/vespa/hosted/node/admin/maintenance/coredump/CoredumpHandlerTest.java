@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
@@ -247,10 +248,11 @@ public class CoredumpHandlerTest {
 
     private static void assertFolderContents(Path pathToFolder, String... filenames) {
         Set<String> expectedContentsOfFolder = Set.of(filenames);
-        Set<String> actualContentsOfFolder = new UnixPath(pathToFolder)
-                .listContentsOfDirectory().stream()
-                .map(unixPath -> unixPath.toPath().getFileName().toString())
-                .collect(Collectors.toSet());
+        Set<String> actualContentsOfFolder;
+        try (Stream<UnixPath> paths = new UnixPath(pathToFolder).listContentsOfDirectory()) {
+            actualContentsOfFolder = paths.map(unixPath -> unixPath.toPath().getFileName().toString())
+                                          .collect(Collectors.toSet());
+        }
         assertEquals(expectedContentsOfFolder, actualContentsOfFolder);
     }
 

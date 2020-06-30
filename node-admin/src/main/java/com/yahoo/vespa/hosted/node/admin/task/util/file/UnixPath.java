@@ -20,10 +20,8 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
@@ -231,8 +229,8 @@ public class UnixPath {
      */
     public boolean deleteRecursively() {
         if (!isSymbolicLink() && isDirectory()) {
-            for (UnixPath path : listContentsOfDirectory()) {
-                path.deleteRecursively();
+            try (Stream<UnixPath> paths = listContentsOfDirectory()) {
+                paths.forEach(UnixPath::deleteRecursively);
             }
         }
         return uncheck(() -> Files.deleteIfExists(path));
@@ -243,13 +241,14 @@ public class UnixPath {
         return this;
     }
 
-    public List<UnixPath> listContentsOfDirectory() {
-        try (Stream<Path> stream = Files.list(path)){
-            return stream
-                    .map(UnixPath::new)
-                    .collect(Collectors.toList());
+    /** Lists the contents of this as a stream. Callers should use try-with to ensure that the stream is closed */
+    public Stream<UnixPath> listContentsOfDirectory() {
+        try {
+            // Avoid the temptation to collect the stream here as collecting a directory with a high number of entries
+            // can quickly lead to out of memory conditions
+            return Files.list(path).map(UnixPath::new);
         } catch (NoSuchFileException ignored) {
-            return List.of();
+            return Stream.empty();
         } catch (IOException e) {
             throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }
