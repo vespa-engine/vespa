@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -141,9 +140,8 @@ public final class CompoundName {
         if (nameParts.length == 0) return this;
         if (isEmpty()) return fromComponents(nameParts);
 
-        List<String> newCompounds = new ArrayList<>();
-        for (String namePart : nameParts)
-            newCompounds.add(namePart);
+        List<String> newCompounds = new ArrayList<>(nameParts.length+compounds.size());
+        newCompounds.addAll(Arrays.asList(nameParts));
         newCompounds.addAll(this.compounds);
         return new CompoundName(newCompounds);
     }

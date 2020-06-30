@@ -74,7 +74,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
      * will be adjusted accordingly.
      */
     @Override
-    protected void sendSearchRequest(Query query) throws IOException {
+    protected Object sendSearchRequest(Query query, Object unusedContext) throws IOException {
         this.query = query;
         invokers.forEach(invoker -> invoker.setMonitor(this));
         deadline = currentTime() + query.getTimeLeft();
@@ -89,13 +89,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         query.setHits(q);
         query.setOffset(0);
 
+        Object context = null;
         for (SearchInvoker invoker : invokers) {
-            invoker.sendSearchRequest(query);
+            context = invoker.sendSearchRequest(query, context);
             askedNodes++;
         }
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
+        return null;
     }
 
     @Override

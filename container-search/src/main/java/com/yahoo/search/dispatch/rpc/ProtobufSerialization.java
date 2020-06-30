@@ -91,7 +91,8 @@ public class ProtobufSerialization {
         return traceLevel;
     }
 
-    private static void mergeToSearchRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder) {
+    private static void
+    mergeToSearchRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder) {
         builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getQueryCache()) {

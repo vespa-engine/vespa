@@ -32,14 +32,22 @@ public abstract class SearchInvoker extends CloseableInvoker {
      * for correct result windowing.
      */
     public Result search(Query query, Execution execution) throws IOException {
-        sendSearchRequest(query);
+        sendSearchRequest(query, null);
         InvokerResult result = getSearchResult(execution);
         setFinalStatus(result.getResult().hits().getError() == null);
         result.complete();
         return result.getResult();
     }
 
-    protected abstract void sendSearchRequest(Query query) throws IOException;
+    /**
+     *
+     * @param query The query to send
+     * @param context A context object that can be used to pass context among different
+     *                invokers. Fx for reuse of preserialized data.
+     * @return An object that can be passed to the next invocation of sendSearchRequest
+     * @throws IOException
+     */
+    protected abstract Object sendSearchRequest(Query query, Object context) throws IOException;
 
     protected abstract InvokerResult getSearchResult(Execution execution) throws IOException;
 
