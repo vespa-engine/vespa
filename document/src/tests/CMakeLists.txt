@@ -1,5 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+find_package(GTest REQUIRED)
+
 # Runner for unit tests written in gtest.
 # NOTE: All new test classes should be added here.
 vespa_add_executable(document_gtest_runner_app TEST
@@ -32,7 +34,7 @@ vespa_add_executable(document_gtest_runner_app TEST
     weightedsetfieldvaluetest.cpp
     DEPENDS
     document
-    gtest
+    GTest::GTest
     AFTER
     document_documentconfig
 )

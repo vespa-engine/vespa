@@ -1,4 +1,5 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+find_package(GTest REQUIRED)
 vespa_add_library(storage_teststorageserver TEST
     SOURCES
     testvisitormessagesession.cpp
@@ -25,7 +26,7 @@ vespa_add_executable(storage_storageserver_gtest_runner_app TEST
     storage_storageserver
     storage_testcommon
     storage_teststorageserver
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(
