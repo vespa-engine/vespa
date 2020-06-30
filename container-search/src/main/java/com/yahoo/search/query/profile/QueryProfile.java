@@ -265,37 +265,6 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     /**
-     * Lists types reachable from this, indexed by the prefix having that type.
-     * If this is itself typed, this' type will be included with an empty prefix
-     */
-    public Map<CompoundName, QueryProfileType> listTypes(CompoundName prefix, Map<String, String> context) {
-        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(), context);
-        AllTypesQueryProfileVisitor visitor = new AllTypesQueryProfileVisitor(prefix);
-        accept(visitor, dimensionBinding, null);
-        return visitor.getResult();
-    }
-
-    /**
-     * Lists references reachable from this.
-     */
-    Set<CompoundName> listReferences(CompoundName prefix, Map<String, String> context) {
-        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(),context);
-        AllReferencesQueryProfileVisitor visitor = new AllReferencesQueryProfileVisitor(prefix);
-        accept(visitor,dimensionBinding,null);
-        return visitor.getResult();
-    }
-
-    /**
-     * Lists every entry (value or reference) reachable from this which is not overridable
-     */
-    Set<CompoundName> listUnoverridable(CompoundName prefix, Map<String, String> context) {
-        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(),context);
-        AllUnoverridableQueryProfileVisitor visitor = new AllUnoverridableQueryProfileVisitor(prefix);
-        accept(visitor, dimensionBinding, null);
-        return visitor.getResult();
-    }
-
-    /**
      * Returns a value from this query profile by resolving the given name:
      * <ul>
      *   <li>The name up to the first dot is the value looked up in the value of this profile
@@ -557,6 +526,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                       QueryProfileVisitor visitor,
                       DimensionBinding dimensionBinding,
                       QueryProfile owner) {
+        //System.out.println("    visiting " + this);
         visitor.onQueryProfile(this, dimensionBinding, owner, null);
         if (visitor.isDone()) return;
 
@@ -570,6 +540,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
         if (visitor.visitInherited())
             visitInherited(allowContent, visitor, dimensionBinding, owner);
+        //System.out.println("    done visiting " + this);
     }
 
     protected void visitVariants(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
@@ -759,7 +730,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Sets the overridability of a field in this profile,
      * this overrides the corresponding setting in the type (if any)
      */
-    private void setOverridable(CompoundName fieldName,boolean overridable,DimensionBinding dimensionBinding) {
+    private void setOverridable(CompoundName fieldName, boolean overridable, DimensionBinding dimensionBinding) {
         QueryProfile parent = lookupParentExact(fieldName, true, dimensionBinding);
         if (parent.overridable == null)
             parent.overridable = new HashMap<>();

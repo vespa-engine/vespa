@@ -3,6 +3,9 @@ package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +29,7 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                         DimensionBinding binding,
                         QueryProfile owner,
                         DimensionValues variant) {
-        putValue(localName, value, owner, variant);
+        putValue(localName, value, null, owner, variant, binding);
     }
 
     @Override
@@ -34,17 +37,25 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                                            DimensionBinding binding,
                                            QueryProfile owner,
                                            DimensionValues variant) {
-        putValue("", profile.getValue(), owner, variant);
+        putValue("", profile.getValue(), profile, owner, variant, binding);
     }
 
-    private void putValue(String key, Object value, QueryProfile owner, DimensionValues variant) {
-        if (value == null) return;
+    private void putValue(String key,
+                          Object value,
+                          QueryProfile profile,
+                          QueryProfile owner,
+                          DimensionValues variant,
+                          DimensionBinding binding) {
         CompoundName fullName = currentPrefix.append(key);
-        if (fullName.isEmpty()) return; // Avoid putting a non-leaf (subtree) root in the list
         if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
+
+        Boolean isOverridable = owner != null ? owner.isLocalOverridable(key, binding) : null;
 
         values.put(fullName.toString(), new ValueWithSource(value,
                                                             owner == null ? "anonymous" : owner.getSource(),
+                                                            isOverridable != null &&  ! isOverridable,
+                                                            profile != null,
+                                                            profile == null ? null : profile.getType(),
                                                             variant));
     }
 

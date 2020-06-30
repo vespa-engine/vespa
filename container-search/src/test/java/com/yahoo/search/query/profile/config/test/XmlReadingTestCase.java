@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;

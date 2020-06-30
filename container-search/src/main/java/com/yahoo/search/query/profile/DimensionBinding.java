@@ -162,7 +162,7 @@ public class DimensionBinding {
                 combined.add(d2.get(d2Index++));
             }
             else {
-                return null; // no independent and no agreement
+                return null; // not independent and no agreement
             }
         }
         if (d1Index < d1.size())

@@ -5732,7 +5732,6 @@
       "public final java.util.Map listValues(java.lang.String, java.util.Map)",
       "public final java.util.Map listValues(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public java.util.Map listValues(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
-      "public java.util.Map listTypes(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public final java.lang.Object get(java.lang.String)",
       "public final java.lang.Object get(java.lang.String, java.util.Map)",
       "public final java.lang.Object get(java.lang.String, java.lang.String[])",
@@ -6064,8 +6063,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>()",
       "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig)",
+      "public void <init>()",
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
@@ -6137,9 +6136,12 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.Object, java.lang.String, com.yahoo.search.query.profile.DimensionValues)",
+      "public void <init>(java.lang.Object, java.lang.String, boolean, boolean, com.yahoo.search.query.profile.types.QueryProfileType, com.yahoo.search.query.profile.DimensionValues)",
       "public java.lang.Object value()",
       "public java.lang.String source()",
+      "public boolean isUnoverridable()",
+      "public boolean isQueryProfile()",
+      "public com.yahoo.search.query.profile.types.QueryProfileType queryProfileType()",
       "public com.yahoo.search.query.profile.compiled.ValueWithSource withValue(java.lang.Object)",
       "public java.util.Optional variant()",
       "public java.lang.String toString()"

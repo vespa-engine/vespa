@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Compile a set of query profiles into compiled profiles.
@@ -24,9 +25,8 @@ public class QueryProfileCompiler {
 
     public static CompiledQueryProfileRegistry compile(QueryProfileRegistry input) {
         CompiledQueryProfileRegistry output = new CompiledQueryProfileRegistry(input.getTypeRegistry());
-        for (QueryProfile inputProfile : input.allComponents()) {
+        for (QueryProfile inputProfile : input.allComponents())
             output.register(compile(inputProfile, output));
-        }
         return output;
     }
 
@@ -40,18 +40,20 @@ public class QueryProfileCompiler {
             // Resolve values for each existing variant and combine into a single data structure
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
-            log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
+            log.fine(() -> "Compiling " + in + " having " + variants.size() + " variants");
+
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
-                    values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+                    CompoundName fullName = variant.path().append(entry.getKey());
+                    values.put(fullName, variant.binding(), entry.getValue());
+                    if (entry.getValue().isUnoverridable())
+                        unoverridables.put(fullName, variant.binding(), Boolean.TRUE);
+                    if (entry.getValue().isQueryProfile())
+                        references.put(fullName, variant.binding(), Boolean.TRUE);
+                    if (entry.getValue().queryProfileType() != null)
+                        types.put(fullName, variant.binding(), entry.getValue().queryProfileType());
                 }
-                for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())
-                    types.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
-                for (CompoundName reference : in.listReferences(variant.path(), variant.binding().getContext()))
-                    references.put(variant.path().append(reference), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
-                for (CompoundName name : in.listUnoverridable(variant.path(), variant.binding().getContext()))
-                    unoverridables.put(variant.path().append(name), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
             }
 
             return new CompiledQueryProfile(in.getId(), in.getType(),
@@ -100,6 +102,7 @@ public class QueryProfileCompiler {
      */
     private static Set<DimensionBindingForPath> wildcardExpanded(Set<DimensionBindingForPath> variants) {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
+
         for (var variant : variants) {
             if (hasWildcardBeforeEnd(variant.binding()))
                 expanded.addAll(wildcardExpanded(variant, variants));
@@ -120,10 +123,10 @@ public class QueryProfileCompiler {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
         for (var variant : variants) {
             if (variant.binding().isNull()) continue;
+            if ( ! variant.path().hasPrefix(variantToExpand.path())) continue;
             DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding());
-            if ( ! combined.isInvalid() ) {
+            if ( ! combined.isInvalid() )
                 expanded.add(new DimensionBindingForPath(combined, variantToExpand.path()));
-            }
         }
         return expanded;
     }
@@ -136,7 +139,7 @@ public class QueryProfileCompiler {
         for (DimensionBindingForPath v1 : v1s) {
             if (v1.binding().isNull()) continue;
             for (DimensionBindingForPath v2 : v2s) {
-                if (v1.binding().isNull()) continue;
+                if (v2.binding().isNull()) continue;
 
                 DimensionBinding combined = v1.binding().combineWith(v2.binding());
                 if ( combined.isInvalid() ) continue;
