@@ -40,6 +40,7 @@ public:
     std::unique_ptr<SameElementSearch> create_same_element_search(bool strict) const;
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
                                       bool strict) const override;
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<Blueprint::UP> &terms() const { return _terms; }
     const vespalib::string &field_name() const { return _field_name; }
