@@ -92,6 +92,7 @@ public:
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     WeakAndBlueprint(uint32_t n) : _n(n) {}
     ~WeakAndBlueprint();
