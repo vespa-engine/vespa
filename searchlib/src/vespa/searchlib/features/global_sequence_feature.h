@@ -14,12 +14,12 @@ namespace search::features {
  * It will change if documents change lid.
  */
 
-class UniqueBlueprint : public fef::Blueprint
+class GlobalSequenceBlueprint : public fef::Blueprint
 {
 private:
     uint32_t  _distributionKey;
 public:
-    UniqueBlueprint();
+    GlobalSequenceBlueprint();
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
@@ -27,6 +27,10 @@ public:
     }
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    static uint64_t globalSequence(uint32_t docId, uint32_t distrKey) {
+        return (1ul << 48) - ((uint64_t(docId) << 16)| distrKey);
+    }
 };
 
 }

@@ -34,7 +34,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
-#include <vespa/searchlib/features/uniquefeature.h>
+#include <vespa/searchlib/features/global_sequence_feature.h>
 #include <vespa/searchlib/features/weighted_set_parser.hpp>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -1565,22 +1565,33 @@ Test::testMatchCount()
     }
 }
 
+void verifySequence(uint64_t first, uint64_t second) {
+    ASSERT_GREATER(first, second);
+    ASSERT_GREATER(double(first), double(second));
+}
+
 void
 Test::testUnique()
 {
     {
-        UniqueBlueprint bp;
-        EXPECT_TRUE(assertCreateInstance(bp, "unique"));
+        GlobalSequenceBlueprint bp;
+        EXPECT_TRUE(assertCreateInstance(bp, "globalSequence"));
         FtFeatureTest ft(_factory, "");
         StringList params, in, out;
         FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
-        FT_DUMP_EMPTY(_factory, "unique");
+        FT_DUMP_EMPTY(_factory, "globalSequence");
     }
-    FtFeatureTest ft(_factory, "unique");
+    FtFeatureTest ft(_factory, "globalSequence");
     ASSERT_TRUE(ft.setup());
-    EXPECT_TRUE(ft.execute(0x10003,0, 1));
-    EXPECT_TRUE(ft.execute(0x70003,0, 7));
-
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1,1)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1,2)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2,1)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2,2)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2,3)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3,0)));
+    ASSERT_EQUAL(0xfffffffefffdul, (1ul << 48) - 0x10003l);
+    EXPECT_TRUE(ft.execute(0xfffffffefffdul, 0, 1));
+    EXPECT_TRUE(ft.execute(0xfffffff8fffdul, 0, 7));
 }
 
 void
