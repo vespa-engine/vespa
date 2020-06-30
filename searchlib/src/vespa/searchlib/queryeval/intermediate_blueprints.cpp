@@ -437,7 +437,11 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    return create_or_filter(get_children(), strict, constraint);
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        return create_or_filter(get_children(), strict, constraint);
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
 }
 
 //-----------------------------------------------------------------------------

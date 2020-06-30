@@ -3,6 +3,7 @@
 #include "parallel_weak_and_blueprint.h"
 #include "parallel_weak_and_search.h"
 #include <vespa/searchlib/queryeval/field_spec.hpp>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -105,7 +106,11 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 std::unique_ptr<SearchIterator>
 ParallelWeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    return create_or_filter(_terms, strict, constraint);
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        return create_or_filter(_terms, strict, constraint);
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
 }
 
 void

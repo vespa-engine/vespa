@@ -421,14 +421,18 @@ public:
 };
 
 std::unique_ptr<SearchIterator>
-DirectWandBlueprint::createFilterSearch(bool, FilterConstraint) const
+DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const
 {
-    std::vector<DocumentWeightIterator> iterators;
-    iterators.reserve(_terms.size());
-    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
-        _attr.create(r.posting_idx, iterators);
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        std::vector<DocumentWeightIterator> iterators;
+        iterators.reserve(_terms.size());
+        for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+            _attr.create(r.posting_idx, iterators);
+        }
+        return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+    } else {
+        return std::make_unique<queryeval::EmptySearch>();
     }
-    return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
 }
 
 //-----------------------------------------------------------------------------
