@@ -16,7 +16,7 @@
   <dependencies>
 
     <dependency>
-      <!-- TODO: this is instead of moving the java code in documentapi to this module,
+      <!-- NOTE: this is instead of moving the java code in documentapi to this module (and turning the deps around),
                  which is made difficult by using common test files with the C++ code. -->
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>documentapi</artifactId>
@@ -27,6 +27,14 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>documentapi-dependencies</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <scope>provided</scope>
     </dependency>
 
   </dependencies>
