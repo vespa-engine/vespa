@@ -79,9 +79,7 @@
                 <version>${project.version}</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <attachBundleArtifact>true</attachBundleArtifact>
-                    <bundleClassifierName>deploy</bundleClassifierName>
-                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
+                    <useCommonAssemblyIds>true</useCommonAssemblyIds>
                 </configuration>
             </plugin>
             <plugin>
