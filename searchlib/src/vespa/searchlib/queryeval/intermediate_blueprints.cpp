@@ -434,6 +434,12 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     return WeakAndSearch::create(terms, _n, strict);
 }
 
+SearchIterator::UP
+WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    return create_or_filter(get_children(), strict, constraint);
+}
+
 //-----------------------------------------------------------------------------
 
 Blueprint::HitEstimate
