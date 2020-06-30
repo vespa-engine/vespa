@@ -16,7 +16,7 @@ template<typename Map>
 LockableMap<Map>::LockIdSet::LockIdSet() : Hash() { }
 
 template<typename Map>
-LockableMap<Map>::LockIdSet::~LockIdSet() { }
+LockableMap<Map>::LockIdSet::~LockIdSet() = default;
 
 template<typename Map>
 size_t
@@ -28,7 +28,7 @@ template<typename Map>
 LockableMap<Map>::LockWaiters::LockWaiters() : _id(0), _map() { }
 
 template<typename Map>
-LockableMap<Map>::LockWaiters::~LockWaiters() { }
+LockableMap<Map>::LockWaiters::~LockWaiters() = default;
 
 template<typename Map>
 size_t
@@ -36,35 +36,6 @@ LockableMap<Map>::LockWaiters::insert(const LockId & lid) {
     Key id(_id++);
     _map.insert(typename WaiterMap::value_type(id, lid));
     return id;
-}
-
-template<typename Map>
-void
-LockableMap<Map>::WrappedEntry::write()
-{
-    assert(_lockKeeper->_locked);
-    assert(_value.verifyLegal());
-    bool b;
-    _lockKeeper->_map.insert(_lockKeeper->_key, _value, _clientId, true, b);
-    _lockKeeper->unlock();
-}
-
-template<typename Map>
-void
-LockableMap<Map>::WrappedEntry::remove()
-{
-    assert(_lockKeeper->_locked);
-    assert(_exists);
-    _lockKeeper->_map.erase(_lockKeeper->_key, _clientId, true);
-    _lockKeeper->unlock();
-}
-
-template<typename Map>
-void
-LockableMap<Map>::WrappedEntry::unlock()
-{
-    assert(_lockKeeper->_locked);
-    _lockKeeper->unlock();
 }
 
 template<typename Map>
@@ -77,7 +48,7 @@ LockableMap<Map>::LockableMap()
 {}
 
 template<typename Map>
-LockableMap<Map>::~LockableMap() {}
+LockableMap<Map>::~LockableMap() = default;
 
 template<typename Map>
 bool
@@ -98,16 +69,16 @@ LockableMap<Map>::operator<(const LockableMap<Map>& other) const
 }
 
 template<typename Map>
-typename Map::size_type
-LockableMap<Map>::size() const
+size_t
+LockableMap<Map>::size() const noexcept
 {
     std::lock_guard<std::mutex> guard(_lock);
     return _map.size();
 }
 
 template<typename Map>
-typename Map::size_type
-LockableMap<Map>::getMemoryUsage() const
+size_t
+LockableMap<Map>::getMemoryUsage() const noexcept
 {
     std::lock_guard<std::mutex> guard(_lock);
     return _map.getMemoryUsage() + _lockedKeys.getMemoryUsage() +
@@ -116,7 +87,7 @@ LockableMap<Map>::getMemoryUsage() const
 
 template<typename Map>
 bool
-LockableMap<Map>::empty() const
+LockableMap<Map>::empty() const noexcept
 {
     std::lock_guard<std::mutex> guard(_lock);
     return _map.empty();
@@ -145,9 +116,7 @@ void LockableMap<Map>::acquireKey(const LockId & lid, std::unique_lock<std::mute
 
 template<typename Map>
 typename LockableMap<Map>::WrappedEntry
-LockableMap<Map>::get(const key_type& key, const char* clientId,
-                      bool createIfNonExisting,
-                      bool lockIfNonExistingAndNotCreating)
+LockableMap<Map>::get(const key_type& key, const char* clientId, bool createIfNonExisting)
 {
     LockId lid(key, clientId);
     std::unique_lock<std::mutex> guard(_lock);
@@ -157,71 +126,34 @@ LockableMap<Map>::get(const key_type& key, const char* clientId,
         _map.find(key, createIfNonExisting, preExisted);
 
     if (it == _map.end()) {
-        if (lockIfNonExistingAndNotCreating) {
-            return WrappedEntry(*this, key, clientId);
-        } else {
-            return WrappedEntry();
-        }
+        return WrappedEntry();
     }
     _lockedKeys.insert(lid);
     return WrappedEntry(*this, key, it->second, clientId, preExisted);
 }
 
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-
-namespace bucketdb {
-struct StorageBucketInfo;
-struct BucketInfo;
-}
-
-namespace debug {
-
-template <typename T> struct TypeTag {};
-// Storage
-void logBucketDbInsert(uint64_t key, const bucketdb::StorageBucketInfo& entry);
-void logBucketDbErase(uint64_t key, const TypeTag<bucketdb::StorageBucketInfo>&);
-
-// Distributor
-void logBucketDbInsert(uint64_t key, const bucketdb::BucketInfo& entry);
-void logBucketDbErase(uint64_t key, const TypeTag<bucketdb::BucketInfo>&);
-
-template <typename DummyValue>
-inline void logBucketDbErase(uint64_t, const TypeTag<DummyValue>&) {}
-template <typename DummyKey, typename DummyValue>
-inline void logBucketDbInsert(const DummyKey&, const DummyValue&) {}
-
-}
-
-#endif // ENABLE_BUCKET_OPERATION_LOGGING
-
 template<typename Map>
 bool
-LockableMap<Map>::erase(const key_type& key, const char* clientId, bool haslock)
+LockableMap<Map>::erase(const key_type& key, const char* client_id, bool has_lock)
 {
-    LockId lid(key, clientId);
+    LockId lid(key, client_id);
     std::unique_lock<std::mutex> guard(_lock);
-    if (!haslock) {
+    if (!has_lock) {
         acquireKey(lid, guard);
     }
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    debug::logBucketDbErase(key, debug::TypeTag<mapped_type>());
-#endif
     return _map.erase(key);
 }
 
 template<typename Map>
 void
 LockableMap<Map>::insert(const key_type& key, const mapped_type& value,
-                         const char* clientId, bool haslock, bool& preExisted)
+                         const char* client_id, bool has_lock, bool& preExisted)
 {
-    LockId lid(key, clientId);
+    LockId lid(key, client_id);
     std::unique_lock<std::mutex> guard(_lock);
-    if (!haslock) {
+    if (!has_lock) {
         acquireKey(lid, guard);
     }
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    debug::logBucketDbInsert(key, value);
-#endif
     _map.insert(key, value, preExisted);
 }
 
@@ -242,12 +174,14 @@ LockableMap<Map>::findNextKey(key_type& key, mapped_type& val,
     // Wait for next value to unlock.
     typename Map::iterator it(_map.lower_bound(key));
     while (it != _map.end() && _lockedKeys.exist(LockId(it->first, ""))) {
-        typename LockWaiters::Key waitId(_lockWaiters.insert(LockId(it->first, clientId)));
+        auto wait_id = _lockWaiters.insert(LockId(it->first, clientId));
         _cond.wait(guard);
-        _lockWaiters.erase(waitId);
+        _lockWaiters.erase(wait_id);
         it = _map.lower_bound(key);
     }
-    if (it == _map.end()) return true;
+    if (it == _map.end()) {
+        return true;
+    }
     key = it->first;
     val = it->second;
     return false;
@@ -260,127 +194,60 @@ LockableMap<Map>::handleDecision(key_type& key, mapped_type& val,
 {
     bool b;
     switch (decision) {
-        case UPDATE: _map.insert(key, val, b);
-                     break;
-        case REMOVE: _map.erase(key);
-                     break;
-        case ABORT:  return true;
-        case CONTINUE: break;
-        default:
-            HDR_ABORT("should not be reached");
+    case Decision::UPDATE:
+        _map.insert(key, val, b);
+        break;
+    case Decision::REMOVE:
+        _map.erase(key);
+        break;
+    case Decision::ABORT:
+        return true;
+    case Decision::CONTINUE:
+        break;
+    default:
+        HDR_ABORT("should not be reached");
     }
     return false;
 }
 
 template<typename Map>
-template<typename Functor>
-void
-LockableMap<Map>::each(Functor& functor, const char* clientId,
-                       const key_type& first, const key_type& last)
-{
-    key_type key = first;
-    mapped_type val;
-    Decision decision;
-    {
-        std::unique_lock<std::mutex> guard(_lock);
-        if (findNextKey(key, val, clientId, guard) || key > last) return;
-        _lockedKeys.insert(LockId(key, clientId));
-    }
-    try{
-        while (true) {
-            decision = functor(const_cast<const key_type&>(key), val);
-            std::unique_lock<std::mutex> guard(_lock);
-            _lockedKeys.erase(LockId(key, clientId));
-            _cond.notify_all();
-            if (handleDecision(key, val, decision)) return;
-            ++key;
-            if (findNextKey(key, val, clientId, guard) || key > last) return;
-            _lockedKeys.insert(LockId(key, clientId));
-        }
-    } catch (...) {
-            // Assuming only the functor call can throw exceptions, we need
-            // to unlock the current key before exiting
-        std::lock_guard<std::mutex> guard(_lock);
-        _lockedKeys.erase(LockId(key, clientId));
-        _cond.notify_all();
-        throw;
-    }
-}
-
-template<typename Map>
-template<typename Functor>
-void
-LockableMap<Map>::each(const Functor& functor, const char* clientId,
-                       const key_type& first, const key_type& last)
-{
-    key_type key = first;
-    mapped_type val;
-    Decision decision;
-    {
-        std::unique_lock<std::mutex> guard(_lock);
-        if (findNextKey(key, val, clientId, guard) || key > last) return;
-        _lockedKeys.insert(LockId(key, clientId));
-    }
-    try{
-        while (true) {
-            decision = functor(const_cast<const key_type&>(key), val);
-            std::unique_lock<std::mutex> guard(_lock);
-            _lockedKeys.erase(LockId(key, clientId));
-            _cond.notify_all();
-            if (handleDecision(key, val, decision)) return;
-            ++key;
-            if (findNextKey(key, val, clientId, guard) || key > last) return;
-            _lockedKeys.insert(LockId(key, clientId));
-        }
-    } catch (...) {
-            // Assuming only the functor call can throw exceptions, we need
-            // to unlock the current key before exiting
-        std::lock_guard<std::mutex> guard(_lock);
-        _lockedKeys.erase(LockId(key, clientId));
-        _cond.notify_all();
-        throw;
-    }
-}
-
-template<typename Map>
-template<typename Functor>
-void
-LockableMap<Map>::all(Functor& functor, const char* clientId,
-                      const key_type& first, const key_type& last)
+void LockableMap<Map>::do_for_each_mutable(std::function<Decision(uint64_t, mapped_type&)> func,
+                                           const char* clientId,
+                                           const key_type& first,
+                                           const key_type& last)
 {
     key_type key = first;
     mapped_type val;
     std::unique_lock<std::mutex> guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard) || key > last) return;
-        Decision d(functor(const_cast<const key_type&>(key), val));
+        Decision d(func(const_cast<const key_type&>(key), val));
         if (handleDecision(key, val, d)) return;
         ++key;
     }
 }
 
 template<typename Map>
-template<typename Functor>
-void
-LockableMap<Map>::all(const Functor& functor, const char* clientId,
-                      const key_type& first, const key_type& last)
+void LockableMap<Map>::do_for_each(std::function<Decision(uint64_t, const mapped_type&)> func,
+                                   const char* clientId,
+                                   const key_type& first,
+                                   const key_type& last)
 {
     key_type key = first;
     mapped_type val;
     std::unique_lock<std::mutex> guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard) || key > last) return;
-        Decision d(functor(const_cast<const key_type&>(key), val));
-        assert(d == ABORT || d == CONTINUE);
+        Decision d(func(const_cast<const key_type&>(key), val));
+        assert(d == Decision::ABORT || d == Decision::CONTINUE);
         if (handleDecision(key, val, d)) return;
         ++key;
     }
 }
 
 template <typename Map>
-template <typename Functor>
 bool
-LockableMap<Map>::processNextChunk(Functor& functor,
+LockableMap<Map>::processNextChunk(std::function<Decision(uint64_t, mapped_type&)>& func,
                                    key_type& key,
                                    const char* clientId,
                                    const uint32_t chunkSize)
@@ -391,7 +258,7 @@ LockableMap<Map>::processNextChunk(Functor& functor,
         if (findNextKey(key, val, clientId, guard)) {
             return false;
         }
-        Decision d(functor(const_cast<const key_type&>(key), val));
+        Decision d(func(const_cast<const key_type&>(key), val));
         if (handleDecision(key, val, d)) {
             return false;
         }
@@ -401,15 +268,13 @@ LockableMap<Map>::processNextChunk(Functor& functor,
 }
 
 template <typename Map>
-template <typename Functor>
-void
-LockableMap<Map>::chunkedAll(Functor& functor,
-                             const char* clientId,
-                             vespalib::duration yieldTime,
-                             uint32_t chunkSize)
+void LockableMap<Map>::do_for_each_chunked(std::function<Decision(uint64_t, mapped_type&)> func,
+                                           const char* clientId,
+                                           vespalib::duration yieldTime,
+                                           uint32_t chunkSize)
 {
     key_type key{};
-    while (processNextChunk(functor, key, clientId, chunkSize)) {
+    while (processNextChunk(func, key, clientId, chunkSize)) {
         // Rationale: delay iteration for as short a time as possible while
         // allowing another thread blocked on the main DB mutex to acquire it
         // in the meantime. Simply yielding the thread does not have the
@@ -591,7 +456,7 @@ LockableMap<Map>::addAndLockResults(
 uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b);
 
 template<typename Map>
-std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
+typename LockableMap<Map>::EntryMap
 LockableMap<Map>::getContained(const BucketId& bucket,
                                const char* clientId)
 {
@@ -626,7 +491,6 @@ LockableMap<Map>::getContained(const BucketId& bucket,
 template<typename Map>
 void
 LockableMap<Map>::getAllWithoutLocking(const BucketId& bucket,
-                                       const BucketId& sibling,
                                        std::vector<BucketId::Type>& keys)
 {
     BucketId result;
@@ -674,26 +538,21 @@ LockableMap<Map>::getAllWithoutLocking(const BucketId& bucket,
             break;
         }
     }
-
-    if (sibling.getRawId() != 0) {
-        keys.push_back(sibling.toKey());
-    }
 }
 
 /**
  * Returns the given bucket, its super buckets and its sub buckets.
  */
 template<typename Map>
-std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
-LockableMap<Map>::getAll(const BucketId& bucket, const char* clientId,
-                         const BucketId& sibling)
+typename LockableMap<Map>::EntryMap
+LockableMap<Map>::getAll(const BucketId& bucket, const char* clientId)
 {
     std::unique_lock<std::mutex> guard(_lock);
 
     std::map<BucketId, WrappedEntry> results;
     std::vector<BucketId::Type> keys;
 
-    getAllWithoutLocking(bucket, sibling, keys);
+    getAllWithoutLocking(bucket, keys);
 
     addAndLockResults(keys, clientId, results, guard);
 
@@ -706,10 +565,9 @@ LockableMap<Map>::isConsistent(const typename LockableMap<Map>::WrappedEntry& en
 {
     std::lock_guard<std::mutex> guard(_lock);
 
-    BucketId sibling(0);
     std::vector<BucketId::Type> keys;
 
-    getAllWithoutLocking(entry.getBucketId(), sibling, keys);
+    getAllWithoutLocking(entry.getBucketId(), keys);
     assert(keys.size() >= 1);
     assert(keys.size() != 1 || keys[0] == entry.getKey());
 

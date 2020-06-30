@@ -19,7 +19,7 @@ private:
     BucketSpaceMap _map;
 
 public:
-    ContentBucketSpaceRepo();
+    explicit ContentBucketSpaceRepo(bool use_btree_db = false);
     ContentBucketSpace &get(document::BucketSpace bucketSpace) const;
     BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
     BucketSpaceMap::const_iterator end() const { return _map.end(); }
@@ -31,7 +31,7 @@ public:
     void forEachBucket(Functor &functor,
                        const char *clientId) const {
         for (const auto &elem : _map) {
-            elem.second->bucketDatabase().all(functor, clientId);
+            elem.second->bucketDatabase().for_each(std::ref(functor), clientId);
         }
     }
 
@@ -39,7 +39,7 @@ public:
     void forEachBucketChunked(Functor &functor,
                               const char *clientId) const {
         for (const auto &elem : _map) {
-            elem.second->bucketDatabase().chunkedAll(functor, clientId);
+            elem.second->bucketDatabase().for_each_chunked(std::ref(functor), clientId);
         }
     }
 

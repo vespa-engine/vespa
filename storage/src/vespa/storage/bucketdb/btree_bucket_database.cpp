@@ -13,6 +13,10 @@
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <iostream>
 
+// TODO remove once this impl uses the generic bucket B-tree code!
+#include "generic_btree_bucket_database.h"
+#include <vespa/vespalib/datastore/datastore.h>
+
 /*
  * Buckets in our tree are represented by their 64-bit numeric key, in what's known as
  * "reversed bit order with appended used-bits" form. I.e. a bucket ID (16, 0xcafe), which
@@ -40,16 +44,8 @@ using vespalib::datastore::EntryRef;
 using vespalib::ConstArrayRef;
 using document::BucketId;
 
-BTreeBucketDatabase::BTreeBucketDatabase()
-    : _tree(),
-      _store(make_default_array_store_config()),
-      _generation_handler()
-{
-}
-
-BTreeBucketDatabase::~BTreeBucketDatabase() = default;
-
-vespalib::datastore::ArrayStoreConfig BTreeBucketDatabase::make_default_array_store_config() {
+template <typename ReplicaStore>
+vespalib::datastore::ArrayStoreConfig make_default_array_store_config() {
     return ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                     4 * 1024, 8 * 1024, 0.2).enable_free_lists(true);
 }
@@ -120,6 +116,15 @@ uint8_t next_parent_bit_seek_level(uint8_t minBits, const document::BucketId& a,
  */
 
 }
+
+BTreeBucketDatabase::BTreeBucketDatabase()
+    : _tree(),
+      _store(make_default_array_store_config<ReplicaStore>()),
+      _generation_handler()
+{
+}
+
+BTreeBucketDatabase::~BTreeBucketDatabase() = default;
 
 void BTreeBucketDatabase::commit_tree_changes() {
     // TODO break up and refactor
@@ -573,5 +578,46 @@ void BTreeBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::B
 uint64_t BTreeBucketDatabase::ReadGuardImpl::generation() const noexcept {
     return _guard.getGeneration();
 }
+
+// TODO replace existing distributor DB code with generic impl.
+// This is to ensure the generic implementation compiles with an ArrayStore backing in
+// the meantime.
+struct BTreeBucketDatabase2 {
+    struct ReplicaValueTraits {
+        using ValueType     = Entry;
+        using ConstValueRef = ConstEntryRef;
+        using DataStoreType = vespalib::datastore::ArrayStore<BucketCopy>;
+
+        static ValueType make_invalid_value() {
+            return Entry::createInvalid();
+        }
+        static uint64_t wrap_and_store_value(DataStoreType& store, const Entry& entry) noexcept {
+            auto replicas_ref = store.add(entry.getBucketInfo().getRawNodes());
+            return value_from(entry.getBucketInfo().getLastGarbageCollectionTime(), replicas_ref);
+        }
+        static void remove_by_wrapped_value(DataStoreType& store, uint64_t value) noexcept {
+            store.remove(entry_ref_from_value(value));
+        }
+        static ValueType unwrap_from_key_value(const DataStoreType& store, uint64_t key, uint64_t value) {
+            const auto replicas_ref = store.get(entry_ref_from_value(value));
+            const auto bucket = BucketId(BucketId::keyToBucketId(key));
+            return entry_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);
+        }
+        static ConstValueRef unwrap_const_ref_from_key_value(const DataStoreType& store, uint64_t key, uint64_t value) {
+            const auto replicas_ref = store.get(entry_ref_from_value(value));
+            const auto bucket = BucketId(BucketId::keyToBucketId(key));
+            return const_entry_ref_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);
+        }
+    };
+
+    using BTreeImpl = bucketdb::GenericBTreeBucketDatabase<ReplicaValueTraits>;
+    BTreeImpl _impl;
+
+    BTreeBucketDatabase2()
+        : _impl(make_default_array_store_config<ReplicaValueTraits::DataStoreType>())
+    {}
+};
+
+template class bucketdb::GenericBTreeBucketDatabase<BTreeBucketDatabase2::ReplicaValueTraits>;
 
 }

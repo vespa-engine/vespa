@@ -140,10 +140,8 @@ namespace {
 }
 
 TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
-    : TestStorageApp(
-            StorageComponentRegisterImpl::UP(
-                new ServiceLayerComponentRegisterImpl),
-            lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
+    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
+                     lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(
                     TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
@@ -157,10 +155,8 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
 
 TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
                                          vespalib::stringref configId)
-    : TestStorageApp(
-            StorageComponentRegisterImpl::UP(
-                new ServiceLayerComponentRegisterImpl),
-            lib::NodeType::STORAGE, index, configId),
+    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
+                     lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(
                     TestStorageApp::getComponentRegister())),
       _persistenceProvider(),

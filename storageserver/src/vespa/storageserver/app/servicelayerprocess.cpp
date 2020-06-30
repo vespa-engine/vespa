@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "servicelayerprocess.h"
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 
@@ -9,8 +11,21 @@ LOG_SETUP(".storageserver.service_layer_process");
 
 namespace storage {
 
-ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri & configUri)
-    : Process(configUri)
+namespace {
+
+bool configured_to_use_btree_db(const config::ConfigUri& config_uri) {
+    using vespa::config::content::core::StorServerConfig;
+    auto server_config = config::ConfigGetter<StorServerConfig>::getConfig(
+            config_uri.getConfigId(), config_uri.getContext());
+    return server_config->useContentNodeBtreeBucketDb;
+}
+
+}
+
+ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
+    : Process(configUri),
+      _context(std::make_unique<framework::defaultimplementation::RealClock>(),
+               configured_to_use_btree_db(configUri))
 {
 }
 

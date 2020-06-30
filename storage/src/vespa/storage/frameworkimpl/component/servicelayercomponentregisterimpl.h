@@ -27,7 +27,7 @@ class ServiceLayerComponentRegisterImpl
 public:
     typedef std::unique_ptr<ServiceLayerComponentRegisterImpl> UP;
 
-    ServiceLayerComponentRegisterImpl();
+    ServiceLayerComponentRegisterImpl(bool use_btree_db = false);
 
     uint16_t getDiskCount() const { return _diskCount; }
     ContentBucketSpaceRepo& getBucketSpaceRepo() { return _bucketSpaceRepo; }

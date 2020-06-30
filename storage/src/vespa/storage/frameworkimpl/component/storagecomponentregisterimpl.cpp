@@ -25,7 +25,7 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
 {
 }
 
-StorageComponentRegisterImpl::~StorageComponentRegisterImpl() { }
+StorageComponentRegisterImpl::~StorageComponentRegisterImpl() = default;
 
 void
 StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
