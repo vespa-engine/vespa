@@ -71,6 +71,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     private boolean shouldMaintain(ApplicationId id) {
         if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking")) return false;
         if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-canary")) return false;
+        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-rhel7")) return false;
         return true;
     }
 
