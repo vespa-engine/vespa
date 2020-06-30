@@ -218,6 +218,19 @@ namespace matching {
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
     };
+
+    /**
+     * Property to control fallback to not building a global filter
+     * for a query with a blueprint that wants a global filter. If the
+     * estimated ratio of matching documents is less than this limit
+     * then don't build a global filter.
+     **/
+    struct GlobalFilterLimit {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
 }
 
 namespace softtimeout {

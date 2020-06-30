@@ -290,6 +290,22 @@ NearestNeighborBruteForceLimit::lookup(const Properties &props, double defaultVa
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const vespalib::string GlobalFilterLimit::NAME("vespa.matching.global_filter_limit");
+
+const double GlobalFilterLimit::DEFAULT_VALUE(0.0);
+
+double
+GlobalFilterLimit::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+GlobalFilterLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 } // namespace matching
 
 namespace softtimeout {
