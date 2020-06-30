@@ -41,11 +41,12 @@ public class QueryProfileCompiler {
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
-            // System.out.println("Compiling " + in.toString() + " having " + variants.size() + " variants");
+            System.out.println("Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
-                // System.out.println("  Compiling variant " + variant);
+                System.out.println("  Compiling variant " + variant);
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
+                    System.out.println("    got " + entry);
                     CompoundName fullName = variant.path().append(entry.getKey());
                     values.put(fullName, variant.binding(), entry.getValue());
                     if (entry.getValue().isUnoverridable())

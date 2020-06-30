@@ -32,6 +32,18 @@ import static org.junit.Assert.fail;
  */
 public class XmlReadingTestCase {
 
+    @Ignore
+    @Test
+    public void testTmp() {
+        QueryProfileRegistry registry =
+                new QueryProfileXMLReader().read("/Users/bratseth/development/slingstone/massmedia_serving/homerun/src/main/application/search/flattened");
+
+        long startTime = System.currentTimeMillis();
+        System.out.println("Compiling ...");
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        System.out.println("Done in " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
+    }
+
     @Test
     public void testValid() {
         QueryProfileRegistry registry=
