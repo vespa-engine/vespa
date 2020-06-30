@@ -41,17 +41,20 @@ public class QueryProfileCompiler {
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
+            // System.out.println("Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
+                // System.out.println("  Compiling variant " + variant);
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
-                    values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+                    CompoundName fullName = variant.path().append(entry.getKey());
+                    values.put(fullName, variant.binding(), entry.getValue());
+                    if (entry.getValue().isUnoverridable())
+                        unoverridables.put(fullName, variant.binding(), Boolean.TRUE);
+                    if (entry.getValue().isQueryProfile())
+                        references.put(fullName, variant.binding(), Boolean.TRUE);
+                    if (entry.getValue().queryProfileType() != null)
+                        types.put(fullName, variant.binding(), entry.getValue().queryProfileType());
                 }
-                for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())
-                    types.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
-                for (CompoundName reference : in.listReferences(variant.path(), variant.binding().getContext()))
-                    references.put(variant.path().append(reference), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
-                for (CompoundName name : in.listUnoverridable(variant.path(), variant.binding().getContext()))
-                    unoverridables.put(variant.path().append(name), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
             }
 
             return new CompiledQueryProfile(in.getId(), in.getType(),

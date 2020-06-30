@@ -159,6 +159,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
 
             ValueWithSource valueWithSource = entry.getValue().get(context);
             if (valueWithSource == null) continue;
+            if (valueWithSource.value() == null) continue;
 
             valueWithSource = valueWithSource.withValue(substitute(valueWithSource.value(), context, substitution));
             CompoundName suffixName = entry.getKey().rest(prefix.size());
