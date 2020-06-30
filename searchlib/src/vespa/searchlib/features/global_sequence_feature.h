@@ -27,6 +27,10 @@ public:
     }
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    static uint64_t globalSequence(uint32_t docId, uint32_t distrKey) {
+        return (1ul << 48) - ((uint64_t(docId) << 16)| distrKey);
+    }
 };
 
 }

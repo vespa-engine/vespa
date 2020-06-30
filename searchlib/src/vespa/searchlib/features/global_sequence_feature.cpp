@@ -23,14 +23,14 @@ public:
     }
 
     void execute(uint32_t docId) override {
-        outputs().set_number(0, ((1ul << 48u) - ((uint64_t(docId) << 16u) | _distributionKey)));
+        outputs().set_number(0, GlobalSequenceBlueprint::globalSequence(docId, _distributionKey));
     }
 };
 
 }
 
 GlobalSequenceBlueprint::GlobalSequenceBlueprint() :
-    Blueprint("globalsequence"),
+    Blueprint("globalSequence"),
     _distributionKey(0)
 {
 }
@@ -44,7 +44,7 @@ bool
 GlobalSequenceBlueprint::setup(const IIndexEnvironment & env, const ParameterList & )
 {
     _distributionKey = env.getDistributionKey();
-    assert( _distributionKey < 0x80000);
+    assert( _distributionKey < 0x10000);
     describeOutput("out", "Returns (1 << 48) - ((lid << 16) | distributionKey)");
     return true;
 }

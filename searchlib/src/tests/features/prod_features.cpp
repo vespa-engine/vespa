@@ -1565,33 +1565,30 @@ Test::testMatchCount()
     }
 }
 
-uint64_t globalSequence(uint32_t docId, uint32_t distrKey) {
-    return (1ul << 48) - ((uint64_t(docId) << 16)| distrKey);
-}
-
 void verifySequence(uint64_t first, uint64_t second) {
     ASSERT_GREATER(first, second);
     ASSERT_GREATER(double(first), double(second));
 }
+
 void
 Test::testUnique()
 {
     {
         GlobalSequenceBlueprint bp;
-        EXPECT_TRUE(assertCreateInstance(bp, "globalsequence"));
+        EXPECT_TRUE(assertCreateInstance(bp, "globalSequence"));
         FtFeatureTest ft(_factory, "");
         StringList params, in, out;
         FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
-        FT_DUMP_EMPTY(_factory, "globalsequence");
+        FT_DUMP_EMPTY(_factory, "globalSequence");
     }
-    FtFeatureTest ft(_factory, "globalsequence");
+    FtFeatureTest ft(_factory, "globalSequence");
     ASSERT_TRUE(ft.setup());
-    TEST_DO(verifySequence(globalSequence(1, 0), globalSequence(1,1)));
-    TEST_DO(verifySequence(globalSequence(1, 1), globalSequence(1,2)));
-    TEST_DO(verifySequence(globalSequence(1, 1), globalSequence(2,1)));
-    TEST_DO(verifySequence(globalSequence(2, 1), globalSequence(2,2)));
-    TEST_DO(verifySequence(globalSequence(2, 2), globalSequence(2,3)));
-    TEST_DO(verifySequence(globalSequence(2, 2), globalSequence(3,0)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1,1)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1,2)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2,1)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2,2)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2,3)));
+    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3,0)));
     ASSERT_EQUAL(0xfffffffefffdul, (1ul << 48) - 0x10003l);
     EXPECT_TRUE(ft.execute(0xfffffffefffdul, 0, 1));
     EXPECT_TRUE(ft.execute(0xfffffff8fffdul, 0, 7));
