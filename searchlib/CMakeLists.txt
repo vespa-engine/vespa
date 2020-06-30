@@ -187,11 +187,9 @@ vespa_define_module(
     src/tests/query
     src/tests/queryeval
     src/tests/queryeval/blueprint
-    src/tests/queryeval/booleanmatchiteratorwrapper
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv
     src/tests/queryeval/fake_searchable
-    src/tests/queryeval/filter_wrapper
     src/tests/queryeval/getnodeweight
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator
@@ -207,6 +205,7 @@ vespa_define_module(
     src/tests/queryeval/weak_and_heap
     src/tests/queryeval/weak_and_scorers
     src/tests/queryeval/weighted_set_term
+    src/tests/queryeval/wrappers
     src/tests/rankingexpression/feature_name_extractor
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
