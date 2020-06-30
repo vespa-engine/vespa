@@ -150,21 +150,18 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>documentapi</artifactId>
+      <artifactId>container-documentapi</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vdslib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>

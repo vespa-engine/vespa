@@ -60,6 +60,7 @@
         <module>container-dev</module>
         <module>container-di</module>
         <module>container-disc</module>
+        <module>container-documentapi</module>
         <module>container-integration-test</module>
         <module>container-jersey2</module>
         <module>container-messagebus</module>
@@ -74,8 +75,9 @@
         <module>docker-api</module>
         <module>docproc</module>
         <module>docprocs</module>
-        <module>documentapi</module>
         <module>document</module>
+        <module>documentapi</module>
+        <module>documentapi-dependencies</module>
         <module>documentgen-test</module>
         <module>fat-model-dependencies</module>
         <module>fileacquirer</module>
