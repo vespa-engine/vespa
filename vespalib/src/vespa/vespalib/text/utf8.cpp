@@ -233,5 +233,20 @@ Utf8Writer<Target>::putChar(uint32_t codepoint)
 template class Utf8Writer<vespalib::string>;
 template class Utf8Writer<std::string>;
 
+template <typename T>
+T Utf8::filter_invalid_sequences(const T& input)
+{
+    T retval;
+    Utf8Reader reader(input.c_str(), input.size());
+    Utf8Writer writer(retval);
+    while (reader.hasMore()) {
+        uint32_t ch = reader.getChar();
+        writer.putChar(ch);
+    }
+    return retval;
+}
 
-} // namespace vespalib
+template vespalib::string Utf8::filter_invalid_sequences(const vespalib::string&);
+template std::string Utf8::filter_invalid_sequences(const std::string&);
+
+} // namespace

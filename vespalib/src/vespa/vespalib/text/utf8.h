@@ -28,6 +28,15 @@ public:
     };
 
     /**
+     * Filter a string (std::string or vespalib::string)
+     * and replace any invalid UTF8 sequences with the
+     * standard replacement char U+FFFD; note that any
+     * UTF-8 encoded surrogates are also considered invalid.
+     **/
+    template <typename T>
+    static T filter_invalid_sequences(const T& input);
+
+    /**
      * check if a byte is valid as the first byte of an UTF-8 character.
      * @param c the byte to be checked
      * @return true if a valid UTF-8 character can start with this byte
