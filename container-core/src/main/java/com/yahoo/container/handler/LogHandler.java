@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 public class LogHandler extends ThreadedHttpRequestHandler {
 
@@ -37,7 +38,12 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) {
-                logReader.writeLogs(outputStream, from, to);
+                try {
+                    logReader.writeLogs(outputStream, from, to);
+                }
+                catch (Throwable t) {
+                    log.log(Level.WARNING, "Failed reading logs from " + from + " to " + to, t);
+                }
             }
         };
     }
