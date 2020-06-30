@@ -109,10 +109,6 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _must_send_updated_host_info(false),
       _use_btree_database(use_btree_database)
 {
-    if (use_btree_database) {
-        LOG(info, "Using new B-tree bucket database implementation instead of legacy implementation"); // TODO remove this once default is swapped
-    }
-
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook,
                                         framework::SecondTime(0));
