@@ -4,6 +4,7 @@
 #include "same_element_search.h"
 #include "field_spec.hpp"
 #include "andsearch.h"
+#include "emptysearch.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -92,15 +93,19 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
 SearchIterator::UP
 SameElementBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        auto search = _terms[i]->createFilterSearch(strict && (i == 0), constraint);
-        sub_searches.push_back(std::move(search));
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        MultiSearch::Children sub_searches;
+        sub_searches.reserve(_terms.size());
+        for (size_t i = 0; i < _terms.size(); ++i) {
+            auto search = _terms[i]->createFilterSearch(strict && (i == 0), constraint);
+            sub_searches.push_back(std::move(search));
+        }
+        UnpackInfo unpack_info;
+        auto search = AndSearch::create(std::move(sub_searches), strict, unpack_info);
+        return search;
+    } else {
+        return std::make_unique<EmptySearch>();
     }
-    UnpackInfo unpack_info;
-    auto search = AndSearch::create(std::move(sub_searches), strict, unpack_info);
-    return search;
 }
 
 void
