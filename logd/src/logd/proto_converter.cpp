@@ -60,15 +60,7 @@ ProtoConverter::log_message_to_proto(const LogMessage& message, ProtoLogMessage&
     proto.set_service(message.service());
     proto.set_component(message.component());
     proto.set_level(convert_level(message.level()));
-    const std::string &payload = message.payload();
-    vespalib::Utf8Reader reader(payload.c_str(), payload.size());
-    std::string filtered_payload;
-    vespalib::Utf8Writer writer(filtered_payload);
-    while (reader.hasMore()) {
-        uint32_t ch = reader.getChar();
-        writer.putChar(ch);
-    }
-    proto.set_payload(filtered_payload);
+    proto.set_payload(vespalib::Utf8::filter_invalid_sequences(message.payload()));
 }
 
 }
