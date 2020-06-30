@@ -3,8 +3,10 @@
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
