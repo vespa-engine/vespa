@@ -35,7 +35,8 @@ public final class AccessControl {
             ContainerCluster.BINDINGS_OVERVIEW_HANDLER_CLASS,
             ContainerCluster.STATE_HANDLER_CLASS,
             ContainerCluster.LOG_HANDLER_CLASS,
-            ApplicationContainerCluster.METRICS_V2_HANDLER_CLASS
+            ApplicationContainerCluster.METRICS_V2_HANDLER_CLASS,
+            ApplicationContainerCluster.PROMETHEUS_V1_HANDLER_CLASS
     );
 
     public static final class Builder {
