@@ -1,10 +1,9 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.api;
+package ai.vespa.hosted.cd.commons;
 
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpRequest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 
 /**
  * Adds environment dependent authentication to HTTP request against Vespa deployments.
