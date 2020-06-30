@@ -118,7 +118,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "field mytensor type tensor(d0[1],d1[784]) { indexing: attribute }",
                                                       "Placeholder",
                                                       application);
-        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
     @Test
@@ -136,7 +136,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "field mytensor type tensor(d0[1],d1[784]) { indexing: attribute }",
                                                       "Placeholder",
                                                       application);
-        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
     @Test
@@ -310,18 +310,10 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReduceBatchDimension() {
-        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                                                      "tensorflow('mnist_softmax/saved')");
-        search.assertFirstPhaseExpression(expression, "my_profile");
-    }
-
-    @Test
     public void testFunctionGeneration() {
         final String name = "mnist_saved";
         final String expression = "join(reduce(join(join(join(reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b))";
-        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
         final String functionExpression2 = "join(reduce(join(join(join(0.009999999776482582, imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
@@ -351,7 +343,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "  }";
 
         final String expression = "join(reduce(join(join(join(reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b))";
-        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
         final String functionExpression2 = "join(reduce(join(join(join(0.009999999776482582, imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));

@@ -29,7 +29,6 @@ public class RankingExpressionWithOnnxTestCase {
     private final static String name = "mnist_softmax";
 
     private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_Variable), f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
-    private final static String vespaExpressionWithBatchReduce = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b)), tensor<float>(d0[1])(1.0), f(a,b)(a * b))";
 
     @After
     public void removeGeneratedModelFiles() {
@@ -97,7 +96,7 @@ public class RankingExpressionWithOnnxTestCase {
                 "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
-        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
 
@@ -115,7 +114,7 @@ public class RankingExpressionWithOnnxTestCase {
                 "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
-        search.assertFirstPhaseExpression(vespaExpressionWithBatchReduce, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
 
