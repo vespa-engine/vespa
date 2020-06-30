@@ -139,12 +139,9 @@ public class BillingApiHandler extends LoggingRequestHandler {
         var planId = PlanId.from(slime.field("plan").asString());
         var hasApplications = applicationController.asList(tenantName).size() > 0;
 
-        if (billingController.setPlan(tenantName, planId, hasApplications)) {
-            return new StringResponse("Plan: " + planId.value());
-        } else {
-            return ErrorResponse.forbidden("Invalid plan change with active deployments");
-        }
-
+        return billingController.setPlan(tenantName, planId, hasApplications)
+                .<HttpResponse>map(ErrorResponse::forbidden)
+                .orElse(new StringResponse("Plan: " + planId.value()));
     }
 
     private HttpResponse getBillingAllTenants(String until) {
@@ -372,19 +369,6 @@ public class BillingApiHandler extends LoggingRequestHandler {
         if (!inspector.field(field).valid())
             throw new BadRequestException("Field " + field + " cannot be null");
         return inspector.field(field).asString();
-    }
-
-    private DeploymentId getDeploymentIdOrNull(Inspector inspector) {
-        if (inspector.field("applicationId").valid() != inspector.field("zoneId").valid() ) {
-            throw new BadRequestException("Either both application id and zone id should be set, or neither.");
-        }
-        if (inspector.field("applicationId").valid()) {
-            return new DeploymentId(
-                    ApplicationId.fromSerializedForm(inspector.field("applicationId").asString()),
-                    com.yahoo.config.provision.zone.ZoneId.from(inspector.field("zoneId").asString())
-            );
-        }
-        return null;
     }
 
     private LocalDate untilParameter(String until) {

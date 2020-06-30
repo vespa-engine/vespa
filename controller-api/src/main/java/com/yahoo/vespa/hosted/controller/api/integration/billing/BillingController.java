@@ -16,9 +16,9 @@ public interface BillingController {
     PlanId getPlan(TenantName tenant);
 
     /**
-     * Returns true if plan was changed
+     * @return String containing error message if something went wrong. Empty otherwise
      */
-    boolean setPlan(TenantName tenant, PlanId planId, boolean hasApplications);
+    Optional<String> setPlan(TenantName tenant, PlanId planId, boolean hasApplications);
 
     Invoice.Id createInvoiceForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
 
