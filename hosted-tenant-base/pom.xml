@@ -5,10 +5,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!--    <version>7-SNAPSHOT</version>-->
-    <!--    <url>https://github.com/vespa-engine</url>-->
-    <!--    <packaging>pom</packaging>-->
-
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>hosted-tenant-base</artifactId>
     <version>7-SNAPSHOT</version>
@@ -42,8 +38,8 @@
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
         <junit.version>5.4.2</junit.version>
-        <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
         <test.categories>!integration</test.categories>
+        <bundlePluginExtraTestProvidedDependencies/>
     </properties>
 
     <dependencyManagement>
@@ -60,12 +56,14 @@
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -82,17 +80,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-test</artifactId>
             <version>${vespaversion}</version>
-            <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-exec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-            </exclusions>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -101,117 +89,134 @@
             <version>${test-framework.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <!-- Build *-fat-test.jar file that includes all non-test classes and resources
-                 that are part of the class path during test and and test.jar that includes
-                 all test classes and resources, and put it inside a zip:
-                   1. application classes and resources
-                   2. test classes and resources
-                   3. classes and resources in all dependencies of both (1) and (2)
-                   4. copy the fat-test-jar and test-jar to application-test/artifacts directory
-                   5. zip application-test -->
-            <id>fat-test-application</id>
+            <id>hosted-build-vespa-application</id>
+            <activation>
+                <file>
+                    <!-- don't run this profile when building this module -->
+                    <missing>is-base-pom-module.txt</missing>
+                </file>
+            </activation>
             <build>
+                <finalName>${project.artifactId}</finalName>
                 <plugins>
-                    <plugin>
-                        <!-- dependencies, see (3) above -->
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.1.1</version>
-                        <executions>
-                            <execution>
-                                <!-- JAR-like dependencies -->
-                                <id>unpack-dependencies</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>unpack-dependencies</goal>
-                                </goals>
-                                <configuration>
-                                    <includeTypes>jar,test-jar</includeTypes>
-                                    <outputDirectory>target/fat-test-classes</outputDirectory>
-                                    <!-- WARNING(2018-06-27): bcpkix-jdk15on-1.58.jar and
-                                         bcprov-jdk15on-1.58.jar are pulled in via
-                                         container-dev and both contains the same set of
-                                         bouncycastle signature files in META-INF:
-                                         BC1024KE.DSA, BC1024KE.SF, BC2048KE.DSA, and
-                                         BC2048KE.SF. By merging any of these two with any
-                                         other JAR file like we're doing here, the signatures
-                                         are wrong. Worse, what we're doing is WRONG but not
-                                         yet fatal.
 
-                                     The symptom of this happening is that the tester fails
-                                     to load the SystemTest class(!?), and subsequently
-                                     tries to run all test-like files in the fat test JAR.
-
-                                     The solution is to exclude such files. This happens
-                                     automatically with maven-assembly-plugin. -->
-                                    <excludes>META-INF/*.SF,META-INF/*.DSA</excludes>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <!-- non-JAR-like dependencies -->
-                                <id>non-jar-dependencies</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>copy-dependencies</goal>
-                                </goals>
-                                <configuration>
-                                    <excludeTypes>jar,test-jar</excludeTypes>
-                                    <outputDirectory>target/fat-test-classes</outputDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.1.0</version>
-                        <executions>
-                            <execution>
-                                <id>copy-resources</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>target/fat-test-classes</outputDirectory>
-                                    <resources>
-                                        <!-- application classes and resources, see 1. above -->
-                                        <resource>
-                                            <directory>target/classes</directory>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <version>3.1.0</version>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <groups>${test.categories}</groups>
+                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                            <trimStackTrace>false</trimStackTrace>
+                            <systemPropertyVariables>
+                                <application>${application}</application>
+                                <tenant>${tenant}</tenant>
+                                <instance>${instance}</instance>
+                                <environment>${environment}</environment>
+                                <region>${region}</region>
+                                <endpoint>${endpoint}</endpoint>
+                                <apiKeyFile>${apiKeyFile}</apiKeyFile>
+                                <apiCertificateFile>${apiCertificateFile}</apiCertificateFile>
+                                <dataPlaneKeyFile>${dataPlaneKeyFile}</dataPlaneKeyFile>
+                                <dataPlaneCertificateFile>${dataPlaneCertificateFile}</dataPlaneCertificateFile>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.0.0-M2</version>
                         <executions>
                             <execution>
-                                <id>fat-test-jar</id>
-                                <phase>package</phase>
+                                <id>enforce-java</id>
                                 <goals>
-                                    <goal>jar</goal>
+                                    <goal>enforce</goal>
                                 </goals>
                                 <configuration>
-                                    <classesDirectory>target/fat-test-classes</classesDirectory>
-                                    <classifier>fat-test</classifier>
+                                    <rules>
+                                        <requireJavaVersion>
+                                            <version>[11, )</version>
+                                        </requireJavaVersion>
+                                        <requireMavenVersion>
+                                            <version>[3.5, )</version>
+                                        </requireMavenVersion>
+                                    </rules>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>bundle-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <testProvidedArtifacts>
+                                ${bundlePluginExtraTestProvidedDependencies},
+                                com.yahoo.vespa:tenant-cd-api,
+                                com.yahoo.vespa:container-test,
+                                org.junit.jupiter:junit-jupiter-api,
+                                !com.yahoo.vespa:application
+                            </testProvidedArtifacts>
+                        </configuration>
+                        <executions>
                             <execution>
-                                <id>test-jar</id>
+                                <id>generate-test-bundle-osgi-manifest</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>generate-test-bundle-osgi-manifest</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>assemble-test-bundle</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>test-jar</goal>
+                                    <goal>assemble-test-bundle</goal>
                                 </goals>
                             </execution>
                         </executions>
                     </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-application-maven-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>packageApplication</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-maven-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                    </plugin>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
@@ -224,17 +229,8 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <!-- copy fat test-jar to application-test artifacts directory, see 4. above -->
-                                        <copy file="target/${project.artifactId}-fat-test.jar"
-                                              todir="target/application-test/artifacts/" />
-
-                                        <!-- copy slim test-jar to application-test artifacts directory, see 4. above -->
-                                        <copy file="target/${project.artifactId}-tests.jar"
-                                              todir="target/application-test/artifacts/" />
-
-                                        <!-- zip application-test, see 5. above -->
-                                        <zip destfile="target/application-test.zip"
-                                             basedir="target/application-test/" />
+                                        <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/artifacts/" />
+                                        <zip destfile="target/application-test.zip" basedir="target/application-test/" />
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -270,68 +266,7 @@
     </profiles>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                    <configuration>
-                        <groups>${test.categories}</groups>
-                        <redirectTestOutputToFile>false</redirectTestOutputToFile>
-                        <trimStackTrace>false</trimStackTrace>
-                        <systemPropertyVariables>
-                            <application>${application}</application>
-                            <tenant>${tenant}</tenant>
-                            <instance>${instance}</instance>
-                            <environment>${environment}</environment>
-                            <region>${region}</region>
-                            <endpoint>${endpoint}</endpoint>
-                            <apiKeyFile>${apiKeyFile}</apiKeyFile>
-                            <apiCertificateFile>${apiCertificateFile}</apiCertificateFile>
-                            <dataPlaneKeyFile>${dataPlaneKeyFile}</dataPlaneKeyFile>
-                            <dataPlaneCertificateFile>${dataPlaneCertificateFile}</dataPlaneCertificateFile>
-                        </systemPropertyVariables>
-                    </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                    <configuration>
-                        <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
-                <executions>
-                    <execution>
-                        <id>enforce-java</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>[11, )</version>
-                                </requireJavaVersion>
-                                <requireMavenVersion>
-                                    <version>[3.5, )</version>
-                                </requireMavenVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -346,42 +281,6 @@
                         <arg>-Werror</arg>
                     </compilerArgs>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>vespa-maven-plugin</artifactId>
-                <version>${vespaversion}</version>
-            </plugin>
-
-            <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>vespa-application-maven-plugin</artifactId>
-                <version>${vespaversion}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>packageApplication</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>bundle-plugin</artifactId>
-                <version>${vespaversion}</version>
-                <extensions>true</extensions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
