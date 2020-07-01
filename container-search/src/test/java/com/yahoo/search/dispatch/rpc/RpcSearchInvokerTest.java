@@ -39,9 +39,9 @@ public class RpcSearchInvokerTest {
         var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, 1000);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        RpcSearchInvoker.Context context = (RpcSearchInvoker.Context) invoker.sendSearchRequest(q, null);
+        RpcSearchInvoker.RpcContext context = (RpcSearchInvoker.RpcContext) invoker.sendSearchRequest(q, null);
         assertTrue( context.payloadLength == lengthHolder.get());
-        assertSame(context.compressionResult.data(), payloadHolder.get());
+        assertSame(context.compressedPayload.data(), payloadHolder.get());
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
@@ -51,10 +51,10 @@ public class RpcSearchInvokerTest {
         assertTrue(request.getQueryTreeBlob().size() > 0);
 
         var invoker2 = new RpcSearchInvoker(mockSearcher(), new Node(8, "eight", 1), mockPool, 1000);
-        RpcSearchInvoker.Context context2 = (RpcSearchInvoker.Context)invoker2.sendSearchRequest(q, context);
+        RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext)invoker2.sendSearchRequest(q, context);
         assertSame(context, context2);
         assertTrue( context.payloadLength == lengthHolder.get());
-        assertSame(context.compressionResult.data(), payloadHolder.get());
+        assertSame(context.compressedPayload.data(), payloadHolder.get());
     }
 
     @Test

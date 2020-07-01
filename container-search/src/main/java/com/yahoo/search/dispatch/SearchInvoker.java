@@ -41,11 +41,10 @@ public abstract class SearchInvoker extends CloseableInvoker {
 
     /**
      *
-     * @param query The query to send
-     * @param context A context object that can be used to pass context among different
-     *                invokers. Fx for reuse of preserialized data.
-     * @return An object that can be passed to the next invocation of sendSearchRequest
-     * @throws IOException
+     * @param query the query to send
+     * @param context a context object that can be used to pass context among different
+     *                invokers, e.g for reuse of preserialized data.
+     * @return an object that can be passed to the next invocation of sendSearchRequest
      */
     protected abstract Object sendSearchRequest(Query query, Object context) throws IOException;
 

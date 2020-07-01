@@ -44,40 +44,33 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         this.maxHits = maxHits;
     }
 
-    static class Context {
-        final Compressor.Compression compressionResult;
-        final int payloadLength;
-        Context(RpcResourcePool resourcePool, Query query, byte [] payload) {
-            this.payloadLength = payload.length;
-            compressionResult = resourcePool.compress(query, payload);
-        }
-    }
-
     @Override
-    protected Object sendSearchRequest(Query query, Object context_in) {
+    protected Object sendSearchRequest(Query query, Object incomingContext) {
         this.query = query;
 
         Client.NodeConnection nodeConnection = resourcePool.getConnection(node.key());
         if (nodeConnection == null) {
             responses.add(Client.ResponseOrError.fromError("Could not send search to unknown node " + node.key()));
             responseAvailable();
-            return context_in;
+            return incomingContext;
         }
         query.trace(false, 5, "Sending search request with jrt/protobuf to node with dist key ", node.key());
 
-        Context context;
-        if (context_in instanceof Context) {
-            context = (Context) context_in;
-        } else {
-            context = new Context(resourcePool, query,
-                                  ProtobufSerialization.serializeSearchRequest(query,
-                                                                               Math.min(query.getHits(), maxHits),
-                                                                               searcher.getServerId()));
-        }
+        RpcContext context = getContext(incomingContext);
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
-        nodeConnection.request(RPC_METHOD, context.compressionResult.type(), context.payloadLength,
-                               context.compressionResult.data(), this, timeoutSeconds);
+        nodeConnection.request(RPC_METHOD, context.compressedPayload.type(), context.payloadLength,
+                               context.compressedPayload.data(), this, timeoutSeconds);
         return context;
+    }
+
+    private RpcContext getContext(Object incomingContext) {
+        if (incomingContext instanceof RpcContext)
+            return (RpcContext)incomingContext;
+
+        return new RpcContext(resourcePool, query,
+                              ProtobufSerialization.serializeSearchRequest(query,
+                                                                           Math.min(query.getHits(), maxHits),
+                                                                           searcher.getServerId()));
     }
 
     @Override
@@ -122,6 +115,18 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
     private String getName() {
         return searcher.getName();
+    }
+
+    static class RpcContext {
+
+        final Compressor.Compression compressedPayload;
+        final int payloadLength;
+
+        RpcContext(RpcResourcePool resourcePool, Query query, byte[] payload) {
+            this.payloadLength = payload.length;
+            compressedPayload = resourcePool.compress(query, payload);
+        }
+
     }
 
 }
