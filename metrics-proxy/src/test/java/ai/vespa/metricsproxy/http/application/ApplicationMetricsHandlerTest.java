@@ -27,6 +27,7 @@ import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -48,8 +49,9 @@ public class ApplicationMetricsHandlerTest {
 
     private static final String HOST = "localhost";
     private static final String URI_BASE = "http://" + HOST;
-    private static final String APP_METRICS_V1_URI = URI_BASE + METRICS_V1_PATH;
-    private static final String APP_METRICS_VALUES_URI = URI_BASE + METRICS_VALUES_PATH;
+    private static final String METRICS_V1_URI = URI_BASE + METRICS_V1_PATH;
+    private static final String METRICS_VALUES_URI = URI_BASE + METRICS_VALUES_PATH;
+    private static final String PROMETHEUS_VALUES_URI = URI_BASE + PROMETHEUS_VALUES_PATH;
 
     private static final String TEST_FILE = "generic-sample.json";
     private static final String RESPONSE = getFileContents(TEST_FILE);
@@ -95,21 +97,23 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void v1_response_contains_values_uri() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_V1_URI).readAll();
+        String response = testDriver.sendRequest(METRICS_V1_URI).readAll();
         JSONObject root = new JSONObject(response);
         assertTrue(root.has("resources"));
 
         JSONArray resources = root.getJSONArray("resources");
-        assertEquals(1, resources.length());
+        assertEquals(2, resources.length());
 
         JSONObject valuesUrl = resources.getJSONObject(0);
-        assertEquals(APP_METRICS_VALUES_URI, valuesUrl.getString("url"));
+        assertEquals(METRICS_VALUES_URI, valuesUrl.getString("url"));
+        JSONObject prometheusUrl = resources.getJSONObject(1);
+        assertEquals(PROMETHEUS_VALUES_URI, prometheusUrl.getString("url"));
     }
 
     @Ignore
     @Test
     public void visually_inspect_values_response() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_VALUES_URI).readAll();
+        String response = testDriver.sendRequest(METRICS_VALUES_URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericApplicationModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
@@ -166,13 +170,13 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void invalid_path_yields_error_response() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_V1_URI + "/invalid").readAll();
+        String response = testDriver.sendRequest(METRICS_V1_URI + "/invalid").readAll();
         JSONObject root = new JSONObject(response);
         assertTrue(root.has("error"));
     }
 
     private GenericApplicationModel getResponseAsJsonModel(String consumer) {
-        String response = testDriver.sendRequest(APP_METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
+        String response = testDriver.sendRequest(METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
         try {
             return createObjectMapper().readValue(response, GenericApplicationModel.class);
         } catch (IOException e) {

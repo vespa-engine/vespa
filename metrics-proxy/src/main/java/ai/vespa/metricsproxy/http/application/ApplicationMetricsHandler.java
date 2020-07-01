@@ -56,7 +56,8 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
-        if (apiPath.matches(METRICS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH)));
+        if (apiPath.matches(METRICS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH,
+                                                                                                          PROMETHEUS_VALUES_PATH)));
         if (apiPath.matches(METRICS_VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
         if (apiPath.matches(PROMETHEUS_VALUES_PATH)) return Optional.of(applicationPrometheusResponse(consumer));
 
