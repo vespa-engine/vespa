@@ -28,7 +28,7 @@ namespace storage {
 FileStorManager::
 FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateList& partitions,
                 spi::PersistenceProvider& provider, ServiceLayerComponentRegister& compReg)
-    : StorageLinkQueued("File store manager", compReg),
+    : StorageLink("File store manager"),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
       _component(compReg, "filestormanager"),
@@ -251,7 +251,7 @@ FileStorManager::handlePersistenceMessage( const shared_ptr<api::StorageMessage>
         reply->setResult(errorCode);
         LOG(spam, "Received persistence message %s. Returning reply: %s",
             msg->getType().getName().c_str(), errorCode.toString().c_str());
-        dispatchUp(reply);
+        sendUp(reply);
     }
     return true;
 }
@@ -765,13 +765,13 @@ FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
     // Currently we need to dispatch due to replies sent by remapQueue
     // function in handlerimpl, as filestorthread keeps bucket db lock
     // while running this function
-    dispatchUp(reply);
+    sendUp(reply);
 }
 
 void
 FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    StorageLinkQueued::sendUp(msg);
+    StorageLink::sendUp(msg);
 }
 
 void FileStorManager::onClose()
@@ -783,7 +783,6 @@ void FileStorManager::onClose()
     _filestorHandler->close();
     LOG(debug, "Closed _filestorHandler.");
     _closed = true;
-    StorageLinkQueued::onClose();
     LOG(debug, "Done closing");
 }
 
@@ -815,7 +814,6 @@ void FileStorManager::onFlush(bool downwards)
                    "stopped: %s",
             result.c_str());
     }
-    StorageLinkQueued::onFlush(downwards);
     LOG(debug, "Done Flushing");
 }
 
