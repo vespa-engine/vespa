@@ -181,7 +181,7 @@ public:
             if (key_at_cursor >= key_to_insert) {
                 break;
             }
-            m.insert_before_current(*_current);
+            m.insert_before_current(_current->getBucketId(), *_current);
             ++_current;
         }
         if ((_current != _last) && (key_at_cursor == key_to_insert)) {
@@ -201,7 +201,7 @@ public:
 
     void insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) override {
         for (; _current != _last; ++_current) {
-            inserter.insert_at_end(*_current);
+            inserter.insert_at_end(_current->getBucketId(), *_current);
         }
     }
 };

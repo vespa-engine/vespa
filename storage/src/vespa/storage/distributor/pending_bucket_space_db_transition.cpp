@@ -193,11 +193,12 @@ void PendingBucketSpaceDbTransition::insert_remaining_at_end(BucketDatabase::Tra
 void
 PendingBucketSpaceDbTransition::addToMerger(BucketDatabase::Merger& merger, const Range& range)
 {
+    const auto bucket_id = _entries[range.first].bucket_id();
     LOG(spam, "Adding new bucket %s with %d copies",
-        _entries[range.first].bucket_id().toString().c_str(),
+        bucket_id.toString().c_str(),
         range.second - range.first);
 
-    BucketDatabase::Entry e(_entries[range.first].bucket_id(), BucketInfo());
+    BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
         e->setLastGarbageCollectionTime(
@@ -205,18 +206,19 @@ PendingBucketSpaceDbTransition::addToMerger(BucketDatabase::Merger& merger, cons
                         .getSeconds().getTime());
     }
     e.getBucketInfo().updateTrusted();
-    merger.insert_before_current(e);
+    merger.insert_before_current(bucket_id, e);
 }
 
 void
 PendingBucketSpaceDbTransition::addToInserter(BucketDatabase::TrailingInserter& inserter, const Range& range)
 {
     // TODO dedupe
+    const auto bucket_id = _entries[range.first].bucket_id();
     LOG(spam, "Adding new bucket %s with %d copies",
-        _entries[range.first].bucket_id().toString().c_str(),
+        bucket_id.toString().c_str(),
         range.second - range.first);
 
-    BucketDatabase::Entry e(_entries[range.first].bucket_id(), BucketInfo());
+    BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
         e->setLastGarbageCollectionTime(
@@ -224,7 +226,7 @@ PendingBucketSpaceDbTransition::addToInserter(BucketDatabase::TrailingInserter& 
                         .getSeconds().getTime());
     }
     e.getBucketInfo().updateTrusted();
-    inserter.insert_at_end(e);
+    inserter.insert_at_end(bucket_id, e);
 }
 
 void

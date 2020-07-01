@@ -29,7 +29,7 @@ public:
     document::BucketId getAppropriateBucket(uint16_t minBits, const document::BucketId& bid) override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    std::unique_ptr<ReadGuard> acquire_read_guard() const override;
+    std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const override;
     vespalib::MemoryUsage memory_usage() const noexcept override;
 private:
     struct E {
@@ -66,7 +66,7 @@ private:
     uint32_t childCountImpl(int index, uint8_t bitCount, const document::BucketId& b) const;
 
     // NOT thread-safe for concurrent reads!
-    class ReadGuardImpl : public ReadGuard {
+    class ReadGuardImpl final : public bucketdb::ReadGuard<Entry> {
         const MapBucketDatabase* _db;
     public:
         explicit ReadGuardImpl(const MapBucketDatabase& db) : _db(&db) {}
