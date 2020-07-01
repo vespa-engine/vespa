@@ -17,9 +17,10 @@ import java.util.Optional;
 /**
  * A session represents an instance of an application that can be edited, prepared and activated. This
  * class represents the common stuff between sessions working on the local file
- * system ({@link LocalSession}s) and sessions working on zookeeper {@link RemoteSession}s.
+ * system ({@link LocalSession}s) and sessions working on zookeeper ({@link RemoteSession}s).
  *
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public abstract class Session implements Comparable<Session>  {
 
@@ -32,10 +33,7 @@ public abstract class Session implements Comparable<Session>  {
         this.sessionId = sessionId;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
     }
-    /**
-     * Retrieve the session id for this session.
-     * @return the session id.
-     */
+
     public final long getSessionId() {
         return sessionId;
     }
@@ -50,7 +48,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     /**
-     * Represents the status of this session.
+     * The status of this session.
      */
     public enum Status {
         NEW, PREPARE, ACTIVATE, DEACTIVATE, DELETE, NONE;
@@ -72,11 +70,9 @@ public abstract class Session implements Comparable<Session>  {
      * @return log preamble
      */
     public String logPre() {
-        if (getApplicationId().equals(ApplicationId.defaultId())) {
-            return TenantRepository.logPre(getTenantName());
-        } else {
-            return TenantRepository.logPre(getApplicationId());
-        }
+        return getApplicationId().equals(ApplicationId.defaultId())
+                ? TenantRepository.logPre(getTenantName())
+                : TenantRepository.logPre(getApplicationId());
     }
 
     public Instant getCreateTime() {
@@ -89,7 +85,7 @@ public abstract class Session implements Comparable<Session>  {
 
     void setApplicationPackageReference(FileReference applicationPackageReference) {
         if (applicationPackageReference == null) throw new IllegalArgumentException(String.format(
-                "Null application package FileReference for tenant: %s, session: %d", tenant, sessionId));
+                "Null application package file reference for tenant %s, session id %d", tenant, sessionId));
         sessionZooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
     }
 

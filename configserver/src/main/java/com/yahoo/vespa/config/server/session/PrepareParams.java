@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Parameters for prepare. Immutable.
+ * Parameters for preparing an application. Immutable.
  *
  * @author Ulf Lilleengen
  */
