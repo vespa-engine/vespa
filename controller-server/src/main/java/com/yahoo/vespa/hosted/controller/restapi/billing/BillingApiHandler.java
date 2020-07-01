@@ -139,9 +139,12 @@ public class BillingApiHandler extends LoggingRequestHandler {
         var planId = PlanId.from(slime.field("plan").asString());
         var hasApplications = applicationController.asList(tenantName).size() > 0;
 
-        return billingController.setPlan(tenantName, planId, hasApplications)
-                .<HttpResponse>map(ErrorResponse::forbidden)
-                .orElse(new StringResponse("Plan: " + planId.value()));
+        var result = billingController.setPlan(tenantName, planId, hasApplications);
+
+        if (result.isSuccess())
+            return new StringResponse("Plan: " + planId.value());
+
+        return ErrorResponse.forbidden(result.getErrorMessage().orElse("Invalid plan change"));
     }
 
     private HttpResponse getBillingAllTenants(String until) {
