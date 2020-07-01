@@ -855,12 +855,26 @@ public class InternalStepRunner implements StepRunner {
         String resourceString = String.format(Locale.ENGLISH,
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
+        String testRuntime = systemUsesAthenz
+                ? "ai.vespa.hosted.cd.vz.impl.VespaTestRuntimeProvider"
+                : "ai.vespa.hosted.cd.cloud.impl.VespaTestRuntimeProvider";
+        String testRuntimeBundle = systemUsesAthenz
+                ? "vz-tenant-cd"
+                : "cloud-tenant-cd";
 
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
                 "    <container version='1.0' id='tester'>\n" +
                 "\n" +
+                // Test runners using container and osgi
+                "        <component id=\"" + testRuntime + "\" bundle=\"" + testRuntimeBundle + "\" />\n" +
+                "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\" />\n" +
+                "        <handler id=\"com.yahoo.vespa.testrunner.JunitHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <binding>http://*/tester/v2/*</binding>\n" +
+                "        </handler>\n" +
+                "\n" +
+                // Test runners using maven
                 "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +

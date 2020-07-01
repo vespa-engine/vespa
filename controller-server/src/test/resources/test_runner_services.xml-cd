@@ -2,6 +2,12 @@
 <services xmlns:deploy='vespa' version='1.0'>
     <container version='1.0' id='tester'>
 
+        <component id="ai.vespa.hosted.cd.vz.impl.VespaTestRuntimeProvider" bundle="vz-tenant-cd" />
+        <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner" />
+        <handler id="com.yahoo.vespa.testrunner.JunitHandler" bundle="vespa-osgi-testrunner">
+            <binding>http://*/tester/v2/*</binding>
+        </handler>
+
         <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
