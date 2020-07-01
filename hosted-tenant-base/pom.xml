@@ -192,6 +192,7 @@
                                 com.yahoo.vespa:tenant-cd-api,
                                 com.yahoo.vespa:container-test,
                                 org.junit.jupiter:junit-jupiter-api,
+                                org.junit.jupiter:junit-jupiter-engine,
                                 !com.yahoo.vespa:application
                             </testProvidedArtifacts>
                         </configuration>
