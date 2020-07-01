@@ -102,7 +102,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    if (node.type().isDockerHost()) throttledHostFailures++;
+                    if (node.type().isHost()) throttledHostFailures++;
                     else throttledNodeFailures++;
                     continue;
                 }
@@ -117,12 +117,14 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         // Fail active nodes
         for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason(activeNodes).entrySet()) {
             Node node = entry.getKey();
-            if (!failAllowedFor(node.type())) {
-                continue;
-            }
+            if (!failAllowedFor(node.type())) continue;
+
             if (throttle(node)) {
-                if (node.type().isDockerHost()) throttledHostFailures++;
-                else throttledNodeFailures++;
+                if (node.type().isHost())
+                    throttledHostFailures++;
+                else
+                    throttledNodeFailures++;
+
                 continue;
             }
             String reason = entry.getValue();
@@ -212,9 +214,10 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
-            } else if (hostSuspended(node, activeNodes)) {
+            }
+            else if (hostSuspended(node, activeNodes)) {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                if (hostNode.type().isDockerHost()) {
+                if (hostNode.type().isHost()) {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
                         if (hostNode.equals(node)) {
@@ -244,7 +247,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     private boolean expectConfigRequests(Node node) {
-        return !node.type().isDockerHost();
+        return !node.type().isHost();
     }
 
     private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {

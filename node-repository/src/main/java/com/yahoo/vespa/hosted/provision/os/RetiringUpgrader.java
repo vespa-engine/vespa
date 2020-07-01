@@ -60,7 +60,7 @@ public class RetiringUpgrader implements Upgrader {
 
     /** Retire and deprovision given host and its children */
     private void retire(Node host, Version target, Instant now) {
-        if (!host.type().isDockerHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
+        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
         try (var lock = nodeRepository.lock(host)) {
             Optional<Node> currentNode = nodeRepository.getNode(host.hostname());
             if (currentNode.isEmpty()) return;

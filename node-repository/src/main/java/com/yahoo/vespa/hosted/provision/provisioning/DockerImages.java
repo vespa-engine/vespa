@@ -60,13 +60,13 @@ public class DockerImages {
     /** Returns the current docker image for given node type, or the type for corresponding child nodes
      * if it is a Docker host, or default */
     public DockerImage dockerImageFor(NodeType type) {
-        NodeType typeToUseForLookup = type.isDockerHost() ? type.childNodeType() : type;
+        NodeType typeToUseForLookup = type.isHost() ? type.childNodeType() : type;
         return getDockerImages().getOrDefault(typeToUseForLookup, defaultImage);
     }
 
     /** Set the docker image for nodes of given type */
     public void setDockerImage(NodeType nodeType, Optional<DockerImage> dockerImage) {
-        if (nodeType.isDockerHost()) {
+        if (nodeType.isHost()) {
             throw new IllegalArgumentException("Setting docker image for " + nodeType + " nodes is unsupported");
         }
         try (Lock lock = db.lockDockerImages()) {

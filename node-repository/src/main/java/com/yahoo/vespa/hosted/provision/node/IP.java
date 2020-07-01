@@ -133,7 +133,7 @@ public class IP {
 
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
-                    if (node.type().isDockerHost()) { // Addresses of a host can never overlap with any other nodes
+                    if (node.type().isHost()) { // Addresses of a host can never overlap with any other nodes
                         addresses.addAll(node.ipConfig().pool().asSet());
                         otherAddresses.addAll(other.ipConfig().pool().asSet());
                     }
