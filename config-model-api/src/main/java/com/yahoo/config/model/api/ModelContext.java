@@ -95,6 +95,9 @@ public interface ModelContext {
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
 
+        // Select sequencer type use while feeding.
+        String feedSequencerType();
+
         boolean useDistributorBtreeDb();
 
         boolean useThreePhaseUpdates();

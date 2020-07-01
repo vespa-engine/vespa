@@ -43,6 +43,7 @@ public class TestProperties implements ModelContext.Properties {
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
     private String jvmGCOptions = null;
+    private String sequencerType = "LATENCY";
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -57,7 +58,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @Override public String jvmGCOptions() { return jvmGCOptions; }
-
+    @Override public String feedSequencerType() { return sequencerType; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return false; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
@@ -76,6 +77,10 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
+        return this;
+    }
+    public TestProperties setFeedSequencerType(String type) {
+        sequencerType = type;
         return this;
     }
     public TestProperties setDefaultTermwiseLimit(double limit) {
