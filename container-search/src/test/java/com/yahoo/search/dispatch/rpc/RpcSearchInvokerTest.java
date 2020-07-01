@@ -40,7 +40,7 @@ public class RpcSearchInvokerTest {
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         RpcSearchInvoker.RpcContext context = (RpcSearchInvoker.RpcContext) invoker.sendSearchRequest(q, null);
-        assertTrue( context.payloadLength == lengthHolder.get());
+        assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
         assertSame(context.compressedPayload.data(), payloadHolder.get());
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
@@ -53,7 +53,7 @@ public class RpcSearchInvokerTest {
         var invoker2 = new RpcSearchInvoker(mockSearcher(), new Node(8, "eight", 1), mockPool, 1000);
         RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext)invoker2.sendSearchRequest(q, context);
         assertSame(context, context2);
-        assertTrue( context.payloadLength == lengthHolder.get());
+        assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
         assertSame(context.compressedPayload.data(), payloadHolder.get());
     }
 

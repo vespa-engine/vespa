@@ -87,7 +87,7 @@ interface Client {
                 RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds);
 
         void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-                ResponseReceiver responseReceiver, double timeoutSeconds);
+                     ResponseReceiver responseReceiver, double timeoutSeconds);
 
         /** Closes this connection */
         void close();

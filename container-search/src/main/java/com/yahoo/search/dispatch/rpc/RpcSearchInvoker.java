@@ -58,8 +58,12 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
         RpcContext context = getContext(incomingContext);
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
-        nodeConnection.request(RPC_METHOD, context.compressedPayload.type(), context.payloadLength,
-                               context.compressedPayload.data(), this, timeoutSeconds);
+        nodeConnection.request(RPC_METHOD,
+                               context.compressedPayload.type(),
+                               context.compressedPayload.uncompressedSize(),
+                               context.compressedPayload.data(),
+                               this,
+                               timeoutSeconds);
         return context;
     }
 
@@ -120,10 +124,8 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     static class RpcContext {
 
         final Compressor.Compression compressedPayload;
-        final int payloadLength;
 
         RpcContext(RpcResourcePool resourcePool, Query query, byte[] payload) {
-            this.payloadLength = payload.length;
             compressedPayload = resourcePool.compress(query, payload);
         }
 
