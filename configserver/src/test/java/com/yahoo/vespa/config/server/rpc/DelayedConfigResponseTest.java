@@ -39,7 +39,7 @@ public class DelayedConfigResponseTest {
     @Test
     public void testDelayedConfigResponses() throws IOException {
 
-        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
+        MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         assertThat(responses.size(), is(0));
         JRTServerConfigRequest req = createRequest("foo", "md5", "myid", "mymd5", 3, 1000000, "bar");
@@ -60,7 +60,7 @@ public class DelayedConfigResponseTest {
     @Test
     public void testDelayResponseRemove() throws IOException {
         GetConfigContext context = GetConfigContext.testContext(ApplicationId.defaultId());
-        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
+        MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         responses.delayResponse(createRequest("foolio", "md5", "myid", "mymd5", 3, 100000, "bar"), context);
         assertThat(responses.size(), is(1));
@@ -70,7 +70,7 @@ public class DelayedConfigResponseTest {
 
     @Test
     public void testDelayedConfigResponse() throws IOException {
-        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
+        MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         assertThat(responses.size(), is(0));
         assertThat(responses.toString(), is("DelayedConfigResponses. Average Size=0"));

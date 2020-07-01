@@ -52,7 +52,7 @@ public class HostHandlerTest {
         tenant.getApplicationRepo().createApplication(applicationId);
         tenant.getApplicationRepo().createPutTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
-        tenant.getSessionRepository().addSession(new SessionHandlerTest.MockLocalSession(sessionId, app, applicationId));
+        tenant.getSessionRepository().addLocalSession(new SessionHandlerTest.MockLocalSession(sessionId, app, applicationId));
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();

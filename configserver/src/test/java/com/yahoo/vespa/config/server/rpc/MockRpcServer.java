@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionService;
  *
  * @author Ulf Lilleengen
  */
-public class MockRpc extends RpcServer {
+public class MockRpcServer extends RpcServer {
 
     public boolean forced = false;
     public RuntimeException exception = null;
@@ -37,7 +37,7 @@ public class MockRpc extends RpcServer {
     public volatile JRTServerConfigRequest latestRequest = null;
 
 
-    public MockRpc(int port, File tempDir) {
+    public MockRpcServer(int port, File tempDir) {
         super(createConfig(port),
               null,
               Metrics.createTestMetrics(),

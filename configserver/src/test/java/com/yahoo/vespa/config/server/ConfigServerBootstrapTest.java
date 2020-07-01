@@ -199,8 +199,8 @@ public class ConfigServerBootstrapTest {
         throw new RuntimeException(messageIfWaitingFails);
     }
 
-    private MockRpc createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
-        return new MockRpc(configserverConfig.rpcport(), temporaryFolder.newFolder());
+    private MockRpcServer createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
+        return new MockRpcServer(configserverConfig.rpcport(), temporaryFolder.newFolder());
     }
 
     private StateMonitor createStateMonitor() {
@@ -241,11 +241,11 @@ public class ConfigServerBootstrapTest {
                              stateMonitor);
     }
 
-    public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {
+    public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {
 
         volatile boolean isRunning = false;
 
-        MockRpc(int port, File tempDir) {
+        MockRpcServer(int port, File tempDir) {
             super(port, tempDir);
         }
 

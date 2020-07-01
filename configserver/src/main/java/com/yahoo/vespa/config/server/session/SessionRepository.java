@@ -119,12 +119,12 @@ public class SessionRepository {
 
     // ---------------- Local sessions ----------------------------------------------------------------
 
-    public synchronized void addSession(LocalSession session) {
+    public synchronized void addLocalSession(LocalSession session) {
         localSessionCache.addSession(session);
         long sessionId = session.getSessionId();
         Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
-        RemoteSession remoteSession = new RemoteSession(tenantName, sessionId, componentRegistry, createSessionZooKeeperClient(sessionId));
-        addWatcher(sessionId, fileCache, remoteSession, Optional.of(session));
+        RemoteSession remoteSession = createRemoteSession(sessionId);
+        addSesssionStateWatcher(sessionId, fileCache, remoteSession, Optional.of(session));
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -137,12 +137,11 @@ public class SessionRepository {
 
     private void loadLocalSessions() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) {
-            return;
-        }
+        if (sessions == null) return;
+
         for (File session : sessions) {
             try {
-                addSession(createSessionFromId(Long.parseLong(session.getName())));
+                addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
@@ -327,7 +326,7 @@ public class SessionRepository {
         Optional<LocalSession> localSession = Optional.empty();
         if (distributeApplicationPackage())
             localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addWatcher(sessionId, fileCache, remoteSession, localSession);
+        addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
     }
 
     private boolean distributeApplicationPackage() {
@@ -553,7 +552,6 @@ public class SessionRepository {
             return Optional.of(createSessionFromId(sessionId));
         }
 
-        log.log(Level.INFO, "Creating local session for session id " + sessionId);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
@@ -570,8 +568,9 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
+            log.log(Level.INFO, "Creating local session for session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
-            addSession(localSession);
+            addLocalSession(localSession);
             return Optional.of(localSession);
         }
         return Optional.empty();
@@ -615,7 +614,7 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
+    private void addSesssionStateWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
         // Remote session will always be present in an existing state watcher, but local session might not
         if (sessionStateWatchers.containsKey(sessionId)) {
             localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
