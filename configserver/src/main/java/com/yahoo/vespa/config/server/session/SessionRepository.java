@@ -330,7 +330,7 @@ public class SessionRepository {
         addWatcher(sessionId, fileCache, remoteSession, localSession);
     }
 
-    private boolean distributeApplicationPackage() {
+    boolean distributeApplicationPackage() {
         return distributeApplicationPackage.value();
     }
 
@@ -553,7 +553,6 @@ public class SessionRepository {
             return Optional.of(createSessionFromId(sessionId));
         }
 
-        log.log(Level.INFO, "Creating local session for session id " + sessionId);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
@@ -570,6 +569,7 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
+            log.log(Level.INFO, "Creating local session for session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addSession(localSession);
             return Optional.of(localSession);
