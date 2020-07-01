@@ -146,6 +146,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
+            "feed-sequencer-type", "",
+            "Selects type of sequenced executor used for feeding, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
             "use-distributor-btree-db", true,
             "Whether to use the new B-tree bucket database in the distributors.",

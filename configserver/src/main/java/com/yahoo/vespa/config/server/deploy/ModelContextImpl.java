@@ -154,6 +154,7 @@ public class ModelContextImpl implements ModelContext {
         private final double threadPoolSizeFactor;
         private final double queueSizefactor;
         private final String jvmGCOPtions;
+        private final String feedSequencer;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final int jdiscHealthCheckProxyClientTimeout;
@@ -196,6 +197,8 @@ public class ModelContextImpl implements ModelContext {
             queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            feedSequencer = Flags.FEED_SEQUENCER_TYPE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
@@ -276,7 +279,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(jdiscHealthCheckProxyClientTimeout); }
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
-
+        @Override public String feedSequencerType() { return feedSequencer; }
     }
 
 }

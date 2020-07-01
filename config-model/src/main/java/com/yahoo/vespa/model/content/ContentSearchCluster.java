@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -43,7 +44,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final boolean flushOnShutdown;
 
     /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
-    private Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
+    private final Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster indexedCluster;
@@ -55,10 +56,11 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private Double visibilityDelay = 0.0;
 
     /** The search nodes of this if it does not have an indexed cluster */
-    private List<SearchNode> nonIndexed = new ArrayList<>();
+    private final List<SearchNode> nonIndexed = new ArrayList<>();
 
-    private Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
+    private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
+    private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -89,6 +91,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor,
                                                                    clusterName,
+                                                                   deployState.getProperties(),
                                                                    documentDefinitions,
                                                                    globallyDistributedDocuments,
                                                                    getFlushOnShutdown(flushOnShutdownElem, deployState),
@@ -176,6 +179,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     private ContentSearchCluster(AbstractConfigProducer parent,
                                  String clusterName,
+                                 ModelContext.Properties featureFlags,
                                  Map<String, NewDocumentType> documentDefinitions,
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
@@ -187,6 +191,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
         this.combined = combined;
+        this.feedSequencerType = ProtonConfig.Indexing.Optimize.Enum.valueOf(featureFlags.feedSequencerType());
     }
 
     public void setVisibilityDelay(double delay) {
@@ -379,6 +384,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         if (hasAnyNonIndexedCluster) {
             builder.feeding.concurrency(builder.feeding.build().concurrency() * 2);
         }
+        builder.indexing.optimize(feedSequencerType);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {
