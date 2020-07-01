@@ -2,6 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestDescriptor;
+import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.exception.ExceptionUtils;
@@ -30,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,11 +42,14 @@ import java.util.stream.Stream;
 public class JunitRunner extends AbstractComponent {
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
+    private static final String TEST_BUNDLE_SUFFIX = "-tests";
+
     private final BundleContext bundleContext;
+    private final TestRuntimeProvider testRuntimeProvider;
 
     @Inject
-    public JunitRunner(OsgiFramework osgiFramework) {
-        // TODO mortent: Find a way to workaround this hack
+    public JunitRunner(OsgiFramework osgiFramework, TestRuntimeProvider testRuntimeProvider) {
+        this.testRuntimeProvider = testRuntimeProvider;
         var tmp = osgiFramework.bundleContext();
         try {
             var field = tmp.getClass().getDeclaredField("wrapped");
@@ -55,27 +60,43 @@ public class JunitRunner extends AbstractComponent {
         }
     }
 
-    public Bundle findTestBundle(String bundleNameSuffix) {
-        return Stream.of(bundleContext.getBundles())
-                .filter(bundle -> bundle.getSymbolicName().endsWith(bundleNameSuffix))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("No bundle on classpath with name ending on " + bundleNameSuffix));
+    public String executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
+        testRuntimeProvider.initialize(testConfig);
+        Bundle testBundle = findTestBundle();
+        Optional<TestDescriptor> testDescriptor = loadTestDescriptor(testBundle);
+        if (testDescriptor.isEmpty()) {
+            throw new RuntimeException("Could not find test descriptor");
+        }
+        List<Class<?>> testClasses = loadClasses(testBundle, testDescriptor.get(), category);
+        return launchJunit(testClasses);
     }
 
-    public TestDescriptor loadTestDescriptor(Bundle bundle) {
+    public boolean isSupported() {
+        Bundle testBundle = findTestBundle();
+        return loadTestDescriptor(testBundle).isPresent();
+    }
+
+    private Bundle findTestBundle() {
+        return Stream.of(bundleContext.getBundles())
+                .filter(bundle -> bundle.getSymbolicName().endsWith(TEST_BUNDLE_SUFFIX))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("No bundle on classpath with name ending on " + TEST_BUNDLE_SUFFIX));
+    }
+
+    private Optional<TestDescriptor> loadTestDescriptor(Bundle bundle) {
         URL resource = bundle.getEntry(TestDescriptor.DEFAULT_FILENAME);
         TestDescriptor testDescriptor;
         try {
             var jsonDescriptor = IOUtils.readAll(resource.openStream(), Charset.defaultCharset()).trim();
             testDescriptor = TestDescriptor.fromJsonString(jsonDescriptor);
             logger.info( "Test classes in bundle :" + testDescriptor.toString());
-            return testDescriptor;
+            return Optional.of(testDescriptor);
         } catch (IOException e) {
-            throw new RuntimeException("Could not load " + TestDescriptor.DEFAULT_FILENAME + " [" + e.getMessage() + "]");
+            return Optional.empty();
         }
     }
 
-    public List<Class<?>> loadClasses(Bundle bundle, TestDescriptor testDescriptor, TestDescriptor.TestCategory testCategory) {
+    private List<Class<?>> loadClasses(Bundle bundle, TestDescriptor testDescriptor, TestDescriptor.TestCategory testCategory) {
         List<Class<?>> testClasses = testDescriptor.getConfiguredTests(testCategory).stream()
                 .map(className -> loadClass(bundle, className))
                 .collect(Collectors.toList());
@@ -94,7 +115,7 @@ public class JunitRunner extends AbstractComponent {
         }
     }
 
-    public String executeTests(List<Class<?>> testClasses) {
+    private String launchJunit(List<Class<?>> testClasses) {
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
                         testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList())

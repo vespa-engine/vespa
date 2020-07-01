@@ -2,21 +2,18 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestDescriptor;
-import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.yahoo.container.handler.metrics.JsonResponse;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import org.osgi.framework.Bundle;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 
 /**
  * @author mortent
@@ -24,48 +21,58 @@ import java.util.function.Function;
 public class JunitHandler extends LoggingRequestHandler {
 
     private final JunitRunner junitRunner;
-    private final TestRuntimeProvider testRuntimeProvider;
 
     @Inject
-    public JunitHandler(Executor executor, AccessLog accessLog, JunitRunner junitRunner, TestRuntimeProvider testRuntimeProvider) {
+    public JunitHandler(Executor executor, AccessLog accessLog, JunitRunner junitRunner) {
         super(executor, accessLog);
         this.junitRunner = junitRunner;
-        this.testRuntimeProvider = testRuntimeProvider;
     }
 
     @Override
     public HttpResponse handle(HttpRequest httpRequest) {
-        String mode = property("mode", "help", httpRequest, String::valueOf);
-        TestDescriptor.TestCategory category = property("category", TestDescriptor.TestCategory.systemtest, httpRequest, TestDescriptor.TestCategory::valueOf);
-
-        try {
-            testRuntimeProvider.initialize(httpRequest.getData().readAllBytes());
-        } catch (IOException e) {
-            return new ErrorResponse(500, "testruntime-initialization", "Exception reading test config");
+        switch (httpRequest.getMethod()) {
+            case GET:
+                return handleGet(httpRequest);
+            case POST:
+                return handlePost(httpRequest);
+            default:
+                return new ErrorResponse(Response.Status.METHOD_NOT_ALLOWED, "testruntime-initialization", "Method '" + httpRequest.getMethod() + "' not supported");
         }
-
-        if ("help".equalsIgnoreCase(mode)) {
-            return new MessageResponse("Accepted modes: \n help \n list \n execute");
-        }
-
-        if (!"list".equalsIgnoreCase(mode) && !"execute".equalsIgnoreCase(mode)) {
-            return new ErrorResponse(400, "client error", "Unknown mode \"" + mode + "\"");
-        }
-
-        Bundle testBundle = junitRunner.findTestBundle("-tests");
-        TestDescriptor testDescriptor = junitRunner.loadTestDescriptor(testBundle);
-        List<Class<?>> testClasses = junitRunner.loadClasses(testBundle, testDescriptor, category);
-
-        String jsonResponse = junitRunner.executeTests(testClasses);
-
-        return new JsonResponse(200, jsonResponse);
     }
 
-    private static <VAL> VAL property(String name, VAL defaultValue, HttpRequest request, Function<String, VAL> converter) {
-        final String propertyString = request.getProperty(name);
-        if (propertyString != null) {
-            return converter.apply(propertyString);
+    public HttpResponse handleGet(HttpRequest httpRequest) {
+        String path = httpRequest.getUri().getPath();
+        if (path.equals("/tester/v2/supported")) {
+            return new JsonResponse(200, String.format("{\"supported\":%b}", junitRunner.isSupported()));
         }
-        return defaultValue;
+        return new EmptyResponse(Response.Status.NOT_FOUND);
+    }
+
+    public HttpResponse handlePost(HttpRequest httpRequest) {
+        String path = httpRequest.getUri().getPath();
+        if (path.equals("/tester/v2/execute")) {
+            TestDescriptor.TestCategory category = getCategoryOrDefault(httpRequest, TestDescriptor.TestCategory.systemtest);
+            try {
+                byte[] config = httpRequest.getData().readAllBytes();
+                String jsonResponse = junitRunner.executeTests(category, config);
+                return new JsonResponse(200, jsonResponse);
+            } catch (Exception e) {
+                return new ErrorResponse(500, "testrun", "Exception while executing tests");
+            }
+        }
+        return new EmptyResponse(Response.Status.NOT_FOUND);
+    }
+
+    private static TestDescriptor.TestCategory getCategoryOrDefault(HttpRequest request, TestDescriptor.TestCategory defaultValue) {
+        final String propertyString = request.getProperty("category");
+        if (Strings.isNullOrEmpty(propertyString)) {
+            return defaultValue;
+        } else {
+            try {
+                return TestDescriptor.TestCategory.valueOf(propertyString);
+            } catch (IllegalArgumentException ignored) {
+                return defaultValue;
+            }
+        }
     }
 }
