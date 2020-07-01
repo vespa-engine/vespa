@@ -42,7 +42,7 @@
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
         <bundlePluginExtraTestProvidedDependencies/>
 
-        <!-- Must be specified by specialized base pom -->
+        <!-- Must be specified by specialized base pom. Can also be overriden by application -->
         <endpoint/>
 
         <!-- Properties that are specified by application pom -->
@@ -244,6 +244,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.3</version>
                         <executions>
                             <execution>
                                 <id>attach-artifact</id>
