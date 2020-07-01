@@ -82,7 +82,7 @@ public class RoutingController {
         return rotationRepository;
     }
 
-    /** Returns zone-scoped endpoints for given deployment */
+    /** Returns endpoints for given deployment */
     public EndpointList endpointsOf(DeploymentId deployment) {
         var endpoints = new LinkedHashSet<Endpoint>();
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
@@ -93,6 +93,7 @@ public class RoutingController {
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
+                endpoints.add(policy.weightedEndpointIn(controller.system(), routingMethod));
             }
         }
         return EndpointList.copyOf(endpoints);
@@ -134,7 +135,7 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Returns all non-global endpoints and corresponding cluster IDs for given deployments, grouped by their zone */
+    /** Returns all zone-scoped endpoints and corresponding cluster IDs for given deployments, grouped by their zone */
     public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {

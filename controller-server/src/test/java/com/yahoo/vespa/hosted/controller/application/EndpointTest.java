@@ -228,6 +228,44 @@ public class EndpointTest {
     }
 
     @Test
+    public void weighted_endpoints() {
+        var cluster = ClusterSpec.Id.from("default");
+        Map<String, Endpoint> tests = Map.of(
+                "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
+                Endpoint.of(app1)
+                        .target(cluster, ZoneId.from("prod", "us-north-1a"))
+                        .weighted()
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
+                Endpoint.of(app1)
+                        .target(cluster, ZoneId.from("prod", "us-north-2"))
+                        .weighted()
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://a1.t1.us-north-2-w.test.public.vespa.oath.cloud/",
+                Endpoint.of(app1)
+                        .target(cluster, ZoneId.from("test", "us-north-2"))
+                        .weighted()
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public)
+        );
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+        Endpoint endpoint = Endpoint.of(app1)
+                                    .target(cluster, ZoneId.from("prod", "us-north-1a"))
+                                    .weighted()
+                                    .routingMethod(RoutingMethod.exclusive)
+                                    .on(Port.tls())
+                                    .in(SystemName.main);
+        assertEquals("Availability zone is removed from region",
+                     "us-north-1",
+                     endpoint.zones().get(0).region().value());
+    }
+
+    @Test
     public void upstream_name() {
         var zone = ZoneId.from("prod", "us-north-1");
         var tests1 = Map.of(

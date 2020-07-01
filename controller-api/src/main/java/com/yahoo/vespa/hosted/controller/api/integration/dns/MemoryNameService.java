@@ -46,9 +46,10 @@ public class MemoryNameService implements NameService {
                              .map(d -> new Record(Record.Type.ALIAS, name, d.pack()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
-        records.stream()
-               .filter(r -> !this.records.contains(r))
-               .forEach(this::add);
+        for (var r1 : records) {
+            this.records.removeIf(r2 -> conflicts(r1, r2));
+        }
+        this.records.addAll(records);
         return records;
     }
 
@@ -115,10 +116,13 @@ public class MemoryNameService implements NameService {
      * most real name services.
      */
     private static boolean conflicts(Record r1, Record r2) {
-        if (!r1.name().equals(r2.name())) return false;               // Distinct names never conflict
-        if (r1.type() == Record.Type.ALIAS && r1.type() == r2.type()) // ALIAS records only require distinct data
-            return r1.data().equals(r2.data());
-        return true;                                                  // Anything else is considered a conflict
+        if (!r1.name().equals(r2.name())) return false;                // Distinct names never conflict
+        if (r1.type() == Record.Type.ALIAS && r1.type() == r2.type()) {
+            AliasTarget t1 = AliasTarget.unpack(r1.data());
+            AliasTarget t2 = AliasTarget.unpack(r2.data());
+            return t1.name().equals(t2.name());                        // ALIAS records require distinct targets
+        }
+        return true;                                                   // Anything else is considered a conflict
     }
 
 }

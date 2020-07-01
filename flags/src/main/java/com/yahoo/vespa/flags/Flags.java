@@ -295,6 +295,13 @@ public class Flags {
             "Takes effect on next tick"
     );
 
+    public static final UnboundBooleanFlag WEIGHTED_DNS_PER_REGION = defineFeatureFlag(
+            "weighted-dns-per-region", false,
+            "Whether to create weighted DNS records per region in global endpoints",
+            "Takes effect on next deployment through controller",
+            APPLICATION_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

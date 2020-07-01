@@ -47,6 +47,11 @@ public class WeightedAliasTarget extends AliasTarget {
         return Objects.hash(super.hashCode(), weight);
     }
 
+    @Override
+    public String toString() {
+        return "weighted target for " + name() + "[id=" + id() + ",dnsZone=" + dnsZone() + ",weight=" + weight + "]";
+    }
+
     /** Unpack weighted alias from given record data */
     public static WeightedAliasTarget unpack(RecordData data) {
         var parts = data.asString().split("/");

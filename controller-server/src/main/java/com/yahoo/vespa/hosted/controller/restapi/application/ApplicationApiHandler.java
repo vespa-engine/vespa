@@ -44,11 +44,11 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -95,7 +95,6 @@ import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.DigestInputStream;
@@ -104,8 +103,6 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.YearMonth;
-import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -116,7 +113,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -975,7 +971,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : controller.routing().endpointsOf(deploymentId)) {
+        for (var endpoint : controller.routing().endpointsOf(deploymentId).scope(Endpoint.Scope.zone)) {
             toSlime(endpoint, endpoint.name(), endpointArray.addObject());
         }
         // Add global endpoints

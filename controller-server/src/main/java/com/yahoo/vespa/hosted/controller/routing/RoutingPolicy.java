@@ -74,11 +74,12 @@ public class RoutingPolicy {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
         if (infraEndpoint.isPresent()) return infraEndpoint.get();
-        return Endpoint.of(id.owner())
-                       .target(id.cluster(), id.zone())
-                       .on(Port.fromRoutingMethod(routingMethod))
-                       .routingMethod(routingMethod)
-                       .in(system);
+        return endpoint(routingMethod).in(system);
+    }
+
+    /** Returns the weighted endpoint of this */
+    public Endpoint weightedEndpointIn(SystemName system, RoutingMethod routingMethod) {
+        return endpoint(routingMethod).weighted().in(system);
     }
 
     @Override
@@ -99,6 +100,13 @@ public class RoutingPolicy {
         return String.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
                              id.zone().value());
+    }
+
+    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {
+        return Endpoint.of(id.owner())
+                       .target(id.cluster(), id.zone())
+                       .on(Port.fromRoutingMethod(routingMethod))
+                       .routingMethod(routingMethod);
     }
 
 }
