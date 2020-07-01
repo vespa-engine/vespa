@@ -177,23 +177,39 @@ public class RoutingPolicies {
     private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Map<RegionEndpoint, Set<AliasTarget>> targets = computeRegionEndpoints(routeEntry.getValue(), inactiveZones);
+            Map<RegionEndpoint, Set<AliasTarget>> regionEndpoints = computeRegionEndpoints(routeEntry.getValue(), inactiveZones);
             // Create a weighted ALIAS per region, pointing to all zones within the same region
-            targets.forEach(((regionEndpoint, weightedTargets) -> {
-                controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.dnsName), weightedTargets,
+            regionEndpoints.forEach(((regionEndpoint, weightedTargets) -> {
+                controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
+                                                              weightedTargets,
                                                               Priority.normal);
             }));
+
             // Create global latency-based ALIAS pointing to each per-region weighted ALIAS
+            Set<AliasTarget> latencyTargets = new LinkedHashSet<>();
+            Set<AliasTarget> inactiveLatencyTargets = new LinkedHashSet<>();
+            for (var regionEndpoint : regionEndpoints.keySet()) {
+                if (regionEndpoint.active()) {
+                    latencyTargets.add(regionEndpoint.target());
+                } else {
+                    inactiveLatencyTargets.add(regionEndpoint.target());
+                }
+            }
+            // If all targets are configured out, all targets are set in. We do this because otherwise removing 100% of
+            // the ALIAS records would cause the global endpoint to stop resolving entirely (NXDOMAIN).
+            if (latencyTargets.isEmpty() && !inactiveLatencyTargets.isEmpty()) {
+                latencyTargets.addAll(inactiveLatencyTargets);
+                inactiveLatencyTargets.clear();
+            }
             var endpoints = controller.routing().endpointsOf(routeEntry.getKey().application())
                                       .named(routeEntry.getKey().endpointId())
                                       .not().requiresRotation();
-            Set<AliasTarget> latencyTargets = targets.keySet().stream()
-                                                     .map(regionEndpoint -> new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName),
-                                                                                                   regionEndpoint.dnsZone,
-                                                                                                   regionEndpoint.zone))
-                                                     .collect(Collectors.toSet());
             endpoints.forEach(endpoint -> controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()),
                                                                                         latencyTargets, Priority.normal));
+            inactiveLatencyTargets.forEach(t -> controller.nameServiceForwarder()
+                                                          .removeRecords(Record.Type.ALIAS,
+                                                                         RecordData.fqdn(t.name().value()),
+                                                                         Priority.normal));
         }
     }
 
@@ -205,19 +221,14 @@ public class RoutingPolicies {
             if (policy.dnsZone().isEmpty()) continue;
             if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
             Endpoint weighted = policy.weightedEndpointIn(controller.system(), routingMethod);
-            // Do not route to zone if global routing status is set out at:
-            // - zone level (ZoneRoutingPolicy)
-            // - deployment level (RoutingPolicy)
-            // - application package level (deployment.xml)
-            long weight = 1;
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-            if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
-                weight = 0; // A record with 0 weight will not received traffic. If all records within a group have 0
-                            // weight, traffic is routed to all records with equal probability.
-            }
-            var regionEndpoint = new RegionEndpoint(weighted, policy.dnsZone().get(), policy.id().zone());
+            boolean active = !isConfiguredOut(policy, zonePolicy, inactiveZones);
+            var regionEndpoint = new RegionEndpoint(new LatencyAliasTarget(HostName.from(weighted.dnsName()),
+                                                                           policy.dnsZone().get(),
+                                                                           policy.id().zone()),
+                                                    active);
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
-                                                         policy.id().zone(), weight);
+                                                         policy.id().zone(), 1);
             targets.computeIfAbsent(regionEndpoint, (k) -> new LinkedHashSet<>())
                    .add(weightedTarget);
         }
@@ -338,15 +349,20 @@ public class RoutingPolicies {
     /** Represents a region-wide endpoint */
     private static class RegionEndpoint {
 
-        private final String dnsName;
-        private final String dnsZone;
-        private final ZoneId zone;
+        private final LatencyAliasTarget target;
+        private final boolean active;
 
-        public RegionEndpoint(Endpoint endpoint, String dnsZone, ZoneId zone) {
-            this.dnsName = Objects.requireNonNull(endpoint).dnsName();
-            this.dnsZone = Objects.requireNonNull(dnsZone);
-            this.zone = Objects.requireNonNull(zone);
-            if (endpoint.scope() != Endpoint.Scope.weighted) throw new IllegalArgumentException("Region endpoint must be weighted");
+        public RegionEndpoint(LatencyAliasTarget target, boolean active) {
+            this.target = Objects.requireNonNull(target);
+            this.active = active;
+        }
+
+        public LatencyAliasTarget target() {
+            return target;
+        }
+
+        public boolean active() {
+            return active;
         }
 
         @Override
@@ -354,12 +370,12 @@ public class RoutingPolicies {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RegionEndpoint that = (RegionEndpoint) o;
-            return dnsName.equals(that.dnsName);
+            return target.name().equals(that.target.name());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(dnsName);
+            return Objects.hash(target.name());
         }
 
     }
