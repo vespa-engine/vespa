@@ -50,6 +50,7 @@ my $msgtxre;
 my $onlypid;
 my $onlysvc;
 my $onlyhst;
+my $onlyint;
 
 my $shortsvc;
 my $shortcmp;
@@ -67,6 +68,7 @@ GetOptions ('level|l=s' => \@optlevels,
             'service|S=s'  => \$onlysvc,
             'show|s=s'  => \@optshow,
             'pid|p=s'  => \$onlypid,
+            'internal|i' => \$onlyint,
             'component|c=s'  => \$compore,
             'message|m=s'  => \$msgtxre,
             'help|h' => \$opthelp,
@@ -107,6 +109,7 @@ if ( $opthelp || $bad ) {
 	"  -N\t\t--nldequote\t\tdequote newlines in message text field\n",
 	"  -t\t--tc\t--truncatecomponent\tchop component to 15 chars\n",
 	"  --ts\t\t--truncateservice\tchop service to 9 chars\n",
+        "  -i\t\t--internal\t\tfilter out plugin-generated messages\n",
 	"\n",
 	"FIELDLIST is comma separated, available fields:\n",
 	"\t time fmttime msecs usecs host level pid service component message\n",
@@ -172,6 +175,31 @@ if ( $optshow ) {
 #		foreach ( keys %showflags ) ;
 }
 
+my $only_internal_regexp = qr/^
+	[^.]*[.]
+	( ai[.]vespa[.] |
+          com[.]yahoo[.]
+	      ( application | binaryprefix | clientmetrics |
+		collections | component | compress |
+		concurrent | config | configtest |
+		container | data | docproc | docprocs |
+		document | documentapi | documentmodel |
+		dummyreceiver | errorhandling | exception |
+		feedapi | feedhandler | filedistribution |
+		fs4 | fsa | geo | io | javacc | jdisc |
+		jrt | lang | language | log | logserver |
+		messagebus | metrics | net | osgi | path |
+		plugin | prelude | processing | protect |
+		reflection | restapi | search |
+		searchdefinition | searchlib | security |
+		slime | socket | statistics | stream |
+		system | tensor | test | text |
+		time | transaction | vdslib | vespa |
+		vespaclient | vespafeeder | vespaget |
+		vespastat | vespasummarybenchmark |
+		vespavisit | vespaxmlparser | yolean )
+	)[.]/x ;
+
 while (<>) {
 	chomp;
 	if ( /^
@@ -205,6 +233,12 @@ while (<>) {
 		}
 		next unless ( $levelflags{$levl} );
 
+		# for now, only filter plugins in "Container"
+		if ($onlyint && $comp =~ m/^Container[.]/) {
+			if ($comp !~ m/$only_internal_regexp/) {
+				next;
+			}
+		}
 		if ($compore && $comp !~ m/$compore/o) { next; }
 		if ($msgtxre && $msgt !~ m/$msgtxre/o) { next; }
 		if ($onlypid && $pidn ne $onlypid) { next; }
