@@ -200,6 +200,21 @@
 
                     <plugin>
                         <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-maven-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-test-descriptor</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>generateTestDescriptor</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
                         <artifactId>vespa-application-maven-plugin</artifactId>
                         <version>${vespaversion}</version>
                         <executions>
@@ -209,12 +224,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>com.yahoo.vespa</groupId>
-                        <artifactId>vespa-maven-plugin</artifactId>
-                        <version>${vespaversion}</version>
                     </plugin>
 
                     <plugin>
