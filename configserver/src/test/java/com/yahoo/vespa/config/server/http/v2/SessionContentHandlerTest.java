@@ -43,7 +43,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     public void setupHandler() throws Exception {
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenant);
-        tenantRepository.getTenant(tenant).getSessionRepository().addSession(new MockLocalSession(1L, FilesApplicationPackage.fromFile(createTestApp())));
+        tenantRepository.getTenant(tenant).getSessionRepository().addLocalSession(new MockLocalSession(1L, FilesApplicationPackage.fromFile(createTestApp())));
         handler = createHandler();
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         baseUrl = "http://foo:1337/application/v2/tenant/" + tenant + "/session/1/content/";

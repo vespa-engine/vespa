@@ -307,7 +307,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         LocalSession newSession = tenant.getSessionRepository().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
-        tenant.getSessionRepository().addSession(newSession);
+        tenant.getSessionRepository().addLocalSession(newSession);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -646,7 +646,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         SessionRepository sessionRepository = tenant.getSessionRepository();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
         LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
-        sessionRepository.addSession(session);
+        sessionRepository.addLocalSession(session);
         return session.getSessionId();
     }
 
@@ -669,7 +669,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                            applicationId,
                                                                            timeoutBudget,
                                                                            activeSessionId);
-        tenant.getSessionRepository().addSession(session);
+        tenant.getSessionRepository().addLocalSession(session);
         return session.getSessionId();
     }
 
