@@ -760,6 +760,38 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
     }
 
+    private void verifyFeedSequencer(String input, String expceted) {
+        String hostedXml = "<services>" +
+                "<content version='1.0' id='search'>" +
+                "  <redundancy>1</redundancy>" +
+                "  <documents>" +
+                "    <document type='music' mode='index'/>" +
+                "  </documents>" +
+                "  <nodes count='1'/>" +
+                "</content>" +
+                "</services>";
+
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setFeedSequencerType(input));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(hostedXml)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(expceted, config.indexing().optimize().toString());
+
+    }
+
+    @Test
+    public void ensureFeedSequencerIsControlledByFlag() {
+        verifyFeedSequencer("LATENCY", "LATENCY");
+        verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
+        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT");
+        verifyFeedSequencer("THOUGHPUT", "LATENCY");
+        verifyFeedSequencer("adaptive", "LATENCY");
+
+    }
+
     @Test
     public void failWhenNoDocumentsElementSpecified() {
         expectedException.expect(IllegalArgumentException.class);

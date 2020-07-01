@@ -177,6 +177,14 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
     }
 
+    private static ProtonConfig.Indexing.Optimize.Enum convertFeedSequencerType(String sequencerType) {
+        try {
+            return ProtonConfig.Indexing.Optimize.Enum.valueOf(sequencerType);
+        } catch (Throwable t) {
+            return ProtonConfig.Indexing.Optimize.Enum.LATENCY;
+        }
+    }
+
     private ContentSearchCluster(AbstractConfigProducer parent,
                                  String clusterName,
                                  ModelContext.Properties featureFlags,
@@ -191,7 +199,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
         this.combined = combined;
-        this.feedSequencerType = ProtonConfig.Indexing.Optimize.Enum.valueOf(featureFlags.feedSequencerType());
+        feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
     }
 
     public void setVisibilityDelay(double delay) {
