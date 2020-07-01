@@ -177,34 +177,34 @@ public class RoutingPolicies {
     private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Map<LatencyAliasTarget, Set<AliasTarget>> targets = computeTargets(routeEntry.getValue(), inactiveZones);
-            // Create a weighted ALIAS per zone, pointing to all targets within that zone
-            targets.forEach(((latencyTarget, weightedTargets) -> {
-                controller.nameServiceForwarder().createAlias(RecordName.from(latencyTarget.name().value()),
-                                                              weightedTargets,
+            Map<RegionEndpoint, Set<AliasTarget>> targets = computeRegionEndpoints(routeEntry.getValue(), inactiveZones);
+            // Create a weighted ALIAS per region, pointing to all zones within the same region
+            targets.forEach(((regionEndpoint, weightedTargets) -> {
+                controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.dnsName), weightedTargets,
                                                               Priority.normal);
             }));
-            // Create global latency-based ALIAS pointing to each weighted ALIAS
+            // Create global latency-based ALIAS pointing to each per-region weighted ALIAS
             var endpoints = controller.routing().endpointsOf(routeEntry.getKey().application())
                                       .named(routeEntry.getKey().endpointId())
                                       .not().requiresRotation();
-            Set<AliasTarget> latencyTargets = Collections.unmodifiableSet(targets.keySet());
+            Set<AliasTarget> latencyTargets = targets.keySet().stream()
+                                                     .map(regionEndpoint -> new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName),
+                                                                                                   regionEndpoint.dnsZone,
+                                                                                                   regionEndpoint.zone))
+                                                     .collect(Collectors.toSet());
             endpoints.forEach(endpoint -> controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()),
                                                                                         latencyTargets, Priority.normal));
         }
     }
 
-    /** Compute latency and associated weighted targets from given policies */
-    private Map<LatencyAliasTarget, Set<AliasTarget>> computeTargets(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
-        Map<LatencyAliasTarget, Set<AliasTarget>> targets = new LinkedHashMap<>();
+    /** Compute region endpoints and their targets from given policies */
+    private Map<RegionEndpoint, Set<AliasTarget>> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
+        Map<RegionEndpoint, Set<AliasTarget>> targets = new LinkedHashMap<>();
         RoutingMethod routingMethod = RoutingMethod.exclusive;
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
             if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
             Endpoint weighted = policy.weightedEndpointIn(controller.system(), routingMethod);
-            LatencyAliasTarget latencyTarget = new LatencyAliasTarget(HostName.from(weighted.dnsName()),
-                                                                      policy.dnsZone().get(),
-                                                                      weighted.zones().get(0));
             // Do not route to zone if global routing status is set out at:
             // - zone level (ZoneRoutingPolicy)
             // - deployment level (RoutingPolicy)
@@ -215,10 +215,11 @@ public class RoutingPolicies {
                 weight = 0; // A record with 0 weight will not received traffic. If all records within a group have 0
                             // weight, traffic is routed to all records with equal probability.
             }
+            var regionEndpoint = new RegionEndpoint(weighted, policy.dnsZone().get(), policy.id().zone());
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                          policy.id().zone(), weight);
-            Set<AliasTarget> weightedTargets = targets.computeIfAbsent(latencyTarget, (k) -> new LinkedHashSet<>());
-            weightedTargets.add(weightedTarget);
+            targets.computeIfAbsent(regionEndpoint, (k) -> new LinkedHashSet<>())
+                   .add(weightedTarget);
         }
         return Collections.unmodifiableMap(targets);
     }
@@ -332,6 +333,35 @@ public class RoutingPolicies {
             case active: return true;
         }
         return false;
+    }
+
+    /** Represents a region-wide endpoint */
+    private static class RegionEndpoint {
+
+        private final String dnsName;
+        private final String dnsZone;
+        private final ZoneId zone;
+
+        public RegionEndpoint(Endpoint endpoint, String dnsZone, ZoneId zone) {
+            this.dnsName = Objects.requireNonNull(endpoint).dnsName();
+            this.dnsZone = Objects.requireNonNull(dnsZone);
+            this.zone = Objects.requireNonNull(zone);
+            if (endpoint.scope() != Endpoint.Scope.weighted) throw new IllegalArgumentException("Region endpoint must be weighted");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RegionEndpoint that = (RegionEndpoint) o;
+            return dnsName.equals(that.dnsName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(dnsName);
+        }
+
     }
 
     /** Load balancers allocated to a deployment */

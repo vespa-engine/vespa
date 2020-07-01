@@ -13,6 +13,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -45,8 +46,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,9 +63,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class RoutingPoliciesTest {
 
-    private final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
-    private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
-    private final ZoneId zone3 = ZoneId.from("prod", "us-east-3");
+    private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
+    private static final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
+    private static final ZoneId zone3 = ZoneId.from("prod", "aws-us-east-1a");
+    private static final ZoneId zone4 = ZoneId.from("prod", "aws-us-east-1b");
 
     private final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                                      .region(zone2.region())
@@ -138,6 +142,30 @@ public class RoutingPoliciesTest {
         assertTrue("Rotation membership is removed from all policies",
                    policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
         assertEquals("Rotations for " + context2.application() + " are not removed", 2, tester.aliasDataOf(endpoint4).size());
+    }
+
+    @Test
+    public void global_routing_policies_with_duplicate_region() {
+        var tester = new RoutingPoliciesTester();
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
+        int clustersPerZone = 2;
+        int numberOfDeployments = 3;
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone3.region())
+                .region(zone4.region())
+                .endpoint("r0", "c0")
+                .endpoint("r1", "c1")
+                .build();
+        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone3, zone4);
+
+        // Creates alias records
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0, zone1, zone3, zone4);
+        tester.assertTargets(context1.instanceId(), EndpointId.of("r1"), 1, zone1, zone3, zone4);
+        assertEquals("Routing policy count is equal to cluster count",
+                     numberOfDeployments * clustersPerZone,
+                     tester.policiesOf(context1.instance().id()).size());
     }
 
     @Test
@@ -595,8 +623,14 @@ public class RoutingPoliciesTest {
 
         public RoutingPoliciesTester(DeploymentTester tester) {
             this.tester = tester;
-            // Make all zones directly routed
-            tester.controllerTester().zoneRegistry().exclusiveRoutingIn(tester.controllerTester().zoneRegistry().zones().all().zones());
+            List<ZoneApi> zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().zones());
+            zones.add(ZoneApiMock.from(zone3));
+            zones.add(ZoneApiMock.from(zone4));
+            tester.controllerTester().zoneRegistry()
+                  .setZones(zones)
+                  .exclusiveRoutingIn(zones);
+            tester.controllerTester().configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(),
+                                                               SystemApplication.all());
             ((InMemoryFlagSource) tester.controllerTester().controller().flagSource()).withBooleanFlag(Flags.WEIGHTED_DNS_PER_REGION.id(), true);
         }
 
@@ -655,28 +689,36 @@ public class RoutingPoliciesTest {
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id clusterId, int loadBalancerId, ZoneId... zones) {
             Set<String> latencyTargets = new HashSet<>();
+            Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zones) {
                 Endpoint weighted = tester.controller().routing().endpointsOf(new DeploymentId(application, zone))
                                           .scope(Endpoint.Scope.weighted)
                                           .named(EndpointId.of(clusterId.value()))
                                           .asList()
                                           .get(0);
-                String latencyTarget = "latency/" + weighted.dnsName() + "/dns-zone-1/" +
-                                       weighted.zones().get(0).value();
-                String weightedTarget = "weighted/lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
-                                        zone.value() + "/dns-zone-1/" + zone.value() + "/1";
-                assertEquals("Weighted target points to load balancer",
-                             List.of(weightedTarget),
-                             aliasDataOf(weighted.dnsName()));
-                latencyTargets.add(latencyTarget);
+                zonesByRegionEndpoint.computeIfAbsent(weighted.dnsName(), (k) -> new ArrayList<>())
+                                     .add(zone);
             }
+            zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
+                List<String> weightedTargets = zonesInRegion.stream()
+                                                            .map(z -> "weighted/lb-" + loadBalancerId + "--" +
+                                                                      application.serializedForm() + "--" + z.value() +
+                                                                      "/dns-zone-1/" + z.value() + "/1")
+                                                            .collect(Collectors.toList());
+                assertEquals("Weighted endpoint " + regionEndpoint + " points to load balancer",
+                             weightedTargets,
+                             aliasDataOf(regionEndpoint));
+                ZoneId zone = zonesInRegion.get(0);
+                String latencyTarget = "latency/" + regionEndpoint + "/dns-zone-1/" + zone.value();
+                latencyTargets.add(latencyTarget);
+            });
             String globalEndpoint = tester.controller().routing().endpointsOf(application)
                                           .named(endpointId)
                                           .targets(List.of(zones))
                                           .primary()
                                           .map(Endpoint::dnsName)
                                           .orElse("<none>");
-            assertEquals("Global endpoint " + globalEndpoint + " points to expected weighted targets",
+            assertEquals("Global endpoint " + globalEndpoint + " points to expected latency targets",
                          latencyTargets, Set.copyOf(aliasDataOf(globalEndpoint)));
 
         }
