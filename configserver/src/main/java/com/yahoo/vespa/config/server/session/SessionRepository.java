@@ -329,7 +329,7 @@ public class SessionRepository {
         addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
     }
 
-    private boolean distributeApplicationPackage() {
+    boolean distributeApplicationPackage() {
         return distributeApplicationPackage.value();
     }
 

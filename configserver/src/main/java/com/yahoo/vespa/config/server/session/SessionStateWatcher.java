@@ -1,16 +1,18 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import java.util.Optional;
-import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
+import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.server.session.Session.Status;
 
 /**
  * Watches one particular session (/config/v2/tenants/&lt;tenantName&gt;/sessions/&lt;n&gt;/sessionState in ZooKeeper)
@@ -49,23 +51,30 @@ public class SessionStateWatcher {
         this.sessionRepository = sessionRepository;
     }
 
-    private void sessionStatusChanged(Session.Status newStatus) {
+    private void sessionStatusChanged(Status newStatus) {
         long sessionId = remoteSession.getSessionId();
-        log.log(Level.FINE, remoteSession.logPre() + "Session change: Session " + remoteSession.getSessionId() + " changed status to " + newStatus);
 
-        if (newStatus.equals(Session.Status.PREPARE)) {
+        if (newStatus.equals(Status.PREPARE)) {
+            createLocalSession(sessionId);
             log.log(Level.FINE, remoteSession.logPre() + "Loading prepared session: " + sessionId);
             remoteSession.loadPrepared();
-        } else if (newStatus.equals(Session.Status.ACTIVATE)) {
+        } else if (newStatus.equals(Status.ACTIVATE)) {
+            createLocalSession(sessionId);
             remoteSession.makeActive(reloadHandler);
-        } else if (newStatus.equals(Session.Status.DEACTIVATE)) {
+        } else if (newStatus.equals(Status.DEACTIVATE)) {
             remoteSession.deactivate();
-        } else if (newStatus.equals(Session.Status.DELETE)) {
+        } else if (newStatus.equals(Status.DELETE)) {
             remoteSession.deactivate();
             localSession.ifPresent(session -> {
                 log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
                 sessionRepository.deleteLocalSession(session);
             });
+        }
+    }
+
+    private void createLocalSession(long sessionId) {
+        if (sessionRepository.distributeApplicationPackage() && localSession.isEmpty()) {
+            localSession = sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
         }
     }
 
@@ -83,19 +92,18 @@ public class SessionStateWatcher {
 
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
-            Session.Status currentStatus = remoteSession.getStatus();
-            Session.Status newStatus = Session.Status.NONE;
+            Status newStatus = Status.NONE;
             try {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
-                    newStatus = Session.Status.parse(Utf8.toString(node.getData()));
-                    log.log(Level.FINE, remoteSession.logPre() + "Session change: Remote session " + remoteSession.getSessionId() +
-                                        " changed status from " + currentStatus.name() + " to " + newStatus.name());
+                    newStatus = Status.parse(Utf8.toString(node.getData()));
+                    log.log(Level.FINE, remoteSession.logPre() + "Session change: Session "
+                                        + remoteSession.getSessionId() + " changed status to " + newStatus.name());
                     sessionStatusChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, remoteSession.logPre() + "Error handling session change from " + currentStatus.name() +
-                                       " to " + newStatus.name() + " for session " + getSessionId(), e);
+                log.log(Level.WARNING, remoteSession.logPre() + "Error handling session change to " +
+                                       newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });
