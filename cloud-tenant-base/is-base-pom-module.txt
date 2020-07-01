@@ -1,0 +1,1 @@
+Used to skip 'hosted-build-vespa-application' profile when building hosted-tenant-base itself

@@ -19,6 +19,16 @@
         <relativePath>../parent</relativePath>
     </parent>
 
+    <properties>
+
+        <!--
+            This version must match the string in all ExportPackage annotations.
+            It must also be in sync junit version specified in 'hosted-tenant-base'.
+        -->
+        <hosted-tenant-base-junit-version>5.6.2</hosted-tenant-base-junit-version>
+
+    </properties>
+
     <dependencies>
         <!-- provided -->
         <dependency>
@@ -42,10 +52,10 @@
         </dependency>
 
         <!-- compile -->
-        <dependency> <!-- TODO(bjorncs): share junit version number with test-runner implementation -->
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.6.2</version> <!-- NOTE: This version must match the string in all ExportPackage annotations -->
+            <version>${hosted-tenant-base-junit-version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
