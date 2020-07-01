@@ -19,7 +19,7 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/statusmessages.h>
-#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
 
@@ -42,7 +42,7 @@ class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 
-class FileStorManager : public StorageLink,
+class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
                         public StateListener,
                         private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
