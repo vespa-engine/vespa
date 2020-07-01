@@ -147,7 +147,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_DISTRIBUTOR_BTREE_DB = defineFeatureFlag(
-            "use-distributor-btree-db", false,
+            "use-distributor-btree-db", true,
             "Whether to use the new B-tree bucket database in the distributors.",
             "Takes effect at restart of distributor process",
             ZONE_ID, APPLICATION_ID);
