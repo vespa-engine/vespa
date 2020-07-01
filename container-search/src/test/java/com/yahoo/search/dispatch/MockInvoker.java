@@ -34,9 +34,10 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected void sendSearchRequest(Query query) throws IOException {
+    protected Object sendSearchRequest(Query query, Object context) throws IOException {
         this.query = query;
         hitsRequested = query.getHits();
+        return context;
     }
 
     @Override

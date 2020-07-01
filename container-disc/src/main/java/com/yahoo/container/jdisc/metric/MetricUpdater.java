@@ -97,7 +97,6 @@ public class MetricUpdater extends AbstractComponent {
             this.jrtMetrics = new JrtMetrics(metric);
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();

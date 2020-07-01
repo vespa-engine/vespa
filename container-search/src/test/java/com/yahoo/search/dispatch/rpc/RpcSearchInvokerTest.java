@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,7 +39,9 @@ public class RpcSearchInvokerTest {
         var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, 1000);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        invoker.sendSearchRequest(q);
+        RpcSearchInvoker.RpcContext context = (RpcSearchInvoker.RpcContext) invoker.sendSearchRequest(q, null);
+        assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
+        assertSame(context.compressedPayload.data(), payloadHolder.get());
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
@@ -46,6 +49,12 @@ public class RpcSearchInvokerTest {
         assertEquals(10, request.getHits());
         assertEquals(3, request.getOffset());
         assertTrue(request.getQueryTreeBlob().size() > 0);
+
+        var invoker2 = new RpcSearchInvoker(mockSearcher(), new Node(8, "eight", 1), mockPool, 1000);
+        RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext)invoker2.sendSearchRequest(q, context);
+        assertSame(context, context2);
+        assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
+        assertSame(context.compressedPayload.data(), payloadHolder.get());
     }
 
     @Test
@@ -59,7 +68,7 @@ public class RpcSearchInvokerTest {
         var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, maxHits);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        invoker.sendSearchRequest(q);
+        invoker.sendSearchRequest(q, null);
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
