@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -72,6 +73,8 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSession = 0;
 
+
+
     private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
     private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
@@ -89,6 +92,7 @@ public class SessionRepository {
     private final Path sessionsPath;
     private final TenantName tenantName;
     private final GlobalComponentRegistry componentRegistry;
+    private final Path locksPath;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -109,6 +113,7 @@ public class SessionRepository {
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.reloadHandler = reloadHandler;
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.locksPath = TenantRepository.getLocksPath(tenantName);
 
         loadLocalSessions();
         initializeRemoteSessions();
@@ -207,13 +212,15 @@ public class SessionRepository {
 
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
-        log.log(Level.FINE, "Deleting local session " + sessionId);
-        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
-        if (watcher != null)  watcher.close();
-        localSessionCache.removeSession(sessionId);
-        NestedTransaction transaction = new NestedTransaction();
-        deleteLocalSession(session, transaction);
-        transaction.commit();
+        try (Lock lock = lock(sessionId)) {
+            log.log(Level.FINE, "Deleting local session " + sessionId);
+            SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+            if (watcher != null) watcher.close();
+            localSessionCache.removeSession(sessionId);
+            NestedTransaction transaction = new NestedTransaction();
+            deleteLocalSession(session, transaction);
+            transaction.commit();
+        }
     }
 
     /** Add transactions to delete this session to the given nested transaction */
@@ -335,7 +342,7 @@ public class SessionRepository {
 
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
-        if (watcher != null)  watcher.close();
+        if (watcher != null) watcher.close();
         remoteSessionCache.removeSession(sessionId);
         metrics.incRemovedSessions();
     }
@@ -630,6 +637,15 @@ public class SessionRepository {
     }
 
     public ReloadHandler getReloadHandler() { return reloadHandler; }
+
+    /** Returns the lock for session operations for the given session id. */
+    public Lock lock(long sessionId) {
+        return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+    }
+
+    private Path lockPath(long sessionId) {
+        return locksPath.append(String.valueOf(sessionId));
+    }
 
     private static class FileTransaction extends AbstractTransaction {
 
