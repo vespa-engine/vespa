@@ -175,7 +175,7 @@ public final class Node {
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
     public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
-        if (!type.isDockerHost() && wantToDeprovision)
+        if (!type.isHost() && wantToDeprovision)
             throw new IllegalArgumentException("wantToDeprovision can only be set for hosts");
         if (wantToRetire == status.wantToRetire() &&
             wantToDeprovision == status.wantToDeprovision()) return this;

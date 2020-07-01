@@ -70,7 +70,7 @@ public enum SystemApplication {
         if (controller.zoneRegistry().zones().reprovisionToUpgradeOs().ids().contains(zone)) {
             return nodeType == NodeType.host; // TODO(mpolden): Remove once all node types are supported
         }
-        return nodeType.isDockerHost();
+        return nodeType.isHost();
     }
 
     /** Returns whether this has an endpoint */
