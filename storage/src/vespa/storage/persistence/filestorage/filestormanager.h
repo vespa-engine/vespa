@@ -149,6 +149,7 @@ private:
     void handleAbortBucketOperations(const std::shared_ptr<AbortBucketOperationsCommand>&);
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
+    void sendReplyDirectly(const std::shared_ptr<api::StorageReply>&) override;
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void onClose() override;
     void onFlush(bool downwards) override;

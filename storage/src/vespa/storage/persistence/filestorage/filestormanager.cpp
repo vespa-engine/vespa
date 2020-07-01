@@ -769,6 +769,19 @@ FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 void
+FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& reply)
+{
+    LOG(spam, "Sending reply %s", reply->toString().c_str());
+
+    if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
+        std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
+        assert(rep.get());
+        if (onInternalReply(rep)) return;
+    }
+    sendUp(reply);
+}
+
+void
 FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
     StorageLinkQueued::sendUp(msg);

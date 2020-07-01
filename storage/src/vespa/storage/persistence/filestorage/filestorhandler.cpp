@@ -104,6 +104,12 @@ FileStorHandler::sendReply(const api::StorageReply::SP& msg)
 }
 
 void
+FileStorHandler::sendReplyDirectly(const api::StorageReply::SP& msg)
+{
+    _impl->sendReplyDirectly(msg);
+}
+
+void
 FileStorHandler::getStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
     _impl->getStatus(out, path);

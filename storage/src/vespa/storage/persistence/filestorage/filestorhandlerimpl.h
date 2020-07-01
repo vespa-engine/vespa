@@ -254,6 +254,7 @@ public:
     }
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
+    void sendReplyDirectly(const api::StorageReply::SP& msg) override;
 
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
 

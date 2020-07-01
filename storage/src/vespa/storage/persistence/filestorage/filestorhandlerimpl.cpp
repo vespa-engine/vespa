@@ -837,6 +837,12 @@ FileStorHandlerImpl::sendReply(const std::shared_ptr<api::StorageReply>& msg)
     _messageSender.sendReply(msg);
 }
 
+void
+FileStorHandlerImpl::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& msg)
+{
+    _messageSender.sendReplyDirectly(msg);
+}
+
 FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
                                                 const document::Bucket &bucket)
     : _command(cmd),

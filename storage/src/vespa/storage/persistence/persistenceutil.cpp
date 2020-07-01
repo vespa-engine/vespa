@@ -99,7 +99,7 @@ MessageTracker::sendReply() {
         }
         LOG(spam, "Sending reply up: %s %" PRIu64,
             getReply().toString().c_str(), getReply().getMsgId());
-        _replySender.sendReply(std::move(_reply));
+        _replySender.sendReplyDirectly(std::move(_reply));
     } else {
         if ( ! _context.getTrace().getRoot().isEmpty()) {
             _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
