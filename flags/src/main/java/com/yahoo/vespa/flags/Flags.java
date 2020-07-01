@@ -147,7 +147,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
-            "feed-sequencer-type", "",
+            "feed-sequencer-type", "LATENCY",
             "Selects type of sequenced executor used for feeding, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
