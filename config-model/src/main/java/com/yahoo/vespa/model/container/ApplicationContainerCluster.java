@@ -140,6 +140,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/tenant-cd-api-jar-with-dependencies.jar")));
             if(deployState.zone().system().isPublic()) {
                 addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/cloud-tenant-cd-jar-with-dependencies.jar")));
+            } else {
+                addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vz-tenant-cd-jar-with-dependencies.jar")));
             }
         }
     }

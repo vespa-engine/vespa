@@ -270,13 +270,15 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatBundlesForTesterApplicationAreInstalled() {
-        List<String> expectedOnpremBundles =
+        List<String> commonBundles =
                 List.of("vespa-testrunner-components-jar-with-dependencies.jar",
                         "vespa-osgi-testrunner-jar-with-dependencies.jar",
                         "tenant-cd-api-jar-with-dependencies.jar");
+        List<String> expectedOnpremBundles = new ArrayList<>(commonBundles);
+        expectedOnpremBundles.add("vz-tenant-cd-jar-with-dependencies.jar");
         verifyTesterApplicationInstalledBundles(Zone.defaultZone(), expectedOnpremBundles);
         
-        List<String> expectedPublicBundles = new ArrayList<>(expectedOnpremBundles);
+        List<String> expectedPublicBundles = new ArrayList<>(commonBundles);
         expectedPublicBundles.add("cloud-tenant-cd-jar-with-dependencies.jar");
         Zone publicZone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
         verifyTesterApplicationInstalledBundles(publicZone, expectedPublicBundles);
