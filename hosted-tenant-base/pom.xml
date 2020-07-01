@@ -39,7 +39,22 @@
         <junit.version>5.4.2</junit.version>
         <test.categories>!integration</test.categories>
 
+        <!-- To allow specialized base pom to include additional "test provided" dependencies -->
         <bundlePluginExtraTestProvidedDependencies/>
+
+        <!-- Must be specified by specialized base pom -->
+        <endpoint/>
+
+        <!-- Properties that are specified by application pom -->
+        <tenant/>
+        <application/>
+        <instance/>
+        <environment/>
+        <region/>
+        <apiKeyFile/>
+        <apiCertificateFile/>
+        <dataPlaneKeyFile/>
+        <dataPlaneCertificateFile/>
     </properties>
 
     <dependencyManagement>
