@@ -5,9 +5,12 @@
 #include "isequencedtaskexecutor.h"
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/eventbarrier.hpp>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/fastos/thread.h>
 #include <mutex>
 #include <condition_variable>
+#include <optional>
 #include <cassert>
 
 namespace vespalib {
@@ -22,6 +25,24 @@ class AdaptiveSequencedExecutor : public ISequencedTaskExecutor
 private:
     using Stats = vespalib::ExecutorStats;
     using Task = vespalib::Executor::Task;
+
+    struct TaggedTask {
+        Task::UP task;
+        uint32_t token;
+        TaggedTask() : task(nullptr), token(0) {}
+        TaggedTask(Task::UP task_in, uint32_t token_in)
+            : task(std::move(task_in)), token(token_in) {}
+        TaggedTask(TaggedTask &&rhs) = default;
+        TaggedTask(const TaggedTask &rhs) = delete;
+        TaggedTask &operator=(const TaggedTask &rhs) = delete;
+        TaggedTask &operator=(TaggedTask &&rhs) {
+            assert(task.get() == nullptr); // no overwrites
+            task = std::move(rhs.task);
+            token = rhs.token;
+            return *this;
+        }
+        operator bool() const { return bool(task); }
+    };
 
     /**
      * Values used to configure the executor.
@@ -51,7 +72,7 @@ private:
     struct Strand {
         enum class State { IDLE, WAITING, ACTIVE };
         State state;
-        vespalib::ArrayQueue<Task::UP> queue;
+        vespalib::ArrayQueue<TaggedTask> queue;
         Strand();
         ~Strand();
     };
@@ -96,11 +117,17 @@ private:
         void close();
     };
 
+    struct BarrierCompletion {
+        Gate gate;
+        void completeBarrier() { gate.countDown(); }
+    };
+
     std::unique_ptr<ThreadTools>       _thread_tools;
     std::mutex                         _mutex;
     std::vector<Strand>                _strands;
     vespalib::ArrayQueue<Strand*>      _wait_queue;
     vespalib::ArrayQueue<Worker*>      _worker_stack;
+    EventBarrier<BarrierCompletion>    _barrier;
     Self                               _self;
     Stats                              _stats;
     Config                             _cfg;
@@ -111,9 +138,8 @@ private:
     Worker *get_worker_to_wake(const std::unique_lock<std::mutex> &lock);
     bool obtain_strand(Worker &worker, std::unique_lock<std::mutex> &lock);
     bool exchange_strand(Worker &worker, std::unique_lock<std::mutex> &lock);
-    Task::UP next_task(Worker &worker);
+    TaggedTask next_task(Worker &worker, std::optional<uint32_t> prev_token);
     void worker_main();
-    void run_task_in_strand(Task::UP task, Strand &strand, std::unique_lock<std::mutex> &lock);
 public:
     AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
                               size_t max_waiting, size_t max_pending);
