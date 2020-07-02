@@ -255,7 +255,7 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/artifacts/" />
+                                        <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/components/" />
                                         <zip destfile="target/application-test.zip" basedir="target/application-test/" />
                                     </tasks>
                                 </configuration>
