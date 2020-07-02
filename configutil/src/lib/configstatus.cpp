@@ -9,6 +9,7 @@
 #include <vbench/http/http_client.h>
 #include <vespa/config/common/exceptions.h>
 #include <iostream>
+#include <cstdlib>
 
 using configdefinitions::tagsContain;
 
@@ -129,7 +130,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
 
     if (_cfg.get() == NULL) {
         std::cerr << "FATAL ERROR: failed to get model configuration." << std::endl;
-        exit(1);
+        std::_Exit(1);
     }
 }
 

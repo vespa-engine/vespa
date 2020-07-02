@@ -2,7 +2,8 @@
 
 #include <vespa/defaults.h>
 #include <iostream>
-#include <lib/modelinspect.h>
+#include <cstdlib>
+#include "lib/modelinspect.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fastos/app.h>
 
@@ -56,7 +57,7 @@ Application::parseOpts()
             return _argc;
         default:
             usage();
-            exit(1);
+            std::_Exit(1);
         }
     }
     if (_specString.empty()) {
@@ -84,7 +85,7 @@ Application::getConfigUri()
     }
     catch (std::exception &e) {
         std::cerr << "FATAL ERROR: failed to set up model configuration: " << e.what() << "\n";
-        exit(1);
+        std::_Exit(1);
     }
 }
 
