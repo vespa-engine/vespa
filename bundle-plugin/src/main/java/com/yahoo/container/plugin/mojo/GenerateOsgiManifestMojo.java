@@ -59,6 +59,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         try {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
+            warnIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
@@ -178,6 +179,23 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         unsupportedArtifacts.forEach(artifact -> getLog()
                 .warn(String.format("Unsupported artifact '%s': Type '%s' is not supported. Please file a feature request.",
                         artifact.getId(), artifact.getType())));
+    }
+
+    // TODO: fail the build by throwing a MojoExecutionException
+    private void warnIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
+        /* In most cases it's sufficient to test for 'component', as it's the lowest level container artifact,
+         * Embedding container artifacts will cause class loading issues at runtime, because the classes will
+         * not be equal to those seen by the framework (e.g. AbstractComponent).
+         */
+        if (includedArtifacts.stream().anyMatch(this::isJdiscComponentArtifact)) {
+            getLog().warn("This project includes the 'com.yahoo.vespa:component' artifact in compile scope." +
+                                  " It must be set to scope 'provided' to avoid resource leaks in your application at runtime." +
+                                  " The build will fail on a future Vespa version unless this is fixed.");
+        }
+    }
+
+    private boolean isJdiscComponentArtifact(Artifact a) {
+        return a.getArtifactId().equals("component") && a.getGroupId().equals("com.yahoo.vespa");
     }
 
     private PackageTally getProjectClassesTally() {
