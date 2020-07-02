@@ -10,32 +10,36 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
  */
 public class StorServerProducer implements StorServerConfig.Producer {
     public static class Builder {
-        StorServerProducer build(ModelElement element) {
+        StorServerProducer build(ModelElement element, boolean useBtreeDatabase) {
             ModelElement tuning = element.child("tuning");
 
             if (tuning == null) {
-                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
+                return new StorServerProducer(ContentCluster.getClusterId(element), null, null, useBtreeDatabase);
             }
 
             ModelElement merges = tuning.child("merges");
             if (merges == null) {
-                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
+                return new StorServerProducer(ContentCluster.getClusterId(element), null, null, useBtreeDatabase);
             }
 
             return new StorServerProducer(ContentCluster.getClusterId(element),
                     merges.integerAttribute("max-per-node"),
-                    merges.integerAttribute("max-queue-size"));
+                    merges.integerAttribute("max-queue-size"),
+                    useBtreeDatabase);
         }
     }
 
-    private String clusterName;
-    private Integer maxMergesPerNode;
-    private Integer queueSize;
+    private final String clusterName;
+    private final Integer maxMergesPerNode;
+    private final Integer queueSize;
+    private final boolean useBtreeDatabase;
 
-    public StorServerProducer(String clusterName, Integer maxMergesPerNode, Integer queueSize) {
+    public StorServerProducer(String clusterName, Integer maxMergesPerNode,
+                              Integer queueSize, boolean useBtreeDatabase) {
         this.clusterName = clusterName;
         this.maxMergesPerNode = maxMergesPerNode;
         this.queueSize = queueSize;
+        this.useBtreeDatabase = useBtreeDatabase;
     }
 
     @Override
@@ -52,5 +56,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
         if (queueSize != null) {
             builder.max_merge_queue_size(queueSize);
         }
+        builder.use_content_node_btree_bucket_db(useBtreeDatabase);
     }
 }

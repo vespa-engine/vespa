@@ -33,12 +33,13 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
         protected StorageCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             final ModelElement clusterElem = new ModelElement(producerSpec);
             final ContentCluster cluster = (ContentCluster)ancestor;
+            boolean useContentNodeBtreeDb = deployState.getProperties().useContentNodeBtreeDb();
 
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterId(clusterElem),
                                       new FileStorProducer.Builder().build(cluster, clusterElem),
                                       new IntegrityCheckerProducer.Builder().build(cluster, clusterElem),
-                                      new StorServerProducer.Builder().build(clusterElem),
+                                      new StorServerProducer.Builder().build(clusterElem, useContentNodeBtreeDb),
                                       new StorVisitorProducer.Builder().build(clusterElem),
                                       new PersistenceProducer.Builder().build(clusterElem));
         }
