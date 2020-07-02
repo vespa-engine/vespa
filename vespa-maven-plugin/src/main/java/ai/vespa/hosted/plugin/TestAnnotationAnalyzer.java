@@ -3,6 +3,7 @@ package ai.vespa.hosted.plugin;
 
 
 import ai.vespa.hosted.cd.ProductionTest;
+import ai.vespa.hosted.cd.StagingSetup;
 import ai.vespa.hosted.cd.StagingTest;
 import ai.vespa.hosted.cd.SystemTest;
 import org.objectweb.asm.AnnotationVisitor;
@@ -28,10 +29,12 @@ class TestAnnotationAnalyzer {
 
     private final List<String> systemTests = new ArrayList<>();
     private final List<String> stagingTests = new ArrayList<>();
+    private final List<String> stagingSetupTests = new ArrayList<>();
     private final List<String> productionTests = new ArrayList<>();
 
     List<String> systemTests() { return systemTests; }
     List<String> stagingTests() { return stagingTests; }
+    List<String> stagingSetupTests() { return stagingSetupTests; }
     List<String> productionTests() { return productionTests; }
 
     void analyzeClass(Path classFile) {
@@ -64,6 +67,8 @@ class TestAnnotationAnalyzer {
             if (ProductionTest.class.getName().equals(annotationClassName)) {
                 productionTests.add(className);
             } else if (StagingTest.class.getName().equals(annotationClassName)) {
+                stagingTests.add(className);
+            } else if (StagingSetup.class.getName().equals(annotationClassName)) {
                 stagingTests.add(className);
             } else if (SystemTest.class.getName().equals(annotationClassName)) {
                 systemTests.add(className);
