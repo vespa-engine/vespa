@@ -30,6 +30,7 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
     attr.huge = liveAttr.huge;
     // Note: Predicate attributes only handle changes for the dense-posting-list-threshold config.
     attr.densepostinglistthreshold = liveAttr.densepostinglistthreshold;
+    attr.distancemetric = liveAttr.distancemetric;
     attr.index = liveAttr.index;
 }
 
