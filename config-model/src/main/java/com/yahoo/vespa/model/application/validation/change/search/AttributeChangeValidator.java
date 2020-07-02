@@ -96,8 +96,8 @@ public class AttributeChangeValidator {
                 validateAttributeSetting(currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
                 validateAttributeSetting(currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
+                validateAttributeSetting(currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
                 if (hasHnswIndex(currAttr) && hasHnswIndex(nextAttr)) {
-                    validateAttributeSetting(currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
                     validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
                 }
