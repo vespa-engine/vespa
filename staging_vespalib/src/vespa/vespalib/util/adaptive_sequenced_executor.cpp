@@ -304,7 +304,7 @@ AdaptiveSequencedExecutor::sync()
 {
     BarrierCompletion barrierCompletion;
     {
-        auto guard = std::scoped_lock(_mutex);
+        auto guard = std::lock_guard(_mutex);
         if (!_barrier.startBarrier(barrierCompletion)) {
             return;
         }
