@@ -4,7 +4,6 @@ package com.yahoo.container.handler;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
