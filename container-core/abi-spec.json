@@ -36,7 +36,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void setContainerHasClusters(boolean)",
+      "public void setClusters(java.util.Set)",
       "public void setReceiveTrafficByDefault(boolean)",
       "public void setUp(java.lang.Object)",
       "public void setDown(java.lang.Object)",
