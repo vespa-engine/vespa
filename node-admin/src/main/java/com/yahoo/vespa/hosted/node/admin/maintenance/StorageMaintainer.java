@@ -160,7 +160,7 @@ public class StorageMaintainer {
         attributes.put("kernel_version", System.getProperty("os.version"));
         attributes.put("cpu_microcode_version", getMicrocodeVersion());
 
-        getDockerImage(context, container).ifPresent(image -> attributes.put("docker_image", image));
+        attributes.put("docker_image", getDockerImage(context, container));
         context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
         context.node().currentVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
         context.node().owner().ifPresent(owner -> {
@@ -202,13 +202,11 @@ public class StorageMaintainer {
         return results[1].trim();
     }
 
-    private Optional<String> getDockerImage(NodeAgentContext context, Optional<Container> container) {
-        return Stream.of(
-                    container.map(c -> c.image.asString()),
-                    context.node().currentDockerImage().map(DockerImage::asString),
-                    context.node().wantedDockerImage().map(DockerImage::asString))
-                .flatMap(Optional::stream)
-                .findFirst();
-
+    private String getDockerImage(NodeAgentContext context, Optional<Container> container) {
+        return container.map(c -> c.image.asString())
+                .orElse(context.node().currentDockerImage()
+                        .map(DockerImage::asString)
+                        .orElse("<none>")
+                );
     }
 }
