@@ -14,7 +14,6 @@ import java.io.File;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.containsString;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -165,7 +164,8 @@ public class ConfigInstanceUtilTest {
             ConfigInstanceUtil.getNewInstance(TestNodefsConfig.class, "id0", ConfigPayload.fromBuilder(payloadBuilder));
             assert(false);
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("Failed creating new instance of 'com.yahoo.foo.TestNodefsConfig' for config id 'id0':"));
+            assertEquals("Failed creating new instance of 'com.yahoo.foo.TestNodefsConfig' for config id 'id0'",
+                         e.getMessage());
         }
     }
 }

@@ -260,7 +260,6 @@ class NodeAllocation {
                 node = node.unretire();
         } else {
             ++wasRetiredJustNow;
-            // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
             node = node.retire(nodeRepository.clock().instant());
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
