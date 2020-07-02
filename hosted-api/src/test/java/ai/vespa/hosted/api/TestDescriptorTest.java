@@ -42,7 +42,6 @@ public class TestDescriptorTest {
 
     @Test
     public void parsesDescriptorFile() {
-        //language=JSON
         String testDescriptor = "{\n" +
                                 "  \"" +
                                 "version\": \"1.0\",\n" +

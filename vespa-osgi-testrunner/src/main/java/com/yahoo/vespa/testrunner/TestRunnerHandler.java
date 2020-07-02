@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
+import ai.vespa.hosted.api.TestDescriptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
@@ -101,7 +102,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             TestProfile testProfile = TestProfile.valueOf(type.toUpperCase() + "_TEST");
             byte[] config = request.getData().readAllBytes();
             if (useOsgiMode) {
-                junitRunner.executeTests(testProfile.testCategory(), config);
+                junitRunner.executeTests(categoryFromProfile(testProfile), config);
                 log.info("Started tests of type " + type + " and status is " + junitRunner.getStatus());
                 return new Response("Successfully started " + type + " tests");
             } else {
@@ -111,6 +112,16 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
+    }
+
+    TestDescriptor.TestCategory categoryFromProfile(TestProfile testProfile) {
+        switch(testProfile) {
+            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
+            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
+            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
+            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
+            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
+        }
     }
 
     private static String lastElement(String path) {
