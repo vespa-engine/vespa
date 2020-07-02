@@ -46,7 +46,7 @@ import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.ApplicationMetricsRetriever;
+import com.yahoo.vespa.config.server.metrics.ApplicationMetricsV1Retriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -745,13 +745,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private List<ApplicationId> activeApplications(TenantName tenantName) {
         return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
+    // ---------------- Metrics V2 ------------------------------------------------------------------------
 
-    // ---------------- Metrics ------------------------------------------------------------------------
-
-    public MetricsResponse getMetrics(ApplicationId applicationId) {
+    public MetricsResponse getMetricsV2(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ApplicationMetricsRetriever applicationMetricsRetriever = new ApplicationMetricsRetriever();
-        return applicationMetricsRetriever.getMetrics(application);
+        ApplicationMetricsV1Retriever applicationMetricsV1Retriever = new ApplicationMetricsV1Retriever();
+        return applicationMetricsV1Retriever.getMetrics(application);
+    }
+
+
+    // ---------------- Metrics V1 ------------------------------------------------------------------------
+
+    public MetricsResponse getMetricsV1(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        ApplicationMetricsV1Retriever applicationMetricsV1Retriever = new ApplicationMetricsV1Retriever();
+        return applicationMetricsV1Retriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------

@@ -444,7 +444,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<ClusterMetrics> getMetrics(DeploymentId deployment) {
+    public List<ClusterMetrics> getMetricsV1(DeploymentId deployment) {
         return Collections.unmodifiableList(clusterMetrics.getOrDefault(deployment, List.of()));
     }
 

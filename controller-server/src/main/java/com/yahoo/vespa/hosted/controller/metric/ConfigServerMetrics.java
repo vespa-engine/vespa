@@ -31,7 +31,7 @@ public class ConfigServerMetrics {
 
     public DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone) {
         var deploymentId = new DeploymentId(application, zone);
-        var metrics = configServer.getMetrics(deploymentId);
+        var metrics = configServer.getMetricsV1(deploymentId);
 
         // The field names here come from the MetricsResponse class.
         return new DeploymentMetrics(

@@ -54,7 +54,9 @@ public interface ConfigServer {
      */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
 
-    List<ClusterMetrics> getMetrics(DeploymentId deployment);
+    List<ClusterMetrics> getMetricsV1(DeploymentId deployment);
+
+    String getMetricsV2(DeploymentId deployment);
 
     List<String> getContentClusters(DeploymentId deployment);
 

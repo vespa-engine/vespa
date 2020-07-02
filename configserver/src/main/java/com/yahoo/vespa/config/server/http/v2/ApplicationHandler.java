@@ -55,7 +55,8 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/v1",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/v2",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
@@ -137,8 +138,12 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.getLogs(applicationId, hostname, apiParams);
         }
 
-        if (isMetricsRequest(request)) {
-            return applicationRepository.getMetrics(applicationId);
+        if (isMetricsV2Request(request)) {
+            return applicationRepository.getMetricsV2(applicationId);
+        }
+
+        if (isMetricsV1Request(request)) {
+            return applicationRepository.getMetricsV1(applicationId);
         }
 
         if (isIsSuspendedRequest(request)) {
@@ -231,9 +236,14 @@ public class ApplicationHandler extends HttpHandler {
                request.getUri().getPath().endsWith("/suspended");
     }
 
-    private static boolean isMetricsRequest(HttpRequest request) {
+    private static boolean isMetricsV2Request(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/metrics");
+                request.getUri().getPath().endsWith("/metrics/v2");
+    }
+
+    private static boolean isMetricsV1Request(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 7 &&
+                request.getUri().getPath().endsWith("/metrics/v1");
     }
 
     private static boolean isLogRequest(HttpRequest request) {

@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class ApplicationMetricsRetrieverTest {
+public class ApplicationMetricsV1RetrieverTest {
 
     @Test
     public void getMetrics()  {
@@ -36,7 +36,7 @@ public class ApplicationMetricsRetrieverTest {
         Application application = new Application(mockModel, null, 0, false,
         null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
-        ApplicationMetricsRetriever clusterMetricsRetriever = new ApplicationMetricsRetriever(mockMetricsRetriever);
+        ApplicationMetricsV1Retriever clusterMetricsRetriever = new ApplicationMetricsV1Retriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
 
         assertEquals(2, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
