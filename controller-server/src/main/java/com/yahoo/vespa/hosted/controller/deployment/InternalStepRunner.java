@@ -45,6 +45,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateException;
+import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.yolean.Exceptions;
@@ -793,10 +794,13 @@ public class InternalStepRunner implements StepRunner {
 
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
+        boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 246));
 
         byte[] servicesXml = servicesXml(! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         testerResourcesFor(zone, spec.requireInstance(id.application().instance())));
+                                         useOsgiBasedTestRuntime,
+                                         testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
+                                         controller.controllerConfig().steprunner().testerapp());
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
         byte[] deploymentXml = deploymentXml(id.tester(),
                                              spec.athenzDomain(),
@@ -845,7 +849,9 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, NodeResources resources) {
+    static byte[] servicesXml(
+            boolean systemUsesAthenz, boolean useTesterCertificate, boolean useOsgiBasedTestRuntime,
+            NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
@@ -855,6 +861,23 @@ public class InternalStepRunner implements StepRunner {
         String resourceString = String.format(Locale.ENGLISH,
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
+
+        String runtimeProviderClass = config.runtimeProviderClass();
+        String tenantCdBundle = config.tenantCdBundle();
+
+        String handlerAndExtraComponents = useOsgiBasedTestRuntime
+                ?
+                "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
+                        "\n" +
+                        "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\" />\n" +
+                        "\n" +
+                        "        <handler id=\"com.yahoo.vespa.testrunner.JunitHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
+                        "            <binding>http://*/tester/v1/*</binding>\n" +
+                        "        </handler>\n"
+                :
+                "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
+                        "            <binding>http://*/tester/v1/*</binding>\n" +
+                        "        </handler>\n";
 
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
@@ -870,9 +893,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
-                "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
-                "            <binding>http://*/tester/v1/*</binding>\n" +
-                "        </handler>\n" +
+                handlerAndExtraComponents +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
