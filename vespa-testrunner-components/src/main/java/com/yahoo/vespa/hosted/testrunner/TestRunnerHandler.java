@@ -9,10 +9,10 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;

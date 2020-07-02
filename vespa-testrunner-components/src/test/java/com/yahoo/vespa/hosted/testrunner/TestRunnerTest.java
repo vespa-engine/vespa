@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.testrunner;
 
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import org.fusesource.jansi.Ansi;
 import org.junit.Before;
 import org.junit.Rule;
@@ -16,7 +17,6 @@ import java.util.logging.LogRecord;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Unit tests relying on a UNIX shell >_<

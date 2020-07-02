@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.testrunner;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import org.fusesource.jansi.AnsiOutputStream;
 import org.fusesource.jansi.HtmlAnsiOutputStream;
 
@@ -30,14 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 
 /**
  * @author valerijf
  * @author jvenstad
  */
-public class TestRunner {
+public class TestRunner implements LegacyTestRunner {
 
     private static final Logger logger = Logger.getLogger(TestRunner.class.getName());
     private static final Level HTML = new Level("html", 1) { };
@@ -201,11 +202,6 @@ public class TestRunner {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to list files under " + directory, e);
         }
-    }
-
-
-    public enum Status {
-        NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
     }
 
 }
