@@ -18,7 +18,7 @@ public interface BillingController {
     /**
      * @return String containing error message if something went wrong. Empty otherwise
      */
-    PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasApplications);
+    PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments);
 
     Invoice.Id createInvoiceForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
 
