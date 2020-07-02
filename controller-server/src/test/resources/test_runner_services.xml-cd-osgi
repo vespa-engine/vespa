@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services xmlns:deploy='vespa' version='1.0'>
+    <container version='1.0' id='tester'>
+
+        <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
+            <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
+                <artifactsPath>artifacts</artifactsPath>
+                <surefireMemoryMb>5120</surefireMemoryMb>
+                <useAthenzCredentials>true</useAthenzCredentials>
+                <useTesterCertificate>false</useTesterCertificate>
+            </config>
+        </component>
+
+        <component id="ai.vespa.hosted.cd.cloud.impl.VespaTestRuntimeProvider" bundle="cloud-tenant-cd" />
+
+        <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner" />
+
+        <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
+            <binding>http://*/tester/v1/*</binding>
+        </handler>
+
+        <nodes count="1" allocated-memory="17%">
+            <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast" storage-type="local"/>
+        </nodes>
+    </container>
+</services>

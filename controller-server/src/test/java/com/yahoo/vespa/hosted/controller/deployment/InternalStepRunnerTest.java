@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -485,12 +486,24 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void generates_correct_services_xml_test() {
-        assertFile("test_runner_services.xml-cd",
-                   new String(InternalStepRunner.servicesXml(
-                           true,
-                           false,
-                           new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local))));
+    public void generates_correct_services_xml_using_osgi_based_runtime() {
+        generates_correct_services_xml("test_runner_services.xml-cd-osgi", true);
+    }
+
+    @Test
+    public void generates_correct_services_xml_using_legacy_runtime() {
+        generates_correct_services_xml("test_runner_services.xml-cd-legacy", false);
+    }
+
+    private void generates_correct_services_xml(String filenameExpectedOutput, boolean useOsgiBasedRuntime) {
+        ControllerConfig.Steprunner.Testerapp config = new ControllerConfig.Steprunner.Testerapp.Builder().build();
+        assertFile(filenameExpectedOutput,
+                new String(InternalStepRunner.servicesXml(
+                        true,
+                        false,
+                        useOsgiBasedRuntime,
+                        new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
+                        config)));
     }
 
     private void assertFile(String resourceName, String actualContent) {
