@@ -132,7 +132,7 @@ main(int argc, char **argv)
             break;
         case 'h':
             usage(argv[0]);
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
     }
 
@@ -154,17 +154,17 @@ main(int argc, char **argv)
         services = findAllFiles(dir);
         if (doOnlyFile) {
             fprintf(stderr, "-f and -a options cannot be used at the same time\n");
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         }
         // No log control files exist
         if (services.empty()) {
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
     } else {
         if (optind >= argc) {
             usage(argv[0]);
             fprintf(stderr, "ERROR: Missing service argument!\n");
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         }
         char *service = strdup(argv[optind]);
         ++optind;
@@ -195,7 +195,7 @@ main(int argc, char **argv)
     if (argc > optind) {
         usage(argv[0]);
         fprintf(stderr, "ERROR: Too many arguments!\n\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     bool hadFailure = false;
@@ -221,12 +221,12 @@ main(int argc, char **argv)
             hadFailure = true;
         }
     }
-    if (hadFailure) exit(EXIT_FAILURE);
+    if (hadFailure) return EXIT_FAILURE;
     if (! hadSuccess) {
         fprintf(stderr, "no logcontrol files updates\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }
 
 static void
