@@ -181,16 +181,15 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    // TODO: fail the build by throwing a MojoExecutionException
     private void warnIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
         /* In most cases it's sufficient to test for 'component', as it's the lowest level container artifact,
          * Embedding container artifacts will cause class loading issues at runtime, because the classes will
-         * not be equal to those seen by the framework (e.g. AbstractComponent).
-         */
+         * not be equal to those seen by the framework (e.g. AbstractComponent). */
         if (includedArtifacts.stream().anyMatch(this::isJdiscComponentArtifact)) {
-            getLog().warn("This project includes the 'com.yahoo.vespa:component' artifact in compile scope." +
-                                  " It must be set to scope 'provided' to avoid resource leaks in your application at runtime." +
-                                  " The build will fail on a future Vespa version unless this is fixed.");
+            throw new MojoExecutionException(
+                    "This project includes the 'com.yahoo.vespa:component' artifact in compile scope." +
+                            " It must have scope 'provided' to avoid resource leaks in your application at runtime." +
+                            " Please use 'mvn dependency:tree' to find the root cause.");
         }
     }
 
