@@ -423,21 +423,26 @@ public class ConfigSubscriber implements AutoCloseable {
      * @return The handle of the config
      * @see #startConfigThread(Runnable)
      */
-    public <T extends ConfigInstance> ConfigHandle<T> subscribe(final SingleSubscriber<T> singleSubscriber, Class<T> configClass, String configId) {
-        if (!subscriptionHandles.isEmpty())
-            throw new IllegalStateException("Can not start single-subscription because subscriptions were previously opened on this.");
-        final ConfigHandle<T> handle = subscribe(configClass, configId);
-        if (!nextConfig())
-            throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed.");
+    public <T extends ConfigInstance> ConfigHandle<T> subscribe(SingleSubscriber<T> singleSubscriber, Class<T> configClass, String configId) {
+        if ( ! subscriptionHandles.isEmpty())
+            throw new IllegalStateException("Can not start single-subscription because subscriptions were previously opened on this");
+
+        ConfigHandle<T> handle = subscribe(configClass, configId);
+
+        if ( ! nextConfig())
+            throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed");
+
         singleSubscriber.configure(handle.getConfig());
         startConfigThread(() -> {
                 while (!isClosed()) {
                     try {
-                        if (nextConfig()) {
-                            if (handle.isChanged()) singleSubscriber.configure(handle.getConfig());
-                        }
-                    } catch (Exception e) {
-                        log.log(SEVERE, "Exception from config system, continuing config thread: " + Exceptions.toMessageString(e));
+                        if (nextConfig() && handle.isChanged())
+                            singleSubscriber.configure(handle.getConfig());
+                    }
+                    catch (Exception e) {
+                        log.log(WARNING, "Exception on applying config " + configClass.getName() +
+                                         " for config id " + configId + ": Ignoring this change: " +
+                                         Exceptions.toMessageString(e));
                     }
                 }
             }

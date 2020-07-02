@@ -22,9 +22,9 @@ public class ConfigInstanceUtil {
      * Values that have not been explicitly set in the source builder, will be left unchanged
      * in the destination.
      *
-     * @param destination The builder to copy values into.
-     * @param source The builder to copy values from. Unset values are not copied.
-     * @param <BUILDER> The builder class.
+     * @param destination the builder to copy values into
+     * @param source the builder to copy values from. Unset values are not copied
+     * @param <BUILDER> the builder class
      */
     public static<BUILDER extends ConfigBuilder> void setValues(BUILDER destination, BUILDER source) {
         try {
@@ -56,9 +56,9 @@ public class ConfigInstanceUtil {
             setConfigId(i, configId);
 
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
-                NoSuchFieldException | IllegalAccessException e) {
+                 NoSuchFieldException | IllegalAccessException e) {
             throw new IllegalArgumentException("Failed creating new instance of '" + type.getCanonicalName() +
-                    "' for config id '" + configId + "': " + Exceptions.toMessageString(e), e);
+                                               "' for config id '" + configId + "'", e);
         }
         return instance;
     }

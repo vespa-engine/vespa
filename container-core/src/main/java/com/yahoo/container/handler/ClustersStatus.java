@@ -4,8 +4,11 @@ package com.yahoo.container.handler;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A component which tracks the up/down status of any clusters which should influence
@@ -37,11 +40,15 @@ public class ClustersStatus extends AbstractComponent {
     /** The status of clusters, when known. Note that clusters may exist for which there is no knowledge yet. */
     private final Map<String, Boolean> clusterStatus = new HashMap<>();
 
-    public void setContainerHasClusters(boolean containerHasClusters) {
+    /** Sets the current clusters of this container */
+    public void setClusters(Set<String> clusters) {
         synchronized (mutex) {
-            this.containerHasClusters = containerHasClusters;
-            if ( ! containerHasClusters)
-                clusterStatus.clear(); // forget container clusters which was configured away
+            this.containerHasClusters = clusters.size() > 0;
+            for (Iterator<String> i = clusterStatus.keySet().iterator(); i.hasNext(); ) {
+                String existingCluster = i.next();
+                if ( ! clusters.contains(existingCluster))
+                    i.remove(); // forget clusters which was configured away
+            }
         }
     }
 
@@ -78,9 +85,11 @@ public class ClustersStatus extends AbstractComponent {
     public boolean containerShouldReceiveTraffic() {
         return containerShouldReceiveTraffic(Require.ONE);
     }
+
     /**
      *  Returns whether this container should receive traffic based on the state of this
-     *  @param require Requirement for being up, ALL or ONE.
+     *
+     *  @param require requirement for being up, ALL or ONE.
      */
     public boolean containerShouldReceiveTraffic(Require require) {
         synchronized (mutex) {

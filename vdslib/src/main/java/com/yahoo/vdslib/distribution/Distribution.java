@@ -97,11 +97,8 @@ public class Distribution {
                         parent.addSubGroup(group);
                     }
                 }
-                if (root == null) {
-                    throw new IllegalStateException("Got config that did not "
-                            + "specify even a root group. Need a root group at"
-                            + "\nminimum:\n" + config.toString());
-                }
+                if (root == null)
+                    throw new IllegalStateException("Config does not specify a root group");
                 root.calculateDistributionHashValues();
                 Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
             } catch (ParseException e) {

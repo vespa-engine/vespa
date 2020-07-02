@@ -47,11 +47,13 @@ public class StateMonitor extends AbstractComponent {
 
     @Inject
     public StateMonitor(HealthMonitorConfig config, Timer timer) {
-        this(config, timer, runnable -> {
-            Thread thread = new Thread(runnable, "StateMonitor");
-            thread.setDaemon(true);
-            return thread;
-        });
+        this(config,
+             timer,
+             runnable -> {
+                 Thread thread = new Thread(runnable, "StateMonitor");
+                 thread.setDaemon(true);
+                 return thread;
+             });
     }
 
     StateMonitor(HealthMonitorConfig config, Timer timer, ThreadFactory threadFactory) {
@@ -59,7 +61,8 @@ public class StateMonitor extends AbstractComponent {
              Status.valueOf(config.initialStatus()),
              timer, threadFactory);
     }
-    /* For Testing */
+
+    /* Public for testing only */
     public StateMonitor(long snapshotIntervalMS, Status status, Timer timer, ThreadFactory threadFactory) {
         this.timer = timer;
         this.snapshotIntervalMs = snapshotIntervalMS;

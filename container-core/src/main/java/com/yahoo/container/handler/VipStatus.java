@@ -6,6 +6,8 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 
+import java.util.stream.Collectors;
+
 /**
  * A component which keeps track of whether or not this container instance should receive traffic
  * and respond that it is in good health.
@@ -59,8 +61,7 @@ public class VipStatus {
         this.clustersStatus = clustersStatus;
         this.healthState = healthState;
         initiallyInRotation = vipStatusConfig.initiallyInRotation();
-        healthState.status(StateMonitor.Status.initializing);
-        clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
+        clustersStatus.setClusters(dispatchers.searchcluster().stream().map(c -> c.name()).collect(Collectors.toSet()));
         updateCurrentlyInRotation();
     }
 
