@@ -113,6 +113,7 @@ private:
     bool exchange_strand(Worker &worker, std::unique_lock<std::mutex> &lock);
     Task::UP next_task(Worker &worker);
     void worker_main();
+    void run_task_in_strand(Task::UP task, Strand &strand, std::unique_lock<std::mutex> &lock);
 public:
     AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
                               size_t max_waiting, size_t max_pending);
