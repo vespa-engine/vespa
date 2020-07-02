@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import java.util.logging.Level;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -158,7 +160,7 @@ public class StorageMaintainer {
         attributes.put("kernel_version", System.getProperty("os.version"));
         attributes.put("cpu_microcode_version", getMicrocodeVersion());
 
-        container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
+        getDockerImage(context, container).ifPresent(image -> attributes.put("docker_image", image));
         context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
         context.node().currentVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
         context.node().owner().ifPresent(owner -> {
@@ -198,5 +200,15 @@ public class StorageMaintainer {
         }
 
         return results[1].trim();
+    }
+
+    private Optional<String> getDockerImage(NodeAgentContext context, Optional<Container> container) {
+        return Stream.of(
+                    container.map(c -> c.image.asString()),
+                    context.node().currentDockerImage().map(DockerImage::asString),
+                    context.node().wantedDockerImage().map(DockerImage::asString))
+                .flatMap(Optional::stream)
+                .findFirst();
+
     }
 }
