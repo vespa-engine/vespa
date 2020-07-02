@@ -33,6 +33,7 @@ public class GenerateTestDescriptorMojo extends AbstractMojo {
                 TestDescriptor.CURRENT_VERSION,
                 analyzer.systemTests(),
                 analyzer.stagingTests(),
+                analyzer.stagingSetupTests(),
                 analyzer.productionTests());
         writeDescriptorFile(descriptor);
     }

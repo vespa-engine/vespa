@@ -24,6 +24,24 @@
         </dependency>
 
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-osgi-testrunner</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+            <!-- junit must be excluded to keep maven-surefire-plugin to be confused -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.jupiter</groupId>
+                    <artifactId>junit-jupiter-engine</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.platform</groupId>
+                    <artifactId>junit-platform-launcher</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>org.fusesource.jansi</groupId>
             <artifactId>jansi</artifactId>
             <version>1.11</version>

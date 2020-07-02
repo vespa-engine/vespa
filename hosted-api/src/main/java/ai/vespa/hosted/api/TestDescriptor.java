@@ -26,6 +26,7 @@ public class TestDescriptor {
     private static final String JSON_FIELD_CONFIGURED_TESTS = "configuredTests";
     private static final String JSON_FIELD_SYSTEM_TESTS = "systemTests";
     private static final String JSON_FIELD_STAGING_TESTS = "stagingTests";
+    private static final String JSON_FIELD_STAGING_SETUP_TESTS = "stagingSetupTests";
     private static final String JSON_FIELD_PRODUCTION_TESTS = "productionTests";
 
     private final Map<TestCategory, List<String>> configuredTestClasses;
@@ -43,20 +44,22 @@ public class TestDescriptor {
         var testRoot = root.field(JSON_FIELD_CONFIGURED_TESTS);
         var systemTests = getJsonArray(testRoot, JSON_FIELD_SYSTEM_TESTS);
         var stagingTests = getJsonArray(testRoot, JSON_FIELD_STAGING_TESTS);
+        var stagingSetupTests = getJsonArray(testRoot, JSON_FIELD_STAGING_SETUP_TESTS);
         var productionTests = getJsonArray(testRoot, JSON_FIELD_PRODUCTION_TESTS);
-        return new TestDescriptor(version, toMap(systemTests, stagingTests, productionTests));
+        return new TestDescriptor(version, toMap(systemTests, stagingTests, stagingSetupTests, productionTests));
     }
 
     public static TestDescriptor from(
-            String version, List<String> systemTests, List<String> stagingTests, List<String> productionTests) {
-        return new TestDescriptor(version, toMap(systemTests, stagingTests, productionTests));
+            String version, List<String> systemTests, List<String> stagingTests, List<String> stagingSetupTests, List<String> productionTests) {
+        return new TestDescriptor(version, toMap(systemTests, stagingTests, stagingSetupTests, productionTests));
     }
 
     private static Map<TestCategory, List<String>> toMap(
-            List<String> systemTests, List<String> stagingTests, List<String> productionTests) {
+            List<String> systemTests, List<String> stagingTests, List<String> stagingSetupTests, List<String> productionTests) {
         return Map.of(
                 TestCategory.systemtest, systemTests,
                 TestCategory.stagingtest, stagingTests,
+                TestCategory.stagingsetuptest, stagingSetupTests,
                 TestCategory.productiontest, productionTests
         );
     }
@@ -81,6 +84,7 @@ public class TestDescriptor {
         addJsonArrayForTests(tests, JSON_FIELD_SYSTEM_TESTS, TestCategory.systemtest);
         addJsonArrayForTests(tests, JSON_FIELD_STAGING_TESTS, TestCategory.stagingtest);
         addJsonArrayForTests(tests, JSON_FIELD_PRODUCTION_TESTS, TestCategory.productiontest);
+        addJsonArrayForTests(tests, JSON_FIELD_STAGING_SETUP_TESTS, TestCategory.stagingsetuptest);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         uncheck(() -> new JsonFormat(/*compact*/false).encode(out, slime));
         return out.toString();
@@ -100,5 +104,5 @@ public class TestDescriptor {
                '}';
     }
 
-    public enum TestCategory {systemtest, stagingtest, productiontest}
+    public enum TestCategory {systemtest, stagingsetuptest, stagingtest, productiontest}
 }

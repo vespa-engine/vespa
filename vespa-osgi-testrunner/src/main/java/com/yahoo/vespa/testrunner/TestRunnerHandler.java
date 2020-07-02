@@ -1,6 +1,7 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.testrunner;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.testrunner;
 
+import ai.vespa.hosted.api.TestDescriptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
@@ -8,10 +9,10 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import com.yahoo.yolean.Exceptions;
 
@@ -19,7 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -29,17 +32,22 @@ import static com.yahoo.jdisc.Response.Status;
 /**
  * @author valerijf
  * @author jvenstad
+ * @author mortent
  */
 public class TestRunnerHandler extends LoggingRequestHandler {
 
     private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
 
-    private final TestRunner testRunner;
+    private final JunitRunner junitRunner;
+    private final LegacyTestRunner testRunner;
+    private final boolean useOsgiMode;
 
     @Inject
-    public TestRunnerHandler(Executor executor, AccessLog accessLog, TestRunner testRunner) {
+    public TestRunnerHandler(Executor executor, AccessLog accessLog, JunitRunner junitRunner, LegacyTestRunner testRunner) {
         super(executor, accessLog);
+        this.junitRunner = junitRunner;
         this.testRunner = testRunner;
+        this.useOsgiMode = junitRunner.isSupported();
     }
 
     @Override
@@ -62,12 +70,27 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
-            return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
-                                                                               ? Long.parseLong(request.getProperty("after"))
-                                                                               : -1)));
+            if (useOsgiMode) {
+                // TODO (mortent): Handle case where log is returned multiple times
+                String report = junitRunner.getReportAsJson();
+                List<LogRecord> logRecords = new ArrayList<>();
+                if (!report.isBlank()) {
+                    logRecords.add(new LogRecord(Level.INFO, report));
+                }
+                return new SlimeJsonResponse(logToSlime(logRecords));
+            } else {
+                return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
+                        ? Long.parseLong(request.getProperty("after"))
+                        : -1)));
+            }
         } else if (path.equals("/tester/v1/status")) {
-            log.info("Responding with status " + testRunner.getStatus());
-            return new Response(testRunner.getStatus().name());
+            if (useOsgiMode) {
+                log.info("Responding with status " + junitRunner.getStatus());
+                return new Response(junitRunner.getStatus().name());
+            } else {
+                log.info("Responding with status " + testRunner.getStatus());
+                return new Response(testRunner.getStatus().name());
+            }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
@@ -77,12 +100,28 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         if (path.startsWith("/tester/v1/run/")) {
             String type = lastElement(path);
             TestProfile testProfile = TestProfile.valueOf(type.toUpperCase() + "_TEST");
-            byte[] config = IOUtils.readBytes(request.getData(), 1 << 16);
-            testRunner.test(testProfile, config);
-            log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
-            return new Response("Successfully started " + type + " tests");
+            byte[] config = request.getData().readAllBytes();
+            if (useOsgiMode) {
+                junitRunner.executeTests(categoryFromProfile(testProfile), config);
+                log.info("Started tests of type " + type + " and status is " + junitRunner.getStatus());
+                return new Response("Successfully started " + type + " tests");
+            } else {
+                testRunner.test(testProfile, config);
+                log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
+                return new Response("Successfully started " + type + " tests");
+            }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
+    }
+
+    TestDescriptor.TestCategory categoryFromProfile(TestProfile testProfile) {
+        switch(testProfile) {
+            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
+            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
+            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
+            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
+            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
+        }
     }
 
     private static String lastElement(String path) {

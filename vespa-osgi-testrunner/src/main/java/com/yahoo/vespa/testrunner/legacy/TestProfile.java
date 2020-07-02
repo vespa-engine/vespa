@@ -1,11 +1,11 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.testrunner;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.testrunner.legacy;
 
 /**
  * @author valerijf
  * @author jvenstad
  */
-enum TestProfile {
+public enum TestProfile {
 
     SYSTEM_TEST("system, com.yahoo.vespa.tenant.systemtest.base.SystemTest", true),
     STAGING_SETUP_TEST("staging-setup", false),
@@ -20,12 +20,11 @@ enum TestProfile {
         this.failIfNoTests = failIfNoTests;
     }
 
-    String group() {
+    public String group() {
         return group;
     }
 
-    boolean failIfNoTests() {
+    public boolean failIfNoTests() {
         return failIfNoTests;
     }
-
 }

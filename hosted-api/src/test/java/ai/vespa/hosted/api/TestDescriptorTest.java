@@ -33,6 +33,9 @@ public class TestDescriptorTest {
         var stagingTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingtest);
         Assertions.assertIterableEquals(Collections.emptyList(), stagingTests);
 
+        var stagingSetupTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingtest);
+        Assertions.assertIterableEquals(Collections.emptyList(), stagingSetupTests);
+
         var productionTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.productiontest);
         Assertions.assertIterableEquals(Collections.emptyList(), productionTests);
     }
@@ -40,7 +43,8 @@ public class TestDescriptorTest {
     @Test
     public void parsesDescriptorFile() {
         String testDescriptor = "{\n" +
-                                "  \"version\": \"1.0\",\n" +
+                                "  \"" +
+                                "version\": \"1.0\",\n" +
                                 "  \"configuredTests\": {\n" +
                                 "    \"systemTests\": [\n" +
                                 "      \"ai.vespa.test.SystemTest1\",\n" +
@@ -49,6 +53,10 @@ public class TestDescriptorTest {
                                 "    \"stagingTests\": [\n" +
                                 "      \"ai.vespa.test.StagingTest1\",\n" +
                                 "      \"ai.vespa.test.StagingTest2\"\n" +
+                                "    ],\n" +
+                                "    \"stagingSetupTests\": [\n" +
+                                "      \"ai.vespa.test.StagingSetupTest1\",\n" +
+                                "      \"ai.vespa.test.StagingSetupTest2\"\n" +
                                 "    ],\n" +
                                 "    \"productionTests\": [\n" +
                                 "      \"ai.vespa.test.ProductionTest1\",\n" +
@@ -65,8 +73,13 @@ public class TestDescriptorTest {
         var stagingTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingtest);
         Assertions.assertIterableEquals(List.of("ai.vespa.test.StagingTest1", "ai.vespa.test.StagingTest2"), stagingTests);
 
+        var stagingSetupTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingsetuptest);
+        Assertions.assertIterableEquals(List.of("ai.vespa.test.StagingSetupTest1", "ai.vespa.test.StagingSetupTest2"), stagingSetupTests);
+
         var productionTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.productiontest);
         Assertions.assertIterableEquals(List.of("ai.vespa.test.ProductionTest1", "ai.vespa.test.ProductionTest2"), productionTests);
+
+        JsonTestHelper.assertJsonEquals(testClassDescriptor.toJson(), testDescriptor);
     }
 
     @Test
