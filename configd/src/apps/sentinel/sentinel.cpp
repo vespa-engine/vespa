@@ -30,7 +30,7 @@ main(int argc, char **argv)
     if (c != 'c') {
         LOG(error, "Usage: %s -c <config-id>", argv[0]);
         EV_STOPPING("config-sentinel", "Bad arguments on command line");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     std::string configId(optarg);
@@ -45,7 +45,7 @@ main(int argc, char **argv)
     if (chdir(rootDir) == -1) {
         LOG(error, "Fatal: Cannot cd to $ROOT (%s)", rootDir);
         EV_STOPPING("config-sentinel", "Cannot cd to $ROOT");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     EV_STARTED("config-sentinel");
@@ -57,7 +57,7 @@ main(int argc, char **argv)
 
     if (setenv("LC_ALL", "C", 1) != 0) {
         LOG(error, "Unable to set locale");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     setlocale(LC_ALL, "C");
 
@@ -69,15 +69,15 @@ main(int argc, char **argv)
     } catch (ConfigTimeoutException & ex) {
         LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     } catch (InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     } catch (ConfigRuntimeException& ex) {
         LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     struct timeval lastTv;
@@ -91,11 +91,11 @@ main(int argc, char **argv)
         } catch (vespalib::PortListenException& ex) {
             LOG(error, "Fatal: %s", ex.getMessage().c_str());
             EV_STOPPING("config-sentinel", ex.what());
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         } catch (vespalib::FatalException& ex) {
             LOG(error, "Fatal: %s", ex.getMessage().c_str());
             EV_STOPPING("config-sentinel", ex.what());
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         }
         if (vespalib::SignalHandler::CHLD.check()) {
             continue;
