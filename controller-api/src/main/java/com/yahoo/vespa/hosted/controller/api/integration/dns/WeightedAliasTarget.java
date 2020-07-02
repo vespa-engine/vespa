@@ -21,6 +21,7 @@ public class WeightedAliasTarget extends AliasTarget {
     public WeightedAliasTarget(HostName name, String dnsZone, ZoneId zone, long weight) {
         super(name, dnsZone, zone.value());
         this.weight = weight;
+        if (weight < 0) throw new IllegalArgumentException("Weight cannot be negative");
     }
 
     /** The weight of this target */
