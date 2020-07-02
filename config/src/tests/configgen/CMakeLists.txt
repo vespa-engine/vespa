@@ -4,7 +4,7 @@ vespa_add_executable(config_configgen_test_app TEST
     configgen.cpp
     DEPENDS
     config_cloudconfig
-    $<TARGET_OBJECTS:config_tests_configgen_config>
+    config_tests_configgen_config
     AFTER
     config_tests_configgen_config
 )
@@ -28,7 +28,7 @@ vespa_add_executable(config_value_converter_test_app TEST
     value_converter.cpp
     DEPENDS
     config_cloudconfig
-    $<TARGET_OBJECTS:config_tests_configgen_config>
+    config_tests_configgen_config
     AFTER
     config_tests_configgen_config
 )
