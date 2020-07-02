@@ -75,7 +75,7 @@ class TestDocument(unittest.TestCase):
             name="body",
             type="string",
             indexing=["index", "summary"],
-            index=["enable-bm25"],
+            index="enable-bm25",
         )
         document.add_fields(field_1, field_2)
         self.assertEqual(document.fields, [field_1, field_2])
@@ -188,3 +188,34 @@ class TestApplicationPackage(unittest.TestCase):
                           "}"
         self.assertEqual(self.app_package.schema_to_text, expected_result)
 
+    def test_hosts_to_text(self):
+        expected_result = '<?xml version="1.0" encoding="utf-8" ?>\n' \
+                          '<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->\n' \
+                          '<hosts>\n' \
+                          '    <host name="localhost">\n' \
+                          '        <alias>node1</alias>\n' \
+                          '    </host>\n' \
+                          '</hosts>'
+        self.assertEqual(self.app_package.hosts_to_text, expected_result)
+
+    def test_services_to_text(self):
+        expected_result = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+                          '<services version="1.0">\n' \
+                          '    <container id="test_app" version="1.0">\n' \
+                          '        <search></search>\n' \
+                          '        <document-processing></document-processing>\n' \
+                          '        <document-api></document-api>\n' \
+                          '    </container>\n' \
+                          '    <content id="test_app" version="1.0">\n' \
+                          '        <redundancy reply-after="1">1</redundancy>\n' \
+                          '        <documents>\n' \
+                          '            <document type="msmarco" mode="index"></document>\n' \
+                          '            <document-processing cluster="test_app"></document-processing>\n' \
+                          '        </documents>\n' \
+                          '        <nodes>\n' \
+                          '            <node distribution-key="0" hostalias="node1"></node>\n' \
+                          '        </nodes>\n' \
+                          '    </content>\n' \
+                          '</services>'
+
+        self.assertEqual(self.app_package.services_to_text, expected_result)

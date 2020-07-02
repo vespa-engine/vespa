@@ -330,6 +330,36 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
             rank_profiles=self.schema.rank_profiles,
         )
 
+    @property
+    def hosts_to_text(self):
+        env = Environment(
+            loader=PackageLoader("vespa", "templates"),
+            autoescape=select_autoescape(
+                disabled_extensions=("txt",), default_for_string=True, default=True,
+            ),
+        )
+        env.trim_blocks = True
+        env.lstrip_blocks = True
+        schema_template = env.get_template("hosts.xml")
+        return schema_template.render()
+
+    @property
+    def services_to_text(self):
+        env = Environment(
+            loader=PackageLoader("vespa", "templates"),
+            autoescape=select_autoescape(
+                disabled_extensions=("txt",), default_for_string=True, default=True,
+            ),
+        )
+        env.trim_blocks = True
+        env.lstrip_blocks = True
+        schema_template = env.get_template("services.xml")
+        return schema_template.render(
+            application_name=self.name,
+            document_name=self.schema.name,
+        )
+
+
     @staticmethod
     def from_dict(mapping: Mapping) -> "ApplicationPackage":
         schema = mapping.get("schema", None)
