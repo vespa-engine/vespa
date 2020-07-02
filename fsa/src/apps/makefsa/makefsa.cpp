@@ -87,10 +87,10 @@ int main(int argc, char** argv)
       break;
     case 'h':
       usage(argv[0]);
-      exit(0);
+      return 0;
     case 'V':
       version();
-      exit(0);
+      return 0;
     case 't':
       format = INPUT_TEXT;
       break;
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
       num_size = strtoul(optarg,NULL,0);
       if(num_size!=1 && num_size!=2 && num_size!=4){
         usage(argv[0],"invalid numerical info size (-s)");
-        exit(1);
+        return 1;
       }
       break;
     case 'z':
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
       break;
     case '?':
       usage(argv[0],"unrecognized option");
-      exit(1);
+      return 1;
     }
   }
 
@@ -141,7 +141,7 @@ int main(int argc, char** argv)
   }
   else{
     usage(argv[0],"required parameter(s) missing");
-    exit(1);
+    return 1;
   }
 
   Automaton automaton;

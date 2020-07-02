@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 {
   if(argc<3){
     std::cerr << "usage: fsamanager_test cache_dir fsa_file_or_url [fsa_file_or_url ...]\n";
-    exit(1);
+    return 1;
   }
 
   FSAManager::instance().setCacheDir(argv[1]);

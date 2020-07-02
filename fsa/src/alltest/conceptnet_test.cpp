@@ -29,13 +29,13 @@ int main(int argc, char **argv)
       break;
     case '?':
       fprintf(stderr,"conceptnet_test: unrecognized option");
-      exit(1);
+      return 1;
     }
   }
 
   if(optind>=argc){
     fprintf(stderr,"usage: conceptnet_test [-aec] DOMAIN [UNIT ...]\n");
-    exit(1);
+    return 1;
   }
 
   std::string domain = argv[optind];
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
                                          domain + ".fsa",
                                          domain + ".dat")){
     fprintf(stderr,"failed to load concept net %s\n",domain.c_str());
-    exit(1);
+    return 1;
   }
 
   ConceptNet::Handle* cn = ConceptNetManager::instance().get(domain);
@@ -71,10 +71,9 @@ int main(int argc, char **argv)
         }
       }
     }
-  }
-  else {
+  } else {
     fprintf(stderr,"failed to load concept net %s\n",domain.c_str());
-    exit(1);
+    return 1;
   }
-
+  return 0;
 }
