@@ -31,7 +31,7 @@ public enum TestProfile {
         return failIfNoTests;
     }
 
-    TestDescriptor.TestCategory testCategory() {
+    public TestDescriptor.TestCategory testCategory() {
         return testCategory;
     }
 

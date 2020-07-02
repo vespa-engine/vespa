@@ -15,6 +15,7 @@ public interface LegacyTestRunner {
 
     void test(TestProfile testProfile, byte[] config);
 
+    // TODO (mortent) : This seems to be duplicated in TesterCloud.Status and expects to have the same values
     enum Status {
         NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
     }

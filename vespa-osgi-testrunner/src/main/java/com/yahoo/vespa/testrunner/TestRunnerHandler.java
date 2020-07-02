@@ -19,7 +19,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -67,12 +69,27 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
-            return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
-                                                                               ? Long.parseLong(request.getProperty("after"))
-                                                                               : -1)));
+            if (useOsgiMode) {
+                // TODO (mortent): Handle case where log is returned multiple times
+                String report = junitRunner.getReportAsJson();
+                List<LogRecord> logRecords = new ArrayList<>();
+                if (!report.isBlank()) {
+                    logRecords.add(new LogRecord(Level.INFO, report));
+                }
+                return new SlimeJsonResponse(logToSlime(logRecords));
+            } else {
+                return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
+                        ? Long.parseLong(request.getProperty("after"))
+                        : -1)));
+            }
         } else if (path.equals("/tester/v1/status")) {
-            log.info("Responding with status " + testRunner.getStatus());
-            return new Response(testRunner.getStatus().name());
+            if (useOsgiMode) {
+                log.info("Responding with status " + junitRunner.getStatus());
+                return new Response(junitRunner.getStatus().name());
+            } else {
+                log.info("Responding with status " + testRunner.getStatus());
+                return new Response(testRunner.getStatus().name());
+            }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
@@ -83,9 +100,15 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             String type = lastElement(path);
             TestProfile testProfile = TestProfile.valueOf(type.toUpperCase() + "_TEST");
             byte[] config = request.getData().readAllBytes();
-            testRunner.test(testProfile, config);
-            log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
-            return new Response("Successfully started " + type + " tests");
+            if (useOsgiMode) {
+                junitRunner.executeTests(testProfile.testCategory(), config);
+                log.info("Started tests of type " + type + " and status is " + junitRunner.getStatus());
+                return new Response("Successfully started " + type + " tests");
+            } else {
+                testRunner.test(testProfile, config);
+                log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
+                return new Response("Successfully started " + type + " tests");
+            }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
