@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/shutdownguard.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <cstdlib>
 
 using namespace vespalib;
 
@@ -23,7 +24,7 @@ Test::Main()
         for (int i = 0; i < 1000; ++i) {
             std::this_thread::sleep_for(20ms);
         }
-        exit(0);
+        std::_Exit(0);
     }
     for (int i = 0; i < 1000; ++i) {
         std::this_thread::sleep_for(20ms);
