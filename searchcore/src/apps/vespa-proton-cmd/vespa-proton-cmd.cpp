@@ -10,6 +10,7 @@
 #include <vespa/fastos/app.h>
 #include <sys/time.h>
 #include <thread>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-proton-cmd");
@@ -123,7 +124,7 @@ public:
             if (!sbmirror.ready()) {
                 fprintf(stderr,
                         "ERROR: no data from service location broker\n");
-                exit(1);
+                std::_Exit(1);
             }
             slobrok::api::MirrorAPI::SpecList specs = sbmirror.lookup(rtcPattern);
             slobrok::api::MirrorAPI::SpecList specs2 = sbmirror.lookup(rtcPattern2);
@@ -140,7 +141,7 @@ public:
             scanSpecs(specs3, me, service, spec, found);
             if (found > 1) {
                 fprintf(stderr, "found more than one local RTC, you must use --id=<name>\n");
-                exit(1);
+                std::_Exit(1);
             }
             if (found < 1) {
                 fprintf(stderr, "found no local RTC, you must use --id=<name> (list follows):\n");
@@ -148,12 +149,12 @@ public:
                     printf("RTC name %s with connection spec %s\n",
                            specs[j].first.c_str(), specs[j].second.c_str());
                 }
-                exit(1);
+                std::_Exit(1);
             }
             return spec;
         } catch (config::InvalidConfigException& e) {
             fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
-            exit(1);
+            std::_Exit(1);
         }
         return "";
     }
