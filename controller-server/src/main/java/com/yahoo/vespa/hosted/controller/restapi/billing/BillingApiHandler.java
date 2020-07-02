@@ -19,6 +19,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
@@ -137,9 +138,9 @@ public class BillingApiHandler extends LoggingRequestHandler {
         var tenantName = TenantName.from(tenant);
         var slime = inspectorOrThrow(request);
         var planId = PlanId.from(slime.field("plan").asString());
-        var hasApplications = applicationController.asList(tenantName).size() > 0;
 
-        var result = billingController.setPlan(tenantName, planId, hasApplications);
+        var hasDeployments = hasDeployments(tenantName);
+        var result = billingController.setPlan(tenantName, planId, hasDeployments);
 
         if (result.isSuccess())
             return new StringResponse("Plan: " + planId.value());
@@ -378,6 +379,16 @@ public class BillingApiHandler extends LoggingRequestHandler {
         if (until == null || until.isEmpty() || until.isBlank())
             return LocalDate.now().plusDays(1);
         return LocalDate.parse(until);
+    }
+
+    private boolean hasDeployments(TenantName tenantName) {
+        return applicationController.asList(tenantName)
+                .stream()
+                .flatMap(app -> app.instances().values()
+                        .stream()
+                        .flatMap(instance -> instance.deployments().values().stream())
+                )
+                .count() > 0;
     }
 
 }
