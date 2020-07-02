@@ -28,4 +28,3 @@ vespa_add_executable(config_value_converter_test_app TEST
     config_cloudconfig
 )
 vespa_add_test(NAME config_value_converter_test_app COMMAND config_value_converter_test_app)
-vespa_generate_config(config_value_converter_test_app ../../test/resources/configdefinitions/motd.def)
