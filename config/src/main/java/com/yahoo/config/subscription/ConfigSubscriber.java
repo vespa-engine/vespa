@@ -435,14 +435,23 @@ public class ConfigSubscriber implements AutoCloseable {
         singleSubscriber.configure(handle.getConfig());
         startConfigThread(() -> {
                 while (!isClosed()) {
+                    boolean hasNewConfig = false;
+
                     try {
-                        if (nextConfig() && handle.isChanged())
+                        hasNewConfig = nextConfig();
+                    }
+                    catch (Exception e) {
+                        log.log(SEVERE, "Exception on receiving config. Ignoring this change.", e);
+                    }
+
+                    try {
+                        if (hasNewConfig)
                             singleSubscriber.configure(handle.getConfig());
                     }
                     catch (Exception e) {
-                        log.log(WARNING, "Exception on applying config " + configClass.getName() +
-                                         " for config id " + configId + ": Ignoring this change: " +
-                                         Exceptions.toMessageString(e));
+                        log.warning("Exception on applying config " + configClass.getName() +
+                                    " for config id " + configId + ": Ignoring this change: " +
+                                    Exceptions.toMessageString(e));
                     }
                 }
             }
