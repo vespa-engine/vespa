@@ -15,6 +15,7 @@
 #include <sstream>
 #include <iostream>
 #include <thread>
+#include <cstdlib>
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
@@ -128,7 +129,7 @@ struct Options : public vespalib::ProgramOptions {
             _clusterName = _cluster.getName();
         } catch (const vespaclient::ClusterList::ClusterNotFoundException& e) {
             std::cerr << e.getMessage() << "\n";
-            exit(1);
+            std::_Exit(1);
         }
         return true;
     }
