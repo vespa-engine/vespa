@@ -31,17 +31,16 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -54,7 +53,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -134,7 +132,7 @@ public class ApplicationRepositoryTest {
                 .flagSource(flagSource)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -573,8 +571,7 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        // TODO: Need to reload config before resolving works
-        RequestHandler requestHandler = reloadConfig(applicationId());
+        RequestHandler requestHandler = getRequestHandler(applicationId());
         SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
         assertEquals(1337 , config.intval());
     }
@@ -597,13 +594,11 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        // TODO: Need to reload config before resolving works
-        RequestHandler requestHandler = reloadConfig(applicationId());
+        RequestHandler requestHandler = getRequestHandler(applicationId());
         SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
 
-        // TODO: Need to reload config before resolving works
-        RequestHandler requestHandler2 = reloadConfig(appId2);
+        RequestHandler requestHandler2 = getRequestHandler(appId2);
         SimpletypesConfig config2 = resolve(SimpletypesConfig.class, requestHandler2, appId2, vespaVersion);
         assertEquals(1330, config2.intval());
 
@@ -622,8 +617,7 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        // TODO: Need to reload config before resolving works
-        RequestHandler requestHandler = reloadConfig(applicationId());
+        RequestHandler requestHandler = getRequestHandler(applicationId());
         SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
 
@@ -640,8 +634,7 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        // TODO: Need to reload config before resolving works
-        RequestHandler requestHandler = reloadConfig(applicationId());
+        RequestHandler requestHandler = getRequestHandler(applicationId());
         SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
         assertEquals(1337 , config.intval());
 
@@ -770,11 +763,8 @@ public class ApplicationRepositoryTest {
         }, Optional.empty());
     }
 
-    @NotNull
-    private RequestHandler reloadConfig(ApplicationId applicationId) {
-        RequestHandler requestHandler = tenantRepository.getTenant(applicationId.tenant()).getRequestHandler();
-        ((TenantApplications) requestHandler).reloadConfig(applicationRepository.getActiveSession(applicationId).ensureApplicationLoaded());
-        return requestHandler;
+    private RequestHandler getRequestHandler(ApplicationId applicationId) {
+        return tenantRepository.getTenant(applicationId.tenant()).getRequestHandler();
     }
 
 }
