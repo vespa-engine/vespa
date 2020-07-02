@@ -31,6 +31,8 @@ struct MessageSender {
 
     virtual void sendCommand(const std::shared_ptr<api::StorageCommand>&) = 0;
     virtual void sendReply(const std::shared_ptr<api::StorageReply>&) = 0;
+    // By calling this you certify that it can continue in same thread or be dispatched.
+    virtual void sendReplyDirectly(const std::shared_ptr<api::StorageReply>&);
 
     void send(const std::shared_ptr<api::StorageMessage>&);
 };

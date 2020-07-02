@@ -239,6 +239,7 @@ public:
     void sendCommand(const api::StorageCommand::SP&) override;
     /** Send the given reply back out of the persistence layer. */
     void sendReply(const api::StorageReply::SP&) override;
+    void sendReplyDirectly(const std::shared_ptr<api::StorageReply>&) override;
 
     /** Writes status page. */
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;

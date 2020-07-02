@@ -40,8 +40,6 @@ public:
 
 private:
     config::ConfigUri _configUri;
-
-    uint32_t _chunkLevel;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**
