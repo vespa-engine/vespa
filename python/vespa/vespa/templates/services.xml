@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services version="1.0">
-    <container id="{{ application_name }}" version="1.0">
+    <container id="{{ application_name }}_container" version="1.0">
         <search></search>
         <document-processing></document-processing>
         <document-api></document-api>
     </container>
-    <content id="{{ application_name }}" version="1.0">
+    <content id="{{ application_name }}_content" version="1.0">
         <redundancy reply-after="1">1</redundancy>
         <documents>
             <document type="{{ document_name }}" mode="index"></document>
-            <document-processing cluster="{{ application_name }}"></document-processing>
+            <document-processing cluster="{{ application_name }}_container"></document-processing>
         </documents>
         <nodes>
             <node distribution-key="0" hostalias="node1"></node>

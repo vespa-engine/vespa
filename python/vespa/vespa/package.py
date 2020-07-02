@@ -1,5 +1,8 @@
+import os
 from time import sleep
 from typing import List, Mapping, Optional
+from tempfile import TemporaryDirectory
+from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import docker
@@ -138,7 +141,9 @@ class FieldSet(ToJson, FromJson["FieldSet"]):
 
 
 class RankProfile(ToJson, FromJson["RankProfile"]):
-    def __init__(self, name: str, first_phase: str) -> None:
+    def __init__(
+        self, name: str, first_phase: str, inherits: Optional[str] = None
+    ) -> None:
         """
         Define a Vespa rank profile
 
@@ -147,20 +152,31 @@ class RankProfile(ToJson, FromJson["RankProfile"]):
         """
         self.name = name
         self.first_phase = first_phase
+        self.inherits = inherits
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "RankProfile":
-        return RankProfile(name=mapping["name"], first_phase=mapping["first_phase"])
+        return RankProfile(
+            name=mapping["name"],
+            first_phase=mapping["first_phase"],
+            inherits=mapping.get("inherits", None),
+        )
 
     @property
     def to_dict(self) -> Mapping:
         map = {"name": self.name, "first_phase": self.first_phase}
+        if self.inherits is not None:
+            map.update({"inherits": self.inherits})
         return map
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.name == other.name and self.first_phase == other.first_phase
+        return (
+            self.name == other.name
+            and self.first_phase == other.first_phase
+            and self.inherits == other.inherits
+        )
 
     def __repr__(self):
         return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
@@ -295,9 +311,10 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
             == "HTTP/1.1 200 OK"
         )
 
-    def deploy_locally(self, disk_folder, container_memory: str = "4G"):
+    def deploy_locally(self, disk_folder: str, container_memory: str = "4G"):
 
-        # todo: use `with tempfile.TemporaryDirectory() as dirpath:` to create a temp dir and write app files there.
+        self.create_application_package_files(dir_path=disk_folder)
+
         self.run_vespa_engine_container(
             disk_folder=disk_folder, container_memory=container_memory
         )
@@ -355,10 +372,22 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
         env.lstrip_blocks = True
         schema_template = env.get_template("services.xml")
         return schema_template.render(
-            application_name=self.name,
-            document_name=self.schema.name,
+            application_name=self.name, document_name=self.schema.name,
         )
 
+    def create_application_package_files(self, dir_path):
+        Path(os.path.join(dir_path, "application/schemas")).mkdir(parents=True, exist_ok=True)
+        with open(
+            os.path.join(
+                dir_path, "application/schemas/{}.sd".format(self.schema.name)
+            ),
+            "w",
+        ) as f:
+            f.write(self.schema_to_text)
+        with open(os.path.join(dir_path, "application/hosts.xml"), "w") as f:
+            f.write(self.hosts_to_text)
+        with open(os.path.join(dir_path, "application/services.xml"), "w") as f:
+            f.write(self.services_to_text)
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "ApplicationPackage":

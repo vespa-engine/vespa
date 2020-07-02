@@ -17,7 +17,7 @@ schema {{ schema_name }} {
     }
 {% endfor %}
 {% for key, value in rank_profiles.items() %}
-    rank-profile {{ key }} {
+    rank-profile {{ key }}{% if value.inherits %} inherits {{ value.inherits }}{% endif %} {
         {% if value.first_phase %}
         first-phase {
             expression: {{ value.first_phase }}
