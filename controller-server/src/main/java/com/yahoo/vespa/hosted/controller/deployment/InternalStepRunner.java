@@ -794,7 +794,7 @@ public class InternalStepRunner implements StepRunner {
 
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
-        boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 246));
+        boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 247, 11));
 
         byte[] servicesXml = servicesXml(! controller.system().isPublic(),
                                          useTesterCertificate,
@@ -871,7 +871,7 @@ public class InternalStepRunner implements StepRunner {
                         "\n" +
                         "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\" />\n" +
                         "\n" +
-                        "        <handler id=\"com.yahoo.vespa.testrunner.JunitHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
+                        "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
                         "            <binding>http://*/tester/v1/*</binding>\n" +
                         "        </handler>\n"
                 :

@@ -15,7 +15,7 @@
 
         <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner" />
 
-        <handler id="com.yahoo.vespa.testrunner.JunitHandler" bundle="vespa-osgi-testrunner">
+        <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
             <binding>http://*/tester/v1/*</binding>
         </handler>
 
