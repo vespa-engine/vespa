@@ -8,6 +8,7 @@ import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -21,8 +22,13 @@ public class ApplicationMetricsV1Retriever {
 
     private final ClusterMetricsRetriever metricsRetriever;
 
+    private static final String VESPA_CONTAINER = "vespa.container";
+    private static final String VESPA_QRSERVER = "vespa.qrserver";
+    private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+
     public ApplicationMetricsV1Retriever() {
-        this(new ClusterMetricsRetriever());
+        this(new ClusterMetricsRetriever(WANTED_METRIC_SERVICES));
     }
 
     public ApplicationMetricsV1Retriever(ClusterMetricsRetriever metricsRetriever) {

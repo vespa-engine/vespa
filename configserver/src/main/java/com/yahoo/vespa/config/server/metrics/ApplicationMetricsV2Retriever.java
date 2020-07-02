@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -13,8 +14,11 @@ public class ApplicationMetricsV2Retriever {
 
     private final ClusterMetricsRetriever metricsRetriever;
 
+    private static final String VESPA_SEARCHNODE = "vespa.searchnode";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_SEARCHNODE);
+
     public ApplicationMetricsV2Retriever() {
-        this(new ClusterMetricsRetriever());
+        this(new ClusterMetricsRetriever(WANTED_METRIC_SERVICES));
     }
 
     public ApplicationMetricsV2Retriever(ClusterMetricsRetriever metricsRetriever) {

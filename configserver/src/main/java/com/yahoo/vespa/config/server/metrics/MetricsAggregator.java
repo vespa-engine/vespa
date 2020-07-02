@@ -12,6 +12,7 @@ public class MetricsAggregator {
     private LatencyMetrics feed;
     private LatencyMetrics qr;
     private LatencyMetrics container;
+    private ProtonMetrics proton;
     private Double documentCount;
 
     public synchronized MetricsAggregator addFeedLatency(double sum, double count) {
@@ -32,6 +33,24 @@ public class MetricsAggregator {
     public synchronized MetricsAggregator addDocumentCount(double count) {
         this.documentCount = (this.documentCount == null ? 0.0 : this.documentCount) + count;
         return this;
+    }
+
+    public synchronized MetricsAggregator addProtonData(
+            double reranked_rate,
+            double allocated_bytes_last,
+            double docs_matched_rate,
+            double documents_active,
+            double documents_ready,
+            double documents_total,
+            double disk_usage,
+            double disk_usage_avg,
+            double mem_usage_avg,
+            double query_latency_avg,
+            double docsum_latency_avg,
+            double docsum_req_doc_rate
+    ) {
+        this.proton.reranked_rate += reranked_rate;
+        
     }
 
     public Optional<Double> aggregateFeedLatency() {
@@ -71,5 +90,20 @@ public class MetricsAggregator {
     private static class LatencyMetrics {
         double latencySum;
         double latencyCount;
+    }
+
+    private static class ProtonMetrics {
+        double reranked_rate;
+        double allocated_bytes_last;
+        double docs_matched_rate;
+        double documents_active;
+        double documents_ready;
+        double documents_total;
+        double disk_usage;
+        double disk_usage_avg;
+        double mem_usage_avg;
+        double query_latency_avg;
+        double docsum_latency_avg;
+        double docsum_req_doc_rate;
     }
 }
