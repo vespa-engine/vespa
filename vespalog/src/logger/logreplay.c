@@ -19,7 +19,7 @@ main(int argc, char **argv)
                 "Replays a vespa log file with the same timing delta between each log message.\n"
                 "Reprints the log messages without timestamps.\n\n",
                 argv[0]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     
     while (fgets(line, sizeof line, stdin)) {
@@ -54,5 +54,5 @@ main(int argc, char **argv)
         fwrite(s, strlen(s), 1, stdout);
         fflush(stdout);
     }
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }

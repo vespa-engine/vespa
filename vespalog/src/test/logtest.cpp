@@ -33,5 +33,5 @@ main(int, char **argv)
     LOG(info, "Exiting.");
     EV_STOPPING("logtest", "clean exit");
     EV_STOPPED("logtest", getpid(), 0);
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }
