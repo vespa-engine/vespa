@@ -15,7 +15,9 @@ import java.util.Map;
  * @author Ulf Lilleengen
  */
 public class TestConfigDefinitionRepo implements ConfigDefinitionRepo {
+
     private final Map<ConfigDefinitionKey, ConfigDefinition> repo = new LinkedHashMap<>();
+
     public TestConfigDefinitionRepo() {
         repo.put(new ConfigDefinitionKey(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE),
                  new ConfigDefinition(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_SCHEMA));
@@ -32,4 +34,5 @@ public class TestConfigDefinitionRepo implements ConfigDefinitionRepo {
 
     @Override
     public ConfigDefinition get(ConfigDefinitionKey key) { return null; }
+
 }
