@@ -1,6 +1,13 @@
 import unittest
 
-from vespa.package import Field, Document, FieldSet, RankProfile, Schema
+from vespa.package import (
+    Field,
+    Document,
+    FieldSet,
+    RankProfile,
+    Schema,
+    ApplicationPackage,
+)
 
 
 class TestField(unittest.TestCase):
@@ -11,25 +18,26 @@ class TestField(unittest.TestCase):
         self.assertEqual(field.to_dict, {"name": "test_name", "type": "string"})
         self.assertEqual(field, Field(name="test_name", type="string"))
         self.assertEqual(field, Field.from_dict(field.to_dict))
+        self.assertIsNone(field.indexing_to_text)
 
     def test_field_name_type_indexing_index(self):
         field = Field(
             name="body",
             type="string",
             indexing=["index", "summary"],
-            index=["enable-bm25"],
+            index="enable-bm25",
         )
         self.assertEqual(field.name, "body")
         self.assertEqual(field.type, "string")
         self.assertEqual(field.indexing, ["index", "summary"])
-        self.assertEqual(field.index, ["enable-bm25"])
+        self.assertEqual(field.index, "enable-bm25")
         self.assertEqual(
             field.to_dict,
             {
                 "name": "body",
                 "type": "string",
                 "indexing": ["index", "summary"],
-                "index": ["enable-bm25"],
+                "index": "enable-bm25",
             },
         )
         self.assertEqual(
@@ -38,10 +46,11 @@ class TestField(unittest.TestCase):
                 name="body",
                 type="string",
                 indexing=["index", "summary"],
-                index=["enable-bm25"],
+                index="enable-bm25",
             ),
         )
         self.assertEqual(field, Field.from_dict(field.to_dict))
+        self.assertEqual(field.indexing_to_text, "index | summary")
 
 
 class TestDocument(unittest.TestCase):
@@ -80,6 +89,7 @@ class TestFieldSet(unittest.TestCase):
         self.assertEqual(field_set.name, "default")
         self.assertEqual(field_set.fields, ["title", "body"])
         self.assertEqual(field_set, FieldSet.from_dict(field_set.to_dict))
+        self.assertEqual(field_set.fields_to_text, "title, body")
 
 
 class TestRankProfile(unittest.TestCase):
@@ -117,3 +127,64 @@ class TestSchema(unittest.TestCase):
                 "default": RankProfile(name="default", first_phase="NativeRank(title)"),
             },
         )
+
+
+class TestApplicationPackage(unittest.TestCase):
+    def setUp(self) -> None:
+        test_schema = Schema(
+            name="msmarco",
+            document=Document(
+                fields=[
+                    Field(name="id", type="string", indexing=["attribute", "summary"]),
+                    Field(
+                        name="title",
+                        type="string",
+                        indexing=["index", "summary"],
+                        index="enable-bm25",
+                    ),
+                    Field(
+                        name="body",
+                        type="string",
+                        indexing=["index", "summary"],
+                        index="enable-bm25",
+                    ),
+                ]
+            ),
+            fieldsets=[FieldSet(name="default", fields=["title", "body"])],
+            rank_profiles=[
+                RankProfile(name="default", first_phase="nativeRank(title, body)")
+            ],
+        )
+        self.app_package = ApplicationPackage(name="test_app", schema=test_schema)
+
+    def test_application_package(self):
+        self.assertEqual(
+            self.app_package, ApplicationPackage.from_dict(self.app_package.to_dict)
+        )
+
+    def test_schema_to_text(self):
+        expected_result = "schema msmarco {\n" \
+                          "    document msmarco {\n" \
+                          "        field id type string {\n" \
+                          "            indexing: attribute | summary\n" \
+                          "        }\n" \
+                          "        field title type string {\n" \
+                          "            indexing: index | summary\n" \
+                          "            index: enable-bm25\n" \
+                          "        }\n" \
+                          "        field body type string {\n" \
+                          "            indexing: index | summary\n" \
+                          "            index: enable-bm25\n" \
+                          "        }\n" \
+                          "    }\n" \
+                          "    fieldset default {\n" \
+                          "        fields: title, body\n" \
+                          "    }\n" \
+                          "    rank-profile default {\n" \
+                          "        first-phase {\n" \
+                          "            expression: nativeRank(title, body)\n" \
+                          "        }\n" \
+                          "    }\n" \
+                          "}"
+        self.assertEqual(self.app_package.schema_to_text, expected_result)
+

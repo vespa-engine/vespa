@@ -1,5 +1,7 @@
+from time import sleep
 from typing import List, Mapping, Optional
 
+from jinja2 import Environment, PackageLoader, select_autoescape
 import docker
 
 from vespa.json_serialization import ToJson, FromJson
@@ -11,7 +13,7 @@ class Field(ToJson, FromJson["Field"]):
         name: str,
         type: str,
         indexing: Optional[List[str]] = None,
-        index: Optional[List[str]] = None,
+        index: Optional[str] = None,
     ) -> None:
         """
         Object representing a Vespa document field.
@@ -25,6 +27,11 @@ class Field(ToJson, FromJson["Field"]):
         self.type = type
         self.indexing = indexing
         self.index = index
+
+    @property
+    def indexing_to_text(self) -> Optional[str]:
+        if self.indexing is not None:
+            return " | ".join(self.indexing)
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "Field":
@@ -106,6 +113,11 @@ class FieldSet(ToJson, FromJson["FieldSet"]):
         """
         self.name = name
         self.fields = fields
+
+    @property
+    def fields_to_text(self):
+        if self.fields is not None:
+            return ", ".join(self.fields)
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "FieldSet":
@@ -231,8 +243,8 @@ class Schema(ToJson, FromJson["Schema"]):
         return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
 
 
-class ApplicationPackage(object):
-    def __init__(self, name: str, disk_folder: str) -> None:
+class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
+    def __init__(self, name: str, schema: Optional[Schema] = None) -> None:
         """
         Vespa Application Package.
 
@@ -240,13 +252,14 @@ class ApplicationPackage(object):
         :param disk_folder: Absolute path of the folder containing the application files.
         """
         self.name = name
-        self.disk_folder = disk_folder
+        self.schema = schema
         self.container = None
 
-    def run_vespa_engine_container(self, container_memory: str = "4G"):
+    def run_vespa_engine_container(self, disk_folder: str, container_memory: str):
         """
         Run a vespa container.
 
+        :param disk_folder: Folder containing the application files.
         :param container_memory: Memory limit of the container
         :return:
         """
@@ -262,7 +275,7 @@ class ApplicationPackage(object):
                     name=self.name,
                     hostname=self.name,
                     privileged=True,
-                    volumes={self.disk_folder: {"bind": "/app", "mode": "rw"}},
+                    volumes={disk_folder: {"bind": "/app", "mode": "rw"}},
                     ports={8080: 8080, 19112: 19112},
                 )
 
@@ -282,8 +295,59 @@ class ApplicationPackage(object):
             == "HTTP/1.1 200 OK"
         )
 
-    def deploy_locally(self):
+    def deploy_locally(self, disk_folder, container_memory: str = "4G"):
+
+        # todo: use `with tempfile.TemporaryDirectory() as dirpath:` to create a temp dir and write app files there.
+        self.run_vespa_engine_container(
+            disk_folder=disk_folder, container_memory=container_memory
+        )
+
+        while not self.check_configuration_server():
+            print("Waiting for configuration server.")
+            sleep(5)
+
         deployment = self.container.exec_run(
             "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
         )
         return deployment.output.decode("utf-8").split("\n")
+
+    @property
+    def schema_to_text(self):
+        env = Environment(
+            loader=PackageLoader("vespa", "templates"),
+            autoescape=select_autoescape(
+                disabled_extensions=("txt",), default_for_string=True, default=True,
+            ),
+        )
+        env.trim_blocks = True
+        env.lstrip_blocks = True
+        schema_template = env.get_template("schema.txt")
+        return schema_template.render(
+            schema_name=self.schema.name,
+            document_name=self.schema.name,
+            fields=self.schema.document.fields,
+            fieldsets=self.schema.fieldsets,
+            rank_profiles=self.schema.rank_profiles,
+        )
+
+    @staticmethod
+    def from_dict(mapping: Mapping) -> "ApplicationPackage":
+        schema = mapping.get("schema", None)
+        if schema is not None:
+            schema = FromJson.map(schema)
+        return ApplicationPackage(name=mapping["name"], schema=schema)
+
+    @property
+    def to_dict(self) -> Mapping:
+        map = {"name": self.name}
+        if self.schema is not None:
+            map.update({"schema": self.schema.to_envelope})
+        return map
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name and self.schema == other.schema
+
+    def __repr__(self):
+        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
