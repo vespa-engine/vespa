@@ -295,17 +295,23 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
-            "enable-public-only", false,
-            "Only access public hosts from container",
-            "Takes effect on next tick"
-    );
-
     public static final UnboundBooleanFlag WEIGHTED_DNS_PER_REGION = defineFeatureFlag(
             "weighted-dns-per-region", false,
             "Whether to create weighted DNS records per region in global endpoints",
             "Takes effect on next deployment through controller",
             APPLICATION_ID
+    );
+
+    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV4 = defineListFlag(
+            "container-outbound-blocked-ipv4", List.of(), String.class,
+            "List of IPs or CIDRs that are blocked for outbound connections",
+            "Takes effect on next tick"
+    );
+
+    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV6 = defineListFlag(
+            "container-outbound-blocked-ipv6", List.of(), String.class,
+            "List of IPs or CIDRs that are blocked for outbound connections",
+            "Takes effect on next tick"
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
