@@ -1,57 +1,96 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpListConfigsHandler.ListConfigsResponse;
-
+import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.time.Clock;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
-
-import static com.yahoo.jdisc.http.HttpResponse.Status.*;
+import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.http.HttpResponse.Status.NOT_FOUND;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public class HttpListConfigsHandlerTest {
-    
-    private MockRequestHandler mockRequestHandler;
+
+    private static final TenantName tenant = TenantName.from("default");
+    private static final String baseUri = "http://foo.com:8080/config/v1/";
+    private final static File testApp = new File("src/test/resources/deploy/validapp");
+    private static final ApplicationId applicationId = ApplicationId.defaultId();
+
     private HttpListConfigsHandler handler;
     private HttpListNamedConfigsHandler namedHandler;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setUp() {
-        mockRequestHandler = new MockRequestHandler(ApplicationId.defaultId());
-        mockRequestHandler.setAllConfigs(new HashSet<>() {{
-            add(new ConfigKey<>("bar", "conf/id/", "foo"));
-        }} );
+    public void setUp() throws IOException {
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .configDefinitionRepo(new TestConfigDefinitionRepo())
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .build())
+                .build();
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
+        tenantRepository.addTenant(tenant);
+        ApplicationRepository applicationRepository =
+                new ApplicationRepository(tenantRepository,
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          new OrchestratorMock(),
+                                          Clock.systemUTC());
+        applicationRepository.deploy(testApp, prepareParams());
+
         HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testOnlyContext();
-        handler = new HttpListConfigsHandler(ctx, mockRequestHandler);
-        namedHandler = new HttpListNamedConfigsHandler(ctx, mockRequestHandler);
+        handler = new HttpListConfigsHandler(ctx, tenantRepository);
+        namedHandler = new HttpListNamedConfigsHandler(ctx, tenantRepository);
     }
     
     @Test
     public void require_that_handler_can_be_created() throws IOException {
         HttpResponse response = handler.handle(HttpRequest.createTestRequest("/config/v1/", GET));
-        assertThat(SessionHandlerTest.getRenderedString(response), is("{\"children\":[],\"configs\":[]}"));
+        String renderedString = getRenderedString(response);
+        assertTrue(renderedString, renderedString.startsWith("{\"children\":["));
+        assertTrue(renderedString, renderedString.contains(",\"configs\":["));
     }
     
     @Test
     public void require_that_named_handler_can_be_created() throws IOException {
-        HttpRequest req = HttpRequest.createTestRequest("http://foo.com:8080/config/v1/foo.bar/conf/id/", GET);
-        req.getJDiscRequest().parameters().put("http.path", List.of("foo.bar"));
+        HttpRequest req = createTestRequest(baseUri + "cloud.config.sentinel/hosts/localhost/sentinel", GET);
+        req.getJDiscRequest().parameters().put("http.path", List.of("cloud.config.sentinel"));
         HttpResponse response = namedHandler.handle(req);
-        assertThat(SessionHandlerTest.getRenderedString(response), is("{\"children\":[],\"configs\":[]}"));
+        String renderedString = getRenderedString(response);
+        assertTrue(renderedString, renderedString.startsWith("{\"children\":["));
+        assertTrue(renderedString, renderedString.contains(",\"configs\":["));
     }
     
     @Test
@@ -76,29 +115,23 @@ public class HttpListConfigsHandlerTest {
         assertEquals(resp.toUrl(new ConfigKey<>("myconfig", "my/id", "mynamespace"), true), "http://foo.com/config/v1/mynamespace.myconfig/my/id");
         assertEquals(resp.toUrl(new ConfigKey<>("myconfig", "my/id", "mynamespace"), false), "http://foo.com/config/v1/mynamespace.myconfig/my/id/");
         assertEquals(resp.getContentType(), "application/json");
-        
     }
  
     @Test
     public void require_error_on_bad_request() throws IOException {
-        HttpRequest req = HttpRequest.createTestRequest("http://foo.com:8080/config/v1/foobar/conf/id/", GET);
+        HttpRequest req = createTestRequest(baseUri + "foobar/hosts/localhost/sentinel/", GET);
         HttpResponse resp = namedHandler.handle(req);
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Illegal config, must be of form namespace.name.");
-        req = HttpRequest.createTestRequest("http://foo.com:8080/config/v1/foo.barNOPE/conf/id/", GET);
+        req = createTestRequest(baseUri + "foo.barNOPE/conf/id/", GET);
         resp = namedHandler.handle(req);
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config: foo.barNOPE");
-        req = HttpRequest.createTestRequest("http://foo.com:8080/config/v1/foo.bar/conf/id/NOPE/", GET);
+        req = createTestRequest(baseUri + "cloud.config.sentinel/conf/id/NOPE/", GET);
         resp = namedHandler.handle(req);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config id: conf/id/NOPE/");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config id: conf/id/NOPE");
     }
-    
-    @Test
-    public void require_correct_error_response_on_no_model() throws IOException {
-        mockRequestHandler.setAllConfigs(new HashSet<>());
-        HttpResponse response = namedHandler.handle(HttpRequest.createTestRequest("http://yahoo.com:8080/config/v1/foo.bar/myid/", GET));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND,
-                HttpErrorResponse.errorCodes.NOT_FOUND,
-                "Config not available, verify that an application package has been deployed and activated.");
+
+    private PrepareParams prepareParams() {
+        return new PrepareParams.Builder().applicationId(applicationId).build();
     }
-    
+
 }

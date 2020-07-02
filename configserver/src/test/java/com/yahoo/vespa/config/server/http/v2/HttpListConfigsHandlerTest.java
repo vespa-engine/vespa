@@ -106,7 +106,7 @@ public class HttpListConfigsHandlerTest {
     @Test
     public void require_that_named_handler_can_be_created() throws IOException {
         HttpRequest req = createTestRequest(baseUri + "cloud.config.sentinel/hosts/localhost/sentinel/", GET);
-        req.getJDiscRequest().parameters().put("http.path", List.of("foo.bar"));
+        req.getJDiscRequest().parameters().put("http.path", List.of("cloud.config.sentinel"));
         HttpResponse response = namedHandler.handle(req);
         String renderedString = getRenderedString(response);
         assertTrue(renderedString, renderedString.startsWith("{\"children\":["));
