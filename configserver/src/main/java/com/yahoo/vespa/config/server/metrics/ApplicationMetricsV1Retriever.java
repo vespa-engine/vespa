@@ -20,18 +20,13 @@ import java.util.stream.Collectors;
  */
 public class ApplicationMetricsV1Retriever {
 
-    private final ClusterMetricsRetriever metricsRetriever;
-
-    private static final String VESPA_CONTAINER = "vespa.container";
-    private static final String VESPA_QRSERVER = "vespa.qrserver";
-    private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
-    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+    private final ClusterMetricsV1Retriever metricsRetriever;
 
     public ApplicationMetricsV1Retriever() {
-        this(new ClusterMetricsRetriever(WANTED_METRIC_SERVICES));
+        this(new ClusterMetricsV1Retriever());
     }
 
-    public ApplicationMetricsV1Retriever(ClusterMetricsRetriever metricsRetriever) {
+    public ApplicationMetricsV1Retriever(ClusterMetricsV1Retriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 

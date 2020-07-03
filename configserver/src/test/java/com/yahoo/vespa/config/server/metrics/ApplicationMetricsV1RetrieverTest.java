@@ -32,7 +32,7 @@ public class ApplicationMetricsV1RetrieverTest {
     @Test
     public void getMetrics()  {
         MockModel mockModel = new MockModel(mockHosts());
-        MockMetricsRetriever mockMetricsRetriever = new MockMetricsRetriever();
+        MockMetricsV1Retriever mockMetricsRetriever = new MockMetricsV1Retriever();
         Application application = new Application(mockModel, null, 0, false,
         null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
@@ -57,7 +57,7 @@ public class ApplicationMetricsV1RetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    class MockMetricsRetriever extends ClusterMetricsRetriever {
+    class MockMetricsV1Retriever extends ClusterMetricsV1Retriever {
 
         Collection<URI> hosts = new ArrayList<>();
 

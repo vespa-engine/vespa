@@ -33,16 +33,18 @@ import java.util.logging.Logger;
  * @author olaa
  * @author ogronnesby
  */
-public class ClusterMetricsRetriever {
+public class ClusterMetricsV1Retriever {
 
-    private static final Logger log = Logger.getLogger(ClusterMetricsRetriever.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterMetricsV1Retriever.class.getName());
+
+    private static final String VESPA_CONTAINER = "vespa.container";
+    private static final String VESPA_QRSERVER = "vespa.qrserver";
+    private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
 
 
-    private final List<String> WANTED_METRIC_SERVICES;
 
-
-
-    private final CloseableHttpClient httpClient = VespaHttpClientBuilder
+    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
                                                             .create(PoolingHttpClientConnectionManager::new)
                                                             .setDefaultRequestConfig(
                                                                     RequestConfig.custom()
@@ -50,9 +52,6 @@ public class ClusterMetricsRetriever {
                                                                             .setSocketTimeout(10 * 1000)
                                                                             .build())
                                                             .build();
-    ClusterMetricsRetriever(List<String> wantedMetricServices) {
-        this.WANTED_METRIC_SERVICES = wantedMetricServices;
-    }
 
     /**
      * Call the metrics API on each host and aggregate the metrics
@@ -84,7 +83,7 @@ public class ClusterMetricsRetriever {
         return clusterMetricsMap;
     }
 
-    private void getHostMetrics(URI hostURI, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+    private static void getHostMetrics(URI hostURI, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
             Slime responseBody = doMetricsRequest(hostURI);
             var parseError = responseBody.get().field("error_message");
 
@@ -98,7 +97,7 @@ public class ClusterMetricsRetriever {
             );
     }
 
-    private Slime doMetricsRequest(URI hostURI) {
+    static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
             InputStream is = response.getEntity().getContent();
@@ -112,14 +111,14 @@ public class ClusterMetricsRetriever {
         }
     }
 
-    private void parseService(Inspector service, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+    private static void parseService(Inspector service, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
         String serviceName = service.field("name").asString();
         service.field("metrics").traverse((ArrayTraverser) (i, metric) ->
                 addMetricsToAggeregator(serviceName, metric, clusterMetricsMap)
         );
     }
 
-    private void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+    private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
         if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
         Inspector values = metric.field("values");
         ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
@@ -142,26 +141,10 @@ public class ClusterMetricsRetriever {
             case "vespa.distributor":
                 metricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
                 break;
-            case "vespa.searchnode":
-                metricsAggregator.addProtonData(
-                        values.field("content.proton.documentdb.matching.docs_reranked.rate").asDouble(),
-                        values.field("content.proton.documentdb.memory_usage.allocated_bytes.last").asDouble(),
-                        values.field("content.proton.documentdb.matching.docs_matched.rate").asDouble(),
-                        values.field("content.proton.documentdb.documents.active.last").asDouble(),
-                        values.field("content.proton.documentdb.documents.ready.last").asDouble(),
-                        values.field("content.proton.documentdb.documents.total.last").asDouble(),
-                        values.field("content.proton.documentdb.disk_usage.last").asDouble(),
-                        values.field("content.proton.resource_usage.disk.average").asDouble(),
-                        values.field("content.proton.resource_usage.memory.average").asDouble(),
-                        values.field("content.proton.search_protocol.query.latency.average").asDouble(),
-                        values.field("content.proton.search_protocol.docsum.latency.average").asDouble(),
-                        values.field("content.proton.search_protocol.docsum.requested_documents.rate").asDouble()
-                );
-                break;
         }
     }
 
-    private static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
+    static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 }
