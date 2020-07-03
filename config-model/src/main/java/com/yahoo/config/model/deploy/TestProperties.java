@@ -37,7 +37,7 @@ public class TestProperties implements ModelContext.Properties {
     private Zone zone;
     private Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useDistributorBtreeDb = false;
+    private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
@@ -70,7 +70,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public double queueSizeFactor() {
         return queueSizeFactor;
     }
-    @Override public boolean useDistributorBtreeDb() { return useDistributorBtreeDb; }
+    @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
@@ -88,8 +88,8 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setUseDistributorBtreeDB(boolean useBtreeDb) {
-        useDistributorBtreeDb = useBtreeDb;
+    public TestProperties setUseContentNodeBtreeDB(boolean useBtreeDb) {
+        useContentNodeBtreeDb = useBtreeDb;
         return this;
     }
 

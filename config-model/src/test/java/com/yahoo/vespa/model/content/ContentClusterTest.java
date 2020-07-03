@@ -949,20 +949,20 @@ public class ContentClusterTest extends ContentBaseTest {
         verifyTopKProbabilityPropertiesControl();
     }
 
-    private boolean resolveDistributorBtreeDbConfigWithFeatureFlag(boolean flagEnabledBtreeDb) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseDistributorBtreeDB(flagEnabledBtreeDb));
+    private boolean resolveContentNodeBtreeDbConfigWithFeatureFlag(boolean flagEnabledBtreeDb) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseContentNodeBtreeDB(flagEnabledBtreeDb));
 
         ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new StorDistributormanagerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
+        var builder = new StorServerConfig.Builder();
+        cc.getStorageNodes().getConfig(builder);
 
-        return (new StorDistributormanagerConfig(builder)).use_btree_database();
+        return (new StorServerConfig(builder)).use_content_node_btree_bucket_db();
     }
 
     @Test
-    public void default_distributor_btree_usage_controlled_by_properties() {
-        assertFalse(resolveDistributorBtreeDbConfigWithFeatureFlag(false));
-        assertTrue(resolveDistributorBtreeDbConfigWithFeatureFlag(true));
+    public void default_content_node_btree_usage_controlled_by_properties() {
+        assertFalse(resolveContentNodeBtreeDbConfigWithFeatureFlag(false));
+        assertTrue(resolveContentNodeBtreeDbConfigWithFeatureFlag(true));
     }
 
     private boolean resolveThreePhaseUpdateConfigWithFeatureFlag(boolean flagEnableThreePhase) {

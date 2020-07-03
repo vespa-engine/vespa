@@ -98,7 +98,10 @@ public interface ModelContext {
         // Select sequencer type use while feeding.
         String feedSequencerType();
 
-        boolean useDistributorBtreeDb();
+        // TODO Remove when 7.247 is last
+        default boolean useDistributorBtreeDb() { return true; }
+
+        boolean useContentNodeBtreeDb();
 
         boolean useThreePhaseUpdates();
 
