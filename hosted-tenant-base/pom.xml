@@ -255,6 +255,9 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
+                                        <!-- Creating a dummy file to support running tests with old test runner. Remove when it is no longer in use -->
+                                        <mkdir dir="target/application-test/artifacts" />
+                                        <touch file="target/application-test/artifacts/.ignore" />
                                         <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/components/" />
                                         <zip destfile="target/application-test.zip" basedir="target/application-test/" />
                                     </tasks>
