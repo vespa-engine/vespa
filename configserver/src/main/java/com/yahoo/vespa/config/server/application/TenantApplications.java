@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.NotFoundException;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -59,7 +58,7 @@ import static java.util.stream.Collectors.toSet;
  * @author Ulf Lilleengen
  * @author jonmv
  */
-public class TenantApplications implements RequestHandler, ReloadHandler, HostValidator<ApplicationId> {
+public class TenantApplications implements RequestHandler, HostValidator<ApplicationId> {
 
     private static final Logger log = Logger.getLogger(TenantApplications.class.getName());
 
@@ -258,7 +257,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
      *
      * @param applicationSet the {@link ApplicationSet} to be reloaded
      */
-    @Override
     public void reloadConfig(ApplicationSet applicationSet) {
         ApplicationId id = applicationSet.getId();
         try (Lock lock = lock(id)) {
@@ -272,7 +270,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         }
     }
 
-    @Override
     public void removeApplication(ApplicationId applicationId) {
         try (Lock lock = lock(applicationId)) {
             if (exists(applicationId))
@@ -288,7 +285,6 @@ public class TenantApplications implements RequestHandler, ReloadHandler, HostVa
         }
     }
 
-    @Override
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
             if ( ! applications.contains(activeApplication)) {

@@ -219,8 +219,9 @@ public class TenantRepository {
                                        componentRegistry.getConfigserverConfig(),
                                        componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
-        SessionRepository sessionRepository = new SessionRepository(tenantName, componentRegistry,
-                                                                    applicationRepo, applicationRepo,
+        SessionRepository sessionRepository = new SessionRepository(tenantName,
+                                                                    componentRegistry,
+                                                                    applicationRepo,
                                                                     componentRegistry.getFlagSource(),
                                                                     componentRegistry.getSessionPreparer());
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);

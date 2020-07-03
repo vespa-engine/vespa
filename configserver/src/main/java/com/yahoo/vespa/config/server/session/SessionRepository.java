@@ -17,7 +17,6 @@ import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -73,8 +72,6 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSession = 0;
 
-
-
     private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
     private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
@@ -84,7 +81,6 @@ public class SessionRepository {
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final BooleanFlag distributeApplicationPackage;
-    private final ReloadHandler reloadHandler;
     private final MetricUpdater metrics;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
@@ -97,7 +93,6 @@ public class SessionRepository {
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
-                             ReloadHandler reloadHandler,
                              FlagSource flagSource,
                              SessionPreparer sessionPreparer) {
         this.tenantName = tenantName;
@@ -111,7 +106,6 @@ public class SessionRepository {
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
-        this.reloadHandler = reloadHandler;
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.locksPath = TenantRepository.getLocksPath(tenantName);
 
@@ -351,7 +345,7 @@ public class SessionRepository {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                reloadHandler.reloadConfig(session.ensureApplicationLoaded());
+                applicationRepo.reloadConfig(session.ensureApplicationLoaded());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
@@ -626,7 +620,7 @@ public class SessionRepository {
         if (sessionStateWatchers.containsKey(sessionId)) {
             localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
         } else {
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, reloadHandler, remoteSession,
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, applicationRepo, remoteSession,
                                                                         localSession, metrics, zkWatcherExecutor, this));
         }
     }
@@ -635,8 +629,6 @@ public class SessionRepository {
     public String toString() {
         return getLocalSessions().toString();
     }
-
-    public ReloadHandler getReloadHandler() { return reloadHandler; }
 
     /** Returns the lock for session operations for the given session id. */
     public Lock lock(long sessionId) {

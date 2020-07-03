@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
@@ -82,10 +83,10 @@ public class TenantRepositoryTest {
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        Tenant tenant = tenantRepository.getTenant(tenant1);
-        tenant.getApplicationRepo().createApplication(ApplicationId.defaultId());
-        tenant.getApplicationRepo().createPutTransaction(ApplicationId.defaultId(), 4).commit();
-        tenant.getSessionRepository().getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
+        TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
+        applicationRepo.createApplication(ApplicationId.defaultId());
+        applicationRepo.createPutTransaction(ApplicationId.defaultId(), 4).commit();
+        applicationRepo.reloadConfig(ApplicationSet.fromSingle(
                 new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                 new ServerCache(),
                                 4L,
