@@ -13,11 +13,11 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(bool use_btree_db)
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
     : _map()
 {
-    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(use_btree_db));
-    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(use_btree_db));
+    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>());
+    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;

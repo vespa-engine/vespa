@@ -2,7 +2,6 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <memory>

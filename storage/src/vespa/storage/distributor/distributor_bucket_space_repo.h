@@ -19,7 +19,7 @@ private:
     BucketSpaceMap _map;
 
 public:
-    explicit DistributorBucketSpaceRepo(bool use_btree_db); // TODO remove param once B-tree is default
+    DistributorBucketSpaceRepo();
     ~DistributorBucketSpaceRepo();
 
     DistributorBucketSpaceRepo(const DistributorBucketSpaceRepo&&) = delete;

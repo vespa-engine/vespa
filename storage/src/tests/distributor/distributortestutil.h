@@ -34,7 +34,7 @@ public:
     /**
      * Sets up the storage link chain.
      */
-    void createLinks(bool use_btree_db = false);
+    void createLinks();
     void setTypeRepo(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
 
     void close();
