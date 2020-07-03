@@ -28,7 +28,7 @@
 namespace storage {
 
 template <typename Map>
-class LockableMap
+class LockableMap final
     : public bucketdb::AbstractBucketMap<typename Map::mapped_type>
 {
 public:

@@ -24,7 +24,7 @@ template <typename DataStoreTraitsT> class GenericBTreeBucketDatabase;
  * Identical global and per-bucket locking semantics as LockableMap.
  */
 template <typename T>
-class BTreeLockableMap : public AbstractBucketMap<T> {
+class BTreeLockableMap final : public AbstractBucketMap<T> {
     struct ValueTraits;
 public:
     using ParentType   = AbstractBucketMap<T>;

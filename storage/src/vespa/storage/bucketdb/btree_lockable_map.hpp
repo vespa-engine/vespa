@@ -439,7 +439,7 @@ BTreeLockableMap<T>::getContained(const BucketId& bucket,
     std::map<BucketId, WrappedEntry> results;
 
     std::vector<BucketId::Type> keys;
-    _impl->find_parents_and_self(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
+    _impl->template find_parents_and_self<ByConstRef>(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
         keys.emplace_back(key);
     });
 
@@ -454,7 +454,7 @@ template <typename T>
 void BTreeLockableMap<T>::getAllWithoutLocking(const BucketId& bucket,
                                                std::vector<BucketId::Type>& keys)
 {
-    _impl->find_parents_self_and_children(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
+    _impl->template find_parents_self_and_children<ByConstRef>(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
         keys.emplace_back(key);
     });
 }
@@ -480,7 +480,7 @@ template <typename T>
 bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) {
     std::lock_guard guard(_lock);
     uint64_t n_buckets = 0;
-    _impl->find_parents_self_and_children(entry.getBucketId(),
+    _impl->template find_parents_self_and_children<ByConstRef>(entry.getBucketId(),
             [&n_buckets]([[maybe_unused]] uint64_t key, [[maybe_unused]] const auto& value) {
                 ++n_buckets;
             });

@@ -414,7 +414,8 @@ struct MapDbMerger final : BucketDatabase::Merger {
     BucketDatabase::Entry& current_entry() override {
         return _current_entry;
     }
-    void insert_before_current(const BucketDatabase::Entry& e) override {
+    void insert_before_current([[maybe_unused]] const document::BucketId& bucket_id,
+                               const BucketDatabase::Entry& e) override {
         _to_insert.emplace_back(e); // TODO movable
     }
 };
@@ -423,7 +424,8 @@ struct MapDbTrailingInserter final : BucketDatabase::TrailingInserter {
     MapBucketDatabase& _db;
     explicit MapDbTrailingInserter(MapBucketDatabase& db) : _db(db) {}
 
-    void insert_at_end(const BucketDatabase::Entry& e) override {
+    void insert_at_end([[maybe_unused]] const document::BucketId& bucket_id,
+                       const BucketDatabase::Entry& e) override {
         _db.update(e);
     }
 };
@@ -584,7 +586,7 @@ MapBucketDatabase::print(std::ostream& out, bool verbose,
     out << ')';
 }
 
-std::unique_ptr<BucketDatabase::ReadGuard> MapBucketDatabase::acquire_read_guard() const {
+std::unique_ptr<bucketdb::ReadGuard<BucketDatabase::Entry>> MapBucketDatabase::acquire_read_guard() const {
     return std::make_unique<ReadGuardImpl>(*this);
 }
 

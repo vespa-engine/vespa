@@ -151,7 +151,6 @@ public:
 
     static constexpr uint32_t DEFAULT_CHUNK_SIZE = 1000;
 
-
     /**
      * Iterate over the entire database contents, holding the global database
      * mutex for `chunkSize` processed entries at a time, yielding the current

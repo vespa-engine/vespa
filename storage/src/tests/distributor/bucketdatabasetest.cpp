@@ -610,7 +610,7 @@ struct InsertBeforeBucketMergingProcessor : BucketDatabase::MergingProcessor {
     Result merge(Merger& m) override {
         if (m.bucket_id() == _before_bucket) {
             // Assumes _before_bucket is > the inserted bucket
-            m.insert_before_current(BucketDatabase::Entry(document::BucketId(16, 2), BI(2)));
+            m.insert_before_current(document::BucketId(16, 2), BucketDatabase::Entry(document::BucketId(16, 2), BI(2)));
         }
         return Result::KeepUnchanged;
     }
@@ -622,7 +622,7 @@ struct InsertAtEndMergingProcessor : BucketDatabase::MergingProcessor {
     }
 
     void insert_remaining_at_end(TrailingInserter& inserter) override {
-        inserter.insert_at_end(BucketDatabase::Entry(document::BucketId(16, 3), BI(3)));
+        inserter.insert_at_end(document::BucketId(16, 3), BucketDatabase::Entry(document::BucketId(16, 3), BI(3)));
     }
 };
 

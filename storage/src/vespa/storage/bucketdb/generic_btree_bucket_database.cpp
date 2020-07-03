@@ -5,6 +5,19 @@ namespace storage::bucketdb {
 
 using document::BucketId;
 
+// TODO getMinDiffBits is hoisted from lockablemap.cpp, could probably be rewritten in terms of xor and MSB bit scan instr
+/*
+ *       63 -------- ... -> 0
+ *     a: 1101111111 ... 0010
+ *     b: 1101110010 ... 0011
+ * a ^ b: 0000001101 ... 0001
+ *              ^- diff bit = 57
+ *
+ * 63 - vespalib::Optimized::msbIdx(a ^ b) ==> 6
+ *
+ * what if a == b? special case? not a problem if we can prove this never happens.
+ */
+
 // TODO dedupe and unify common code
 uint8_t
 getMinDiffBits(uint16_t minBits, const BucketId& a, const BucketId& b) {
