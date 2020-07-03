@@ -47,7 +47,11 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                           DimensionValues variant,
                           DimensionBinding binding) {
         CompoundName fullName = currentPrefix.append(key);
-        if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
+
+        ValueWithSource existing = values.get(fullName.toString());
+
+        // The first value encountered has priority and values have priority over profiles
+        if (existing != null && (existing.value() != null || value == null)) return;
 
         Boolean isOverridable = owner != null ? owner.isLocalOverridable(key, binding) : null;
 
