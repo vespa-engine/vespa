@@ -8,6 +8,7 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
@@ -62,18 +63,27 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testBasics() {
-        StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        parse("<content id=\"foofighters\"><documents/>\n" +
+    public void testBasics() throws Exception {
+        StorageCluster storage = parse("<content id=\"foofighters\"><documents/>\n" +
               "  <group>" +
               "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
               "  </group>" +
-              "</content>\n").
-              getConfig(builder);
+              "</content>\n");
 
-        StorServerConfig config = new StorServerConfig(builder);
-        assertEquals(false, config.is_distributor());
-        assertEquals("foofighters", config.cluster_name());
+        assertEquals(1, storage.getChildren().size());
+        {
+            StorServerConfig.Builder builder = new StorServerConfig.Builder();
+            storage.getConfig(builder);
+            StorServerConfig config = new StorServerConfig(builder);
+            assertEquals(false, config.is_distributor());
+            assertEquals("foofighters", config.cluster_name());
+        }
+        {
+            StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+            storage.getChildren().get("0").getConfig(builder);
+            StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
+            assertFalse(config.mbus().dispatch_on_encode());
+        }
     }
 
     @Test
