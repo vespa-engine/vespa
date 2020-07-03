@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
@@ -26,14 +25,12 @@ public interface ConfigResponseFactory {
     }
 
     /**
-     * Create a {@link ConfigResponse} for a given payload and generation.
-     *
-     * @param payload The {@link com.yahoo.vespa.config.ConfigPayload} to put in the response.
-     * @param defFile The {@link com.yahoo.config.codegen.InnerCNode} def file for this config.
-     * @param generation The payload generation.  @return A {@link ConfigResponse} that can be sent to the client.
+     * Creates a {@link ConfigResponse} for a given payload and generation.
+     * @param payload          the {@link ConfigPayload} to put in the response.
+     * @param generation       the payload generation.  @return A {@link ConfigResponse} that can be sent to the client.
      * @param internalRedeploy whether this config generation was produced by an internal redeployment,
      *                         not a change to the application package
      */
-    ConfigResponse createResponse(ConfigPayload payload, InnerCNode defFile, long generation, boolean internalRedeploy);
+    ConfigResponse createResponse(ConfigPayload payload, long generation, boolean internalRedeploy);
 
 }

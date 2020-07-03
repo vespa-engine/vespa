@@ -134,7 +134,7 @@ public class Application implements ModelResult {
             throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
         }
 
-        ConfigResponse configResponse = responseFactory.createResponse(payload, def.getCNode(), appGeneration, internalRedeploy);
+        ConfigResponse configResponse = responseFactory.createResponse(payload, appGeneration, internalRedeploy);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
