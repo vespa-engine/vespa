@@ -302,6 +302,12 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
+            "enable-public-only", false,
+            "Only access public hosts from container",
+            "Takes effect on next tick"
+    );
+
     public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV4 = defineListFlag(
             "container-outbound-blocked-ipv4", List.of(), String.class,
             "List of IPs or CIDRs that are blocked for outbound connections",
