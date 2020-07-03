@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 
 #include <csignal>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
