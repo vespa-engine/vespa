@@ -14,8 +14,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for content DistributorCluster.
@@ -48,7 +48,7 @@ public class DistributorTest {
                 getConfig(builder);
 
         StorServerConfig config = new StorServerConfig(builder);
-        assertEquals(true, config.is_distributor());
+        assertTrue(config.is_distributor());
         assertEquals("foofighters", config.cluster_name());
     }
 
@@ -62,7 +62,7 @@ public class DistributorTest {
                 "  </group>" +
                 "</cluster>").getConfig(builder);
         StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
-        assertEquals(false, conf.enable_revert());
+        assertFalse(conf.enable_revert());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class DistributorTest {
         assertEquals(26214400, conf.splitsize());
         assertEquals(13107200, conf.joinsize());
         assertEquals(8, conf.minsplitcount());
-        assertEquals(false, conf.inlinebucketsplitting());
+        assertFalse(conf.inlinebucketsplitting());
     }
 
     @Test
@@ -110,7 +110,7 @@ public class DistributorTest {
         assertEquals(33544432, conf.splitsize());
         assertEquals(16000000, conf.joinsize());
         assertEquals(8, conf.minsplitcount());
-        assertEquals(true, conf.inlinebucketsplitting());
+        assertTrue(conf.inlinebucketsplitting());
 
         cluster = parseCluster("<cluster id=\"storage\">\n" +
                 "  <redundancy>2</redundancy>" +
@@ -137,7 +137,7 @@ public class DistributorTest {
         assertEquals(33544432, conf.splitsize());
         assertEquals(16000000, conf.joinsize());
         assertEquals(1, conf.minsplitcount());
-        assertEquals(true, conf.inlinebucketsplitting());
+        assertTrue(conf.inlinebucketsplitting());
     }
 
     @Test
@@ -269,7 +269,27 @@ public class DistributorTest {
 
         cluster.getChildren().get("0").getConfig(builder);
         StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
+        assertTrue(config.mbus().dispatch_on_encode());
         assertEquals(14066, config.rpcport());
+    }
+
+    @Test
+    public void testCommunicationManagerDefaults() {
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        DistributorCluster cluster =
+                parse("<cluster id=\"storage\">" +
+                        "  <documents/>" +
+                        "  <group>" +
+                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                        "  </group>" +
+                        "</cluster>");
+
+        cluster.getChildren().get("0").getConfig(builder);
+        StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
+        assertTrue(config.mbus().dispatch_on_encode());
+        assertFalse(config.mbus().dispatch_on_decode());
+        assertEquals(4, config.mbus().num_threads());
+        assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
     }
 
     private StorDistributormanagerConfig clusterXmlToConfig(String xml) {
@@ -288,14 +308,14 @@ public class DistributorTest {
     public void bucket_activation_disabled_if_no_documents_in_indexed_mode() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.storeOnly("music")));
-        assertThat(config.disable_bucket_activation(), is(true));
+        assertTrue(config.disable_bucket_activation());
     }
 
     @Test
     public void bucket_activation_enabled_with_single_indexed_document() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.index("music")));
-        assertThat(config.disable_bucket_activation(), is(false));
+        assertFalse(config.disable_bucket_activation());
     }
 
     @Test
@@ -303,7 +323,7 @@ public class DistributorTest {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.index("music"),
                                        DocType.index("movies")));
-        assertThat(config.disable_bucket_activation(), is(false));
+        assertFalse(config.disable_bucket_activation());
     }
 
     @Test
@@ -312,14 +332,14 @@ public class DistributorTest {
                 generateXmlForDocTypes(DocType.storeOnly("music"),
                                        DocType.streaming("bunnies"),
                                        DocType.index("movies")));
-        assertThat(config.disable_bucket_activation(), is(false));
+        assertFalse(config.disable_bucket_activation());
     }
 
     @Test
     public void bucket_activation_disabled_for_single_streaming_type() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.streaming("music")));
-        assertThat(config.disable_bucket_activation(), is(true));
+        assertTrue(config.disable_bucket_activation());
     }
 
 }
