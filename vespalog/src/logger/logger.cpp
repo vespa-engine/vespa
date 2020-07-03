@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
         default:
             fprintf(stderr, "Usage: foo | %s [-s service] [-c component]"
                     "[-l level] [-p pid]\n", argv[0]);
-            exit(ch != 'h');
+            return (ch == 'h') ? EXIT_SUCCESS : EXIT_FAILURE;
         }
     }
 

@@ -325,13 +325,13 @@ int loop(const char *svc, char * const * run)
     return WEXITSTATUS(wstat);
 }
 
-void usage(char *prog, int es)
+int usage(char *prog, int es)
 {
     fprintf(stderr, "Usage: %s\n"
             "       [-s service] [-r restartinterval] [-p pidfile]"
             " program [args ...]\n"
             "or:    [-p pidfile] [-k killcmd] -S\n", prog);
-    exit(es);
+    return es;
 }
 
 int main(int argc, char *argv[])
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
             killcmd = optarg;
             break;
         default:
-            usage(argv[0], ch != 'h');
+            return usage(argv[0], ch != 'h');
         }
     }
 
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     if (optind >= argc || killcmd != NULL) {
-        usage(argv[0], 1);
+        return usage(argv[0], 1);
     }
 
     if (mypf.anotherRunning()) {
