@@ -230,7 +230,6 @@ public class MandatoryTestCase {
         defaultProfile.setType(fixture.rootType);
 
         QueryProfile mandatoryProfile = new QueryProfile("mandatory");
-        mandatoryProfile.setType(fixture.rootType);
         mandatoryProfile.setType(fixture.mandatoryType);
 
         fixture.registry.register(defaultProfile);
@@ -249,7 +248,6 @@ public class MandatoryTestCase {
         defaultProfile.setType(fixture.rootType);
 
         QueryProfile mandatoryProfile = new QueryProfile("mandatory");
-        mandatoryProfile.setType(fixture.rootType);
         mandatoryProfile.addInherited(defaultProfile); // The single difference from the test above
         mandatoryProfile.setType(fixture.mandatoryType);
 

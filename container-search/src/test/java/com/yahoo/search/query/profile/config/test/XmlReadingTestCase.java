@@ -14,6 +14,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -29,6 +30,17 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class XmlReadingTestCase {
+
+    @Test
+    public void testInheritance() {
+        QueryProfileRegistry registry =
+                new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/inheritance");
+
+        CompiledQueryProfile cProfile = registry.getComponent("child").compile(null);
+        Query q = new Query("?query=foo", cProfile);
+        assertEquals("a.b-parent", q.properties().getString("a.b"));
+        assertEquals("d-parent", q.properties().getString("d"));
+    }
 
     @Test
     public void testValid() {
