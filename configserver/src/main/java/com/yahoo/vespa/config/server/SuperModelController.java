@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -47,22 +46,21 @@ public class SuperModelController {
      */
     public ConfigResponse resolveConfig(GetConfigRequest request) {
         ConfigKey<?> configKey = request.getConfigKey();
-        InnerCNode targetDef = getConfigDefinition(request.getConfigKey(), request.getDefContent());
+        validateConfigDefinition(request.getConfigKey(), request.getDefContent());
         ConfigPayload payload = model.getConfig(configKey);
-        return responseFactory.createResponse(payload, targetDef, generation, false);
+        return responseFactory.createResponse(payload, generation, false);
     }
 
-    private InnerCNode getConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {
+    private void validateConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {
         if (defContent.isEmpty()) {
             ConfigDefinitionKey configDefinitionKey = new ConfigDefinitionKey(configKey.getName(), configKey.getNamespace());
             ConfigDefinition configDefinition = configDefinitionRepo.getConfigDefinitions().get(configDefinitionKey);
             if (configDefinition == null) {
                 throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
             }
-            return configDefinition.getCNode();
         } else {
             DefParser dParser = new DefParser(configKey.getName(), new StringReader(defContent.asString()));
-            return dParser.getTree();
+            dParser.getTree();
         }
     }
 

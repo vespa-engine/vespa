@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -26,7 +26,7 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private final ReloadHandler reloadHandler;
+    private final TenantApplications tenantApplications;
     private final RemoteSession remoteSession;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
@@ -34,14 +34,14 @@ public class SessionStateWatcher {
     private Optional<LocalSession> localSession;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        ReloadHandler reloadHandler,
+                        TenantApplications tenantApplications,
                         RemoteSession remoteSession,
                         Optional<LocalSession> localSession,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
-        this.reloadHandler = reloadHandler;
+        this.tenantApplications = tenantApplications;
         this.remoteSession = remoteSession;
         this.localSession = localSession;
         this.metrics = metrics;
@@ -60,7 +60,7 @@ public class SessionStateWatcher {
             remoteSession.loadPrepared();
         } else if (newStatus.equals(Status.ACTIVATE)) {
             createLocalSession(sessionId);
-            remoteSession.makeActive(reloadHandler);
+            remoteSession.makeActive(tenantApplications);
         } else if (newStatus.equals(Status.DEACTIVATE)) {
             remoteSession.deactivate();
         } else if (newStatus.equals(Status.DELETE)) {

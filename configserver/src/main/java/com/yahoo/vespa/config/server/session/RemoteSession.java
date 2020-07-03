@@ -8,8 +8,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
@@ -81,12 +81,12 @@ public class RemoteSession extends Session {
         return sessionZooKeeperClient.createWriteStatusTransaction(Status.DELETE);
     }
 
-    void makeActive(ReloadHandler reloadHandler) {
+    void makeActive(TenantApplications tenantApplications) {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.getActiveWaiter();
         log.log(Level.FINE, () -> logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
         log.log(Level.FINE, () -> logPre() + "Reloading config for " + getSessionId());
-        reloadHandler.reloadConfig(app);
+        tenantApplications.reloadConfig(app);
         log.log(Level.FINE, () -> logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
         log.log(Level.INFO, logPre() + "Session activated: " + getSessionId());

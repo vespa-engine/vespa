@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.CompressionInfo;
@@ -19,7 +18,6 @@ public class UncompressedConfigResponseFactory implements ConfigResponseFactory 
 
     @Override
     public ConfigResponse createResponse(ConfigPayload payload,
-                                         InnerCNode defFile,
                                          long generation,
                                          boolean internalRedeploy) {
         Utf8Array rawPayload = payload.toUtf8Array(true);

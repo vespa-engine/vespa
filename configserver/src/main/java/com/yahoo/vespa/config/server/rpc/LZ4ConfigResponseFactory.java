@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.LZ4PayloadCompressor;
@@ -18,11 +17,10 @@ import com.yahoo.vespa.config.util.ConfigUtils;
  */
 public class LZ4ConfigResponseFactory implements ConfigResponseFactory {
 
-    private static LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
+    private static final LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
 
     @Override
     public ConfigResponse createResponse(ConfigPayload payload,
-                                         InnerCNode defFile,
                                          long generation,
                                          boolean internalRedeploy) {
         Utf8Array rawPayload = payload.toUtf8Array(true);
