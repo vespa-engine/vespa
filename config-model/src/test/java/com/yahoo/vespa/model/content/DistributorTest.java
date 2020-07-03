@@ -273,6 +273,25 @@ public class DistributorTest {
         assertEquals(14066, config.rpcport());
     }
 
+    @Test
+    public void testCommunicationManagerDefaults() {
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        DistributorCluster cluster =
+                parse("<cluster id=\"storage\">" +
+                        "  <documents/>" +
+                        "  <group>" +
+                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                        "  </group>" +
+                        "</cluster>");
+
+        cluster.getChildren().get("0").getConfig(builder);
+        StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
+        assertTrue(config.mbus().dispatch_on_encode());
+        assertFalse(config.mbus().dispatch_on_decode());
+        assertEquals(4, config.mbus().num_threads());
+        assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
+    }
+
     private StorDistributormanagerConfig clusterXmlToConfig(String xml) {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse(xml).getConfig(builder);

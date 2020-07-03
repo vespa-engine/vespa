@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Flavor;
@@ -37,14 +35,6 @@ public class StorageClusterTest {
         return parse(xml, root);
     }
 
-    StorageCluster parse(String xml, Flavor flavor, ModelContext.Properties properties) {
-        MockRoot root = new MockRoot("", new DeployState.Builder()
-                .applicationPackage(new MockApplicationPackage.Builder().build())
-                .modelHostProvisioner(new SingleNodeProvisioner(flavor))
-                .properties(properties).build());
-        return parse(xml, root);
-    }
-
     StorageCluster parse(String xml) {
         MockRoot root = new MockRoot();
         return parse(xml, root);
@@ -63,7 +53,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testBasics() throws Exception {
+    public void testBasics() {
         StorageCluster storage = parse("<content id=\"foofighters\"><documents/>\n" +
               "  <group>" +
               "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -71,19 +61,26 @@ public class StorageClusterTest {
               "</content>\n");
 
         assertEquals(1, storage.getChildren().size());
-        {
-            StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            storage.getConfig(builder);
-            StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(false, config.is_distributor());
-            assertEquals("foofighters", config.cluster_name());
-        }
-        {
-            StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
-            storage.getChildren().get("0").getConfig(builder);
-            StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
-            assertFalse(config.mbus().dispatch_on_encode());
-        }
+        StorServerConfig.Builder builder = new StorServerConfig.Builder();
+        storage.getConfig(builder);
+        StorServerConfig config = new StorServerConfig(builder);
+        assertFalse(config.is_distributor());
+        assertEquals("foofighters", config.cluster_name());
+    }
+    @Test
+    public void testCommunicationManagerDefaults() {
+        StorageCluster storage = parse("<content id=\"foofighters\"><documents/>\n" +
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</content>\n");
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        storage.getChildren().get("0").getConfig(builder);
+        StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
+        assertFalse(config.mbus().dispatch_on_encode());
+        assertFalse(config.mbus().dispatch_on_decode());
+        assertEquals(4, config.mbus().num_threads());
+        assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
     }
 
     @Test
@@ -107,7 +104,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testVisitors() throws Exception {
+    public void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
