@@ -234,11 +234,10 @@ public class SessionPreparer {
         }
 
         void checkTimeout(String step) {
-            String used = params.getTimeoutBudget().timesUsed();
-            if (params.getTimeoutBudget().hasTimeLeft())
-                log.log(Level.FINE, () -> "Used " + used + " after " + step + " step: " + applicationId);
-            else
-                throw new RuntimeException("prepare timed out " + used + " after " + step + " step: " + applicationId);
+            if (! params.getTimeoutBudget().hasTimeLeft()) {
+                String used = params.getTimeoutBudget().timesUsed();
+                throw new RuntimeException("prepare timed out "+used+" after "+step+" step: " + applicationId);
+            }
         }
 
         FileReference distributeApplicationPackage() {
