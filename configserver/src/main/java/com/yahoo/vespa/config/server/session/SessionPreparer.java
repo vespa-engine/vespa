@@ -234,10 +234,11 @@ public class SessionPreparer {
         }
 
         void checkTimeout(String step) {
-            if (! params.getTimeoutBudget().hasTimeLeft()) {
-                String used = params.getTimeoutBudget().timesUsed();
-                throw new RuntimeException("prepare timed out "+used+" after "+step+" step: " + applicationId);
-            }
+            String used = params.getTimeoutBudget().timesUsed();
+            if (params.getTimeoutBudget().hasTimeLeft())
+                log.log(Level.FINE, () -> "Used " + used + " after " + step + " step: " + applicationId);
+            else
+                throw new RuntimeException("prepare timed out " + used + " after " + step + " step: " + applicationId);
         }
 
         FileReference distributeApplicationPackage() {
@@ -251,6 +252,7 @@ public class SessionPreparer {
                     .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
+            checkTimeout("distributeApplicationPackage");
             return fileReference;
         }
 
