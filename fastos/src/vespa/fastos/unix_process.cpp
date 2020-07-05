@@ -4,6 +4,7 @@
 #include "ringbuffer.h"
 #include <vector>
 #include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -947,12 +948,12 @@ ReadBytes(int fd, void *buffer, int bytes)
 
         if (bytesRead < 0) {
             //perror("FATAL: FastOS_UNIX_ProcessStarter read");
-            exit(1);
+            std::_Exit(1);
         }
         else if(bytesRead == 0)
         {
             //fprintf(stderr, "FATAL: FastOS_UNIX_RealProcessStart read 0\n");
-            exit(1);
+            std::_Exit(1);
         }
 
         writePtr += bytesRead;
@@ -977,12 +978,12 @@ WriteBytes(int fd, const void *buffer, int bytes, bool ignoreFailure)
             if (ignoreFailure)
                 return;
             //perror("FATAL: FastOS_UNIX_ProcessStarter write");
-            exit(1);
+            std::_Exit(1);
         } else if (bytesWritten == 0) {
             if (ignoreFailure)
                 return;
             //fprintf(stderr, "FATAL: FastOS_UNIX_RealProcessStart write 0\n");
-            exit(1);
+            std::_Exit(1);
         }
 
         readPtr += bytesWritten;

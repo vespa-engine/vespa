@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cf-handler.h"
+#include <cstdlib>
 #include <dirent.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -122,12 +123,12 @@ CfHandler::start(const char *configId)
         subscribe(configId, CONFIG_TIMEOUT_MS);
     } catch (config::ConfigTimeoutException & ex) {
         LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     } catch (config::InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     } catch (config::ConfigRuntimeException& ex) {
         LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
 }

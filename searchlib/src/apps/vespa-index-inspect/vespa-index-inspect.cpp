@@ -15,6 +15,7 @@
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <getopt.h>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");
@@ -153,10 +154,8 @@ FieldOptions::validateFields(const Schema &schema)
          i != ie; ++i) {
         uint32_t fieldId = schema.getIndexFieldId(*i);
         if (fieldId == Schema::UNKNOWN_FIELD_ID) {
-            LOG(error,
-                "No such field: %s",
-                i->c_str());
-            exit(1);
+            LOG(error, "No such field: %s", i->c_str());
+            std::_Exit(1);
         }
         _ids.push_back(fieldId);
     }
@@ -465,7 +464,7 @@ ShowPostingListSubApp::showTransposedPostingList()
     if (!schema.loadFromFile(schemaName)) {
         LOG(error,
             "Could not load schema from %s", schemaName.c_str());
-        exit(1);
+        std::_Exit(1);
     }
     _fieldOptions.validateFields(schema);
     if (!readDocIdLimit(schema))
@@ -538,14 +537,14 @@ ShowPostingListSubApp::showPostingList()
     if (!schema.loadFromFile(schemaName)) {
         LOG(error,
             "Could not load schema from %s", schemaName.c_str());
-        exit(1);
+        std::_Exit(1);
     }
     _fieldOptions.validateFields(schema);
     if (_fieldOptions._ids.size() != 1) {
         LOG(error,
             "Wrong number of field arguments: %d",
             static_cast<int>(_fieldOptions._ids.size()));
-        exit(1);
+        std::_Exit(1);
     }
     SchemaUtil::IndexIterator it(schema, _fieldOptions._ids.front());
 
@@ -559,26 +558,22 @@ ShowPostingListSubApp::showPostingList()
     if (_readmmap)
         tuneFileRead.setWantMemoryMap();
     if (!dict->open(dictName, tuneFileRead)) {
-        LOG(error,
-            "Could not open dictionary %s",
-            dictName.c_str());
-        exit(1);
+        LOG(error, "Could not open dictionary %s", dictName.c_str());
+        std::_Exit(1);
     }
     std::unique_ptr<PostingListFileRandRead> postingfile(new Zc4PosOccRandRead);
     std::string mangledName = _indexDir + "/" + shortName +
                               "/posocc.dat.compressed";
     if (!postingfile->open(mangledName, tuneFileRead)) {
-        LOG(error,
-            "Could not open posting list file %s",
-            mangledName.c_str());
-        exit(1);
+        LOG(error, "Could not open posting list file %s", mangledName.c_str());
+        std::_Exit(1);
     }
     PostingListOffsetAndCounts offsetAndCounts;
     uint64_t wordNum = 0;
     bool res = dict->lookup(_word, wordNum, offsetAndCounts);
     if (!res) {
         LOG(warning, "Unknown word %s", _word.c_str());
-        exit(1);
+        std::_Exit(1);
     }
     if (_verbose) {
         LOG(info,
@@ -650,15 +645,13 @@ ShowPostingListSubApp::showPostingList()
     }
 
     if (!postingfile->close()) {
-        LOG(error,
-            "Could not close posting list file %s",
+        LOG(error, "Could not close posting list file %s",
             mangledName.c_str());
-        exit(1);
+        std::_Exit(1);
     }
     if (!dict->close()) {
-        LOG(error,
-            "Could not close dictionary %s", dictName.c_str());
-        exit(1);
+        LOG(error, "Could not close dictionary %s", dictName.c_str());
+        std::_Exit(1);
     }
 }
 
@@ -797,16 +790,14 @@ DumpWordsSubApp::dumpWords()
     search::index::Schema schema;
     std::string schemaName = _indexDir + "/schema.txt";
     if (!schema.loadFromFile(schemaName)) {
-        LOG(error,
-            "Could not load schema from %s", schemaName.c_str());
-        exit(1);
+        LOG(error, "Could not load schema from %s", schemaName.c_str());
+        std::_Exit(1);
     }
     _fieldOptions.validateFields(schema);
     if (_fieldOptions._ids.size() != 1) {
-        LOG(error,
-            "Wrong number of field arguments: %d",
+        LOG(error, "Wrong number of field arguments: %d",
             static_cast<int>(_fieldOptions._ids.size()));
-        exit(1);
+        std::_Exit(1);
     }
 
     SchemaUtil::IndexIterator index(schema, _fieldOptions._ids[0]);
@@ -815,9 +806,8 @@ DumpWordsSubApp::dumpWords()
     std::string wordListName = fieldDir + "/dictionary";
     search::TuneFileSeqRead tuneFileRead;
     if (!wordList.open(wordListName, tuneFileRead)) {
-        LOG(error,
-            "Could not open wordlist %s", wordListName.c_str());
-        exit(1);
+        LOG(error, "Could not open wordlist %s", wordListName.c_str());
+        std::_Exit(1);
     }
     uint64_t wordNum = 0;
     vespalib::string word;
@@ -838,9 +828,8 @@ DumpWordsSubApp::dumpWords()
         std::cout << '\n';
     }
     if (!wordList.close()) {
-        LOG(error,
-            "Could not close wordlist %s", wordListName.c_str());
-        exit(1);
+        LOG(error, "Could not close wordlist %s", wordListName.c_str());
+        std::_Exit(1);
     }
 }
 

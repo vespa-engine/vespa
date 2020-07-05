@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <cstdlib>
 
 using std::string;
 using namespace std::chrono_literals;
@@ -44,18 +45,18 @@ FileThread::Run(FastOS_ThreadInterface *, void *)
         int fd = open(_file.c_str(), O_RDWR | O_CREAT | O_APPEND, 0644);
         if (fd == -1) {
             fprintf(stderr, "open failed: %s\n", strerror(errno));
-            exit(1);
+            std::_Exit(1);
         }
         std::this_thread::sleep_for(5ms);
         struct stat buf;
         fstat(fd, &buf);
         if (buf.st_size != 0) {
             fprintf(stderr, "%s isn't empty anymore\n", _file.c_str());
-            exit(1);
+            std::_Exit(1);
         }
         if (close(fd) != 0) {
             fprintf(stderr, "close of %d failed: %s\n", fd, strerror(errno));
-            exit(1);
+            std::_Exit(1);
         }
     }
 }

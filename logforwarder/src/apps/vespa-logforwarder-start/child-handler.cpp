@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include <vector>
 #include <string>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
@@ -44,7 +45,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         execv(cargv[0], cargv);
         // if execv fails:
         perror(cargv[0]);
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "child running with pid %d", (int)child);
     int waitStatus = 0;

@@ -102,7 +102,7 @@ PidFile::writePid()
     if (didtruncate != 0) {
         fprintf(stderr, "could not truncate pid file %s: %s\n",
                 _pidfile, strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     char buf[100];
     sprintf(buf, "%d\n", getpid());
@@ -111,7 +111,7 @@ PidFile::writePid()
     if (didw != l) {
         fprintf(stderr, "could not write pid to %s: %s\n",
                 _pidfile, strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "wrote '%s' to %s (fd %d)", buf, _pidfile, _fd);
 }
@@ -168,7 +168,7 @@ int loop(const char *svc, char * const * run)
 
     if (pipe(pstdout) < 0 || pipe(pstderr) < 0) {
         LOG(error, "pipe: %s", strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "stdout pipe %d <- %d; stderr pipe %d <- %d",
         pstdout[0], pstdout[1],
@@ -188,11 +188,11 @@ int loop(const char *svc, char * const * run)
         close(pstderr[1]);
         execvp(run[0], run);
         LOG(error, "exec %s: %s", run[0], strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     if (child < 0) {
         LOG(error, "fork(): %s", strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     // I am the parent process
 
@@ -325,13 +325,13 @@ int loop(const char *svc, char * const * run)
     return WEXITSTATUS(wstat);
 }
 
-void usage(char *prog, int es)
+int usage(char *prog, int es)
 {
     fprintf(stderr, "Usage: %s\n"
             "       [-s service] [-r restartinterval] [-p pidfile]"
             " program [args ...]\n"
             "or:    [-p pidfile] [-k killcmd] -S\n", prog);
-    exit(es);
+    return es;
 }
 
 int main(int argc, char *argv[])
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
             killcmd = optarg;
             break;
         default:
-            usage(argv[0], ch != 'h');
+            return usage(argv[0], ch != 'h');
         }
     }
 
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
     }
     if (chdir(envROOT) != 0) {
         fprintf(stderr, "Cannot chdir to %s: %s\n", envROOT, strerror(errno));
-        exit(1);
+        return 1;
     }
 
     PidFile mypf(pidfile);
@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
                 if (killpg(pid, SIGTERM) != 0) {
                     fprintf(stderr, "could not signal %d: %s\n", pid,
                             strerror(errno));
-                    exit(1);
+                    return 1;
                 }
             }
             fprintf(stdout, "Waiting for exit (up to 60 seconds)\n");
@@ -421,16 +421,16 @@ int main(int argc, char *argv[])
                     service, pidfile);
         }
         mypf.cleanUp();
-        exit(0);
+        return 0;
     }
     if (optind >= argc || killcmd != NULL) {
-        usage(argv[0], 1);
+        return usage(argv[0], 1);
     }
 
     if (mypf.anotherRunning()) {
         fprintf(stderr, "runserver already running with pid %d\n",
                 mypf.readPid());
-        exit(0);
+        return 0;
     }
 
     if (!mypf.writeOpen()) {
@@ -443,17 +443,17 @@ int main(int argc, char *argv[])
         close(0);
         if (open("/dev/null", O_RDONLY) != 0) {
             perror("open /dev/null for reading failed");
-            exit(1);
+            std::_Exit(1);
         }
         close(1);
         if (open("/dev/null", O_WRONLY) != 1) {
             perror("open /dev/null for writing failed");
-            exit(1);
+            std::_Exit(1);
         }
         dup2(1, 2);
         if (setsid() < 0) {
             perror("setsid");
-            exit(1);
+            std::_Exit(1);
         }
         struct sigaction act;
         struct sigaction oact;
@@ -482,15 +482,14 @@ int main(int argc, char *argv[])
             } while (!gotstopsig && restart > 0);
         } catch (MsgException& ex) {
             LOG(error, "exception: '%s'", ex.what());
-            exit(1);
+            return 1;
         }
         if (restart > 0) {
             LOG(debug, "final exit status: %d", stat);
         }
         mypf.cleanUp();
-        exit(stat);
+        return stat;
     }
-
     if (rsp < 0) {
         perror("fork");
         return 1;

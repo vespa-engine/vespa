@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
   if(argc!=3){
     std::cerr << "usage: " << argv[0] << " plain_count_fsa_file sorted_count_fsa_file" << std::endl;
-    exit(1);
+    return 1;
   }
 
   FSA plain_fsa(argv[1]);

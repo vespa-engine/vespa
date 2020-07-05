@@ -14,6 +14,7 @@
 #include <cmath>
 #include <csignal>
 #include <cinttypes>
+#include <cstdlib>
 
 namespace {
 
@@ -327,7 +328,7 @@ FBench::Exit()
     StopClients();
     printf("\n");
     PrintSummary();
-    exit(0);
+    std::_Exit(0);
 }
 
 int

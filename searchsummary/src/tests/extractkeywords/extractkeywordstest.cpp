@@ -18,7 +18,7 @@ ExtractKeywordsTest::Main()
     bool failed = false;
 
     if (_argc == 1)
-        Usage(_argv[0]);
+        return Usage(_argv[0]);
 
     // default initialize to not run any tests.
     for (int n = 0; n < NUMTESTS; n++)
@@ -271,7 +271,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     return result;
 }
 
-void
+int
 ExtractKeywordsTest::Usage(char *progname)
 {
     printf("%s {testnospec}+\n\
@@ -279,7 +279,7 @@ ExtractKeywordsTest::Usage(char *progname)
       num:     single test\n\
       num-num: inclusive range (open range permitted)\n",progname);
     printf("There are tests from %d to %d\n\n", 0, NUMTESTS-1);
-    exit(-1);
+    return EXIT_FAILURE;
 }
 
 int

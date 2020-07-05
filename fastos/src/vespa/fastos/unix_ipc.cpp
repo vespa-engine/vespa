@@ -3,6 +3,7 @@
 #include "ringbuffer.h"
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <memory>
@@ -21,7 +22,7 @@ FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
 
     if(pipe(_wakeupPipe) != 0) {
         perror("pipe wakeuppipe");
-        exit(1);
+        std::_Exit(1);
     } else {
         SetBlocking(_wakeupPipe[0], false);
         SetBlocking(_wakeupPipe[1], true);
@@ -536,10 +537,10 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
                     if ((fds[i].events & POLLOUT) != 0)
                         printf("Write %d\n", fds[i].fd);
                 }
-                exit(1);
-            }
-            else
+                std::_Exit(1);
+            } else {
                 break;
+            }
         }
 
         bool woken = false;

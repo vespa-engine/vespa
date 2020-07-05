@@ -80,10 +80,10 @@ int main(int argc, char** argv)
       break;
     case 'h':
       usage(argv[0]);
-      exit(0);
+      return 0;
     case 'V':
       version();
-      exit(0);
+      return 0;
     case 't':
       format = OUTPUT_TEXT;
       break;
@@ -101,13 +101,13 @@ int main(int argc, char** argv)
       break;
     case '?':
       usage(argv[0],"unrecognized option");
-      exit(1);
+      return 1;
     }
   }
 
   if(optind!=argc-1){
     usage(argv[0],"required parameter(s) missing");
-    exit(1);
+    return 1;
   }
 
   if(format==OUTPUT_UNDEF) // use default format (warning?)
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
 
   if(!fsa.isOk()){
     std::cerr << "Failed to open fsa file (" << input_file << ")" << std::endl;
-    exit(1);
+    return 1;
   }
 
   std::string meta,temp;

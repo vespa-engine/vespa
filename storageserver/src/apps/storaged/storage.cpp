@@ -21,6 +21,7 @@
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <csignal>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vds.application");
@@ -109,11 +110,11 @@ bool StorageApp::Init()
     } catch (vespalib::InvalidCommandLineArgumentsException& e) {
         std::cerr << e.getMessage() << "\n\n";
         writeSyntaxPage(std::cerr);
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     if (_showSyntax) {
         writeSyntaxPage(std::cerr);
-        exit(0);
+        std::_Exit(0);
     }
     return true;
 }

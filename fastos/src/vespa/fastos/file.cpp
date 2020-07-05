@@ -10,6 +10,7 @@
 #include <sstream>
 #include <cstring>
 #include <fcntl.h>
+#include <cstdlib>
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -339,19 +340,19 @@ FastOS_FileInterface::MakeDirIfNotPresentOrExit(const char *name)
             return;
 
         fprintf(stderr, "%s is not a directory\n", name);
-        exit(1);
+        std::_Exit(1);
     }
 
     if (statInfo._error != FastOS_StatInfo::FileNotFound) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not stat %s: %s\n", name, ec.message().c_str());
-        exit(1);
+        std::_Exit(1);
     }
 
     if (!FastOS_File::MakeDirectory(name)) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not mkdir(\"%s\", 0775): %s\n", name, ec.message().c_str());
-        exit(1);
+        std::_Exit(1);
     }
 }
 

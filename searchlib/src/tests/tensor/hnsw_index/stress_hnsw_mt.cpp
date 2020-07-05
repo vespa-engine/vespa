@@ -82,7 +82,7 @@ void read_vector_file(MallocPointVector *p) {
     int fd = open(fn.c_str(), O_RDONLY);
     if (fd < 0) {
         perror(fn.c_str());
-        exit(1);
+        std::_Exit(1);
     }
     int d;
     size_t rv;

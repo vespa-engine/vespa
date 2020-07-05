@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 
 #include <csignal>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -215,7 +216,7 @@ Service::start()
         }
         EV_STARTING(name().c_str());
         runChild(pipes); // This function should not return.
-        _exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
 
     close(pipes[1]); // close writing end
@@ -373,7 +374,7 @@ Service::runChild(int pipes[2])
         snprintf(buf, sizeof buf, "open /dev/null for fd 0: got %d "
                                   "(%s)", fd, strerror(errno));
         [[maybe_unused]] auto writeRes = write(pipes[1], buf, strlen(buf));
-        _exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     fcntl(0, F_SETFD, 0); // Don't close on exec
 
@@ -383,7 +384,7 @@ Service::runChild(int pipes[2])
     snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'",
              strerror(errno), _config->command.c_str());
     [[maybe_unused]] auto writeRes = write(pipes[1], buf, strlen(buf));
-    _exit(EXIT_FAILURE);
+    std::_Exit(EXIT_FAILURE);
 }
 
 const vespalib::string &

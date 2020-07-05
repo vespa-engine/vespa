@@ -30,7 +30,7 @@ main(int argc, char** argv)
     int c = getopt(argc, argv, "c:");
     if (c != 'c') {
         LOG(error, "Usage: %s -c <config-id>", argv[0]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     Wrapper wrapper(optarg);
     wrapper.run();

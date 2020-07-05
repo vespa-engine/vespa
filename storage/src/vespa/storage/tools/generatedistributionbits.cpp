@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
         std::cerr << e.getMessage() << "\n\n";
         o.writeSyntaxPage(std::cerr);
         std::cerr << "\n";
-        exit(1);
+        return 1;
     }
     o.finalize();
     if (o.printHtml) { std::cout << "<b>"; }

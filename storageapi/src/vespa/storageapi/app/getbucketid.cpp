@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 {
     if (argc != 2) {
         std::cerr << "Usage: getbucketid <documentid>\n";
-        exit(1);
+        return 1;
     }
     document::BucketIdFactory factory;
     document::BucketId id = factory.getBucketId(document::DocumentId(argv[1]));

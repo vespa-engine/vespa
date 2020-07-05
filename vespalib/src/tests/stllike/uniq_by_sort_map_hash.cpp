@@ -310,13 +310,13 @@ int main(int argc, char *argv[])
                } else {
                    std::vector<pthread_t> threads(numThreads);
                    for (size_t j(0); j < numThreads; j++) {
-                        pthread_create(&threads[j], NULL, (VFUNC)runBenchMark, &indirectSlotVector);
+                       pthread_create(&threads[j], NULL, (VFUNC)runBenchMark, &indirectSlotVector);
                    }
                    for (size_t j(0); j < numThreads; j++) {
                        pthread_join(threads[j], NULL);
                    }
                }
-           break;
+            break;
         default:
             printf("'m' = %s\n", description[type]);
             printf("'M' = %s\n", description[type]);
@@ -327,11 +327,10 @@ int main(int argc, char *argv[])
             printf("'g' = %s\n", description[type]);
             printf("'G' = %s\n", description[type]);
             printf("'J' = %s\n", description[type]);
-            printf("Unspecified type %c. Running map benchmark\n", type);
-            exit(1);
-            break;
+            printf("Unspecified type %c.\n", type);
+            return 1;
         }
     }
     printf("Running test '%c' = %s, result = %ld unique values\n", type, description[type], uniq);
+    return 0;
 }
-
