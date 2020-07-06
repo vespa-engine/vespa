@@ -13,7 +13,16 @@ import java.util.List;
  * @author ollivir
  */
 class Artifacts {
+    interface ScopeTranslator {
+        String scopeOf(Artifact artifact);
+    }
+
+    static class NoopScopeTranslator implements ScopeTranslator {
+        @Override public String scopeOf(Artifact artifact) { return artifact.getScope(); }
+    }
+
     static class ArtifactSet {
+
         private final List<Artifact> jarArtifactsToInclude;
         private final List<Artifact> jarArtifactsProvided;
         private final List<Artifact> nonJarArtifacts;
@@ -40,29 +49,25 @@ class Artifacts {
         }
     }
 
-    static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, false, null); }
+    static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, new NoopScopeTranslator()); }
 
-    static ArtifactSet getArtifacts(MavenProject project, boolean includeTestArtifacts, String testProvidedConfig) {
-        TestProvidedArtifacts testProvidedArtifacts = TestProvidedArtifacts.from(project.getArtifactMap(), testProvidedConfig);
+    static ArtifactSet getArtifacts(MavenProject project, ScopeTranslator scopeTranslator) {
         List<Artifact> jarArtifactsToInclude = new ArrayList<>();
         List<Artifact> jarArtifactsProvided = new ArrayList<>();
         List<Artifact> nonJarArtifactsToInclude = new ArrayList<>();
         List<Artifact> nonJarArtifactsProvided = new ArrayList<>();
         for (Artifact artifact : project.getArtifacts()) {
+            String scope = scopeTranslator.scopeOf(artifact);
             if ("jar".equals(artifact.getType())) {
-                if (includeTestArtifacts && testProvidedArtifacts.isTestProvided(artifact)) {
-                    jarArtifactsProvided.add(artifact);
-                } else if (Artifact.SCOPE_COMPILE.equals(artifact.getScope())) {
+                if (Artifact.SCOPE_COMPILE.equals(scope)) {
                     jarArtifactsToInclude.add(artifact);
-                } else if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope())) {
+                } else if (Artifact.SCOPE_PROVIDED.equals(scope)) {
                     jarArtifactsProvided.add(artifact);
-                } else if (includeTestArtifacts && Artifact.SCOPE_TEST.equals(artifact.getScope())) {
-                    jarArtifactsToInclude.add(artifact);
                 }
             } else {
-                if (Artifact.SCOPE_COMPILE.equals(artifact.getScope())) {
+                if (Artifact.SCOPE_COMPILE.equals(scope)) {
                     nonJarArtifactsToInclude.add(artifact);
-                } else if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope())) {
+                } else if (Artifact.SCOPE_PROVIDED.equals(scope)) {
                     nonJarArtifactsProvided.add(artifact);
                 }
             }
@@ -72,6 +77,6 @@ class Artifacts {
     }
 
     static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
-        return getArtifacts(project, false, null).getJarArtifactsToInclude();
+        return getArtifacts(project, new NoopScopeTranslator()).getJarArtifactsToInclude();
     }
 }
