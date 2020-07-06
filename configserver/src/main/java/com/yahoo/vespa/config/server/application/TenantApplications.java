@@ -87,8 +87,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
-        this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
+        this.directoryCache.start();
         this.metrics = metrics;
         this.reloadListener = reloadListener;
         this.responseFactory = ConfigResponseFactory.create(configserverConfig);

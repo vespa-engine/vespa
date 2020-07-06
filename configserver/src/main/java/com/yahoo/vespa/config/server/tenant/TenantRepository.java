@@ -118,8 +118,8 @@ public class TenantRepository {
 
         if (useZooKeeperWatchForTenantChanges) {
             this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
-            this.directoryCache.get().start();
             this.directoryCache.get().addListener(this::childEvent);
+            this.directoryCache.get().start();
         } else {
             this.directoryCache = Optional.empty();
         }
