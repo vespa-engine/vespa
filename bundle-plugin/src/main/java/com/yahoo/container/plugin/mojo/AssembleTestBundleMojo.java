@@ -20,11 +20,12 @@ import static com.yahoo.container.plugin.mojo.TestBundleUtils.manifestFile;
 public class AssembleTestBundleMojo extends AbstractAssembleBundleMojo {
 
     @Parameter
-    private String testProvidedArtifacts;
+    private String testBundleScopeOverrides;
 
     @Override
     public void execute() throws MojoExecutionException {
-        Artifacts.ArtifactSet artifacts = Artifacts.getArtifacts(project, true, testProvidedArtifacts);
+        Artifacts.ArtifactSet artifacts = Artifacts.getArtifacts(
+                project, TestBundleDependencyScopeTranslator.from(project.getArtifactMap(), testBundleScopeOverrides));
         JarArchiver archiver = new JarArchiver();
         addDirectory(archiver, Paths.get(project.getBuild().getOutputDirectory()));
         addDirectory(archiver, Paths.get(project.getBuild().getTestOutputDirectory()));

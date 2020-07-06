@@ -31,11 +31,12 @@ import static java.util.stream.Collectors.toList;
 public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     @Parameter
-    private String testProvidedArtifacts;
+    private String testBundleScopeOverrides;
 
     public void execute() throws MojoExecutionException {
         try {
-            Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project, true, testProvidedArtifacts);
+            Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(
+                    project, TestBundleDependencyScopeTranslator.from(project.getArtifactMap(), testBundleScopeOverrides));
 
             List<File> providedJars = artifactSet.getJarArtifactsProvided().stream()
                     .map(Artifact::getFile)
