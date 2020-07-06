@@ -42,4 +42,4 @@ attribute[].index.hnsw.neighborstoexploreatinsert int default=200
 # Deprecated: Remove on Vespa 8 or before when possible.
 attribute[].index.hnsw.distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES } default=EUCLIDEAN
 # Whether multi-threaded indexing is enabled for this hnsw index.
-attribute[].index.hnsw.multithreadedindexing bool default=false
+attribute[].index.hnsw.multithreadedindexing bool default=true

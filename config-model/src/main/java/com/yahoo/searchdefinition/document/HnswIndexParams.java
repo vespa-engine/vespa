@@ -72,6 +72,6 @@ public class HnswIndexParams {
     }
 
     public boolean multiThreadedIndexing() {
-        return multiThreadedIndexing.orElse(false);
+        return multiThreadedIndexing.orElse(true);
     }
 }

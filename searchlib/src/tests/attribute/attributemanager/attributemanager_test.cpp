@@ -295,6 +295,16 @@ AttributeManagerTest::testConfigConvert()
         auto out = ConfigConverter::convert(a);
         EXPECT_TRUE(out.distance_metric() == DistanceMetric::InnerProduct);
     }
+    { // hnsw index default params (enabled)
+        CACA a;
+        a.index.hnsw.enabled = true;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.hnsw_index_params().has_value());
+        const auto& params = out.hnsw_index_params().value();
+        EXPECT_EQUAL(16u, params.max_links_per_node());
+        EXPECT_EQUAL(200u, params.neighbors_to_explore_at_insert());
+        EXPECT_TRUE(params.multi_threaded_indexing());
+    }
     { // hnsw index params (enabled)
         auto dm_in = AttributesConfig::Attribute::Distancemetric::ANGULAR;
         auto dm_out = DistanceMetric::Angular;
@@ -303,16 +313,15 @@ AttributeManagerTest::testConfigConvert()
         a.index.hnsw.enabled = true;
         a.index.hnsw.maxlinkspernode = 32;
         a.index.hnsw.neighborstoexploreatinsert = 300;
-        a.index.hnsw.multithreadedindexing = true;
+        a.index.hnsw.multithreadedindexing = false;
         auto out = ConfigConverter::convert(a);
         EXPECT_TRUE(out.hnsw_index_params().has_value());
         const auto& params = out.hnsw_index_params().value();
         EXPECT_EQUAL(32u, params.max_links_per_node());
         EXPECT_EQUAL(300u, params.neighbors_to_explore_at_insert());
         EXPECT_TRUE(params.distance_metric() == dm_out);
-        EXPECT_TRUE(params.multi_threaded_indexing());
+        EXPECT_FALSE(params.multi_threaded_indexing());
     }
-
     { // hnsw index params (disabled)
         CACA a;
         a.index.hnsw.enabled = false;
