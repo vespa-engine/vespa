@@ -124,11 +124,13 @@ private:
         WaiterMap _map;
     };
 
-    Map               _map;
+    class ReadGuardImpl;
+
+    Map                     _map;
     mutable std::mutex      _lock;
     std::condition_variable _cond;
-    LockIdSet         _lockedKeys;
-    LockWaiters       _lockWaiters;
+    LockIdSet               _lockedKeys;
+    LockWaiters             _lockWaiters;
 
     void unlock(const key_type& key) override;
     bool findNextKey(key_type& key, mapped_type& val, const char* clientId,
@@ -146,10 +148,12 @@ private:
                      const key_type& first,
                      const key_type& last) override;
 
-    void do_for_each_chunked(std::function<Decision(uint64_t, mapped_type&)> func,
+    void do_for_each_chunked(std::function<Decision(uint64_t, const mapped_type&)> func,
                              const char* clientId,
                              vespalib::duration yieldTime,
                              uint32_t chunkSize) override;
+
+    std::unique_ptr<bucketdb::ReadGuard<typename Map::mapped_type>> do_acquire_read_guard() const override;
 
     /**
      * Process up to `chunkSize` bucket database entries from--and possibly
@@ -162,7 +166,7 @@ private:
      * Modifies `key` in-place to point to the next key to process for the next
      * invocation of this function.
      */
-    bool processNextChunk(std::function<Decision(uint64_t, mapped_type&)>& func,
+    bool processNextChunk(std::function<Decision(uint64_t, const mapped_type&)>& func,
                           key_type& key,
                           const char* clientId,
                           uint32_t chunkSize);

@@ -6,6 +6,7 @@
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".lockable_map_test");
@@ -200,13 +201,23 @@ EntryProcessor<Map>::~EntryProcessor() = default;
 
 template <typename Map>
 struct ConstProcessor {
+    mutable uint32_t count;
     mutable std::vector<std::string> log;
+    mutable std::vector<typename Map::Decision> behaviour;
+
+    ConstProcessor();
+    explicit ConstProcessor(std::vector<typename Map::Decision> decisions);
+    ~ConstProcessor();
 
     typename Map::Decision operator()(uint64_t key, const A& a) const {
         std::ostringstream ost;
         ost << key << " - " << a;
         log.push_back(ost.str());
-        return Map::CONTINUE;
+        auto d = Map::Decision::CONTINUE;
+        if (behaviour.size() > count) {
+            d = behaviour[count++];
+        }
+        return d;
     }
 
     std::string toString() {
@@ -217,6 +228,17 @@ struct ConstProcessor {
         return ost.str();
     }
 };
+
+template <typename Map>
+ConstProcessor<Map>::ConstProcessor()
+    : count(0), log(), behaviour() {}
+
+template <typename Map>
+ConstProcessor<Map>::ConstProcessor(std::vector<typename Map::Decision> decisions)
+    : count(0), log(), behaviour(std::move(decisions)) {}
+
+template <typename Map>
+ConstProcessor<Map>::~ConstProcessor() = default;
 
 }
 
@@ -300,17 +322,21 @@ TYPED_TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes)
     map.insert(16, A(1, 2, 3), "foo", preExisted);
     map.insert(11, A(4, 6, 0), "foo", preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
-    NonConstProcessor<TypeParam> ncproc; // Increments 2nd value in all entries.
-    // for_each_chunked with chunk size of 1
-    map.for_each_chunked(std::ref(ncproc), "foo", 1us, 1);
-    EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
-    EXPECT_EQ(A(42, 1, 0), *map.get(14, "foo"));
-    EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
-    // for_each_chunked with chunk size larger than db size
-    map.for_each_chunked(std::ref(ncproc), "foo", 1us, 100);
-    EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
-    EXPECT_EQ(A(42, 2, 0), *map.get(14, "foo"));
-    EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
+    std::string expected("11 - A(4, 6, 0)\n"
+                         "14 - A(42, 0, 0)\n"
+                         "16 - A(1, 2, 3)\n");
+    {
+        ConstProcessor<TypeParam> cproc;
+        // for_each_chunked with chunk size of 1
+        map.for_each_chunked(std::ref(cproc), "foo", 1us, 1);
+        EXPECT_EQ(expected, cproc.toString());
+    }
+    {
+        ConstProcessor<TypeParam> cproc;
+        // for_each_chunked with chunk size larger than db size
+        map.for_each_chunked(std::ref(cproc), "foo", 1us, 100);
+        EXPECT_EQ(expected, cproc.toString());
+    }
 }
 
 TYPED_TEST(LockableMapTest, can_abort_during_chunked_iteration) {
@@ -323,10 +349,10 @@ TYPED_TEST(LockableMapTest, can_abort_during_chunked_iteration) {
     std::vector<typename TypeParam::Decision> decisions;
     decisions.push_back(TypeParam::CONTINUE);
     decisions.push_back(TypeParam::ABORT);
-    EntryProcessor<TypeParam> proc(decisions);
+    ConstProcessor<TypeParam> proc(std::move(decisions));
     map.for_each_chunked(std::ref(proc), "foo", 1us, 100);
     std::string expected("11 - A(4, 6, 0)\n"
-            "14 - A(42, 0, 0)\n");
+                         "14 - A(42, 0, 0)\n");
     EXPECT_EQ(expected, proc.toString());
 }
 
@@ -509,6 +535,18 @@ TYPED_TEST(LockableMapTest, find_all) {
     EXPECT_EQ(1, results.size());
 
     EXPECT_EQ(A(9,10,11), *results[id9.stripUnused()]); // sub bucket
+
+    // Make sure we clear any existing bucket locks before we continue, or test will deadlock
+    // if running with legacy (non-snapshot capable) DB implementation.
+    results.clear();
+    // Results should be equal when using read guard
+    auto guard = map.acquire_read_guard();
+
+    auto guard_results = guard->find_parents_self_and_children(BucketId(17, 0x1aaaa));
+    EXPECT_THAT(guard_results, ElementsAre(A(1,2,3), A(5,6,7), A(6,7,8), A(7,8,9)));
+
+    guard_results = guard->find_parents_self_and_children(BucketId(16, 0xffff));
+    EXPECT_THAT(guard_results, ElementsAre(A(9,10,11)));
 }
 
 TYPED_TEST(LockableMapTest, find_all_2) { // Ticket 3121525

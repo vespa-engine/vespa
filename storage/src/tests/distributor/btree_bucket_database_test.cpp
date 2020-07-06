@@ -37,8 +37,10 @@ struct BTreeReadGuardTest : Test {
 TEST_F(BTreeReadGuardTest, guard_does_not_observe_new_entries) {
     auto guard = _db.acquire_read_guard();
     _db.update(BucketDatabase::Entry(BucketId(16, 16), BI(1, 1234)));
-    std::vector<BucketDatabase::Entry> entries;
-    guard->find_parents_and_self(BucketId(16, 16), entries);
+
+    auto entries = guard->find_parents_and_self(BucketId(16, 16));
+    EXPECT_EQ(entries.size(), 0U);
+    entries = guard->find_parents_self_and_children(BucketId(16, 16));
     EXPECT_EQ(entries.size(), 0U);
 }
 
@@ -47,8 +49,12 @@ TEST_F(BTreeReadGuardTest, guard_observes_entries_alive_at_acquire_time) {
     _db.update(BucketDatabase::Entry(bucket, BI(1, 1234)));
     auto guard = _db.acquire_read_guard();
     _db.remove(bucket);
-    std::vector<BucketDatabase::Entry> entries;
-    guard->find_parents_and_self(bucket, entries);
+
+    auto entries = guard->find_parents_and_self(bucket);
+    ASSERT_EQ(entries.size(), 1U);
+    EXPECT_EQ(entries[0].getBucketInfo(), BI(1, 1234));
+
+    entries = guard->find_parents_self_and_children(bucket);
     ASSERT_EQ(entries.size(), 1U);
     EXPECT_EQ(entries[0].getBucketInfo(), BI(1, 1234));
 }

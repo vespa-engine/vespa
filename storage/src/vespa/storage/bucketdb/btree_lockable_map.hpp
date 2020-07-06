@@ -307,7 +307,7 @@ void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const map
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, mapped_type&)>& func,
+bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, const mapped_type&)>& func,
                                            key_type& key,
                                            const char* client_id,
                                            const uint32_t chunk_size)
@@ -328,7 +328,7 @@ bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, mapp
 }
 
 template <typename T>
-void BTreeLockableMap<T>::do_for_each_chunked(std::function<Decision(uint64_t, mapped_type&)> func,
+void BTreeLockableMap<T>::do_for_each_chunked(std::function<Decision(uint64_t, const mapped_type&)> func,
                                               const char* client_id,
                                               vespalib::duration yield_time,
                                               uint32_t chunk_size)
@@ -344,6 +344,66 @@ void BTreeLockableMap<T>::do_for_each_chunked(std::function<Decision(uint64_t, m
         // face of blocked point lookups.
         std::this_thread::sleep_for(yield_time);
     }
+}
+
+template <typename T>
+class BTreeLockableMap<T>::ReadGuardImpl final : public bucketdb::ReadGuard<T> {
+    typename ImplType::ReadSnapshot _snapshot;
+public:
+    explicit ReadGuardImpl(const BTreeLockableMap<T>& db);
+    ~ReadGuardImpl() override;
+
+    std::vector<T> find_parents_and_self(const document::BucketId& bucket) const override;
+    std::vector<T> find_parents_self_and_children(const document::BucketId& bucket) const override;
+    void for_each(std::function<void(uint64_t, const T&)> func) const override;
+    [[nodiscard]] uint64_t generation() const noexcept override;
+};
+
+template <typename T>
+BTreeLockableMap<T>::ReadGuardImpl::ReadGuardImpl(const BTreeLockableMap<T>& db)
+    : _snapshot(*db._impl)
+{}
+
+template <typename T>
+BTreeLockableMap<T>::ReadGuardImpl::~ReadGuardImpl() = default;
+
+template <typename T>
+std::vector<T>
+BTreeLockableMap<T>::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket) const {
+    std::vector<T> entries;
+    _snapshot.template find_parents_and_self<ByConstRef>(
+            bucket,
+            [&entries]([[maybe_unused]] uint64_t key, const T& entry){
+                entries.emplace_back(entry);
+            });
+    return entries;
+}
+
+template <typename T>
+std::vector<T>
+BTreeLockableMap<T>::ReadGuardImpl::find_parents_self_and_children(const document::BucketId& bucket) const {
+    std::vector<T> entries;
+    _snapshot.template find_parents_self_and_children<ByConstRef>(
+            bucket,
+            [&entries]([[maybe_unused]] uint64_t key, const T& entry){
+                entries.emplace_back(entry);
+            });
+    return entries;
+}
+
+template <typename T>
+void BTreeLockableMap<T>::ReadGuardImpl::for_each(std::function<void(uint64_t, const T&)> func) const {
+    _snapshot.template for_each<ByConstRef>(std::move(func));
+}
+
+template <typename T>
+uint64_t BTreeLockableMap<T>::ReadGuardImpl::generation() const noexcept {
+    return _snapshot.generation();
+}
+
+template <typename T>
+std::unique_ptr<ReadGuard<T>> BTreeLockableMap<T>::do_acquire_read_guard() const {
+    return std::make_unique<ReadGuardImpl>(*this);
 }
 
 template <typename T>

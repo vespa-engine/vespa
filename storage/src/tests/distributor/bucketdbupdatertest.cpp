@@ -2769,8 +2769,7 @@ struct BucketDBUpdaterSnapshotTest : BucketDBUpdaterTest {
         uint32_t found_buckets = 0;
         for_each_bucket(repo, [&](const auto& space, const auto& entry) {
             if (space == bucket_space) {
-                std::vector<BucketDatabase::Entry> entries;
-                guard->find_parents_and_self(entry.getBucketId(), entries);
+                auto entries = guard->find_parents_and_self(entry.getBucketId());
                 if (entries.size() == 1) {
                     ++found_buckets;
                 }

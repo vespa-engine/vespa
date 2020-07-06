@@ -250,12 +250,12 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self(
 
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children(
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children_internal(
+        const typename BTree::FrozenView& frozen_view,
         const BucketId& bucket,
         Func func) const
 {
-    auto view = _tree.getFrozenView();
-    auto iter = find_parents_internal<IterValueExtractor>(view, bucket, func);
+    auto iter = find_parents_internal<IterValueExtractor>(frozen_view, bucket, func);
     // `iter` is already pointing at, or beyond, one of the bucket's subtrees.
     for (; iter.valid(); ++iter) {
         auto candidate = BucketId(BucketId::keyToBucketId(iter.getKey()));
@@ -265,6 +265,16 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_childre
             break;
         }
     }
+}
+
+template <typename DataStoreTraitsT>
+template <typename IterValueExtractor, typename Func>
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children(
+        const BucketId& bucket,
+        Func func) const
+{
+    auto view = _tree.getFrozenView();
+    find_parents_self_and_children_internal<IterValueExtractor>(view, bucket, std::move(func));
 }
 
 template <typename DataStoreTraitsT>
@@ -321,19 +331,6 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update(const BucketId& bucket
                                                           const ValueType& new_entry)
 {
     return update_by_raw_key(bucket.toKey(), new_entry);
-}
-
-// TODO need snapshot read with guarding
-// FIXME semantics of for-each in judy and bit tree DBs differ, former expects lbound, latter ubound..!
-// FIXME but bit-tree code says "lowerBound" in impl and "after" in declaration???
-template <typename DataStoreTraitsT>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::for_each(EntryProcessor& proc, const BucketId& after) const {
-    for (auto iter = _tree.upperBound(after.toKey()); iter.valid(); ++iter) {
-        // TODO memory fencing once we use snapshots!
-        if (!proc.process(DataStoreTraitsT::unwrap_const_ref_from_key_value(_store, iter.getKey(), iter.getData()))) {
-            break;
-        }
-    }
 }
 
 /*
@@ -538,6 +535,24 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::find_parents_an
         Func func) const
 {
     _db->find_parents_and_self_internal<IterValueExtractor>(_frozen_view, bucket, std::move(func));
+}
+
+template <typename DataStoreTraitsT>
+template <typename IterValueExtractor, typename Func>
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::find_parents_self_and_children(
+        const BucketId& bucket,
+        Func func) const
+{
+    _db->find_parents_self_and_children_internal<IterValueExtractor>(_frozen_view, bucket, std::move(func));
+}
+
+template <typename DataStoreTraitsT>
+template <typename IterValueExtractor, typename Func>
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::for_each(Func func) const {
+    for (auto iter = _frozen_view.begin(); iter.valid(); ++iter) {
+        // Iterator value extractor implicitly inserts any required memory fences for value.
+        func(iter.getKey(), IterValueExtractor::apply(*_db, iter));
+    }
 }
 
 template <typename DataStoreTraitsT>

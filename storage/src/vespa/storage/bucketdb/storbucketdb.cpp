@@ -136,6 +136,11 @@ void StorBucketDatabase::for_each(
     _impl->for_each(std::move(func), clientId, first, last);
 }
 
+std::unique_ptr<bucketdb::ReadGuard<StorBucketDatabase::Entry>>
+StorBucketDatabase::acquire_read_guard() const {
+    return {};
+}
+
 template class JudyMultiMap<bucketdb::StorageBucketInfo>;
 
 } // storage
