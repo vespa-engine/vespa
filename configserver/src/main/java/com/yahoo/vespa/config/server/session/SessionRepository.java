@@ -142,7 +142,7 @@ public class SessionRepository {
             try {
                 addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
-                log.log(Level.WARNING, "Could not load session '" +
+                log.log(Level.WARNING, "Could not load local session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
@@ -318,16 +318,18 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     public void sessionAdded(long sessionId) {
-        log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
-        fileCache.addListener(this::nodeChanged);
-        loadSessionIfActive(remoteSession);
-        addRemoteSession(remoteSession);
-        Optional<LocalSession> localSession = Optional.empty();
-        if (distributeApplicationPackage())
-            localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
+        try (var lock = lock(sessionId)) {
+            log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
+            RemoteSession remoteSession = createRemoteSession(sessionId);
+            Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
+            fileCache.addListener(this::nodeChanged);
+            loadSessionIfActive(remoteSession);
+            addRemoteSession(remoteSession);
+            Optional<LocalSession> localSession = Optional.empty();
+            if (distributeApplicationPackage())
+                localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
+            addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
+        }
     }
 
     boolean distributeApplicationPackage() {
