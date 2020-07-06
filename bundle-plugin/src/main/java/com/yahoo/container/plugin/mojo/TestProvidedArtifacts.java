@@ -38,8 +38,8 @@ class TestProvidedArtifacts {
             boolean hasTestProvidedArtifactAsParent =
                     dependencyTrail(artifact, artifacts)
                             .anyMatch(parent -> testProvidedArtifactStringIds.contains(toArtifactStringId(parent)));
-            boolean isBlacklisted = testProvidedArtifactStringIds.contains(toBlacklistedArtifactStringId(artifact));
-            if (hasTestProvidedArtifactAsParent && !isBlacklisted) {
+            boolean isBlocked = testProvidedArtifactStringIds.contains(toBlockedArtifactStringId(artifact));
+            if (hasTestProvidedArtifactAsParent && !isBlocked) {
                 testProvidedArtifacts.add(artifact);
             }
         }
@@ -68,6 +68,6 @@ class TestProvidedArtifacts {
 
     private static String toArtifactStringId(Artifact artifact) { return artifact.getGroupId() + ":" + artifact.getArtifactId(); }
 
-    private static String toBlacklistedArtifactStringId(Artifact artifact) { return "!" + toArtifactStringId(artifact); }
+    private static String toBlockedArtifactStringId(Artifact artifact) { return "!" + toArtifactStringId(artifact); }
 
 }

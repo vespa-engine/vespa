@@ -44,7 +44,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
 
     private final HttpServletRequest request;
     private final HeaderFields headerFields;
-    private final Set<String> headerBlacklist = new HashSet<>();
+    private final Set<String> removedHeaders = new HashSet<>();
     private final Map<String, Object> context = new HashMap<>();
     private final Map<String, List<String>> parameters = new HashMap<>();
     private final long connectedAt;
@@ -127,7 +127,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        if (headerBlacklist.contains(name))
+        if (removedHeaders.contains(name))
             return null;
 
         /* We don't need to merge headerFields and the servlet request's headers
@@ -140,7 +140,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
 
     @Override
     public String getHeader(String name) {
-        if (headerBlacklist.contains(name))
+        if (removedHeaders.contains(name))
             return null;
 
         String headerField = headerFields.getFirst(name);
@@ -153,28 +153,28 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
     public Enumeration<String> getHeaderNames() {
         Set<String> names = new HashSet<>(Collections.list(super.getHeaderNames()));
         names.addAll(headerFields.keySet());
-        names.removeAll(headerBlacklist);
+        names.removeAll(removedHeaders);
         return Collections.enumeration(names);
     }
 
     public void addHeader(String name, String value) {
         headerFields.add(name, value);
-        headerBlacklist.remove(name);
+        removedHeaders.remove(name);
     }
 
     public void setHeaders(String name, String value) {
         headerFields.put(name, value);
-        headerBlacklist.remove(name);
+        removedHeaders.remove(name);
     }
 
     public void setHeaders(String name, List<String> values) {
         headerFields.put(name, values);
-        headerBlacklist.remove(name);
+        removedHeaders.remove(name);
     }
 
     public void removeHeaders(String name) {
         headerFields.remove(name);
-        headerBlacklist.add(name);
+        removedHeaders.add(name);
     }
 
     @Override

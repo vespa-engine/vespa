@@ -166,11 +166,11 @@ public:
                       uint32_t ef, uint32_t searchLevel);
     void search_layer_with_filter(Vector vector, FurthestPriQ &w,
                                   uint32_t ef, uint32_t searchLevel,
-                                  const BitVector &blacklist);
+                                  const BitVector &skipDocIds);
     void search_layer_with_filter(Vector vector, FurthestPriQ &w,
                                   VisitedSet &visited,
                                   uint32_t ef, uint32_t searchLevel,
-                                  const BitVector &blacklist);
+                                  const BitVector &skipDocIds);
 
     bool haveCloserDistance(HnswHit e, const LinkList &r) const;
 
@@ -199,5 +199,5 @@ public:
 
     std::vector<NnsHit> topK(uint32_t k, Vector vector, uint32_t search_k) override;
 
-    std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist) override;
+    std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds) override;
 };
