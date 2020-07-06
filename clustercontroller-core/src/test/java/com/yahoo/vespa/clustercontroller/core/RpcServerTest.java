@@ -59,7 +59,7 @@ public class RpcServerTest extends FleetControllerTest {
         String[] slobrokConnectionSpecs = new String[1];
         slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
-        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
+        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 18347);
         int portUsed = server.getPort();
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, portUsed);
         server.disconnect();
