@@ -69,15 +69,6 @@ public class Container {
         });
     }
 
-    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
-                                               ComponentGraph newGraph,
-                                               Collection<Bundle> obsoleteBundles) {
-        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
-        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
-        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
-        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
-    }
-
     public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
@@ -99,6 +90,15 @@ public class Container {
 
     ComponentGraph getNewComponentGraph() {
         return getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
+    }
+
+    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
+                                               ComponentGraph newGraph,
+                                               Collection<Bundle> obsoleteBundles) {
+        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
+        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
+        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
+        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
     private static String newGraphErrorMessage(long generation, Throwable cause) {
