@@ -150,7 +150,7 @@ public class StorageClusterTest {
 
             assertEquals(7, config.num_threads());
             assertFalse(config.enable_multibit_split_optimalization());
-            assertEquals(1, config.num_response_threads());
+            assertEquals(2, config.num_response_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());
@@ -180,7 +180,7 @@ public class StorageClusterTest {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         stc.getConfig(builder);
         StorFilestorConfig config = new StorFilestorConfig(builder);
-        assertEquals(1, config.num_response_threads());
+        assertEquals(2, config.num_response_threads());
         assertEquals(7, config.num_threads());
     }
 
