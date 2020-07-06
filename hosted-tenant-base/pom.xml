@@ -40,7 +40,7 @@
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
-        <bundlePluginExtraTestProvidedDependencies/>
+        <extraTestBundleScopeOverrides/>
 
         <!-- Must be specified by specialized base pom. Can also be overriden by application -->
         <endpoint/>
@@ -187,14 +187,16 @@
                         <version>${vespaversion}</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <testProvidedArtifacts>
-                                ${bundlePluginExtraTestProvidedDependencies},
-                                com.yahoo.vespa:tenant-cd-api,
-                                com.yahoo.vespa:container-test,
-                                org.junit.jupiter:junit-jupiter-api,
-                                org.junit.jupiter:junit-jupiter-engine,
-                                !com.yahoo.vespa:application
-                            </testProvidedArtifacts>
+                            <!-- override default test bundle scope translation which translates 'test' to 'compile' -->
+                            <!-- note: ordering affects how overrides are evaluated! -->
+                            <testBundleScopeOverrides>
+                                ${extraTestBundleScopeOverrides},
+                                com.yahoo.vespa:application:test,
+                                com.yahoo.vespa:container-test:runtime,
+                                org.junit.jupiter:junit-jupiter-api:provided,
+                                org.junit.jupiter:junit-jupiter-engine:test,
+                                com.yahoo.vespa:tenant-cd-api:provided
+                            </testBundleScopeOverrides>
                         </configuration>
                         <executions>
                             <execution>

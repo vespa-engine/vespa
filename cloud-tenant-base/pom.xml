@@ -39,7 +39,9 @@
 
     <properties>
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
-        <bundlePluginExtraTestProvidedDependencies>com.yahoo.vespa:cloud-tenant-cd</bundlePluginExtraTestProvidedDependencies>
+        <extraTestBundleScopeOverrides>
+            com.yahoo.vespa:cloud-tenant-cd:provided
+        </extraTestBundleScopeOverrides>
     </properties>
 
 
