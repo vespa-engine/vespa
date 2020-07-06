@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
+import com.google.inject.Guice;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.di.IntConfig;
 import com.yahoo.config.test.TestConfig;
@@ -49,7 +50,7 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource);
 
-        ComponentTakingConfig component = createComponentTakingConfig(container.getNewComponentGraph());
+        ComponentTakingConfig component = createComponentTakingConfig(getNewComponentGraph(container));
         assertThat(component.config.stringVal(), is("myString"));
 
         container.shutdownConfigurer();
@@ -62,7 +63,7 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource);
 
-        ComponentGraph componentGraph = container.getNewComponentGraph();
+        ComponentGraph componentGraph = getNewComponentGraph(container);
         ComponentTakingConfig component = createComponentTakingConfig(componentGraph);
 
         assertThat(component.config.stringVal(), is("original"));
@@ -71,7 +72,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("test", "stringVal \"reconfigured\"");
         container.reloadConfig(2);
 
-        ComponentGraph newComponentGraph = container.getNewComponentGraph(componentGraph);
+        ComponentGraph newComponentGraph = getNewComponentGraph(container, componentGraph);
         ComponentTakingConfig component2 = createComponentTakingConfig(newComponentGraph);
         assertThat(component2.config.stringVal(), is("reconfigured"));
 
@@ -85,7 +86,7 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource);
 
-        ComponentGraph graph = container.getNewComponentGraph();
+        ComponentGraph graph = getNewComponentGraph(container);
         ComponentTakingConfig component = createComponentTakingConfig(graph);
         assertThat(component.getId().toString(), is("id1"));
 
@@ -94,7 +95,7 @@ public class ContainerTest extends ContainerTestBase {
                 new ComponentEntry("id2", ComponentTakingConfig.class));
 
         container.reloadConfig(2);
-        ComponentGraph newGraph = container.getNewComponentGraph(graph);
+        ComponentGraph newGraph = getNewComponentGraph(container, graph);
 
         assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(Node.class));
         assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(Node.class));
@@ -112,12 +113,12 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource);
 
-        ComponentGraph oldGraph = container.getNewComponentGraph();
+        ComponentGraph oldGraph = getNewComponentGraph(container);
         DestructableComponent componentToDestruct = oldGraph.getInstance(DestructableComponent.class);
 
         writeBootstrapConfigs("id2", DestructableComponent.class);
         container.reloadConfig(2);
-        container.getNewComponentGraph(oldGraph);
+        getNewComponentGraph(container, oldGraph);
         assertTrue(componentToDestruct.deconstructed);
     }
 
@@ -127,7 +128,7 @@ public class ContainerTest extends ContainerTestBase {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
         Container container = newContainer(dirConfigSource);
         try {
-            container.getNewComponentGraph();
+            getNewComponentGraph(container);
             fail("Expected to log and die.");
         } catch (Throwable t) {
             fail("Expected to log and die");
@@ -140,14 +141,14 @@ public class ContainerTest extends ContainerTestBase {
 
         writeBootstrapConfigs(simpleComponentEntry);
         Container container = newContainer(dirConfigSource);
-        ComponentGraph currentGraph = container.getNewComponentGraph();
+        ComponentGraph currentGraph = getNewComponentGraph(container);
 
         SimpleComponent simpleComponent = currentGraph.getInstance(SimpleComponent.class);
 
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
         container.reloadConfig(2);
         try {
-            currentGraph = container.getNewComponentGraph(currentGraph);
+            currentGraph = getNewComponentGraph(container, currentGraph);
             fail("Expected exception");
         } catch (ComponentConstructorException ignored) {
             // Expected, do nothing
@@ -161,7 +162,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
         writeBootstrapConfigs(simpleComponentEntry, componentTakingConfigEntry);
         container.reloadConfig(3);
-        currentGraph = container.getNewComponentGraph(currentGraph);
+        currentGraph = getNewComponentGraph(container, currentGraph);
 
         assertEquals(3, currentGraph.generation());
         assertSame(simpleComponent, currentGraph.getInstance(SimpleComponent.class));
@@ -174,7 +175,7 @@ public class ContainerTest extends ContainerTestBase {
 
         writeBootstrapConfigs(simpleComponentEntry);
         Container container = newContainer(dirConfigSource);
-        ComponentGraph currentGraph = container.getNewComponentGraph();
+        ComponentGraph currentGraph = getNewComponentGraph(container);
 
         currentGraph.getInstance(SimpleComponent.class);
 
@@ -182,7 +183,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
         container.reloadConfig(2);
         try {
-            currentGraph = container.getNewComponentGraph(currentGraph);
+            currentGraph = getNewComponentGraph(container, currentGraph);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {
             // Expected, do nothing
@@ -198,18 +199,18 @@ public class ContainerTest extends ContainerTestBase {
         writeBootstrapConfigs("myId", ComponentTakingConfig.class);
 
         Container container = newContainer(dirConfigSource);
-        final ComponentGraph currentGraph = container.getNewComponentGraph();
+        final ComponentGraph currentGraph = getNewComponentGraph(container);
 
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
         container.reloadConfig(2);
 
         try {
-            container.getNewComponentGraph(currentGraph);
+            getNewComponentGraph(container, currentGraph);
             fail("expected exception");
         } catch (Exception ignored) {
         }
         ExecutorService exec = Executors.newFixedThreadPool(1);
-        Future<ComponentGraph> newGraph = exec.submit(() -> container.getNewComponentGraph(currentGraph));
+        Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
 
         try {
             newGraph.get(1, TimeUnit.SECONDS);
@@ -234,7 +235,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("jersey-injection", "inject[0]");
 
         Container container = newContainer(dirConfigSource);
-        ComponentGraph componentGraph = container.getNewComponentGraph();
+        ComponentGraph componentGraph = getNewComponentGraph(container);
 
         RestApiContext restApiContext = componentGraph.getInstance(clazz);
         assertNotNull(restApiContext);
@@ -271,7 +272,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("jersey-injection", injectionConfig);
 
         Container container = newContainer(dirConfigSource);
-        ComponentGraph componentGraph = container.getNewComponentGraph();
+        ComponentGraph componentGraph = getNewComponentGraph(container);
 
         RestApiContext restApiContext = componentGraph.getInstance(restApiClass);
 
@@ -298,12 +299,12 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource, deconstructor);
 
-        ComponentGraph oldGraph = container.getNewComponentGraph();
+        ComponentGraph oldGraph = getNewComponentGraph(container);
         DestructableEntity destructableEntity = oldGraph.getInstance(DestructableEntity.class);
 
         writeBootstrapConfigs("id2", DestructableProvider.class);
         container.reloadConfig(2);
-        container.getNewComponentGraph(oldGraph);
+        getNewComponentGraph(container, oldGraph);
 
         assertTrue(destructableEntity.deconstructed);
     }
@@ -314,7 +315,7 @@ public class ContainerTest extends ContainerTestBase {
 
         Container container = newContainer(dirConfigSource);
 
-        ComponentGraph oldGraph = container.getNewComponentGraph();
+        ComponentGraph oldGraph = getNewComponentGraph(container);
     }
 
     static class DestructableEntity {
@@ -396,6 +397,14 @@ public class ContainerTest extends ContainerTestBase {
 
     private static Container newContainer(DirConfigSource dirConfigSource) {
         return newContainer(dirConfigSource, new TestDeconstructor());
+    }
+
+    ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
+        return container.getNewComponentGraph(oldGraph, Guice.createInjector(), false);
+    }
+
+    ComponentGraph getNewComponentGraph(Container container) {
+        return container.getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
     }
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {

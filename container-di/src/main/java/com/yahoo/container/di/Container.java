@@ -84,14 +84,6 @@ public class Container {
         }
     }
 
-    ComponentGraph getNewComponentGraph(ComponentGraph oldGraph) {
-        return getNewComponentGraph(oldGraph, Guice.createInjector(), false);
-    }
-
-    ComponentGraph getNewComponentGraph() {
-        return getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
-    }
-
     private void deconstructObsoleteComponents(ComponentGraph oldGraph,
                                                ComponentGraph newGraph,
                                                Collection<Bundle> obsoleteBundles) {
