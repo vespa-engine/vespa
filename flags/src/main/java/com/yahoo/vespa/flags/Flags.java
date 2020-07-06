@@ -151,6 +151,16 @@ public class Flags {
             "Selects type of sequenced executor used for feeding, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+    public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
+            "response-sequencer-type", "ADAPTIVE",
+            "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
+            "response-num-threads", 2,
+            "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_CONTENT_NODE_BTREE_DB = defineFeatureFlag(
             "use-content-node-btree-db", false,

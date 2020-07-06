@@ -30,12 +30,9 @@ public class TestProperties implements ModelContext.Properties {
     private boolean multitenant = false;
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = Collections.emptyList();
-    private HostName loadBalancerName = null;
-    private URI ztsUrl = null;
-    private String athenzDnsSuffix = null;
     private boolean hostedVespa = false;
     private Zone zone;
-    private Set<ContainerEndpoint> endpoints = Collections.emptySet();
+    private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
@@ -44,6 +41,8 @@ public class TestProperties implements ModelContext.Properties {
     private double queueSizeFactor = 0.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
+    private String responseSequencerType = "ADAPTIVE";
+    private int reponseNumThreads = 2;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -51,9 +50,9 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
     @Override public List<ConfigServerSpec> configServerSpecs() { return configServerSpecs; }
-    @Override public HostName loadBalancerName() { return loadBalancerName; }
-    @Override public URI ztsUrl() { return ztsUrl; }
-    @Override public String athenzDnsSuffix() { return athenzDnsSuffix; }
+    @Override public HostName loadBalancerName() { return null; }
+    @Override public URI ztsUrl() { return null; }
+    @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
@@ -74,6 +73,8 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
+    @Override public String responseSequencerType() { return responseSequencerType; }
+    @Override public int defaultNumResponseThreads() { return reponseNumThreads; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
@@ -81,6 +82,14 @@ public class TestProperties implements ModelContext.Properties {
     }
     public TestProperties setFeedSequencerType(String type) {
         sequencerType = type;
+        return this;
+    }
+    public TestProperties setResponseSequencerType(String type) {
+        responseSequencerType = type;
+        return this;
+    }
+    public TestProperties setResponseNumThreads(int numThreads) {
+        reponseNumThreads = numThreads;
         return this;
     }
     public TestProperties setDefaultTermwiseLimit(double limit) {

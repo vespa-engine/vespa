@@ -95,6 +95,19 @@ uint32_t computeNumResponseThreads(int configured) {
     return (configured < 0) ? std::max(1u, std::thread::hardware_concurrency()/4) : configured;
 }
 
+vespalib::Executor::OptimizeFor
+selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerType sequencerType) {
+    switch (sequencerType) {
+        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::THROUGHPUT:
+            return vespalib::Executor::OptimizeFor::THROUGHPUT;
+        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::LATENCY:
+            return vespalib::Executor::OptimizeFor::LATENCY;
+        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::ADAPTIVE:
+        default:
+            return vespalib::Executor::OptimizeFor::ADAPTIVE;
+    }
+}
+
 }
 /**
  * If live configuration, assuming storageserver makes sure no messages are
@@ -119,7 +132,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
         uint32_t numResposeThreads = computeNumResponseThreads(_config->numResponseThreads);
         if (numResposeThreads > 0) {
-            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResposeThreads, 10000, vespalib::Executor::OptimizeFor::ADAPTIVE);
+            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResposeThreads, 10000, selectSequencer(_config->responseSequencerType));
         }
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {

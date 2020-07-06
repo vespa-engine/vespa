@@ -37,7 +37,7 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
 
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterId(clusterElem),
-                                      new FileStorProducer.Builder().build(cluster, clusterElem),
+                                      new FileStorProducer.Builder().build(deployState.getProperties(), cluster, clusterElem),
                                       new IntegrityCheckerProducer.Builder().build(cluster, clusterElem),
                                       new StorServerProducer.Builder().build(clusterElem, useContentNodeBtreeDb),
                                       new StorVisitorProducer.Builder().build(clusterElem),

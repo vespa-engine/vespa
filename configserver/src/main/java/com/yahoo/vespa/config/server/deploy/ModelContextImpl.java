@@ -155,6 +155,8 @@ public class ModelContextImpl implements ModelContext {
         private final double queueSizefactor;
         private final String jvmGCOPtions;
         private final String feedSequencer;
+        private final String responseSequencer;
+        private final int numResponseThreads;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final int jdiscHealthCheckProxyClientTimeout;
@@ -199,6 +201,10 @@ public class ModelContextImpl implements ModelContext {
             jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             feedSequencer = Flags.FEED_SEQUENCER_TYPE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
@@ -280,6 +286,16 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(jdiscHealthCheckProxyClientTimeout); }
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
         @Override public String feedSequencerType() { return feedSequencer; }
+
+        @Override
+        public String responseSequencerType() {
+            return responseSequencer;
+        }
+
+        @Override
+        public int defaultNumResponseThreads() {
+            return numResponseThreads;
+        }
     }
 
 }
