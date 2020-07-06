@@ -1838,12 +1838,12 @@ void hnswIndex(IndexOperation index) :
 void hnswIndexBody(HnswIndexParams.Builder params) :
 {
     int num;
-    String str;
+    boolean bool;
 }
 {
     ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
       | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
-      | <MULTITHREADEDINDEXING> { params.setMultiThreadedIndexing(true); } )
+      | <MULTITHREADEDINDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
 }
 
 /**

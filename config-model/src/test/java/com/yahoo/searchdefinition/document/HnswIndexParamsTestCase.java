@@ -28,7 +28,7 @@ public class HnswIndexParamsTestCase {
 
         assertThat(empty.maxLinksPerNode(), is(16));
         assertThat(empty.neighborsToExploreAtInsert(), is(200));
-        assertThat(empty.multiThreadedIndexing(), is(false));
+        assertThat(empty.multiThreadedIndexing(), is(true));
 
         assertThat(one.maxLinksPerNode(), is(7));
         assertThat(one.multiThreadedIndexing(), is(false));
