@@ -58,10 +58,8 @@ public class Container {
         this.componentDeconstructor = componentDeconstructor;
         this.osgi = osgi;
 
-        Set<ConfigKey<? extends ConfigInstance>> keySet = new HashSet<>();
-        keySet.add(bundlesConfigKey);
-        keySet.add(componentsConfigKey);
-        this.configurer = new ConfigRetriever(keySet, subscriberFactory::getSubscriber);
+        var bootstrapKeys = Set.of(bundlesConfigKey, componentsConfigKey);
+        this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
     }
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor) {
