@@ -174,12 +174,11 @@ namespace {
         std::vector<Count> disk;
         uint32_t lowestUsedBit;
 
-        MetricsUpdater(uint16_t diskCnt)
+        explicit MetricsUpdater(uint16_t diskCnt)
             : diskCount(diskCnt), disk(diskCnt), lowestUsedBit(58) {}
 
-        StorBucketDatabase::Decision operator()(
-                document::BucketId::Type bucketId,
-                const StorBucketDatabase::Entry& data)
+        void operator()(document::BucketId::Type bucketId,
+                        const StorBucketDatabase::Entry& data)
         {
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
@@ -200,8 +199,6 @@ namespace {
                     lowestUsedBit = bucket.getUsedBits();
                 }
             }
-
-            return StorBucketDatabase::Decision::CONTINUE;
         };
 
         void add(const MetricsUpdater& rhs) {
@@ -241,7 +238,8 @@ BucketManager::updateMetrics(bool updateDocCount)
         MetricsUpdater total(diskCount);
         for (auto& space : _component.getBucketSpaceRepo()) {
             MetricsUpdater m(diskCount);
-            space.second->bucketDatabase().for_each_chunked(std::ref(m), "BucketManager::updateMetrics");
+            auto guard = space.second->bucketDatabase().acquire_read_guard();
+            guard->for_each(std::ref(m));
             total.add(m);
             if (updateDocCount) {
                 auto bm = _metrics->bucket_spaces.find(space.first);
@@ -270,8 +268,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 void BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketSpaceRepo().forEachBucketChunked(
-            m, "BucketManager::updateMetrics");
+    _component.getBucketSpaceRepo().for_each_bucket(std::ref(m));
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
     if (bitTracker.getMinUsedBits() != m.lowestUsedBit) {
@@ -339,9 +336,7 @@ namespace {
     public:
         explicit BucketDBDumper(vespalib::XmlOutputStream& xos) : _xos(xos) {}
 
-        StorBucketDatabase::Decision operator()(
-                uint64_t bucketId, const StorBucketDatabase::Entry& info)
-        {
+        void operator()(uint64_t bucketId, const StorBucketDatabase::Entry& info) {
             using namespace vespalib::xml;
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
@@ -355,7 +350,6 @@ namespace {
             info.getBucketInfo().printXml(_xos);
             _xos << XmlAttribute("disk", info.disk);
             _xos << XmlEndTag();
-            return StorBucketDatabase::Decision::CONTINUE;
         };
     };
 }
@@ -377,8 +371,8 @@ BucketManager::reportStatus(std::ostream& out,
             xmlReporter << XmlTag("bucket-space")
                         << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
-            _component.getBucketSpaceRepo().get(space.first).bucketDatabase().for_each_chunked(
-                    std::ref(dumper), "BucketManager::reportStatus");
+            auto guard = _component.getBucketSpaceRepo().get(space.first).bucketDatabase().acquire_read_guard();
+            guard->for_each(std::ref(dumper));
             xmlReporter << XmlEndTag();
         }
         xmlReporter << XmlEndTag();
@@ -398,7 +392,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketSpaceRepo().forEachBucketChunked(dumper, "BucketManager::dump");
+    _component.getBucketSpaceRepo().for_each_bucket(std::ref(dumper));
 }
 
 

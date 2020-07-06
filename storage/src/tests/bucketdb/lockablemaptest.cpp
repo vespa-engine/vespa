@@ -356,6 +356,22 @@ TYPED_TEST(LockableMapTest, can_abort_during_chunked_iteration) {
     EXPECT_EQ(expected, proc.toString());
 }
 
+TYPED_TEST(LockableMapTest, can_iterate_via_read_guard) {
+    TypeParam map;
+    bool pre_existed;
+    map.insert(16, A(1, 2, 3), "foo", pre_existed);
+    map.insert(11, A(4, 6, 0), "foo", pre_existed);
+    map.insert(14, A(42, 0, 0), "foo", pre_existed);
+    std::string expected("11 - A(4, 6, 0)\n"
+                         "14 - A(42, 0, 0)\n"
+                         "16 - A(1, 2, 3)\n");
+
+    ConstProcessor<TypeParam> cproc;
+    auto guard = map.acquire_read_guard();
+    guard->for_each(std::ref(cproc));
+    EXPECT_EQ(expected, cproc.toString());
+}
+
 TYPED_TEST(LockableMapTest, find_buckets_simple) {
     TypeParam map;
 
