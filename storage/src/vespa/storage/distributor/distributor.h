@@ -51,7 +51,6 @@ public:
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
                 bool manageActiveBucketCopies,
-                bool use_btree_database,
                 HostInfo& hostInfoReporterRegistrar,
                 ChainedMessageSender* = nullptr);
 
@@ -341,7 +340,6 @@ private:
     std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
     size_t _inhibited_maintenance_tick_count;
     bool _must_send_updated_host_info;
-    const bool _use_btree_database;
 };
 
 } // distributor

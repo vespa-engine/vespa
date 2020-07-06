@@ -8,7 +8,6 @@
 #pragma once
 
 #include "storagecomponentregisterimpl.h"
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/nodestateupdater.h>
 
@@ -34,7 +33,7 @@ public:
     typedef std::unique_ptr<DistributorComponentRegisterImpl> UP;
 
     DistributorComponentRegisterImpl();
-    ~DistributorComponentRegisterImpl();
+    ~DistributorComponentRegisterImpl() override;
 
     void registerDistributorComponent(DistributorManagedComponent&) override;
     void setTimeCalculator(UniqueTimeCalculator& calc);

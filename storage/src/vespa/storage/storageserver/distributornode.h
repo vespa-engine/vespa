@@ -24,7 +24,6 @@ class DistributorNode
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;
     bool _manageActiveBucketCopies;
-    bool _use_btree_database;
     std::unique_ptr<StorageLink> _retrievedCommunicationManager;
 
 public:
@@ -39,7 +38,6 @@ public:
                     DistributorNodeContext&,
                     ApplicationGenerationFetcher& generationFetcher,
                     NeedActiveState,
-                    bool use_btree_database,
                     std::unique_ptr<StorageLink> communicationManager);
     ~DistributorNode() override;
 

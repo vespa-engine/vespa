@@ -15,7 +15,6 @@ namespace storage {
 class DistributorProcess final : public Process {
     DistributorNodeContext _context;
     DistributorNode::NeedActiveState _activeFlag;
-    bool _use_btree_database;
     DistributorNode::UP _node;
     config::ConfigHandle<vespa::config::content::core::StorDistributormanagerConfig>::UP
             _distributorConfigHandler;

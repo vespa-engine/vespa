@@ -1072,7 +1072,7 @@ TEST_F(DistributorTest, pending_to_no_pending_global_merges_edge_immediately_sen
 }
 
 TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_handler) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_stale_reads_enabled(true);
@@ -1083,7 +1083,7 @@ TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_h
 }
 
 TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_update_fast_path_restart_enabled(true);
@@ -1094,7 +1094,7 @@ TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_int
 }
 
 TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_merge_operations_disabled(true);
@@ -1105,7 +1105,7 @@ TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config)
 }
 
 TEST_F(DistributorTest, metadata_update_phase_config_is_propagated_to_internal_config) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_metadata_update_phase_enabled(true);
@@ -1116,7 +1116,7 @@ TEST_F(DistributorTest, metadata_update_phase_config_is_propagated_to_internal_c
 }
 
 TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_use_weak_internal_read_consistency(true);
@@ -1128,15 +1128,8 @@ TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_i
     EXPECT_FALSE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
 }
 
-TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {
-    createLinks(false);
-    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-    configure_stale_reads_enabled(true);
-    EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
-}
-
 void DistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled) {
-    createLinks(true);
+    createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
     configure_stale_reads_enabled(enabled);
 
@@ -1145,7 +1138,7 @@ void DistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enab
     _distributor->onDown(make_dummy_get_command_for_bucket_1());
 }
 
-TEST_F(DistributorTest, gets_are_started_outside_main_distributor_logic_if_btree_db_and_stale_reads_enabled) {
+TEST_F(DistributorTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     ASSERT_THAT(_sender.commands(), SizeIs(1));
     EXPECT_THAT(_sender.replies(), SizeIs(0));

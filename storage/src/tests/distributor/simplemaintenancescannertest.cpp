@@ -36,7 +36,7 @@ void
 SimpleMaintenanceScannerTest::SetUp()
 {
     _priorityGenerator = std::make_unique<MockMaintenancePriorityGenerator>();
-    _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>(false);
+    _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>();
     _priorityDb = std::make_unique<SimpleBucketPriorityDatabase>();
     _scanner = std::make_unique<SimpleMaintenanceScanner>(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo);
 }
@@ -79,7 +79,7 @@ TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket) {
 
 TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket_alt_bucket_space) {
     document::BucketSpace bucketSpace(4);
-    _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>(false));
+    _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>());
     _scanner->reset();
     addBucketToDb(bucketSpace, 1);
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");

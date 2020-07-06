@@ -61,7 +61,6 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          framework::TickingThreadPool& threadPool,
                          DoneInitializeHandler& doneInitHandler,
                          bool manageActiveBucketCopies,
-                         bool use_btree_database,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
@@ -70,8 +69,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _clusterStateBundle(lib::ClusterState()),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(use_btree_database)),
-      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(use_btree_database)),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
+      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -106,8 +105,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false),
-      _use_btree_database(use_btree_database)
+      _must_send_updated_host_info(false)
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook,
@@ -886,9 +884,8 @@ Distributor::enableNextConfig()
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
     _pendingMessageTracker.setNodeBusyDuration(getConfig().getInhibitMergesOnBusyNodeDuration());
     _bucketDBUpdater.set_stale_reads_enabled(getConfig().allowStaleReadsDuringClusterStateTransitions());
-    // Concurrent reads are only safe if the B-tree DB implementation is used.
     _externalOperationHandler.set_concurrent_gets_enabled(
-            _use_btree_database && getConfig().allowStaleReadsDuringClusterStateTransitions());
+            getConfig().allowStaleReadsDuringClusterStateTransitions());
     _externalOperationHandler.set_use_weak_internal_read_consistency_for_gets(
             getConfig().use_weak_internal_read_consistency_for_client_gets());
 }
