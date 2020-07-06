@@ -197,7 +197,7 @@ public:
 };
 
 std::vector<NnsHit>
-RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist)
+RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds)
 {
     std::vector<NnsHit> result;
     result.reserve(k);
@@ -213,7 +213,7 @@ RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVect
     int whdcCnt = 0;
     size_t docidLimit = _generated_doc_hashes.size();
     for (uint32_t docid = 0; docid < docidLimit; ++docid) {
-        if (blacklist.isSet(docid)) continue;
+        if (skipDocIds.isSet(docid)) continue;
         int hd = hash_dist(query_hash, _generated_doc_hashes[docid]);
         if (hd <= limit_hash_dist) {
             ++fullCnt;

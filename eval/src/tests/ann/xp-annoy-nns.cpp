@@ -27,7 +27,7 @@ struct Node {
     virtual Node *addDoc(uint32_t docid, V vector, AnnoyLikeNns &meta) = 0;
     virtual int remove(uint32_t docid, V vector) = 0;
     virtual void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const = 0;
-    virtual void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &blacklist) const = 0;
+    virtual void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &skipDocIds) const = 0;
     virtual void stats(std::vector<uint32_t> &depths) = 0;
 };
 
@@ -39,7 +39,7 @@ struct LeafNode : public Node {
     Node *addDoc(uint32_t docid, V vector, AnnoyLikeNns &meta) override;
     int remove(uint32_t docid, V vector) override;
     void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const override;
-    void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &blacklist) const override;
+    void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &skipDocIds) const override;
 
     Node *split(AnnoyLikeNns &meta);
     virtual void stats(std::vector<uint32_t> &depths) override { depths.push_back(1); }
@@ -57,7 +57,7 @@ struct SplitNode : public Node {
     Node *addDoc(uint32_t docid, V vector, AnnoyLikeNns &meta) override;
     int remove(uint32_t docid, V vector) override;
     void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const override;
-    void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &blacklist) const override;
+    void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &skipDocIds) const override;
 
     double planeDistance(V vector) const;
     virtual void stats(std::vector<uint32_t> &depths) override {
@@ -310,10 +310,10 @@ LeafNode::findCandidates(std::set<uint32_t> &cands, V, NodeQueue &, double) cons
 }
 
 void
-LeafNode::filterCandidates(std::set<uint32_t> &cands, V, NodeQueue &, double, const BitVector &blacklist) const
+LeafNode::filterCandidates(std::set<uint32_t> &cands, V, NodeQueue &, double, const BitVector &skipDocIds) const
 {
     for (uint32_t d : docids) {
-        if (blacklist.isSet(d)) continue;
+        if (skipDocIds.isSet(d)) continue;
         cands.insert(d);
     }
 }
@@ -412,7 +412,7 @@ AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
 }
 
 std::vector<NnsHit>
-AnnoyLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist)
+AnnoyLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds)
 {
     ++find_top_k_cnt;
     std::vector<NnsHit> r;
@@ -429,11 +429,11 @@ AnnoyLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const Bit
         // fprintf(stderr, "find candidates: node with min distance %g\n", md);
         Node *n = top.second;
         queue.pop();
-        n->filterCandidates(candidates, vector, queue, md, blacklist);
+        n->filterCandidates(candidates, vector, queue, md, skipDocIds);
         ++find_cand_cnt;
     }
     for (uint32_t docid : candidates) {
-        if (blacklist.isSet(docid)) continue;
+        if (skipDocIds.isSet(docid)) continue;
         double dist = l2distCalc.l2sq_dist(vector, _dva.get(docid));
         NnsHit hit(docid, SqDist(dist));
         r.push_back(hit);

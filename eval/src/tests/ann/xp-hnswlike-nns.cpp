@@ -253,7 +253,7 @@ HnswLikeNns::distance(Vector v, uint32_t b) const
 }
 
 std::vector<NnsHit> 
-HnswLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist)
+HnswLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds)
 {
     std::vector<NnsHit> result;
     if (_entryLevel < 0) return result;
@@ -267,12 +267,12 @@ HnswLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitV
     }
     FurthestPriQ w;
     w.push(entryPoint);
-    search_layer_with_filter(vector, w, std::max(k, search_k), 0, blacklist);
+    search_layer_with_filter(vector, w, std::max(k, search_k), 0, skipDocIds);
     NearestList tmp = w.steal();
     std::sort(tmp.begin(), tmp.end(), LesserDist());
     result.reserve(std::min((size_t)k, tmp.size()));
     for (const auto & hit : tmp) {
-        if (blacklist.isSet(hit.docid)) continue;
+        if (skipDocIds.isSet(hit.docid)) continue;
         result.emplace_back(hit.docid, SqDist(hit.dist));
         if (result.size() == k) break;
     }
@@ -330,7 +330,7 @@ HnswLikeNns::search_layer(Vector vector, FurthestPriQ &w,
 void
 HnswLikeNns::search_layer_with_filter(Vector vector, FurthestPriQ &w,
                                       uint32_t ef, uint32_t searchLevel,
-                                      const BitVector &blacklist)
+                                      const BitVector &skipDocIds)
 {
     NearestPriQ candidates;
     VisitedSet &visited = _visitedSetPool.get(_nodes.size());
@@ -338,7 +338,7 @@ HnswLikeNns::search_layer_with_filter(Vector vector, FurthestPriQ &w,
     for (const HnswHit & entry : w.peek()) {
         candidates.push(entry);
         visited.mark(entry.docid);
-        if (blacklist.isSet(entry.docid)) ++ef;
+        if (skipDocIds.isSet(entry.docid)) ++ef;
     }
     double limd = std::numeric_limits<double>::max();
     while (! candidates.empty()) {
@@ -354,7 +354,7 @@ HnswLikeNns::search_layer_with_filter(Vector vector, FurthestPriQ &w,
             ++distcalls_search_layer;
             if (e_dist < limd) {
                 candidates.emplace(e_id, SqDist(e_dist));
-                if (blacklist.isSet(e_id)) continue;
+                if (skipDocIds.isSet(e_id)) continue;
                 w.emplace(e_id, SqDist(e_dist));
                 if (w.size() > ef) {
                     w.pop();

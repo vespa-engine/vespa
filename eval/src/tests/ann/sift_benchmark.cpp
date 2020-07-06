@@ -26,11 +26,11 @@
 #include "read-vecs.h"
 #include "bruteforce-nns.h"
 
-TopK bruteforce_nns_filter(const PointVector &query, const BitVector &blacklist) {
+TopK bruteforce_nns_filter(const PointVector &query, const BitVector &skipDocIds) {
     TopK result;
     BfHitHeap heap(result.K);
     for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
-        if (blacklist.isSet(docid)) continue;
+        if (skipDocIds.isSet(docid)) continue;
         const PointVector &docvector = generatedDocs[docid];
         double d = l2distCalc.l2sq_dist(query, docvector);
         Hit h(docid, d);
@@ -46,19 +46,19 @@ TopK bruteforce_nns_filter(const PointVector &query, const BitVector &blacklist)
 
 void timing_bf_filter(int percent)
 {
-    BitVector blacklist(NUM_DOCS);
+    BitVector skipDocIds(NUM_DOCS);
     RndGen rnd;
     for (uint32_t idx = 0; idx < NUM_DOCS; ++idx) {
         if (rnd.nextUniform() < 0.01 * percent) {
-            blacklist.setBit(idx);
+            skipDocIds.setBit(idx);
         } else {
-            blacklist.clearBit(idx);
+            skipDocIds.clearBit(idx);
         }
     }
     TimePoint bef = std::chrono::steady_clock::now();
     for (int cnt = 0; cnt < NUM_Q; ++cnt) {
         const PointVector &qv = generatedQueries[cnt];
-        auto res = bruteforce_nns_filter(qv, blacklist);
+        auto res = bruteforce_nns_filter(qv, skipDocIds);
         EXPECT_TRUE(res.hits[res.K - 1].distance > 0.0);
     }
     TimePoint aft = std::chrono::steady_clock::now();
@@ -89,11 +89,11 @@ TEST("require that brute force works") {
 using NNS_API = NNS<float>;
 
 size_t search_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
-                          const BitVector &blacklist)
+                          const BitVector &skipDocIds)
 {
     const PointVector &qv = generatedQueries[qid];
     vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
-    auto rv = nns.topKfilter(100, query, sk, blacklist);
+    auto rv = nns.topKfilter(100, query, sk, skipDocIds);
     return rv.size();
 }
 
@@ -101,12 +101,12 @@ size_t search_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
 #include "verify-top-k.h"
 
 void verify_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
-                        const BitVector &blacklist)
+                        const BitVector &skipDocIds)
 {
     const PointVector &qv = generatedQueries[qid];
-    auto expected = bruteforce_nns_filter(qv, blacklist);
+    auto expected = bruteforce_nns_filter(qv, skipDocIds);
     vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
-    auto rv = nns.topKfilter(expected.K, query, sk, blacklist);
+    auto rv = nns.topKfilter(expected.K, query, sk, skipDocIds);
     TopK actual;
     for (size_t i = 0; i < actual.K; ++i) {
         actual.hits[i] = Hit(rv[i].docid, rv[i].sq.distance);
@@ -117,19 +117,19 @@ void verify_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
 void timing_nns_filter(const char *name, NNS_API &nns,
                        std::vector<uint32_t> sk_list, int percent)
 {
-    BitVector blacklist(NUM_DOCS);
+    BitVector skipDocIds(NUM_DOCS);
     RndGen rnd;
     for (uint32_t idx = 0; idx < NUM_DOCS; ++idx) {
         if (rnd.nextUniform() < 0.01 * percent) {
-            blacklist.setBit(idx);
+            skipDocIds.setBit(idx);
         } else {
-            blacklist.clearBit(idx);
+            skipDocIds.clearBit(idx);
         }
     }
     for (uint32_t search_k : sk_list) {
         TimePoint bef = std::chrono::steady_clock::now();
         for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            uint32_t nh = search_with_filter(search_k, nns, cnt, blacklist);
+            uint32_t nh = search_with_filter(search_k, nns, cnt, skipDocIds);
             EXPECT_EQUAL(nh, 100u);
         }
         TimePoint aft = std::chrono::steady_clock::now();
@@ -138,7 +138,7 @@ void timing_nns_filter(const char *name, NNS_API &nns,
 #if 0
         fprintf(stderr, "Quality check for %s filter %d %%:\n", name, percent);
         for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            verify_with_filter(search_k, nns, cnt, blacklist);
+            verify_with_filter(search_k, nns, cnt, skipDocIds);
         }
 #endif
     }

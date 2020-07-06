@@ -47,7 +47,7 @@ public:
         return result;
     }
 
-    std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist) override {
+    std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds) override {
         std::vector<NnsHit> reversed;
         uint32_t adjusted_k = k+4;
         uint32_t adjusted_sk = search_k+4;
@@ -57,7 +57,7 @@ public:
             auto priQ = _hnsw.searchKnn(vector.cbegin(), adjusted_k);
             while (! priQ.empty()) {
                 auto pair = priQ.top();
-                if (! blacklist.isSet(pair.second)) {
+                if (! skipDocIds.isSet(pair.second)) {
                     reversed.emplace_back(pair.second, SqDist(pair.first));
                 }
                 priQ.pop();

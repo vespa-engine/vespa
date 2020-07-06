@@ -75,7 +75,7 @@ public:
 
     using Vector = vespalib::ConstArrayRef<FltType>;
     virtual std::vector<NnsHit> topK(uint32_t k, Vector vector, uint32_t search_k) = 0;
-    virtual std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &blacklist) = 0;
+    virtual std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds) = 0;
     virtual ~NNS() {}
 protected:
     uint32_t _numDims;
