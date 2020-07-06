@@ -206,13 +206,15 @@ public class SessionRepository {
 
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
-        log.log(Level.FINE, "Deleting local session " + sessionId);
-        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
-        if (watcher != null) watcher.close();
-        localSessionCache.removeSession(sessionId);
-        NestedTransaction transaction = new NestedTransaction();
-        deleteLocalSession(session, transaction);
-        transaction.commit();
+        try (Lock lock = lock(sessionId)) {
+            log.log(Level.FINE, "Deleting local session " + sessionId);
+            SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+            if (watcher != null) watcher.close();
+            localSessionCache.removeSession(sessionId);
+            NestedTransaction transaction = new NestedTransaction();
+            deleteLocalSession(session, transaction);
+            transaction.commit();
+        }
     }
 
     /** Add transactions to delete this session to the given nested transaction */
