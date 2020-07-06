@@ -251,6 +251,7 @@ public class SessionPreparer {
                     .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
+            checkTimeout("distributeApplicationPackage");
             return fileReference;
         }
 
