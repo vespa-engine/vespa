@@ -70,8 +70,7 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double defaultTermwiseLimit();
 
-        // TODO Remove when 7.225 is last
-        default int defaultNumResponseThreads() { return 1; }
+        default int defaultNumResponseThreads() { return 2; }
 
         // TODO Revisit in May or June 2020
         double threadPoolSizeFactor();
@@ -97,6 +96,7 @@ public interface ModelContext {
 
         // Select sequencer type use while feeding.
         String feedSequencerType();
+        String responseSequencerType();
 
         // TODO Remove when 7.247 is last
         default boolean useDistributorBtreeDb() { return true; }

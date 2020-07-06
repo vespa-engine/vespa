@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -11,8 +13,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 public class FileStorProducer implements StorFilestorConfig.Producer {
 
     public static class Builder {
-        protected FileStorProducer build(ContentCluster parent, ModelElement clusterElem) {
-            return new FileStorProducer(parent, getThreads(clusterElem));
+        protected FileStorProducer build(ModelContext.Properties properties, ContentCluster parent, ModelElement clusterElem) {
+            return new FileStorProducer(properties, parent, getThreads(clusterElem));
         }
 
        private Integer getThreads(ModelElement clusterElem) {
@@ -43,10 +45,21 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
 
     private final Integer numThreads;
     private final ContentCluster cluster;
+    private final int reponseNumThreads;
+    private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
 
-    public FileStorProducer(ContentCluster parent, Integer numThreads) {
+    private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
+        try {
+            return StorFilestorConfig.Response_sequencer_type.Enum.valueOf(sequencerType);
+        } catch (Throwable t) {
+            return StorFilestorConfig.Response_sequencer_type.Enum.ADAPTIVE;
+        }
+    }
+    public FileStorProducer(ModelContext.Properties properties, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
+        this.reponseNumThreads = properties.defaultNumResponseThreads();
+        this.responseSequencerType = convertResponseSequencerType(properties.responseSequencerType());
     }
 
     @Override
@@ -55,6 +68,8 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
             builder.num_threads(numThreads);
         }
         builder.enable_multibit_split_optimalization(cluster.getPersistence().enableMultiLevelSplitting());
+        builder.num_response_threads(reponseNumThreads);
+        builder.response_sequencer_type(responseSequencerType);
     }
 
 }

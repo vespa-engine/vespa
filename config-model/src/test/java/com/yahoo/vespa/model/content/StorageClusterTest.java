@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Flavor;
@@ -32,6 +34,13 @@ public class StorageClusterTest {
         MockRoot root = new MockRoot("", new DeployState.Builder()
                 .applicationPackage(new MockApplicationPackage.Builder().build())
                 .modelHostProvisioner(new SingleNodeProvisioner(flavor)).build());
+        return parse(xml, root);
+    }
+    StorageCluster parse(String xml, Flavor flavor, ModelContext.Properties properties) {
+        MockRoot root = new MockRoot("", new DeployState.Builder()
+                .applicationPackage(new MockApplicationPackage.Builder().build())
+                .modelHostProvisioner(new SingleNodeProvisioner(flavor))
+                .properties(properties).build());
         return parse(xml, root);
     }
 
@@ -181,6 +190,7 @@ public class StorageClusterTest {
         stc.getConfig(builder);
         StorFilestorConfig config = new StorFilestorConfig(builder);
         assertEquals(2, config.num_response_threads());
+        assertEquals(StorFilestorConfig.Response_sequencer_type.ADAPTIVE, config.response_sequencer_type());
         assertEquals(7, config.num_threads());
     }
 
@@ -250,6 +260,25 @@ public class StorageClusterTest {
             StorFilestorConfig config = new StorFilestorConfig(builder);
             assertEquals(9, config.num_threads());
         }
+    }
+
+    @Test
+    public void testFeatureFlagControlOfResponseSequencer() {
+        StorageCluster stc = parse(
+                "<cluster id=\"bees\">\n" +
+                        "    <documents/>" +
+                        "  <group>" +
+                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                        "  </group>" +
+                        "</cluster>",
+                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()),
+                new TestProperties().setResponseNumThreads(13).setResponseSequencerType("THROUGHPUT")
+        );
+        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
+        stc.getConfig(builder);
+        StorFilestorConfig config = new StorFilestorConfig(builder);
+        assertEquals(13, config.num_response_threads());
+        assertEquals(StorFilestorConfig.Response_sequencer_type.THROUGHPUT, config.response_sequencer_type());
     }
 
     @Test
