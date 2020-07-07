@@ -226,14 +226,12 @@ class TestApplicationPackage(unittest.TestCase):
             '<services version="1.0">\n'
             '    <container id="test_app_container" version="1.0">\n'
             "        <search></search>\n"
-            "        <document-processing></document-processing>\n"
             "        <document-api></document-api>\n"
             "    </container>\n"
             '    <content id="test_app_content" version="1.0">\n'
             '        <redundancy reply-after="1">1</redundancy>\n'
             "        <documents>\n"
             '            <document type="msmarco" mode="index"></document>\n'
-            '            <document-processing cluster="test_app_container"></document-processing>\n'
             "        </documents>\n"
             "        <nodes>\n"
             '            <node distribution-key="0" hostalias="node1"></node>\n'
