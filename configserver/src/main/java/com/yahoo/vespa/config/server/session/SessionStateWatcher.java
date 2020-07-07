@@ -53,23 +53,22 @@ public class SessionStateWatcher {
 
     private void sessionStatusChanged(Status newStatus) {
         long sessionId = remoteSession.getSessionId();
-        try (var lock = sessionRepository.lock(sessionId)) {
-            if (newStatus.equals(Status.PREPARE)) {
-                createLocalSession(sessionId);
-                log.log(Level.FINE, remoteSession.logPre() + "Loading prepared session: " + sessionId);
-                remoteSession.loadPrepared();
-            } else if (newStatus.equals(Status.ACTIVATE)) {
-                createLocalSession(sessionId);
-                remoteSession.makeActive(tenantApplications);
-            } else if (newStatus.equals(Status.DEACTIVATE)) {
-                remoteSession.deactivate();
-            } else if (newStatus.equals(Status.DELETE)) {
-                remoteSession.deactivate();
-                localSession.ifPresent(session -> {
-                    log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
-                    sessionRepository.deleteLocalSession(session);
-                });
-            }
+
+        if (newStatus.equals(Status.PREPARE)) {
+            createLocalSession(sessionId);
+            log.log(Level.FINE, remoteSession.logPre() + "Loading prepared session: " + sessionId);
+            remoteSession.loadPrepared();
+        } else if (newStatus.equals(Status.ACTIVATE)) {
+            createLocalSession(sessionId);
+            remoteSession.makeActive(tenantApplications);
+        } else if (newStatus.equals(Status.DEACTIVATE)) {
+            remoteSession.deactivate();
+        } else if (newStatus.equals(Status.DELETE)) {
+            remoteSession.deactivate();
+            localSession.ifPresent(session -> {
+                log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
+                sessionRepository.deleteLocalSession(session);
+            });
         }
     }
 

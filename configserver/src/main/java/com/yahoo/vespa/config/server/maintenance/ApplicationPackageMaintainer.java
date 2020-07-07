@@ -82,10 +82,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
         Tenant tenant = applicationRepository.tenantRepository().getTenant(applicationId.tenant());
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        try (var lock = sessionRepository.lock(sessionId)) {
-            if (sessionRepository.getLocalSession(sessionId) == null)
-                sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        }
+        if (sessionRepository.getLocalSession(sessionId) == null)
+            sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
 
     private boolean missingOnDisk(FileReference applicationPackageReference) {
