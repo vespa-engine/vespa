@@ -30,6 +30,8 @@ endif()
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
 
+find_package(GTest REQUIRED)
+
 include(build_settings.cmake)
 
 # Enable CTest unit testing
