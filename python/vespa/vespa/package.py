@@ -1,7 +1,6 @@
 import os
 from time import sleep
 from typing import List, Mapping, Optional
-from tempfile import TemporaryDirectory
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -67,10 +66,10 @@ class Field(ToJson, FromJson["Field"]):
     def __repr__(self):
         return "{0}({1}, {2}, {3}, {4})".format(
             self.__class__.__name__,
-            str(self.name),
-            str(self.type),
-            str(self.indexing),
-            str(self.index),
+            repr(self.name),
+            repr(self.type),
+            repr(self.indexing),
+            repr(self.index),
         )
 
 
@@ -107,7 +106,7 @@ class Document(ToJson, FromJson["Document"]):
 
     def __repr__(self):
         return "{0}({1})".format(
-            self.__class__.__name__, str(self.fields) if self.fields else None
+            self.__class__.__name__, repr(self.fields) if self.fields else None
         )
 
 
@@ -143,7 +142,7 @@ class FieldSet(ToJson, FromJson["FieldSet"]):
 
     def __repr__(self):
         return "{0}({1}, {2})".format(
-            self.__class__.__name__, str(self.name), str(self.fields)
+            self.__class__.__name__, repr(self.name), repr(self.fields)
         )
 
 
@@ -188,9 +187,9 @@ class RankProfile(ToJson, FromJson["RankProfile"]):
     def __repr__(self):
         return "{0}({1}, {2}, {3})".format(
             self.__class__.__name__,
-            str(self.name),
-            str(self.first_phase),
-            str(self.inherits),
+            repr(self.name),
+            repr(self.first_phase),
+            repr(self.inherits),
         )
 
 
@@ -270,12 +269,12 @@ class Schema(ToJson, FromJson["Schema"]):
     def __repr__(self):
         return "{0}({1}, {2}, {3}, {4})".format(
             self.__class__.__name__,
-            str(self.name),
-            str(self.document),
-            str(
+            repr(self.name),
+            repr(self.document),
+            repr(
                 [field for field in self.fieldsets.values()] if self.fieldsets else None
             ),
-            str(
+            repr(
                 [rank_profile for rank_profile in self.rank_profiles.values()]
                 if self.rank_profiles
                 else None
@@ -378,7 +377,7 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
 
     def __repr__(self):
         return "{0}({1}, {2})".format(
-            self.__class__.__name__, str(self.name), str(self.schema)
+            self.__class__.__name__, repr(self.name), repr(self.schema)
         )
 
 
