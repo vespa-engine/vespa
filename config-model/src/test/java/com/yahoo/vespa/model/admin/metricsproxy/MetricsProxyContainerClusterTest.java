@@ -15,8 +15,8 @@ import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
+import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
@@ -44,7 +44,6 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -56,11 +55,11 @@ public class MetricsProxyContainerClusterTest {
     @Test
     public void metrics_proxy_bundle_is_included_in_bundles_config() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
-        var builder = new BundlesConfig.Builder();
+        var builder = new PlatformBundlesConfig.Builder();
         model.getConfig(builder, CLUSTER_CONFIG_ID);
-        BundlesConfig config = builder.build();
-        assertEquals(1, config.bundle().size());
-        assertThat(config.bundle(0).value(), endsWith(METRICS_PROXY_BUNDLE_FILE.toString()));
+        PlatformBundlesConfig config = builder.build();
+        assertEquals(1, config.bundles().size());
+        assertThat(config.bundles(0).value(), endsWith(METRICS_PROXY_BUNDLE_FILE.toString()));
     }
 
     @Test

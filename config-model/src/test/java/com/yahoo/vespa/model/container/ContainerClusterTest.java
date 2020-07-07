@@ -16,7 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.container.BundlesConfig;
+import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -292,9 +292,9 @@ public class ContainerClusterTest {
                 .zone(zone).build();
         MockRoot root = new MockRoot("foo", state);
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
-        BundlesConfig.Builder bundleBuilder = new BundlesConfig.Builder();
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
         cluster.getConfig(bundleBuilder);
-        List<String> installedBundles = bundleBuilder.build().bundle().stream().map(FileReference::value).collect(Collectors.toList());
+        List<String> installedBundles = bundleBuilder.build().bundles().stream().map(FileReference::value).collect(Collectors.toList());
 
         assertEquals(expectedBundleNames.size(), installedBundles.size());
         assertThat(installedBundles, containsInAnyOrder(
