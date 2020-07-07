@@ -284,73 +284,15 @@ class Schema(ToJson, FromJson["Schema"]):
 
 
 class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
-    def __init__(self, name: str, schema: Optional[Schema] = None) -> None:
+    def __init__(self, name: str, schema: Schema) -> None:
         """
         Vespa Application Package.
 
         :param name: Application name.
-        :param disk_folder: Absolute path of the folder containing the application files.
+        :param schema: Schema of the application.
         """
         self.name = name
         self.schema = schema
-        self.container = None
-
-    def run_vespa_engine_container(self, disk_folder: str, container_memory: str):
-        """
-        Run a vespa container.
-
-        :param disk_folder: Folder containing the application files.
-        :param container_memory: Memory limit of the container
-        :return:
-        """
-        client = docker.from_env()
-        if self.container is None:
-            try:
-                self.container = client.containers.get(self.name)
-            except docker.errors.NotFound:
-                self.container = client.containers.run(
-                    "vespaengine/vespa",
-                    detach=True,
-                    mem_limit=container_memory,
-                    name=self.name,
-                    hostname=self.name,
-                    privileged=True,
-                    volumes={disk_folder: {"bind": "/app", "mode": "rw"}},
-                    ports={8080: 8080, 19112: 19112},
-                )
-
-    def check_configuration_server(self) -> bool:
-        """
-        Check if configuration server is running and ready for deployment
-
-        :return: True if configuration server is running.
-        """
-        return (
-            self.container is not None
-            and self.container.exec_run(
-                "bash -c 'curl -s --head http://localhost:19071/ApplicationStatus'"
-            )
-            .output.decode("utf-8")
-            .split("\r\n")[0]
-            == "HTTP/1.1 200 OK"
-        )
-
-    def deploy_locally(self, disk_folder: str, container_memory: str = "4G"):
-
-        self.create_application_package_files(dir_path=disk_folder)
-
-        self.run_vespa_engine_container(
-            disk_folder=disk_folder, container_memory=container_memory
-        )
-
-        while not self.check_configuration_server():
-            print("Waiting for configuration server.")
-            sleep(5)
-
-        deployment = self.container.exec_run(
-            "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
-        )
-        return deployment.output.decode("utf-8").split("\n")
 
     @property
     def schema_to_text(self):
@@ -438,3 +380,71 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
         return "{0}({1}, {2})".format(
             self.__class__.__name__, str(self.name), str(self.schema)
         )
+
+
+class VespaDocker(object):
+    def __init__(self, application_package: ApplicationPackage) -> None:
+        """
+        Deploy application to a Vespa container
+
+        :param application_package: ApplicationPackage to be deployed.
+        """
+        self.application_package = application_package
+        self.container = None
+
+    def run_vespa_engine_container(self, disk_folder: str, container_memory: str):
+        """
+        Run a vespa container.
+
+        :param disk_folder: Folder containing the application files.
+        :param container_memory: Memory limit of the container
+        :return:
+        """
+        client = docker.from_env()
+        if self.container is None:
+            try:
+                self.container = client.containers.get(self.application_package.name)
+            except docker.errors.NotFound:
+                self.container = client.containers.run(
+                    "vespaengine/vespa",
+                    detach=True,
+                    mem_limit=container_memory,
+                    name=self.application_package.name,
+                    hostname=self.application_package.name,
+                    privileged=True,
+                    volumes={disk_folder: {"bind": "/app", "mode": "rw"}},
+                    ports={8080: 8080, 19112: 19112},
+                )
+
+    def check_configuration_server(self) -> bool:
+        """
+        Check if configuration server is running and ready for deployment
+
+        :return: True if configuration server is running.
+        """
+        return (
+            self.container is not None
+            and self.container.exec_run(
+                "bash -c 'curl -s --head http://localhost:19071/ApplicationStatus'"
+            )
+            .output.decode("utf-8")
+            .split("\r\n")[0]
+            == "HTTP/1.1 200 OK"
+        )
+
+    def deploy(self, disk_folder: str, container_memory: str = "4G"):
+
+        self.application_package.create_application_package_files(dir_path=disk_folder)
+
+        self.run_vespa_engine_container(
+            disk_folder=disk_folder, container_memory=container_memory
+        )
+
+        while not self.check_configuration_server():
+            print("Waiting for configuration server.")
+            sleep(5)
+
+        deployment = self.container.exec_run(
+            "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
+        )
+        return deployment.output.decode("utf-8").split("\n")
