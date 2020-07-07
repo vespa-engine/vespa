@@ -86,7 +86,7 @@ class Document(ToJson, FromJson["Document"]):
         :param fields: fields to be added
         :return:
         """
-        self.fields.extend(list(fields))
+        self.fields.extend(fields)
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "Document":
