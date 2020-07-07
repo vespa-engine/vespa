@@ -3,6 +3,4 @@ vespa_add_library(storage_storageutil OBJECT
     SOURCES
     bloomfilter.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

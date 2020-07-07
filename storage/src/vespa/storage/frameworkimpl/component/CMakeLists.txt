@@ -5,6 +5,4 @@ vespa_add_library(storage_component OBJECT
     servicelayercomponentregisterimpl.cpp
     storagecomponentregisterimpl.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

@@ -47,6 +47,4 @@ vespa_add_library(storage_distributor
     INSTALL lib64
     DEPENDS
     storage
-    AFTER
-    storage_storageconfig
 )

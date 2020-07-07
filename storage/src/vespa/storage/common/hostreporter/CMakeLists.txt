@@ -5,6 +5,4 @@ vespa_add_library(storage_hostreporter OBJECT
     kernelmetrictool.cpp
     versionreporter.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

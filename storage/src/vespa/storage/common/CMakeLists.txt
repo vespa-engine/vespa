@@ -16,6 +16,4 @@ vespa_add_library(storage_common OBJECT
     storagelink.cpp
     storagelinkqueued.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

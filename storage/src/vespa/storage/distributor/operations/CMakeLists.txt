@@ -3,6 +3,4 @@ vespa_add_library(storage_distributoroperation OBJECT
     SOURCES
     operation.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

@@ -2,6 +2,4 @@
 vespa_add_library(searchsummary_test
     SOURCES
     mock_attribute_manager.cpp
-    AFTER
-    searchsummary_config
 )

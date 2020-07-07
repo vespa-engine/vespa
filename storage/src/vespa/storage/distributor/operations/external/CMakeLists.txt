@@ -12,6 +12,4 @@ vespa_add_library(storage_distributoroperationexternal OBJECT
     updateoperation.cpp
     visitoroperation.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

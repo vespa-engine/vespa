@@ -6,6 +6,4 @@ vespa_add_library(document_util OBJECT
     serializableexceptions.cpp
     stringutil.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

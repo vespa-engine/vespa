@@ -7,6 +7,4 @@ vespa_add_library(document_serialization OBJECT
     vespadocumentserializer.cpp
     vespadocumentdeserializer.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

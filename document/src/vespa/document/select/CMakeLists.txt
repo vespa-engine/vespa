@@ -42,8 +42,6 @@ vespa_add_library(document_select OBJECT
     parser_limits.cpp
     ${BISON_DocSelParser_OUTPUTS}
     ${FLEX_DocSelLexer_OUTPUTS}
-    AFTER
-    document_documentconfig
 )
 
 #TODO Remove once we have a recently new flex compiler. At least 2.5.38/39 or 2.6
