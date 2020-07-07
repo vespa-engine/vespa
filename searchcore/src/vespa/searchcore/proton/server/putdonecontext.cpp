@@ -30,7 +30,7 @@ PutDoneContext::~PutDoneContext()
         _docIdLimit->bumpUpLimit(_lid + 1);
     }
     if (_enableNotifyPut) {
-        _gidToLidChangeHandler.notifyPutDone(_gid, _lid, _serialNum);
+        _gidToLidChangeHandler.notifyPutDone(steal(), _gid, _lid, _serialNum);
     }
 }
 

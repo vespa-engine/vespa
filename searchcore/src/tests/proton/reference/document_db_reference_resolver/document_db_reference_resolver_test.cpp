@@ -191,6 +191,7 @@ asImportedAttribute(const IAttributeVector &attr)
 struct Fixture {
     MyGidToLidMapperFactory::SP factory;
     MonitoredRefCount _gidToLidChangeListenerRefCount;
+    std::unique_ptr<ISequencedTaskExecutor> _attributeFieldWriter;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler2;
     MyDocumentDBReference::SP parentReference;
@@ -200,10 +201,10 @@ struct Fixture {
     MyAttributeManager oldAttrMgr;
     DocumentModel docModel;
     ImportedFieldsConfig importedFieldsCfg;
-    std::unique_ptr<ISequencedTaskExecutor> _attributeFieldWriter;
     Fixture() :
         factory(std::make_shared<MyGidToLidMapperFactory>()),
         _gidToLidChangeListenerRefCount(),
+        _attributeFieldWriter(SequencedTaskExecutor::create(1)),
         _parentGidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>()),
         _parentGidToLidChangeHandler2(std::make_shared<MockGidToLidChangeHandler>()),
         parentReference(std::make_shared<MyDocumentDBReference>(factory, _parentGidToLidChangeHandler)),
@@ -211,9 +212,7 @@ struct Fixture {
         registry(),
         attrMgr(),
         docModel(),
-        importedFieldsCfg(createImportedFieldsConfig()),
-        _attributeFieldWriter(SequencedTaskExecutor::create(1))
-
+        importedFieldsCfg(createImportedFieldsConfig())
     {
         registry.add("parent", parentReference);
         registry.add("parent2", parentReference2);

@@ -21,27 +21,28 @@ GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor 
 }
 GidToLidChangeListener::~GidToLidChangeListener()
 {
+    _attributeFieldWriter.sync();
     _refCount.release();
 }
 
 void
-GidToLidChangeListener::notifyPutDone(document::GlobalId gid, uint32_t lid)
+GidToLidChangeListener::notifyPutDone(Context context, document::GlobalId gid, uint32_t lid)
 {
-    std::promise<void> promise;
-    auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise, gid, lid]() { _attr->notifyReferencedPut(gid, lid); promise.set_value(); });
-    future.wait();
+                                        [this, context=std::move(context), gid, lid]() {
+                                            (void) context;
+                                            _attr->notifyReferencedPut(gid, lid);
+                                        });
 }
 
 void
-GidToLidChangeListener::notifyRemove(document::GlobalId gid)
+GidToLidChangeListener::notifyRemove(Context context, document::GlobalId gid)
 {
-    std::promise<void> promise;
-    auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise, gid]() { _attr->notifyReferencedRemove(gid); promise.set_value(); });
-    future.wait();
+                                        [this, context = std::move(context), gid]() {
+                                            (void) context;
+                                            _attr->notifyReferencedRemove(gid);
+                                        });
 }
 
 void
@@ -50,7 +51,10 @@ GidToLidChangeListener::notifyRegistered()
     std::promise<void> promise;
     auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise]() { _attr->populateTargetLids(); promise.set_value(); });
+                                        [this, &promise]() {
+                                            _attr->populateTargetLids();
+                                            promise.set_value();
+                                        });
     future.wait();
 }
 

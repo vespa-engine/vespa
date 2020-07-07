@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_handler_test");
@@ -100,12 +101,12 @@ public:
     {
         _stats.markCreatedListener();
     }
-    virtual ~MyListener() { _stats.markDestroyedListener(); }
-    virtual void notifyPutDone(GlobalId, uint32_t) override { _stats.notifyPutDone(); }
-    virtual void notifyRemove(GlobalId) override { _stats.notifyRemove(); }
-    virtual void notifyRegistered() override { _stats.markRegisteredListener(); }
-    virtual const vespalib::string &getName() const override { return _name; }
-    virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
+    ~MyListener() override { _stats.markDestroyedListener(); }
+    void notifyPutDone(Context, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
+    void notifyRemove(Context, GlobalId) override { _stats.notifyRemove(); }
+    void notifyRegistered() override { _stats.markRegisteredListener(); }
+    const vespalib::string &getName() const override { return _name; }
+    const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
 
 struct Fixture
@@ -139,11 +140,15 @@ struct Fixture
     }
 
     void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) {
-        _handler->notifyPutDone(gid, lid, serialNum);
+        vespalib::Gate gate;
+        _handler->notifyPutDone(std::make_shared<search::GateCallback>(gate), gid, lid, serialNum);
+        gate.await();
     }
 
     void notifyRemove(GlobalId gid, SerialNum serialNum) {
-        _handler->notifyRemove(gid, serialNum);
+        vespalib::Gate gate;
+        _handler->notifyRemove(std::make_shared<search::GateCallback>(gate), gid, serialNum);
+        gate.await();
     }
 
     void notifyRemoveDone(GlobalId gid, SerialNum serialNum) {
