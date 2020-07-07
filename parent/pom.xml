@@ -255,6 +255,7 @@
                     <artifactId>bundle-plugin</artifactId>
                     <version>${project.version}</version>
                     <configuration>
+                        <buildVespaPlatformBundle>true</buildVespaPlatformBundle>
                         <configGenVersion>${project.version}</configGenVersion>
                         <useCommonAssemblyIds>true</useCommonAssemblyIds>
                     </configuration>
