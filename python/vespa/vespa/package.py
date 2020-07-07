@@ -74,10 +74,7 @@ class Document(ToJson, FromJson["Document"]):
         Object representing a Vespa document.
 
         """
-        if not fields:
-            fields = []
-
-        self.fields = fields
+        self.fields = [] if not fields else fields
 
     def add_fields(self, *fields: Field):
         """
