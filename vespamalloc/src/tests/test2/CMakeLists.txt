@@ -5,7 +5,7 @@ vespa_add_executable(vespamalloc_testgraph_app TEST
     ../../vespamalloc/util/stream.cpp
     ../../vespamalloc/util/traceutil.cpp
     ../../vespamalloc/util/callstack.cpp
-    DEPENDS
+    EXTERNAL_DEPENDS
     dl
 )
 vespa_add_test(NAME vespamalloc_testgraph_app NO_VALGRIND COMMAND vespamalloc_testgraph_app)

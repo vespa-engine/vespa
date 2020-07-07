@@ -5,6 +5,7 @@ vespa_add_executable(searchlib_ioerrorhandler_test_app TEST
     DEPENDS
     searchlib_test
     searchlib
+    EXTERNAL_DEPENDS
     dl
 )
 vespa_add_test(NAME searchlib_ioerrorhandler_test_app COMMAND searchlib_ioerrorhandler_test_app)

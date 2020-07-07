@@ -168,7 +168,7 @@ function(vespa_add_library TARGET)
     cmake_parse_arguments(ARG
         "STATIC;OBJECT;INTERFACE;TEST"
         "INSTALL;OUTPUT_NAME"
-        "DEPENDS;AFTER;SOURCES"
+        "DEPENDS;EXTERNAL_DEPENDS;AFTER;SOURCES"
         ${ARGN})
 
     __check_target_parameters()
@@ -233,7 +233,7 @@ function(vespa_add_executable TARGET)
     cmake_parse_arguments(ARG
         "TEST"
         "INSTALL;OUTPUT_NAME"
-        "DEPENDS;AFTER;SOURCES"
+        "DEPENDS;EXTERNAL_DEPENDS;AFTER;SOURCES"
         ${ARGN})
 
     __check_target_parameters()
@@ -490,6 +490,11 @@ macro(__add_dependencies_to_target)
     # Link with other targets defined as module dependencies
     foreach(DEPENDEE IN LISTS MODULE_DEPENDS)
         vespa_add_target_dependency(${TARGET} ${DEPENDEE})
+    endforeach()
+
+    # Link with other external libraries defined as external dependencies
+    foreach(DEPENDEE IN LISTS ARG_EXTERNAL_DEPENDS)
+        vespa_add_target_external_dependency(${TARGET} ${DEPENDEE})
     endforeach()
 
     # Link with other external libraries defined as module external dependencies
