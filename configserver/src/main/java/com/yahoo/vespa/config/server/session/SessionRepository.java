@@ -108,12 +108,15 @@ public class SessionRepository {
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.locksPath = TenantRepository.getLocksPath(tenantName);
-
-        loadLocalSessions();
-        initializeRemoteSessions();
+        loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
+    }
+
+    private void loadSessions() {
+        loadLocalSessions();
+        initializeRemoteSessions();
     }
 
     // ---------------- Local sessions ----------------------------------------------------------------
@@ -211,18 +214,21 @@ public class SessionRepository {
             SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
             if (watcher != null) watcher.close();
             localSessionCache.removeSession(sessionId);
-            NestedTransaction transaction = new NestedTransaction();
-            deleteLocalSession(session, transaction);
-            transaction.commit();
+            deletePersistentData(sessionId);
         }
     }
 
-    /** Add transactions to delete this session to the given nested transaction */
-    public void deleteLocalSession(LocalSession session, NestedTransaction transaction) {
-        long sessionId = session.getSessionId();
+    private void deletePersistentData(long sessionId) {
+        NestedTransaction transaction = new NestedTransaction();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+
+        // We will try to delete data from zookeeper from several servers, but since we take a lock
+        // and the transaction will either delete everything or nothing (which will happen if it has been done
+        // on another server) this works fine
         transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
+
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
+        transaction.commit();
     }
 
     public void close() {
