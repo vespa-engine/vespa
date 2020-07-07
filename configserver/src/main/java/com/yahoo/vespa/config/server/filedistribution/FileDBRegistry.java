@@ -20,7 +20,7 @@ import java.util.Optional;
 public class FileDBRegistry implements FileRegistry {
 
     private final AddFileInterface manager;
-    private List<Entry> entries = new ArrayList<>();
+    private final List<Entry> entries = new ArrayList<>();
     private final Map<String, FileReference> fileReferenceCache = new HashMap<>();
 
     public FileDBRegistry(AddFileInterface manager) {

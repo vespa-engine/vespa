@@ -126,7 +126,7 @@ public class SessionRepository {
         long sessionId = session.getSessionId();
         Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSesssionStateWatcher(sessionId, fileCache, remoteSession, Optional.of(session));
+        addSessionStateWatcher(sessionId, fileCache, remoteSession, Optional.of(session));
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -333,7 +333,27 @@ public class SessionRepository {
         Optional<LocalSession> localSession = Optional.empty();
         if (distributeApplicationPackage())
             localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
+        addSessionStateWatcher(sessionId, fileCache, remoteSession, localSession);
+    }
+
+    void activate(RemoteSession session) {
+        long sessionId = session.getSessionId();
+        Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
+        log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + sessionId);
+        ApplicationSet app = session.ensureApplicationLoaded();
+        log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
+        applicationRepo.reloadConfig(app);
+        log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
+        session.notifyCompletion(waiter);
+        log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
+    }
+
+    public void deactivate(RemoteSession remoteSession) {
+        remoteSession.deactivate();
+    }
+
+    void prepare(RemoteSession session) {
+        session.prepare();
     }
 
     boolean distributeApplicationPackage() {
@@ -621,13 +641,13 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addSesssionStateWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
+    private void addSessionStateWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
         // Remote session will always be present in an existing state watcher, but local session might not
         if (sessionStateWatchers.containsKey(sessionId)) {
             localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
         } else {
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, applicationRepo, remoteSession,
-                                                                        localSession, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, localSession,
+                                                                        metrics, zkWatcherExecutor, this));
         }
     }
 

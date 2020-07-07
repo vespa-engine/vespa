@@ -183,7 +183,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
             log.log(Level.FINE, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
             return Optional.of(identity);
         } catch (NodeIdentifierException e) {
-            throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);
+            throw new AuthorizationException("Failed to identify peer: " + e.getMessage(), e);
         }
     }
 
