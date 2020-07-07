@@ -4,6 +4,7 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
@@ -46,9 +47,11 @@ public class JunitRunner extends AbstractComponent {
 
     @Inject
     public JunitRunner(OsgiFramework osgiFramework,
-                       TestRuntimeProvider testRuntimeProvider) {
+                       TestRuntimeProvider testRuntimeProvider,
+                       ConfigserverConfig configserverConfig) {
         this.testRuntimeProvider = testRuntimeProvider;
         this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
+        uglyHackSetCredentialsRootSystemProperty(configserverConfig);
     }
 
     // Hack to retrieve bundle context that allows access to other bundles
@@ -61,6 +64,17 @@ public class JunitRunner extends AbstractComponent {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // TODO(bjorncs|tokle) Propagate credentials root without ConfigserverConfig and system property
+    private static void uglyHackSetCredentialsRootSystemProperty(ConfigserverConfig config) {
+        String credentialsRoot;
+        if (config.system().equals("public") || config.system().equals("publiccd")) {
+            credentialsRoot = "/opt/vespa/tmp/test/artifacts";
+        } else {
+            credentialsRoot = "/opt/vespa/var/vespa/sia";
+        }
+        System.setProperty("vespa.test.credentials.root", credentialsRoot);
     }
 
     public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
