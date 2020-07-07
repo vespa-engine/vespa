@@ -45,14 +45,20 @@ public class JunitRunner extends AbstractComponent {
     private volatile Future<TestReport> execution;
 
     @Inject
-    public JunitRunner(OsgiFramework osgiFramework, TestRuntimeProvider testRuntimeProvider) {
+    public JunitRunner(OsgiFramework osgiFramework,
+                       TestRuntimeProvider testRuntimeProvider) {
         this.testRuntimeProvider = testRuntimeProvider;
-        var tmp = osgiFramework.bundleContext();
+        this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
+    }
+
+    // Hack to retrieve bundle context that allows access to other bundles
+    private static BundleContext getUnrestrictedBundleContext(OsgiFramework framework) {
         try {
-            var field = tmp.getClass().getDeclaredField("wrapped");
+            BundleContext restrictedBundleContext = framework.bundleContext();
+            var field = restrictedBundleContext.getClass().getDeclaredField("wrapped");
             field.setAccessible(true);
-            bundleContext = (BundleContext) field.get(tmp);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+            return  (BundleContext) field.get(restrictedBundleContext);
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
