@@ -104,7 +104,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                     }
                 } catch (Exception e) { // Typically timeouts which are reported as SSLHandshakeException
                     String message = String.format("Health check request from port %d to %d failed: %s", localPort, proxyTarget.port, e.getMessage());
-                    log.log(Level.WARNING, message);
+                    log.log(Level.INFO, message);
                     log.log(Level.FINE, e.toString(), e);
                     servletResponse.sendError(Response.Status.INTERNAL_SERVER_ERROR, message);
                     if (Duration.ofSeconds(1).compareTo(proxyTarget.timeout) >= 0) { // TODO bjorncs: remove call to close() if client is correctly pruning bad connections (VESPA-17628)
