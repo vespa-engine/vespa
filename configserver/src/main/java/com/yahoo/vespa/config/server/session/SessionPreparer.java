@@ -128,9 +128,7 @@ public class SessionPreparer {
                                                   tenantPath, serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
 
         preparation.preprocess();
-
         var distributedApplicationPackage = preparation.distributeApplicationPackage();
-
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);

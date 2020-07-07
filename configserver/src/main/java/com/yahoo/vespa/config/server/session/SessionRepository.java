@@ -70,7 +70,7 @@ public class SessionRepository {
 
     private static final Logger log = Logger.getLogger(SessionRepository.class.getName());
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
-    private static final long nonExistingActiveSession = 0;
+    private static final long nonExistingActiveSessionId = 0;
 
     private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
     private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
@@ -108,12 +108,15 @@ public class SessionRepository {
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.locksPath = TenantRepository.getLocksPath(tenantName);
-
-        loadLocalSessions();
-        initializeRemoteSessions();
+        loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
+    }
+
+    private void loadSessions() {
+        loadLocalSessions();
+        initializeRemoteSessions();
     }
 
     // ---------------- Local sessions ----------------------------------------------------------------
@@ -121,9 +124,8 @@ public class SessionRepository {
     public synchronized void addLocalSession(LocalSession session) {
         localSessionCache.addSession(session);
         long sessionId = session.getSessionId();
-        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
         RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSesssionStateWatcher(sessionId, fileCache, remoteSession, Optional.of(session));
+        addSessionStateWatcher(sessionId, remoteSession, Optional.of(session));
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -211,18 +213,21 @@ public class SessionRepository {
             SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
             if (watcher != null) watcher.close();
             localSessionCache.removeSession(sessionId);
-            NestedTransaction transaction = new NestedTransaction();
-            deleteLocalSession(session, transaction);
-            transaction.commit();
+            deletePersistentData(sessionId);
         }
     }
 
-    /** Add transactions to delete this session to the given nested transaction */
-    public void deleteLocalSession(LocalSession session, NestedTransaction transaction) {
-        long sessionId = session.getSessionId();
+    private void deletePersistentData(long sessionId) {
+        NestedTransaction transaction = new NestedTransaction();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+
+        // We will try to delete data from zookeeper from several servers, but since we take a lock
+        // and the transaction will either delete everything or nothing (which will happen if it has been done
+        // on another server) this works fine
         transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
+
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
+        transaction.commit();
     }
 
     public void close() {
@@ -320,14 +325,32 @@ public class SessionRepository {
     public void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
         RemoteSession remoteSession = createRemoteSession(sessionId);
-        Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
-        fileCache.addListener(this::nodeChanged);
         loadSessionIfActive(remoteSession);
         addRemoteSession(remoteSession);
         Optional<LocalSession> localSession = Optional.empty();
         if (distributeApplicationPackage())
             localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSesssionStateWatcher(sessionId, fileCache, remoteSession, localSession);
+        addSessionStateWatcher(sessionId, remoteSession, localSession);
+    }
+
+    void activate(RemoteSession session) {
+        long sessionId = session.getSessionId();
+        Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
+        log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + sessionId);
+        ApplicationSet app = session.ensureApplicationLoaded();
+        log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
+        applicationRepo.reloadConfig(app);
+        log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
+        session.notifyCompletion(waiter);
+        log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
+    }
+
+    public void deactivate(RemoteSession remoteSession) {
+        remoteSession.deactivate();
+    }
+
+    void prepare(RemoteSession session) {
+        session.prepare();
     }
 
     boolean distributeApplicationPackage() {
@@ -428,7 +451,7 @@ public class SessionRepository {
             user = "unknown";
         }
         DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
-                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSession));
+                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
@@ -615,13 +638,15 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addSesssionStateWatcher(long sessionId, Curator.FileCache fileCache, RemoteSession remoteSession, Optional<LocalSession> localSession) {
+    private void addSessionStateWatcher(long sessionId, RemoteSession remoteSession, Optional<LocalSession> localSession) {
         // Remote session will always be present in an existing state watcher, but local session might not
         if (sessionStateWatchers.containsKey(sessionId)) {
             localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
         } else {
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, applicationRepo, remoteSession,
-                                                                        localSession, metrics, zkWatcherExecutor, this));
+            Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
+            fileCache.addListener(this::nodeChanged);
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, localSession,
+                                                                        metrics, zkWatcherExecutor, this));
         }
     }
 

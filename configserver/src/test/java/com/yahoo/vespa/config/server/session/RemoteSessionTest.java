@@ -75,7 +75,7 @@ public class RemoteSessionTest {
     @Test
     public void require_that_applications_are_loaded() {
         RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())));
-        session.loadPrepared();
+        session.prepare();
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3L));
@@ -101,7 +101,7 @@ public class RemoteSessionTest {
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
-        session.loadPrepared();
+        session.prepare();
     }
 
     @Test
@@ -116,7 +116,7 @@ public class RemoteSessionTest {
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
-        session.loadPrepared();
+        session.prepare();
     }
 
     @Test
@@ -138,7 +138,7 @@ public class RemoteSessionTest {
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
         RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory));
-        session.loadPrepared();
+        session.prepare();
 
         // Does not cause an error because model version 3 is skipped
     }
@@ -162,7 +162,7 @@ public class RemoteSessionTest {
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
         RemoteSession session = createSession(4, zkc, Arrays.asList(okFactory, failingFactory));
-        session.loadPrepared();
+        session.prepare();
 
         // Does not cause an error because model version 4 is skipped
     }

@@ -9,7 +9,6 @@ import com.yahoo.lang.SettableOptional;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
@@ -49,7 +48,7 @@ public class RemoteSession extends Session {
         this.clock = componentRegistry.getClock();
     }
 
-    void loadPrepared() {
+    void prepare() {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded();
         notifyCompletion(waiter);
@@ -80,17 +79,6 @@ public class RemoteSession extends Session {
     public Transaction createDeleteTransaction() {
         return sessionZooKeeperClient.createWriteStatusTransaction(Status.DELETE);
     }
-
-    void makeActive(TenantApplications tenantApplications) {
-        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getActiveWaiter();
-        log.log(Level.FINE, () -> logPre() + "Getting session from repo: " + getSessionId());
-        ApplicationSet app = ensureApplicationLoaded();
-        log.log(Level.FINE, () -> logPre() + "Reloading config for " + getSessionId());
-        tenantApplications.reloadConfig(app);
-        log.log(Level.FINE, () -> logPre() + "Notifying " + waiter);
-        notifyCompletion(waiter);
-        log.log(Level.INFO, logPre() + "Session activated: " + getSessionId());
-    }
     
     void confirmUpload() {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.getUploadWaiter();
@@ -99,7 +87,7 @@ public class RemoteSession extends Session {
         log.log(Level.FINE, "Done notifying upload for session " + getSessionId());
     }
 
-    private void notifyCompletion(Curator.CompletionWaiter completionWaiter) {
+    void notifyCompletion(Curator.CompletionWaiter completionWaiter) {
         try {
             completionWaiter.notifyCompletion();
         } catch (RuntimeException e) {

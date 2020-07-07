@@ -234,7 +234,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return locksPath.append(id.serializedForm());
     }
 
-
     /**
      * Gets a config for the given app, or null if not found
      */

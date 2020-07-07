@@ -49,8 +49,8 @@ public class SessionPrepareHandler extends SessionHandler {
     protected HttpResponse handleGET(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
         long sessionId = getSessionIdV2(request);
-        applicationRepository.validateThatRemoteSessionIsNotActive(tenant, sessionId);
-        applicationRepository.validateThatRemoteSessionIsPrepared(tenant, sessionId);
+        applicationRepository.validateThatSessionIsNotActive(tenant, sessionId);
+        applicationRepository.validateThatSessionIsPrepared(tenant, sessionId);
         return new SessionPrepareResponse(applicationRepository.createDeployLog(), tenant.getName(), request, sessionId);
     }
 

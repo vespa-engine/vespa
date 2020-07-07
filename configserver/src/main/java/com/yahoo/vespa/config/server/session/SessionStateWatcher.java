@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -26,7 +25,6 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private final TenantApplications tenantApplications;
     private final RemoteSession remoteSession;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
@@ -34,14 +32,12 @@ public class SessionStateWatcher {
     private Optional<LocalSession> localSession;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        TenantApplications tenantApplications,
                         RemoteSession remoteSession,
                         Optional<LocalSession> localSession,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
-        this.tenantApplications = tenantApplications;
         this.remoteSession = remoteSession;
         this.localSession = localSession;
         this.metrics = metrics;
@@ -56,15 +52,15 @@ public class SessionStateWatcher {
 
         if (newStatus.equals(Status.PREPARE)) {
             createLocalSession(sessionId);
-            log.log(Level.FINE, remoteSession.logPre() + "Loading prepared session: " + sessionId);
-            remoteSession.loadPrepared();
+            log.log(Level.FINE, remoteSession.logPre() + "Preparing session: " + sessionId);
+            sessionRepository.prepare(remoteSession);
         } else if (newStatus.equals(Status.ACTIVATE)) {
             createLocalSession(sessionId);
-            remoteSession.makeActive(tenantApplications);
+            sessionRepository.activate(remoteSession);
         } else if (newStatus.equals(Status.DEACTIVATE)) {
-            remoteSession.deactivate();
+            sessionRepository.deactivate(remoteSession);
         } else if (newStatus.equals(Status.DELETE)) {
-            remoteSession.deactivate();
+            sessionRepository.deactivate(remoteSession);
             localSession.ifPresent(session -> {
                 log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
                 sessionRepository.deleteLocalSession(session);
