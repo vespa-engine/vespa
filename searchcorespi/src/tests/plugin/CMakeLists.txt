@@ -16,9 +16,6 @@ vespa_add_executable(searchcorespi_plugin_test_app TEST
     plugin_test.cpp
     DEPENDS
     searchcorespi
-    AFTER
-    searchcorespi_tplugin
-    searchcorespi_illegal-plugin
 )
 vespa_add_test(
     NAME searchcorespi_plugin_test_app

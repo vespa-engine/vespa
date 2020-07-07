@@ -8,6 +8,4 @@ vespa_add_library(storage_filestorpersistence OBJECT
     mergestatus.cpp
     modifiedbucketchecker.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

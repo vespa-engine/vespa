@@ -12,6 +12,4 @@ vespa_add_library(document_base OBJECT
     testdocman.cpp
     testdocrepo.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

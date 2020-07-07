@@ -14,6 +14,4 @@ vespa_add_library(storage_spersistence OBJECT
     testandsethelper.cpp
     types.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

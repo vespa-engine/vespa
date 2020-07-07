@@ -11,6 +11,4 @@ vespa_add_library(storage_distributoroperationidealstate OBJECT
     setbucketstateoperation.cpp
     splitoperation.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

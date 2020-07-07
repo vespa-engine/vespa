@@ -35,8 +35,6 @@ vespa_add_executable(document_gtest_runner_app TEST
     DEPENDS
     document
     GTest::GTest
-    AFTER
-    document_documentconfig
 )
 
 vespa_add_test(

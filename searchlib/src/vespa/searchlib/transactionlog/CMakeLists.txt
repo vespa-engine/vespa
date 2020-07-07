@@ -12,6 +12,4 @@ vespa_add_library(searchlib_transactionlog OBJECT
     translogserverapp.cpp
     DEPENDS
     searchlib_sconfig
-    AFTER
-    searchlib_common
 )

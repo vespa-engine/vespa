@@ -3,6 +3,4 @@ vespa_add_library(storage_status OBJECT
     SOURCES
     statuswebserver.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

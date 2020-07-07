@@ -28,6 +28,4 @@ vespa_add_library(document_fieldvalues OBJECT
     weightedsetfieldvalue.cpp
     referencefieldvalue.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

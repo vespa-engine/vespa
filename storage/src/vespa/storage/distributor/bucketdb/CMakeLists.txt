@@ -3,6 +3,4 @@ vespa_add_library(storage_distributor_bucketdb OBJECT
     SOURCES
     bucketdbmetricupdater.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

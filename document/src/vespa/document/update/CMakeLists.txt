@@ -18,6 +18,4 @@ vespa_add_library(document_updates OBJECT
     tensor_remove_update.cpp
     valueupdate.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )
