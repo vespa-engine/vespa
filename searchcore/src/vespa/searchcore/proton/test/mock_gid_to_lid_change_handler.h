@@ -31,21 +31,20 @@ public:
     {
     }
 
-    ~MockGidToLidChangeHandler() { }
+    ~MockGidToLidChangeHandler() override { }
 
-    virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
+    void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
         _adds.emplace_back(listener->getDocTypeName(), listener->getName());
         _listeners.push_back(std::move(listener));
     }
 
-    virtual void removeListeners(const vespalib::string &docTypeName,
-                                 const std::set<vespalib::string> &keepNames) override {
+    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override {
         _removes.emplace_back(docTypeName, keepNames);
     }
 
-    virtual void notifyPutDone(document::GlobalId, uint32_t, SerialNum)  override { }
-    virtual void notifyRemove(document::GlobalId, SerialNum)  override { }
-    virtual void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
+    void notifyPutDone(Context, document::GlobalId, uint32_t, SerialNum)  override { }
+    void notifyRemove(Context, document::GlobalId, SerialNum)  override { }
+    void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)
     {

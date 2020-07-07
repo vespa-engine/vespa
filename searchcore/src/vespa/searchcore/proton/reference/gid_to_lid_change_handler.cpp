@@ -2,10 +2,9 @@
 
 #include "gid_to_lid_change_handler.h"
 #include "i_gid_to_lid_change_listener.h"
-#include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::makeLambdaTask;
 
@@ -28,23 +27,23 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 }
 
 void
-GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyPutDone(gid, lid);
+        listener->notifyPutDone(context, gid, lid);
     }
 }
 
 void
-GidToLidChangeHandler::notifyRemove(GlobalId gid)
+GidToLidChangeHandler::notifyRemove(Context context, GlobalId gid)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyRemove(gid);
+        listener->notifyRemove(context, gid);
     }
 }
 
 void
-GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum)
+GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto itr = _pendingRemove.find(gid);
@@ -60,11 +59,11 @@ GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid, SerialNum seria
         }
         entry.putSerialNum = serialNum;
     }
-    notifyPutDone(gid, lid);
+    notifyPutDone(std::move(context), gid, lid);
 }
 
 void
-GidToLidChangeHandler::notifyRemove(GlobalId gid, SerialNum serialNum)
+GidToLidChangeHandler::notifyRemove(Context context, GlobalId gid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
@@ -73,12 +72,12 @@ GidToLidChangeHandler::notifyRemove(GlobalId gid, SerialNum serialNum)
         assert(entry.removeSerialNum < serialNum);
         assert(entry.putSerialNum < serialNum);
         if (entry.removeSerialNum < entry.putSerialNum) {
-            notifyRemove(gid);
+            notifyRemove(std::move(context), gid);
         }
         entry.removeSerialNum = serialNum;
         ++entry.refCount;
     } else {
-        notifyRemove(gid);
+        notifyRemove(std::move(context), gid);
     }
 }
 

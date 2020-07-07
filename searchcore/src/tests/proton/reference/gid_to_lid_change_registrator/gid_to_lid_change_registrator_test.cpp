@@ -23,12 +23,12 @@ public:
           _name(name)
     {
     }
-    virtual ~MyListener() { }
-    virtual void notifyPutDone(document::GlobalId, uint32_t) override { }
-    virtual void notifyRemove(document::GlobalId) override { }
-    virtual void notifyRegistered() override { }
-    virtual const vespalib::string &getName() const override { return _name; }
-    virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
+    ~MyListener() override { }
+    void notifyPutDone(Context, document::GlobalId, uint32_t) override { }
+    void notifyRemove(Context, document::GlobalId) override { }
+    void notifyRegistered() override { }
+    const vespalib::string &getName() const override { return _name; }
+    const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
 
 
@@ -46,9 +46,7 @@ struct Fixture
     {
     }
 
-    ~Fixture()
-    {
-    }
+    ~Fixture() { }
 
     std::unique_ptr<GidToLidChangeRegistrator>
     getRegistrator(const vespalib::string &docTypeName) {

@@ -22,12 +22,12 @@ class IGidToLidChangeHandler;
  */
 class PutDoneContext : public OperationDoneContext
 {
-    uint32_t _lid;
-    DocIdLimit *_docIdLimit;
+    uint32_t                _lid;
+    DocIdLimit             *_docIdLimit;
     IGidToLidChangeHandler &_gidToLidChangeHandler;
-    document::GlobalId _gid;
-    search::SerialNum _serialNum;
-    bool _enableNotifyPut;
+    document::GlobalId      _gid;
+    search::SerialNum       _serialNum;
+    bool                    _enableNotifyPut;
     std::shared_ptr<const document::Document> _doc;
 
 public:
@@ -38,6 +38,5 @@ public:
 
     void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }
 };
-
 
 }  // namespace proton

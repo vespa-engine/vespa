@@ -3,10 +3,10 @@
 #pragma once
 
 #include "i_gid_to_lid_change_handler.h"
-#include <vector>
-#include <mutex>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/document/base/globalid.h>
+#include <vector>
+#include <mutex>
 
 namespace searchcorespi { namespace index { struct IThreadService; } }
 
@@ -41,28 +41,27 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
     };
 
     std::mutex _lock;
-    Listeners _listeners;
-    bool _closed;
+    Listeners  _listeners;
+    bool       _closed;
     vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
 
-    void notifyPutDone(GlobalId gid, uint32_t lid);
-    void notifyRemove(GlobalId gid);
+    void notifyPutDone(Context context, GlobalId gid, uint32_t lid);
+    void notifyRemove(Context context, GlobalId gid);
 public:
     GidToLidChangeHandler();
-    virtual ~GidToLidChangeHandler();
+    ~GidToLidChangeHandler() override;
 
-    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
-    virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
-    virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
+    void notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    void notifyRemove(Context context, GlobalId gid, SerialNum serialNum) override;
+    void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
 
     /**
      * Close handler, further notifications are blocked.
      */
     void close();
 
-    virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    virtual void removeListeners(const vespalib::string &docTypeName,
-                                 const std::set<vespalib::string> &keepNames) override;
+    void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
+    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
 };
 
 } // namespace proton

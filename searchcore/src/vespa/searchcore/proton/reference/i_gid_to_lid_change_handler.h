@@ -2,16 +2,13 @@
 
 #pragma once
 
-#include <set>
-#include <memory>
-#include <vespa/vespalib/stllike/string.h>
+#include "i_gid_to_lid_change_listener.h"
 #include <vespa/searchlib/common/serialnum.h>
+#include <set>
 
 namespace document { class GlobalId; }
 
 namespace proton {
-
-class IGidToLidChangeListener;
 
 /*
  * Interface class for registering listeners that get notification when
@@ -20,6 +17,7 @@ class IGidToLidChangeListener;
 class IGidToLidChangeHandler
 {
 public:
+    using Context = IGidToLidChangeListener::Context;
     using SerialNum = search::SerialNum;
     using GlobalId = document::GlobalId;
 
@@ -40,8 +38,8 @@ public:
     /**
      * Notify gid to lid mapping change.
      */
-    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
-    virtual void notifyRemove(GlobalId gid, SerialNum serialNum) = 0;
+    virtual void notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
+    virtual void notifyRemove(Context context, GlobalId gid, SerialNum serialNum) = 0;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) = 0;
 };
 

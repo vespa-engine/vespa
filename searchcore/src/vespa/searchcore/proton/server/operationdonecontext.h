@@ -19,6 +19,7 @@ class OperationDoneContext : public search::IDestructorCallback
     FeedToken _token;
 protected:
     void ack();
+    FeedToken steal() { return std::move(_token); }
 
 public:
     OperationDoneContext(FeedToken token);

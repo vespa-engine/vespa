@@ -18,6 +18,7 @@
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -632,8 +633,10 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
                 putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
-            _gidToLidChangeHandler.notifyRemove(gid, serialNum);
+            vespalib::Gate gate;
+            _gidToLidChangeHandler.notifyRemove(std::make_shared<search::GateCallback>(gate), gid, serialNum);
             pendingNotifyRemoveDone.setup(_gidToLidChangeHandler, gid, serialNum);
+            gate.await();
             removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
         _metaStore.commit(serialNum, serialNum);
@@ -664,10 +667,15 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     bool explicitReuseLids = false;
     std::vector<document::GlobalId> gidsToRemove;
     if (useDMS) {
+        vespalib::Gate gate;
         gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
-        for (const auto &gid : gidsToRemove) {
-            _gidToLidChangeHandler.notifyRemove(gid, serialNum);
+        {
+            IGidToLidChangeHandler::Context context = std::make_shared<search::GateCallback>(gate);
+            for (const auto &gid : gidsToRemove) {
+                _gidToLidChangeHandler.notifyRemove(context, gid, serialNum);
+            }
         }
+        gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);

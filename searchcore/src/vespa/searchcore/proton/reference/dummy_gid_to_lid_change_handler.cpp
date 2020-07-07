@@ -4,23 +4,17 @@
 
 namespace proton {
 
-DummyGidToLidChangeHandler::DummyGidToLidChangeHandler()
-    : IGidToLidChangeHandler()
+DummyGidToLidChangeHandler::DummyGidToLidChangeHandler() = default;
 
-{
-}
+DummyGidToLidChangeHandler::~DummyGidToLidChangeHandler() = default;
 
-DummyGidToLidChangeHandler::~DummyGidToLidChangeHandler()
+void
+DummyGidToLidChangeHandler::notifyPutDone(Context , GlobalId, uint32_t, SerialNum)
 {
 }
 
 void
-DummyGidToLidChangeHandler::notifyPutDone(GlobalId, uint32_t, SerialNum)
-{
-}
-
-void
-DummyGidToLidChangeHandler::notifyRemove(GlobalId, SerialNum)
+DummyGidToLidChangeHandler::notifyRemove(Context , GlobalId, SerialNum)
 {
 }
 

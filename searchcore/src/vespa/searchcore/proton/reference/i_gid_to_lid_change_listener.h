@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace document { class GlobalId; }
@@ -16,9 +16,10 @@ namespace proton {
 class IGidToLidChangeListener
 {
 public:
+    using Context = std::shared_ptr<search::IDestructorCallback>;
     virtual ~IGidToLidChangeListener() { }
-    virtual void notifyPutDone(document::GlobalId gid, uint32_t lid) = 0;
-    virtual void notifyRemove(document::GlobalId gid) = 0;
+    virtual void notifyPutDone(Context context, document::GlobalId gid, uint32_t lid) = 0;
+    virtual void notifyRemove(Context context, document::GlobalId gid) = 0;
     virtual void notifyRegistered() = 0;
     virtual const vespalib::string &getName() const = 0;
     virtual const vespalib::string &getDocTypeName() const = 0;
