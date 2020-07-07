@@ -214,7 +214,7 @@ class Schema(ToJson, FromJson["Schema"]):
         :param rank_profile: `RankProfile` to be added.
         :return: None.
         """
-        self.rank_profiles.update({rank_profile.name: rank_profile})
+        self.rank_profiles[rank_profile.name] = rank_profile
 
     @staticmethod
     def from_dict(mapping: Mapping) -> "Schema":
@@ -373,7 +373,9 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
         )
 
     def create_application_package_files(self, dir_path):
-        Path(os.path.join(dir_path, "application/schemas")).mkdir(parents=True, exist_ok=True)
+        Path(os.path.join(dir_path, "application/schemas")).mkdir(
+            parents=True, exist_ok=True
+        )
         with open(
             os.path.join(
                 dir_path, "application/schemas/{}.sd".format(self.schema.name)
