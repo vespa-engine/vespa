@@ -70,7 +70,7 @@ public class SessionRepository {
 
     private static final Logger log = Logger.getLogger(SessionRepository.class.getName());
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
-    private static final long nonExistingActiveSession = 0;
+    private static final long nonExistingActiveSessionId = 0;
 
     private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
     private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
@@ -451,7 +451,7 @@ public class SessionRepository {
             user = "unknown";
         }
         DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
-                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSession));
+                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 

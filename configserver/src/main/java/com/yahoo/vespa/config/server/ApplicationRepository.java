@@ -306,8 +306,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession activeSession = getActiveLocalSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        LocalSession newSession = tenant.getSessionRepository().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
-        tenant.getSessionRepository().addLocalSession(newSession);
+        SessionRepository sessionRepository = tenant.getSessionRepository();
+        LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
+        sessionRepository.addLocalSession(newSession);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -493,11 +494,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
         try {
-            Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+            Tenant tenant = getTenant(applicationId);
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
-            RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
-            if (session == null) throw new NotFoundException("Remote session " + sessionId + " not found");
+            RemoteSession session = getRemoteSession(tenant, sessionId);
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
             log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
@@ -625,15 +625,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationRepo.requireActiveSessionOf(applicationId);
     }
 
-    public void validateThatRemoteSessionIsNotActive(Tenant tenant, long sessionId) {
-        RemoteSession session = getRemoteSession(tenant, sessionId);
+    public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
+        Session session = getRemoteSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalStateException("Session is active: " + sessionId);
         }
     }
 
-    public void validateThatRemoteSessionIsPrepared(Tenant tenant, long sessionId) {
-        RemoteSession session = getRemoteSession(tenant, sessionId);
+    public void validateThatSessionIsPrepared(Tenant tenant, long sessionId) {
+        Session session = getRemoteSession(tenant, sessionId);
         if ( ! Session.Status.PREPARE.equals(session.getStatus()))
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
