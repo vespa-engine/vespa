@@ -21,6 +21,7 @@ GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor 
 }
 GidToLidChangeListener::~GidToLidChangeListener()
 {
+    _attributeFieldWriter.sync();
     _refCount.release();
 }
 
