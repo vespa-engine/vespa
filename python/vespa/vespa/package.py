@@ -65,7 +65,13 @@ class Field(ToJson, FromJson["Field"]):
         )
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1}, {2}, {3}, {4})".format(
+            self.__class__.__name__,
+            str(self.name),
+            str(self.type),
+            str(self.indexing),
+            str(self.index),
+        )
 
 
 class Document(ToJson, FromJson["Document"]):
@@ -100,7 +106,9 @@ class Document(ToJson, FromJson["Document"]):
         return self.fields == other.fields
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1})".format(
+            self.__class__.__name__, str(self.fields) if self.fields else None
+        )
 
 
 class FieldSet(ToJson, FromJson["FieldSet"]):
@@ -134,7 +142,9 @@ class FieldSet(ToJson, FromJson["FieldSet"]):
         return self.name == other.name and self.fields == other.fields
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1}, {2})".format(
+            self.__class__.__name__, str(self.name), str(self.fields)
+        )
 
 
 class RankProfile(ToJson, FromJson["RankProfile"]):
@@ -176,7 +186,12 @@ class RankProfile(ToJson, FromJson["RankProfile"]):
         )
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1}, {2}, {3})".format(
+            self.__class__.__name__,
+            str(self.name),
+            str(self.first_phase),
+            str(self.inherits),
+        )
 
 
 class Schema(ToJson, FromJson["Schema"]):
@@ -253,7 +268,19 @@ class Schema(ToJson, FromJson["Schema"]):
         )
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1}, {2}, {3}, {4})".format(
+            self.__class__.__name__,
+            str(self.name),
+            str(self.document),
+            str(
+                [field for field in self.fieldsets.values()] if self.fieldsets else None
+            ),
+            str(
+                [rank_profile for rank_profile in self.rank_profiles.values()]
+                if self.rank_profiles
+                else None
+            ),
+        )
 
 
 class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
@@ -408,4 +435,6 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
         return self.name == other.name and self.schema == other.schema
 
     def __repr__(self):
-        return "{0}\n{1}".format(self.__class__.__name__, str(self.to_dict))
+        return "{0}({1}, {2})".format(
+            self.__class__.__name__, str(self.name), str(self.schema)
+        )
