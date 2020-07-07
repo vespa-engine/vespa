@@ -17,7 +17,7 @@
     </parent>
 
     <dependencies>
-        <!-- compile -->
+        <!-- provided -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd-api</artifactId>
