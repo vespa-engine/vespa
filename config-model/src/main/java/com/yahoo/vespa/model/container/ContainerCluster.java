@@ -18,6 +18,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -88,6 +89,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
         BundlesConfig.Producer,
+        PlatformBundlesConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
@@ -475,6 +477,12 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(BundlesConfig.Builder builder) {
         platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
                 .forEach(builder::bundle);
+    }
+
+    @Override
+    public void getConfig(PlatformBundlesConfig.Builder builder) {
+        platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
+                .forEach(builder::bundles);
     }
 
     private static String toFileReferenceString(Path path) {

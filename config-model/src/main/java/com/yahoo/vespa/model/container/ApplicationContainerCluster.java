@@ -10,6 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.di.ApplicationBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
  * @author gjoranv
  */
 public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
+        ApplicationBundlesConfig.Producer,
         BundlesConfig.Producer,
         QrStartConfig.Producer,
         RankProfilesConfig.Producer,
@@ -193,6 +195,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         applicationBundles.stream().map(FileReference::value)
                 .forEach(builder::bundle);
         super.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(ApplicationBundlesConfig.Builder builder) {
+        applicationBundles.stream().map(FileReference::value)
+                .forEach(builder::bundles);
     }
 
     @Override
