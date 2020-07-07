@@ -42,7 +42,7 @@ public class JunitRunner extends AbstractComponent {
 
     private final BundleContext bundleContext;
     private final TestRuntimeProvider testRuntimeProvider;
-    private Future<TestReport> execution;
+    private volatile Future<TestReport> execution;
 
     @Inject
     public JunitRunner(OsgiFramework osgiFramework, TestRuntimeProvider testRuntimeProvider) {
