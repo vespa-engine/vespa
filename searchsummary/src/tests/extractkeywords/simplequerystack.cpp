@@ -24,7 +24,7 @@ SimpleQueryStack::~SimpleQueryStack()
 }
 
 void
-SimpleQueryStack::Push(ParseItem *item)
+SimpleQueryStack::Push(SimpleQueryStackItem *item)
 {
     item->_next = _stack;
     _stack = item;
@@ -35,7 +35,7 @@ SimpleQueryStack::Push(ParseItem *item)
 void
 SimpleQueryStack::AppendBuffer(RawBuf *buf) const
 {
-    for (ParseItem *item = _stack; item != nullptr; item = item->_next) {
+    for (SimpleQueryStackItem *item = _stack; item != nullptr; item = item->_next) {
         item->AppendBuffer(buf);
     }
 }

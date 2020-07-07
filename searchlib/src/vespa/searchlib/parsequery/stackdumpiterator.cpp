@@ -207,6 +207,7 @@ SimpleQueryStackDumpIterator::next()
         }
         break;
     case ParseItem::ITEM_NUMTERM:
+    case ParseItem::ITEM_LOCATION_TERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:
     case ParseItem::ITEM_SUBSTRINGTERM:

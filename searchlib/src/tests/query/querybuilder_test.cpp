@@ -2,7 +2,6 @@
 // Unit tests for querybuilder.
 
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>

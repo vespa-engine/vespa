@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include <vespa/searchlib/parsequery/parse.h>
+#include "simplequerystackitem.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {
 
 /**
- * A stack of ParseItems.
+ * A stack of SimpleQueryStackItems.
  *
- * A simple stack consisting of a list of ParseItems.
+ * A simple stack consisting of a list of SimpleQueryStackItems.
  * It is able to generate a binary encoding of itself
- * to a search::RawBuf.
+ * to a RawBuf.
  */
 class SimpleQueryStack
 {
@@ -25,7 +25,7 @@ private:
      * Warning: FastQT_ProximityEmul currently assumes this is the head
      * of a singly linked list (linked with _next).
      */
-    search::ParseItem *_stack;
+    SimpleQueryStackItem *_stack;
 
 public:
     SimpleQueryStack(const SimpleQueryStack &) = delete;
@@ -40,16 +40,16 @@ public:
     ~SimpleQueryStack();
     /**
      * Push an item on the stack.
-     * @param item The search::ParseItem to push.
+     * @param item The SimpleQueryStackItem to push.
      */
-    void Push(search::ParseItem *item);
+    void Push(SimpleQueryStackItem *item);
 
 
     /**
      * Encode the contents of the stack in a binary buffer.
      * @param buf Pointer to a buffer containing the encoded contents.
      */
-    void AppendBuffer(search::RawBuf *buf) const;
+    void AppendBuffer(RawBuf *buf) const;
 
     /**
      * Return the number of items on the stack.

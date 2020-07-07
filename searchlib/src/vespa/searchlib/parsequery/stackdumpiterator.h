@@ -110,12 +110,10 @@ public:
      **/
     uint32_t getUniqueId() const { return _currUniqueId; }
 
-    /**
-     * Get the flags of the current item.
-     *
-     * @return flags of current item
-     **/
-    uint32_t getFlags() const { return _currFlags; }
+    // Get the flags of the current item.
+    bool hasNoRankFlag() const { return (_currFlags & ParseItem::IFLAG_NORANK) != 0; }
+    bool hasSpecialTokenFlag() const { return (_currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0; }
+    bool hasNoPositionDataFlag() const { return (_currFlags & ParseItem::IFLAG_NOPOSITIONDATA) != 0; }
 
     uint32_t getArity() const { return _currArity; }
 

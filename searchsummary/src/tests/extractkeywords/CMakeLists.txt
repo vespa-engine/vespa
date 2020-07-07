@@ -2,6 +2,8 @@
 vespa_add_executable(searchsummary_extractkeywordstest_app TEST
     SOURCES
     extractkeywordstest.cpp
+    simplequerystack.cpp
+    simplequerystackitem.cpp
     DEPENDS
     searchsummary
 )
