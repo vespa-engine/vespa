@@ -49,22 +49,26 @@ public class SessionStateWatcher {
 
     private void sessionStatusChanged(Status newStatus) {
         long sessionId = remoteSession.getSessionId();
-
-        if (newStatus.equals(Status.PREPARE)) {
-            createLocalSession(sessionId);
-            log.log(Level.FINE, remoteSession.logPre() + "Preparing session: " + sessionId);
-            sessionRepository.prepare(remoteSession);
-        } else if (newStatus.equals(Status.ACTIVATE)) {
-            createLocalSession(sessionId);
-            sessionRepository.activate(remoteSession);
-        } else if (newStatus.equals(Status.DEACTIVATE)) {
-            sessionRepository.deactivate(remoteSession);
-        } else if (newStatus.equals(Status.DELETE)) {
-            sessionRepository.deactivate(remoteSession);
-            localSession.ifPresent(session -> {
-                log.log(Level.FINE, session.logPre() + "Deleting session " + sessionId);
-                sessionRepository.deleteLocalSession(session);
-            });
+        switch (newStatus) {
+            case NEW:
+            case NONE:
+                break;
+            case PREPARE:
+                createLocalSession(sessionId);
+                sessionRepository.prepare(remoteSession);
+                break;
+            case ACTIVATE:
+                createLocalSession(sessionId);
+                sessionRepository.activate(remoteSession);
+                break;
+            case DEACTIVATE:
+                sessionRepository.deactivate(remoteSession);
+                break;
+            case DELETE:
+                sessionRepository.delete(remoteSession, localSession);
+                break;
+            default:
+                throw new IllegalStateException("Unknown status " + newStatus);
         }
     }
 

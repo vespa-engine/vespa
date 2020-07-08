@@ -349,6 +349,11 @@ public class SessionRepository {
         remoteSession.deactivate();
     }
 
+    public void delete(RemoteSession remoteSession, Optional<LocalSession> localSession) {
+        localSession.ifPresent(this::deleteLocalSession);
+        remoteSession.deactivate();
+    }
+
     void prepare(RemoteSession session) {
         session.prepare();
     }
