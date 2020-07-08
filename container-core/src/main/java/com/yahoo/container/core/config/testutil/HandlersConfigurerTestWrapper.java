@@ -41,7 +41,8 @@ public class HandlersConfigurerTestWrapper {
     private final static String testFiles[] = {
             "components.cfg",
             "handlers.cfg",
-            "bundles.cfg",
+            "platform-bundles.cfg",
+            "application-bundles.cfg",
             "string.cfg",
             "int.cfg",
             "renderers.cfg",

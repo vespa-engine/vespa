@@ -102,11 +102,15 @@ public class HandlersConfigurerDi {
 
         private final OsgiFramework osgiFramework;
         private final BundleManager bundleManager;
+        private final PlatformBundleInstaller platformBundleInstaller;
 
         public ContainerAndDiOsgi(OsgiFramework osgiFramework) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
-            bundleManager = new BundleManager(new OsgiImpl(osgiFramework));
+
+            OsgiImpl osgi = new OsgiImpl(osgiFramework);
+            bundleManager = new BundleManager(osgi);
+            platformBundleInstaller = new PlatformBundleInstaller(osgi);
         }
 
 
@@ -128,6 +132,12 @@ public class HandlersConfigurerDi {
 
                 return new BundleClasses(bundle, OsgiUtil.getClassEntriesInBundleClassPath(bundle, packagesToScan));
             }
+        }
+
+        @Override
+        public void installPlatformBundles(Collection<FileReference> bundles) {
+            log.fine("Installing platform bundles.");
+            platformBundleInstaller.install(bundles);
         }
 
         @Override

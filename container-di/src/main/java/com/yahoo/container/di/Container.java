@@ -40,7 +40,8 @@ public class Container {
     private static final Logger log = Logger.getLogger(Container.class.getName());
 
     private final SubscriberFactory subscriberFactory;
-    private ConfigKey<BundlesConfig> bundlesConfigKey;
+    private ConfigKey<ApplicationBundlesConfig> applicationBundlesConfigKey;
+    private ConfigKey<PlatformBundlesConfig> platformBundlesConfigKey;
     private ConfigKey<ComponentsConfig> componentsConfigKey;
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
@@ -54,9 +55,10 @@ public class Container {
         this.componentDeconstructor = componentDeconstructor;
         this.osgi = osgi;
 
-        bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
+        applicationBundlesConfigKey = new ConfigKey<>(ApplicationBundlesConfig.class, configId);
+        platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
-        var bootstrapKeys = Set.of(bundlesConfigKey, componentsConfigKey);
+        var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
         this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
     }
 
@@ -74,7 +76,6 @@ public class Container {
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
             return newGraph;
         } catch (Throwable t) {
-            // TODO: Wrap ComponentConstructorException in an Error when generation==0 (+ unit test that Error is thrown)
             invalidateGeneration(oldGraph.generation(), t);
             throw t;
         }
@@ -104,6 +105,9 @@ public class Container {
                                         + "previous generation: %d\n",
                                 getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration));
 
+                if (graph.generation() == 0) {
+                    installPlatformBundles(getConfig(platformBundlesConfigKey, snapshot.configs()));
+                }
                 Collection<Bundle> bundlesToRemove = installBundles(snapshot.configs());
                 obsoleteBundles.addAll(bundlesToRemove);
 
@@ -151,9 +155,13 @@ public class Container {
         componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
+    private void installPlatformBundles(PlatformBundlesConfig platformBundlesConfig) {
+        osgi.installPlatformBundles(platformBundlesConfig.bundles());
+    }
+
     private Set<Bundle> installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
-        BundlesConfig bundlesConfig = getConfig(bundlesConfigKey, configsIncludingBootstrapConfigs);
-        return osgi.useBundles(bundlesConfig.bundle());
+        ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
+        return osgi.useBundles(applicationBundlesConfig.bundles());
     }
 
     private ComponentGraph createComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
