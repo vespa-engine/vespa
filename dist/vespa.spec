@@ -57,6 +57,7 @@ BuildRequires: llvm7.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1g-1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 %endif
@@ -155,6 +156,7 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?el7}
 Requires: llvm7.0
+Requires: vespa-onnxruntime >= 1.3.0-1
 Requires: vespa-openssl >= 1.1.1g-1
 Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-protobuf >= 3.7.0-4
