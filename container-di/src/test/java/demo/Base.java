@@ -56,9 +56,4 @@ public class Base {
         this.injector = injector;
     }
 
-    @SuppressWarnings("unchecked")
-    public void addConfig(ConfigInstance configInstance, ComponentId id) {
-        configs.put(new ConfigKey<>((Class<ConfigInstance>)configInstance.getClass(), id.toString()),
-                configInstance);
-    }
 }
