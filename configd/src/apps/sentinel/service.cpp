@@ -158,17 +158,10 @@ Service::start()
     }
     _last_start = vespalib::steady_clock::now();
 
-// make a pipe, close the good ends of it, mark it close-on-exec
-// if exec fails, write a complaint on the fd (which will then be read
-// by mother program).
-//
-// Return 0 on success, -1 on failure
     setState(STARTING);
 
-    int pipes[2];
-    int err = pipe(pipes);
     int stdoutpipes[2];
-    err |= pipe(stdoutpipes);
+    int err = pipe(stdoutpipes);
     int stderrpipes[2];
     err |= pipe(stderrpipes);
 
@@ -185,8 +178,6 @@ Service::start()
         LOG(error, "%s: Attempted to start, but fork() failed: %s", name().c_str(),
             strerror(errno));
         setState(FAILED);
-        close(pipes[0]);
-        close(pipes[1]);
         close(stdoutpipes[0]);
         close(stdoutpipes[1]);
         close(stderrpipes[0]);
@@ -195,7 +186,6 @@ Service::start()
     }
 
     if (_pid == 0) {
-        close(pipes[0]); // Close reading end
         close(stdoutpipes[0]);
         close(stderrpipes[0]);
 
@@ -215,21 +205,16 @@ Service::start()
             kill(getpid(), SIGTERM);
         }
         EV_STARTING(name().c_str());
-        runChild(pipes); // This function should not return.
+        runChild(); // This function should not return.
         std::_Exit(EXIT_FAILURE);
     }
 
-    close(pipes[1]); // close writing end
     close(stdoutpipes[1]);
     close(stderrpipes[1]);
 
-    // do not call ensureChildRuns, as the pipe magic did not work as intended
-    // This also ensures that the process does not wait while the service process waits in penalty.
-    // ensureChildRuns(pipes[0]); // This will wait until the execl goes through
     setState(RUNNING);
     _metrics.currentlyRunningServices++;
     _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
-    close(pipes[0]); // close reading end
 
     using ns_log::LLParser;
     LLParser *p = new LLParser();
@@ -260,27 +245,6 @@ Service::remove()
     terminate(false, false);
     setState(REMOVING);
 }
-
-
-// TODO: Garbage collect this, since it did not work as intended when execl'ing /bin/sh
-void
-Service::ensureChildRuns(int fd)
-{
-    char buf[200];
-    int len;
-    do {
-        len = read(fd, buf, sizeof buf);
-    } while (len == -1 && errno == EINTR);
-    if (len > 0) {
-        // Failed to do an execl.. pick up the remains
-        _exitStatus = 0;
-        waitpid(_pid, &_exitStatus, 0);
-        setState(FAILED);
-    } else {
-        setState(RUNNING);
-    }
-}
-
 
 void
 Service::youExited(int status)
@@ -343,15 +307,12 @@ Service::youExited(int status)
 }
 
 void
-Service::runChild(int pipes[2])
+Service::runChild()
 {
     // child process - this should exec or signal error
     for (int n = 3; n < 1024; ++n) { // Close all open fds on exec()
         fcntl(n, F_SETFD, FD_CLOEXEC);
     }
-
-    // TODO: Garbage collect the clever pipes magic, as it does not work when the execl target is /bin/sh
-    fcntl(pipes[1], F_SETFD, FD_CLOEXEC); // close on exec()
 
     // Set up environment
     setenv("VESPA_SERVICE_NAME", _config->name.c_str(), 1);
@@ -373,7 +334,7 @@ Service::runChild(int pipes[2])
         char buf[200];
         snprintf(buf, sizeof buf, "open /dev/null for fd 0: got %d "
                                   "(%s)", fd, strerror(errno));
-        [[maybe_unused]] auto writeRes = write(pipes[1], buf, strlen(buf));
+        [[maybe_unused]] auto writeRes = write(2, buf, strlen(buf));
         std::_Exit(EXIT_FAILURE);
     }
     fcntl(0, F_SETFD, 0); // Don't close on exec
@@ -383,7 +344,7 @@ Service::runChild(int pipes[2])
     char buf[200];
     snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'",
              strerror(errno), _config->command.c_str());
-    [[maybe_unused]] auto writeRes = write(pipes[1], buf, strlen(buf));
+    [[maybe_unused]] auto writeRes = write(2, buf, strlen(buf));
     std::_Exit(EXIT_FAILURE);
 }
 
