@@ -141,7 +141,7 @@ private:
                 t = &builder.addStringTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUFFIXTERM) {
                 t = &builder.addSuffixTerm(term, view, id, weight);
-            } else if (type == ParseItem::ITEM_LOCATION_TERM) {
+            } else if (type == ParseItem::ITEM_GEO_LOCATION_TERM) {
                 Location loc(term);
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {

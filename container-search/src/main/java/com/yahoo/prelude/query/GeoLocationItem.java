@@ -53,7 +53,7 @@ public class GeoLocationItem extends TermItem {
 
     @Override
     public ItemType getItemType() {
-        return ItemType.LOCATION_TERM;
+        return ItemType.GEO_LOCATION_TERM;
     }
 
     @Override

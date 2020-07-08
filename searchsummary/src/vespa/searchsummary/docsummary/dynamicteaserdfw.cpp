@@ -270,7 +270,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_PREDICATE_QUERY:
         case search::ParseItem::ITEM_SAME_ELEMENT:
         case search::ParseItem::ITEM_NEAREST_NEIGHBOR:
-        case search::ParseItem::ITEM_LOCATION_TERM:
+        case search::ParseItem::ITEM_GEO_LOCATION_TERM:
             if (!v->VisitOther(&item, iterator.getArity())) {
                 rc = SkipItem(&iterator);
             }

@@ -64,7 +64,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     }
     break;
     case ParseItem::ITEM_NUMTERM:
-    case ParseItem::ITEM_LOCATION_TERM:
+    case ParseItem::ITEM_GEO_LOCATION_TERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:
     case ParseItem::ITEM_REGEXP:
