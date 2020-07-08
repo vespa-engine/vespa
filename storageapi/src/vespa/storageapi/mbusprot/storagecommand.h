@@ -21,7 +21,7 @@ public:
     api::StorageMessage::SP getInternalMessage() override { return _cmd; }
     api::StorageMessage::CSP getInternalMessage() const override { return _cmd; }
 
-    bool hasBucketSequence() const override { return true; }
+    bool hasBucketSequence() const override { return false; }
 
     uint8_t priority() const override {
         return ((getInternalMessage()->getPriority()) / 255) * 16;
