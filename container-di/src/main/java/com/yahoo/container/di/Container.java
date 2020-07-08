@@ -45,17 +45,17 @@ public class Container {
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
 
-    private ConfigRetriever configurer;
+    private final ConfigRetriever configurer;
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor, Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
-        this.componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         this.componentDeconstructor = componentDeconstructor;
         this.osgi = osgi;
 
+        bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
+        componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(bundlesConfigKey, componentsConfigKey);
         this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
     }
