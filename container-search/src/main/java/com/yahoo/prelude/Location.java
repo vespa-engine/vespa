@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 /**
  * Location data for a geographical query.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author arnej27959
  */
 public class Location {
@@ -245,6 +245,10 @@ public class Location {
         else {
             throw new IllegalArgumentException("Illegal location syntax");
         }
+    }
+
+    public Location clone() {
+        return new Location(toString());
     }
 
     public String toString() {

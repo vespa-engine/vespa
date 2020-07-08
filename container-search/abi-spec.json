@@ -527,6 +527,30 @@
     ],
     "fields": []
   },
+  "com.yahoo.prelude.query.GeoLocationItem": {
+    "superClass": "com.yahoo.prelude.query.TermItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.prelude.Location)",
+      "public void <init>(com.yahoo.prelude.Location, java.lang.String)",
+      "public java.lang.String getRawWord()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public java.lang.String stringValue()",
+      "public void setValue(java.lang.String)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String getIndexedString()",
+      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int getNumWords()",
+      "public boolean isStemmed()",
+      "public boolean isWords()"
+    ],
+    "fields": []
+  },
   "com.yahoo.prelude.query.HasIndexItem": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -804,30 +828,6 @@
       "public static final com.yahoo.prelude.query.Limit NEGATIVE_INFINITY",
       "public static final com.yahoo.prelude.query.Limit POSITIVE_INFINITY"
     ]
-  },
-  "com.yahoo.prelude.query.LocationItem": {
-    "superClass": "com.yahoo.prelude.query.TermItem",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.prelude.Location)",
-      "public void <init>(com.yahoo.prelude.Location, java.lang.String)",
-      "public java.lang.String getRawWord()",
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "public void setValue(java.lang.String)",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
-      "public java.lang.String getIndexedString()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
-      "public int getNumWords()",
-      "public boolean isStemmed()",
-      "public boolean isWords()"
-    ],
-    "fields": []
   },
   "com.yahoo.prelude.query.MarkerWordItem": {
     "superClass": "com.yahoo.prelude.query.WordItem",
