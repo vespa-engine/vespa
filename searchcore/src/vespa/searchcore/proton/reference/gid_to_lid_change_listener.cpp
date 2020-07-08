@@ -26,7 +26,7 @@ GidToLidChangeListener::~GidToLidChangeListener()
 }
 
 void
-GidToLidChangeListener::notifyPutDone(Context context, document::GlobalId gid, uint32_t lid)
+GidToLidChangeListener::notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid)
 {
     _attributeFieldWriter.executeLambda(_executorId,
                                         [this, context=std::move(context), gid, lid]() {
@@ -36,7 +36,7 @@ GidToLidChangeListener::notifyPutDone(Context context, document::GlobalId gid, u
 }
 
 void
-GidToLidChangeListener::notifyRemove(Context context, document::GlobalId gid)
+GidToLidChangeListener::notifyRemove(IDestructorCallbackSP context, document::GlobalId gid)
 {
     _attributeFieldWriter.executeLambda(_executorId,
                                         [this, context = std::move(context), gid]() {

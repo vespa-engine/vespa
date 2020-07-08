@@ -102,8 +102,8 @@ public:
         _stats.markCreatedListener();
     }
     ~MyListener() override { _stats.markDestroyedListener(); }
-    void notifyPutDone(Context, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
-    void notifyRemove(Context, GlobalId) override { _stats.notifyRemove(); }
+    void notifyPutDone(IDestructorCallbackSP, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
+    void notifyRemove(IDestructorCallbackSP, GlobalId) override { _stats.notifyRemove(); }
     void notifyRegistered() override { _stats.markRegisteredListener(); }
     const vespalib::string &getName() const override { return _name; }
     const vespalib::string &getDocTypeName() const override { return _docTypeName; }

@@ -670,7 +670,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         vespalib::Gate gate;
         gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
         {
-            IGidToLidChangeHandler::Context context = std::make_shared<search::GateCallback>(gate);
+            IGidToLidChangeHandler::IDestructorCallbackSP context = std::make_shared<search::GateCallback>(gate);
             for (const auto &gid : gidsToRemove) {
                 _gidToLidChangeHandler.notifyRemove(context, gid, serialNum);
             }

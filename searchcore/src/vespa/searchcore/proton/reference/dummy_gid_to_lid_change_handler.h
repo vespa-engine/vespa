@@ -22,8 +22,8 @@ public:
     DummyGidToLidChangeHandler();
     ~DummyGidToLidChangeHandler() override;
 
-    void notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
-    void notifyRemove(Context context, GlobalId gid, SerialNum serialNum) override;
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) override;
     void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
     void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;

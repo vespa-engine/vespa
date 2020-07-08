@@ -16,10 +16,10 @@ namespace proton {
 class IGidToLidChangeListener
 {
 public:
-    using Context = std::shared_ptr<search::IDestructorCallback>;
+    using IDestructorCallbackSP = std::shared_ptr<search::IDestructorCallback>;
     virtual ~IGidToLidChangeListener() { }
-    virtual void notifyPutDone(Context context, document::GlobalId gid, uint32_t lid) = 0;
-    virtual void notifyRemove(Context context, document::GlobalId gid) = 0;
+    virtual void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) = 0;
+    virtual void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) = 0;
     virtual void notifyRegistered() = 0;
     virtual const vespalib::string &getName() const = 0;
     virtual const vespalib::string &getDocTypeName() const = 0;
