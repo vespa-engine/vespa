@@ -123,10 +123,8 @@ public class TenantRepository {
         } else {
             this.directoryCache = Optional.empty();
         }
-        log.log(Level.FINE, "Creating all tenants");
         bootstrapTenants();
         notifyTenantsLoaded();
-        log.log(Level.FINE, "All tenants created");
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
