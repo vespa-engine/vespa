@@ -24,6 +24,7 @@ import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BoolItem;
@@ -34,6 +35,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
@@ -149,6 +151,7 @@ public class YqlParser implements Parser {
     static final String DOT_PRODUCT = "dotProduct";
     static final String EQUIV = "equiv";
     static final String FILTER = "filter";
+    static final String GEO_LOCATION = "geoLocation";
     static final String HIT_LIMIT = "hitLimit";
     static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
@@ -372,6 +375,8 @@ public class YqlParser implements Parser {
                 return buildWeightedSet(ast);
             case DOT_PRODUCT:
                 return buildDotProduct(ast);
+            case GEO_LOCATION:
+                return buildGeoLocation(ast);
             case NEAREST_NEIGHBOR:
                 return buildNearestNeighbor(ast);
             case PREDICATE:
@@ -413,6 +418,19 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
     }
 
+    private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
+        String field = fetchFieldRead(args.get(0));
+        String location = fetchFieldRead(args.get(1));
+        GeoLocationItem item = new GeoLocationItem(new Location(location), field);
+        String label = getAnnotation(ast, LABEL, String.class, null, "item label");
+        if (label != null) {
+            item.setLabel(label);
+        }
+        return item;
+    }
+
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -438,7 +456,7 @@ public class YqlParser implements Parser {
         item.setAllowApproximate(allowApproximate);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
-                item.setLabel(label);
+            item.setLabel(label);
         }
         return item;
     }

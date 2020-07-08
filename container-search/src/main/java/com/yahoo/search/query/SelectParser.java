@@ -6,6 +6,7 @@ import com.yahoo.collections.LazyMap;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
@@ -15,6 +16,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
@@ -99,6 +101,7 @@ public class SelectParser implements Parser {
     private static final String DOT_PRODUCT = "dotProduct";
     private static final String EQUIV = "equiv";
     private static final String FILTER = "filter";
+    private static final String GEO_LOCATION = "geoLocation";
     private static final String HIT_LIMIT = "hitLimit";
     private static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     private static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
@@ -135,7 +138,7 @@ public class SelectParser implements Parser {
     private static final String CONTAINS = "contains";
     private static final String MATCHES = "matches";
     private static final String CALL = "call";
-    private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
 
     public SelectParser(ParserEnvironment environment) {
         indexFacts = environment.getIndexFacts();
@@ -264,6 +267,8 @@ public class SelectParser implements Parser {
                 return buildWeightedSet(key, value);
             case DOT_PRODUCT:
                 return buildDotProduct(key, value);
+            case GEO_LOCATION:
+                return buildGeoLocation(key, value);
             case NEAREST_NEIGHBOR:
                 return buildNearestNeighbor(key, value);
             case PREDICATE:
@@ -408,6 +413,23 @@ public class SelectParser implements Parser {
         OrItem orItem = new OrItem();
         addItemsFromInspector(orItem, value);
         return orItem;
+    }
+
+    private Item buildGeoLocation(String key, Inspector value) {
+        HashMap<Integer, Inspector> children = childMap(value);
+        Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
+        String field = children.get(0).asString();
+        String location = children.get(1).asString();
+        GeoLocationItem item = new GeoLocationItem(new Location(location), field);
+        Inspector annotations = getAnnotations(value);
+        if (annotations != null){
+            annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
+                if (LABEL.equals(annotation_name)) {
+                    item.setLabel(annotation_value.asString());
+                }
+            });
+        }
+        return item;
     }
 
     private Item buildNearestNeighbor(String key, Inspector value) {

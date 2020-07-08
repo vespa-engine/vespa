@@ -16,6 +16,7 @@ import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
+import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
@@ -72,6 +73,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -689,6 +691,23 @@ public class VespaSerializer {
 
     }
 
+    private static class GeoLocationSerializer extends Serializer<GeoLocationItem> {
+        @Override
+        void onExit(StringBuilder destination, GeoLocationItem item) { }
+        @Override
+        boolean serialize(StringBuilder destination, GeoLocationItem item) {
+            String annotations = leafAnnotations(item);
+            if (annotations.length() > 0) {
+                destination.append("([{").append(annotations).append("}]");
+            }
+            destination.append(GEO_LOCATION).append('(');
+            destination.append(item.getIndexName()).append(", ").append('"');
+            escape(item.getIndexedString(), destination);
+            destination.append('"').append(')');
+            return false;
+        }
+    }
+
     private static class NearestNeighborSerializer extends Serializer<NearestNeighborItem> {
 
         @Override
@@ -1163,6 +1182,7 @@ public class VespaSerializer {
         dispatchBuilder.put(EquivItem.class, new EquivSerializer());
         dispatchBuilder.put(ExactStringItem.class, new WordSerializer());
         dispatchBuilder.put(IntItem.class, new NumberSerializer());
+        dispatchBuilder.put(GeoLocationItem.class, new GeoLocationSerializer());
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());

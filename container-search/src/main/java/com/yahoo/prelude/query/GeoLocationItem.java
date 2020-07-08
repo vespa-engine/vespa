@@ -11,30 +11,31 @@ import java.nio.ByteBuffer;
  *
  * @author  arnej
  */
-public class LocationItem extends TermItem {
+public class GeoLocationItem extends TermItem {
 
     private Location location;
 
     /**
      */
-    public LocationItem(Location location) {
+    public GeoLocationItem(Location location) {
         super(location.getAttribute(), false);
-        this.location = location;
+        this.location = location.clone();
         if (! location.hasAttribute()) {
             throw new IllegalArgumentException("missing attribute on location: "+location);
         }
+        location.setAttribute(null);
         setNormalizable(false);
     }
 
     /**
      */
-    public LocationItem(Location location, String indexName) {
+    public GeoLocationItem(Location location, String indexName) {
         super(indexName, false);
-        this.location = location;
+        this.location = location.clone();
         if (location.hasAttribute() && ! location.getAttribute().equals(indexName)) {
             throw new IllegalArgumentException("inconsistent attribute on location: "+location+" versus indexName: "+indexName);
         }
-        this.location.setAttribute(indexName);
+        location.setAttribute(null);
         setNormalizable(false);
     }
 
@@ -55,6 +56,7 @@ public class LocationItem extends TermItem {
 
     @Override
     public String stringValue() {
+        location.setAttribute(null);
         return location.toString();
     }
 
@@ -71,13 +73,14 @@ public class LocationItem extends TermItem {
     @Override
     public boolean equals(Object object) {
         if ( ! super.equals(object)) return false;
-        LocationItem other = (LocationItem) object; // Ensured by superclass
+        GeoLocationItem other = (GeoLocationItem) object; // Ensured by superclass
         if ( ! location.equals(other.location)) return false;
         return true;
     }
 
     @Override
     public String getIndexedString() {
+        location.setAttribute(null);
         return location.toString();
     }
 
