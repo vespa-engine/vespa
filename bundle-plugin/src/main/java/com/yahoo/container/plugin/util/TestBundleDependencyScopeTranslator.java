@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.plugin.mojo;
+package com.yahoo.container.plugin.util;
 
 import org.apache.maven.artifact.Artifact;
 
@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author bjorncs
  */
-class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
+public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
 
     private static final Logger log = Logger.getLogger(TestBundleDependencyScopeTranslator.class.getName());
 
@@ -37,7 +37,7 @@ class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
 
     @Override public String scopeOf(Artifact artifact) { return Objects.requireNonNull(dependencyScopes.get(artifact)); }
 
-    static TestBundleDependencyScopeTranslator from(Map<String, Artifact> dependencies, String rawConfig) {
+    public static TestBundleDependencyScopeTranslator from(Map<String, Artifact> dependencies, String rawConfig) {
         List<DependencyOverride> dependencyOverrides = toDependencyOverrides(rawConfig);
         Map<Artifact, String> dependencyScopes = new HashMap<>();
         for (Artifact dependency : dependencies.values()) {
