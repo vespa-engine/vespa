@@ -228,7 +228,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(LocationTerm &node) override {
-        createTerm(node, ParseItem::ITEM_LOCATION_TERM);
+        createTerm(node, ParseItem::ITEM_GEO_LOCATION_TERM);
     }
 
     void visit(PrefixTerm &node) override {

@@ -722,7 +722,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType REGEXP",
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD_ALTERNATIVES",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NEAREST_NEIGHBOR",
-      "public static final enum com.yahoo.prelude.query.Item$ItemType LOCATION_TERM",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType GEO_LOCATION_TERM",
       "public final int code"
     ]
   },
