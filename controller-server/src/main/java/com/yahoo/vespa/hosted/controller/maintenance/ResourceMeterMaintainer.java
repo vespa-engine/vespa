@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -18,10 +19,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
- * Creates a ResourceSnapshot per application, which is then passed on to a MeteringClient
+ * Creates a {@link ResourceSnapshot} per application, which is then passed on to a MeteringClient
  *
  * @author olaa
  */
@@ -49,7 +51,15 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     @Override
     protected void maintain() {
+        try {
+            collectResourceSnapshots();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to collect resource snapshots. Retrying in " + interval() + ". Error: " +
+                                   Exceptions.toMessageString(e));
+        }
+    }
 
+    private void collectResourceSnapshots() {
         Collection<ResourceSnapshot> resourceSnapshots = getAllResourceSnapshots();
         meteringClient.consume(resourceSnapshots);
 
@@ -104,4 +114,5 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private boolean isNodeStateMeterable(Node node) {
         return METERABLE_NODE_STATES.contains(node.state());
     }
+
 }
