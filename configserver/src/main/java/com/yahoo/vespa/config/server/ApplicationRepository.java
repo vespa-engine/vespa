@@ -619,9 +619,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        if (applicationRepo == null)
-            throw new NotFoundException("Application repo for tenant '" + tenant.getName() + "' not found");
-
+        if (! applicationRepo.exists(applicationId))
+            throw new NotFoundException("Unknown application id '" + applicationId + "'");
         return applicationRepo.requireActiveSessionOf(applicationId);
     }
 
