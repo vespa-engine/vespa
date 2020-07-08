@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.toList;
  *
  * Dependencies of scope 'test' are by default translated to 'compile'. Dependencies of other scopes are kept as is.
  *
- * Default scope translation can be overridden through a comma-separated configuration string.
+ * Default scope translation for 'test' scope dependencies can be overridden through a comma-separated configuration string.
  * Each substring is a triplet on the form [groupId]:[artifactId]:[scope].
  * Scope translation overrides affects all transitive dependencies.
  * The ordering of the triplets determines the priority - only the first matching override will affect a given dependency.
@@ -72,12 +72,10 @@ class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
     private static String getScopeForDependency(
             Artifact dependency, List<DependencyOverride> overrides, Map<String, Artifact> otherArtifacts) {
         String oldScope = dependency.getScope();
+        if (!oldScope.equals(Artifact.SCOPE_TEST)) return oldScope;
         for (DependencyOverride override : overrides) {
             for (Artifact dependent : dependencyTrailOf(dependency, otherArtifacts)) {
                 if (override.isForArtifact(dependent)) {
-                    // This translation is not always correct for artifacts having 'runtime' scope dependencies.
-                    // If such dependencies are overridden to 'compile' scope, its 'runtime' dependencies will get
-                    // scope 'compile' instead of 'runtime'.
                     log.fine(() -> String.format(
                             "Overriding scope of '%s'; scope '%s' overridden to '%s'",
                             dependency.getId(), oldScope, override.scope));
@@ -85,11 +83,10 @@ class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
                 }
             }
         }
-        String newScope = defaultScopeTranslationOf(oldScope);
         log.fine(() -> String.format(
-                "Using default scope translation for '%s'; scope '%s' translated to '%s'",
-                dependency.getId(), oldScope, newScope));
-        return newScope;
+                "Using default scope translation for '%s'; scope 'test' translated to 'compile'",
+                dependency.getId()));
+        return Artifact.SCOPE_COMPILE;
     }
 
     private static List<Artifact> dependencyTrailOf(Artifact artifact, Map<String, Artifact> otherArtifacts) {
@@ -98,10 +95,6 @@ class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTranslator {
                 .map(parentId -> otherArtifacts.get(stripVersionAndScope(parentId)))
                 .filter(Objects::nonNull)
                 .collect(toList());
-    }
-
-    private static String defaultScopeTranslationOf(String scope) {
-        return scope.equals(Artifact.SCOPE_TEST) ? Artifact.SCOPE_COMPILE : scope;
     }
 
     private static class DependencyOverride {

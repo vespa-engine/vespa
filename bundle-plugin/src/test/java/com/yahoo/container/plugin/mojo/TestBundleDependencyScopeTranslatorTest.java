@@ -22,54 +22,87 @@ public class TestBundleDependencyScopeTranslatorTest {
     private static final String GROUP_ID = "com.test";
 
     @Test
-    public void findsAllTestProvidedDependencies() {
+    public void test_dependencies_are_translated_to_compile_scope_by_default() {
         Map<String, Artifact> artifacts = new TreeMap<>();
-        Artifact a = createArtifact(artifacts, "a", "compile", List.of());
-        Artifact aa = createArtifact(artifacts, "a-a", "compile", List.of("a"));
-        Artifact ab = createArtifact(artifacts, "a-b", "runtime", List.of("a"));
-        Artifact aba = createArtifact(artifacts, "a-b-a", "runtime", List.of("a", "a-b"));
-        Artifact ac = createArtifact(artifacts, "a-c", "runtime", List.of("a"));
-        Artifact ad = createArtifact(artifacts, "a-d", "compile", List.of("a"));
-        Artifact ada = createArtifact(artifacts, "a-d-a", "compile", List.of("a", "a-d"));
-        Artifact adb = createArtifact(artifacts, "a-d-b", "compile", List.of("a", "a-d"));
-        Artifact b = createArtifact(artifacts, "b", "provided", List.of());
-        Artifact ba = createArtifact(artifacts, "b-a", "provided", List.of("b"));
-        Artifact bb = createArtifact(artifacts, "b-b", "provided", List.of("b"));
-        Artifact c = createArtifact(artifacts, "c", "runtime", List.of());
-        Artifact ca = createArtifact(artifacts, "c-a", "runtime", List.of("c"));
-        Artifact d = createArtifact(artifacts, "d", "test", List.of());
-        Artifact da = createArtifact(artifacts, "d-a", "test", List.of("d"));
-        Artifact daa = createArtifact(artifacts, "d-a-a", "test", List.of("d", "d-a"));
-        Artifact db = createArtifact(artifacts, "d-b", "test", List.of("d"));
-        Artifact dc = createArtifact(artifacts, "d-c", "test", List.of("d"));
-        Artifact dca = createArtifact(artifacts, "d-c-a", "test", List.of("d", "d-c"));
+        Artifact a = createArtifact(artifacts, "a", "test", List.of());
+        Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
+        Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
+        Artifact aba = createArtifact(artifacts, "a-b-a", "test", List.of("a", "a-b"));
 
-        String configString =
-                "com.test:a-d:compile," +
-                "com.test:a:provided," +
-                "com.test:d-a:test," +
-                "com.test:d-c:compile," +
-                "com.test:d:runtime";
+        TestBundleDependencyScopeTranslator translator = TestBundleDependencyScopeTranslator.from(artifacts, null);
+        assertScope(translator, a, "compile");
+        assertScope(translator, aa, "compile");
+        assertScope(translator, ab, "compile");
+        assertScope(translator, aba, "compile");
+
+    }
+
+    @Test
+    public void non_test_scope_dependencies_keep_original_scope() {
+        Map<String, Artifact> artifacts = new TreeMap<>();
+        Artifact a = createArtifact(artifacts, "a", "provided", List.of());
+        Artifact aa = createArtifact(artifacts, "a-a", "provided", List.of("a"));
+        Artifact ab = createArtifact(artifacts, "a-b", "provided", List.of("a"));
+        Artifact b = createArtifact(artifacts, "b", "runtime", List.of());
+        Artifact ba = createArtifact(artifacts, "b-a", "runtime", List.of("b"));
+        Artifact c = createArtifact(artifacts, "c", "test", List.of());
+        Artifact ca = createArtifact(artifacts, "c-a", "test", List.of("c"));
+
+        TestBundleDependencyScopeTranslator translator = TestBundleDependencyScopeTranslator.from(artifacts, null);
+        assertScope(translator, a, "provided");
+        assertScope(translator, aa, "provided");
+        assertScope(translator, ab, "provided");
+        assertScope(translator, b, "runtime");
+        assertScope(translator, ba, "runtime");
+        assertScope(translator, c, "compile");
+        assertScope(translator, ca, "compile");
+    }
+
+    @Test
+    public void ordering_in_config_string_determines_translation() {
+        Map<String, Artifact> artifacts = new TreeMap<>();
+        Artifact a = createArtifact(artifacts, "a", "test", List.of());
+        Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
+        {
+            String configString =
+                    "com.test:a-a:runtime," +
+                    "com.test:a:test,";
+            TestBundleDependencyScopeTranslator translator = TestBundleDependencyScopeTranslator.from(artifacts, configString);
+            assertScope(translator, a, "test");
+            assertScope(translator, aa, "runtime");
+        }
+        {
+            String configString =
+                    "com.test:a:test," +
+                    "com.test:a-a:runtime";
+            TestBundleDependencyScopeTranslator translator = TestBundleDependencyScopeTranslator.from(artifacts, configString);
+            assertScope(translator, a, "test");
+            assertScope(translator, aa, "test");
+        }
+    }
+
+    @Test
+    public void transitive_non_test_dependencies_of_test_dependencies_keep_original_scope() {
+        Map<String, Artifact> artifacts = new TreeMap<>();
+        Artifact a = createArtifact(artifacts, "a", "test", List.of());
+        Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
+        Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
+        Artifact aba = createArtifact(artifacts, "a-b-a", "compile", List.of("a", "a-b"));
+        Artifact ac = createArtifact(artifacts, "a-c", "runtime", List.of("a"));
+        Artifact b = createArtifact(artifacts, "b", "test", List.of());
+        Artifact ba = createArtifact(artifacts, "b-a", "test", List.of("b"));
+        Artifact bb = createArtifact(artifacts, "b-b", "provided", List.of("b"));
+
+        String configString = "com.test:a:provided";
         TestBundleDependencyScopeTranslator translator = TestBundleDependencyScopeTranslator.from(artifacts, configString);
         assertScope(translator, a, "provided");
         assertScope(translator, aa, "provided");
         assertScope(translator, ab, "provided");
-        assertScope(translator, aba, "provided");
-        assertScope(translator, ac, "provided");
-        assertScope(translator, ad, "compile");
-        assertScope(translator, ada, "compile");
-        assertScope(translator, adb, "compile");
-        assertScope(translator, b, "provided");
-        assertScope(translator, ba, "provided");
+        assertScope(translator, aba, "compile");
+        assertScope(translator, ac, "runtime");
+        assertScope(translator, b, "compile");
+        assertScope(translator, ba, "compile");
         assertScope(translator, bb, "provided");
-        assertScope(translator, c, "runtime");
-        assertScope(translator, ca, "runtime");
-        assertScope(translator, d, "runtime");
-        assertScope(translator, da, "test");
-        assertScope(translator, daa, "test");
-        assertScope(translator, db, "runtime");
-        assertScope(translator, dc, "compile");
-        assertScope(translator, dca, "compile");
     }
 
     private static Artifact createArtifact(
