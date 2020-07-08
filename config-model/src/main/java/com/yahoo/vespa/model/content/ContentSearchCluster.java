@@ -392,7 +392,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         if (hasAnyNonIndexedCluster) {
             builder.feeding.concurrency(builder.feeding.build().concurrency() * 2);
         }
-        builder.indexing.optimize(feedSequencerType);
+        if ((feedSequencerType == ProtonConfig.Indexing.Optimize.Enum.THROUGHPUT) && (visibilityDelay == 0.0)) {
+            // THROUGHPUT and zero visibilityDelay is inconsistent and currently a suboptimal combination, defaulting to LATENCY.
+            // TODO: Once we have figured out optimal combination this limitation will be cleaned up.
+            builder.indexing.optimize(ProtonConfig.Indexing.Optimize.Enum.LATENCY);
+        } else {
+            builder.indexing.optimize(feedSequencerType);
+        }
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {

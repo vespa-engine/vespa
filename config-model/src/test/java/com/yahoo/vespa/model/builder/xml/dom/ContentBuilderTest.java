@@ -760,10 +760,16 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
     }
 
-    private void verifyFeedSequencer(String input, String expceted) {
+    private void verifyFeedSequencer(String input, String expected) {
+        verifyFeedSequencer(input, expected, 0);
+    }
+    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
         String hostedXml = "<services>" +
                 "<content version='1.0' id='search'>" +
                 "  <redundancy>1</redundancy>" +
+                "  <search>" +
+                "    <visibility-delay>" + visibilityDelay + "</visibility-delay>" +
+                "  </search>" +
                 "  <documents>" +
                 "    <document type='music' mode='index'/>" +
                 "  </documents>" +
@@ -778,7 +784,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 .build())
                 .create(deployStateBuilder);
         ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(expceted, config.indexing().optimize().toString());
+        assertEquals(expected, config.indexing().optimize().toString());
 
     }
 
@@ -786,7 +792,9 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void ensureFeedSequencerIsControlledByFlag() {
         verifyFeedSequencer("LATENCY", "LATENCY");
         verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
-        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT");
+        verifyFeedSequencer("THROUGHPUT", "LATENCY", 0);
+        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0.1);
+
         verifyFeedSequencer("THOUGHPUT", "LATENCY");
         verifyFeedSequencer("adaptive", "LATENCY");
 
