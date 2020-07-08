@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public class RoutingPolicies {
 
     // TODO(mpolden): Remove and inline call to updateGlobalDnsOf when feature flag disappears
     private void updateGlobalDnsOf(ApplicationId application, Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
-        if (weightedDnsPerRegion.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value()) {
+        if (useWeightedDnsPerRegion(application)) {
             updateGlobalDnsOf(routingPolicies, inactiveZones, lock);
         } else {
             legacyUpdateGlobalDnsOf(routingPolicies, inactiveZones, lock);
@@ -245,7 +246,7 @@ public class RoutingPolicies {
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.dnsZone(),
-                                              allocation.endpointIdsOf(loadBalancer),
+                                              allocation.endpointIdsOf(loadBalancer, useWeightedDnsPerRegion(loadBalancer.application())),
                                               new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
@@ -262,15 +263,15 @@ public class RoutingPolicies {
         var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())
                                          .dnsName());
         var data = RecordData.fqdn(policy.canonicalName().value());
-        NameUpdater nameUpdater = nameUpdaterIn(policy.id().zone());
+        NameServiceForwarder forwarder = nameServiceForwarderIn(policy.id().zone());
         if (policy.id().owner().equals(SystemApplication.configServer.id())) {
             // TODO(mpolden): Remove this after transition is complete. Before automatic provisioning of config server
             //                load balancers, the DNS records for the config server LB were of type A. It's not possible
             //                to change the type of an existing record, we therefore remove the A record before creating
             //                a CNAME.
-            nameUpdater.removeRecords(Record.Type.A, name);
+            forwarder.removeRecords(Record.Type.A, name, Priority.normal);
         }
-        nameUpdater.createCname(name, data);
+        forwarder.createCname(name, data, Priority.normal);
     }
 
     /** Remove policies and zone DNS records unreferenced by given load balancers */
@@ -284,7 +285,9 @@ public class RoutingPolicies {
                 !policy.id().zone().equals(allocation.deployment.zoneId())) continue;
 
             var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry()).dnsName();
-            nameUpdaterIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME, RecordName.from(dnsName));
+            nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
+                                                                                 RecordName.from(dnsName),
+                                                                                 Priority.normal);
             newPolicies.remove(policy.id());
         }
         db.writeRoutingPolicies(allocation.deployment.applicationId(), newPolicies);
@@ -300,16 +303,17 @@ public class RoutingPolicies {
             var endpoints = controller.routing().endpointsOf(id.application())
                                       .not().requiresRotation()
                                       .named(id.endpointId());
-            var nameUpdater = nameUpdaterIn(allocation.deployment.zoneId());
-            endpoints.forEach(endpoint -> nameUpdater.removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName())));
+            var forwarder = nameServiceForwarderIn(allocation.deployment.zoneId());
+            endpoints.forEach(endpoint -> forwarder.removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
+                                                                  Priority.normal));
         }
     }
 
     /** Compute routing IDs from given load balancers */
-    private static Set<RoutingId> routingIdsFrom(LoadBalancerAllocation allocation) {
+    private Set<RoutingId> routingIdsFrom(LoadBalancerAllocation allocation) {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
         for (var loadBalancer : allocation.loadBalancers) {
-            for (var endpointId : allocation.endpointIdsOf(loadBalancer)) {
+            for (var endpointId : allocation.endpointIdsOf(loadBalancer, useWeightedDnsPerRegion(loadBalancer.application()))) {
                 routingIds.add(new RoutingId(loadBalancer.application(), endpointId));
             }
         }
@@ -347,6 +351,10 @@ public class RoutingPolicies {
             case active: return true;
         }
         return false;
+    }
+
+    private boolean useWeightedDnsPerRegion(ApplicationId application) {
+        return weightedDnsPerRegion.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
     }
 
     /** Represents records for a region-wide endpoint */
@@ -410,7 +418,7 @@ public class RoutingPolicies {
         }
 
         /** Compute all endpoint IDs for given load balancer */
-        private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer) {
+        private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer, boolean useWeightedDnsPerRegion) {
             if (!deployment.zoneId().environment().isProduction()) { // Only production deployments have configurable endpoints
                 return Set.of();
             }
@@ -418,12 +426,16 @@ public class RoutingPolicies {
             if (instanceSpec.isEmpty()) {
                 return Set.of();
             }
+            if (useWeightedDnsPerRegion && instanceSpec.get().globalServiceId().filter(id -> id.equals(loadBalancer.cluster().value())).isPresent()) {
+                // Legacy assignment always has the default endpoint Id
+                return Set.of(EndpointId.defaultId());
+            }
             return instanceSpec.get().endpoints().stream()
                                .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
                                .filter(endpoint -> endpoint.regions().contains(deployment.zoneId().region()))
                                .map(com.yahoo.config.application.api.Endpoint::endpointId)
                                .map(EndpointId::of)
-                               .collect(Collectors.toSet());
+                               .collect(Collectors.toUnmodifiableSet());
         }
 
     }
@@ -440,52 +452,24 @@ public class RoutingPolicies {
     }
 
     /** Returns the name updater to use for given zone */
-    private NameUpdater nameUpdaterIn(ZoneId zone) {
+    private NameServiceForwarder nameServiceForwarderIn(ZoneId zone) {
         if (controller.zoneRegistry().routingMethods(zone).contains(RoutingMethod.exclusive)) {
-            return new NameUpdater(controller.nameServiceForwarder());
+            return controller.nameServiceForwarder();
         }
-        return new DiscardingNameUpdater();
+        return new NameServiceDiscarder(controller.curator());
     }
 
-    /** A name updater that passes name service operations to the next handler */
-    private static class NameUpdater {
+    /** A {@link NameServiceForwarder} that does nothing. Used in zones where no explicit DNS updates are needed */
+    private static class NameServiceDiscarder extends NameServiceForwarder {
 
-        private final NameServiceForwarder forwarder;
-
-        public NameUpdater(NameServiceForwarder forwarder) {
-            this.forwarder = forwarder;
-        }
-
-        public void removeRecords(Record.Type type, RecordName name) {
-            forwarder.removeRecords(type, name, Priority.normal);
-        }
-
-        public void createAlias(RecordName name, Set<AliasTarget> targets) {
-            forwarder.createAlias(name, targets, Priority.normal);
-        }
-
-        public void createCname(RecordName name, RecordData data) {
-            forwarder.createCname(name, data, Priority.normal);
-        }
-
-    }
-
-    /** A name updater that does nothing */
-    private static class DiscardingNameUpdater extends NameUpdater {
-
-        private DiscardingNameUpdater() {
-            super(null);
+        public NameServiceDiscarder(CuratorDb db) {
+            super(db);
         }
 
         @Override
-        public void removeRecords(Record.Type type, RecordName name) {}
-
-        @Override
-        public void createAlias(RecordName name, Set<AliasTarget> targets) {}
-
-        @Override
-        public void createCname(RecordName name, RecordData data) {}
-
+        protected void forward(NameServiceRequest request, Priority priority) {
+            // Ignored
+        }
     }
 
 }

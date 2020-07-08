@@ -176,8 +176,8 @@ public class RoutingPoliciesTest {
 
         // Weight of inactive zone is set to zero
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L,
-                                                                                  zone3, 1L,
-                                                                                  zone4, 0L));
+                                                                                           zone3, 1L,
+                                                                                           zone4, 0L));
 
         // Other zone in shared region is set out. Entire record group for the region is removed as all zones in the
         // region are out (weight sum = 0)
@@ -195,6 +195,27 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L,
                                                                                            zone3, 1L,
                                                                                            zone4, 1L));
+    }
+
+    @Test
+    public void global_routing_policies_legacy_global_service_id() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        int clustersPerZone = 2;
+        int numberOfDeployments = 2;
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .globalServiceId("c0")
+                .build();
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+
+        // Creates alias records
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
+        assertEquals("Routing policy count is equal to cluster count",
+                     numberOfDeployments * clustersPerZone,
+                     tester.policiesOf(context.instance().id()).size());
     }
 
     @Test
@@ -294,8 +315,19 @@ public class RoutingPoliciesTest {
     }
 
     @Test
+    public void zone_routing_policies_without_dns_update() {
+        var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(0, tester.controllerTester().controller().curator().readNameServiceQueue().requests().size());
+        assertEquals(Set.of(), tester.recordNames());
+        assertEquals(2, tester.policiesOf(context.instanceId()).size());
+    }
+
+    @Test
     public void global_routing_policies_in_rotationless_system() {
-        var tester = new RoutingPoliciesTester(new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build())));
+        var tester = new RoutingPoliciesTester(new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build())), true);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
 
@@ -692,7 +724,7 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester(SystemName system) {
-            this(new DeploymentTester(new ControllerTester(new ServiceRegistryMock(system))));
+            this(new DeploymentTester(new ControllerTester(new ServiceRegistryMock(system))), true);
         }
 
         public RoutingPolicies routingPolicies() {
@@ -707,14 +739,15 @@ public class RoutingPoliciesTest {
             return tester.controllerTester();
         }
 
-        public RoutingPoliciesTester(DeploymentTester tester) {
+        public RoutingPoliciesTester(DeploymentTester tester, boolean exclusiveRouting) {
             this.tester = tester;
             List<ZoneApi> zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().zones());
             zones.add(ZoneApiMock.from(zone3));
             zones.add(ZoneApiMock.from(zone4));
-            tester.controllerTester().zoneRegistry()
-                  .setZones(zones)
-                  .exclusiveRoutingIn(zones);
+            tester.controllerTester().zoneRegistry().setZones(zones);
+            if (exclusiveRouting) {
+                  tester.controllerTester().zoneRegistry().exclusiveRoutingIn(zones);
+            }
             tester.controllerTester().configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(),
                                                                SystemApplication.all());
             ((InMemoryFlagSource) tester.controllerTester().controller().flagSource()).withBooleanFlag(Flags.WEIGHTED_DNS_PER_REGION.id(), true);
