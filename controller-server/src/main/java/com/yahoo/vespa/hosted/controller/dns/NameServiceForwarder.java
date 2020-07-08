@@ -69,7 +69,7 @@ public class NameServiceForwarder {
         forward(new RemoveRecords(type, data), priority);
     }
 
-    private void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
+    protected void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
