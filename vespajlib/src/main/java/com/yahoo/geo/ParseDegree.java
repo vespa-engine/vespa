@@ -31,6 +31,14 @@ public class ParseDegree {
     private int len = 0;
     private int pos = 0;
 
+    public String toString() {
+        if (foundLatitude) {
+            return parseString + " -> latitude(" + latitude + ")";
+        } else {
+            return parseString + " -> longitude(" + longitude + ")";
+        }
+    }
+
     private char getNextChar() throws IllegalArgumentException {
         if (pos == len) {
             pos++;
@@ -71,11 +79,11 @@ public class ParseDegree {
      * "N63.418417" and "E10.433033" → same <br>
      * "63N25.105" and "10E25.982" → same <br>
      * @param assume_n_s Latitude assumed, otherwise longitude
-     * @param latorlong Latitude or longitude
+     * @param lat_or_lon Latitude or longitude
      *
      **/
-    public ParseDegree(boolean assume_n_s, String lat_or_long) throws IllegalArgumentException {
-        this.parseString = lat_or_long;
+    public ParseDegree(boolean assume_n_s, String lat_or_lon) throws IllegalArgumentException {
+        this.parseString = lat_or_lon;
         this.len = parseString.length();
         consumeString(assume_n_s);
     }
@@ -263,5 +271,12 @@ public class ParseDegree {
             }
         } while (ch != 0);
         // everything parsed OK
+        if (foundLatitude && foundLongitude) {
+            throw new IllegalArgumentException("found both latitude and longitude from: "+parseString);
+        }
+        if (foundLatitude || foundLongitude) {
+            return;
+        }
+        throw new IllegalArgumentException("found neither latitude nor longitude from: "+parseString);
     }
 }
