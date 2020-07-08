@@ -108,7 +108,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void osgi_component_is_deconstructed_when_not_reused() {
+    public void component_is_deconstructed_when_not_reused() {
         writeBootstrapConfigs("id1", DestructableComponent.class);
 
         Container container = newContainer(dirConfigSource);
@@ -194,7 +194,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void runOnce_hangs_waiting_for_valid_config_after_invalid_config() throws InterruptedException, ExecutionException, TimeoutException {
+    public void getNewComponentGraph_hangs_waiting_for_valid_config_after_invalid_config() throws Exception {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
         writeBootstrapConfigs("myId", ComponentTakingConfig.class);
 

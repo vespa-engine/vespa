@@ -14,6 +14,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 
 /**
  * Tests that ComponentRegistry handles namespaces correctly.
+ * 
  * @author Tony Vaagenes
  */
 public class ComponentRegistryTestCase {
