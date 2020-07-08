@@ -127,7 +127,7 @@ public class Location {
             throw new IllegalArgumentException("n/s location must be in range [-90,+90]");
         }
         if (radius_in_degrees < 0) {
-            pr = 512 * 1024 * 1024;
+            pr = -1;
         }
         x = px;
         y = py;
@@ -142,7 +142,7 @@ public class Location {
             throw new IllegalArgumentException("can only set geo circle once");
         }
         if (radius_in_units < 0) {
-            throw new IllegalArgumentException("radius must be positive");
+            radius_in_units = -1;
         }
         x = px;
         y = py;
@@ -247,11 +247,14 @@ public class Location {
         }
     }
 
-    public Location clone() {
-        return new Location(toString());
+    public String toString() {
+        return render(false);
+    }
+    public String backendString() {
+        return render(true);
     }
 
-    public String toString() {
+    private String render(boolean forBackend) {
         StringBuilder ser = new StringBuilder();
         if (attribute != null) {
             ser.append(attribute).append(':');
@@ -275,7 +278,7 @@ public class Location {
             if (dimensions == 2) {
                 ser.append(",").append(y);
             }
-            ser.append(",").append(r).
+            ser.append(",").append(forBackend ? backendRadius() : r).
                 append(",").append(tableId).
                 append(",").append(s).
                 append(",").append(replace);
@@ -362,11 +365,16 @@ public class Location {
 
     /**
      * Obtain circle radius (in degrees).
+     * Note that "no radius" or "infinite radius" is represented as -1.
      * May only be called when isGeoCircle() returns true.
      **/
     public double degRadius() {
         checkGeoCircle();
-        return 0.000001 * r;
+        return (r < 0) ? -1.0 : (0.000001 * r);
+    }
+
+    private int backendRadius() {
+        return (r < 0) ?  (512 * 1024 * 1024) : r;
     }
 
     /**
@@ -374,7 +382,7 @@ public class Location {
      * For internal use.
      */
     public int encode(ByteBuffer buffer) {
-        byte[] loc = Utf8.toBytes(toString());
+        byte[] loc = Utf8.toBytes(backendString());
         buffer.put(loc);
         return loc.length;
     }

@@ -536,6 +536,7 @@
     "methods": [
       "public void <init>(com.yahoo.prelude.Location)",
       "public void <init>(com.yahoo.prelude.Location, java.lang.String)",
+      "public com.yahoo.prelude.Location getLocation()",
       "public java.lang.String getRawWord()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",

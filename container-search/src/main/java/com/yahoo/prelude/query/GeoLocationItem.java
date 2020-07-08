@@ -18,25 +18,32 @@ public class GeoLocationItem extends TermItem {
     /**
      */
     public GeoLocationItem(Location location) {
-        super(location.getAttribute(), false);
-        this.location = location.clone();
+        this(location, location.getAttribute());
         if (! location.hasAttribute()) {
             throw new IllegalArgumentException("missing attribute on location: "+location);
         }
-        location.setAttribute(null);
-        setNormalizable(false);
     }
 
     /**
      */
     public GeoLocationItem(Location location, String indexName) {
         super(indexName, false);
-        this.location = location.clone();
         if (location.hasAttribute() && ! location.getAttribute().equals(indexName)) {
-            throw new IllegalArgumentException("inconsistent attribute on location: "+location+" versus indexName: "+indexName);
+            throw new IllegalArgumentException("inconsistent attribute on location: "+location.getAttribute()+" versus indexName: "+indexName);
         }
-        location.setAttribute(null);
+        if (! location.isGeoCircle()) {
+            throw new IllegalArgumentException("GeoLocationItem only supports Geo Circles, got: "+location);
+        }
+        if (location.hasBoundingBox()) {
+            throw new IllegalArgumentException("GeoLocationItem does not support bounding box yet, got: "+location);
+        }
+        this.location = new Location(location.toString());
+        this.location.setAttribute(null); // keep this in indexName only
         setNormalizable(false);
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     @Override
@@ -51,12 +58,11 @@ public class GeoLocationItem extends TermItem {
 
     @Override
     public String getName() {
-        return "LOCATION";
+        return "GEO_LOCATION";
     }
 
     @Override
     public String stringValue() {
-        location.setAttribute(null);
         return location.toString();
     }
 
@@ -80,14 +86,13 @@ public class GeoLocationItem extends TermItem {
 
     @Override
     public String getIndexedString() {
-        location.setAttribute(null);
         return location.toString();
     }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
-        putString(getIndexedString(), buffer);
+        putString(location.backendString(), buffer);
     }
 
     @Override
