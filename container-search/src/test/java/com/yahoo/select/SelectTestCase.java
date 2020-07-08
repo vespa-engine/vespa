@@ -522,6 +522,18 @@ public class SelectTestCase {
     }
 
     @Test
+    public void testGeoLocation() {
+        assertParse("{ \"geoLocation\": [ \"workplace\", 63.418417, 10.433033, 500000 ] }",
+                    "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
+        assertParse("{ \"geoLocation\": [ \"headquarters\", \"37.416383\", \"-122.024683\", \"100 miles\" ] }",
+                    "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
+        assertParse("{ \"geoLocation\": [ \"home\", \"E10.433033\", \"N63.418417\", \"5km\" ] }",
+                    "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
+        assertParse("{ \"geoLocation\": [ \"workplace\", -12.0, -34.0, -77 ] }",
+                    "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
+    }
+
+    @Test
     public void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
                 "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,approximate=true,targetHits=0}");
