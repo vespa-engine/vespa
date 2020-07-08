@@ -225,7 +225,7 @@ BucketDBUpdater::removeSuperfluousBuckets(
         if (!is_distribution_config_change
             && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
         {
-            LOG(info, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
+            LOG(debug, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
                 document::FixedBucketSpaces::to_string(elem.first).data(),
                 oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
