@@ -58,9 +58,35 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
+const ProtonLocationTerm *
+find_location_term(const Node *tree) {
+    if (auto loc = dynamic_cast<const ProtonLocationTerm *>(tree)) {
+        return loc;
+    } else if (auto parent = dynamic_cast<const search::query::Intermediate *>(tree)) {
+        for (const Node * child : parent->getChildren()) {
+            auto child_loc = find_location_term(child);
+            if (child_loc) return child_loc;
+        }
+    }
+    return nullptr;
+}
+
 void
 addLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
     if (location_str.empty()) {
+        auto loc_term = find_location_term(query_tree.get());
+        if (loc_term) {
+            const string view = PositionDataType::getZCurveFieldName(loc_term->getView());
+            const search::query::Location &loc = loc_term->getTerm();
+            search::common::Location locationSpec;
+            if (locationSpec.parse(loc.getLocationString())) {
+                fef_location.setAttribute(view);
+                fef_location.setXPosition(locationSpec.getX());
+                fef_location.setYPosition(locationSpec.getY());
+                fef_location.setXAspect(locationSpec.getXAspect());
+                fef_location.setValid(true);
+            }
+        }
         return;
     }
     string::size_type pos = location_str.find(':');
