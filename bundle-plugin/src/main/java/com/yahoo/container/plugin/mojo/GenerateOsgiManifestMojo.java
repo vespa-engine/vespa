@@ -55,8 +55,14 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     @Parameter(alias = "Main-Class")
     private String mainClass = null;
 
+    @Parameter(defaultValue = "false")
+    private boolean buildVespaPlatformBundle;
+
     public void execute() throws MojoExecutionException {
         try {
+            if (discPreInstallBundle != null && ! buildVespaPlatformBundle)
+                throw new MojoExecutionException("The 'discPreInstallBundle' parameter can only be used by Vespa platform bundles.");
+
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
             warnIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
