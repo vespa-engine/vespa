@@ -119,6 +119,14 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    public void testGeoLocation() {
+        parseAndConfirm("geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\")");
+        parseAndConfirm("geoLocation(headquarters, 37.41638, -122.024683, \"180.0 deg\")");
+        parseAndConfirm("geoLocation(home, -17.0, 42.0, \"0.0 deg\")");
+        parseAndConfirm("geoLocation(workplace, -12.0, -34.0, \"-1.0 deg\")");
+    }
+
+    @Test
     public void testNear() {
         parseAndConfirm("title contains near(\"a\", \"b\")");
         parseAndConfirm("title contains ([{\"distance\": 50}]near(\"a\", \"b\"))");

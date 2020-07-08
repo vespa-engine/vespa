@@ -19,6 +19,8 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
+import com.yahoo.geo.ParseDegree;
+import com.yahoo.geo.ParseDistance;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
@@ -420,10 +422,20 @@ public class YqlParser implements Parser {
 
     private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
+        Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
         String field = fetchFieldRead(args.get(0));
-        String location = fetchFieldRead(args.get(1));
-        GeoLocationItem item = new GeoLocationItem(new Location(location), field);
+        var coord_1 = new ParseDegree(true, fetchFieldRead(args.get(1)));
+        var coord_2 = new ParseDegree(false, fetchFieldRead(args.get(2)));
+        var radius = new ParseDistance(fetchFieldRead(args.get(3)));
+        var loc = new Location();
+        if (coord_1.foundLatitude && coord_2.foundLongitude) {
+            loc.setGeoCircle(coord_1.latitude, coord_2.longitude, radius.degrees);
+        } else if (coord_2.foundLatitude && coord_1.foundLongitude) {
+            loc.setGeoCircle(coord_2.latitude, coord_1.longitude, radius.degrees);
+        } else {
+            throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
+        }
+        var item = new GeoLocationItem(loc, field);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
             item.setLabel(label);
@@ -920,6 +932,8 @@ public class YqlParser implements Parser {
 
     private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
         switch (ast.getOperator()) {
+            case LITERAL:
+                return ast.getArgument(0).toString();
             case READ_FIELD:
                 return ast.getArgument(1);
             case PROPREF:

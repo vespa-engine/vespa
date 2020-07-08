@@ -701,9 +701,12 @@ public class VespaSerializer {
                 destination.append("([{").append(annotations).append("}]");
             }
             destination.append(GEO_LOCATION).append('(');
-            destination.append(item.getIndexName()).append(", ").append('"');
-            escape(item.getIndexedString(), destination);
-            destination.append('"').append(')');
+            destination.append(item.getIndexName()).append(", ");
+            var loc = item.getLocation();
+            destination.append(loc.degNS()).append(", ");
+            destination.append(loc.degEW()).append(", ");
+            destination.append('"').append(loc.degRadius()).append(" deg").append('"');
+            destination.append(')');
             return false;
         }
     }

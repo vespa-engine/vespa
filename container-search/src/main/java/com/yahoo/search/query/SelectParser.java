@@ -3,6 +3,8 @@ package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
+import com.yahoo.geo.ParseDegree;
+import com.yahoo.geo.ParseDistance;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.prelude.IndexFacts;
@@ -49,6 +51,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -156,7 +159,7 @@ public class SelectParser implements Parser {
     }
 
     private QueryTree buildTree() {
-        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString().getBytes()).get();
+        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString()).get();
         if (inspector.field("error_message").valid()) {
             throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
                                      " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
@@ -216,7 +219,7 @@ public class SelectParser implements Parser {
 
     /** Translates a list of grouping requests on JSON form to a list in the grouping language form */
     private List<String> toGroupingRequests(String groupingJson) {
-        Inspector inspector = SlimeUtils.jsonToSlime(groupingJson.getBytes()).get();
+        Inspector inspector = SlimeUtils.jsonToSlime(groupingJson).get();
         if (inspector.field("error_message").valid()) {
             throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
                                      " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
@@ -417,10 +420,36 @@ public class SelectParser implements Parser {
 
     private Item buildGeoLocation(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
-        Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
+        Preconditions.checkArgument(children.size() == 4, "Expected 4 arguments, got %s.", children.size());
         String field = children.get(0).asString();
-        String location = children.get(1).asString();
-        GeoLocationItem item = new GeoLocationItem(new Location(location), field);
+        var arg1 = children.get(1);
+        var arg2 = children.get(2);
+        var arg3 = children.get(3);
+        var loc = new Location();
+        double radius = -1;
+        if (arg3.type() == Type.STRING) {
+           radius = new ParseDistance(arg3.asString()).degrees;
+        } else if (arg3.type() == Type.LONG) {
+           radius = new ParseDistance(String.valueOf(arg3.asLong())).degrees;
+        } else {
+           throw new IllegalArgumentException("Invalid geoLocation radius type "+arg3.type()+" for "+arg3);
+        }
+        if (arg1.type() == Type.STRING && arg2.type() == Type.STRING) {
+            var coord_1 = new ParseDegree(true, children.get(1).asString());
+            var coord_2 = new ParseDegree(false, children.get(2).asString());
+            if (coord_1.foundLatitude && coord_2.foundLongitude) {
+                loc.setGeoCircle(coord_1.latitude, coord_2.longitude, radius);
+            } else if (coord_2.foundLatitude && coord_1.foundLongitude) {
+                loc.setGeoCircle(coord_2.latitude, coord_1.longitude, radius);
+            } else {
+                throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
+            }
+        } else if (arg1.type() == Type.DOUBLE && arg2.type() == Type.DOUBLE) {
+            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius);
+        } else {
+            throw new IllegalArgumentException("Invalid geoLocation coordinate types "+arg1.type()+" and "+arg2.type());
+        }
+        var item = new GeoLocationItem(loc, field);
         Inspector annotations = getAnnotations(value);
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
