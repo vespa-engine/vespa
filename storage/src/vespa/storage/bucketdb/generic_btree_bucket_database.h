@@ -71,13 +71,6 @@ public:
     GenericBTreeBucketDatabase(GenericBTreeBucketDatabase&&) = delete;
     GenericBTreeBucketDatabase& operator=(GenericBTreeBucketDatabase&&) = delete;
 
-    // TODO move
-    struct EntryProcessor {
-        virtual ~EntryProcessor() = default;
-        /** Return false to stop iterating. */
-        virtual bool process(const typename DataStoreTraitsT::ConstValueRef& e) = 0;
-    };
-
     ValueType entry_from_iterator(const BTreeConstIterator& iter) const;
     ConstValueRef const_value_ref_from_valid_iterator(const BTreeConstIterator& iter) const;
 
@@ -103,14 +96,10 @@ public:
     bool update_by_raw_key(uint64_t bucket_key, const ValueType& new_entry);
 
     template <typename IterValueExtractor, typename Func>
-    void find_parents_and_self(const document::BucketId& bucket,
-                               Func func) const;
+    void find_parents_and_self(const document::BucketId& bucket, Func func) const;
 
     template <typename IterValueExtractor, typename Func>
-    void find_parents_self_and_children(const document::BucketId& bucket,
-                                        Func func) const;
-
-    void for_each(EntryProcessor& proc, const document::BucketId& after) const;
+    void find_parents_self_and_children(const document::BucketId& bucket, Func func) const;
 
     document::BucketId getAppropriateBucket(uint16_t minBits, const document::BucketId& bid) const;
 
@@ -136,6 +125,10 @@ public:
 
         template <typename IterValueExtractor, typename Func>
         void find_parents_and_self(const document::BucketId& bucket, Func func) const;
+        template <typename IterValueExtractor, typename Func>
+        void find_parents_self_and_children(const document::BucketId& bucket, Func func) const;
+        template <typename IterValueExtractor, typename Func>
+        void for_each(Func func) const;
         [[nodiscard]] uint64_t generation() const noexcept;
     };
 private:
@@ -148,6 +141,11 @@ private:
     void find_parents_and_self_internal(const typename BTree::FrozenView& frozen_view,
                                         const document::BucketId& bucket,
                                         Func func) const;
+    template <typename IterValueExtractor, typename Func>
+    void find_parents_self_and_children_internal(const typename BTree::FrozenView& frozen_view,
+                                                 const document::BucketId& bucket,
+                                                 Func func) const;
+
     void commit_tree_changes();
 
     template <typename DataStoreTraitsT2> friend struct BTreeBuilderMerger;

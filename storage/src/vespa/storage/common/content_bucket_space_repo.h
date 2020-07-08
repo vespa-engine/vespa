@@ -43,6 +43,13 @@ public:
         }
     }
 
+    template <typename Functor>
+    void for_each_bucket(Functor functor) const {
+        for (const auto& elem : _map) {
+            elem.second->bucketDatabase().acquire_read_guard()->for_each(std::move(functor));
+        }
+    }
+
 };
 
 }

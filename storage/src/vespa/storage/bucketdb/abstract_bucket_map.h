@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "read_guard.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -161,7 +162,7 @@ public:
      *
      * Type erasure of functor needed due to virtual indirection.
      */
-    void for_each_chunked(std::function<Decision(uint64_t, ValueT&)> func,
+    void for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
                           const char* clientId,
                           vespalib::duration yieldTime = 10us,
                           uint32_t chunkSize = DEFAULT_CHUNK_SIZE)
@@ -185,6 +186,10 @@ public:
         do_for_each(std::move(func), clientId, first, last);
     }
 
+    std::unique_ptr<bucketdb::ReadGuard<ValueT>> acquire_read_guard() const {
+        return do_acquire_read_guard();
+    }
+
     [[nodiscard]] virtual size_type size() const noexcept = 0;
     [[nodiscard]] virtual size_type getMemoryUsage() const noexcept = 0;
     [[nodiscard]] virtual bool empty() const noexcept = 0;
@@ -194,7 +199,7 @@ public:
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 private:
     virtual void unlock(const key_type& key) = 0; // Only for bucket lock guards
-    virtual void do_for_each_chunked(std::function<Decision(uint64_t, ValueT&)> func,
+    virtual void do_for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
                                      const char* clientId,
                                      vespalib::duration yieldTime,
                                      uint32_t chunkSize) = 0;
@@ -206,6 +211,7 @@ private:
                              const char* clientId,
                              const key_type& first,
                              const key_type& last) = 0;
+    virtual std::unique_ptr<bucketdb::ReadGuard<ValueT>> do_acquire_read_guard() const = 0;
 };
 
 template <typename ValueT>

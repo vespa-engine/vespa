@@ -247,7 +247,7 @@ void LockableMap<Map>::do_for_each(std::function<Decision(uint64_t, const mapped
 
 template <typename Map>
 bool
-LockableMap<Map>::processNextChunk(std::function<Decision(uint64_t, mapped_type&)>& func,
+LockableMap<Map>::processNextChunk(std::function<Decision(uint64_t, const mapped_type&)>& func,
                                    key_type& key,
                                    const char* clientId,
                                    const uint32_t chunkSize)
@@ -268,7 +268,7 @@ LockableMap<Map>::processNextChunk(std::function<Decision(uint64_t, mapped_type&
 }
 
 template <typename Map>
-void LockableMap<Map>::do_for_each_chunked(std::function<Decision(uint64_t, mapped_type&)> func,
+void LockableMap<Map>::do_for_each_chunked(std::function<Decision(uint64_t, const mapped_type&)> func,
                                            const char* clientId,
                                            vespalib::duration yieldTime,
                                            uint32_t chunkSize)
@@ -284,6 +284,55 @@ void LockableMap<Map>::do_for_each_chunked(std::function<Decision(uint64_t, mapp
         // face of blocked point lookups.
         std::this_thread::sleep_for(yieldTime);
     }
+}
+
+// TODO This is a placeholder that has to work around the const-ness and type quirks of
+// the legacy LockableMap implementation. In particular, it offers no snapshot isolation
+// at all, nor does it support the "get parents and self" bucket lookup operation.
+template <typename Map>
+class LockableMap<Map>::ReadGuardImpl final
+    : public bucketdb::ReadGuard<typename Map::mapped_type>
+{
+    const LockableMap<Map>& _map;
+public:
+    using mapped_type = typename Map::mapped_type;
+
+    explicit ReadGuardImpl(const LockableMap<Map>& map) : _map(map) {}
+    ~ReadGuardImpl() override = default;
+
+    std::vector<mapped_type> find_parents_and_self(const document::BucketId&) const override {
+        abort(); // Finding just parents+self isn't supported by underlying legacy DB API!
+    }
+
+    std::vector<mapped_type> find_parents_self_and_children(const document::BucketId& bucket) const override {
+        auto& mutable_map = const_cast<LockableMap<Map>&>(_map); // _map is thread safe.
+        auto locked_entries = mutable_map.getAll(bucket, "ReadGuardImpl::find_parents_self_and_children");
+        std::vector<mapped_type> entries;
+        entries.reserve(locked_entries.size());
+        for (auto& e : locked_entries) {
+            entries.emplace_back(*e.second);
+        }
+        return entries;
+    }
+
+    void for_each(std::function<void(uint64_t, const mapped_type&)> func) const override {
+        auto decision_wrapper = [&func](uint64_t key, const mapped_type& value) -> Decision {
+            func(key, value);
+            return Decision::CONTINUE;
+        };
+        auto& mutable_map = const_cast<LockableMap<Map>&>(_map); // _map is thread safe.
+        mutable_map.for_each_chunked(std::move(decision_wrapper), "ReadGuardImpl::for_each");
+    }
+
+    [[nodiscard]] uint64_t generation() const noexcept override {
+        return 0;
+    }
+};
+
+template <typename Map>
+std::unique_ptr<bucketdb::ReadGuard<typename Map::mapped_type>>
+LockableMap<Map>::do_acquire_read_guard() const {
+    return std::make_unique<ReadGuardImpl>(*this);
 }
 
 template<typename Map>

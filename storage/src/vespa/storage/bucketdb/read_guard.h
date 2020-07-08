@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
+#include <functional>
 #include <vector>
 
 namespace storage::bucketdb {
@@ -36,8 +37,9 @@ public:
     ReadGuard(const ReadGuard&) = delete;
     ReadGuard& operator=(const ReadGuard&) = delete;
 
-    virtual void find_parents_and_self(const document::BucketId& bucket,
-                                       std::vector<ValueT>& entries) const = 0;
+    virtual std::vector<ValueT> find_parents_and_self(const document::BucketId& bucket) const = 0;
+    virtual std::vector<ValueT> find_parents_self_and_children(const document::BucketId& bucket) const = 0;
+    virtual void for_each(std::function<void(uint64_t, const ValueT&)> func) const = 0;
     // If the underlying guard represents a snapshot, returns its monotonically
     // increasing generation. Otherwise returns 0.
     [[nodiscard]] virtual uint64_t generation() const noexcept = 0;

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "abstract_bucket_map.h"
+#include "read_guard.h"
 #include "storagebucketinfo.h"
 #include <vespa/storageapi/defs.h>
 #include <memory>
@@ -67,6 +68,8 @@ public:
                   const char* clientId,
                   const key_type& first = key_type(),
                   const key_type& last = key_type() - 1);
+
+    std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 
     /**
      * Returns true iff bucket has no superbuckets or sub-buckets in the

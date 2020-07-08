@@ -250,8 +250,7 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
     document::BucketIdFactory bucketIdFactory;
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
-    std::vector<BucketDatabase::Entry> entries;
-    read_guard.find_parents_and_self(bid, entries);
+    auto entries = read_guard.find_parents_and_self(bid);
 
     for (uint32_t j = 0; j < entries.size(); ++j) {
         const BucketDatabase::Entry& e = entries[j];

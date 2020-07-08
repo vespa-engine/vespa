@@ -198,8 +198,9 @@ public:
     explicit ReadGuardImpl(const BTreeBucketDatabase& db);
     ~ReadGuardImpl() override;
 
-    void find_parents_and_self(const document::BucketId& bucket,
-                               std::vector<Entry>& entries) const override;
+    std::vector<Entry> find_parents_and_self(const document::BucketId& bucket) const override;
+    std::vector<Entry> find_parents_self_and_children(const document::BucketId& bucket) const override;
+    void for_each(std::function<void(uint64_t, const Entry&)> func) const override;
     [[nodiscard]] uint64_t generation() const noexcept override;
 };
 
@@ -209,12 +210,26 @@ BTreeBucketDatabase::ReadGuardImpl::ReadGuardImpl(const BTreeBucketDatabase& db)
 
 BTreeBucketDatabase::ReadGuardImpl::~ReadGuardImpl() = default;
 
-void BTreeBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket,
-                                                               std::vector<Entry>& entries) const
-{
+std::vector<Entry>
+BTreeBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket) const {
+    std::vector<Entry> entries;
     _snapshot.find_parents_and_self<ByValue>(bucket, [&entries]([[maybe_unused]] uint64_t key, Entry entry){
         entries.emplace_back(std::move(entry));
     });
+    return entries;
+}
+
+std::vector<Entry>
+BTreeBucketDatabase::ReadGuardImpl::find_parents_self_and_children(const document::BucketId& bucket) const {
+    std::vector<Entry> entries;
+    _snapshot.find_parents_self_and_children<ByValue>(bucket, [&entries]([[maybe_unused]] uint64_t key, Entry entry){
+        entries.emplace_back(std::move(entry));
+    });
+    return entries;
+}
+
+void BTreeBucketDatabase::ReadGuardImpl::for_each(std::function<void(uint64_t, const Entry&)> func) const {
+    _snapshot.for_each<ByValue>(std::move(func));
 }
 
 uint64_t BTreeBucketDatabase::ReadGuardImpl::generation() const noexcept {

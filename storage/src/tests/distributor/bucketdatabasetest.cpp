@@ -173,8 +173,7 @@ BucketDatabaseTest::doFindParents(const std::vector<document::BucketId>& ids,
     // TODO remove in favor of only read guard once legacy DB usage has been ported over
     db().getParents(searchId, entries);
 
-    std::vector<BucketDatabase::Entry> checked_entries;
-    db().acquire_read_guard()->find_parents_and_self(searchId, checked_entries);
+    auto checked_entries = db().acquire_read_guard()->find_parents_and_self(searchId);
     if (entries != checked_entries) {
         return "Mismatch between results from getParents() and ReadGuard!";
     }
