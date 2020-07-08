@@ -675,7 +675,6 @@ public class RoutingPoliciesTest {
         var tester = new RoutingPoliciesTester();
         var app = SystemApplication.configServer.id();
         RecordName name = RecordName.from("cfg.prod.us-west-1.test.vip");
-        tester.controllerTester().nameService().add(new Record(Record.Type.A, name, RecordData.from("192.0.2.1")));
 
         tester.provisionLoadBalancers(1, app, zone1);
         tester.routingPolicies().refresh(app, DeploymentSpec.empty, zone1);

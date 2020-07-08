@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
@@ -263,15 +262,7 @@ public class RoutingPolicies {
         var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())
                                          .dnsName());
         var data = RecordData.fqdn(policy.canonicalName().value());
-        NameServiceForwarder forwarder = nameServiceForwarderIn(policy.id().zone());
-        if (policy.id().owner().equals(SystemApplication.configServer.id())) {
-            // TODO(mpolden): Remove this after transition is complete. Before automatic provisioning of config server
-            //                load balancers, the DNS records for the config server LB were of type A. It's not possible
-            //                to change the type of an existing record, we therefore remove the A record before creating
-            //                a CNAME.
-            forwarder.removeRecords(Record.Type.A, name, Priority.normal);
-        }
-        forwarder.createCname(name, data, Priority.normal);
+        nameServiceForwarderIn(policy.id().zone()).createCname(name, data, Priority.normal);
     }
 
     /** Remove policies and zone DNS records unreferenced by given load balancers */
