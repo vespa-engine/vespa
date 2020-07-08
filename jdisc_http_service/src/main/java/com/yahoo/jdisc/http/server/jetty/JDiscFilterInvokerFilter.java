@@ -55,7 +55,13 @@ class JDiscFilterInvokerFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest)request;
         HttpServletResponse httpResponse = (HttpServletResponse)response;
 
-        URI uri = HttpRequestFactory.getUri(httpRequest);
+        URI uri;
+        try {
+            uri = HttpRequestFactory.getUri(httpRequest);
+        } catch (RequestException e) {
+            httpResponse.sendError(e.getResponseStatus(), e.getMessage());
+            return;
+        }
 
         AtomicReference<Boolean> responseReturned = new AtomicReference<>(null);
 
