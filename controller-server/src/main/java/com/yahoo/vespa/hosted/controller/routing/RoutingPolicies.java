@@ -166,7 +166,7 @@ public class RoutingPolicies {
 
     // TODO(mpolden): Remove and inline call to updateGlobalDnsOf when feature flag disappears
     private void updateGlobalDnsOf(ApplicationId application, Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
-        if (weightedDnsPerRegion.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value()) {
+        if (useWeightedDnsPerRegion(application)) {
             updateGlobalDnsOf(routingPolicies, inactiveZones, lock);
         } else {
             legacyUpdateGlobalDnsOf(routingPolicies, inactiveZones, lock);
@@ -245,7 +245,7 @@ public class RoutingPolicies {
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.dnsZone(),
-                                              allocation.endpointIdsOf(loadBalancer),
+                                              allocation.endpointIdsOf(loadBalancer, useWeightedDnsPerRegion(loadBalancer.application())),
                                               new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
@@ -306,10 +306,10 @@ public class RoutingPolicies {
     }
 
     /** Compute routing IDs from given load balancers */
-    private static Set<RoutingId> routingIdsFrom(LoadBalancerAllocation allocation) {
+    private Set<RoutingId> routingIdsFrom(LoadBalancerAllocation allocation) {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
         for (var loadBalancer : allocation.loadBalancers) {
-            for (var endpointId : allocation.endpointIdsOf(loadBalancer)) {
+            for (var endpointId : allocation.endpointIdsOf(loadBalancer, useWeightedDnsPerRegion(loadBalancer.application()))) {
                 routingIds.add(new RoutingId(loadBalancer.application(), endpointId));
             }
         }
@@ -347,6 +347,10 @@ public class RoutingPolicies {
             case active: return true;
         }
         return false;
+    }
+
+    private boolean useWeightedDnsPerRegion(ApplicationId application) {
+        return weightedDnsPerRegion.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
     }
 
     /** Represents records for a region-wide endpoint */
@@ -410,7 +414,7 @@ public class RoutingPolicies {
         }
 
         /** Compute all endpoint IDs for given load balancer */
-        private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer) {
+        private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer, boolean useWeightedDnsPerRegion) {
             if (!deployment.zoneId().environment().isProduction()) { // Only production deployments have configurable endpoints
                 return Set.of();
             }
@@ -418,7 +422,7 @@ public class RoutingPolicies {
             if (instanceSpec.isEmpty()) {
                 return Set.of();
             }
-            if (instanceSpec.get().globalServiceId().filter(id -> id.equals(loadBalancer.cluster().value())).isPresent()) {
+            if (useWeightedDnsPerRegion && instanceSpec.get().globalServiceId().filter(id -> id.equals(loadBalancer.cluster().value())).isPresent()) {
                 // Legacy assignment always has the default endpoint Id
                 return Set.of(EndpointId.defaultId());
             }
