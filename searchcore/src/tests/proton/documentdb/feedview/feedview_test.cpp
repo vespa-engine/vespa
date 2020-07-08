@@ -185,14 +185,14 @@ public:
     {
     }
 
-    void notifyPutDone(Context, document::GlobalId gid, uint32_t lid, SerialNum)  override {
+    void notifyPutDone(IDestructorCallbackSP, document::GlobalId gid, uint32_t lid, SerialNum)  override {
         _changeGid = gid;
         _changeLid = lid;
         _gidToLid[gid] = lid;
         ++_changes;
     }
 
-    void notifyRemove(Context, document::GlobalId gid, SerialNum)  override {
+    void notifyRemove(IDestructorCallbackSP, document::GlobalId gid, SerialNum)  override {
         _changeGid = gid;
         _changeLid = 0;
         _gidToLid[gid] = 0;

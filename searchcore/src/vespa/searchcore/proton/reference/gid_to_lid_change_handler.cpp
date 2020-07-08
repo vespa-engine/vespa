@@ -27,7 +27,7 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 }
 
 void
-GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid)
 {
     for (const auto &listener : _listeners) {
         listener->notifyPutDone(context, gid, lid);
@@ -35,7 +35,7 @@ GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid
 }
 
 void
-GidToLidChangeHandler::notifyRemove(Context context, GlobalId gid)
+GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid)
 {
     for (const auto &listener : _listeners) {
         listener->notifyRemove(context, gid);
@@ -43,7 +43,7 @@ GidToLidChangeHandler::notifyRemove(Context context, GlobalId gid)
 }
 
 void
-GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum)
+GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto itr = _pendingRemove.find(gid);
@@ -63,7 +63,7 @@ GidToLidChangeHandler::notifyPutDone(Context context, GlobalId gid, uint32_t lid
 }
 
 void
-GidToLidChangeHandler::notifyRemove(Context context, GlobalId gid, SerialNum serialNum)
+GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));

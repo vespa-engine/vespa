@@ -17,7 +17,7 @@ namespace proton {
 class IGidToLidChangeHandler
 {
 public:
-    using Context = IGidToLidChangeListener::Context;
+    using IDestructorCallbackSP = IGidToLidChangeListener::IDestructorCallbackSP;
     using SerialNum = search::SerialNum;
     using GlobalId = document::GlobalId;
 
@@ -38,8 +38,8 @@ public:
     /**
      * Notify gid to lid mapping change.
      */
-    virtual void notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
-    virtual void notifyRemove(Context context, GlobalId gid, SerialNum serialNum) = 0;
+    virtual void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
+    virtual void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) = 0;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) = 0;
 };
 

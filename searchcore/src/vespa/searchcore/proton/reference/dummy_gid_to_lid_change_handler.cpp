@@ -9,12 +9,12 @@ DummyGidToLidChangeHandler::DummyGidToLidChangeHandler() = default;
 DummyGidToLidChangeHandler::~DummyGidToLidChangeHandler() = default;
 
 void
-DummyGidToLidChangeHandler::notifyPutDone(Context , GlobalId, uint32_t, SerialNum)
+DummyGidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP , GlobalId, uint32_t, SerialNum)
 {
 }
 
 void
-DummyGidToLidChangeHandler::notifyRemove(Context , GlobalId, SerialNum)
+DummyGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP , GlobalId, SerialNum)
 {
 }
 

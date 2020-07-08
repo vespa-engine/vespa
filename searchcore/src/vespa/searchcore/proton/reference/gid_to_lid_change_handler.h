@@ -45,14 +45,14 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
     bool       _closed;
     vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
 
-    void notifyPutDone(Context context, GlobalId gid, uint32_t lid);
-    void notifyRemove(Context context, GlobalId gid);
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid);
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid);
 public:
     GidToLidChangeHandler();
     ~GidToLidChangeHandler() override;
 
-    void notifyPutDone(Context context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
-    void notifyRemove(Context context, GlobalId gid, SerialNum serialNum) override;
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) override;
     void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
 
     /**

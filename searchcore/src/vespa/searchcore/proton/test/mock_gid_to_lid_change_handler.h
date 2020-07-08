@@ -42,8 +42,8 @@ public:
         _removes.emplace_back(docTypeName, keepNames);
     }
 
-    void notifyPutDone(Context, document::GlobalId, uint32_t, SerialNum)  override { }
-    void notifyRemove(Context, document::GlobalId, SerialNum)  override { }
+    void notifyPutDone(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
+    void notifyRemove(IDestructorCallbackSP, document::GlobalId, SerialNum)  override { }
     void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)

@@ -29,8 +29,8 @@ public:
                            const vespalib::string &name,
                            const vespalib::string &docTypeName);
     ~GidToLidChangeListener() override;
-    void notifyPutDone(Context context, document::GlobalId gid, uint32_t lid) override;
-    void notifyRemove(Context context, document::GlobalId gid) override;
+    void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) override;
+    void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) override;
     void notifyRegistered() override;
     const vespalib::string &getName() const override;
     const vespalib::string &getDocTypeName() const override;
