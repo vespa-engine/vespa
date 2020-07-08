@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * Represents the resources allocated to a deployment at specific point in time.
+ *
  * @author olaa
  */
 public class ResourceSnapshot {
