@@ -127,11 +127,12 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return curator.exists(applicationPath(id));
     }
 
-    /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
+    /** Returns the active session id for the given application. Returns Optional.empty if application not found or no active session exists. */
     public Optional<Long> activeSessionOf(ApplicationId id) {
-        String data = curator.getData(applicationPath(id)).map(Utf8::toString)
-                             .orElseThrow(() -> new NotFoundException("No active session found for application id: '" + id + "'"));
-        return data.isEmpty() ? Optional.empty() : Optional.of(Long.parseLong(data));
+        Optional<byte[]> data = curator.getData(applicationPath(id));
+        return (data.isEmpty() || data.get().length == 0)
+                ? Optional.empty()
+                : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
     }
 
     public boolean hasLocalSession(long sessionId) {
