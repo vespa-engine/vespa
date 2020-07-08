@@ -132,7 +132,15 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     private static int getRemotePort(final HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_PORT))
                 .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP)))
-                .map(Integer::valueOf)
+                .flatMap(AccessLogRequestLog::parsePort)
                 .orElseGet(request::getRemotePort);
+    }
+
+    private static Optional<Integer> parsePort(String port) {
+        try {
+            return Optional.of(Integer.valueOf(port));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 }
