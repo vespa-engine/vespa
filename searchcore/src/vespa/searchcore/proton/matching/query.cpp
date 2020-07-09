@@ -58,16 +58,18 @@ inject(Node::UP query, Node::UP to_inject) {
 }
 
 std::vector<const ProtonLocationTerm *>
-find_location_terms(const Node *tree) {
+fix_location_terms(Node *tree) {
     std::vector<const ProtonLocationTerm *> retval;
-    std::vector<const Node *> nodes;
+    std::vector<Node *> nodes;
     nodes.push_back(tree);
     for (size_t i = 0; i < nodes.size(); ++i) {
-        if (auto loc = dynamic_cast<const ProtonLocationTerm *>(nodes[i])) {
+        if (auto loc = dynamic_cast<ProtonLocationTerm *>(nodes[i])) {
+            const string old_view = loc->getView();
+            loc->setView(PositionDataType::getZCurveFieldName(old_view));
             retval.push_back(loc);
         }
         if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
-            for (const Node * child : parent->getChildren()) {
+            for (Node * child : parent->getChildren()) {
                 nodes.push_back(child);
             }
         }
@@ -94,7 +96,6 @@ ParsedLocationString parseQueryLocationString(string str) {
     }
     retval.view = PositionDataType::getZCurveFieldName(str.substr(0, sep));
     const string loc = str.substr(sep + 1);
-
     if (retval.locationSpec.parse(loc)) {
         retval.loc_string = loc;
         retval.valid = true;
@@ -115,12 +116,15 @@ void exchangeLocationNodes(const string &location_str,
     if (parsed.valid) {
         locationSpecs.emplace_back(parsed.view, std::move(parsed.locationSpec));
     }
-    for (const ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
-        const string view = PositionDataType::getZCurveFieldName(pterm->getView());
+    for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
+        const string view = pterm->getView();
         const search::query::Location &loc = pterm->getTerm();
         search::common::Location loc_spec;
         if (loc_spec.parse(loc.getLocationString())) {
             locationSpecs.emplace_back(view, std::move(loc_spec));
+        } else {
+            LOG(warning, "GeoLocationItem in query had invalid location string: %s",
+                loc.getLocationString().c_str());
         }
     }
     for (const Spec &spec : locationSpecs) {
