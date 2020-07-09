@@ -81,7 +81,7 @@ public class HandlersConfigurerDi {
                                 OsgiFramework osgiFramework) {
 
         this(subscriberFactory, vespaContainer, configId, deconstructor, discInjector,
-             new ContainerAndDiOsgi(osgiFramework, new BundleManager(new OsgiImpl(osgiFramework))));
+             new ContainerAndDiOsgi(osgiFramework));
     }
 
     // Only public for testing
@@ -103,10 +103,10 @@ public class HandlersConfigurerDi {
         private final OsgiFramework osgiFramework;
         private final BundleManager bundleLoader;
 
-        public ContainerAndDiOsgi(OsgiFramework osgiFramework, BundleManager bundleLoader) {
+        public ContainerAndDiOsgi(OsgiFramework osgiFramework) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
-            this.bundleLoader = bundleLoader;
+            bundleLoader = new BundleManager(new OsgiImpl(osgiFramework));
         }
 
 
