@@ -281,6 +281,23 @@ public class SessionRepository {
         return deleted;
     }
 
+    public int deleteExpiredLocks(Clock clock, Duration expiryTime) {
+        int deleted = 0;
+        for (var lock : curator.getChildren(locksPath)) {
+            Path path = locksPath.append(lock);
+            if (zooKeeperNodeCreated(path).orElse(clock.instant()).isBefore(clock.instant().minus(expiryTime))) {
+                log.log(Level.INFO, "Lock  " + path + " has expired, deleting it");
+                curator.delete(path);
+                deleted++;
+            }
+        }
+        return deleted;
+    }
+
+    private Optional<Instant> zooKeeperNodeCreated(Path path) {
+        return curator.getStat(path).map(s -> Instant.ofEpochMilli(s.getCtime()));
+    }
+
     private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
         return (created.plus(expiryTime).isBefore(clock.instant()));
     }
