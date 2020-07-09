@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -130,8 +129,13 @@ public class MockBillingController implements BillingController {
                 "brand",
                 "type",
                 "endingWith",
-                "expiryDate"
-        );
+                "expiryDate",
+                "addressLine1",
+                "addressLine2",
+                "zip",
+                "city",
+                "state",
+                "country");
     }
 
     public void addInvoice(TenantName tenantName, Invoice invoice, boolean committed) {

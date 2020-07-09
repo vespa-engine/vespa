@@ -19,8 +19,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
@@ -259,9 +257,20 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private void renderInstrument(Cursor cursor, PaymentInstrument instrument) {
+        cursor.setString("pi-id", instrument.getId());
         cursor.setString("type", instrument.getType());
         cursor.setString("brand", instrument.getBrand());
         cursor.setString("endingWith", instrument.getEndingWith());
+        cursor.setString("expiryDate", instrument.getExpiryDate());
+        cursor.setString("displayText", instrument.getDisplayText());
+        cursor.setString("nameOnCard", instrument.getNameOnCard());
+        cursor.setString("addressLine1", instrument.getAddressLine1());
+        cursor.setString("addressLine2", instrument.getAddressLine2());
+        cursor.setString("zip", instrument.getZip());
+        cursor.setString("city", instrument.getCity());
+        cursor.setString("state", instrument.getState());
+        cursor.setString("country", instrument.getCountry());
+
     }
 
     private void renderCurrentUsage(Cursor cursor, Invoice currentUsage) {
