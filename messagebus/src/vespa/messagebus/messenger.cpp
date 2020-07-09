@@ -156,15 +156,15 @@ public:
 
 namespace mbus {
 
-Messenger::Messenger() :
+Messenger::Messenger(bool skip_request_thread, bool skip_reply_thread) :
     _monitor(),
     _pool(128000),
     _children(),
     _queue(),
-    _closed(false)
-{
-    // empty
-}
+    _closed(false),
+    _skip_request_thread(skip_request_thread),
+    _skip_reply_thread(skip_reply_thread)
+{}
 
 Messenger::~Messenger()
 {
@@ -246,13 +246,21 @@ Messenger::start()
 void
 Messenger::deliverMessage(Message::UP msg, IMessageHandler &handler)
 {
-    enqueue(std::make_unique<MessageTask>(std::move(msg), handler));
+    if (_skip_request_thread) {
+        handler.handleMessage(std::move(msg));
+    } else {
+        enqueue(std::make_unique<MessageTask>(std::move(msg), handler));
+    }
 }
 
 void
 Messenger::deliverReply(Reply::UP reply, IReplyHandler &handler)
 {
-    enqueue(std::make_unique<ReplyTask>(std::move(reply), handler));
+    if (_skip_reply_thread) {
+        handler.handleReply(std::move(reply));
+    } else {
+        enqueue(std::make_unique<ReplyTask>(std::move(reply), handler));
+    }
 }
 
 void

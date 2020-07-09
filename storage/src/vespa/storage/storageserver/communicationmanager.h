@@ -108,12 +108,14 @@ private:
     vespalib::Lock _messageBusSentLock;
     std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand> > _messageBusSent;
 
-    config::ConfigUri _configUri;
-    std::atomic<bool> _closed;
-    DocumentApiConverter _docApiConverter;
+    config::ConfigUri     _configUri;
+    std::atomic<bool>     _closed;
+    DocumentApiConverter  _docApiConverter;
     framework::Thread::UP _thread;
+    bool                  _skip_thread;
 
     void updateMetrics(const MetricLockGuard &) override;
+    void optionalEnqueue(std::shared_ptr<api::StorageMessage> msg);
 
     // Test needs access to configure() for live reconfig testing.
     friend struct CommunicationManagerTest;

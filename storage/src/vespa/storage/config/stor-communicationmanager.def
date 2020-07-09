@@ -43,3 +43,15 @@ mbus.dispatch_on_encode bool default=true
 ## False will use network(fnet) thread
 ## Todo: Change default once verified in large scale deployment.
 mbus.dispatch_on_decode bool default=false
+
+## Skip messenger thread on reply
+## Experimental
+mbus.skip_reply_thread bool default=false
+
+## Skip messenger thread on reply
+## Experimental
+mbus.skip_request_thread bool default=false
+
+## Skip communication manager thread on mbus requests
+## Experimental
+skip_thread bool default=false

@@ -45,20 +45,19 @@ private:
     std::vector<ITask*> _children;
     vespalib::ArrayQueue<ITask*>  _queue;
     bool                _closed;
+    const bool          _skip_request_thread;
+    const bool          _skip_reply_thread;
 
 protected:
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
 public:
-    /**
-     * Constructs a new messenger object.
-     */
-    Messenger();
+    Messenger(bool skip_request_thread, bool skip_reply_thread);
 
     /**
      * Frees any allocated resources. Also destroys all queued tasks.
      */
-    ~Messenger();
+    ~Messenger() override;
 
     /**
      * Adds a recurrent task to this that is to be run for every iteration of
