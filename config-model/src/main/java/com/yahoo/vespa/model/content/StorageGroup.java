@@ -283,10 +283,10 @@ public class StorageGroup {
 
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
-                StorageNode sNode = new StorageNode(parent.getStorageNodes(), 1.0, distributionKey , false);
+                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), 1.0, distributionKey , false);
                 sNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
-                new Distributor(parent.getDistributorNodes(), distributionKey, null, provider);
+                new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
                 return sNode;
             }
             
@@ -463,13 +463,13 @@ public class StorageGroup {
         }
 
         private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
-            StorageNode sNode = new StorageNode(parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
+            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
             sNode.initService(deployState.getDeployLogger());
 
             // TODO: Supplying null as XML is not very nice
             PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
-            Distributor d = new Distributor(parent.getDistributorNodes(), clusterMembership.index(), null, provider);
+            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState.getDeployLogger());
             return sNode;

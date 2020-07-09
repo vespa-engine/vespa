@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
@@ -21,16 +22,21 @@ import com.yahoo.vespa.model.application.validation.RestartConfigs;
 public abstract class ContentNode extends AbstractService
         implements StorCommunicationmanagerConfig.Producer, StorStatusConfig.Producer, StorServerConfig.Producer {
 
-    protected int distributionKey;
-    String rootDirectory;
+    private final int distributionKey;
+    private final String rootDirectory;
+    private final boolean skipCommunicationManagerThread;
+    private final boolean skipMbusRequestThread;
+    private final boolean skipMbusReplyThread;
 
-    public ContentNode(AbstractConfigProducer parent, String clusterName, String rootDirectory, int distributionKey) {
+    public ContentNode(ModelContext.Properties properties, AbstractConfigProducer parent, String clusterName, String rootDirectory, int distributionKey) {
         super(parent, "" + distributionKey);
         this.distributionKey = distributionKey;
-        initialize(distributionKey);
-
+        this.skipCommunicationManagerThread = properties.skipCommunicationManagerThread();
+        this.skipMbusRequestThread = properties.skipMbusRequestThread();
+        this.skipMbusReplyThread = properties.skipMbusReplyThread();
         this.rootDirectory = rootDirectory;
 
+        initialize();
         setProp("clustertype", "content");
         setProp("clustername", clusterName);
         setProp("index", distributionKey);
@@ -46,8 +52,7 @@ public abstract class ContentNode extends AbstractService
         builder.node_index(distributionKey);
     }
 
-    public void initialize(int distributionKey) {
-        this.distributionKey = distributionKey;
+    private void initialize() {
         portsMeta.on(0).tag("messaging");
         portsMeta.on(1).tag("rpc").tag("status");
         portsMeta.on(2).tag("http").tag("status").tag("state");
@@ -73,6 +78,9 @@ public abstract class ContentNode extends AbstractService
     public void getConfig(StorCommunicationmanagerConfig.Builder builder) {
         builder.mbusport(getRelativePort(0));
         builder.rpcport(getRelativePort(1));
+        builder.skip_thread(skipCommunicationManagerThread);
+        builder.mbus.skip_request_thread(skipMbusRequestThread);
+        builder.mbus.skip_reply_thread(skipMbusReplyThread);
     }
 
     @Override
