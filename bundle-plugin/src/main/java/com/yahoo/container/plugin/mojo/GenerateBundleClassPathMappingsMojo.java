@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.yahoo.container.plugin.bundle.AnalyzeBundle;
 import com.yahoo.container.plugin.osgi.ProjectBundleClassPaths;
 import com.yahoo.container.plugin.osgi.ProjectBundleClassPaths.BundleClasspathMapping;
+import com.yahoo.container.plugin.util.Artifacts;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
