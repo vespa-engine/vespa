@@ -6,6 +6,8 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 
+import java.util.TreeSet;
+
 /**
  * A response containing maintenance job status
  *
@@ -26,7 +28,7 @@ public class JobsResponse extends SlimeJsonResponse {
             jobArray.addObject().setString("name", jobName);
 
         Cursor inactiveArray = root.setArray("inactive");
-        for (String jobName : jobControl.inactiveJobs())
+        for (String jobName : new TreeSet<>(jobControl.inactiveJobs()))
             inactiveArray.addString(jobName);
 
         return slime;

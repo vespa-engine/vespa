@@ -253,28 +253,8 @@ public class NodesV2ApiTest {
 
     @Test
     public void maintenance_requests() throws Exception {
-        // POST deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
         // GET a list of all maintenance jobs
         assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
-
-        // DELETE deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
-
-        // POST run of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/PeriodicApplicationMaintainer",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Executed job 'PeriodicApplicationMaintainer'\"}");
-
-        // POST run of unknown maintenance job
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/foo",
-                                         new byte[0], Request.Method.POST),
-                             400,
-                             "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such job 'foo'\"}");
     }
 
     @Test

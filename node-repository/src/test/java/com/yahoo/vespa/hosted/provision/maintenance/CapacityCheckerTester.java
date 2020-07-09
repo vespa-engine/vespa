@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -63,6 +64,7 @@ public class CapacityCheckerTester {
                                             zone,
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                            new InMemoryFlagSource(),
                                             true,
                                             false,
                                             0);

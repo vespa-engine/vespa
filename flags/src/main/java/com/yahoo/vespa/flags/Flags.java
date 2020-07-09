@@ -123,6 +123,11 @@ public class Flags {
             "Otherwise it specifies the total (unallocated or not) capacity.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
+    public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
+            "inactive-maintenance-jobs", List.of(), String.class,
+            "The list of maintenance jobs that are inactive.",
+            "Takes effect immediately, but any currently running jobs will run until completion.");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Default limit for when to apply termwise query evaluation",

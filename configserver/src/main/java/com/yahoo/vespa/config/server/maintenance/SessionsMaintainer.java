@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Duration;
 
@@ -17,10 +18,10 @@ import java.time.Duration;
 public class SessionsMaintainer extends ConfigServerMaintainer {
     private final boolean hostedVespa;
 
-    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
         // Start this maintainer immediately. It frees disk space, so if disk goes full and config server
         // restarts this makes sure that cleanup will happen as early as possible
-        super(applicationRepository, curator, Duration.ZERO, interval);
+        super(applicationRepository, curator, flagSource, Duration.ZERO, interval);
         this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 

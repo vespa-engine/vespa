@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -40,6 +41,7 @@ public class NodeRepositoryTester {
                                             Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                            new InMemoryFlagSource(),
                                             true,
                                             false,
                                             0);

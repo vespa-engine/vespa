@@ -2,18 +2,18 @@
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.concurrent.maintenance.JobControlState;
 import com.yahoo.concurrent.maintenance.Maintainer;
-import com.yahoo.concurrent.maintenance.StringSetSerializer;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.ListFlag;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A maintainer is some job which runs at a fixed interval to perform some maintenance task in the config server.
@@ -24,47 +24,28 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     protected final ApplicationRepository applicationRepository;
 
-    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration initialDelay, Duration interval) {
-        super(null, interval, initialDelay, new JobControl(new JobControlDb(curator)));
+    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
+                           Duration initialDelay, Duration interval) {
+        super(null, interval, initialDelay, new JobControl(new JobControlFlags(curator, flagSource)));
         this.applicationRepository = applicationRepository;
     }
 
-    private static class JobControlDb implements JobControl.Db {
-
-        private static final Logger log = Logger.getLogger(JobControlDb.class.getName());
+    private static class JobControlFlags implements JobControlState {
 
         private static final Path root = Path.fromString("/configserver/v1/");
         private static final Path lockRoot = root.append("locks");
-        private static final Path inactiveJobsPath = root.append("inactiveJobs");
 
         private final Curator curator;
-        private final StringSetSerializer serializer = new StringSetSerializer();
+        private final ListFlag<String> inactiveJobsFlag;
 
-        public JobControlDb(Curator curator) {
+        public JobControlFlags(Curator curator, FlagSource flagSource) {
             this.curator = curator;
+            this.inactiveJobsFlag = Flags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
         }
 
         @Override
         public Set<String> readInactiveJobs() {
-            try {
-                return curator.getData(inactiveJobsPath)
-                              .filter(data -> data.length > 0)
-                              .map(serializer::fromJson).orElseGet(HashSet::new);
-            } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
-                writeInactiveJobs(Set.of());
-                return new HashSet<>();
-            }
-        }
-
-        @Override
-        public void writeInactiveJobs(Set<String> inactiveJobs) {
-            curator.set(inactiveJobsPath, serializer.toJson(inactiveJobs));
-        }
-
-        @Override
-        public Mutex lockInactiveJobs() {
-            return curator.lock(lockRoot.append("inactiveJobsLock"), Duration.ofSeconds(1));
+            return Set.copyOf(inactiveJobsFlag.value());
         }
 
         @Override
