@@ -42,7 +42,7 @@ jobs:
       run: |
         nbdev_test_nbs
     - name: Build and publish
-      if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.test_pypi_password }}
