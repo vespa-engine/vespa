@@ -114,7 +114,7 @@ private:
     bool                  _skip_thread;
 
     void updateMetrics(const MetricLockGuard &) override;
-    void optionalEnqueue(std::shared_ptr<api::StorageMessage> msg);
+    void enque_or_process(std::shared_ptr<api::StorageMessage> msg);
 
     // Test needs access to configure() for live reconfig testing.
     friend struct CommunicationManagerTest;

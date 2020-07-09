@@ -46,7 +46,7 @@ void
 CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     assert(reply);
-    optionalEnqueue(reply);
+    enque_or_process(reply);
 }
 
 namespace {
@@ -101,7 +101,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         cmd->setTrace(docMsgPtr->getTrace());
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(docMsgPtr)));
 
-        optionalEnqueue(std::move(cmd));
+        enque_or_process(std::move(cmd));
     } else if (protocolName == mbusprot::StorageProtocol::NAME) {
         std::unique_ptr<mbusprot::StorageCommand> storMsgPtr(static_cast<mbusprot::StorageCommand*>(msg.release()));
 
@@ -113,7 +113,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         cmd->setTrace(storMsgPtr->getTrace());
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(storMsgPtr)));
 
-        optionalEnqueue(std::move(cmd));
+        enque_or_process(std::move(cmd));
     } else {
         LOGBM(warning, "Received unsupported message type %d for protocol '%s'",
               msg->getType(), msg->getProtocol().c_str());
@@ -443,7 +443,7 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
 }
 
 void
-CommunicationManager::optionalEnqueue(std::shared_ptr<api::StorageMessage> msg)
+CommunicationManager::enque_or_process(std::shared_ptr<api::StorageMessage> msg)
 {
     assert(msg);
     if (_skip_thread) {
