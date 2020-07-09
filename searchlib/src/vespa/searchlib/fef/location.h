@@ -39,7 +39,7 @@ public:
     }
 
     /**
-     * Returns the name of the attribute to use for x positions.
+     * Returns the name of the attribute to use for positions.
      *
      * @return the attribute name.
      **/

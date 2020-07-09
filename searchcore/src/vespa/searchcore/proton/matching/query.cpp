@@ -24,7 +24,6 @@ using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::fef::Location;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
@@ -58,63 +57,87 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-const ProtonLocationTerm *
-find_location_term(const Node *tree) {
-    if (auto loc = dynamic_cast<const ProtonLocationTerm *>(tree)) {
-        return loc;
-    } else if (auto parent = dynamic_cast<const search::query::Intermediate *>(tree)) {
-        for (const Node * child : parent->getChildren()) {
-            auto child_loc = find_location_term(child);
-            if (child_loc) return child_loc;
+std::vector<const ProtonLocationTerm *>
+find_location_terms(const Node *tree) {
+    std::vector<const ProtonLocationTerm *> retval;
+    std::vector<const Node *> nodes;
+    nodes.push_back(tree);
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        if (auto loc = dynamic_cast<const ProtonLocationTerm *>(tree)) {
+            retval.push_back(loc);
         }
-    }
-    return nullptr;
-}
-
-void
-addLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
-    if (location_str.empty()) {
-        auto loc_term = find_location_term(query_tree.get());
-        if (loc_term) {
-            const string view = PositionDataType::getZCurveFieldName(loc_term->getView());
-            const search::query::Location &loc = loc_term->getTerm();
-            search::common::Location locationSpec;
-            if (locationSpec.parse(loc.getLocationString())) {
-                fef_location.setAttribute(view);
-                fef_location.setXPosition(locationSpec.getX());
-                fef_location.setYPosition(locationSpec.getY());
-                fef_location.setXAspect(locationSpec.getXAspect());
-                fef_location.setValid(true);
+        if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
+            for (const Node * child : parent->getChildren()) {
+                nodes.push_back(child);
             }
         }
-        return;
     }
-    string::size_type pos = location_str.find(':');
-    if (pos == string::npos) {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", location_str.c_str());
-        return;
-    }
-    const string view = PositionDataType::getZCurveFieldName(location_str.substr(0, pos));
-    const string loc = location_str.substr(pos + 1);
+    return retval;
+}
 
+struct ParsedLocationString {
+    bool valid;
+    string view;
     search::common::Location locationSpec;
-    if (!locationSpec.parse(loc)) {
-        LOG(warning, "Location parse error (location: '%s'): %s", location_str.c_str(), locationSpec.getParseError());
-        return;
+    string loc_string;
+    ParsedLocationString() : valid(false), view(), locationSpec(), loc_string() {}
+    ~ParsedLocationString() {}
+    ParsedLocationString(ParsedLocationString &&) = default;
+};
+  
+ParsedLocationString parseQueryLocationString(string str) {
+    ParsedLocationString retval;
+    string::size_type sep = str.find(':');
+    if (sep == string::npos) {
+        LOG(warning, "Location string '%s' lacks attribute vector specification.", str.c_str());
+        return retval;
     }
+    retval.view = PositionDataType::getZCurveFieldName(str.substr(0, sep));
+    const string loc = str.substr(sep + 1);
 
-    int32_t id = -1;
-    Weight weight(100);
+    if (retval.locationSpec.parse(loc)) {
+        retval.loc_string = loc;
+        retval.valid = true;
+    } else {
+        LOG(warning, "Location parse error (location: '%s'): %s", loc.c_str(), retval.locationSpec.getParseError());
+    }
+    return retval;
+}
 
-    if (locationSpec.getRankOnDistance()) {
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
-        fef_location.setAttribute(view);
-        fef_location.setXPosition(locationSpec.getX());
-        fef_location.setYPosition(locationSpec.getY());
-        fef_location.setXAspect(locationSpec.getXAspect());
-        fef_location.setValid(true);
-    } else if (locationSpec.getPruneOnDistance()) {
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
+void exchangeLocationNodes(const string &location_str,
+                           Node::UP &query_tree,
+                           std::vector<search::fef::Location> &fef_locations)
+{
+    using Spec = std::pair<string, search::common::Location>;
+    std::vector<Spec> locationSpecs;
+
+    auto parsed = parseQueryLocationString(location_str);
+    if (parsed.valid) {
+        locationSpecs.emplace_back(parsed.view, std::move(parsed.locationSpec));
+    }
+    for (const ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
+        const string view = PositionDataType::getZCurveFieldName(pterm->getView());
+        const search::query::Location &loc = pterm->getTerm();
+        search::common::Location loc_spec;
+        if (loc_spec.parse(loc.getLocationString())) {
+            locationSpecs.emplace_back(view, std::move(loc_spec));
+        }
+    }
+    for (const Spec &spec : locationSpecs) {
+        if (spec.second.getRankOnDistance()) {
+            search::fef::Location fef_loc;
+            fef_loc.setAttribute(spec.first);
+            fef_loc.setXPosition(spec.second.getX());
+            fef_loc.setYPosition(spec.second.getY());
+            fef_loc.setXAspect(spec.second.getXAspect());
+            fef_loc.setValid(true);
+            fef_locations.push_back(fef_loc);
+        }
+    }
+    if (parsed.valid) {
+        int32_t id = -1;
+        Weight weight(100);
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(parsed.loc_string, parsed.view, id, weight));
     }
 }
 
@@ -153,7 +176,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
-        addLocationNode(location, _query_tree, _location);
+        exchangeLocationNodes(location, _query_tree, _locations);
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
                 bool(_whiteListBlueprint), split_unpacking_iterators, delay_unpacking_iterators);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
@@ -172,10 +195,17 @@ Query::extractTerms(vector<const ITermData *> &terms)
 }
 
 void
-Query::extractLocations(vector<const Location *> &locations)
+Query::extractLocations(vector<const search::fef::Location *> &locations)
 {
+    // must guarantee at least one location
+    if (_locations.empty()) {
+        search::fef::Location invalid;
+        _locations.push_back(invalid);
+    }
     locations.clear();
-    locations.push_back(&_location);
+    for (const auto & loc : _locations) {
+        locations.push_back(&loc);
+    }
 }
 
 void
