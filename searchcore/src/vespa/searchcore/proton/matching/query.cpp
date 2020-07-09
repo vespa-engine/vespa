@@ -63,7 +63,7 @@ find_location_terms(const Node *tree) {
     std::vector<const Node *> nodes;
     nodes.push_back(tree);
     for (size_t i = 0; i < nodes.size(); ++i) {
-        if (auto loc = dynamic_cast<const ProtonLocationTerm *>(tree)) {
+        if (auto loc = dynamic_cast<const ProtonLocationTerm *>(nodes[i])) {
             retval.push_back(loc);
         }
         if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
