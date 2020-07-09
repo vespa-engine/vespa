@@ -45,7 +45,7 @@ StorageTransportContext::~StorageTransportContext() = default;
 void
 CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    assert(reply.get());
+    assert(reply);
     enqueue(reply);
 }
 
@@ -81,7 +81,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
     if (protocolName == documentapi::DocumentProtocol::NAME) {
         std::unique_ptr<documentapi::DocumentMessage> docMsgPtr(static_cast<documentapi::DocumentMessage*>(msg.release()));
 
-        assert(docMsgPtr.get());
+        assert(docMsgPtr);
 
         std::unique_ptr<api::StorageCommand> cmd;
         try {
@@ -91,7 +91,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
             return;
         }
 
-        if (!cmd.get()) {
+        if ( ! cmd) {
             LOGBM(warning, "Unsupported message: StorageApi could not convert message of type %d to a storageapi message",
                   docMsgPtr->getType());
             _metrics.convertToStorageAPIFailures.inc();
@@ -105,7 +105,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
     } else if (protocolName == mbusprot::StorageProtocol::NAME) {
         std::unique_ptr<mbusprot::StorageCommand> storMsgPtr(static_cast<mbusprot::StorageCommand*>(msg.release()));
 
-        assert(storMsgPtr.get());
+        assert(storMsgPtr);
 
         //TODO: Can it be moved ?
         std::shared_ptr<api::StorageCommand> cmd = storMsgPtr->getCommand();
@@ -136,7 +136,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
     if (reply->getType() == 0) {
         std::unique_ptr<mbus::Message> message(reply->getMessage());
 
-        if (message.get()) {
+        if (message) {
             std::unique_ptr<mbus::Reply> convertedReply;
 
             const vespalib::string& protocolName = message->getProtocol();
@@ -198,7 +198,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
             std::shared_ptr<api::StorageReply> sar(
                     _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), *originalCommand));
 
-            if (sar.get()) {
+            if (sar) {
                 sar->setTrace(reply->getTrace());
                 receiveStorageReply(sar);
             }
@@ -251,7 +251,6 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _listener(),
       _eventQueue(),
       _mbus(),
-      _count(0),
       _configUri(configUri),
       _closed(false),
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>())
@@ -478,7 +477,7 @@ CommunicationManager::sendMessageBusMessage(const std::shared_ptr<api::StorageCo
 
     if (!result.isAccepted()) {
         std::shared_ptr<api::StorageReply> reply(msg->makeReply());
-        if (reply.get()) {
+        if (reply) {
             if (result.getError().getCode() > mbus::ErrorCode::FATAL_ERROR) {
                 reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, result.getError().getMessage()));
             } else {
@@ -540,7 +539,7 @@ CommunicationManager::sendCommand(
 
         std::unique_ptr<mbus::Message> mbusMsg(_docApiConverter.toDocumentAPI(*msg));
 
-        if (mbusMsg.get()) {
+        if (mbusMsg) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
             mbusMsg->setTrace(msg->getTrace());
             mbusMsg->setRetryEnabled(address.retryEnabled());
@@ -631,7 +630,7 @@ CommunicationManager::sendMessageBusReply(
 
     // If this was originally documentapi, create a reply now and transfer the
     // state.
-    if (context._docAPIMsg.get()) {
+    if (context._docAPIMsg) {
         if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
             replyUP = std::make_unique<documentapi::WrongDistributionReply>(reply->getResult().getMessage());
             replyUP->swapState(*context._docAPIMsg);
@@ -645,7 +644,7 @@ CommunicationManager::sendMessageBusReply(
             replyUP->setMessage(std::move(context._docAPIMsg));
             _docApiConverter.transferReplyState(*reply, *replyUP);
         }
-    } else if (context._storageProtocolMsg.get()) {
+    } else if (context._storageProtocolMsg) {
         replyUP = std::make_unique<mbusprot::StorageReply>(reply);
         if (reply->getResult().getResult() != api::ReturnCode::OK) {
             replyUP->addError(mbus::Error(reply->getResult().getResult(), reply->getResult().getMessage()));
@@ -656,12 +655,12 @@ CommunicationManager::sendMessageBusReply(
         replyUP->setMessage(std::move(context._storageProtocolMsg));
     }
 
-    if (replyUP.get() != NULL) {
+    if (replyUP) {
         // Forward message only if it was successfully stored in storage.
         if (!replyUP->hasErrors()) {
             mbus::Message::UP messageUP = replyUP->getMessage();
 
-            if (messageUP.get() && messageUP->getRoute().hasHops()) {
+            if (messageUP && messageUP->getRoute().hasHops()) {
                 messageUP->setContext(mbus::Context(FORWARDED_MESSAGE));
                 _sourceSession->send(std::move(messageUP));
             }
@@ -683,14 +682,14 @@ CommunicationManager::sendReply(
 
     std::unique_ptr<StorageTransportContext> context(static_cast<StorageTransportContext*>(reply->getTransportContext().release()));
 
-    if (!context.get()) {
+    if (!context) {
         LOG(spam, "No transport context in reply %s", reply->toString().c_str());
         return false;
     }
 
     framework::MilliSecTimer startTime(_component.getClock());
-    if (context->_request.get()) {
-        sendDirectRPCReply(*(context->_request.get()), reply);
+    if (context->_request) {
+        sendDirectRPCReply(*(context->_request), reply);
     } else {
         sendMessageBusReply(*context, reply);
     }
@@ -734,7 +733,7 @@ CommunicationManager::print(std::ostream& out, bool verbose, const std::string& 
 
 void CommunicationManager::updateMessagebusProtocol(
         const std::shared_ptr<const document::DocumentTypeRepo> &repo) {
-    if (_mbus.get()) {
+    if (_mbus) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
         auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), repo);
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
