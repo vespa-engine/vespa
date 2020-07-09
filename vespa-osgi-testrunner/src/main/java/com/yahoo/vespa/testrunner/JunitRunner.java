@@ -78,8 +78,8 @@ public class JunitRunner extends AbstractComponent {
     }
 
     public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
-        if (execution != null) {
-            throw new RuntimeException("Test execution already in progress");
+        if (execution != null && !execution.isDone()) {
+            throw new IllegalStateException("Test execution already in progress");
         }
         testRuntimeProvider.initialize(testConfig);
         Optional<Bundle> testBundle = findTestBundle();
