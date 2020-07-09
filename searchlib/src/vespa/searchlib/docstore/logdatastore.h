@@ -187,7 +187,7 @@ private:
     // Implements ISetLid API
     void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
 
-    void compactWorst(double bloatLimit, double spreadLimit);
+    void compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void compactFile(FileId chunkId);
 
     typedef vespalib::RcuVector<uint64_t> LidInfoVector;
@@ -203,7 +203,7 @@ private:
     NameIdSet eraseIncompleteCompactedFiles(NameIdSet partList);
     void internalFlushAll();
 
-    bool isTotalDiskBloatExceeded() const;
+    bool isTotalDiskBloatExceeded(size_t diskFootPrint, size_t bloat) const;
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
     FileId allocateFileId(const LockGuard & guard);
@@ -268,7 +268,7 @@ private:
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
-    std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit);
+    std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void incGeneration();
     bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
 
