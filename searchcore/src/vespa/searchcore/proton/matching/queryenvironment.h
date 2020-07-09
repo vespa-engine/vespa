@@ -70,7 +70,7 @@ public:
     const search::fef::ITermData *getTerm(uint32_t idx) const override;
 
     // inherited from search::fef::IQueryEnvironment
-    const search::fef::Location & getLocation() const override;
+    // const search::fef::Location & getLocation() const override;
     std::vector<const search::fef::Location *> getAllLocations() const override {
         return _locations;
     }

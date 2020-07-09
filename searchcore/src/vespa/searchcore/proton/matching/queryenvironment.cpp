@@ -44,11 +44,11 @@ QueryEnvironment::getTerm(uint32_t idx) const
     return _terms[idx];
 }
 
-const search::fef::Location &
-QueryEnvironment::getLocation() const
-{
-    return *_locations[0];
-}
+// const search::fef::Location &
+// QueryEnvironment::getLocation() const
+// {
+//     return *_locations[0];
+// }
 
 const IAttributeContext &
 QueryEnvironment::getAttributeContext() const
