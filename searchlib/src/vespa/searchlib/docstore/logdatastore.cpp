@@ -303,7 +303,7 @@ LogDataStore::compact(uint64_t syncToken)
     const bool doCompact = (_fileChunks.size() > 1);
     if (doCompact) {
         LOG(info, "%s. Will compact", bloatMsg(bloat, usage).c_str());
-        compactWorst(_config.getMaxDiskBloatFactor(), _config.getMaxBucketSpread());
+        compactWorst(_config.getMaxDiskBloatFactor(), _config.getMaxBucketSpread(), isTotalDiskBloatExceeded(usage, bloat));
     }
     flushActiveAndWait(syncToken);
     if (doCompact) {
@@ -313,16 +313,22 @@ LogDataStore::compact(uint64_t syncToken)
     }
 }
 
+bool
+LogDataStore::isTotalDiskBloatExceeded(size_t diskFootPrint, size_t bloat) const {
+    const size_t maxConfiguredDiskBloat = diskFootPrint * _config.getMaxDiskBloatFactor();
+    return bloat > maxConfiguredDiskBloat;
+}
+
 size_t
 LogDataStore::getMaxCompactGain() const
 {
-    const size_t diskFootPrint = getDiskFootprint();
-    const size_t maxConfiguredDiskBloat = diskFootPrint * _config.getMaxDiskBloatFactor();
-    double maxSpread = getMaxBucketSpread();
     size_t bloat = getDiskBloat();
-    if (bloat < maxConfiguredDiskBloat) {
+    const size_t diskFootPrint = getDiskFootprint();
+    if ( ! isTotalDiskBloatExceeded(diskFootPrint, bloat) ) {
         bloat = 0;
     }
+
+    const double maxSpread = getMaxBucketSpread();
     size_t spreadAsBloat = diskFootPrint * (1.0 - 1.0/maxSpread);
     if ( maxSpread < _config.getMaxBucketSpread()) {
         spreadAsBloat = 0;
@@ -374,7 +380,7 @@ LogDataStore::getMaxBucketSpread() const
 }
 
 std::pair<bool, LogDataStore::FileId>
-LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit)
+LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat)
 {
     typedef std::multimap<double, FileId, std::greater<double>> CostMap;
     CostMap worstBloat;
@@ -402,7 +408,7 @@ LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit)
         }
     }
     std::pair<bool, FileId> retval(false, FileId(-1));
-    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit)) {
+    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit) && prioritizeDiskBloat) {
         retval.first = true;
         retval.second = worstBloat.begin()->second;
     } else if ( ! worstSpread.empty() && (worstSpread.begin()->first > spreadLimit)) {
@@ -416,8 +422,8 @@ LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit)
 }
 
 void
-LogDataStore::compactWorst(double bloatLimit, double spreadLimit) {
-    auto worst = findNextToCompact(bloatLimit, spreadLimit);
+LogDataStore::compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat) {
+    auto worst = findNextToCompact(bloatLimit, spreadLimit, prioritizeDiskBloat);
     if (worst.first) {
         compactFile(worst.second);
     }
