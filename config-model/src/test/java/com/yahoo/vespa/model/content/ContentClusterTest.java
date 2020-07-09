@@ -652,7 +652,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals("statereporter", config.consumer(5).name());
         assertEquals("*", config.consumer(5).addedmetrics(0));
         assertEquals("thread", config.consumer(5).removedtags(0));
-        assertEquals("disk", config.consumer(5).tags(0));
+        assertEquals("partofsum", config.consumer(5).removedtags(1));
+        assertEquals(0, config.consumer(5).tags().size());
 
         cluster.getStorageNodes().getConfig(builder);
         config = new MetricsmanagerConfig(builder);
