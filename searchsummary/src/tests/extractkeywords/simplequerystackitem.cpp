@@ -9,13 +9,10 @@ namespace search {
 
 SimpleQueryStackItem::SimpleQueryStackItem()
   : _next(NULL),
-    _weight(100),
-    _uniqueId(0),
     _arg1(0),
     _arg2(0),
     _arg3(0),
     _type(ITEM_UNDEF),
-    _flags(0),
     _arity(0),
     _indexName(),
     _term()
@@ -110,15 +107,6 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
 
     // Put the values into the buffer.
     buf->append(_type);
-    if (Feature_Weight()) { // this item has weight
-        buf->appendCompressedNumber(_weight.percent());
-    }
-    if (feature_UniqueId()) {
-        buf->appendCompressedPositiveNumber(_uniqueId);
-    }
-    if (feature_Flags()) {
-        buf->append(_flags);
-    }
     switch (Type()) {
     case ITEM_OR:
     case ITEM_EQUIV:

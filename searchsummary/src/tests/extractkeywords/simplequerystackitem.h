@@ -29,51 +29,17 @@ public:
     SimpleQueryStackItem *_next;
 
 private:
-    query::Weight _weight;
-    uint32_t      _uniqueId;
     uint32_t      _arg1;
     double        _arg2;
     double        _arg3;
-    uint8_t       _type;
-    uint8_t       _flags;
+    ItemType      _type;
 
 public:
-    /** Extra information on each item (creator id) coded in bits 12-19 of _type */
-    static inline ItemCreator GetCreator(uint8_t type) { return static_cast<ItemCreator>((type >> 3) & 0x01); }
-    /** The old item type now uses only the lower 12 bits in a backward compatible way) */
-    static inline ItemType GetType(uint8_t type) { return static_cast<ItemType>(type & 0x1F); }
-    inline ItemType Type() const { return GetType(_type); }
-
-    static inline bool GetFeature(uint8_t type, uint8_t feature)
-    { return ((type & feature) != 0); }
-
-    static inline bool GetFeature_Weight(uint8_t type)
-    { return GetFeature(type, IF_WEIGHT); }
-
-    static inline bool getFeature_UniqueId(uint8_t type)
-    { return GetFeature(type, IF_UNIQUEID); }
-
-    static inline bool getFeature_Flags(uint8_t type)
-    { return GetFeature(type, IF_FLAGS); }
-
-    inline bool Feature(uint8_t feature) const
-    { return GetFeature(_type, feature); }
-
-    inline bool Feature_Weight() const
-    { return GetFeature_Weight(_type); }
-
-    inline bool feature_UniqueId() const
-    { return getFeature_UniqueId(_type); }
-
-    inline bool feature_Flags() const
-    { return getFeature_Flags(_type); }
-
-    static inline bool getFlag(uint8_t flags, uint8_t flag)
-    { return ((flags & flag) != 0); }
+    ItemType Type() const { return _type; }
 
     /** The number of operands for the operation. */
     uint32_t _arity;
-    /** The name of the specified index, or NULL if no index. */
+    /** The name of the specified index, or empty if no index. */
     vespalib::string _indexName;
     /** The specified search term. */
     vespalib::string  _term;
@@ -128,15 +94,8 @@ public:
      * @param type The new type.
      */
     void SetType(ItemType type) {
-        _type = (_type & ~0x1F) | type;
+        _type = type;
     }
-
-    /**
-     * Get the unique id for this item.
-     *
-     * @return unique id for this item
-     **/
-    uint32_t getUniqueId() const { return _uniqueId; }
 
     /**
      * Encode the item in a binary buffer.
