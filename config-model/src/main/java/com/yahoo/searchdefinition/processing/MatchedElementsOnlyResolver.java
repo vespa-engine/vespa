@@ -2,8 +2,13 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -43,13 +48,38 @@ public class MatchedElementsOnlyResolver extends Processor {
                 if (isComplexFieldWithOnlyStructFieldAttributes(sourceField)) {
                     field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
                 }
+            } else if (isSupportedAttributeField(sourceField)) {
+                field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
             } else if (validate) {
                 fail(summary, field, "'matched-elements-only' is not supported for this field type. " +
-                        "Supported field types are array of simple struct, map of primitive type to simple struct, " +
+                        "Supported field types are: array attribute, weighted set attribute, " +
+                        "array of simple struct, map of primitive type to simple struct, " +
                         "and map of primitive type to primitive type");
             }
         }
         // else case is handled in SummaryFieldsMustHaveValidSource
+    }
+
+    private boolean isSupportedAttributeField(ImmutableSDField sourceField) {
+        var type = sourceField.getDataType();
+        return sourceField.doesAttributing() &&
+                (isArrayOfPrimitiveType(type) || isWeightedsetOfPrimitiveType(type));
+    }
+
+    private boolean isArrayOfPrimitiveType(DataType type) {
+        if (type instanceof ArrayDataType) {
+            var arrayType = (ArrayDataType) type;
+            return ComplexAttributeFieldUtils.isPrimitiveType(arrayType.getNestedType());
+        }
+        return false;
+    }
+
+    private boolean isWeightedsetOfPrimitiveType(DataType type) {
+        if (type instanceof WeightedSetDataType) {
+            var wsetType = (WeightedSetDataType) type;
+            return ComplexAttributeFieldUtils.isPrimitiveType(wsetType.getNestedType());
+        }
+        return false;
     }
 
     private void fail(DocumentSummary summary, SummaryField field, String msg) {
