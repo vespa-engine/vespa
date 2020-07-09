@@ -37,6 +37,7 @@ import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -279,6 +280,27 @@ public class SessionRepository {
             }
         }
         return deleted;
+    }
+
+    public int deleteExpiredLocks(Clock clock, Duration expiryTime) {
+        int deleted = 0;
+        for (var lock : curator.getChildren(locksPath)) {
+            Path path = locksPath.append(lock);
+            if (zooKeeperNodeCreated(path).isBefore(clock.instant().minus(expiryTime))) {
+                log.log(Level.INFO, "Lock  " + path + " has expired, deleting it");
+                curator.delete(path);
+                deleted++;
+            }
+        }
+        return deleted;
+    }
+
+    private Instant zooKeeperNodeCreated(Path path) {
+        Optional<Stat> stat = curator.getStat(path);
+        if (stat.isPresent())
+            return Instant.ofEpochMilli(stat.get().getCtime());
+        else
+            return componentRegistry.getClock().instant();
     }
 
     private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
@@ -665,7 +687,7 @@ public class SessionRepository {
         return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
 
-    private Path lockPath(long sessionId) {
+    public Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));
     }
 

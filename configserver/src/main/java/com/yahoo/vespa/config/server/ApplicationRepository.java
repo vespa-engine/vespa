@@ -688,6 +688,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         sessionsPerTenant.keySet().forEach(tenant -> tenant.getSessionRepository().deleteExpiredSessions(activeSessions));
     }
 
+    public int deleteExpiredLocks(Duration expiryTime) {
+        return tenantRepository.getAllTenants()
+                .stream()
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredLocks(clock, expiryTime))
+                .mapToInt(i -> i)
+                .sum();
+    }
+
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
         return deleteExpiredRemoteSessions(clock, expiryTime);
     }
