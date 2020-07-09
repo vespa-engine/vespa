@@ -16,7 +16,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("positionsdfw_test");
 
-using search::RawBuf;
 using search::IAttributeManager;
 using search::MatchingElements;
 using search::SingleInt64ExtAttribute;

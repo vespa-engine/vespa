@@ -17,9 +17,6 @@ namespace search {
  * to the different query stack execution operations. It also
  * provides an arity, and the string values indexName and term, to
  * accomodate the different needs of the operations.
- * It also includes a mechanism for making singly linked lists
- * with sub-lists. This is used during the parsing, and also
- * when constructing the simple query stack.
  */
 class SimpleQueryStackItem : public ParseItem
 {
@@ -30,8 +27,6 @@ private:
 public:
     /** Pointer to next item in a linked list. */
     SimpleQueryStackItem *_next;
-    /** Pointer to first item in a sublist. */
-    SimpleQueryStackItem *_sibling;
 
 private:
     query::Weight _weight;

@@ -9,7 +9,6 @@ namespace search {
 
 SimpleQueryStackItem::SimpleQueryStackItem()
   : _next(NULL),
-    _sibling(NULL),
     _weight(100),
     _uniqueId(0),
     _arg1(0),
@@ -99,7 +98,6 @@ SimpleQueryStackItem::SimpleQueryStackItem(ItemType type, const char *term) : Si
 SimpleQueryStackItem::~SimpleQueryStackItem()
 {
     delete _next;
-    delete _sibling;
 }
 
 void

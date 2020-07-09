@@ -178,6 +178,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
 
     case 1:
     {
+        // check that skipping these works also:
         stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_LOCATION_TERM, "no"));
         stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_NEAREST_NEIGHBOR, "no"));
         // multi term query
