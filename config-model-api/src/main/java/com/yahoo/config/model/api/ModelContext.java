@@ -97,6 +97,9 @@ public interface ModelContext {
         // Select sequencer type use while feeding.
         String feedSequencerType();
         String responseSequencerType();
+        boolean skipCommunicationManagerThread();
+        boolean skipMbusRequestThread();
+        boolean skipMbusReplyThread();
 
         // TODO Remove when 7.247 is last
         default boolean useDistributorBtreeDb() { return true; }

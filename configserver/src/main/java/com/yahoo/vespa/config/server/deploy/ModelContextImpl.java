@@ -156,6 +156,9 @@ public class ModelContextImpl implements ModelContext {
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
+        private final boolean skipCommunicationManagerThread;
+        private final boolean skipMbusRequestThread;
+        private final boolean skipMbusReplyThread;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
 
@@ -204,6 +207,12 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            skipCommunicationManagerThread = Flags.SKIP_COMMUNICATIONMANAGER_THREAD.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            skipMbusRequestThread = Flags.SKIP_MBUS_REQUEST_THREAD.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            skipMbusReplyThread = Flags.SKIP_MBUS_REPLY_THREAD.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();;
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
         }
@@ -281,16 +290,13 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
         @Override public String feedSequencerType() { return feedSequencer; }
-
-        @Override
-        public String responseSequencerType() {
-            return responseSequencer;
-        }
-
-        @Override
-        public int defaultNumResponseThreads() {
+        @Override public String responseSequencerType() { return responseSequencer; }
+        @Override public int defaultNumResponseThreads() {
             return numResponseThreads;
         }
+        @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
+        @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
+        @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
     }
 
 }

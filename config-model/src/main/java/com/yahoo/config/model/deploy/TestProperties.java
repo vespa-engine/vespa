@@ -75,6 +75,9 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return reponseNumThreads; }
+    @Override public boolean skipCommunicationManagerThread() { return false; }
+    @Override public boolean skipMbusRequestThread() { return false; }
+    @Override public boolean skipMbusReplyThread() { return false; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
