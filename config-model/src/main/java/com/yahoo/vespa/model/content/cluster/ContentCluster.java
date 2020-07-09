@@ -711,7 +711,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                         name("statereporter").
                         addedmetrics("*").
                         removedtags("thread").
-                        tags("disk"));
+                        removedtags("partofsum"));
     }
 
     private static final String DEFAULT_BUCKET_SPACE = "default";
