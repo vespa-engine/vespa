@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.prelude.Location;
 import java.nio.ByteBuffer;
-
 
 /**
  * This represents a geo-location for matching.
@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
  *
  * @author  arnej
  */
+@Beta
 public class GeoLocationItem extends TermItem {
 
     private Location location;
