@@ -12,7 +12,7 @@ namespace search::features {
  */
 class DistanceExecutor : public fef::FeatureExecutor {
 private:
-    const fef::Location               & _location;
+    std::vector<const fef::Location *>  _locations;
     const attribute::IAttributeVector * _pos;
     attribute::IntegerContent           _intBuf;
 
@@ -23,10 +23,11 @@ public:
     /**
      * Constructs an executor for the distance feature.
      *
-     * @param location the location object associated with the query environment.
+     * @param locations location objects associated with the query environment.
      * @param pos the attribute to use for positions (expects zcurve encoding).
      */
-    DistanceExecutor(const fef::Location & location, const attribute::IAttributeVector * pos);
+    DistanceExecutor(std::vector<const fef::Location *> locations,
+                     const attribute::IAttributeVector * pos);
     void execute(uint32_t docId) override;
 
     static const feature_t DEFAULT_DISTANCE;

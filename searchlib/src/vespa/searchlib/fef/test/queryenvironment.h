@@ -38,7 +38,12 @@ public:
     const Properties &getProperties() const override { return _properties; }
     uint32_t getNumTerms() const override { return _terms.size(); }
     const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
-    const Location & getLocation() const override { return _location; }
+ // const Location & getLocation() const override { return _location; }
+    std::vector<const Location *> getAllLocations() const override {
+        std::vector<const Location *> retval;
+        retval.push_back(&_location);
+        return retval;
+    }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
     double get_average_field_length(const vespalib::string& field_name) const override {
         auto itr = _avg_field_lengths.find(field_name);

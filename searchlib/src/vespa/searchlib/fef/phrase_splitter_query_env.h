@@ -73,7 +73,10 @@ public:
     }
 
     const Properties & getProperties() const override { return _queryEnv.getProperties(); }
-    const Location & getLocation() const override { return _queryEnv.getLocation(); }
+ // const Location & getLocation() const override { return _queryEnv.getLocation(); }
+    std::vector<const Location *> getAllLocations() const override {
+        return _queryEnv.getAllLocations();
+    }
     const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
     double get_average_field_length(const vespalib::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
     const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
