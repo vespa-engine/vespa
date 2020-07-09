@@ -69,7 +69,7 @@ class TestAnnotationAnalyzer {
             } else if (StagingTest.class.getName().equals(annotationClassName)) {
                 stagingTests.add(className);
             } else if (StagingSetup.class.getName().equals(annotationClassName)) {
-                stagingTests.add(className);
+                stagingSetupTests.add(className);
             } else if (SystemTest.class.getName().equals(annotationClassName)) {
                 systemTests.add(className);
             }
