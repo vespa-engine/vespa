@@ -18,11 +18,11 @@ class ISearchContext;
 class Query
 {
 private:
-    using Blueprint=search::queryeval::Blueprint;
+    using Blueprint = search::queryeval::Blueprint;
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
-    search::fef::Location   _location;
     Blueprint::UP           _whiteListBlueprint;
+    std::vector<search::fef::Location> _locations;
 
 public:
     Query();
