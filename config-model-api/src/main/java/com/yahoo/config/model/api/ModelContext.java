@@ -113,8 +113,8 @@ public interface ModelContext {
 
         Optional<ApplicationRoles> applicationRoles();
 
-        // TODO(bjorncs): Temporary feature flag, revisit July 2020
-        default Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofSeconds(1); }
+        // TODO(bjorncs): Temporary feature flag, revisit August 2020
+        default Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(100); }
     }
 
 }
