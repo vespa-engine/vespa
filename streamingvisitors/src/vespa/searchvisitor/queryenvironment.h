@@ -51,6 +51,12 @@ public:
     // inherit documentation
     virtual const search::fef::Location & getLocation() const override { return _location; }
 
+    std::vector<const search::fef::Location *> getAllLocations() const override {
+        std::vector<const search::fef::Location *> retval;
+        retval.push_back(&_location);
+        return retval;
+    }
+
     // inherit documentation
     virtual const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
 

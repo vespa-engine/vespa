@@ -71,6 +71,9 @@ public:
 
     // inherited from search::fef::IQueryEnvironment
     const search::fef::Location & getLocation() const override;
+    std::vector<const search::fef::Location *> getAllLocations() const override {
+        return _locations;
+    }
 
     // inherited from search::fef::IQueryEnvironment
     const search::attribute::IAttributeContext & getAttributeContext() const override;
