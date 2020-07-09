@@ -23,5 +23,9 @@ search child {
     summary my_int_array_field type array<int> {}
     summary my_int_wset_field type weightedset<int> {}
     summary my_ancient_int_field type int {}
+    summary my_filtered_int_array_field type array<int> {
+      source: my_int_array_field
+      matched-elements-only
+    }
   }
 }

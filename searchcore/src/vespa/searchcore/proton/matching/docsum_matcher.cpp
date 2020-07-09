@@ -128,6 +128,8 @@ void find_matching_elements(const MatchingElementsFields &fields, const std::vec
     } else if (const AttrSearchCtx *attr_ctx = bp.get_attribute_search_context()) {
         if (fields.has_struct_field(attr_ctx->attributeName())) {
             find_matching_elements(docs, fields.get_enclosing_field(attr_ctx->attributeName()), *attr_ctx, result);
+        } else if (fields.has_field(attr_ctx->attributeName())) {
+            find_matching_elements(docs, attr_ctx->attributeName(), *attr_ctx, result);
         }
     } else if (auto and_not = as<AndNotBlueprint>(bp)) {
         find_matching_elements(fields, docs, and_not->getChild(0), result);

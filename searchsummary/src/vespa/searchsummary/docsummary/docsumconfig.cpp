@@ -102,7 +102,11 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         string source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
-            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, matching_elems_fields);
+            if (attr_ctx->getAttribute(source_field) != nullptr) {
+                fieldWriter = AttributeDFWFactory::create(*getEnvironment()->getAttributeManager(), source_field, true, matching_elems_fields);
+            } else {
+                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, matching_elems_fields);
+            }
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedelementsfilter") {
