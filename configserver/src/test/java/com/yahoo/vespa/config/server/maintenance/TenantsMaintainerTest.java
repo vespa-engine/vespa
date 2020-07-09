@@ -9,6 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
 import java.io.File;
@@ -39,7 +40,7 @@ public class TenantsMaintainerTest {
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
         clock.advance(TenantsMaintainer.defaultTtlForUnusedTenant.plus(Duration.ofDays(1)));
-        new TenantsMaintainer(applicationRepository, tester.curator(), Duration.ofDays(1), clock).run();
+        new TenantsMaintainer(applicationRepository, tester.curator(), new InMemoryFlagSource(), Duration.ofDays(1), clock).run();
         tenantRepository.updateTenants();
 
         // One tenant should now have been deleted

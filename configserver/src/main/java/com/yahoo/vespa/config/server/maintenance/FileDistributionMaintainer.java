@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.time.Duration;
@@ -25,8 +26,9 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
-                               ConfigserverConfig configserverConfig) {
-        super(applicationRepository, curator, interval, interval);
+                               ConfigserverConfig configserverConfig,
+                               FlagSource flagSource) {
+        super(applicationRepository, curator, flagSource, interval, interval);
         this.applicationRepository = applicationRepository;
         this.configserverConfig = configserverConfig;
         this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));

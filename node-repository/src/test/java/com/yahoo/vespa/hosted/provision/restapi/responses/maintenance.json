@@ -52,13 +52,11 @@
       "name": "RetiredExpirer"
     },
     {
-      "name":"ScalingSuggestionsMaintainer"
+      "name": "ScalingSuggestionsMaintainer"
     },
     {
       "name": "SpareCapacityMaintainer"
     }
   ],
-  "inactive": [
-    "NodeFailer"
-  ]
+  "inactive": []
 }

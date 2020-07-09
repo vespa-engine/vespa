@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -76,7 +77,7 @@ public class DeploymentTester {
         tester = controllerTester;
         jobs = tester.controller().jobController();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
-        var jobControl = new JobControl(tester.controller().curator());
+        var jobControl = new JobControl(new JobControlFlags(tester.controller().curator(), tester.controller().flagSource()));
         runner = new JobRunner(tester.controller(), Duration.ofDays(1),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
         upgrader = new Upgrader(tester.controller(), maintenanceInterval, tester.curator());

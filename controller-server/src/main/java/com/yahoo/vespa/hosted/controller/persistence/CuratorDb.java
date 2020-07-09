@@ -5,8 +5,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.maintenance.JobControl;
-import com.yahoo.concurrent.maintenance.StringSetSerializer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
@@ -44,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -72,7 +69,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author mpolden
  * @author jonmv
  */
-public class CuratorDb implements JobControl.Db {
+public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
     private static final Duration deployLockTimeout = Duration.ofMinutes(30);
@@ -89,7 +86,6 @@ public class CuratorDb implements JobControl.Db {
     private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
     private static final Path endpointCertificateRoot = root.append("applicationCertificates");
 
-    private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
@@ -159,12 +155,6 @@ public class CuratorDb implements JobControl.Db {
         return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
-    @Override
-    public Lock lockInactiveJobs() {
-        return curator.lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
-    }
-
-    @Override
     public Lock lockMaintenanceJob(String jobName) {
         try {
             return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
@@ -227,25 +217,6 @@ public class CuratorDb implements JobControl.Db {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    // -------------- Maintenance jobs ----------------------------------------
-
-    @Override
-    public Set<String> readInactiveJobs() {
-        try {
-            return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
-            writeInactiveJobs(Collections.emptySet());
-            return new HashSet<>();
-        }
-    }
-
-    @Override
-    public void writeInactiveJobs(Set<String> inactiveJobs) {
-        curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
     }
 
     // -------------- Deployment orchestration --------------------------------

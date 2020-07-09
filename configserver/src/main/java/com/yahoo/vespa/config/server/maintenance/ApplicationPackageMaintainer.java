@@ -42,7 +42,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  Duration interval,
                                  ConfigserverConfig configserverConfig,
                                  FlagSource flagSource) {
-        super(applicationRepository, curator, interval, interval);
+        super(applicationRepository, curator, flagSource, interval, interval);
         this.applicationRepository = applicationRepository;
         this.configserverConfig = configserverConfig;
 

@@ -104,6 +104,7 @@ public class ProvisioningTester {
                                                  zone,
                                                  nameResolver,
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 flagSource,
                                                  true,
                                                  provisionServiceProvider.getHostProvisioner().isPresent(),
                                                  spareCount);

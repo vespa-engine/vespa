@@ -21,7 +21,8 @@ public class JobControlTest {
 
     @Test
     public void testJobControl() {
-        JobControl jobControl = new JobControl(new MockDb());
+        MockJobControlState state = new MockJobControlState();
+        JobControl jobControl = new JobControl(state);
 
         MockMaintainer maintainer1 = new MockMaintainer();
         MockMaintainer maintainer2 = new MockMaintainer();
@@ -39,19 +40,19 @@ public class JobControlTest {
         assertTrue(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
 
-        jobControl.setActive(job1, false);
+        state.setActive(job1, false);
         assertFalse(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
 
-        jobControl.setActive(job2, false);
+        state.setActive(job2, false);
         assertFalse(jobControl.isActive(job1));
         assertFalse(jobControl.isActive(job2));
 
-        jobControl.setActive(job1, true);
+        state.setActive(job1, true);
         assertTrue(jobControl.isActive(job1));
         assertFalse(jobControl.isActive(job2));
 
-        jobControl.setActive(job2, true);
+        state.setActive(job2, true);
         assertTrue(jobControl.isActive(job1));
         assertTrue(jobControl.isActive(job2));
 
@@ -63,14 +64,15 @@ public class JobControlTest {
         assertEquals(1, maintainer2.maintenanceInvocations);
 
         // Running jobs on-demand ignores inactive flag
-        jobControl.setActive(job1, false);
+        state.setActive(job1, false);
         jobControl.run(job1);
         assertEquals(3, maintainer1.maintenanceInvocations);
     }
 
     @Test
     public void testJobControlMayDeactivateJobs() {
-        JobControl jobControl = new JobControl(new MockDb());
+        MockJobControlState state = new MockJobControlState();
+        JobControl jobControl = new JobControl(state);
         MockMaintainer mockMaintainer = new MockMaintainer(jobControl);
 
         assertTrue(jobControl.jobs().contains("MockMaintainer"));
@@ -80,16 +82,16 @@ public class JobControlTest {
         mockMaintainer.run();
         assertEquals(1, mockMaintainer.maintenanceInvocations);
 
-        jobControl.setActive("MockMaintainer", false);
+        state.setActive("MockMaintainer", false);
         mockMaintainer.run();
         assertEquals(1, mockMaintainer.maintenanceInvocations);
 
-        jobControl.setActive("MockMaintainer", true);
+        state.setActive("MockMaintainer", true);
         mockMaintainer.run();
         assertEquals(2, mockMaintainer.maintenanceInvocations);
     }
 
-    private static class MockDb implements JobControl.Db {
+    private static class MockJobControlState implements JobControlState {
 
         private final Set<String> inactiveJobs = new HashSet<>();
 
@@ -99,19 +101,16 @@ public class JobControlTest {
         }
 
         @Override
-        public void writeInactiveJobs(Set<String> inactiveJobs) {
-            this.inactiveJobs.clear();
-            this.inactiveJobs.addAll(inactiveJobs);
-        }
-
-        @Override
-        public Mutex lockInactiveJobs() {
-            return () -> {};
-        }
-
-        @Override
         public Mutex lockMaintenanceJob(String job) {
             return () -> {};
+        }
+
+        public void setActive(String job, boolean active) {
+            if (active) {
+                inactiveJobs.remove(job);
+            } else {
+                inactiveJobs.add(job);
+            }
         }
 
     }
@@ -125,7 +124,7 @@ public class JobControlTest {
         }
 
         private MockMaintainer() {
-            this(new JobControl(new MockDb()));
+            this(new JobControl(new MockJobControlState()));
         }
 
         @Override

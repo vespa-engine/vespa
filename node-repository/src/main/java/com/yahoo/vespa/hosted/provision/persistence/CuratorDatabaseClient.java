@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.maintenance.JobControl;
-import com.yahoo.concurrent.maintenance.StringSetSerializer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.DockerImage;
@@ -34,11 +32,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -59,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
  *
  * @author bratseth
  */
-public class CuratorDatabaseClient implements JobControl.Db {
+public class CuratorDatabaseClient {
 
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
@@ -77,7 +73,6 @@ public class CuratorDatabaseClient implements JobControl.Db {
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
-    private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final CuratorDatabase db;
     private final Clock clock;
     private final Zone zone;
@@ -437,35 +432,8 @@ public class CuratorDatabaseClient implements JobControl.Db {
 
     // Maintenance jobs -----------------------------------------------------------
 
-    @Override
     public Lock lockMaintenanceJob(String jobName) {
         return db.lock(lockPath.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
-    }
-
-    @Override
-    public Set<String> readInactiveJobs() {
-        try {
-            return read(inactiveJobsPath, stringSetSerializer::fromJson).orElseGet(HashSet::new);
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
-            writeInactiveJobs(Collections.emptySet());
-            return new HashSet<>();
-        }
-    }
-
-    @Override
-    public void writeInactiveJobs(Set<String> inactiveJobs) {
-        NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath.getAbsolute(),
-                                                         stringSetSerializer.toJson(inactiveJobs)));
-        transaction.commit();
-    }
-
-    @Override
-    public Lock lockInactiveJobs() {
-        return db.lock(lockPath.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     // Infrastructure versions -----------------------------------------------------------

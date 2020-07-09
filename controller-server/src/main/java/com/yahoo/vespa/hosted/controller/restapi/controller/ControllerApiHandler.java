@@ -6,16 +6,15 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
@@ -76,14 +75,12 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), false);
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
         return notFound(path);
     }
 
     private HttpResponse delete(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), true);
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return removeConfidenceOverride(path.get("version"));
         return notFound(path);
     }
@@ -98,14 +95,6 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse root(HttpRequest request) {
         return new ResourceResponse(request, "auditlog", "jobs/upgrader", "maintenance");
-    }
-
-    private HttpResponse setActive(String jobName, boolean active) {
-        boolean activatingInactiveJob = active && !controller.jobControl().isActive(jobName);
-        if (!activatingInactiveJob && !controller.jobControl().jobs().contains(jobName))
-            return ErrorResponse.notFoundError("No job named '" + jobName + "'");
-        controller.jobControl().setActive(jobName, active);
-        return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
     private HttpResponse configureUpgrader(HttpRequest request) {

@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -112,7 +113,7 @@ public class Controller extends AbstractComponent {
         tenantController = new TenantController(this, curator, accessControl);
         routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
-        jobControl = new JobControl(curator);
+        jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         this.controllerConfig = controllerConfig;
 
         // Record the version of this controller

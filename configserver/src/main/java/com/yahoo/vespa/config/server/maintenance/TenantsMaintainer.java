@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -19,8 +20,9 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     private final Duration ttlForUnusedTenant;
     private final Clock clock;
 
-    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Clock clock) {
-        super(applicationRepository, curator, interval, interval);
+    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
+                      Duration interval, Clock clock) {
+        super(applicationRepository, curator, flagSource, interval, interval);
         this.ttlForUnusedTenant = defaultTtlForUnusedTenant;
         this.clock = clock;
     }
@@ -29,4 +31,5 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     protected void maintain() {
         applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
     }
+
 }

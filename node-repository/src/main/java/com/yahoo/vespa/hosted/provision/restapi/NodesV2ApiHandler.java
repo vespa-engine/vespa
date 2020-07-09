@@ -185,7 +185,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             int addedNodes = addNodes(request.getData());
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
-        if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), false);
         if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
 
@@ -195,7 +194,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
-        if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), true);
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
@@ -349,13 +347,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             }
         }
         return false;
-    }
-
-    private MessageResponse setJobActive(String jobName, boolean active) {
-        if ( ! nodeRepository.jobControl().jobs().contains(jobName))
-            throw new NotFoundException("No job named '" + jobName + "'");
-        nodeRepository.jobControl().setActive(jobName, active);
-        return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
     private MessageResponse setTargetVersions(HttpRequest request) {

@@ -17,6 +17,7 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -35,6 +36,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.os.OsVersions;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
+import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
@@ -114,14 +116,17 @@ public class NodeRepository extends AbstractComponent {
                           NodeFlavors flavors,
                           ProvisionServiceProvider provisionServiceProvider,
                           Curator curator,
-                          Zone zone) {
+                          Zone zone,
+                          FlagSource flagSource) {
         this(flavors,
              provisionServiceProvider.getHostResourcesCalculator(),
              curator,
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(),
+             DockerImage.fromString(config.dockerImage()),
+             flagSource,
+             config.useCuratorClientCache(),
              provisionServiceProvider.getHostProvisioner().isPresent(),
              zone.environment().isProduction() && provisionServiceProvider.getHostProvisioner().isEmpty() ? 1 : 0);
     }
@@ -137,6 +142,7 @@ public class NodeRepository extends AbstractComponent {
                           Zone zone,
                           NameResolver nameResolver,
                           DockerImage dockerImage,
+                          FlagSource flagSource,
                           boolean useCuratorClientCache,
                           boolean canProvisionHosts,
                           int spareCount) {
@@ -150,7 +156,7 @@ public class NodeRepository extends AbstractComponent {
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
-        this.jobControl = new JobControl(db);
+        this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.canProvisionHosts = canProvisionHosts;
         this.spareCount = spareCount;

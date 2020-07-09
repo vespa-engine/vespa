@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -19,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 
@@ -41,39 +42,11 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testControllerApi() {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", "", Request.Method.GET), new File("root.json"));
 
-        // POST deactivates a maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            "", Request.Method.POST),
-                       "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}", 200);
+        ((InMemoryFlagSource) tester.controller().flagSource()).withListFlag(Flags.INACTIVE_MAINTENANCE_JOBS.id(), List.of("DeploymentExpirer"), String.class);
 
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", "", Request.Method.GET),
                               new File("maintenance.json"));
-
-        // DELETE activates maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            "", Request.Method.DELETE),
-                       "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
-                              200);
-
-        // DELETE fails to activate unknown maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/foo",
-                                                    "", Request.Method.DELETE),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'foo'\"}",
-                              404);
-
-        // DELETE clears inactive flag for maintenance job that has been removed from the code base
-        tester.controller().curator().writeInactiveJobs(Set.of("bar"));
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
-                                                    "", Request.Method.DELETE),
-                              "{\"message\":\"Re-activated job 'bar'\"}",
-                              200);
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
-                                                    "", Request.Method.DELETE),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'bar'\"}",
-                              404);
-
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
 
     @Test
