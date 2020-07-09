@@ -235,7 +235,7 @@ public class ApplicationHandlerTest {
         ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant("default").build();
         HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
         assertEquals(404, responseForUnknown.getStatus());
-        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No active session found for application id: 'default.unknown'\"}",
+        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"Unknown application id 'default.unknown'\"}",
                      getRenderedString(responseForUnknown));
     }
 

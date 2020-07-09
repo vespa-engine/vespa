@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.plugin.mojo;
+package com.yahoo.container.plugin.util;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
@@ -12,16 +12,16 @@ import java.util.List;
  * @author Tony Vaagenes
  * @author ollivir
  */
-class Artifacts {
+public class Artifacts {
     interface ScopeTranslator {
         String scopeOf(Artifact artifact);
     }
 
-    static class NoopScopeTranslator implements ScopeTranslator {
+    private static class NoopScopeTranslator implements ScopeTranslator {
         @Override public String scopeOf(Artifact artifact) { return artifact.getScope(); }
     }
 
-    static class ArtifactSet {
+    public static class ArtifactSet {
 
         private final List<Artifact> jarArtifactsToInclude;
         private final List<Artifact> jarArtifactsProvided;
@@ -36,22 +36,22 @@ class Artifacts {
             this.nonJarArtifacts = nonJarArtifacts;
         }
 
-        List<Artifact> getJarArtifactsToInclude() {
+        public List<Artifact> getJarArtifactsToInclude() {
             return jarArtifactsToInclude;
         }
 
-        List<Artifact> getJarArtifactsProvided() {
+        public List<Artifact> getJarArtifactsProvided() {
             return jarArtifactsProvided;
         }
 
-        List<Artifact> getNonJarArtifacts() {
+        public List<Artifact> getNonJarArtifacts() {
             return nonJarArtifacts;
         }
     }
 
-    static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, new NoopScopeTranslator()); }
+    public static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, new NoopScopeTranslator()); }
 
-    static ArtifactSet getArtifacts(MavenProject project, ScopeTranslator scopeTranslator) {
+    public static ArtifactSet getArtifacts(MavenProject project, ScopeTranslator scopeTranslator) {
         List<Artifact> jarArtifactsToInclude = new ArrayList<>();
         List<Artifact> jarArtifactsProvided = new ArrayList<>();
         List<Artifact> nonJarArtifactsToInclude = new ArrayList<>();
@@ -76,7 +76,7 @@ class Artifacts {
         return new ArtifactSet(jarArtifactsToInclude, jarArtifactsProvided, nonJarArtifactsToInclude);
     }
 
-    static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
+    public static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
         return getArtifacts(project, new NoopScopeTranslator()).getJarArtifactsToInclude();
     }
 }

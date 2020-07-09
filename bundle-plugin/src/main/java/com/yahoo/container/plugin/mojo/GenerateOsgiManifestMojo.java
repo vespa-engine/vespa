@@ -8,6 +8,7 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
+import com.yahoo.container.plugin.util.Artifacts;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
