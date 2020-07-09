@@ -107,9 +107,6 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                     log.log(Level.INFO, message);
                     log.log(Level.FINE, e.toString(), e);
                     servletResponse.sendError(Response.Status.INTERNAL_SERVER_ERROR, message);
-                    if (Duration.ofSeconds(1).compareTo(proxyTarget.timeout) >= 0) { // TODO bjorncs: remove call to close() if client is correctly pruning bad connections (VESPA-17628)
-                        proxyTarget.close();
-                    }
                 }
             } else {
                 servletResponse.sendError(NOT_FOUND);
