@@ -48,7 +48,7 @@ FastS_2DZLocationIterator::~FastS_2DZLocationIterator() = default;
 void
 FastS_2DZLocationIterator::doSeek(uint32_t docId)
 {
-    LOG(info, "FastS_2DZLocationIterator: seek(%u) with numDocs=%u endId=%u",
+    LOG(debug, "FastS_2DZLocationIterator: seek(%u) with numDocs=%u endId=%u",
         docId, _numDocs, getEndId());
     if (__builtin_expect(docId >= _numDocs, false)) {
         setAtEnd();
@@ -67,32 +67,32 @@ FastS_2DZLocationIterator::doSeek(uint32_t docId)
         }
         for (uint32_t i = 0; i < numValues; i++) {
             int64_t docxy(pos[i]);
-            LOG(info, "doc %u has docxy %zu", docId, docxy);
+            LOG(spam, "doc %u has docxy %zu", docId, docxy);
             if ( ! location.getzFailBoundingBoxTest(docxy)) {
                 int32_t docx = 0;
                 int32_t docy = 0;
                 vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-                LOG(info, "decode zcurve: docx %u, docy %u", docx, docy);
+                LOG(spam, "decode zcurve: docx %u, docy %u", docx, docy);
                 uint32_t dx = (location.getX() > docx)
                               ? location.getX() - docx
                               : docx - location.getX();
-                LOG(info, "dx : %u", dx);
+                LOG(spam, "dx : %u", dx);
                 if (location.getXAspect() != 0)
                     dx = ((uint64_t) dx * location.getXAspect()) >> 32;
-                LOG(info, "d'* : %u", dx);
+                LOG(spam, "d'* : %u", dx);
 
                 uint32_t dy = (location.getY() > docy)
                               ? location.getY() - docy
                               : docy - location.getY();
-                LOG(info, "dy : %u", dx);
+                LOG(spam, "dy : %u", dx);
                 uint64_t dist2 = (uint64_t) dx * dx + (uint64_t) dy * dy;
-                LOG(info, "dist^2 : %zu", dist2);
+                LOG(spam, "dist^2 : %zu", dist2);
                 if (dist2 <= _radius2) {
                     setDocId(docId);
                     return;
                 }
             } else {
-                LOG(info, "%u[%u] zFailBoundingBoxTest", docId, i);
+                LOG(spam, "%u[%u] zFailBoundingBoxTest", docId, i);
             }
         }
 
