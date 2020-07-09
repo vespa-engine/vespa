@@ -82,7 +82,8 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
 feature_t
 DistanceExecutor::calculateDistance(uint32_t docId)
 {
-    if ((! _locations.empty()) && _pos != nullptr) {
+    if ((! _locations.empty()) && (_pos != nullptr)) {
+        LOG(info, "calculate 2D Z-distance from %zu locations", _locations.size());
         return calculate2DZDistance(docId);
     }
     return DEFAULT_DISTANCE;
@@ -103,14 +104,19 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
         int32_t loc_x = loc->getXPosition();
         int32_t loc_y = loc->getYPosition();
         uint64_t loc_a = loc->getXAspect();
+        LOG(info, "location: x=%u, y=%u, aspect=%zu", loc_x, loc_y, loc_a);
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
             uint32_t dx = (loc_x > docx) ? (loc_x - docx) : (docx - loc_x);
+            LOG(info, "dx = %u", dx);
             if (loc_a != 0) {
                 dx = (uint64_t(dx) * loc_a) >> 32;
             }
+            LOG(info, "dx' = %u", dx);
             uint32_t dy = (loc_y > docy) ? (loc_y - docy) : (docy - loc_y);
+            LOG(info, "dy = %u", dy);
             uint64_t sqdist = (uint64_t) dx * dx + (uint64_t) dy * dy;
+            LOG(info, "sqdist = %zu", sqdist);
             if (sqdist < sqabsdist) {
                 sqabsdist = sqdist;
             }
@@ -265,10 +271,10 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
         }
     }
     if (matching_locs.empty() && other_locs.empty()) {
-        LOG(debug, "DistanceBlueprint::createExecutor no valid locations");
+        LOG(warning, "DistanceBlueprint::createExecutor no valid locations");
         return stash.create<DistanceExecutor>(matching_locs, nullptr);
     }
-    LOG(debug, "DistanceBlueprint::createExecutor location.valid='%s', attribute='%s'",
+    LOG(info, "DistanceBlueprint::createExecutor location.valid='%s', attribute='%s'",
         "true", _arg_string.c_str());
 
     const search::attribute::IAttributeVector * pos = nullptr;
@@ -289,8 +295,8 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
             LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
         }
     }
-    return stash.create<DistanceExecutor>(matching_locs.empty() ? other_locs : matching_locs,
-                                          pos);
+    LOG(info, "use %s with pos=%p", matching_locs.empty() ? "other" : "matching", pos);
+    return stash.create<DistanceExecutor>(matching_locs.empty() ? other_locs : matching_locs, pos);
 }
 
 }
