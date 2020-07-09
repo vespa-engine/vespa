@@ -187,7 +187,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         v->VisitAND(&item, 2);
     }
     while (rc && iterator.next()) {
-        bool isSpecialToken = search::ParseItem::getFlag(iterator.getFlags(), search::ParseItem::IFLAG_SPECIALTOKEN);
+        bool isSpecialToken = iterator.hasSpecialTokenFlag();
         switch (iterator.getType()) {
         case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:
@@ -241,10 +241,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             if (!v->VisitPHRASE(&item, iterator.getArity()))
                 rc = SkipItem(&iterator);
             break;
-        case search::ParseItem::ITEM_PAREN:
-            if (!v->VisitOther(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
-            break;
         case search::ParseItem::ITEM_PREFIXTERM:
         case search::ParseItem::ITEM_SUBSTRINGTERM:
             {
@@ -273,6 +269,8 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_REGEXP:
         case search::ParseItem::ITEM_PREDICATE_QUERY:
         case search::ParseItem::ITEM_SAME_ELEMENT:
+        case search::ParseItem::ITEM_NEAREST_NEIGHBOR:
+        case search::ParseItem::ITEM_LOCATION_TERM:
             if (!v->VisitOther(&item, iterator.getArity())) {
                 rc = SkipItem(&iterator);
             }

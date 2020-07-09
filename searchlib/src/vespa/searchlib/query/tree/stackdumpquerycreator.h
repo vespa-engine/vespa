@@ -6,7 +6,6 @@
 #include "querybuilder.h"
 #include "term.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/vespalib/objects/hexdump.h>
 
 namespace search::query {
@@ -28,10 +27,10 @@ public:
         while (!builder.hasError() && queryStack.next()) {
             Term *t = createQueryTerm(queryStack, builder, pureTermView);
             if (!builder.hasError() && t) {
-                if (queryStack.getFlags() & ParseItem::IFLAG_NORANK) {
+                if (queryStack.hasNoRankFlag()) {
                     t->setRanked(false);
                 }
-                if (queryStack.getFlags() & ParseItem::IFLAG_NOPOSITIONDATA) {
+                if (queryStack.hasNoPositionDataFlag()) {
                     t->setPositionData(false);
                 }
             }
@@ -142,11 +141,15 @@ private:
                 t = &builder.addStringTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUFFIXTERM) {
                 t = &builder.addSuffixTerm(term, view, id, weight);
+            } else if (type == ParseItem::ITEM_LOCATION_TERM) {
+                Location loc(term);
+                t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
                 if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
                     Range range(term);
                     t = &builder.addRangeTerm(range, view, id, weight);
                 } else if (term[0] == '(') {
+                    // TODO: handled above, should remove this block
                     Location loc(term);
                     t = &builder.addLocationTerm(loc, view, id, weight);
                 } else {

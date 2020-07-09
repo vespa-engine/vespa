@@ -79,9 +79,11 @@ RawBuf::expandBuf(size_t needlen)
 void
 RawBuf::append(const void *data, size_t len)
 {
-    ensureSize(len);
-    memcpy(_bufFillPos, data, len);
-    _bufFillPos += len;
+    if (__builtin_expect(len != 0, true)) {
+        ensureSize(len);
+        memcpy(_bufFillPos, data, len);
+        _bufFillPos += len;
+    }
 }
 
 void

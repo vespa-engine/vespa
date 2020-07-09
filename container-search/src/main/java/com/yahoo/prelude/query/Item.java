@@ -42,7 +42,7 @@ public abstract class Item implements Cloneable {
         WORD(4),
         INT(5),
         PHRASE(6),
-        PAREN(7),
+        PAREN(7), // TODO not used - remove on Vespa 8
         PREFIX(8),
         SUBSTRING(9),
         NEAR(11),
@@ -60,7 +60,8 @@ public abstract class Item implements Cloneable {
         PREDICATE_QUERY(23),
         REGEXP(24),
         WORD_ALTERNATIVES(25),
-        NEAREST_NEIGHBOR(26);
+        NEAREST_NEIGHBOR(26),
+        LOCATION_TERM(27);
 
         public final int code;
 
