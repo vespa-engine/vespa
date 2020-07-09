@@ -66,6 +66,65 @@ import static com.yahoo.slime.Type.LONG;
 import static com.yahoo.slime.Type.OBJECT;
 import static com.yahoo.slime.Type.STRING;
 
+import static com.yahoo.search.yql.YqlParser.ACCENT_DROP;
+import static com.yahoo.search.yql.YqlParser.ALTERNATIVES;
+import static com.yahoo.search.yql.YqlParser.AND_SEGMENTING;
+import static com.yahoo.search.yql.YqlParser.ANNOTATIONS;
+import static com.yahoo.search.yql.YqlParser.APPROXIMATE;
+import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
+import static com.yahoo.search.yql.YqlParser.BOUNDS;
+import static com.yahoo.search.yql.YqlParser.BOUNDS_LEFT_OPEN;
+import static com.yahoo.search.yql.YqlParser.BOUNDS_OPEN;
+import static com.yahoo.search.yql.YqlParser.BOUNDS_RIGHT_OPEN;
+import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
+import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
+import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
+import static com.yahoo.search.yql.YqlParser.DEFAULT_TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
+import static com.yahoo.search.yql.YqlParser.DISTANCE;
+import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
+import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
+import static com.yahoo.search.yql.YqlParser.EQUIV;
+import static com.yahoo.search.yql.YqlParser.FILTER;
+import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
+import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
+import static com.yahoo.search.yql.YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
+import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
+import static com.yahoo.search.yql.YqlParser.LABEL;
+import static com.yahoo.search.yql.YqlParser.NEAR;
+import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
+import static com.yahoo.search.yql.YqlParser.NFKC;
+import static com.yahoo.search.yql.YqlParser.NORMALIZE_CASE;
+import static com.yahoo.search.yql.YqlParser.ONEAR;
+import static com.yahoo.search.yql.YqlParser.ORIGIN;
+import static com.yahoo.search.yql.YqlParser.ORIGIN_LENGTH;
+import static com.yahoo.search.yql.YqlParser.ORIGIN_OFFSET;
+import static com.yahoo.search.yql.YqlParser.ORIGIN_ORIGINAL;
+import static com.yahoo.search.yql.YqlParser.PHRASE;
+import static com.yahoo.search.yql.YqlParser.PREDICATE;
+import static com.yahoo.search.yql.YqlParser.PREFIX;
+import static com.yahoo.search.yql.YqlParser.RANGE;
+import static com.yahoo.search.yql.YqlParser.RANK;
+import static com.yahoo.search.yql.YqlParser.RANKED;
+import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
+import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
+import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
+import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
+import static com.yahoo.search.yql.YqlParser.STEM;
+import static com.yahoo.search.yql.YqlParser.SUBSTRING;
+import static com.yahoo.search.yql.YqlParser.SUFFIX;
+import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
+import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
+import static com.yahoo.search.yql.YqlParser.URI;
+import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
+import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
+import static com.yahoo.search.yql.YqlParser.WAND;
+import static com.yahoo.search.yql.YqlParser.WEAK_AND;
+import static com.yahoo.search.yql.YqlParser.WEIGHT;
+import static com.yahoo.search.yql.YqlParser.WEIGHTED_SET;
+
 /**
  * The Select query language.
  *
@@ -75,6 +134,14 @@ import static com.yahoo.slime.Type.STRING;
  */
 public class SelectParser implements Parser {
 
+    private static final String AND = "and";
+    private static final String AND_NOT = "and_not";
+    private static final String CALL = "call";
+    private static final String CONTAINS = "contains";
+    private static final String EQ = "equals";
+    private static final String MATCHES = "matches";
+    private static final String OR = "or";
+
     Parsable query;
     private final IndexFacts indexFacts;
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
@@ -82,65 +149,6 @@ public class SelectParser implements Parser {
     private final Normalizer normalizer;
     private IndexFacts.Session indexFactsSession;
 
-    // YQL parameters and functions
-    private static final String DESCENDING_HITS_ORDER = "descending";
-    private static final String ASCENDING_HITS_ORDER = "ascending";
-    private static final Integer DEFAULT_TARGET_NUM_HITS = 10;
-    private static final String ORIGIN_LENGTH = "length";
-    private static final String ORIGIN_OFFSET = "offset";
-    private static final String ORIGIN = "origin";
-    private static final String ORIGIN_ORIGINAL = "original";
-    private static final String CONNECTION_ID = "id";
-    private static final String CONNECTION_WEIGHT = "weight";
-    private static final String CONNECTIVITY = "connectivity";
-    private static final String ANNOTATIONS = "annotations";
-    private static final String NFKC = "nfkc";
-    private static final String USER_INPUT_LANGUAGE = "language";
-    private static final String ACCENT_DROP = "accentDrop";
-    private static final String ALTERNATIVES = "alternatives";
-    private static final String AND_SEGMENTING = "andSegmenting";
-    private static final String APPROXIMATE = "approximate";
-    private static final String DISTANCE = "distance";
-    private static final String DOT_PRODUCT = "dotProduct";
-    private static final String EQUIV = "equiv";
-    private static final String FILTER = "filter";
-    private static final String GEO_LOCATION = "geoLocation";
-    private static final String HIT_LIMIT = "hitLimit";
-    private static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
-    private static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
-    private static final String LABEL = "label";
-    private static final String NEAR = "near";
-    private static final String NEAREST_NEIGHBOR = "nearestNeighbor";
-    private static final String NORMALIZE_CASE = "normalizeCase";
-    private static final String ONEAR = "onear";
-    private static final String PHRASE = "phrase";
-    private static final String PREDICATE = "predicate";
-    private static final String PREFIX = "prefix";
-    private static final String RANKED = "ranked";
-    private static final String RANK = "rank";
-    private static final String SAME_ELEMENT = "sameElement";
-    private static final String SCORE_THRESHOLD = "scoreThreshold";
-    private static final String SIGNIFICANCE = "significance";
-    private static final String STEM = "stem";
-    private static final String SUBSTRING = "substring";
-    private static final String SUFFIX = "suffix";
-    private static final String TARGET_HITS = "targetHits";
-    private static final String TARGET_NUM_HITS = "targetNumHits";
-    private static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
-    private static final String UNIQUE_ID = "id";
-    private static final String USE_POSITION_DATA = "usePositionData";
-    private static final String WAND = "wand";
-    private static final String WEAK_AND = "weakAnd";
-    private static final String WEIGHTED_SET = "weightedSet";
-    private static final String WEIGHT = "weight";
-    private static final String AND = "and";
-    private static final String AND_NOT = "and_not";
-    private static final String OR = "or";
-    private static final String EQ = "equals";
-    private static final String RANGE = "range";
-    private static final String CONTAINS = "contains";
-    private static final String MATCHES = "matches";
-    private static final String CALL = "call";
     private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
 
     public SelectParser(ParserEnvironment environment) {
