@@ -38,6 +38,6 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
 
         Duration lockExpiryTime = Duration.ofDays(1);
         int deleted = applicationRepository.deleteExpiredLocks(lockExpiryTime);
-        log.log(LogLevel.INFO, "Deleted " + deleted + " expired locks, expiry time " + lockExpiryTime);
+        log.log(LogLevel.INFO, "Deleted " + deleted + " locks older than " + lockExpiryTime);
     }
 }
