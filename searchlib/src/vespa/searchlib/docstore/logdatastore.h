@@ -203,6 +203,8 @@ private:
     NameIdSet eraseIncompleteCompactedFiles(NameIdSet partList);
     void internalFlushAll();
 
+    bool isTotalDiskBloatExceeded() const;
+
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
     FileId allocateFileId(const LockGuard & guard);
     void setNewFileChunk(const LockGuard & guard, FileChunk::UP fileChunk);

@@ -313,16 +313,23 @@ LogDataStore::compact(uint64_t syncToken)
     }
 }
 
+bool
+LogDataStore::isTotalDiskBloatExceeded() const {
+    const size_t diskFootPrint = getDiskFootprint();
+    const size_t maxConfiguredDiskBloat = diskFootPrint * _config.getMaxDiskBloatFactor();
+    return getDiskBloat() > maxConfiguredDiskBloat;
+}
+
 size_t
 LogDataStore::getMaxCompactGain() const
 {
-    const size_t diskFootPrint = getDiskFootprint();
-    const size_t maxConfiguredDiskBloat = diskFootPrint * _config.getMaxDiskBloatFactor();
-    double maxSpread = getMaxBucketSpread();
-    size_t bloat = getDiskBloat();
-    if (bloat < maxConfiguredDiskBloat) {
-        bloat = 0;
+    size_t bloat = 0;
+    if ( isTotalDiskBloatExceeded() ) {
+        bloat = getDiskBloat();
     }
+
+    const size_t diskFootPrint = getDiskFootprint();
+    double maxSpread = getMaxBucketSpread();
     size_t spreadAsBloat = diskFootPrint * (1.0 - 1.0/maxSpread);
     if ( maxSpread < _config.getMaxBucketSpread()) {
         spreadAsBloat = 0;
@@ -402,7 +409,7 @@ LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit)
         }
     }
     std::pair<bool, FileId> retval(false, FileId(-1));
-    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit)) {
+    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit) && isTotalDiskBloatExceeded()) {
         retval.first = true;
         retval.second = worstBloat.begin()->second;
     } else if ( ! worstSpread.empty() && (worstSpread.begin()->first > spreadLimit)) {
