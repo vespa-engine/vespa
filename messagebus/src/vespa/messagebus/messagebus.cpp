@@ -83,13 +83,13 @@ public:
 
 namespace mbus {
 
-MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
+MessageBus::MessageBus(INetwork &net, ProtocolSet protocols, bool skip_request_thread, bool skip_reply_thread) :
     _network(net),
     _lock(),
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
+    _msn(std::make_unique<Messenger>(skip_request_thread, skip_reply_thread)),
     _resender(),
     _maxPendingCount(0),
     _maxPendingSize(0),
@@ -112,7 +112,7 @@ MessageBus::MessageBus(INetwork &net, const MessageBusParams &params) :
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
+    _msn(std::make_unique<Messenger>(true, true)),
     _resender(),
     _maxPendingCount(params.getMaxPendingCount()),
     _maxPendingSize(params.getMaxPendingSize()),

@@ -23,6 +23,8 @@ private:
     bool              _tcpNoDelay;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;
+    bool              _skip_request_thread;
+    bool              _skip_reply_thread;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
 
@@ -69,10 +71,6 @@ public:
     const config::ConfigUri & getSlobrokConfig() const {
         return _slobrokConfig;
     }
-
-    /**
-     *
-     */
 
     /**
      * Returns the port to listen to.
@@ -190,14 +188,28 @@ public:
         return *this;
     }
 
-    uint32_t getDispatchOnDecode() const { return _dispatchOnDecode; }
+    bool getDispatchOnDecode() const { return _dispatchOnDecode; }
 
     RPCNetworkParams &setDispatchOnEncode(bool dispatchOnEncode) {
         _dispatchOnEncode = dispatchOnEncode;
         return *this;
     }
 
-    uint32_t getDispatchOnEncode() const { return _dispatchOnEncode; }
+    bool getDispatchOnEncode() const { return _dispatchOnEncode; }
+
+    RPCNetworkParams &setSkipRequestThread(bool skip_request_thread) {
+        _skip_request_thread = skip_request_thread;
+        return *this;
+    }
+
+    bool getSkipRequestThread() const { return _skip_request_thread; }
+
+    RPCNetworkParams &setSkipReplyThread(bool skip_reply_thread) {
+        _skip_reply_thread = skip_reply_thread;
+        return *this;
+    }
+
+    bool getSkipReplyThread() const { return _skip_reply_thread; }
 };
 
 }

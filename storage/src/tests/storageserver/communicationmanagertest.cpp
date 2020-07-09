@@ -158,6 +158,7 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
                                  storConfig.getConfigId());
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
+    storage.open();
 
     // Message dequeing does not start before we invoke `open` on the storage
     // link chain, so we enqueue messages in randomized priority order before
@@ -168,7 +169,6 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     for (auto pri : pris) {
         storage.enqueue(createDummyCommand(pri));
     }
-    storage.open();
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
     for (size_t i = 0; i < pris.size(); ++i) {
@@ -191,12 +191,12 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
                                  storConfig.getConfigId());
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
+    storage.open();
 
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
         storage.enqueue(createDummyCommand(pri)->makeReply());
     }
-    storage.open();
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
     // Want FIFO order for replies, not priority-sorted order.

@@ -125,7 +125,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
                 toString().c_str(), msg->toString().c_str(), stateToString(getState()));
             assert(false);
     }
-    assert(msg.get());
+    assert(msg);
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
@@ -167,7 +167,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
                 toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
             assert(false);
     }
-    assert(msg.get());
+    assert(msg);
     if (isTop()) {
         ostringstream ost;
         ost << "Unhandled message at top of chain " << *msg << ".";

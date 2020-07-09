@@ -83,7 +83,7 @@ public:
      * @param network   The network to associate with.
      * @param protocols An array of protocols to register.
      */
-    MessageBus(INetwork &net, ProtocolSet protocols);
+    MessageBus(INetwork &net, ProtocolSet protocols, bool skip_request_thread, bool skip_reply_thread);
 
     /**
      * Constructs an instance of message bus. This requires a network object that it will associate with. This

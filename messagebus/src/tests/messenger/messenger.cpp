@@ -6,8 +6,6 @@
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
 class ThrowException : public Messenger::ITask {
 public:
     void run() override {
@@ -39,20 +37,17 @@ public:
     }
 };
 
-int
-Test::Main()
-{
-    TEST_INIT("messenger_test");
+TEST("messenger_test") {
 
-    Messenger msn;
+    Messenger msn(true, true);
     msn.start();
 
     vespalib::Barrier barrier(2);
-    msn.enqueue(Messenger::ITask::UP(new ThrowException()));
-    msn.enqueue(Messenger::ITask::UP(new BarrierTask(barrier)));
+    msn.enqueue(std::make_unique<ThrowException>());
+    msn.enqueue(std::make_unique<BarrierTask>(barrier));
 
     barrier.await();
     ASSERT_TRUE(msn.isEmpty());
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
