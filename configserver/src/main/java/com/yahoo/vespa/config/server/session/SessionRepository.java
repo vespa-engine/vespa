@@ -273,7 +273,7 @@ public class SessionRepository {
             if (session == null) continue; // Internal sessions not in synch with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
-                log.log(Level.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                log.log(Level.FINE, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 session.delete();
                 deleted++;
             }
@@ -286,7 +286,7 @@ public class SessionRepository {
         for (var lock : curator.getChildren(locksPath)) {
             Path path = locksPath.append(lock);
             if (zooKeeperNodeCreated(path).orElse(clock.instant()).isBefore(clock.instant().minus(expiryTime))) {
-                log.log(Level.INFO, "Lock  " + path + " has expired, deleting it");
+                log.log(Level.FINE, "Lock  " + path + " has expired, deleting it");
                 curator.delete(path);
                 deleted++;
             }
