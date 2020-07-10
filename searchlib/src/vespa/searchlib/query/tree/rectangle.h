@@ -15,10 +15,4 @@ struct Rectangle {
         : left(l), top(t), right(r), bottom(b) {}
 };
 
-inline bool operator==(const Rectangle &r1, const Rectangle &r2) {
-    return r1.left == r2.left && r1.right == r2.right
-        && r1.top == r2.top && r1.bottom == r2.bottom;
 }
-
-}
-
