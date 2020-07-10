@@ -21,22 +21,14 @@ parseLocation(const string & location_str)
     if (location_str.empty()) {
         return fefLocation;
     }
-    string::size_type pos = location_str.find(':');
-    if (pos == string::npos) {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'. Location ignored.",
-                     location_str.c_str());
-        return fefLocation;
-    }
-    string attr = location_str.substr(0, pos);
-    const string location = location_str.substr(pos + 1);
-
-    search::common::GeoLocationSpec locationSpec;
-    if (!locationSpec.parseOldFormat(location)) {
+    search::common::GeoLocationParser locationParser;
+    if (!locationParser.parseOldFormatWithField(location_str)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
-                     location.c_str(), locationSpec.getParseError());
+                     location_str.c_str(), locationParser.getParseError());
         return fefLocation;
     }
-    fefLocation.setAttribute(attr);
+    auto locationSpec = locationParser.spec();
+    fefLocation.setAttribute(locationSpec.getFieldName());
     fefLocation.setXPosition(locationSpec.getX());
     fefLocation.setYPosition(locationSpec.getY());
     fefLocation.setXAspect(locationSpec.getXAspect());

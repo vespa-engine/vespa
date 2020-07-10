@@ -28,9 +28,9 @@ namespace search::common {
 
 GeoLocationSpec::GeoLocationSpec() :
       _valid(false),
-      _hasPoint(false),
-      _hasRadius(false),
-      _hasBoundingBox(false),
+      _has_point(false),
+      _has_radius(false),
+      _has_bounding_box(false),
       _field_name(),
       _x(0),
       _y(0),
@@ -39,26 +39,9 @@ GeoLocationSpec::GeoLocationSpec() :
       _min_x(std::numeric_limits<int32_t>::min()),
       _max_x(std::numeric_limits<int32_t>::max()),
       _min_y(std::numeric_limits<int32_t>::min()),
-      _max_y(std::numeric_limits<int32_t>::max()),
-      _parseError(NULL)
-{
-}
+      _max_y(std::numeric_limits<int32_t>::max())
+{}
 
-
-bool
-GeoLocationSpec::getDimensionality(const char * &p) {
-    if (*p == '2') {
-        p++;
-        if (*p != ',') {
-            _parseError = "Missing comma after 2D dimensionality";
-            return false;
-        }
-        p++;
-        return true;
-    }
-    _parseError = "Bad dimensionality spec, not 2D";
-    return false;
-}
 
 std::string
 GeoLocationSpec::getLocationString() const
@@ -87,8 +70,38 @@ GeoLocationSpec::getLocationString() const
     return loc.str();
 }
 
+std::string
+GeoLocationSpec::getLocationStringWithField() const
+{
+    if (hasFieldName()) {
+        return getFieldName() + ":" + getLocationString();
+    } else {
+        return getLocationString();
+    }
+}
+
+
+GeoLocationParser::GeoLocationParser()
+  : GeoLocationSpec(), _parseError(NULL)
+{}
+
 bool
-GeoLocationSpec::parseOldFormatWithField(const std::string &str)
+GeoLocationParser::getDimensionality(const char * &p) {
+    if (*p == '2') {
+        p++;
+        if (*p != ',') {
+            _parseError = "Missing comma after 2D dimensionality";
+            return false;
+        }
+        p++;
+        return true;
+    }
+    _parseError = "Bad dimensionality spec, not 2D";
+    return false;
+}
+
+bool
+GeoLocationParser::parseOldFormatWithField(const std::string &str)
 {
      auto sep = str.find(':');
      if (sep == std::string::npos) {
@@ -101,7 +114,7 @@ GeoLocationSpec::parseOldFormatWithField(const std::string &str)
 }
 
 bool
-GeoLocationSpec::parseOldFormat(const std::string &locStr)
+GeoLocationParser::parseOldFormat(const std::string &locStr)
 {
     bool foundBoundingBox = false;
     bool foundLoc = false;
@@ -201,9 +214,8 @@ GeoLocationSpec::parseOldFormat(const std::string &locStr)
             return false;
         }
     }
-
     if (foundLoc) {
-        _hasRadius = (_radius != std::numeric_limits<uint32_t>::max());
+        _has_radius = (_radius != std::numeric_limits<uint32_t>::max());
         uint32_t maxdx = _radius;
         if (_x_aspect != 0) {
             uint64_t maxdx2 = ((static_cast<uint64_t>(_radius) << 32) + 0xffffffffu) /
@@ -225,10 +237,13 @@ GeoLocationSpec::parseOldFormat(const std::string &locStr)
         if (implied_max_y < _max_y) _max_y = implied_max_y;
         if (implied_min_y > _min_y) _min_y = implied_min_y;
     }
-    _hasPoint = foundLoc;
-    _hasBoundingBox = foundBoundingBox || _hasRadius;
-    _valid = (_hasPoint || _hasBoundingBox);
+    _has_point = foundLoc;
+    _has_bounding_box = ((_min_x != std::numeric_limits<int32_t>::min()) ||
+                         (_max_x != std::numeric_limits<int32_t>::max()) ||
+                         (_min_y != std::numeric_limits<int32_t>::min()) ||
+                         (_max_y != std::numeric_limits<int32_t>::max()));
+    _valid = (_has_point || _has_bounding_box);
     return _valid;
 }
 
-}
+} // namespace

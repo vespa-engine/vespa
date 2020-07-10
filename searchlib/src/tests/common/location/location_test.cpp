@@ -3,43 +3,16 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 
-
 using search::common::Location;
-
-bool is_parseable(const char *str) {
-    Location loc;
-    return loc.parse(str);
-}
+using search::common::GeoLocationParser;
+using search::common::GeoLocationSpec;
 
 Location parse(const char *str) {
-    Location loc;
-    if (!EXPECT_TRUE(loc.parse(str))) {
-        fprintf(stderr, "  parse error: %s\n", loc.getParseError());
+    GeoLocationParser parser;
+    if (!EXPECT_TRUE(parser.parseOldFormat(str))) {
+        fprintf(stderr, "  parse error: %s\n", parser.getParseError());
     }
-    return loc;
-}
-
-TEST("require that malformed bounding boxes are not parseable") {
-    EXPECT_TRUE(is_parseable("[2,10,20,30,40]"));
-    EXPECT_FALSE(is_parseable("[2,10,20,30,40][2,10,20,30,40]"));
-    EXPECT_FALSE(is_parseable("[1,10,20,30,40]"));
-    EXPECT_FALSE(is_parseable("[3,10,20,30,40]"));
-    EXPECT_FALSE(is_parseable("[2, 10, 20, 30, 40]"));
-    EXPECT_FALSE(is_parseable("[2,10,20,30,40"));
-    EXPECT_FALSE(is_parseable("[2,10,20,30]"));
-    EXPECT_FALSE(is_parseable("[10,20,30,40]"));
-}
-
-TEST("require that malformed circles are not parseable") {
-    EXPECT_TRUE(is_parseable("(2,10,20,5,0,0,0)"));
-    EXPECT_FALSE(is_parseable("(2,10,20,5,0,0,0)(2,10,20,5,0,0,0)"));
-    EXPECT_FALSE(is_parseable("(1,10,20,5,0,0,0)"));
-    EXPECT_FALSE(is_parseable("(3,10,20,5,0,0,0)"));
-    EXPECT_FALSE(is_parseable("(2, 10, 20, 5, 0, 0, 0)"));
-    EXPECT_FALSE(is_parseable("(2,10,20,5)"));
-    EXPECT_FALSE(is_parseable("(2,10,20,5,0,0,0"));
-    EXPECT_FALSE(is_parseable("(2,10,20,5,0,0,0,1000"));
-    EXPECT_FALSE(is_parseable("(10,20,5)"));
+    return Location(parser.spec());
 }
 
 TEST("require that bounding boxes can be parsed") {
