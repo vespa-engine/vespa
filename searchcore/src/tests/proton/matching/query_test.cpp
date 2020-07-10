@@ -730,7 +730,8 @@ void checkQueryAddsLocation(Test &test, const string &loc_string) {
     SearchIterator::UP search = query.createSearch(*md);
     test.ASSERT_TRUE(search.get());
     if (!test.EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_string))) {
-        fprintf(stderr, "search (missing loc_string): %s", search->asString().c_str());
+        fprintf(stderr, "search (missing loc_string '%s'): %s",
+                loc_string.c_str(), search->asString().c_str());
     }
 }
 
