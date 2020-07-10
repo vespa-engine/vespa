@@ -44,7 +44,7 @@ GeoLocationSpec::GeoLocationSpec() :
 
 
 std::string
-GeoLocationSpec::getLocationString() const
+GeoLocationSpec::getOldFormatLocationString() const
 {
     vespalib::asciistream loc;
     if (hasPoint()) {
@@ -71,12 +71,12 @@ GeoLocationSpec::getLocationString() const
 }
 
 std::string
-GeoLocationSpec::getLocationStringWithField() const
+GeoLocationSpec::getOldFormatLocationStringWithField() const
 {
     if (hasFieldName()) {
-        return getFieldName() + ":" + getLocationString();
+        return getFieldName() + ":" + getOldFormatLocationString();
     } else {
-        return getLocationString();
+        return getOldFormatLocationString();
     }
 }
 

@@ -27,8 +27,8 @@ public:
     int32_t getMaxX() const { return _max_x; }
     int32_t getMaxY() const { return _max_y; }
 
-    std::string getLocationString() const;
-    std::string getLocationStringWithField() const;
+    std::string getOldFormatLocationString() const;
+    std::string getOldFormatLocationStringWithField() const;
     std::string getFieldName() const { return _field_name; }
 
 protected:

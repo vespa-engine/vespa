@@ -8,7 +8,7 @@ namespace search::common {
 Location::Location() : _zBoundingBox(0,0,0,0) {}
 
 Location::Location(const GeoLocationSpec &other)
-    : _zBoundingBox(0,0,0,0)
+  : Location()
 {
     setSpec(other);
 }
@@ -24,17 +24,5 @@ Location::setSpec(const GeoLocationSpec &other)
                                             getMinY(), getMaxY());
     }
 }
-
-
-#if 0
-bool Location::parse(const std::string &locStr) {
-    bool valid = GeoLocationSpec::parseOldFormat(locStr);
-    if (valid) {
-        _zBoundingBox = vespalib::geo::ZCurve::BoundingBox(getMinX(), getMaxX(),
-                                                           getMinY(), getMaxY());
-    }
-    return valid;
-}
-#endif
 
 } // namespace
