@@ -31,6 +31,7 @@ GeoLocationSpec::GeoLocationSpec() :
       _hasPoint(false),
       _hasRadius(false),
       _hasBoundingBox(false),
+      _field_name(),
       _x(0),
       _y(0),
       _x_aspect(0u),
@@ -84,6 +85,19 @@ GeoLocationSpec::getLocationString() const
             << "]" ;
     }
     return loc.str();
+}
+
+bool
+GeoLocationSpec::parseOldFormatWithField(const std::string &str)
+{
+     auto sep = str.find(':');
+     if (sep == std::string::npos) {
+         _parseError = "Location string lacks field specification.";
+         return false;
+     }
+     _field_name = str.substr(0, sep);
+     std::string only_loc = str.substr(sep + 1);
+     return parseOldFormat(only_loc);
 }
 
 bool

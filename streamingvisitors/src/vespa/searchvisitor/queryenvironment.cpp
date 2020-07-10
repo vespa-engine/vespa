@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryenvironment.h"
-#include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.queryenvironment");
@@ -30,8 +30,8 @@ parseLocation(const string & location_str)
     string attr = location_str.substr(0, pos);
     const string location = location_str.substr(pos + 1);
 
-    search::common::Location locationSpec;
-    if (!locationSpec.parse(location)) {
+    search::common::GeoLocationSpec locationSpec;
+    if (!locationSpec.parseOldFormat(location)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
                      location.c_str(), locationSpec.getParseError());
         return fefLocation;
