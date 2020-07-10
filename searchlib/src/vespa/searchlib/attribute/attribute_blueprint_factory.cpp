@@ -248,13 +248,13 @@ public:
     LocationPostFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
-          _location()
+          _location(loc)
     {
+        uint32_t estHits = 0;
         if (loc.isValid()) {
             _location.setVec(attribute);
-            _location.setSpec(loc);
+            estHits = _attribute.getNumDocs();
         }
-        uint32_t estHits = _attribute.getNumDocs();
         LOG(debug, "location %s in attribute with numdocs %u", loc.getDebugString().c_str(), estHits);
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);

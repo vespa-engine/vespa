@@ -8,17 +8,10 @@ namespace search::common {
 Location::Location() : _zBoundingBox(0,0,0,0) {}
 
 Location::Location(const GeoLocationSpec &other)
-  : Location()
-{
-    setSpec(other);
-}
-
-void
-Location::setSpec(const GeoLocationSpec &other)
+  : GeoLocationSpec(other),
+    _zBoundingBox(0,0,0,0)
 {
     using vespalib::geo::ZCurve;
-
-    GeoLocationSpec::operator=(other);
     if (isValid()) {
         _zBoundingBox = ZCurve::BoundingBox(getMinX(), getMaxX(),
                                             getMinY(), getMaxY());
