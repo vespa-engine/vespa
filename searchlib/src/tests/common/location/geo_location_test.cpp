@@ -8,12 +8,12 @@ using search::common::GeoLocationSpec;
 
 bool is_parseable(const char *str) {
     GeoLocationSpec loc;
-    return loc.parse(str);
+    return loc.parseOldFormat(str);
 }
 
 GeoLocationSpec parse(const char *str) {
     GeoLocationSpec loc;
-    EXPECT_TRUE(loc.parse(str));
+    EXPECT_TRUE(loc.parseOldFormat(str));
     return loc;
 }
 
