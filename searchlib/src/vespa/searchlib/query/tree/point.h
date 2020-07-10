@@ -13,8 +13,4 @@ struct Point {
     Point(int64_t x_in, int64_t y_in) : x(x_in), y(y_in) {}
 };
 
-inline bool operator==(const Point &p1, const Point &p2) {
-    return p1.x == p2.x && p1.y == p2.y;
-}
-
 }

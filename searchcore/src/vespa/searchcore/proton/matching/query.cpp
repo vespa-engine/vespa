@@ -10,8 +10,6 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/tree/point.h>
-#include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 
 #include <vespa/log/log.h>
