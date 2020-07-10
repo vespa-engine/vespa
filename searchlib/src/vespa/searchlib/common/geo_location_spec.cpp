@@ -42,6 +42,8 @@ GeoLocationSpec::GeoLocationSpec() :
       _max_y(std::numeric_limits<int32_t>::max())
 {}
 
+GeoLocationSpec::GeoLocationSpec(const GeoLocationSpec &other) = default;
+GeoLocationSpec& GeoLocationSpec::operator=(const GeoLocationSpec &other) = default;
 
 std::string
 GeoLocationSpec::getOldFormatLocationString() const

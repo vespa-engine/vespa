@@ -10,54 +10,49 @@ using vespalib::asciistream;
 namespace search::query {
 
 Location::Location(const Point &point, uint32_t max_dist, uint32_t x_aspect) {
-    asciistream loc;
-    loc << "(2"  // dimensionality
-        << "," << point.x
-        << "," << point.y
-        << "," << max_dist
-        << "," << "0"  // table id.
-        << "," << "1"  // rank multiplier.
-        << "," << "0"  // rank only on distance.
-        << "," << x_aspect  // x aspect.
-        << ")";
-    _location_string = loc.str();
+    _x = point.x;
+    _y = point.y;
+    _has_point = true;
+    _radius = max_dist;
+    _has_radius = true;
+    _x_aspect = x_aspect;
+    _valid = true;
 }
 
 Location::Location(const Rectangle &rect,
                    const Point &point, uint32_t max_dist, uint32_t x_aspect)
 {
-    asciistream loc;
-    loc << "(2"  // dimensionality
-        << "," << point.x
-        << "," << point.y
-        << "," << max_dist
-        << "," << "0"  // table id.
-        << "," << "1"  // rank multiplier.
-        << "," << "0"  // rank only on distance.
-        << "," << x_aspect  // x aspect.
-        << ")";
-    loc << "[2," << rect.left
-        << "," << rect.top
-        << "," << rect.right
-        << "," << rect.bottom
-        << "]" ;
-    _location_string = loc.str();
+    _x = point.x;
+    _y = point.y;
+    _has_point = true;
 
+    _radius = max_dist;
+    _has_radius = true;
+
+    _x_aspect = x_aspect;
+
+    _min_x = rect.left;
+    _min_y = rect.top;
+    _max_x = rect.right;
+    _max_y = rect.bottom;
+    _has_bounding_box = true;
+    
+    _valid = true;
 }
 
 
 Location::Location(const Rectangle &rect) {
-    asciistream loc;
-    loc << "[2," << rect.left
-        << "," << rect.top
-        << "," << rect.right
-        << "," << rect.bottom
-        << "]" ;
-    _location_string = loc.str();
+    _min_x = rect.left;
+    _min_y = rect.top;
+    _max_x = rect.right;
+    _max_y = rect.bottom;
+    _has_bounding_box = true;
+    
+    _valid = true;
 }
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
-    return out << loc.getLocationString();
+    return out << loc.getOldFormatLocationString();
 }
 
 }
