@@ -16,6 +16,7 @@ class Location : public DocumentLocations,
 {
 public:
     Location();
+    Location(const GeoLocationSpec& other);
     ~Location() {}
     Location(Location &&) = default;
     bool getRankOnDistance() const { return hasPoint(); }
@@ -23,7 +24,8 @@ public:
     bool getzFailBoundingBoxTest(int64_t docxy) const {
         return _zBoundingBox.getzFailBoundingBoxTest(docxy);
     }
-    bool parse(const std::string &locStr);
+    // bool parse(const std::string &locStr);
+    void setSpec(const GeoLocationSpec& other);
 private:
     GeoLocationSpec _spec;
     vespalib::geo::ZCurve::BoundingBox _zBoundingBox;

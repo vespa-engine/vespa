@@ -4,17 +4,18 @@
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
 
 bool is_parseable(const char *str) {
-    GeoLocationSpec loc;
-    return loc.parseOldFormat(str);
+    GeoLocationParser parser;
+    return parser.parseOldFormat(str);
 }
 
 GeoLocationSpec parse(const char *str) {
-    GeoLocationSpec loc;
-    EXPECT_TRUE(loc.parseOldFormat(str));
-    return loc;
+    GeoLocationParser parser;
+    EXPECT_TRUE(parser.parseOldFormat(str));
+    return parser.spec();
 }
 
 TEST(GeoLocationSpec, malformed_bounding_boxes_are_not_parseable) {

@@ -76,7 +76,7 @@ AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type
             state->_callback.ParseLocation(state);
         }
         assert(state->_parsedLocation);
-        if (state->_parsedLocation->getParseError() == nullptr) {
+        if (state->_parsedLocation->isValid()) {
             forceEmpty = false;
         }
     }

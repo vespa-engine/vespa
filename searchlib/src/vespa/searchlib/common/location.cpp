@@ -7,15 +7,34 @@ namespace search::common {
 
 Location::Location() : _zBoundingBox(0,0,0,0) {}
 
+Location::Location(const GeoLocationSpec &other)
+    : _zBoundingBox(0,0,0,0)
+{
+    setSpec(other);
+}
+
+void
+Location::setSpec(const GeoLocationSpec &other)
+{
+    using vespalib::geo::ZCurve;
+
+    GeoLocationSpec::operator=(other);
+    if (isValid()) {
+        _zBoundingBox = ZCurve::BoundingBox(getMinX(), getMaxX(),
+                                            getMinY(), getMaxY());
+    }
+}
+
+
+#if 0
 bool Location::parse(const std::string &locStr) {
     bool valid = GeoLocationSpec::parseOldFormat(locStr);
     if (valid) {
-        _zBoundingBox = vespalib::geo::ZCurve::BoundingBox(getMinX(),
-                                                           getMaxX(),
-                                                           getMinY(),
-                                                           getMaxY());
+        _zBoundingBox = vespalib::geo::ZCurve::BoundingBox(getMinX(), getMaxX(),
+                                                           getMinY(), getMaxY());
     }
     return valid;
 }
+#endif
 
 } // namespace

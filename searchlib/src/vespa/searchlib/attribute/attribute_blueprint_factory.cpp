@@ -250,8 +250,11 @@ public:
           _attribute(attribute),
           _location()
     {
-        _location.setVec(attribute);
-        _location.parse(loc.getLocationString());
+        search::common::GeoLocationParser parser;
+        if (parser.parseOldFormat(loc.getLocationString())) {
+            _location.setVec(attribute);
+            _location.setSpec(parser.spec());
+        }
         uint32_t estHits = _attribute.getNumDocs();
         LOG(debug, "location %s in attribute with numdocs %u", loc.getLocationString().c_str(), estHits);
         HitEstimate estimate(estHits, estHits == 0);

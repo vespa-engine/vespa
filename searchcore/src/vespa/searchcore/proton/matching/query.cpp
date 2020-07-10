@@ -79,8 +79,8 @@ struct ParsedLocationString {
     bool valid;
     string view;
     search::common::GeoLocationSpec locationSpec;
-    string loc_string;
-    ParsedLocationString() : valid(false), view(), locationSpec(), loc_string() {}
+    string loc_term;
+    ParsedLocationString() : valid(false), view(), locationSpec(), loc_term() {}
     ~ParsedLocationString() {}
 };
   
@@ -89,18 +89,15 @@ ParsedLocationString parseQueryLocationString(string str) {
     if (str.empty()) {
         return retval;
     }
-    string::size_type sep = str.find(':');
-    if (sep == string::npos) {
-        LOG(warning, "Location string '%s' lacks attribute vector specification.", str.c_str());
-        return retval;
-    }
-    retval.view = PositionDataType::getZCurveFieldName(str.substr(0, sep));
-    const string loc = str.substr(sep + 1);
-    if (retval.locationSpec.parseOldFormat(loc)) {
-        retval.loc_string = loc;
+    search::common::GeoLocationParser locationParser;
+    if (locationParser.parseOldFormatWithField(str)) {
+        auto spec = locationParser.spec();
+        retval.locationSpec = spec;
+        retval.view = PositionDataType::getZCurveFieldName(spec.getFieldName());
+        retval.loc_term = str.substr(str.find(':') + 1);
         retval.valid = true;
     } else {
-        LOG(warning, "Location parse error (location: '%s'): %s", loc.c_str(), retval.locationSpec.getParseError());
+        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), locationParser.getParseError());
     }
     return retval;
 }
@@ -119,9 +116,9 @@ void exchangeLocationNodes(const string &location_str,
     for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
         const string view = pterm->getView();
         const string loc = pterm->getTerm().getLocationString();
-        search::common::GeoLocationSpec loc_spec;
-        if (loc_spec.parseOldFormat(loc)) {
-            locationSpecs.emplace_back(view, loc_spec);
+        search::common::GeoLocationParser loc_parser;
+        if (loc_parser.parseOldFormat(loc)) {
+            locationSpecs.emplace_back(view, loc_parser.spec());
         } else {
             LOG(warning, "GeoLocationItem in query had invalid location string: %s", loc.c_str());
         }
@@ -140,7 +137,7 @@ void exchangeLocationNodes(const string &location_str,
     if (parsed.valid) {
         int32_t id = -1;
         Weight weight(100);
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(parsed.loc_string, parsed.view, id, weight));
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(parsed.loc_term, parsed.view, id, weight));
     }
 }
 

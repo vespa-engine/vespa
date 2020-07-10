@@ -181,36 +181,29 @@ DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState * state, sea
     state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
 }
 
-namespace {
-Location *getLocation(const string &loc_str, search::IAttributeManager &attrMgr)
-{
-    LOG(debug, "Filling document locations from location string: %s", loc_str.c_str());
-
-    Location *loc = new Location;
-    string location;
-    string::size_type pos = loc_str.find(':');
-    if (pos != string::npos) {
-        string view = loc_str.substr(0, pos);
-        AttributeGuard::UP vec = attrMgr.getAttribute(view);
-        if (!vec->valid()) {
-            view = PositionDataType::getZCurveFieldName(view);
-            vec = attrMgr.getAttribute(view);
-        }
-        loc->setVecGuard(std::move(vec));
-        location = loc_str.substr(pos + 1);
-    } else {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", loc_str.c_str());
-        location = loc_str;
-    }
-    loc->parse(location);
-    return loc;
-}
-}  // namespace
-
 void
 DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
 {
-    state->_parsedLocation.reset(getLocation(_request.location, _attrMgr));
+    search::common::GeoLocationParser locationParser;
+    if (locationParser.parseOldFormatWithField(_request.location)) {
+        auto spec = locationParser.spec();
+        LOG(debug, "Filling document locations from location string: %s",
+            _request.location.c_str());
+        string view = spec.getFieldName();
+        AttributeGuard::UP vec = _attrMgr.getAttribute(view);
+        if (!vec->valid()) {
+            view = PositionDataType::getZCurveFieldName(view);
+            vec = _attrMgr.getAttribute(view);
+        }
+        state->_parsedLocation = std::make_unique<Location>(spec);
+        state->_parsedLocation->setVecGuard(std::move(vec));
+    } else {
+        state->_parsedLocation = std::make_unique<Location>();
+        if (! _request.location.empty()) {
+            LOG(warning, "Error parsing location string '%s': %s",
+                _request.location.c_str(), locationParser.getParseError());
+        }
+    }
 }
 
 std::unique_ptr<MatchingElements>
