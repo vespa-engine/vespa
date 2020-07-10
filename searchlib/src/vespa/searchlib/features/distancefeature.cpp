@@ -108,15 +108,11 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
             uint32_t dx = (loc_x > docx) ? (loc_x - docx) : (docx - loc_x);
-            LOG(spam, "dx = %u", dx);
             if (loc_a != 0) {
                 dx = (uint64_t(dx) * loc_a) >> 32;
             }
-            LOG(spam, "dx' = %u", dx);
             uint32_t dy = (loc_y > docy) ? (loc_y - docy) : (docy - loc_y);
-            LOG(spam, "dy = %u", dy);
             uint64_t sqdist = (uint64_t) dx * dx + (uint64_t) dy * dy;
-            LOG(spam, "sqdist = %zu", sqdist);
             if (sqdist < sqabsdist) {
                 sqabsdist = sqdist;
             }
