@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
@@ -24,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -47,35 +45,24 @@ public class Container {
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
 
-    private ConfigRetriever configurer;
+    private final ConfigRetriever configurer;
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor, Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
-        this.componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         this.componentDeconstructor = componentDeconstructor;
         this.osgi = osgi;
 
-        Set<ConfigKey<? extends ConfigInstance>> keySet = new HashSet<>();
-        keySet.add(bundlesConfigKey);
-        keySet.add(componentsConfigKey);
-        this.configurer = new ConfigRetriever(keySet, subscriberFactory::getSubscriber);
+        bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
+        componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
+        var bootstrapKeys = Set.of(bundlesConfigKey, componentsConfigKey);
+        this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
     }
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor) {
         this(subscriberFactory, configId, componentDeconstructor, new Osgi() {
         });
-    }
-
-    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
-                                               ComponentGraph newGraph,
-                                               Collection<Bundle> obsoleteBundles) {
-        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
-        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
-        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
-        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
     public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
@@ -93,49 +80,12 @@ public class Container {
         }
     }
 
-    ComponentGraph getNewComponentGraph(ComponentGraph oldGraph) {
-        return getNewComponentGraph(oldGraph, Guice.createInjector(), false);
-    }
-
-    ComponentGraph getNewComponentGraph() {
-        return getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
-    }
-
-    private static String newGraphErrorMessage(long generation, Throwable cause) {
-        String failedFirstMessage = "Failed to set up first component graph";
-        String failedNewMessage = "Failed to set up new component graph";
-        String constructMessage = " due to error when constructing one of the components";
-        String retainMessage = ". Retaining previous component generation.";
-
-        if (generation == 0) {
-            if (cause instanceof ComponentNode.ComponentConstructorException) {
-                return failedFirstMessage + constructMessage;
-            } else {
-                return failedFirstMessage;
-            }
-        } else {
-            if (cause instanceof ComponentNode.ComponentConstructorException) {
-                return failedNewMessage + constructMessage + retainMessage;
-            } else {
-                return failedNewMessage + retainMessage;
-            }
-        }
-    }
-
-    private void invalidateGeneration(long generation, Throwable cause) {
-        leastGeneration = Math.max(configurer.getComponentsGeneration(), configurer.getBootstrapGeneration()) + 1;
-        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
-            log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
-        }
-    }
-
     private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
                                                    Injector fallbackInjector,
                                                    boolean restartOnRedeploy,
                                                    Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
-
         while (true) {
             snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
 
@@ -188,15 +138,17 @@ public class Container {
         return componentGraph;
     }
 
-    private void injectNodes(ComponentsConfig config, ComponentGraph graph) {
-        for (ComponentsConfig.Components component : config.components()) {
-            Node componentNode = ComponentGraph.getNode(graph, component.id());
+    private void constructComponents(ComponentGraph graph) {
+        graph.nodes().forEach(Node::constructInstance);
+    }
 
-            for (ComponentsConfig.Components.Inject inject : component.inject()) {
-                //TODO: Support inject.name()
-                componentNode.inject(ComponentGraph.getNode(graph, inject.id()));
-            }
-        }
+    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
+                                               ComponentGraph newGraph,
+                                               Collection<Bundle> obsoleteBundles) {
+        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
+        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
+        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
+        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
     private Set<Bundle> installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
@@ -238,8 +190,43 @@ public class Container {
         }
     }
 
-    private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(Node::constructInstance);
+    private void injectNodes(ComponentsConfig config, ComponentGraph graph) {
+        for (ComponentsConfig.Components component : config.components()) {
+            Node componentNode = ComponentGraph.getNode(graph, component.id());
+
+            for (ComponentsConfig.Components.Inject inject : component.inject()) {
+                //TODO: Support inject.name()
+                componentNode.inject(ComponentGraph.getNode(graph, inject.id()));
+            }
+        }
+    }
+
+    private void invalidateGeneration(long generation, Throwable cause) {
+        leastGeneration = Math.max(configurer.getComponentsGeneration(), configurer.getBootstrapGeneration()) + 1;
+        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
+            log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
+        }
+    }
+
+    private static String newGraphErrorMessage(long generation, Throwable cause) {
+        String failedFirstMessage = "Failed to set up first component graph";
+        String failedNewMessage = "Failed to set up new component graph";
+        String constructMessage = " due to error when constructing one of the components";
+        String retainMessage = ". Retaining previous component generation.";
+
+        if (generation == 0) {
+            if (cause instanceof ComponentNode.ComponentConstructorException) {
+                return failedFirstMessage + constructMessage;
+            } else {
+                return failedFirstMessage;
+            }
+        } else {
+            if (cause instanceof ComponentNode.ComponentConstructorException) {
+                return failedNewMessage + constructMessage + retainMessage;
+            } else {
+                return failedNewMessage + retainMessage;
+            }
+        }
     }
 
     public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {

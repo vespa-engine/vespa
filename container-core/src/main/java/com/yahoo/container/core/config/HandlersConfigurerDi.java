@@ -81,7 +81,7 @@ public class HandlersConfigurerDi {
                                 OsgiFramework osgiFramework) {
 
         this(subscriberFactory, vespaContainer, configId, deconstructor, discInjector,
-             new ContainerAndDiOsgi(osgiFramework, new BundleManager(new OsgiImpl(osgiFramework))));
+             new ContainerAndDiOsgi(osgiFramework));
     }
 
     // Only public for testing
@@ -101,12 +101,12 @@ public class HandlersConfigurerDi {
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
 
         private final OsgiFramework osgiFramework;
-        private final BundleManager bundleLoader;
+        private final BundleManager bundleManager;
 
-        public ContainerAndDiOsgi(OsgiFramework osgiFramework, BundleManager bundleLoader) {
+        public ContainerAndDiOsgi(OsgiFramework osgiFramework) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
-            this.bundleLoader = bundleLoader;
+            bundleManager = new BundleManager(new OsgiImpl(osgiFramework));
         }
 
 
@@ -133,7 +133,7 @@ public class HandlersConfigurerDi {
         @Override
         public Set<Bundle> useBundles(Collection<FileReference> bundles) {
             log.info("Installing bundles from the latest application");
-            return bundleLoader.use(new ArrayList<>(bundles));
+            return bundleManager.use(new ArrayList<>(bundles));
         }
     }
 

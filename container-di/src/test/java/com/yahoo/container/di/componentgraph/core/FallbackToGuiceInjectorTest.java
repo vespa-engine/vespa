@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package demo;
+package com.yahoo.container.di.componentgraph.core;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -8,10 +8,19 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.ComponentId;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.container.di.componentgraph.core.ComponentGraph;
+import com.yahoo.container.di.componentgraph.core.ComponentNode;
+import com.yahoo.container.di.componentgraph.core.Node;
+import com.yahoo.vespa.config.ConfigKey;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -24,7 +33,22 @@ import static org.junit.Assert.assertNotNull;
  * @author gjoranv
  */
 @SuppressWarnings("unused")
-public class FallbackToGuiceInjectorTest extends Base {
+public class FallbackToGuiceInjectorTest {
+
+    private ComponentGraph componentGraph;
+    private Injector injector;
+    private Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs =
+            new HashMap<>();
+
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+
+    @Before
+    public void createGraph() {
+        injector = Guice.createInjector();
+        componentGraph = new ComponentGraph(0);
+    }
+
     public static class MyComponent extends AbstractComponent {
         private final String url;
         private final Executor executor;
@@ -51,9 +75,6 @@ public class FallbackToGuiceInjectorTest extends Base {
     public static class ComponentThatCannotBeConstructed {
         public ComponentThatCannotBeConstructed(Integer cannot_be_injected_because_Integer_has_no_default_ctor) { }
     }
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void guice_injector_is_used_when_no_global_component_exists() {
@@ -90,8 +111,34 @@ public class FallbackToGuiceInjectorTest extends Base {
         register(ComponentThatCannotBeConstructed.class);
 
         exception.expect(RuntimeException.class);
-        exception.expectMessage("When resolving dependencies of 'demo.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'");
+        exception.expectMessage("When resolving dependencies of 'com.yahoo.container.di.componentgraph.core.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'");
         complete();
+    }
+
+    public void register(Class<?> componentClass) {
+        componentGraph.add(mockComponentNode(componentClass));
+    }
+
+    public ComponentId toId(Class<?> componentClass) {
+        return ComponentId.fromString(componentClass.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Node mockComponentNode(Class<?> componentClass) {
+        return new ComponentNode(toId(componentClass), toId(componentClass).toString(), (Class<Object>)componentClass, null);
+    }
+
+    public <T> T getInstance(Class<T> componentClass) {
+        return componentGraph.getInstance(componentClass);
+    }
+
+    public void complete() {
+        componentGraph.complete(injector);
+        componentGraph.setAvailableConfigs(configs);
+    }
+
+    public void setInjector(Injector injector) {
+        this.injector = injector;
     }
 
     private Injector emptyGuiceInjector() {
