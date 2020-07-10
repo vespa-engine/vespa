@@ -869,7 +869,12 @@ public class InternalStepRunner implements StepRunner {
                 ?
                 "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
                         "\n" +
-                        "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\" />\n" +
+                        "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
+                        "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
+                        "                <artifactsPath>artifacts</artifactsPath>\n" +
+                        "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
+                        "            </config>\n" +
+                        "        </component>\n" +
                         "\n" +
                         "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
                         "            <binding>http://*/tester/v1/*</binding>\n" +

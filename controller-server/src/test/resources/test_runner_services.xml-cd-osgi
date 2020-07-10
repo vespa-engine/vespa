@@ -13,7 +13,12 @@
 
         <component id="ai.vespa.hosted.cd.cloud.impl.VespaTestRuntimeProvider" bundle="cloud-tenant-cd" />
 
-        <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner" />
+        <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner">
+            <config name="com.yahoo.vespa.testrunner.junit-test-runner">
+                <artifactsPath>artifacts</artifactsPath>
+                <useAthenzCredentials>true</useAthenzCredentials>
+            </config>
+        </component>
 
         <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
             <binding>http://*/tester/v1/*</binding>
