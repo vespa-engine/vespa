@@ -24,7 +24,6 @@ public:
     bool getzFailBoundingBoxTest(int64_t docxy) const {
         return _zBoundingBox.getzFailBoundingBoxTest(docxy);
     }
-    void setSpec(const GeoLocationSpec& other);
 private:
     vespalib::geo::ZCurve::BoundingBox _zBoundingBox;
 };
