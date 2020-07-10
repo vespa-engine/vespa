@@ -67,26 +67,20 @@ FastS_2DZLocationIterator::doSeek(uint32_t docId)
         }
         for (uint32_t i = 0; i < numValues; i++) {
             int64_t docxy(pos[i]);
-            LOG(spam, "doc %u has docxy %zu", docId, docxy);
             if ( ! location.getzFailBoundingBoxTest(docxy)) {
                 int32_t docx = 0;
                 int32_t docy = 0;
                 vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-                LOG(spam, "decode zcurve: docx %u, docy %u", docx, docy);
                 uint32_t dx = (location.getX() > docx)
                               ? location.getX() - docx
                               : docx - location.getX();
-                LOG(spam, "dx : %u", dx);
                 if (location.getXAspect() != 0)
                     dx = ((uint64_t) dx * location.getXAspect()) >> 32;
-                LOG(spam, "d'* : %u", dx);
 
                 uint32_t dy = (location.getY() > docy)
                               ? location.getY() - docy
                               : docy - location.getY();
-                LOG(spam, "dy : %u", dx);
                 uint64_t dist2 = (uint64_t) dx * dx + (uint64_t) dy * dy;
-                LOG(spam, "dist^2 : %zu", dist2);
                 if (dist2 <= _radius2) {
                     setDocId(docId);
                     return;

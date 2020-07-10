@@ -253,7 +253,7 @@ public:
         _location.setVec(attribute);
         _location.parse(loc.getLocationString());
         uint32_t estHits = _attribute.getNumDocs();
-        LOG(info, "location %s in attribute with numdocs %u", loc.getLocationString().c_str(), estHits);
+        LOG(debug, "location %s in attribute with numdocs %u", loc.getLocationString().c_str(), estHits);
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
     }

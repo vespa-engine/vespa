@@ -89,6 +89,9 @@ struct ParsedLocationString {
   
 ParsedLocationString parseQueryLocationString(string str) {
     ParsedLocationString retval;
+    if (str.empty()) {
+        return retval;
+    }
     string::size_type sep = str.find(':');
     if (sep == string::npos) {
         LOG(warning, "Location string '%s' lacks attribute vector specification.", str.c_str());
