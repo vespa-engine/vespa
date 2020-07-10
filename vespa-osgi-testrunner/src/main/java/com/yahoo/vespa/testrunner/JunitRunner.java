@@ -4,10 +4,10 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
@@ -47,11 +47,11 @@ public class JunitRunner extends AbstractComponent {
 
     @Inject
     public JunitRunner(OsgiFramework osgiFramework,
-                       TestRuntimeProvider testRuntimeProvider,
-                       ConfigserverConfig configserverConfig) {
+                       JunitTestRunnerConfig config,
+                       TestRuntimeProvider testRuntimeProvider) {
         this.testRuntimeProvider = testRuntimeProvider;
         this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
-        uglyHackSetCredentialsRootSystemProperty(configserverConfig);
+        uglyHackSetCredentialsRootSystemProperty(config);
     }
 
     // Hack to retrieve bundle context that allows access to other bundles
@@ -66,13 +66,13 @@ public class JunitRunner extends AbstractComponent {
         }
     }
 
-    // TODO(bjorncs|tokle) Propagate credentials root without ConfigserverConfig and system property
-    private static void uglyHackSetCredentialsRootSystemProperty(ConfigserverConfig config) {
+    // TODO(bjorncs|tokle) Propagate credentials root without system property. Ideally move knowledge about path to test-runtime implementations
+    private static void uglyHackSetCredentialsRootSystemProperty(JunitTestRunnerConfig config) {
         String credentialsRoot;
-        if (config.system().equals("public") || config.system().equals("publiccd")) {
-            credentialsRoot = "/opt/vespa/tmp/test/artifacts";
+        if (config.useAthenzCredentials()) {
+            credentialsRoot = Defaults.getDefaults().underVespaHome("var/vespa/sia");
         } else {
-            credentialsRoot = "/opt/vespa/var/vespa/sia";
+            credentialsRoot = config.artifactsPath().toString();
         }
         System.setProperty("vespa.test.credentials.root", credentialsRoot);
     }
