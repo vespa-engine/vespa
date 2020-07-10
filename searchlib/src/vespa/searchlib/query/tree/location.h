@@ -6,6 +6,8 @@
 
 namespace vespalib { class asciistream; }
 namespace search::query {
+
+// for unit tests:
 struct Point;
 struct Rectangle;
 
