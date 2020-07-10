@@ -22,20 +22,9 @@ public:
     Location(const Rectangle &rect);
     Location(const Rectangle &rect, const Point &p, uint32_t dist, uint32_t x_asp);
 
-#if 0
-    Location(const std::string &s) {
-        search::common::GeoLocationParser parser;
-        parser.parseOldFormat(s);
-        Parent::operator=(parser.spec());
-    }
-#endif
-
-    bool operator==(const Location &other) const {
-        return getOldFormatLocationStringWithField() == other.getOldFormatLocationStringWithField();
-    }
-
-    std::string getLocationString() const {
-        return getOldFormatLocationString();
+    bool operator==(const Location &other) const;
+    std::string getDebugString() const {
+        return getOldFormatLocationStringWithField();
     }
 };
 

@@ -17,6 +17,7 @@ Location::Location(const Point &point, uint32_t max_dist, uint32_t x_aspect) {
     _has_radius = true;
     _x_aspect = x_aspect;
     _valid = true;
+    adjust_bounding_box();
 }
 
 Location::Location(const Rectangle &rect,
@@ -50,6 +51,20 @@ Location::Location(const Rectangle &rect) {
     
     _valid = true;
 }
+
+bool
+Location::operator==(const Location &other) const
+{
+    auto me = getOldFormatLocationStringWithField();
+    auto it = other.getOldFormatLocationStringWithField();
+    if (me == it) {
+        return true;
+    } else {
+        // dump 'me' and 'it' here if unit tests fail
+        return false;
+    }
+}
+
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
     return out << loc.getOldFormatLocationString();

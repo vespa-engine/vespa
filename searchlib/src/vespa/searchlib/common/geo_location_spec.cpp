@@ -29,7 +29,6 @@ namespace search::common {
 GeoLocationSpec::GeoLocationSpec() :
       _valid(false),
       _has_point(false),
-      _has_radius(false),
       _has_bounding_box(false),
       _field_name(),
       _x(0),
@@ -56,13 +55,11 @@ GeoLocationSpec::getOldFormatLocationString() const
             << "," << _radius
             << "," << "0"  // table id.
             << "," << "1"  // rank multiplier.
-            << "," << "0"; // rank only on distance.
-        if (_x_aspect != 0) {
-            loc << "," << _x_aspect; // aspect multiplier
-        }
-        loc << ")";
+            << "," << "0" // rank only on distance.
+            << "," << _x_aspect // aspect multiplier
+            << ")";
     }
-    if (hasPoint()) {
+    if (hasBoundingBox()) {
         loc << "[2," << _min_x
             << "," << _min_y
             << "," << _max_x
@@ -81,6 +78,41 @@ GeoLocationSpec::getOldFormatLocationStringWithField() const
         return getOldFormatLocationString();
     }
 }
+
+void
+GeoLocationSpec::adjust_bounding_box()
+{
+    if (hasPoint() && (_radius != std::numeric_limits<uint32_t>::max())) {
+        uint32_t maxdx = _radius;
+        if (_x_aspect != 0) {
+            uint64_t maxdx2 = ((static_cast<uint64_t>(_radius) << 32) + 0xffffffffu) /
+                              _x_aspect;
+            if (maxdx2 >= 0xffffffffu)
+                maxdx = 0xffffffffu;
+            else
+                maxdx = static_cast<uint32_t>(maxdx2);
+        }
+        int64_t implied_max_x = int64_t(_x) + int64_t(maxdx);
+        int64_t implied_min_x = int64_t(_x) - int64_t(maxdx);
+
+        int64_t implied_max_y = int64_t(_y) + int64_t(_radius);
+        int64_t implied_min_y = int64_t(_y) - int64_t(_radius);
+
+        if (implied_max_x < _max_x) _max_x = implied_max_x;
+        if (implied_min_x > _min_x) _min_x = implied_min_x;
+
+        if (implied_max_y < _max_y) _max_y = implied_max_y;
+        if (implied_min_y > _min_y) _min_y = implied_min_y;
+    }
+    if ((_min_x != std::numeric_limits<int32_t>::min()) ||
+        (_max_x != std::numeric_limits<int32_t>::max()) ||
+        (_min_y != std::numeric_limits<int32_t>::min()) ||
+        (_max_y != std::numeric_limits<int32_t>::max()))
+    {
+        _has_bounding_box = true;
+    }
+}
+
 
 
 GeoLocationParser::GeoLocationParser()
@@ -216,35 +248,10 @@ GeoLocationParser::parseOldFormat(const std::string &locStr)
             return false;
         }
     }
-    if (foundLoc) {
-        _has_radius = (_radius != std::numeric_limits<uint32_t>::max());
-        uint32_t maxdx = _radius;
-        if (_x_aspect != 0) {
-            uint64_t maxdx2 = ((static_cast<uint64_t>(_radius) << 32) + 0xffffffffu) /
-                              _x_aspect;
-            if (maxdx2 >= 0xffffffffu)
-                maxdx = 0xffffffffu;
-            else
-                maxdx = static_cast<uint32_t>(maxdx2);
-        }
-        int64_t implied_max_x = int64_t(_x) + int64_t(maxdx);
-        int64_t implied_min_x = int64_t(_x) - int64_t(maxdx);
-
-        int64_t implied_max_y = int64_t(_y) + int64_t(_radius);
-        int64_t implied_min_y = int64_t(_y) - int64_t(_radius);
-
-        if (implied_max_x < _max_x) _max_x = implied_max_x;
-        if (implied_min_x > _min_x) _min_x = implied_min_x;
-
-        if (implied_max_y < _max_y) _max_y = implied_max_y;
-        if (implied_min_y > _min_y) _min_y = implied_min_y;
-    }
     _has_point = foundLoc;
-    _has_bounding_box = ((_min_x != std::numeric_limits<int32_t>::min()) ||
-                         (_max_x != std::numeric_limits<int32_t>::max()) ||
-                         (_min_y != std::numeric_limits<int32_t>::min()) ||
-                         (_max_y != std::numeric_limits<int32_t>::max()));
+    _has_bounding_box = foundBoundingBox;
     _valid = (_has_point || _has_bounding_box);
+    adjust_bounding_box();
     return _valid;
 }
 

@@ -50,6 +50,8 @@ protected:
     int32_t  _max_x;     /* Max X coordinate */
     int32_t  _min_y;     /* Min Y coordinate */
     int32_t  _max_y;     /* Max Y coordinate */
+
+    void adjust_bounding_box();
 };
 
 class GeoLocationParser : private GeoLocationSpec

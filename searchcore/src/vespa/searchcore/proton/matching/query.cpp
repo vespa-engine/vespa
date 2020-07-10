@@ -79,8 +79,7 @@ struct ParsedLocationString {
     bool valid;
     string view;
     search::common::GeoLocationSpec locationSpec;
-    string loc_term;
-    ParsedLocationString() : valid(false), view(), locationSpec(), loc_term() {}
+    ParsedLocationString() : valid(false), view(), locationSpec() {}
     ~ParsedLocationString() {}
 };
   
@@ -94,7 +93,6 @@ ParsedLocationString parseQueryLocationString(string str) {
         auto spec = locationParser.spec();
         retval.locationSpec = spec;
         retval.view = PositionDataType::getZCurveFieldName(spec.getFieldName());
-        retval.loc_term = str.substr(str.find(':') + 1);
         retval.valid = true;
     } else {
         LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), locationParser.getParseError());
@@ -115,12 +113,9 @@ void exchangeLocationNodes(const string &location_str,
     }
     for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
         const string view = pterm->getView();
-        const string loc = pterm->getTerm().getLocationString();
-        search::common::GeoLocationParser loc_parser;
-        if (loc_parser.parseOldFormat(loc)) {
-            locationSpecs.emplace_back(view, loc_parser.spec());
-        } else {
-            LOG(warning, "GeoLocationItem in query had invalid location string: %s", loc.c_str());
+        auto loc = pterm->getTerm();
+        if (loc.isValid()) {
+            locationSpecs.emplace_back(view, loc);
         }
     }
     for (const Spec &spec : locationSpecs) {
