@@ -83,6 +83,9 @@ Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNod
         if (fields.has_struct_field(query_term->getIndex())) {
             _sub_field_terms.emplace_back(fields.get_enclosing_field(query_term->getIndex()), query_term);
         }
+        if (fields.has_field(query_term->getIndex())) {
+            _sub_field_terms.emplace_back(query_term->getIndex(), query_term);
+        }
     } else if (auto and_not = as<AndNotQueryNode>(query_node)) {
         select_query_nodes(fields, *(*and_not)[0]);
     } else if (auto intermediate = as<QueryConnector>(query_node)) {

@@ -9,8 +9,9 @@ namespace search::attribute { class IAttributeContext; }
 namespace search::docsummary {
 
 /**
- * Field writer that filters matched elements (according to the query) from a complex field
- * (map of primitives, map of struct, array of struct) that is retrieved from the document store.
+ * Field writer that filters matched elements (according to the query) from a multi-value or complex field
+ * (array of primitive, weighted set of primitive, map of primitives, map of struct, array of struct)
+ * that is retrieved from the document store.
  */
 class MatchedElementsFilterDFW : public IDocsumFieldWriter {
 private:

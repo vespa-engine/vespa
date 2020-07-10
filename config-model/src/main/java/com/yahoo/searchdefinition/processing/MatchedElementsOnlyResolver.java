@@ -48,11 +48,13 @@ public class MatchedElementsOnlyResolver extends Processor {
                 if (isComplexFieldWithOnlyStructFieldAttributes(sourceField)) {
                     field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
                 }
-            } else if (isSupportedAttributeField(sourceField)) {
-                field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+            } else if (isSupportedMultiValueField(sourceField)) {
+                if (sourceField.doesAttributing()) {
+                    field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+                }
             } else if (validate) {
                 fail(summary, field, "'matched-elements-only' is not supported for this field type. " +
-                        "Supported field types are: array attribute, weighted set attribute, " +
+                        "Supported field types are: array of primitive, weighted set of primitive, " +
                         "array of simple struct, map of primitive type to simple struct, " +
                         "and map of primitive type to primitive type");
             }
@@ -60,10 +62,9 @@ public class MatchedElementsOnlyResolver extends Processor {
         // else case is handled in SummaryFieldsMustHaveValidSource
     }
 
-    private boolean isSupportedAttributeField(ImmutableSDField sourceField) {
+    private boolean isSupportedMultiValueField(ImmutableSDField sourceField) {
         var type = sourceField.getDataType();
-        return sourceField.doesAttributing() &&
-                (isArrayOfPrimitiveType(type) || isWeightedsetOfPrimitiveType(type));
+        return (isArrayOfPrimitiveType(type) || isWeightedsetOfPrimitiveType(type));
     }
 
     private boolean isArrayOfPrimitiveType(DataType type) {
