@@ -15,6 +15,7 @@ public:
     bool isValid()        const { return _valid; }
     bool hasPoint()       const { return _hasPoint; }
     bool hasBoundingBox() const { return _hasBoundingBox; }
+    bool hasFieldName()   const { return ! _field_name.empty(); }
 
     uint32_t getXAspect()          const { return _x_aspect; }
     int32_t getX()                 const { return _x; }
@@ -28,6 +29,7 @@ public:
     int32_t getMaxY() const { return _max_y; }
 
     bool parseOldFormat(const std::string &locStr);
+    bool parseOldFormatWithField(const std::string &str);
 
     std::string getLocationString() const;
 
@@ -36,6 +38,8 @@ private:
     bool _hasPoint;
     bool _hasRadius;
     bool _hasBoundingBox;
+
+    std::string _field_name;
 
     int32_t  _x;         /* Query X position */
     int32_t  _y;         /* Query Y position */

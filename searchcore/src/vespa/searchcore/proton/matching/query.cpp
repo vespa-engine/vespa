@@ -8,7 +8,7 @@
 #include "sameelementmodifier.h"
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 
@@ -78,11 +78,10 @@ fix_location_terms(Node *tree) {
 struct ParsedLocationString {
     bool valid;
     string view;
-    search::common::Location locationSpec;
+    search::common::GeoLocationSpec locationSpec;
     string loc_string;
     ParsedLocationString() : valid(false), view(), locationSpec(), loc_string() {}
     ~ParsedLocationString() {}
-    ParsedLocationString(ParsedLocationString &&) = default;
 };
   
 ParsedLocationString parseQueryLocationString(string str) {
@@ -97,7 +96,7 @@ ParsedLocationString parseQueryLocationString(string str) {
     }
     retval.view = PositionDataType::getZCurveFieldName(str.substr(0, sep));
     const string loc = str.substr(sep + 1);
-    if (retval.locationSpec.parse(loc)) {
+    if (retval.locationSpec.parseOldFormat(loc)) {
         retval.loc_string = loc;
         retval.valid = true;
     } else {
@@ -110,26 +109,25 @@ void exchangeLocationNodes(const string &location_str,
                            Node::UP &query_tree,
                            std::vector<search::fef::Location> &fef_locations)
 {
-    using Spec = std::pair<string, search::common::Location>;
+    using Spec = std::pair<string, search::common::GeoLocationSpec>;
     std::vector<Spec> locationSpecs;
 
     auto parsed = parseQueryLocationString(location_str);
     if (parsed.valid) {
-        locationSpecs.emplace_back(parsed.view, std::move(parsed.locationSpec));
+        locationSpecs.emplace_back(parsed.view, parsed.locationSpec);
     }
     for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
         const string view = pterm->getView();
-        const search::query::Location &loc = pterm->getTerm();
-        search::common::Location loc_spec;
-        if (loc_spec.parse(loc.getLocationString())) {
-            locationSpecs.emplace_back(view, std::move(loc_spec));
+        const string loc = pterm->getTerm().getLocationString();
+        search::common::GeoLocationSpec loc_spec;
+        if (loc_spec.parseOldFormat(loc)) {
+            locationSpecs.emplace_back(view, loc_spec);
         } else {
-            LOG(warning, "GeoLocationItem in query had invalid location string: %s",
-                loc.getLocationString().c_str());
+            LOG(warning, "GeoLocationItem in query had invalid location string: %s", loc.c_str());
         }
     }
     for (const Spec &spec : locationSpecs) {
-        if (spec.second.getRankOnDistance()) {
+        if (spec.second.hasPoint()) {
             search::fef::Location fef_loc;
             fef_loc.setAttribute(spec.first);
             fef_loc.setXPosition(spec.second.getX());
@@ -202,11 +200,6 @@ Query::extractTerms(vector<const ITermData *> &terms)
 void
 Query::extractLocations(vector<const search::fef::Location *> &locations)
 {
-    // must guarantee at least one location
-    if (_locations.empty()) {
-        search::fef::Location invalid;
-        _locations.push_back(invalid);
-    }
     locations.clear();
     for (const auto & loc : _locations) {
         locations.push_back(&loc);

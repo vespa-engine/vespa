@@ -53,7 +53,9 @@ public:
 
     std::vector<const search::fef::Location *> getAllLocations() const override {
         std::vector<const search::fef::Location *> retval;
-        retval.push_back(&_location);
+        if (_location.isValid()) {
+            retval.push_back(&_location);
+        }
         return retval;
     }
 

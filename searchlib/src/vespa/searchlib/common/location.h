@@ -16,6 +16,8 @@ class Location : public DocumentLocations,
 {
 public:
     Location();
+    ~Location() {}
+    Location(Location &&) = default;
     bool getRankOnDistance() const { return hasPoint(); }
     bool getPruneOnDistance() const { return hasBoundingBox(); }
     bool getzFailBoundingBoxTest(int64_t docxy) const {
