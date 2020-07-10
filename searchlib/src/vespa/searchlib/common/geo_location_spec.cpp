@@ -87,7 +87,7 @@ GeoLocationSpec::getLocationString() const
 }
 
 bool
-GeoLocationSpec::parse(const std::string &locStr)
+GeoLocationSpec::parseOldFormat(const std::string &locStr)
 {
     bool foundBoundingBox = false;
     bool foundLoc = false;

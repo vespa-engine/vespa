@@ -27,7 +27,7 @@ public:
     int32_t getMaxX() const { return _max_x; }
     int32_t getMaxY() const { return _max_y; }
 
-    bool parse(const std::string &locStr);
+    bool parseOldFormat(const std::string &locStr);
 
     std::string getLocationString() const;
 
