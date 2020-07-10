@@ -137,7 +137,8 @@ void exchangeLocationNodes(const string &location_str,
     if (parsed.valid) {
         int32_t id = -1;
         Weight weight(100);
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(parsed.loc_term, parsed.view, id, weight));
+        query_tree = inject(std::move(query_tree),
+                            std::make_unique<ProtonLocationTerm>(parsed.locationSpec, parsed.view, id, weight));
     }
 }
 

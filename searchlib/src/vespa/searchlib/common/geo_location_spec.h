@@ -11,6 +11,9 @@ class GeoLocationSpec
 {
 public:
     GeoLocationSpec();
+    GeoLocationSpec(const GeoLocationSpec &other);
+    GeoLocationSpec& operator=(const GeoLocationSpec &other);
+    ~GeoLocationSpec() {}
 
     bool isValid()        const { return _valid; }
     bool hasPoint()       const { return _has_point; }
