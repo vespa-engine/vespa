@@ -12,6 +12,7 @@ vespa_add_library(searchlib_common OBJECT
     featureset.cpp
     fileheadercontext.cpp
     gatecallback.cpp
+    geo_location_spec.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
     location.cpp
