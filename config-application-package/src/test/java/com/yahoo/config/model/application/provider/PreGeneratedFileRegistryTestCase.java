@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -24,8 +25,7 @@ public class PreGeneratedFileRegistryTestCase {
 
         PreGeneratedFileRegistry importedRegistry = PreGeneratedFileRegistry.importRegistry(new StringReader(serializedRegistry));
 
-        FileReference fileReference = new FileReference("1234");
-        assertTrue(importedRegistry.getPaths().containsAll(List.of("1234", fileReference)));
+        assertEquals(Set.of("1234"), importedRegistry.getPaths());
 
         assertEquals(1, importedRegistry.getPaths().size());
 

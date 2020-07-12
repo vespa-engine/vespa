@@ -19,7 +19,7 @@ public class MockFileRegistry implements FileRegistry {
 
     public FileReference addFile(String relativePath) {
         FileReference fileReference = new FileReference(relativePath);
-        entries.add(new Entry("", fileReference));
+        entries.add(new Entry(relativePath, fileReference));
         return fileReference;
     }
 
