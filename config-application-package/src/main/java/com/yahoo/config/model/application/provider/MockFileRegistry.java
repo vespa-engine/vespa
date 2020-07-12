@@ -3,37 +3,30 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.net.HostName;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A file registry for testing, and, it seems, doubling as a null registry in some code paths.
  *
  * @author Tony Vaagenes
+ * @author hmusum
  */
 public class MockFileRegistry implements FileRegistry {
+    private final List<Entry> entries = new ArrayList<>();
 
     public FileReference addFile(String relativePath) {
-        return new FileReference("0123456789abcdef");
+        FileReference fileReference = new FileReference(relativePath);
+        entries.add(new Entry("", fileReference));
+        return fileReference;
     }
 
     @Override
-    public String fileSourceHost() {
-        return "localhost.fortestingpurposesonly";
-    }
+    public String fileSourceHost() { return HostName.getLocalhost(); }
 
-    public static final Entry entry1 = new Entry("component/path1", new FileReference("1234"));
-    public static final Entry entry2 = new Entry("component/path2", new FileReference("56789"));
-
-    public List<Entry> export() {
-        List<Entry> result = new ArrayList<>();
-        result.add(entry1);
-        result.add(entry2);
-        return result;
-    }
+    public List<Entry> export() { return entries; }
 
     @Override
     public FileReference addUri(String uri) {

@@ -11,10 +11,10 @@ import com.yahoo.vespa.model.Host;
 import java.util.*;
 
 /**
- * Sends RPC requests to hosts (tenant hosts and config servers) to start download of files. This is used during prepare
- * of an application. Services themselves will also request files, the work done in this class is done so that hosts can
- * start downloading files before services gets new config that needs these files. This also tries to make sure that
- * all config servers (not just the one where the application was deployed) have the files available.
+ * Sends RPC requests to hosts (tenant hosts and config servers) asking them to start download of files. This is used
+ * during prepare of an application. Services themselves will also request files, the methods in this class are used
+ * so that hosts can start downloading files before services gets new config that needs these files. It also tries
+ * to make sure that all config servers (not just the one where the application was deployed) have the files available.
  *
  * @author Tony Vaagenes
  */
@@ -36,7 +36,6 @@ public class FileDistributor {
     /**
      * Adds the given file to the associated application packages' registry of file and marks the file
      * for distribution to the given host.
-     * <b>Note: This class receives ownership of the given collection.</b>
      *
      * @return the reference to the file, created by the application package
      */
@@ -47,7 +46,6 @@ public class FileDistributor {
     /**
      * Adds the given file to the associated application packages' registry of file and marks the file
      * for distribution to the given host.
-     * <b>Note: This class receives ownership of the given collection.</b>
      *
      * @return the reference to the file, created by the application package
      */
