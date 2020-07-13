@@ -58,7 +58,6 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.getDefaultPublicConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
-import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.absoluteBundlePath;
 
 /**
@@ -76,7 +75,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
     private static final String METRICS_PROXY_NAME = "metrics-proxy";
-    static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
+    static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath(METRICS_PROXY_NAME);
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
     static final class AppDimensionNames {

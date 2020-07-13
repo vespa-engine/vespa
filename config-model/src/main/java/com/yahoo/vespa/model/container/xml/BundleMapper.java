@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public class BundleMapper {
 
-    public enum JarSuffix {
+    private enum JarSuffix {
         JAR_WITH_DEPS("-jar-with-dependencies.jar"),
         DEPLOY("-deploy.jar");
 
@@ -36,9 +36,9 @@ public class BundleMapper {
         return Optional.ofNullable(bundleFromClass.get(className));
     }
 
-    public static Path absoluteBundlePath(Path fileName) {
+    public static Path absoluteBundlePath(String fileName) {
         if (fileName == null) return null;
-        return LIBRARY_PATH.resolve(fileName);
+        return LIBRARY_PATH.resolve(Paths.get(fileName + JarSuffix.JAR_WITH_DEPS.suffix));
     }
 
      //This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
