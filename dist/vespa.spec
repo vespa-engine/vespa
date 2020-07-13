@@ -56,6 +56,7 @@ BuildRequires: cmake3
 BuildRequires: llvm7.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
+BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-1
 BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1g-1
