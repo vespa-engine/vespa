@@ -181,31 +181,6 @@ DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState * state, sea
     state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
 }
 
-void
-DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
-{
-    search::common::GeoLocationParser locationParser;
-    if (locationParser.parseOldFormatWithField(_request.location)) {
-        auto spec = locationParser.spec();
-        LOG(debug, "Filling document locations from location string: %s",
-            _request.location.c_str());
-        string view = spec.getFieldName();
-        AttributeGuard::UP vec = _attrMgr.getAttribute(view);
-        if (!vec->valid()) {
-            view = PositionDataType::getZCurveFieldName(view);
-            vec = _attrMgr.getAttribute(view);
-        }
-        state->_parsedLocation = std::make_unique<Location>(spec);
-        state->_parsedLocation->setVecGuard(std::move(vec));
-    } else {
-        state->_parsedLocation = std::make_unique<Location>();
-        if (! _request.location.empty()) {
-            LOG(warning, "Error parsing location string '%s': %s",
-                _request.location.c_str(), locationParser.getParseError());
-        }
-    }
-}
-
 std::unique_ptr<MatchingElements>
 DocsumContext::fill_matching_elements(const MatchingElementsFields &fields)
 {

@@ -8,6 +8,7 @@ GetDocsumArgs::GetDocsumArgs()
     : _ranking(),
       _resultClassName(),
       _dumpFeatures(false),
+      _no_locations(false),
       _stackItems(0),
       _stackDump(),
       _location(),

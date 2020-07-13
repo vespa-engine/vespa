@@ -3,13 +3,40 @@
 #pragma once
 
 #include "attributedfw.h"
+#include <vespa/searchlib/common/geo_location_spec.h>
 
 namespace search::docsummary {
 
-class AbsDistanceDFW : public AttrDFW
+class LocationAttrDFW : public AttrDFW
+{
+public:
+    using GeoLoc = search::common::GeoLocationSpec;
+
+    LocationAttrDFW(const vespalib::string & attrName)
+        : AttrDFW(attrName)
+    {}
+
+    struct AllLocations {
+        std::vector<const GeoLoc *> matching;
+        std::vector<const GeoLoc *> other;
+
+        ~AllLocations() {}
+
+        bool empty() const {
+            return matching.empty() && other.empty();
+        }
+        const std::vector<const GeoLoc *> & best() const {
+            return matching.empty() ? other : matching;
+        }
+    };
+    AllLocations getAllLocations(GetDocsumsState *state);
+};
+
+class AbsDistanceDFW : public LocationAttrDFW
 {
 private:
-    uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state);
+    uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state,
+                             const std::vector<const GeoLoc *> &locations);
 public:
     AbsDistanceDFW(const vespalib::string & attrName);
 

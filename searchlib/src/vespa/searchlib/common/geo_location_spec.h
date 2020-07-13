@@ -59,9 +59,10 @@ class GeoLocationParser : private GeoLocationSpec
 public:
     GeoLocationParser();
     bool parseOldFormat(const std::string &locStr);
+    void setFieldName(const std::string &name) { _field_name = name; }
     bool parseOldFormatWithField(const std::string &str);
     GeoLocationSpec spec() const { return *this; }
-    const char * getParseError()   const { return _parseError; }
+    const char * getParseError() const { return _parseError; }
 private:
     const char *_parseError;
     bool getDimensionality(const char * &p);
