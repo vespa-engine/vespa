@@ -448,6 +448,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Collections.unmodifiableList(clusterMetrics.getOrDefault(deployment, List.of()));
     }
 
+    @Override
+    public String getMetricsV2(DeploymentId deployment) {
+        return null;
+    }
+
     // Returns a canned example response
     @Override
     public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath) {

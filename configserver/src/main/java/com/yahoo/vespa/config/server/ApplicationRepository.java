@@ -19,6 +19,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
@@ -748,7 +749,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
     // ---------------- Metrics V2 ------------------------------------------------------------------------
 
-    public MetricsResponse getMetricsV2(ApplicationId applicationId) {
+    public JsonResponse getMetricsV2(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         ApplicationMetricsV2Retriever applicationMetricsV2Retriever = new ApplicationMetricsV2Retriever();
         return applicationMetricsV2Retriever.getMetrics(application);
