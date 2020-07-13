@@ -50,6 +50,7 @@ private:
     uint16_t                                  _distributorIndex;
     bool                                      _bucketOwnershipTransfer;
     std::unordered_map<uint16_t, size_t>      _rejectedRequests;
+    std::unordered_map<uint16_t, size_t>      _failed_requests; // Also includes rejections
 
     BucketDatabase::MergingProcessor::Result merge(BucketDatabase::Merger&) override;
     void insert_remaining_at_end(BucketDatabase::TrailingInserter&) override;
@@ -121,6 +122,13 @@ public:
     size_t rejectedRequests(uint16_t node) const {
         auto iter = _rejectedRequests.find(node);
         return ((iter != _rejectedRequests.end()) ? iter->second : 0);
+    }
+    void increment_request_failures(uint16_t node) {
+        _failed_requests[node]++;
+    }
+    [[nodiscard]] size_t request_failures(uint16_t node) const noexcept {
+        auto iter = _failed_requests.find(node);
+        return ((iter != _failed_requests.end()) ? iter->second : 0);
     }
 };
 

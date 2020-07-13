@@ -155,6 +155,10 @@ public:
     std::string requestNodesToString() const;
 
 private:
+    // With 100ms resend timeout, this requires a particular node to have failed
+    // for _at least_ threshold/10 seconds before a log warning is emitted.
+    constexpr static size_t RequestFailureWarningEdgeTriggerThreshold = 20;
+
     /**
      * Creates a pending cluster state that represents
      * a set system state command from the fleet controller.
@@ -211,6 +215,7 @@ private:
     std::string getPrevClusterStateBundleString() const {
         return _prevClusterStateBundle.getBaselineClusterState()->toString();
     }
+    void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
