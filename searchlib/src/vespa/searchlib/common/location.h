@@ -15,8 +15,7 @@ class Location : public DocumentLocations,
                  public GeoLocationSpec
 {
 public:
-    Location();
-    Location(const GeoLocationSpec& other);
+    Location(const GeoLocationSpec& from);
     ~Location() {}
     Location(Location &&) = default;
     bool getRankOnDistance() const { return hasPoint(); }
