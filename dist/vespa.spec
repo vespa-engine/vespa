@@ -216,8 +216,8 @@ Requires: %{name}-malloc = %{version}-%{release}
 Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
-# _dl_sym function.
-%global __requires_exclude ^libc\\.so\\.6\\(GLIBC_PRIVATE\\)\\(64bit\\)$
+# _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd)\\.so\\.[0-9.]*\\((OPENSSL_1_1_0)?\\))\\(64bit\\)$
 
 
 %description
@@ -248,6 +248,8 @@ Requires: vespa-openssl >= 1.1.1g-1
 %else
 Requires: openssl-libs
 %endif
+Requires: vespa-lz4 >= 1.9.2-1
+Requires: vespa-zstd >= 1.4.5-1
 
 %description base-libs
 
