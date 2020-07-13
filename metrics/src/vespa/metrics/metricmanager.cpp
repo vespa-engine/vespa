@@ -94,6 +94,9 @@ MetricManager::~MetricManager()
 void
 MetricManager::stop()
 {
+    if (!running()) {
+        return; // Let stop() be idempotent.
+    }
     Runnable::stop();
     {
         vespalib::MonitorGuard sync(_waiter);

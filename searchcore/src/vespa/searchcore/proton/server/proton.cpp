@@ -408,7 +408,7 @@ Proton::~Proton()
     _stateServer.reset();
     if (_metricsEngine) {
         _metricsEngine->removeMetricsHook(_metricsHook);
-        _metricsEngine->stop();
+        _metricsEngine->stop(); // Idempotent call
     }
     if (_matchEngine) {
         _matchEngine->close();
@@ -460,6 +460,15 @@ Proton::~Proton()
     _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");
+}
+
+void
+Proton::perform_pre_service_layer_shutdown_steps()
+{
+    _stateServer.reset();
+    if (_metricsEngine) {
+        _metricsEngine->stop(); // Idempotent call
+    }
 }
 
 void

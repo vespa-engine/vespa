@@ -252,6 +252,9 @@ App::Main()
                     }
                 }
             }
+            // Ensure metric manager and state server are shut down before we start tearing
+            // down any service layer components that they may end up transitively using.
+            protonUP->perform_pre_service_layer_shutdown_steps();
             if (spiProton) {
                 spiProton->getNode().requestShutdown("controlled shutdown");
                 spiProton->shutdown();

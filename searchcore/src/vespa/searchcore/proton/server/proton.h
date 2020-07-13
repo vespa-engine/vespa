@@ -169,6 +169,12 @@ public:
      */
     BootstrapConfig::SP init();
 
+    /**
+     * Shuts down metric manager and state server functionality to avoid
+     * calls to these during service layer component tear-down.
+     */
+    void perform_pre_service_layer_shutdown_steps();
+
     // 2nd phase init: setup data structures.
     void init(const BootstrapConfig::SP & configSnapshot);
 
