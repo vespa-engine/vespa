@@ -30,4 +30,9 @@ public class ImportedFieldsTestCase extends AbstractExportingTestCase {
     public void configs_for_imported_position_field_summary_are_derived() throws IOException, ParseException {
         assertCorrectDeriving("imported_position_field_summary", "child");
     }
+
+    @Test
+    public void derives_configs_for_imported_fields_when_reference_fields_are_inherited() throws IOException, ParseException {
+        assertCorrectDeriving("imported_fields_inherited_reference", "child_c");
+    }
 }

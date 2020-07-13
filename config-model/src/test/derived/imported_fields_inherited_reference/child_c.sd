@@ -1,0 +1,7 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema child_c {
+  document child_c inherits child_b {
+  }
+  import field ref_from_a.int_field as from_a_int_field {}
+  import field ref_from_b.int_field as from_b_int_field {}
+}

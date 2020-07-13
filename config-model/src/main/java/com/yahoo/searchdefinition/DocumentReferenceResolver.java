@@ -6,6 +6,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -30,8 +31,22 @@ public class DocumentReferenceResolver {
     }
 
     public void resolveReferences(SDDocumentType documentType) {
-        DocumentReferences references = new DocumentReferences(createFieldToDocumentReferenceMapping(documentType));
+        var references = new DocumentReferences(createFieldToDocumentReferenceMapping(documentType));
         documentType.setDocumentReferences(references);
+    }
+
+    public void resolveInheritedReferences(SDDocumentType documentType) {
+        resolveInheritedReferencesRecursive(documentType, documentType.getInheritedTypes());
+    }
+
+    private void resolveInheritedReferencesRecursive(SDDocumentType documentType,
+                                                     Collection<SDDocumentType> inheritedTypes) {
+        for (var inheritedType : inheritedTypes) {
+            documentType.getDocumentReferences().get().mergeFrom(inheritedType.getDocumentReferences().get());
+        }
+        for (var inheritedType : inheritedTypes) {
+            resolveInheritedReferencesRecursive(documentType, inheritedType.getInheritedTypes());
+        }
     }
 
     private Map<String, DocumentReference> createFieldToDocumentReferenceMapping(SDDocumentType documentType) {
