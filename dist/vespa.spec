@@ -104,6 +104,7 @@ BuildRequires: gmock-devel
 %endif
 BuildRequires: xxhash-devel >= 0.7.3
 BuildRequires: openblas-devel
+BuildRequires: libzstd
 BuildRequires: zlib-devel
 BuildRequires: re2-devel
 %if ! 0%{?el7}
@@ -240,6 +241,7 @@ Vespa - The open big data serving engine - base
 Summary: Vespa - The open big data serving engine - base C++ libs
 
 Requires: xxhash-libs >= 0.7.3
+Requires: libzstd
 %if 0%{?el7}
 Requires: vespa-openssl >= 1.1.1g-1
 %else
