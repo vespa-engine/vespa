@@ -18,6 +18,10 @@ public class DocumentReferences implements Iterable<Map.Entry<String, DocumentRe
         this.references = references;
     }
 
+    public void mergeFrom(DocumentReferences other) {
+        references.putAll(other.references);
+    }
+
     @Override
     public Iterator<Map.Entry<String, DocumentReference>> iterator() {
         return Collections.unmodifiableSet(references.entrySet()).iterator();
