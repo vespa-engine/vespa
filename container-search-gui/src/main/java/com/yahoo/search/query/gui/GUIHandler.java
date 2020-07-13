@@ -4,9 +4,11 @@ package com.yahoo.search.query.gui;
 import com.google.inject.Inject;
 
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.jdisc.HandlerEntryPoint;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.NavigableRequestHandler;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.restapi.Path;
@@ -28,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,7 +44,7 @@ import java.util.logging.Level;
  * @author  Henrik Høiness
  */
 
-public class GUIHandler extends LoggingRequestHandler {
+public class GUIHandler extends LoggingRequestHandler implements NavigableRequestHandler {
 
     private final IndexModel indexModel;
     private final RankProfilesConfig rankProfilesConfig;
@@ -92,6 +95,11 @@ public class GUIHandler extends LoggingRequestHandler {
         }
 
         return isValid;
+    }
+
+    @Override
+    public List<HandlerEntryPoint> entryPoints() {
+        return List.of(HandlerEntryPoint.of("./"));
     }
 
     private static class FileResponse extends HttpResponse {
