@@ -31,14 +31,9 @@ public class BundleMapper {
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
     private static final Map<String, String> bundleFromClass;
-    private static final Map<String, Path> bundleFileFromClass;
 
     public static Optional<String> getBundle(String className) {
         return Optional.ofNullable(bundleFromClass.get(className));
-    }
-
-    public static Optional<Path> getBundlePath(String className) {
-        return Optional.ofNullable(absoluteBundlePath(bundleFileFromClass.get(className)));
     }
 
     public static Path absoluteBundlePath(Path fileName) {
@@ -46,16 +41,9 @@ public class BundleMapper {
         return LIBRARY_PATH.resolve(fileName);
     }
 
-    /**
-     * TODO: This is a temporary hack to ensure that users can use our internal components without
-     * specifying the bundle in which the components reside. Ideally, this information
-     * should be generated during vespamodel build time.
-     *
-     * The container_maven_plugin has much of the logic in place, but needs to be extended.
-     */
+     //This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
     static {
         bundleFromClass = new HashMap<>();
-        bundleFileFromClass = new HashMap<>();
 
         bundleFromClass.put("com.yahoo.docproc.AbstractConcreteDocumentFactory", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.docproc.DocumentProcessor", searchAndDocprocBundle);
