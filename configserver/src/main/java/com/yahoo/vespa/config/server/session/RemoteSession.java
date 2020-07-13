@@ -15,6 +15,7 @@ import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,15 +92,22 @@ public class RemoteSession extends Session {
         try {
             completionWaiter.notifyCompletion();
         } catch (RuntimeException e) {
-            // Throw only if we get something else than NoNodeException -- NoNodeException might happen when
-            // the session is no longer in use (e.g. the app using this session has been deleted) and this method
-            // has not been called yet for the previous session operation
-            // on a minority of the config servers (see awaitInternal() method in this class)
-            if (e.getCause().getClass() != KeeperException.NoNodeException.class) {
+            // Throw only if we get something else than NoNodeException or NodeExistsException.
+            // NoNodeException might happen when the session is no longer in use (e.g. the app using this session
+            // has been deleted) and this method has not been called yet for the previous session operation on a
+            // minority of the config servers.
+            // NodeExistsException might happen if an event for this node is delivered more than once, in that case
+            // this is a no-op
+            Set<Class<? extends KeeperException>> acceptedExceptions = Set.of(KeeperException.NoNodeException.class,
+                                                                              KeeperException.NodeExistsException.class);
+            Class<? extends Throwable> exceptionClass = e.getCause().getClass();
+            if (acceptedExceptions.contains(exceptionClass))
+                log.log(Level.INFO, "Not able to notify completion for session: " + getSessionId() + ", node " +
+                                    (exceptionClass.equals(KeeperException.NoNodeException.class)
+                                            ? "has been deleted"
+                                            : "already exists"));
+            else
                 throw e;
-            } else {
-                log.log(Level.INFO, "Not able to notify completion for session: " + getSessionId() + ", node has been deleted");
-            }
         }
     }
 
