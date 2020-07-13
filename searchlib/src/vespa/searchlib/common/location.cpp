@@ -5,10 +5,8 @@
 
 namespace search::common {
 
-Location::Location() : _zBoundingBox(0,0,0,0) {}
-
-Location::Location(const GeoLocationSpec &other)
-  : GeoLocationSpec(other),
+Location::Location(const GeoLocationSpec &from)
+  : GeoLocationSpec(from),
     _zBoundingBox(0,0,0,0)
 {
     using vespalib::geo::ZCurve;
