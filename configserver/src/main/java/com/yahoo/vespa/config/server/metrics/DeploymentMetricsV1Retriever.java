@@ -8,7 +8,6 @@ import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -18,15 +17,15 @@ import java.util.stream.Collectors;
  *
  * @author olaa
  */
-public class ApplicationMetricsV1Retriever {
+public class DeploymentMetricsV1Retriever {
 
-    private final ClusterMetricsV1Retriever metricsRetriever;
+    private final ClusterDeploymentMetricsV1Retriever metricsRetriever;
 
-    public ApplicationMetricsV1Retriever() {
-        this(new ClusterMetricsV1Retriever());
+    public DeploymentMetricsV1Retriever() {
+        this(new ClusterDeploymentMetricsV1Retriever());
     }
 
-    public ApplicationMetricsV1Retriever(ClusterMetricsV1Retriever metricsRetriever) {
+    public DeploymentMetricsV1Retriever(ClusterDeploymentMetricsV1Retriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
@@ -40,7 +39,7 @@ public class ApplicationMetricsV1Retriever {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
-                .map(ApplicationMetricsV1Retriever::createMetricsProxyURI)
+                .map(DeploymentMetricsV1Retriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
 
     }

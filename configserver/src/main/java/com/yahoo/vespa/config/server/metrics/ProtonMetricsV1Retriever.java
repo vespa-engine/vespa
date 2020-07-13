@@ -1,18 +1,9 @@
 package com.yahoo.vespa.config.server.metrics;
 
-import com.google.common.base.Charsets;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.JSONResponse;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
-import io.netty.handler.codec.json.JsonObjectDecoder;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
@@ -22,14 +13,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ApplicationMetricsV2Retriever {
+public class ProtonMetricsV1Retriever {
 
-    private final ClusterMetricsV2Retriever metricsRetriever;
-    public ApplicationMetricsV2Retriever() {
-        this( new ClusterMetricsV2Retriever());
+    private final ClusterProtonMetricsV1Retriever metricsRetriever;
+    public ProtonMetricsV1Retriever() {
+        this( new ClusterProtonMetricsV1Retriever());
     }
 
-    public ApplicationMetricsV2Retriever(ClusterMetricsV2Retriever metricsRetriever) {
+    public ProtonMetricsV1Retriever(ClusterProtonMetricsV1Retriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
@@ -65,7 +56,7 @@ public class ApplicationMetricsV2Retriever {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
-                .map(ApplicationMetricsV2Retriever::createMetricsProxyURI)
+                .map(ProtonMetricsV1Retriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
     }
 

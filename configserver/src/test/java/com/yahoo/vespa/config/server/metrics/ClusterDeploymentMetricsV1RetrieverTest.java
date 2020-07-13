@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class ClusterMetricsV1RetrieverTest {
+public class ClusterDeploymentMetricsV1RetrieverTest {
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
@@ -57,7 +57,7 @@ public class ClusterMetricsV1RetrieverTest {
         ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
         ClusterInfo expectedContainerCluster = new ClusterInfo("container_cluster_id", "container");
 
-        Map<ClusterInfo, MetricsAggregator> aggregatorMap = new ClusterMetricsV1Retriever().requestMetricsGroupedByCluster(hosts);
+        Map<ClusterInfo, MetricsAggregator> aggregatorMap = new ClusterDeploymentMetricsV1Retriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
                 new MetricsAggregator().addDocumentCount(6000.0),

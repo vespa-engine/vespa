@@ -1,14 +1,7 @@
 package com.yahoo.vespa.config.server.metrics;
 
-import ai.vespa.util.http.VespaHttpClientBuilder;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectSymbolTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
@@ -18,21 +11,15 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.yahoo.vespa.config.server.metrics.ClusterMetricsV1Retriever.doMetricsRequest;
-import static com.yahoo.vespa.config.server.metrics.ClusterMetricsV1Retriever.getClusterInfoFromDimensions;
+import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsV1Retriever.doMetricsRequest;
+import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsV1Retriever.getClusterInfoFromDimensions;
 
-public class ClusterMetricsV2Retriever {
+public class ClusterProtonMetricsV1Retriever {
 
-    private static final Logger log = Logger.getLogger(ClusterMetricsV2Retriever.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterProtonMetricsV1Retriever.class.getName());
 
     private static final List<String> DESIRED_METRICS = List.of(
             "content.proton.documentdb.matching.docs_matched.rate",

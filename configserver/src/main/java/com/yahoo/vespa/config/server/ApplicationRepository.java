@@ -47,8 +47,8 @@ import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.ApplicationMetricsV1Retriever;
-import com.yahoo.vespa.config.server.metrics.ApplicationMetricsV2Retriever;
+import com.yahoo.vespa.config.server.metrics.DeploymentMetricsV1Retriever;
+import com.yahoo.vespa.config.server.metrics.ProtonMetricsV1Retriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -751,8 +751,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public JsonResponse getMetricsV2(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ApplicationMetricsV2Retriever applicationMetricsV2Retriever = new ApplicationMetricsV2Retriever();
-        return applicationMetricsV2Retriever.getMetrics(application);
+        ProtonMetricsV1Retriever protonMetricsV1Retriever = new ProtonMetricsV1Retriever();
+        return protonMetricsV1Retriever.getMetrics(application);
     }
 
 
@@ -760,8 +760,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public MetricsResponse getMetricsV1(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ApplicationMetricsV1Retriever applicationMetricsV1Retriever = new ApplicationMetricsV1Retriever();
-        return applicationMetricsV1Retriever.getMetrics(application);
+        DeploymentMetricsV1Retriever deploymentMetricsV1Retriever = new DeploymentMetricsV1Retriever();
+        return deploymentMetricsV1Retriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
