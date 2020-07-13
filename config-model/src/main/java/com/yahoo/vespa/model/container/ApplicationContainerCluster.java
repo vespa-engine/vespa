@@ -29,6 +29,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
+import com.yahoo.vespa.model.container.xml.BundleMapper;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.nio.file.Paths;
@@ -135,11 +136,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
         if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) {
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vespa-testrunner-components-jar-with-dependencies.jar")));
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar")));
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/tenant-cd-api-jar-with-dependencies.jar")));
+            addPlatformBundle(BundleMapper.absoluteBundlePath("vespa-testrunner-components"));
+            addPlatformBundle(BundleMapper.absoluteBundlePath("vespa-osgi-testrunner"));
+            addPlatformBundle(BundleMapper.absoluteBundlePath("tenant-cd-api"));
             if(deployState.zone().system().isPublic()) {
-                addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/cloud-tenant-cd-jar-with-dependencies.jar")));
+                addPlatformBundle(BundleMapper.absoluteBundlePath("cloud-tenant-cd"));
             }
         }
     }
