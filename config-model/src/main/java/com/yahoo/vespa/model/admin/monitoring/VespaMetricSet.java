@@ -642,6 +642,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.puts.sum.failures.total.rate"));
         metrics.add(new Metric("vds.distributor.puts.sum.failures.notfound.rate"));
         metrics.add(new Metric("vds.distributor.puts.sum.failures.test_and_set_failed.rate"));
+        metrics.add(new Metric("vds.distributor.puts.sum.failures.concurrent_mutations.rate"));
         metrics.add(new Metric("vds.distributor.removes.sum.latency.max"));
         metrics.add(new Metric("vds.distributor.removes.sum.latency.sum"));
         metrics.add(new Metric("vds.distributor.removes.sum.latency.count"));
@@ -650,6 +651,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.removes.sum.failures.total.rate"));
         metrics.add(new Metric("vds.distributor.removes.sum.failures.notfound.rate"));
         metrics.add(new Metric("vds.distributor.removes.sum.failures.test_and_set_failed.rate"));
+        metrics.add(new Metric("vds.distributor.removes.sum.failures.concurrent_mutations.rate"));
         metrics.add(new Metric("vds.distributor.updates.sum.latency.max"));
         metrics.add(new Metric("vds.distributor.updates.sum.latency.sum"));
         metrics.add(new Metric("vds.distributor.updates.sum.latency.count"));
@@ -658,6 +660,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.updates.sum.failures.total.rate"));
         metrics.add(new Metric("vds.distributor.updates.sum.failures.notfound.rate"));
         metrics.add(new Metric("vds.distributor.updates.sum.failures.test_and_set_failed.rate"));
+        metrics.add(new Metric("vds.distributor.updates.sum.failures.concurrent_mutations.rate"));
         metrics.add(new Metric("vds.distributor.updates.sum.diverging_timestamp_updates.rate"));
         metrics.add(new Metric("vds.distributor.removelocations.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.removelocations.sum.failures.total.rate"));
