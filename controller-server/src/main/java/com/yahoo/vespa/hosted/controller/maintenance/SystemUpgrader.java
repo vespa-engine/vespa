@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -62,15 +63,12 @@ public class SystemUpgrader extends InfrastructureUpgrader<Version> {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
+            boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethods(zone.getId()).stream()
+                                                       .anyMatch(RoutingMethod::isShared);
             return minVersion(zone, application, Node::wantedVersion)
-                    // Upgrade if target is after any wanted version
-                    .map(target::isAfter)
-                    // Skip upgrade if there are no nodes allocated. This is overloaded to mean that the zone is not
-                    // expected to have a deployment of this application.
-                    // TODO(mpolden): Once all zones are either directly routed or not: Change this to
-                    //                always deploy proxy app and wait for convergence in zones that are not directly
-                    //                routed.
-                    .orElse(false);
+                    .map(target::isAfter)          // Upgrade if target is after any wanted version
+                    .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet
+
         }
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
