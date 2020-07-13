@@ -56,10 +56,11 @@ BuildRequires: cmake3
 BuildRequires: llvm7.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
-BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-lz4-devel >= 1.9.2-1
 BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1g-1
-BuildRequires: vespa-icu-devel >= 65.1.0-1
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-zstd-devel >= 1.4.5-1
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
@@ -67,14 +68,18 @@ BuildRequires: llvm-devel >= 9.0.1
 BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
-BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-lz4-devel >= 1.9.2-1
 BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-zstd-devel >= 1.4.5-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
 BuildRequires: openssl-devel
+BuildRequires: vespa-lz4-devel >= 1.9.2-1
+BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
+BuildRequires: vespa-zstd-devel >= 1.4.5-1
 %if 0%{?fc31}
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: llvm-devel >= 9.0.0
@@ -158,12 +163,14 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?el7}
 Requires: llvm7.0
+Requires: vespa-icu >= 65.1.0-1
+Requires: vespa-lz4 >= 1.9.2-1
 Requires: vespa-onnxruntime >= 1.3.0-1
 Requires: vespa-openssl >= 1.1.1g-1
-Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.16.0-1
+Requires: vespa-zstd >= 1.4.5-1
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -171,15 +178,19 @@ Requires: vespa-valgrind >= 3.16.0-1
 %if 0%{?el8}
 Requires: llvm-libs >= 9.0.1
 %define _vespa_llvm_version 9
-Requires: vespa-protobuf >= 3.7.0-4
-Requires: vespa-onnxruntime >= 1.3.0-1
 Requires: openssl-libs
+Requires: vespa-lz4 >= 1.9.2-1
+Requires: vespa-onnxruntime >= 1.3.0-1
+Requires: vespa-protobuf >= 3.7.0-4
+Requires: vespa-zstd >= 1.4.5-1
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
-Requires: vespa-onnxruntime >= 1.3.0-1
 Requires: openssl-libs
+Requires: vespa-lz4 >= 1.9.2-1
+Requires: vespa-onnxruntime >= 1.3.0-1
+Requires: vespa-zstd >= 1.4.5-1
 %if 0%{?fc31}
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: llvm-libs >= 9.0.0
