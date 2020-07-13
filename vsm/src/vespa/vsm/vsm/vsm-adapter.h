@@ -40,7 +40,6 @@ public:
     GetDocsumsStateCallback();
     void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
     void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
-    void ParseLocation(GetDocsumsState * state) override;
     virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
     virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }

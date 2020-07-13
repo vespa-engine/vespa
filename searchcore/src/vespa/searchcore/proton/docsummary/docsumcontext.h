@@ -52,7 +52,6 @@ public:
     // Implements GetDocsumsStateCallback
     void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
     void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    void ParseLocation(search::docsummary::GetDocsumsState * state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields &fields) override;
 };
 

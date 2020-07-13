@@ -5,7 +5,12 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include "docsum_field_writer_state.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchsummary.docsummary.docsumstate");
 
 namespace search::docsummary {
 
@@ -22,7 +27,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _attributes(),
       _fieldWriterStates(),
       _jsonStringer(),
-      _parsedLocation(),
+      _parsedLocations(),
       _summaryFeatures(NULL),
       _summaryFeaturesCached(false),
       _rankFeatures(NULL),
@@ -57,5 +62,39 @@ GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_el
     }
     return *_matching_elements;
 }
+
+void
+GetDocsumsState::parse_locations()
+{
+    assert(_parsedLocations.empty()); // only allowed to call this once
+    if (! _args.getLocation().empty()) {
+        search::common::GeoLocationParser locationParser;
+        if (locationParser.parseOldFormatWithField(_args.getLocation())) {
+            _parsedLocations.emplace_back(locationParser.spec());
+        } else {
+            LOG(warning, "could not parse location string '%s' from request",
+                _args.getLocation().c_str());
+        }
+    }
+    auto stackdump = _args.getStackDump();
+    if (! stackdump.empty()) {
+        search::SimpleQueryStackDumpIterator iterator(stackdump);
+        while (iterator.next()) {
+            if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
+                vespalib::string view = iterator.getIndexName();
+                vespalib::string term = iterator.getTerm();
+                search::common::GeoLocationParser locationParser;                
+                if (locationParser.parseOldFormat(term)) {
+                    locationParser.setFieldName(view);
+                    _parsedLocations.emplace_back(locationParser.spec());
+                } else {
+                    LOG(warning, "could not parse location string '%s' from stack dump",
+                        term.c_str());
+                }
+            }
+        }
+    }
+}
+
 
 }
