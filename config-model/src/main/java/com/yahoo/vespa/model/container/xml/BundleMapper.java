@@ -2,12 +2,13 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.vespa.defaults.Defaults;
+import org.tensorflow.op.Op;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author gjoranv
@@ -27,13 +28,12 @@ public class BundleMapper {
     }
 
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
-
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
-    private static final Map<String, String> bundleFromClass;
+    private static final Set<String> searchAndDocprocComponents;
 
-    public static Optional<String> getBundle(String className) {
-        return Optional.ofNullable(bundleFromClass.get(className));
+    public static boolean isSearchAndDocprocClass(String className) {
+        return searchAndDocprocComponents.contains(className);
     }
 
     public static Path absoluteBundlePath(String fileName) {
@@ -41,82 +41,82 @@ public class BundleMapper {
         return LIBRARY_PATH.resolve(Paths.get(fileName + JarSuffix.JAR_WITH_DEPS.suffix));
     }
 
-     //This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
+    // This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
     static {
-        bundleFromClass = new HashMap<>();
+        searchAndDocprocComponents = new HashSet<>();
 
-        bundleFromClass.put("com.yahoo.docproc.AbstractConcreteDocumentFactory", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.docproc.DocumentProcessor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.docproc.SimpleDocumentProcessor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.docproc.util.JoinerDocumentProcessor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.docproc.util.SplitterDocumentProcessor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.example.TimingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.language.simple.SimpleLinguistics", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.cluster.ClusterSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.fastsearch.FastSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.fastsearch.VespaBackEndSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.CJKSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.CollapsePhraseSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.LiteralBoostSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.NoRankingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.NonPhrasingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.NormalizingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.PhrasingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.RecallSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.StemmingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.BlendingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.FieldCollapsingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.FillSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.JSONDebugSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.JuniperSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.MultipleResultsSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.PosSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.QuotingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.ValidateSortingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.semantics.SemanticSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.statistics.StatisticsSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.templates.SearchRendererAdaptor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.Searcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.cluster.ClusterSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.cluster.PingableSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.FederationSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.ForwardingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.http.ConfiguredHTTPClientSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.http.ConfiguredHTTPProviderSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.http.HTTPClientSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.http.HTTPProviderSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.http.HTTPSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.news.NewsSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.federation.vespa.VespaSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.grouping.GroupingQueryParser", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.grouping.GroupingValidator", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.grouping.vespa.GroupingExecutor", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.handler.SearchWithRendererHandler", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.PageTemplate", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.PageTemplateSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.engine.Resolver", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.engine.resolvers.RandomResolver", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.model.Renderer", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.query.rewrite.QueryRewriteSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.query.rewrite.SearchChainDispatcherSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.query.rewrite.rewriters.GenericExpansionRewriter", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.query.rewrite.rewriters.MisspellRewriter", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.query.rewrite.rewriters.NameRewriter", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.AllLowercasingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.DefaultPositionSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.LowercasingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.NGramSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.VespaLowercasingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.rendering.Renderer", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.rendering.SectionedRenderer", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.searchchain.ForkingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.searchchain.example.ExampleSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.searchers.CacheControlSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.statistics.PeakQpsSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.statistics.TimingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.vespa.streamingvisitors.MetricsSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher", searchAndDocprocBundle);
+        searchAndDocprocComponents.add("com.yahoo.docproc.AbstractConcreteDocumentFactory");
+        searchAndDocprocComponents.add("com.yahoo.docproc.DocumentProcessor");
+        searchAndDocprocComponents.add("com.yahoo.docproc.SimpleDocumentProcessor");
+        searchAndDocprocComponents.add("com.yahoo.docproc.util.JoinerDocumentProcessor");
+        searchAndDocprocComponents.add("com.yahoo.docproc.util.SplitterDocumentProcessor");
+        searchAndDocprocComponents.add("com.yahoo.example.TimingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.language.simple.SimpleLinguistics");
+        searchAndDocprocComponents.add("com.yahoo.prelude.cluster.ClusterSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.fastsearch.FastSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.fastsearch.VespaBackEndSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.CJKSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.CollapsePhraseSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.LiteralBoostSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.NoRankingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.NonPhrasingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.NormalizingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.PhrasingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.RecallSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.querytransform.StemmingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.BlendingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.FieldCollapsingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.FillSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.JSONDebugSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.JuniperSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.MultipleResultsSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.PosSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.QuotingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.searcher.ValidateSortingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.semantics.SemanticSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.statistics.StatisticsSearcher");
+        searchAndDocprocComponents.add("com.yahoo.prelude.templates.SearchRendererAdaptor");
+        searchAndDocprocComponents.add("com.yahoo.search.Searcher");
+        searchAndDocprocComponents.add("com.yahoo.search.cluster.ClusterSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.cluster.PingableSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.FederationSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.ForwardingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.http.ConfiguredHTTPClientSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.http.ConfiguredHTTPProviderSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.http.HTTPClientSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.http.HTTPProviderSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.http.HTTPSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.news.NewsSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.federation.vespa.VespaSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.grouping.GroupingQueryParser");
+        searchAndDocprocComponents.add("com.yahoo.search.grouping.GroupingValidator");
+        searchAndDocprocComponents.add("com.yahoo.search.grouping.vespa.GroupingExecutor");
+        searchAndDocprocComponents.add("com.yahoo.search.handler.SearchWithRendererHandler");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.PageTemplate");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.PageTemplateSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.engine.Resolver");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.engine.resolvers.RandomResolver");
+        searchAndDocprocComponents.add("com.yahoo.search.pagetemplates.model.Renderer");
+        searchAndDocprocComponents.add("com.yahoo.search.query.rewrite.QueryRewriteSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.query.rewrite.SearchChainDispatcherSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.query.rewrite.rewriters.GenericExpansionRewriter");
+        searchAndDocprocComponents.add("com.yahoo.search.query.rewrite.rewriters.MisspellRewriter");
+        searchAndDocprocComponents.add("com.yahoo.search.query.rewrite.rewriters.NameRewriter");
+        searchAndDocprocComponents.add("com.yahoo.search.querytransform.AllLowercasingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.querytransform.DefaultPositionSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.querytransform.LowercasingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.querytransform.NGramSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.querytransform.VespaLowercasingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.rendering.Renderer");
+        searchAndDocprocComponents.add("com.yahoo.search.rendering.SectionedRenderer");
+        searchAndDocprocComponents.add("com.yahoo.search.searchchain.ForkingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.searchchain.example.ExampleSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.searchers.CacheControlSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.statistics.PeakQpsSearcher");
+        searchAndDocprocComponents.add("com.yahoo.search.statistics.TimingSearcher");
+        searchAndDocprocComponents.add("com.yahoo.vespa.streamingvisitors.MetricsSearcher");
+        searchAndDocprocComponents.add("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
     }
 
 }

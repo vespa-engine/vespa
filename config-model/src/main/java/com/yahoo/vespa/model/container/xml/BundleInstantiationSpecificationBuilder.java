@@ -26,13 +26,14 @@ public class BundleInstantiationSpecificationBuilder {
         BundleInstantiationSpecification instSpec = new BundleInstantiationSpecification(id, classId, bundle);
         validate(instSpec);
 
-        return bundle == null ? setBundleForKnownClass(instSpec) : instSpec;
+        return bundle == null ? setBundleForSearchAndDocprocComponents(instSpec) : instSpec;
     }
 
-    private static BundleInstantiationSpecification setBundleForKnownClass(BundleInstantiationSpecification spec) {
-        return BundleMapper.getBundle(spec.getClassName()).
-                map(spec::inBundle).
-                orElse(spec);
+    private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
+        if (BundleMapper.isSearchAndDocprocClass(spec.getClassName()))
+            return spec.inBundle(BundleMapper.searchAndDocprocBundle);
+        else
+            return spec;
     }
 
 
