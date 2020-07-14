@@ -4,16 +4,14 @@
 
 #include <string>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include "point.h"
+#include "rectangle.h"
 
 namespace vespalib { class asciistream; }
 namespace search::query {
 
-// for unit tests:
-struct Point;
-struct Rectangle;
-
-class Location : public search::common::GeoLocationSpec {
-    using Parent = search::common::GeoLocationSpec;
+class Location : public search::common::GeoLocation {
+    using Parent = search::common::GeoLocation;
 public:
     Location() {}
     Location(const Parent &spec) : Parent(spec) {}
@@ -23,9 +21,7 @@ public:
     Location(const Rectangle &rect, const Point &p, uint32_t dist, uint32_t x_asp);
 
     bool operator==(const Location &other) const;
-    std::string getDebugString() const {
-        return getOldFormatLocationStringWithField();
-    }
+    std::string getDebugString() const;
 };
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc);

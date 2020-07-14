@@ -9,6 +9,7 @@
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 
@@ -18,6 +19,7 @@ LOG_SETUP(".proton.matching.query");
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;
+using search::common::GeoLocationSpec;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
@@ -75,65 +77,55 @@ fix_location_terms(Node *tree) {
     return retval;
 }
 
-struct ParsedLocationString {
-    bool valid;
-    string view;
-    search::common::GeoLocationSpec locationSpec;
-    ParsedLocationString() : valid(false), view(), locationSpec() {}
-    ~ParsedLocationString() {}
-};
-  
-ParsedLocationString parseQueryLocationString(string str) {
-    ParsedLocationString retval;
+GeoLocationSpec parseQueryLocationString(string str) {
+    GeoLocationSpec empty;
     if (str.empty()) {
-        return retval;
+        return empty;
     }
-    search::common::GeoLocationParser locationParser;
-    if (locationParser.parseOldFormatWithField(str)) {
-        auto spec = locationParser.spec();
-        retval.locationSpec = spec;
-        retval.view = PositionDataType::getZCurveFieldName(spec.getFieldName());
-        retval.valid = true;
+    search::common::GeoLocationParser parser;
+    if (parser.parseOldFormatWithField(str)) {
+        auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
+        return GeoLocationSpec{attr_name, parser.getGeoLocation()};
     } else {
-        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), locationParser.getParseError());
+        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
     }
-    return retval;
+    return empty;
 }
 
 void exchangeLocationNodes(const string &location_str,
                            Node::UP &query_tree,
                            std::vector<search::fef::Location> &fef_locations)
 {
-    using Spec = std::pair<string, search::common::GeoLocationSpec>;
-    std::vector<Spec> locationSpecs;
+    std::vector<GeoLocationSpec> locationSpecs;
 
     auto parsed = parseQueryLocationString(location_str);
-    if (parsed.valid) {
-        locationSpecs.emplace_back(parsed.view, parsed.locationSpec);
+    if (parsed.location.valid()) {
+        locationSpecs.emplace_back(parsed);
     }
     for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
-        const string view = pterm->getView();
-        auto loc = pterm->getTerm();
-        if (loc.isValid()) {
-            locationSpecs.emplace_back(view, loc);
+        std::string view = pterm->getView();
+        search::common::GeoLocation loc = pterm->getTerm();
+        if (loc.valid()) {
+            search::common::GeoLocationSpec spec{view, loc};
+            locationSpecs.push_back(spec);
         }
     }
-    for (const Spec &spec : locationSpecs) {
-        if (spec.second.hasPoint()) {
+    for (const GeoLocationSpec &spec : locationSpecs) {
+        if (spec.location.has_point) {
             search::fef::Location fef_loc;
-            fef_loc.setAttribute(spec.first);
-            fef_loc.setXPosition(spec.second.getX());
-            fef_loc.setYPosition(spec.second.getY());
-            fef_loc.setXAspect(spec.second.getXAspect());
+            fef_loc.setAttribute(spec.field_name);
+            fef_loc.setXPosition(spec.location.point.x);
+            fef_loc.setYPosition(spec.location.point.y);
+            fef_loc.setXAspect(spec.location.x_aspect.multiplier);
             fef_loc.setValid(true);
             fef_locations.push_back(fef_loc);
         }
     }
-    if (parsed.valid) {
+    if (parsed.location.can_limit()) {
         int32_t id = -1;
         Weight weight(100);
         query_tree = inject(std::move(query_tree),
-                            std::make_unique<ProtonLocationTerm>(parsed.locationSpec, parsed.view, id, weight));
+                            std::make_unique<ProtonLocationTerm>(parsed.location, parsed.field_name, id, weight));
     }
 }
 

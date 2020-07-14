@@ -10,7 +10,7 @@ namespace search::docsummary {
 class LocationAttrDFW : public AttrDFW
 {
 public:
-    using GeoLoc = search::common::GeoLocationSpec;
+    using GeoLoc = search::common::GeoLocation;
 
     LocationAttrDFW(const vespalib::string & attrName)
         : AttrDFW(attrName)

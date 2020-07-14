@@ -6,57 +6,35 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using vespalib::asciistream;
+using search::common::GeoLocation;
 
 namespace search::query {
 
-Location::Location(const Point &point, uint32_t max_dist, uint32_t x_aspect) {
-    _x = point.x;
-    _y = point.y;
-    _has_point = true;
-    _radius = max_dist;
-    _has_radius = true;
-    _x_aspect = x_aspect;
-    _valid = true;
-    adjust_bounding_box();
+static GeoLocation::Box convert(const Rectangle &rect) {
+    GeoLocation::Range x_range{rect.left, rect.right};
+    GeoLocation::Range y_range{rect.top, rect.bottom};
+    return GeoLocation::Box{x_range, y_range};
 }
+
+Location::Location(const Point &p, uint32_t max_dist, uint32_t aspect)
+    : Parent(p, max_dist, GeoLocation::Aspect(aspect))
+{}
 
 Location::Location(const Rectangle &rect,
-                   const Point &point, uint32_t max_dist, uint32_t x_aspect)
-{
-    _x = point.x;
-    _y = point.y;
-    _has_point = true;
-
-    _radius = max_dist;
-    _has_radius = true;
-
-    _x_aspect = x_aspect;
-
-    _min_x = rect.left;
-    _min_y = rect.top;
-    _max_x = rect.right;
-    _max_y = rect.bottom;
-    _has_bounding_box = true;
-    
-    _valid = true;
-}
+                   const Point &p, uint32_t max_dist, uint32_t aspect)
+    : Parent(convert(rect), p, max_dist, GeoLocation::Aspect(aspect))
+{}
 
 
-Location::Location(const Rectangle &rect) {
-    _min_x = rect.left;
-    _min_y = rect.top;
-    _max_x = rect.right;
-    _max_y = rect.bottom;
-    _has_bounding_box = true;
-    
-    _valid = true;
-}
+Location::Location(const Rectangle &rect)
+    : Parent(convert(rect))
+{}
 
 bool
 Location::operator==(const Location &other) const
 {
-    auto me = getOldFormatLocationStringWithField();
-    auto it = other.getOldFormatLocationStringWithField();
+    auto me = getDebugString();
+    auto it = other.getDebugString();
     if (me == it) {
         return true;
     } else {
@@ -65,9 +43,31 @@ Location::operator==(const Location &other) const
     }
 }
 
+std::string
+Location::getDebugString() const
+{
+    vespalib::asciistream buf;
+    buf << "query::Location{";
+    if (has_point) {
+        buf << "point=[" << point.x << "," << point.y << "]";
+        if (has_radius()) {
+            buf << ",radius=" << radius;
+        }
+        if (x_aspect.active()) {
+            buf << ",x_aspect=" << x_aspect.multiplier;
+        }
+    }
+    if (bounding_box.active()) {
+        if (has_point) buf << ",";
+        buf << "bb.x=[" << bounding_box.x.lo << "," << bounding_box.x.hi << "],";
+        buf << "bb.y=[" << bounding_box.y.lo << "," << bounding_box.y.hi << "]";
+    }
+    buf << "}";
+    return buf.str();
+}
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
-    return out << loc.getOldFormatLocationString();
+    return out << loc.getDebugString();
 }
 
 }

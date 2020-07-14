@@ -3,14 +3,10 @@
 #pragma once
 
 #include <cstdint>
+#include <vespa/searchlib/common/geo_location.h>
 
 namespace search::query {
 
-struct Point {
-    int64_t x;
-    int64_t y;
-    Point() : x(0), y(0) {}
-    Point(int64_t x_in, int64_t y_in) : x(x_in), y(y_in) {}
-};
+using Point = search::common::GeoLocation::Point;
 
 }

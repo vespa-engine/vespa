@@ -5,15 +5,6 @@
 
 namespace search::common {
 
-Location::Location(const GeoLocationSpec &from)
-  : GeoLocationSpec(from),
-    _zBoundingBox(0,0,0,0)
-{
-    using vespalib::geo::ZCurve;
-    if (isValid()) {
-        _zBoundingBox = ZCurve::BoundingBox(getMinX(), getMaxX(),
-                                            getMinY(), getMaxY());
-    }
-}
+Location::Location(const GeoLocation &from) : GeoLocation(from) {}
 
 } // namespace

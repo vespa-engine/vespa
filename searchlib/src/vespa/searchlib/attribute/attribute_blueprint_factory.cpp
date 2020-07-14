@@ -251,7 +251,7 @@ public:
           _location(loc)
     {
         uint32_t estHits = 0;
-        if (loc.isValid()) {
+        if (loc.valid()) {
             _location.setVec(attribute);
             estHits = _attribute.getNumDocs();
         }
@@ -275,14 +275,16 @@ Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
     auto post_filter = std::make_unique<LocationPostFilterBlueprint>(field, attribute, loc);
     const common::Location &location = post_filter->location();
-    if (location.getMinX() > location.getMaxX() ||
-        location.getMinY() > location.getMaxY())
+    if (location.bounding_box.x.lo > location.bounding_box.x.hi ||
+        location.bounding_box.y.lo > location.bounding_box.y.hi)
     {
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     ZCurve::RangeVector rangeVector = ZCurve::find_ranges(
-            location.getMinX(), location.getMinY(),
-            location.getMaxX(), location.getMaxY());
+            location.bounding_box.x.lo,
+            location.bounding_box.y.lo,
+            location.bounding_box.x.hi,
+            location.bounding_box.y.hi);
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector);
     if (!pre_filter->should_use()) {
         return post_filter;

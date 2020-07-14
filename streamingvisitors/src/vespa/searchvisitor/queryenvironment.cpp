@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryenvironment.h"
+#include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.queryenvironment");
@@ -27,12 +29,14 @@ parseLocation(const string & location_str)
                      location_str.c_str(), locationParser.getParseError());
         return fefLocation;
     }
-    auto locationSpec = locationParser.spec();
-    fefLocation.setAttribute(locationSpec.getFieldName());
-    fefLocation.setXPosition(locationSpec.getX());
-    fefLocation.setYPosition(locationSpec.getY());
-    fefLocation.setXAspect(locationSpec.getXAspect());
-    fefLocation.setValid(true);
+    auto location = locationParser.getGeoLocation();
+    if (location.has_point) {
+        fefLocation.setAttribute(locationParser.getFieldName());
+        fefLocation.setXPosition(location.point.x);
+        fefLocation.setYPosition(location.point.y);
+        fefLocation.setXAspect(location.x_aspect.multiplier);
+        fefLocation.setValid(true);
+    }
     return fefLocation;
 }
 

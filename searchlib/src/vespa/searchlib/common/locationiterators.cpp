@@ -14,7 +14,6 @@ class FastS_2DZLocationIterator : public search::queryeval::SearchIterator
 private:
     const unsigned int _numDocs;
     const bool         _strict;
-    const uint64_t     _radius2;
     const Location &   _location;
     std::vector<search::AttributeVector::largeint_t> _pos;
 
@@ -34,7 +33,6 @@ FastS_2DZLocationIterator(unsigned int numDocs,
     : SearchIterator(),
       _numDocs(numDocs),
       _strict(strict),
-      _radius2(static_cast<uint64_t>(location.getRadius()) * location.getRadius()),
       _location(location),
       _pos()
 {
@@ -67,26 +65,9 @@ FastS_2DZLocationIterator::doSeek(uint32_t docId)
         }
         for (uint32_t i = 0; i < numValues; i++) {
             int64_t docxy(pos[i]);
-            if ( ! location.getzFailBoundingBoxTest(docxy)) {
-                int32_t docx = 0;
-                int32_t docy = 0;
-                vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-                uint32_t dx = (location.getX() > docx)
-                              ? location.getX() - docx
-                              : docx - location.getX();
-                if (location.getXAspect() != 0)
-                    dx = ((uint64_t) dx * location.getXAspect()) >> 32;
-
-                uint32_t dy = (location.getY() > docy)
-                              ? location.getY() - docy
-                              : docy - location.getY();
-                uint64_t dist2 = (uint64_t) dx * dx + (uint64_t) dy * dy;
-                if (dist2 <= _radius2) {
-                    setDocId(docId);
-                    return;
-                }
-            } else {
-                LOG(spam, "%u[%u] zFailBoundingBoxTest", docId, i);
+            if (location.inside_limit(docxy)) {
+                setDocId(docId);
+                return;
             }
         }
 
