@@ -34,6 +34,8 @@ LocationAttrDFW::getAllLocations(GetDocsumsState *state)
     }
     for (const auto & loc : state->_parsedLocations) {
         if (loc.location.valid()) {
+            LOG(debug, "found location(field %s) for DFW(field %s)\n",
+                loc.field_name.c_str(), getAttributeName().c_str());
             if (getAttributeName() == loc.field_name) {
                 retval.matching.push_back(&loc.location);
             } else {

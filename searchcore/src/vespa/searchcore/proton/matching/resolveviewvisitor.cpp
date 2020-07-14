@@ -18,7 +18,7 @@ ResolveViewVisitor::visit(ProtonLocationTerm &n) {
         auto newView = document::PositionDataType::getZCurveFieldName(oldView);
         n.setView(newView);
         n.resolve(_resolver, _indexEnv);
-        LOG(info, "ProtonLocationTerm found %zu field after view change %s -> %s",
+        LOG(debug, "ProtonLocationTerm found %zu field after view change %s -> %s",
             n.numFields(), oldView.c_str(), newView.c_str());
     }
 }
