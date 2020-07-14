@@ -3,11 +3,11 @@
 package com.yahoo.geo;
 
 /**
- * utility for parsing geographical coordinates
+ * utility for parsing one geographical coordinate
  *
  * @author arnej27959
  **/
-public class ParseDegree {
+class OneDegreeParser {
     /**
      * the parsed latitude (degrees north if positive)
      **/
@@ -82,7 +82,7 @@ public class ParseDegree {
      * @param lat_or_lon Latitude or longitude
      *
      **/
-    public ParseDegree(boolean assume_n_s, String lat_or_lon) throws IllegalArgumentException {
+    public OneDegreeParser(boolean assume_n_s, String lat_or_lon) throws IllegalArgumentException {
         this.parseString = lat_or_lon;
         this.len = parseString.length();
         consumeString(assume_n_s);

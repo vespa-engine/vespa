@@ -19,8 +19,8 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
-import com.yahoo.geo.ParseDegree;
-import com.yahoo.geo.ParseDistance;
+import com.yahoo.geo.DistanceParser;
+import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
@@ -424,14 +424,14 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
         String field = fetchFieldRead(args.get(0));
-        var coord_1 = new ParseDegree(true, fetchFieldRead(args.get(1)));
-        var coord_2 = new ParseDegree(false, fetchFieldRead(args.get(2)));
-        var radius = new ParseDistance(fetchFieldRead(args.get(3)));
+        var coord_1 = ParsedDegree.fromString(fetchFieldRead(args.get(1)), true, false);
+        var coord_2 = ParsedDegree.fromString(fetchFieldRead(args.get(2)), false, true);
+        var radius = new DistanceParser(fetchFieldRead(args.get(3)), false);
         var loc = new Location();
-        if (coord_1.foundLatitude && coord_2.foundLongitude) {
-            loc.setGeoCircle(coord_1.latitude, coord_2.longitude, radius.degrees);
-        } else if (coord_2.foundLatitude && coord_1.foundLongitude) {
-            loc.setGeoCircle(coord_2.latitude, coord_1.longitude, radius.degrees);
+        if (coord_1.isLatitude && coord_2.isLongitude) {
+            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius.degrees);
+        } else if (coord_2.isLatitude && coord_1.isLongitude) {
+            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius.degrees);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
         }

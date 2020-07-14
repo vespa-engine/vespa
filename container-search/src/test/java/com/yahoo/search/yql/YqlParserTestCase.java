@@ -549,7 +549,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testGeoLocation() {
-        assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, 500000);",
+        assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\");",
                     "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
         assertParse("select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\");",
                     "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
@@ -558,10 +558,10 @@ public class YqlParserTestCase {
 
         assertParseFail("select foo from bar where geoLocation(qux, 1, 2);",
                         new IllegalArgumentException("Expected 4 arguments, got 3."));
-        assertParseFail("select foo from bar where geoLocation(qux, 1.0, \"N1.0\", 100);",
+        assertParseFail("select foo from bar where geoLocation(qux, 2.0, \"N5.0\", \"0.5 deg\");",
                         new IllegalArgumentException(
-                                "Invalid geoLocation coordinates '1.0 -> latitude(1.0)' and 'N1.0 -> latitude(1.0)'"));
-        assertParse("select foo from bar where geoLocation(workplace, -12, -34, -77);",
+                                "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
+        assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\");",
                     "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
     }
 
