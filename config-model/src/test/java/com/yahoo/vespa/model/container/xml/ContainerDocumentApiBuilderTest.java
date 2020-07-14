@@ -110,9 +110,9 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         Map<String, Handler<?>> handlers = getHandlers("cluster1");
         Handler<?> feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
         Set<String> injectedComponentIds = feedApiHandler.getInjectedComponentIds();
-        assertThat(injectedComponentIds, hasItem("threadpool-provider@feedapi-handler"));
+        assertThat(injectedComponentIds, hasItem("threadpool@feedapi-handler"));
 
-        ThreadpoolConfig config = root.getConfig(ThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool-provider@feedapi-handler");
+        ThreadpoolConfig config = root.getConfig(ThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
         assertEquals(4, config.maxthreads());
         assertEquals(4, config.corePoolSize());
     }
