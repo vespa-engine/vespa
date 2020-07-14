@@ -131,9 +131,6 @@ public class BundleManager {
         PredicateSplit<FileReference> bundlesToInstall_isDisk = partition(bundlesToInstall, BundleManager::isDiskBundle);
         installBundlesFromDisk(bundlesToInstall_isDisk.trueValues);
         installBundlesFromFileDistribution(bundlesToInstall_isDisk.falseValues);
-
-        // TODO: Remove. Bundles are also started in use()
-        startBundles();
     }
 
     private static boolean isDiskBundle(FileReference fileReference) {
