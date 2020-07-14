@@ -85,11 +85,6 @@ public class SessionZooKeeperClientTest {
     }
 
     @Test
-    public void require_that_default_name_is_returned_if_node_does_not_exist() {
-        assertThat(createSessionZKClient("3").readApplicationId().application().value(), is("default"));
-    }
-
-    @Test
     public void require_that_create_time_can_be_written_and_read() {
         SessionZooKeeperClient zkc = createSessionZKClient("3");
         curator.delete(Path.fromString("3"));

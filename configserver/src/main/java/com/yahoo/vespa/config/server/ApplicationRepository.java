@@ -677,7 +677,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
-        sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));
+        sessionsPerTenant.values()
+                .forEach(sessionList -> sessionList.stream()
+                        .map(Session::getApplicationId)
+                        .filter(Objects::nonNull)
+                        .forEach(applicationIds::add));
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
         applicationIds.forEach(applicationId -> {

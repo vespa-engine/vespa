@@ -150,8 +150,8 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationId readApplicationId() {
-        if ( ! configCurator.exists(applicationIdPath())) return ApplicationId.defaultId();
-        return ApplicationId.fromSerializedForm(configCurator.getData(applicationIdPath()));
+        String idString = configCurator.getData(applicationIdPath());
+        return idString == null ? null : ApplicationId.fromSerializedForm(idString);
     }
 
     void writeApplicationPackageReference(FileReference applicationPackageReference) {

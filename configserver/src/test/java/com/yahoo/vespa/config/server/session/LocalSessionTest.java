@@ -62,7 +62,7 @@ public class LocalSessionTest {
                                             .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                                             .build())
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
         configCurator = ConfigCurator.create(curator);
     }
@@ -126,12 +126,14 @@ public class LocalSessionTest {
         }
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         TenantApplications applications = tenantRepository.getTenant(tenantName).getApplicationRepo();
-        applications.createApplication(zkc.readApplicationId());
-        return new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp), zkc, applications);
+        applications.createApplication(applicationId());
+        LocalSession session = new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp), zkc, applications);
+        session.setApplicationId(applicationId());
+        return session;
     }
 
     private void doPrepare(LocalSession session) {
-        doPrepare(session, new PrepareParams.Builder().build());
+        doPrepare(session, new PrepareParams.Builder().applicationId(applicationId()).build());
     }
 
     private void doPrepare(LocalSession session, PrepareParams params) {
@@ -140,8 +142,11 @@ public class LocalSessionTest {
     }
 
     private DeployHandlerLogger getLogger() {
-        return new DeployHandlerLogger(new Slime().get(), false,
-                                       new ApplicationId.Builder().tenant(tenantName).applicationName("testapp").build());
+        return new DeployHandlerLogger(new Slime().get(), false, applicationId());
+    }
+
+    private ApplicationId applicationId() {
+        return new ApplicationId.Builder().tenant(tenantName).applicationName("testapp").build();
     }
 
 }
