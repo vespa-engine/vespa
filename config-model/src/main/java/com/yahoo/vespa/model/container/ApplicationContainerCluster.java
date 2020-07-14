@@ -21,7 +21,6 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
@@ -29,10 +28,9 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
-import com.yahoo.vespa.model.container.xml.BundleMapper;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.utils.FileSender;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -136,11 +134,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
         if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) {
-            addPlatformBundle(BundleMapper.absoluteBundlePath("vespa-testrunner-components"));
-            addPlatformBundle(BundleMapper.absoluteBundlePath("vespa-osgi-testrunner"));
-            addPlatformBundle(BundleMapper.absoluteBundlePath("tenant-cd-api"));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-testrunner-components"));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-osgi-testrunner"));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("tenant-cd-api"));
             if(deployState.zone().system().isPublic()) {
-                addPlatformBundle(BundleMapper.absoluteBundlePath("cloud-tenant-cd"));
+                addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-tenant-cd"));
             }
         }
     }

@@ -30,8 +30,8 @@ public class BundleInstantiationSpecificationBuilder {
     }
 
     private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
-        if (BundleMapper.isSearchAndDocprocClass(spec.getClassName()))
-            return spec.inBundle(BundleMapper.searchAndDocprocBundle);
+        if (PlatformBundles.isSearchAndDocprocClass(spec.getClassName()))
+            return spec.inBundle(PlatformBundles.searchAndDocprocBundle);
         else
             return spec;
     }

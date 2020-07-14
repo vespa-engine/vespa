@@ -14,7 +14,7 @@ import java.util.Set;
  * @author gjoranv
  * @author Ulf Lilleengen
  */
-public class BundleMapper {
+public class PlatformBundles {
 
     private enum JarSuffix {
         JAR_WITH_DEPS("-jar-with-dependencies.jar"),

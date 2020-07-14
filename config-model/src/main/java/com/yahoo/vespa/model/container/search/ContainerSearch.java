@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
@@ -25,7 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.vespa.model.container.xml.BundleMapper.searchAndDocprocBundle;
+import static com.yahoo.vespa.model.container.xml.PlatformBundles.searchAndDocprocBundle;
 
 /**
  * @author gjoranv
