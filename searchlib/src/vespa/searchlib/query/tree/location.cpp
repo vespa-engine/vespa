@@ -39,8 +39,6 @@ Location::operator==(const Location &other) const
         return true;
     } else {
         // dump 'me' and 'it' here if unit tests fail
-        fprintf(stderr, "not equal: this('%s') and other('%s')\n",
-                me.c_str(), it.c_str());
         return false;
     }
 }
