@@ -2,7 +2,7 @@
 
 package com.yahoo.geo;
 
-public class ParseDistance {
+public class DistanceParser {
     // according to wikipedia:
     // Earth's equatorial radius = 6378137 meter - not used
     // meters per mile = 1609.344
@@ -13,9 +13,9 @@ public class ParseDistance {
     public final static double km2deg = 1000.000 * 180.0 / (Math.PI * 6356752.0);
     public final static double mi2deg = 1609.344 * 180.0 / (Math.PI * 6356752.0);
 
-    public double degrees = 0.0;
+    public final double degrees;
 
-    public ParseDistance(String distance) {
+    public DistanceParser(String distance, boolean assume_micro_degrees) {
         if (distance.endsWith(" km")) {
             double km = Double.valueOf(distance.substring(0, distance.length()-3));
             degrees = km * km2deg;
@@ -48,8 +48,10 @@ public class ParseDistance {
             degrees = Double.valueOf(distance.substring(0, distance.length()-3));
         } else if (distance.endsWith("d")) {
             degrees = Double.valueOf(distance.substring(0, distance.length()-1));
-        } else {
+        } else if (assume_micro_degrees) {
             degrees = Integer.parseInt(distance) * 0.000001;
+        } else {
+            throw new IllegalArgumentException("missing unit for distance: "+distance);
         }
     }
 

@@ -3,8 +3,8 @@ package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
-import com.yahoo.geo.ParseDegree;
-import com.yahoo.geo.ParseDistance;
+import com.yahoo.geo.DistanceParser;
+import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.prelude.IndexFacts;
@@ -434,26 +434,24 @@ public class SelectParser implements Parser {
         var arg2 = children.get(2);
         var arg3 = children.get(3);
         var loc = new Location();
-        double radius = -1;
-        if (arg3.type() == Type.STRING) {
-           radius = new ParseDistance(arg3.asString()).degrees;
-        } else if (arg3.type() == Type.LONG) {
-           radius = new ParseDistance(String.valueOf(arg3.asLong())).degrees;
-        } else {
+        if (arg3.type() != Type.STRING) {
            throw new IllegalArgumentException("Invalid geoLocation radius type "+arg3.type()+" for "+arg3);
         }
+        var radius = new DistanceParser(arg3.asString(), false);
         if (arg1.type() == Type.STRING && arg2.type() == Type.STRING) {
-            var coord_1 = new ParseDegree(true, children.get(1).asString());
-            var coord_2 = new ParseDegree(false, children.get(2).asString());
-            if (coord_1.foundLatitude && coord_2.foundLongitude) {
-                loc.setGeoCircle(coord_1.latitude, coord_2.longitude, radius);
-            } else if (coord_2.foundLatitude && coord_1.foundLongitude) {
-                loc.setGeoCircle(coord_2.latitude, coord_1.longitude, radius);
+            var c1input = children.get(1).asString();
+            var c2input = children.get(2).asString();
+            var coord_1 = ParsedDegree.fromString(c1input, true, false);
+            var coord_2 = ParsedDegree.fromString(c2input, false, true);
+            if (coord_1.isLatitude && coord_2.isLongitude) {
+                loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius.degrees);
+            } else if (coord_2.isLatitude && coord_1.isLongitude) {
+                loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius.degrees);
             } else {
-                throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
+                throw new IllegalArgumentException("Invalid geoLocation coordinates '"+c1input+"' and '"+c2input+"'");
             }
         } else if (arg1.type() == Type.DOUBLE && arg2.type() == Type.DOUBLE) {
-            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius);
+            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius.degrees);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinate types "+arg1.type()+" and "+arg2.type());
         }
