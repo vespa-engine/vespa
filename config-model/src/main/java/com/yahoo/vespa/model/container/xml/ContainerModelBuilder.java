@@ -154,19 +154,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
-        addBundlesForPlatformComponents(cluster);
         cluster.setMessageBusEnabled(rpcServerEnabled);
         cluster.setRpcServerEnabled(rpcServerEnabled);
         cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
-    }
-
-    private void addBundlesForPlatformComponents(ApplicationContainerCluster cluster) {
-        for (Component<?, ?> component : cluster.getAllComponents()) {
-            String componentClass = component.model.bundleInstantiationSpec.getClassName();
-            BundleMapper.getBundlePath(componentClass).
-                    ifPresent(cluster::addPlatformBundle);
-        }
     }
 
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {

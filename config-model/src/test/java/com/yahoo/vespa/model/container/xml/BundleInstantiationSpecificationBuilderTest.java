@@ -33,7 +33,7 @@ public class BundleInstantiationSpecificationBuilderTest {
     @Test
     public void bundle_is_replaced_for_internal_class() throws IOException, SAXException {
         String internalClass = GroupingValidator.class.getName();
-        verifyExpectedBundle(internalClass, null, BundleMapper.searchAndDocprocBundle);
+        verifyExpectedBundle(internalClass, null, PlatformBundles.searchAndDocprocBundle);
     }
 
     @Test

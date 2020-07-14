@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.BundleMapper;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent, ComponentModel> {
 
@@ -13,6 +13,6 @@ public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent
 
     private static ComponentModel toComponentModel(String clusterName) {
         String componentId = "rpcresourcepool." + clusterName;
-        return new ComponentModel(componentId, com.yahoo.search.dispatch.rpc.RpcResourcePool.class.getName(), BundleMapper.searchAndDocprocBundle);
+        return new ComponentModel(componentId, com.yahoo.search.dispatch.rpc.RpcResourcePool.class.getName(), PlatformBundles.searchAndDocprocBundle);
     }
 }
