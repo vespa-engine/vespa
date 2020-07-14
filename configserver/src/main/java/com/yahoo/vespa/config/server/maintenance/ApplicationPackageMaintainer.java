@@ -16,11 +16,10 @@ import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -65,7 +64,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 log.fine(() -> "Verifying application package file reference " + applicationPackage + " for session " + sessionId);
 
                 if (applicationPackage != null) {
-                    if (missingOnDisk(applicationPackage)) {
+                    if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " - session " + sessionId);
 
                         if (fileDownloader.getFile(applicationPackage).isEmpty()) {
@@ -84,11 +83,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         SessionRepository sessionRepository = tenant.getSessionRepository();
         if (sessionRepository.getLocalSession(sessionId) == null)
             sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
-    }
-
-    private boolean missingOnDisk(FileReference applicationPackageReference) {
-        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(downloadDirectory);
-        return ! fileReferencesOnDisk.contains(applicationPackageReference.value());
     }
 
 }

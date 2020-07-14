@@ -1,6 +1,7 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -48,6 +49,10 @@ public class FileDistributionUtil {
                 .collect(Collectors.toList());
 
         return configServers.size() > 0 ? new JRTConnectionPool(new ConfigSourceSet(configServers)) : emptyConnectionPool();
+    }
+
+    public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {
+        return getFileReferencesOnDisk(downloadDirectory).contains(applicationPackageReference.value());
     }
 
     static ConnectionPool emptyConnectionPool() {
