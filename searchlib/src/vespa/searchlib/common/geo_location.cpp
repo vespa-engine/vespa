@@ -92,7 +92,7 @@ GeoLocation::GeoLocation(Point p, uint32_t r, Aspect xa)
   : has_point(true),
     point(p),
     radius(r),
-    x_aspect(),
+    x_aspect(xa),
     bounding_box(adjust_bounding_box(no_box, p, r, xa)),
     _sq_radius(uint64_t(r) * uint64_t(r)),
     _z_bounding_box(to_z(bounding_box))

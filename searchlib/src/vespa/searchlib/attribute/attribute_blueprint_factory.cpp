@@ -255,7 +255,7 @@ public:
             _location.setVec(attribute);
             estHits = _attribute.getNumDocs();
         }
-        LOG(debug, "location %s in attribute with numdocs %u", loc.getDebugString().c_str(), estHits);
+        LOG(debug, "location %s in attribute with numdocs %u", loc.getOldFormatString().c_str(), estHits);
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
     }

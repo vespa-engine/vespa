@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/common/location.h>
-#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 
 using search::common::Location;
 using search::common::GeoLocationParser;
-using search::common::GeoLocationSpec;
 
 Location parse(const char *str) {
     GeoLocationParser parser;
