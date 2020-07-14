@@ -12,8 +12,6 @@ import java.util.List;
  */
 public interface Osgi {
 
-    List<Bundle> getInitialBundles();
-
     Bundle[] getBundles();
 
     /** Returns all bundles that have not been scheduled for uninstall. */

@@ -42,11 +42,6 @@ public class OsgiImpl implements Osgi {
     }
 
     @Override
-    public List<Bundle> getInitialBundles() {
-        return initialBundles;
-    }
-
-    @Override
     public Bundle[] getBundles() {
         List<Bundle> bundles = jdiscOsgi.bundles();
         return bundles.toArray(new Bundle[bundles.size()]);
