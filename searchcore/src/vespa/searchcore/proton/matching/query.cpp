@@ -19,6 +19,8 @@ LOG_SETUP(".proton.matching.query");
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;
+using search::common::GeoLocation;
+using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
@@ -57,15 +59,13 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-std::vector<const ProtonLocationTerm *>
-fix_location_terms(Node *tree) {
-    std::vector<const ProtonLocationTerm *> retval;
+std::vector<ProtonLocationTerm *>
+find_location_terms(Node *tree) {
+    std::vector<ProtonLocationTerm *> retval;
     std::vector<Node *> nodes;
     nodes.push_back(tree);
     for (size_t i = 0; i < nodes.size(); ++i) {
         if (auto loc = dynamic_cast<ProtonLocationTerm *>(nodes[i])) {
-            const string old_view = loc->getView();
-            loc->setView(PositionDataType::getZCurveFieldName(old_view));
             retval.push_back(loc);
         }
         if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
@@ -82,7 +82,7 @@ GeoLocationSpec parseQueryLocationString(string str) {
     if (str.empty()) {
         return empty;
     }
-    search::common::GeoLocationParser parser;
+    GeoLocationParser parser;
     if (parser.parseOldFormatWithField(str)) {
         auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
         return GeoLocationSpec{attr_name, parser.getGeoLocation()};
@@ -90,6 +90,14 @@ GeoLocationSpec parseQueryLocationString(string str) {
         LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
     }
     return empty;
+}
+
+GeoLocationSpec process_query_term(ProtonLocationTerm &pterm) {
+    auto old_view = pterm.getView();
+    auto new_view = PositionDataType::getZCurveFieldName(old_view);
+    pterm.setView(new_view);
+    const GeoLocation &loc = pterm.getTerm();
+    return GeoLocationSpec{new_view, loc};
 }
 
 void exchangeLocationNodes(const string &location_str,
@@ -100,13 +108,11 @@ void exchangeLocationNodes(const string &location_str,
 
     auto parsed = parseQueryLocationString(location_str);
     if (parsed.location.valid()) {
-        locationSpecs.emplace_back(parsed);
+        locationSpecs.push_back(parsed);
     }
-    for (const ProtonLocationTerm * pterm : fix_location_terms(query_tree.get())) {
-        std::string view = pterm->getView();
-        search::common::GeoLocation loc = pterm->getTerm();
-        if (loc.valid()) {
-            search::common::GeoLocationSpec spec{view, loc};
+    for (ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
+        auto spec = process_query_term(*pterm);
+        if (spec.location.valid()) {
             locationSpecs.push_back(spec);
         }
     }
