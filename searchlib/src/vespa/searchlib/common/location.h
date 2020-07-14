@@ -3,28 +3,19 @@
 #pragma once
 
 #include "documentlocations.h"
-#include "geo_location_spec.h"
-#include <string>
-#include <vespa/vespalib/geo/zcurve.h>
-
-#include <vespa/vespalib/stllike/string.h>
+#include "geo_location.h"
 
 namespace search::common {
 
 class Location : public DocumentLocations,
-                 public GeoLocationSpec
+                 public GeoLocation
 {
 public:
-    Location(const GeoLocationSpec& from);
+    Location(const GeoLocation& from);
     ~Location() {}
     Location(Location &&) = default;
-    bool getRankOnDistance() const { return hasPoint(); }
-    bool getPruneOnDistance() const { return hasBoundingBox(); }
-    bool getzFailBoundingBoxTest(int64_t docxy) const {
-        return _zBoundingBox.getzFailBoundingBoxTest(docxy);
-    }
-private:
-    vespalib::geo::ZCurve::BoundingBox _zBoundingBox;
+    bool getRankOnDistance() const { return has_point; }
+    bool getPruneOnDistance() const { return can_limit(); }
 };
 
 }

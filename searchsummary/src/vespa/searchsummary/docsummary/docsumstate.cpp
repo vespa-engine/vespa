@@ -3,7 +3,9 @@
 #include "docsumstate.h"
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/geo_location.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -70,7 +72,10 @@ GetDocsumsState::parse_locations()
     if (! _args.getLocation().empty()) {
         search::common::GeoLocationParser locationParser;
         if (locationParser.parseOldFormatWithField(_args.getLocation())) {
-            _parsedLocations.emplace_back(locationParser.spec());
+            // TODO: do we need to add _zcurve prefix?
+            auto attr_name = locationParser.getFieldName();
+            search::common::GeoLocationSpec spec{attr_name, locationParser.getGeoLocation()};
+            _parsedLocations.push_back(spec);
         } else {
             LOG(warning, "could not parse location string '%s' from request",
                 _args.getLocation().c_str());
@@ -85,8 +90,9 @@ GetDocsumsState::parse_locations()
                 vespalib::string term = iterator.getTerm();
                 search::common::GeoLocationParser locationParser;                
                 if (locationParser.parseOldFormat(term)) {
-                    locationParser.setFieldName(view);
-                    _parsedLocations.emplace_back(locationParser.spec());
+                    // TODO: do we need to add _zcurve prefix?
+                    search::common::GeoLocationSpec spec{view, locationParser.getGeoLocation()};
+                    _parsedLocations.push_back(spec);
                 } else {
                     LOG(warning, "could not parse location string '%s' from stack dump",
                         term.c_str());

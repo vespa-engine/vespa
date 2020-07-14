@@ -5,13 +5,13 @@
 namespace search::query {
 
 struct Rectangle {
-    int64_t left;
-    int64_t top;
-    int64_t right;
-    int64_t bottom;
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
 
     Rectangle() : left(0), top(0), right(0), bottom(0) {}
-    Rectangle(int64_t l, int64_t t, int64_t r, int64_t b)
+    Rectangle(int32_t l, int32_t t, int32_t r, int32_t b)
         : left(l), top(t), right(r), bottom(b) {}
 };
 

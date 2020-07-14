@@ -33,11 +33,11 @@ LocationAttrDFW::getAllLocations(GetDocsumsState *state)
         state->parse_locations();
     }
     for (const auto & loc : state->_parsedLocations) {
-        if (loc.isValid()) {
-            if (getAttributeName() == loc.getFieldName()) {
-                retval.matching.push_back(&loc);
+        if (loc.location.valid()) {
+            if (getAttributeName() == loc.field_name) {
+                retval.matching.push_back(&loc.location);
             } else {
-                retval.other.push_back(&loc);
+                retval.other.push_back(&loc.location);
             }
         }
     }
@@ -67,23 +67,7 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
         for (uint32_t i = 0; i < numValues; i++) {
             int64_t docxy(pos[i]);
             vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-            uint32_t dx;
-            if (location->getX() > docx) {
-                dx = location->getX() - docx;
-            } else {
-                dx = docx - location->getX();
-            }
-            if (location->getXAspect() != 0) {
-                dx = ((uint64_t) dx * location->getXAspect()) >> 32;
-            }
-            uint32_t dy;
-            if (location->getY() > docy) {
-                dy = location->getY() - docy;
-            } else {
-                dy = docy - location->getY();
-            }
-            uint64_t dist2 = dx * (uint64_t) dx +
-                             dy * (uint64_t) dy;
+            uint64_t dist2 = location->sq_distance_to(GeoLoc::Point{docx, docy});
             if (dist2 < absdist) {
                 absdist = dist2;
             }

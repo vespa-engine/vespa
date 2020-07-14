@@ -27,6 +27,7 @@ struct GeoLocation
     struct Aspect {
         uint32_t multiplier;
         Aspect() : multiplier(0) {}
+        Aspect(uint32_t multiplier_in) : multiplier(multiplier_in) {}
         bool active() const { return multiplier != 0; }
     };
     struct Range {
@@ -72,7 +73,7 @@ struct GeoLocation
     bool inside_limit(Point p) const;
 
     bool inside_limit(int64_t zcurve_encoded_xy) const {
-        if (_zBoundingBox.getzFailBoundingBoxTest(zcurve_encoded_xy)) return false;
+        if (_z_bounding_box.getzFailBoundingBoxTest(zcurve_encoded_xy)) return false;
         int32_t x = 0;
         int32_t y = 0;
         vespalib::geo::ZCurve::decode(zcurve_encoded_xy, &x, &y);
@@ -83,7 +84,7 @@ private:
     // constants for implementation of helper methods:
     static constexpr uint64_t sq_radius_inf = std::numeric_limits<uint64_t>::max();
     const uint64_t _sq_radius;
-    const vespalib::geo::ZCurve::BoundingBox _zBoundingBox;
+    const vespalib::geo::ZCurve::BoundingBox _z_bounding_box;
 };
 
 } // namespace
