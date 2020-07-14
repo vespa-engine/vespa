@@ -134,13 +134,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+            validateSessionStatus(session);
             ApplicationId applicationId = session.getApplicationId();
 
             if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
 
             RemoteSession previousActiveSession;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
-                validateSessionStatus(session);
                 NestedTransaction transaction = new NestedTransaction();
                 previousActiveSession = applicationRepository.getActiveSession(applicationId);
                 transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
