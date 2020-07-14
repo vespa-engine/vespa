@@ -96,12 +96,14 @@ class LogReader {
         private final BufferedReader reader;
         private final double from;
         private final double to;
+        private final InputStream inputStream;
         private LineWithTimestamp next;
 
         private LogLineIterator(Path log, double from, double to) throws IOException {
             boolean zipped = log.toString().endsWith(".gz");
             InputStream in = Files.newInputStream(log);
-            this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
+            this.inputStream = zipped ? new GZIPInputStream(in) : in;
+            this.reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
             this.from = from;
             this.to = to;
             this.next = readNext();
@@ -122,6 +124,7 @@ class LogReader {
         @Override
         public void close() throws IOException {
             reader.close();
+            inputStream.close();
         }
 
         private LineWithTimestamp readNext() {
