@@ -22,10 +22,7 @@ public interface ApplicationStore {
     byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
 
     /** Find application package by given build number */
-    default Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber) {
-        // TODO(mpolden): Remove default once all implemenations catch up
-        return Optional.empty();
-    }
+    Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
 
     /** Stores the given tenant application package of the given version. */
     void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage);
