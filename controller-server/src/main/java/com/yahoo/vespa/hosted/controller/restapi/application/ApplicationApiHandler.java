@@ -18,7 +18,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -39,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -654,7 +652,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-        String metrics = controller.serviceRegistry().configServer().getMetricsV2(deployment);
+        String metrics = controller.serviceRegistry().configServer().getProtonMetricsV1(deployment);
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) throws IOException {
