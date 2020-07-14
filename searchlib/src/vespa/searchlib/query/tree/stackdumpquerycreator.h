@@ -146,10 +146,6 @@ private:
                 search::common::GeoLocationParser parser;
                 parser.parseOldFormat(term);
                 Location loc(parser.getGeoLocation());
-                if (! loc.valid()) {
-                    vespalib::string tmp(term);
-                    fprintf(stderr, "not valid location term: '%s'\n", tmp.c_str());
-                }
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
                 if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
