@@ -2,6 +2,7 @@
 
 #include "docsumstate.h"
 #include <vespa/juniper/rpinterface.h>
+#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
@@ -68,13 +69,14 @@ GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_el
 void
 GetDocsumsState::parse_locations()
 {
+    using document::PositionDataType;
     assert(_parsedLocations.empty()); // only allowed to call this once
     if (! _args.getLocation().empty()) {
-        search::common::GeoLocationParser locationParser;
-        if (locationParser.parseOldFormatWithField(_args.getLocation())) {
-            // TODO: do we need to add _zcurve prefix?
-            auto attr_name = locationParser.getFieldName();
-            search::common::GeoLocationSpec spec{attr_name, locationParser.getGeoLocation()};
+        search::common::GeoLocationParser parser;
+        if (parser.parseOldFormatWithField(_args.getLocation())) {
+            auto view = parser.getFieldName();
+            auto attr_name = PositionDataType::getZCurveFieldName(view);
+            search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
             _parsedLocations.push_back(spec);
         } else {
             LOG(warning, "could not parse location string '%s' from request",
@@ -88,10 +90,10 @@ GetDocsumsState::parse_locations()
             if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
                 vespalib::string view = iterator.getIndexName();
                 vespalib::string term = iterator.getTerm();
-                search::common::GeoLocationParser locationParser;                
-                if (locationParser.parseOldFormat(term)) {
-                    // TODO: do we need to add _zcurve prefix?
-                    search::common::GeoLocationSpec spec{view, locationParser.getGeoLocation()};
+                search::common::GeoLocationParser parser;                
+                if (parser.parseOldFormat(term)) {
+                    auto attr_name = PositionDataType::getZCurveFieldName(view);
+                    search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
                     _parsedLocations.push_back(spec);
                 } else {
                     LOG(warning, "could not parse location string '%s' from stack dump",
