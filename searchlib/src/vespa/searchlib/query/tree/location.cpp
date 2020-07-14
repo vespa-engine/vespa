@@ -33,20 +33,43 @@ Location::Location(const Rectangle &rect)
 bool
 Location::operator==(const Location &other) const
 {
-    auto me = getDebugString();
-    auto it = other.getDebugString();
+    auto me = getOldFormatString();
+    auto it = other.getOldFormatString();
     if (me == it) {
         return true;
     } else {
         // dump 'me' and 'it' here if unit tests fail
+        fprintf(stderr, "not equal: this('%s') and other('%s')\n",
+                me.c_str(), it.c_str());
         return false;
     }
 }
 
 std::string
-Location::getDebugString() const
+Location::getOldFormatString() const
 {
+    // we need to product what search::common::GeoLocationParser can parse
     vespalib::asciistream buf;
+#if 1
+    if (has_point) {
+        buf << "(2"  // dimensionality
+                        << "," << point.x
+                        << "," << point.y
+                        << "," << radius
+                        << "," << "0"  // table id.
+                        << "," << "1"  // rank multiplier.
+                        << "," << "0" // rank only on distance.
+                        << "," << x_aspect.multiplier // aspect multiplier
+                        << ")";
+    }
+    if (bounding_box.active()) {
+        buf << "[2," << bounding_box.x.lo
+            << "," << bounding_box.y.lo
+            << "," << bounding_box.x.hi
+            << "," << bounding_box.y.hi
+            << "]" ;
+    }
+#else
     buf << "query::Location{";
     if (has_point) {
         buf << "point=[" << point.x << "," << point.y << "]";
@@ -63,11 +86,12 @@ Location::getDebugString() const
         buf << "bb.y=[" << bounding_box.y.lo << "," << bounding_box.y.hi << "]";
     }
     buf << "}";
+#endif
     return buf.str();
 }
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
-    return out << loc.getDebugString();
+    return out << loc.getOldFormatString();
 }
 
 }

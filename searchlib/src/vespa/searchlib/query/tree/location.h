@@ -21,7 +21,7 @@ public:
     Location(const Rectangle &rect, const Point &p, uint32_t dist, uint32_t x_asp);
 
     bool operator==(const Location &other) const;
-    std::string getDebugString() const;
+    std::string getOldFormatString() const;
 };
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc);
