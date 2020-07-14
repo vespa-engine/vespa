@@ -14,6 +14,8 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.RoutingController;
@@ -652,6 +654,7 @@ public class RoutingPoliciesLegacyTest {
         public RoutingPoliciesTester(DeploymentTester tester) {
             this.tester = tester;
             // Make all zones directly routed
+            ((InMemoryFlagSource) tester.controllerTester().controller().flagSource()).withBooleanFlag(Flags.WEIGHTED_DNS_PER_REGION.id(), false);
             tester.controllerTester().zoneRegistry().exclusiveRoutingIn(tester.controllerTester().zoneRegistry().zones().all().zones());
         }
 

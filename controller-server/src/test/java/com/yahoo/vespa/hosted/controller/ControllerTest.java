@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -822,10 +823,16 @@ public class ControllerTest {
 
         context.submit(applicationPackage).deploy();
         var expectedRecords = List.of(
-                // The 'east' global endpoint, pointing to zone 2 with exclusive routing
+                // The weighted record for zone 2's region
+                new Record(Record.Type.ALIAS,
+                           RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                           new WeightedAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                                                   "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
+
+                // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           new LatencyAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                           new LatencyAliasTarget(HostName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
                                                   "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
