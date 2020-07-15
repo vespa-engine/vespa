@@ -8,7 +8,6 @@
 
 using search::common::GeoLocation;
 using search::common::GeoLocationParser;
-using search::common::GeoLocationSpec;
 
 bool is_parseable(const char *str) {
     GeoLocationParser parser;
@@ -21,7 +20,7 @@ GeoLocation parse(const char *str) {
     return parser.getGeoLocation();
 }
 
-TEST(GeoLocationSpec, malformed_bounding_boxes_are_not_parseable) {
+TEST(GeoLocationTest, malformed_bounding_boxes_are_not_parseable) {
     EXPECT_TRUE(is_parseable("[2,10,20,30,40]"));
     EXPECT_FALSE(is_parseable("[2,10,20,30,40][2,10,20,30,40]"));
     EXPECT_FALSE(is_parseable("[1,10,20,30,40]"));
@@ -32,7 +31,7 @@ TEST(GeoLocationSpec, malformed_bounding_boxes_are_not_parseable) {
     EXPECT_FALSE(is_parseable("[10,20,30,40]"));
 }
 
-TEST(GeoLocationSpec, malformed_circles_are_not_parseable) {
+TEST(GeoLocationTest, malformed_circles_are_not_parseable) {
     EXPECT_TRUE(is_parseable("(2,10,20,5,0,0,0)"));
     EXPECT_FALSE(is_parseable("(2,10,20,5,0,0,0)(2,10,20,5,0,0,0)"));
     EXPECT_FALSE(is_parseable("(1,10,20,5,0,0,0)"));
@@ -44,7 +43,7 @@ TEST(GeoLocationSpec, malformed_circles_are_not_parseable) {
     EXPECT_FALSE(is_parseable("(10,20,5)"));
 }
 
-TEST(GeoLocationSpec, bounding_boxes_can_be_parsed) {
+TEST(GeoLocationTest, bounding_boxes_can_be_parsed) {
     auto loc = parse("[2,10,20,30,40]");
     EXPECT_EQ(false, loc.has_point);
     EXPECT_EQ(true, loc.bounding_box.active());
@@ -58,7 +57,7 @@ TEST(GeoLocationSpec, bounding_boxes_can_be_parsed) {
     EXPECT_EQ(40, loc.bounding_box.y.hi);
 }
 
-TEST(GeoLocationSpec, circles_can_be_parsed) {
+TEST(GeoLocationTest, circles_can_be_parsed) {
     auto loc = parse("(2,10,20,5,0,0,0)");
     EXPECT_EQ(true, loc.has_point);
     EXPECT_EQ(true, loc.bounding_box.active());
@@ -72,7 +71,7 @@ TEST(GeoLocationSpec, circles_can_be_parsed) {
     EXPECT_EQ(25, loc.bounding_box.y.hi);    
 }
 
-TEST(GeoLocationSpec, circles_can_have_aspect_ratio) {
+TEST(GeoLocationTest, circles_can_have_aspect_ratio) {
     auto loc = parse("(2,10,20,5,0,0,0,2147483648)");
     EXPECT_EQ(true, loc.has_point);
     EXPECT_EQ(true, loc.bounding_box.active());
@@ -86,7 +85,7 @@ TEST(GeoLocationSpec, circles_can_have_aspect_ratio) {
     EXPECT_EQ(25, loc.bounding_box.y.hi);
 }
 
-TEST(GeoLocationSpec, bounding_box_can_be_specified_after_circle) {
+TEST(GeoLocationTest, bounding_box_can_be_specified_after_circle) {
     auto loc = parse("(2,10,20,5,0,0,0)[2,10,20,30,40]");
     EXPECT_EQ(true, loc.has_point);
     EXPECT_EQ(true, loc.bounding_box.active());
@@ -100,7 +99,7 @@ TEST(GeoLocationSpec, bounding_box_can_be_specified_after_circle) {
     EXPECT_EQ(25, loc.bounding_box.y.hi);
 }
 
-TEST(GeoLocationSpec, circles_can_be_specified_after_bounding_box) {
+TEST(GeoLocationTest, circles_can_be_specified_after_bounding_box) {
     auto loc = parse("[2,10,20,30,40](2,10,20,5,0,0,0)");
     EXPECT_EQ(true, loc.has_point);
     EXPECT_EQ(true, loc.bounding_box.active());
@@ -114,22 +113,20 @@ TEST(GeoLocationSpec, circles_can_be_specified_after_bounding_box) {
     EXPECT_EQ(25, loc.bounding_box.y.hi);    
 }
 
-TEST(GeoLocationSpec, santa_search_gives_non_wrapped_bounding_box) {
+TEST(GeoLocationTest, santa_search_gives_non_wrapped_bounding_box) {
     auto loc = parse("(2,122163600,89998536,290112,4,2000,0,109704)");
     EXPECT_GE(loc.bounding_box.x.hi, loc.bounding_box.x.lo);
     EXPECT_GE(loc.bounding_box.y.hi, loc.bounding_box.y.lo);
 }
 
-TEST(GeoLocationSpec, near_boundary_search_gives_non_wrapped_bounding_box) {
+TEST(GeoLocationTest, near_boundary_search_gives_non_wrapped_bounding_box) {
     auto loc1 = parse("(2,2000000000,2000000000,3000000000,0,1,0)");
- // fprintf(stderr, "positive near boundary: %s\n", loc1.getLocationString().c_str());
     EXPECT_GE(loc1.bounding_box.x.hi, loc1.bounding_box.x.lo);
     EXPECT_GE(loc1.bounding_box.y.hi, loc1.bounding_box.y.lo);
     EXPECT_EQ(std::numeric_limits<int32_t>::max(), loc1.bounding_box.y.hi);
     EXPECT_EQ(std::numeric_limits<int32_t>::max(), loc1.bounding_box.y.hi);    
 
     auto loc2 = parse("(2,-2000000000,-2000000000,3000000000,0,1,0)");
- // fprintf(stderr, "negative near boundary: %s\n", loc2.getLocationString().c_str());
     EXPECT_GE(loc2.bounding_box.x.hi, loc2.bounding_box.x.lo);
     EXPECT_GE(loc2.bounding_box.y.hi, loc2.bounding_box.y.lo);
     EXPECT_EQ(std::numeric_limits<int32_t>::min(), loc2.bounding_box.x.lo);
