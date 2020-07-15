@@ -32,7 +32,7 @@ const size_t distance = 4;
 const string int1 = "42";
 const string float1 = "3.14";
 const Range range(32, 64);
-const Point position{100, 100};
+const Point position(100, 100);
 const int max_distance = 20;
 const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);

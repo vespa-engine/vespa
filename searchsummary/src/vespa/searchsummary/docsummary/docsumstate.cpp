@@ -2,18 +2,10 @@
 
 #include "docsumstate.h"
 #include <vespa/juniper/rpinterface.h>
-#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/common/geo_location.h>
-#include <vespa/searchlib/common/geo_location_parser.h>
-#include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include "docsum_field_writer_state.h"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchsummary.docsummary.docsumstate");
 
 namespace search::docsummary {
 
@@ -30,7 +22,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _attributes(),
       _fieldWriterStates(),
       _jsonStringer(),
-      _parsedLocations(),
+      _parsedLocation(),
       _summaryFeatures(NULL),
       _summaryFeaturesCached(false),
       _rankFeatures(NULL),
@@ -65,44 +57,5 @@ GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_el
     }
     return *_matching_elements;
 }
-
-void
-GetDocsumsState::parse_locations()
-{
-    using document::PositionDataType;
-    assert(_parsedLocations.empty()); // only allowed to call this once
-    if (! _args.getLocation().empty()) {
-        search::common::GeoLocationParser parser;
-        if (parser.parseOldFormatWithField(_args.getLocation())) {
-            auto view = parser.getFieldName();
-            auto attr_name = PositionDataType::getZCurveFieldName(view);
-            search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
-            _parsedLocations.push_back(spec);
-        } else {
-            LOG(warning, "could not parse location string '%s' from request",
-                _args.getLocation().c_str());
-        }
-    }
-    auto stackdump = _args.getStackDump();
-    if (! stackdump.empty()) {
-        search::SimpleQueryStackDumpIterator iterator(stackdump);
-        while (iterator.next()) {
-            if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
-                vespalib::string view = iterator.getIndexName();
-                vespalib::string term = iterator.getTerm();
-                search::common::GeoLocationParser parser;                
-                if (parser.parseOldFormat(term)) {
-                    auto attr_name = PositionDataType::getZCurveFieldName(view);
-                    search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
-                    _parsedLocations.push_back(spec);
-                } else {
-                    LOG(warning, "could not parse location string '%s' from stack dump",
-                        term.c_str());
-                }
-            }
-        }
-    }
-}
-
 
 }

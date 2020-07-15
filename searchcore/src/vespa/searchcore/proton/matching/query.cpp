@@ -8,9 +8,10 @@
 #include "sameelementmodifier.h"
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchlib/common/geo_location_spec.h>
-#include <vespa/searchlib/common/geo_location_parser.h>
+#include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/query/tree/point.h>
+#include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 
 #include <vespa/log/log.h>
@@ -19,13 +20,11 @@ LOG_SETUP(".proton.matching.query");
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;
-using search::common::GeoLocation;
-using search::common::GeoLocationParser;
-using search::common::GeoLocationSpec;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
+using search::fef::Location;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
@@ -59,79 +58,37 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-std::vector<ProtonLocationTerm *>
-find_location_terms(Node *tree) {
-    std::vector<ProtonLocationTerm *> retval;
-    std::vector<Node *> nodes;
-    nodes.push_back(tree);
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        if (auto loc = dynamic_cast<ProtonLocationTerm *>(nodes[i])) {
-            retval.push_back(loc);
-        }
-        if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
-            for (Node * child : parent->getChildren()) {
-                nodes.push_back(child);
-            }
-        }
+void
+addLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
+    if (location_str.empty()) {
+        return;
     }
-    return retval;
-}
+    string::size_type pos = location_str.find(':');
+    if (pos == string::npos) {
+        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", location_str.c_str());
+        return;
+    }
+    const string view = PositionDataType::getZCurveFieldName(location_str.substr(0, pos));
+    const string loc = location_str.substr(pos + 1);
 
-GeoLocationSpec parse_location_string(string str) {
-    GeoLocationSpec empty;
-    if (str.empty()) {
-        return empty;
+    search::common::Location locationSpec;
+    if (!locationSpec.parse(loc)) {
+        LOG(warning, "Location parse error (location: '%s'): %s", location_str.c_str(), locationSpec.getParseError());
+        return;
     }
-    GeoLocationParser parser;
-    if (parser.parseOldFormatWithField(str)) {
-        auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
-        return GeoLocationSpec{attr_name, parser.getGeoLocation()};
-    } else {
-        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
-    }
-    return empty;
-}
 
-GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
-    auto old_view = pterm.getView();
-    auto new_view = PositionDataType::getZCurveFieldName(old_view);
-    pterm.setView(new_view);
-    const GeoLocation &loc = pterm.getTerm();
-    return GeoLocationSpec{new_view, loc};
-}
+    int32_t id = -1;
+    Weight weight(100);
 
-void exchange_location_nodes(const string &location_str,
-                           Node::UP &query_tree,
-                           std::vector<search::fef::Location> &fef_locations)
-{
-    std::vector<GeoLocationSpec> locationSpecs;
-
-    auto parsed = parse_location_string(location_str);
-    if (parsed.location.valid()) {
-        locationSpecs.push_back(parsed);
-    }
-    for (ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
-        auto spec = process_location_term(*pterm);
-        if (spec.location.valid()) {
-            locationSpecs.push_back(spec);
-        }
-    }
-    for (const GeoLocationSpec &spec : locationSpecs) {
-        if (spec.location.has_point) {
-            search::fef::Location fef_loc;
-            fef_loc.setAttribute(spec.field_name);
-            fef_loc.setXPosition(spec.location.point.x);
-            fef_loc.setYPosition(spec.location.point.y);
-            fef_loc.setXAspect(spec.location.x_aspect.multiplier);
-            fef_loc.setValid(true);
-            fef_locations.push_back(fef_loc);
-        }
-    }
-    if (parsed.location.can_limit()) {
-        int32_t id = -1;
-        Weight weight(100);
-        query_tree = inject(std::move(query_tree),
-                            std::make_unique<ProtonLocationTerm>(parsed.location, parsed.field_name, id, weight));
+    if (locationSpec.getRankOnDistance()) {
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
+        fef_location.setAttribute(view);
+        fef_location.setXPosition(locationSpec.getX());
+        fef_location.setYPosition(locationSpec.getY());
+        fef_location.setXAspect(locationSpec.getXAspect());
+        fef_location.setValid(true);
+    } else if (locationSpec.getPruneOnDistance()) {
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
     }
 }
 
@@ -170,7 +127,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
-        exchange_location_nodes(location, _query_tree, _locations);
+        addLocationNode(location, _query_tree, _location);
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
                 bool(_whiteListBlueprint), split_unpacking_iterators, delay_unpacking_iterators);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
@@ -189,12 +146,10 @@ Query::extractTerms(vector<const ITermData *> &terms)
 }
 
 void
-Query::extractLocations(vector<const search::fef::Location *> &locations)
+Query::extractLocations(vector<const Location *> &locations)
 {
     locations.clear();
-    for (const auto & loc : _locations) {
-        locations.push_back(&loc);
-    }
+    locations.push_back(&_location);
 }
 
 void

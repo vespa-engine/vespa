@@ -527,31 +527,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.prelude.query.GeoLocationItem": {
-    "superClass": "com.yahoo.prelude.query.TermItem",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.prelude.Location)",
-      "public void <init>(com.yahoo.prelude.Location, java.lang.String)",
-      "public com.yahoo.prelude.Location getLocation()",
-      "public java.lang.String getRawWord()",
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "public void setValue(java.lang.String)",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
-      "public java.lang.String getIndexedString()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
-      "public int getNumWords()",
-      "public boolean isStemmed()",
-      "public boolean isWords()"
-    ],
-    "fields": []
-  },
   "com.yahoo.prelude.query.HasIndexItem": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -722,7 +697,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType REGEXP",
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD_ALTERNATIVES",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NEAREST_NEIGHBOR",
-      "public static final enum com.yahoo.prelude.query.Item$ItemType GEO_LOCATION_TERM",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType LOCATION_TERM",
       "public final int code"
     ]
   },

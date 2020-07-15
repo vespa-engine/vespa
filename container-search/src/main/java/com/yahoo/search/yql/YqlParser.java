@@ -19,14 +19,11 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
-import com.yahoo.geo.DistanceParser;
-import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BoolItem;
@@ -37,7 +34,6 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
-import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
@@ -98,8 +94,8 @@ import com.yahoo.search.query.parser.ParserFactory;
  */
 public class YqlParser implements Parser {
 
-    public static final String DESCENDING_HITS_ORDER = "descending";
-    public static final String ASCENDING_HITS_ORDER = "ascending";
+    private static final String DESCENDING_HITS_ORDER = "descending";
+    private static final String ASCENDING_HITS_ORDER = "ascending";
 
     private enum SegmentWhen {
         NEVER, POSSIBLY, ALWAYS;
@@ -111,12 +107,12 @@ public class YqlParser implements Parser {
 
     private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
-    public static final Integer DEFAULT_TARGET_NUM_HITS = 10;
+    private static final Integer DEFAULT_TARGET_NUM_HITS = 10;
     private static final String ACCENT_DROP_DESCRIPTION = "setting for whether to remove accents if field implies it";
-    public static final String ANNOTATIONS = "annotations";
+    private static final String ANNOTATIONS = "annotations";
     private static final String FILTER_DESCRIPTION = "term filter setting";
     private static final String IMPLICIT_TRANSFORMS_DESCRIPTION = "setting for whether built-in query transformers should touch the term";
-    public static final String NFKC = "nfkc";
+    private static final String NFKC = "nfkc";
     private static final String NORMALIZE_CASE_DESCRIPTION = "setting for whether to do case normalization if field implies it";
     private static final String ORIGIN_DESCRIPTION = "string origin for a term";
     private static final String RANKED_DESCRIPTION = "setting for whether to use term for ranking";
@@ -125,7 +121,7 @@ public class YqlParser implements Parser {
     private static final String USER_INPUT_ALLOW_EMPTY = "allowEmpty";
     private static final String USER_INPUT_DEFAULT_INDEX = "defaultIndex";
     private static final String USER_INPUT_GRAMMAR = "grammar";
-    public static final String USER_INPUT_LANGUAGE = "language";
+    private static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_RAW = "raw";
     private static final String USER_INPUT_SEGMENT = "segment";
     private static final String USER_INPUT = "userInput";
@@ -138,56 +134,55 @@ public class YqlParser implements Parser {
     public static final String SORTING_LOCALE = "locale";
     public static final String SORTING_STRENGTH = "strength";
 
-    public static final String ACCENT_DROP = "accentDrop";
-    public static final String ALTERNATIVES = "alternatives";
-    public static final String AND_SEGMENTING = "andSegmenting";
-    public static final String APPROXIMATE = "approximate";
-    public static final String BOUNDS = "bounds";
-    public static final String BOUNDS_LEFT_OPEN = "leftOpen";
-    public static final String BOUNDS_OPEN = "open";
-    public static final String BOUNDS_RIGHT_OPEN = "rightOpen";
-    public static final String CONNECTION_ID = "id";
-    public static final String CONNECTION_WEIGHT = "weight";
-    public static final String CONNECTIVITY = "connectivity";
-    public static final String DISTANCE = "distance";
-    public static final String DOT_PRODUCT = "dotProduct";
-    public static final String EQUIV = "equiv";
-    public static final String FILTER = "filter";
-    public static final String GEO_LOCATION = "geoLocation";
-    public static final String HIT_LIMIT = "hitLimit";
-    public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
-    public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
-    public static final String LABEL = "label";
-    public static final String NEAR = "near";
-    public static final String NEAREST_NEIGHBOR = "nearestNeighbor";
-    public static final String NORMALIZE_CASE = "normalizeCase";
-    public static final String ONEAR = "onear";
-    public static final String ORIGIN_LENGTH = "length";
-    public static final String ORIGIN_OFFSET = "offset";
-    public static final String ORIGIN = "origin";
-    public static final String ORIGIN_ORIGINAL = "original";
-    public static final String PHRASE = "phrase";
-    public static final String PREDICATE = "predicate";
-    public static final String PREFIX = "prefix";
-    public static final String RANGE = "range";
-    public static final String RANKED = "ranked";
-    public static final String RANK = "rank";
-    public static final String SAME_ELEMENT = "sameElement";
-    public static final String SCORE_THRESHOLD = "scoreThreshold";
-    public static final String SIGNIFICANCE = "significance";
-    public static final String STEM = "stem";
-    public static final String SUBSTRING = "substring";
-    public static final String SUFFIX = "suffix";
-    public static final String TARGET_HITS = "targetHits";
-    public static final String TARGET_NUM_HITS = "targetNumHits";
-    public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
-    public static final String UNIQUE_ID = "id";
-    public static final String USE_POSITION_DATA = "usePositionData";
-    public static final String WAND = "wand";
-    public static final String WEAK_AND = "weakAnd";
-    public static final String WEIGHTED_SET = "weightedSet";
-    public static final String WEIGHT = "weight";
-    public static final String URI = "uri";
+    static final String ACCENT_DROP = "accentDrop";
+    static final String ALTERNATIVES = "alternatives";
+    static final String AND_SEGMENTING = "andSegmenting";
+    static final String APPROXIMATE = "approximate";
+    static final String BOUNDS = "bounds";
+    static final String BOUNDS_LEFT_OPEN = "leftOpen";
+    static final String BOUNDS_OPEN = "open";
+    static final String BOUNDS_RIGHT_OPEN = "rightOpen";
+    static final String CONNECTION_ID = "id";
+    static final String CONNECTION_WEIGHT = "weight";
+    static final String CONNECTIVITY = "connectivity";
+    static final String DISTANCE = "distance";
+    static final String DOT_PRODUCT = "dotProduct";
+    static final String EQUIV = "equiv";
+    static final String FILTER = "filter";
+    static final String HIT_LIMIT = "hitLimit";
+    static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
+    static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
+    static final String LABEL = "label";
+    static final String NEAR = "near";
+    static final String NEAREST_NEIGHBOR = "nearestNeighbor";
+    static final String NORMALIZE_CASE = "normalizeCase";
+    static final String ONEAR = "onear";
+    static final String ORIGIN_LENGTH = "length";
+    static final String ORIGIN_OFFSET = "offset";
+    static final String ORIGIN = "origin";
+    static final String ORIGIN_ORIGINAL = "original";
+    static final String PHRASE = "phrase";
+    static final String PREDICATE = "predicate";
+    static final String PREFIX = "prefix";
+    static final String RANGE = "range";
+    static final String RANKED = "ranked";
+    static final String RANK = "rank";
+    static final String SAME_ELEMENT = "sameElement";
+    static final String SCORE_THRESHOLD = "scoreThreshold";
+    static final String SIGNIFICANCE = "significance";
+    static final String STEM = "stem";
+    static final String SUBSTRING = "substring";
+    static final String SUFFIX = "suffix";
+    static final String TARGET_HITS = "targetHits";
+    static final String TARGET_NUM_HITS = "targetNumHits";
+    static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
+    static final String UNIQUE_ID = "id";
+    static final String USE_POSITION_DATA = "usePositionData";
+    static final String WAND = "wand";
+    static final String WEAK_AND = "weakAnd";
+    static final String WEIGHTED_SET = "weightedSet";
+    static final String WEIGHT = "weight";
+    static final String URI = "uri";
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -377,8 +372,6 @@ public class YqlParser implements Parser {
                 return buildWeightedSet(ast);
             case DOT_PRODUCT:
                 return buildDotProduct(ast);
-            case GEO_LOCATION:
-                return buildGeoLocation(ast);
             case NEAREST_NEIGHBOR:
                 return buildNearestNeighbor(ast);
             case PREDICATE:
@@ -420,29 +413,6 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
     }
 
-    private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
-        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
-        String field = fetchFieldRead(args.get(0));
-        var coord_1 = ParsedDegree.fromString(fetchFieldRead(args.get(1)), true, false);
-        var coord_2 = ParsedDegree.fromString(fetchFieldRead(args.get(2)), false, true);
-        double radius = DistanceParser.parse(fetchFieldRead(args.get(3)));
-        var loc = new Location();
-        if (coord_1.isLatitude && coord_2.isLongitude) {
-            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
-        } else if (coord_2.isLatitude && coord_1.isLongitude) {
-            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
-        } else {
-            throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
-        }
-        var item = new GeoLocationItem(loc, field);
-        String label = getAnnotation(ast, LABEL, String.class, null, "item label");
-        if (label != null) {
-            item.setLabel(label);
-        }
-        return item;
-    }
-
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -468,7 +438,7 @@ public class YqlParser implements Parser {
         item.setAllowApproximate(allowApproximate);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
-            item.setLabel(label);
+                item.setLabel(label);
         }
         return item;
     }
@@ -932,8 +902,6 @@ public class YqlParser implements Parser {
 
     private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
         switch (ast.getOperator()) {
-            case LITERAL:
-                return ast.getArgument(0).toString();
             case READ_FIELD:
                 return ast.getArgument(1);
             case PROPREF:

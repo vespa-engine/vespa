@@ -82,8 +82,7 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
 feature_t
 DistanceExecutor::calculateDistance(uint32_t docId)
 {
-    if ((! _locations.empty()) && (_pos != nullptr)) {
-        LOG(debug, "calculate 2D Z-distance from %zu locations", _locations.size());
+    if (_location.isValid() && _pos != nullptr) {
         return calculate2DZDistance(docId);
     }
     return DEFAULT_DISTANCE;
@@ -98,33 +97,35 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
     uint64_t sqabsdist = std::numeric_limits<uint64_t>::max();
     int32_t docx = 0;
     int32_t docy = 0;
-    for (auto loc : _locations) {
-        assert(loc);
-        assert(loc->isValid());
-        int32_t loc_x = loc->getXPosition();
-        int32_t loc_y = loc->getYPosition();
-        uint64_t loc_a = loc->getXAspect();
-        LOG(debug, "location: x=%u, y=%u, aspect=%zu", loc_x, loc_y, loc_a);
-        for (uint32_t i = 0; i < numValues; ++i) {
-            vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
-            uint32_t dx = (loc_x > docx) ? (loc_x - docx) : (docx - loc_x);
-            if (loc_a != 0) {
-                dx = (uint64_t(dx) * loc_a) >> 32;
-            }
-            uint32_t dy = (loc_y > docy) ? (loc_y - docy) : (docy - loc_y);
-            uint64_t sqdist = (uint64_t) dx * dx + (uint64_t) dy * dy;
-            if (sqdist < sqabsdist) {
-                sqabsdist = sqdist;
-            }
+    for (uint32_t i = 0; i < numValues; ++i) {
+        vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
+        uint32_t dx;
+        uint32_t dy;
+        if (_location.getXPosition() > docx) {
+            dx = _location.getXPosition() - docx;
+        } else {
+            dx = docx - _location.getXPosition();
+        }
+        if (_location.getXAspect() != 0) {
+            dx = ((uint64_t) dx * _location.getXAspect()) >> 32;
+        }
+        if (_location.getYPosition() > docy) {
+            dy = _location.getYPosition() - docy;
+        } else {
+            dy = docy - _location.getYPosition();
+        }
+        uint64_t sqdist = (uint64_t) dx * dx + (uint64_t) dy * dy;
+        if (sqdist < sqabsdist) {
+            sqabsdist = sqdist;
         }
     }
     return static_cast<feature_t>(std::sqrt(static_cast<feature_t>(sqabsdist)));
 }
 
-DistanceExecutor::DistanceExecutor(std::vector<const Location *> locations,
+DistanceExecutor::DistanceExecutor(const Location & location,
                                    const search::attribute::IAttributeVector * pos) :
     FeatureExecutor(),
-    _locations(locations),
+    _location(location),
     _pos(pos),
     _intBuf()
 {
@@ -230,7 +231,6 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         return setup_geopos(env, z);
     }
     if (allow_bad_field) {
-        // TODO remove on Vespa 8
         // backwards compatibility fallback:
         return setup_geopos(env, arg);
     }
@@ -251,30 +251,11 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
     if (_use_item_label) {
         return stash.create<ConvertRawscoreToDistance>(env, _arg_string);
     }
-    // expect geo pos:
     const search::attribute::IAttributeVector * pos = nullptr;
-    std::vector<const search::fef::Location *> matching_locs;
-    std::vector<const search::fef::Location *> other_locs;
-
-    for (auto loc_ptr : env.getAllLocations()) {
-        if (_use_geo_pos && loc_ptr && loc_ptr->isValid()) {
-            if (loc_ptr->getAttribute() == _arg_string) {
-                LOG(debug, "found loc from query env matching '%s'", _arg_string.c_str());
-                matching_locs.push_back(loc_ptr);
-            } else {
-                LOG(debug, "found loc(%s) from query env not matching arg(%s)",
-                    loc_ptr->getAttribute().c_str(), _arg_string.c_str());
-                other_locs.push_back(loc_ptr);
-            }
-        }
-    }
-    if (matching_locs.empty() && other_locs.empty()) {
-        LOG(debug, "createExecutor: no valid locations");
-        return stash.create<DistanceExecutor>(matching_locs, nullptr);
-    }
-    LOG(debug, "createExecutor: valid location, attribute='%s'", _arg_string.c_str());
-
-    if (_use_geo_pos) {
+    const Location & location = env.getLocation();
+    LOG(debug, "DistanceBlueprint::createExecutor location.valid='%s', attribute='%s'",
+        location.isValid() ? "true" : "false", _arg_string.c_str());
+    if (_use_geo_pos && location.isValid()) {
         pos = env.getAttributeContext().getAttribute(_arg_string);
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
@@ -290,8 +271,8 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
             LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
         }
     }
-    LOG(debug, "use '%s' locations with pos=%p", matching_locs.empty() ? "other" : "matching", pos);
-    return stash.create<DistanceExecutor>(matching_locs.empty() ? other_locs : matching_locs, pos);
+
+    return stash.create<DistanceExecutor>(location, pos);
 }
 
 }

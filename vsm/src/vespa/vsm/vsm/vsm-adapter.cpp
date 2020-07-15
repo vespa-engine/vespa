@@ -38,6 +38,11 @@ void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState * state, IDocsumE
     }
 }
 
+void GetDocsumsStateCallback::ParseLocation(GetDocsumsState *state)
+{
+    (void) state;
+}
+
 void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDocsumEnvironment * env)
 {
     (void) state;

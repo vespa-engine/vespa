@@ -63,13 +63,8 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         }
     }
     break;
-    case ParseItem::ITEM_GEO_LOCATION_TERM:
-        // TODO implement this:
-        // vespalib::string field = queryRep.getIndexName();
-        // vespalib::stringref location_term = queryRep.getTerm();
-        // qn = std::make_unique<LocationQueryNode> ...something ....
-        // break;
     case ParseItem::ITEM_NUMTERM:
+    case ParseItem::ITEM_LOCATION_TERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:
     case ParseItem::ITEM_REGEXP:

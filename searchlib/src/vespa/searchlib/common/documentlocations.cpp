@@ -21,9 +21,5 @@ DocumentLocations::setVecGuard(std::unique_ptr<search::AttributeGuard> guard) {
     setVec(*_vec_guard.get()->get());
 }
 
-DocumentLocations::DocumentLocations(DocumentLocations &&) = default;
-DocumentLocations & DocumentLocations::operator = (DocumentLocations &&) = default;
-
-
 }  // namespace common
 }  // namespace search

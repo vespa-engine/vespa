@@ -248,14 +248,11 @@ public:
     LocationPostFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
-          _location(loc)
+          _location()
     {
-        uint32_t estHits = 0;
-        if (loc.valid()) {
-            _location.setVec(attribute);
-            estHits = _attribute.getNumDocs();
-        }
-        LOG(debug, "location %s in attribute with numdocs %u", loc.getOldFormatString().c_str(), estHits);
+        _location.setVec(attribute);
+        _location.parse(loc.getLocationString());
+        uint32_t estHits = _attribute.getNumDocs();
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
     }
@@ -275,16 +272,14 @@ Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
     auto post_filter = std::make_unique<LocationPostFilterBlueprint>(field, attribute, loc);
     const common::Location &location = post_filter->location();
-    if (location.bounding_box.x.low > location.bounding_box.x.high ||
-        location.bounding_box.y.low > location.bounding_box.y.high)
+    if (location.getMinX() > location.getMaxX() ||
+        location.getMinY() > location.getMaxY())
     {
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     ZCurve::RangeVector rangeVector = ZCurve::find_ranges(
-            location.bounding_box.x.low,
-            location.bounding_box.y.low,
-            location.bounding_box.x.high,
-            location.bounding_box.y.high);
+            location.getMinX(), location.getMinY(),
+            location.getMaxX(), location.getMaxY());
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector);
     if (!pre_filter->should_use()) {
         return post_filter;

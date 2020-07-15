@@ -83,7 +83,7 @@ Node::UP getQuery(const ViewResolver &resolver)
         query_builder.addStringTerm("bar", field, id[3], Weight(0));
     }
 
-    query_builder.addLocationTerm(Location(Point{10, 10}, 3, 0),
+    query_builder.addLocationTerm(Location(Point(10, 10), 3, 0),
                                   field, id[7], Weight(0));
     Node::UP node = query_builder.build();
 

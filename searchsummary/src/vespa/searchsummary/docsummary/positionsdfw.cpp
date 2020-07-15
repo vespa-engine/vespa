@@ -22,57 +22,44 @@ using search::attribute::BasicType;
 using search::attribute::IntegerContent;
 using search::common::Location;
 
-LocationAttrDFW::AllLocations
-LocationAttrDFW::getAllLocations(GetDocsumsState *state)
-{
-    AllLocations retval;
-    if (! state->_args.locations_possible()) {
-        return retval;
-    }
-    if (state->_parsedLocations.empty()) {
-        state->parse_locations();
-    }
-    for (const auto & loc : state->_parsedLocations) {
-        if (loc.location.valid()) {
-            LOG(debug, "found location(field %s) for DFW(field %s)\n",
-                loc.field_name.c_str(), getAttributeName().c_str());
-            if (getAttributeName() == loc.field_name) {
-                retval.matching.push_back(&loc.location);
-            } else {
-                retval.other.push_back(&loc.location);
-            }
-        }
-    }
-    if (retval.empty()) {
-        // avoid doing things twice
-        state->_args.locations_possible(false);
-    }
-    return retval;
-}
-
 AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName) :
-    LocationAttrDFW(attrName)
+    AttrDFW(attrName)
 { }
 
 uint64_t
-AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
-                                const std::vector<const GeoLoc *> &locations)
+AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state)
 {
-    uint64_t absdist = std::numeric_limits<int64_t>::max();
+    search::common::Location &location = *state->_parsedLocation;
     const auto& attribute = get_attribute(*state);
-    for (auto location : locations) {
-        int32_t docx = 0;
-        int32_t docy = 0;
-        IntegerContent pos;
-        pos.fill(attribute, docid);
-        uint32_t numValues = pos.size();
-        for (uint32_t i = 0; i < numValues; i++) {
-            int64_t docxy(pos[i]);
-            vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-            uint64_t dist2 = location->sq_distance_to(GeoLoc::Point{docx, docy});
-            if (dist2 < absdist) {
-                absdist = dist2;
-            }
+
+    uint64_t absdist = std::numeric_limits<int64_t>::max();
+    int32_t docx = 0;
+    int32_t docy = 0;
+    IntegerContent pos;
+    pos.fill(attribute, docid);
+    uint32_t numValues = pos.size();
+    for (uint32_t i = 0; i < numValues; i++) {
+        int64_t docxy(pos[i]);
+        vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
+        uint32_t dx;
+        if (location.getX() > docx) {
+            dx = location.getX() - docx;
+        } else {
+            dx = docx - location.getX();
+        }
+        if (location.getXAspect() != 0) {
+            dx = ((uint64_t) dx * location.getXAspect()) >> 32;
+        }
+        uint32_t dy;
+        if (location.getY() > docy) {
+            dy = location.getY() - docy;
+        } else {
+            dy = docy - location.getY();
+        }
+        uint64_t dist2 = dx * (uint64_t) dx +
+                         dy * (uint64_t) dy;
+        if (dist2 < absdist) {
+            absdist = dist2;
         }
     }
     return (uint64_t) std::sqrt((double) absdist);
@@ -81,11 +68,22 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
 void
 AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target)
 {
-    const auto & all_locations = getAllLocations(state);
-    if (all_locations.empty()) {
-        return;
+    bool forceEmpty = true;
+
+    const vespalib::string &locationStr = state->_args.getLocation();
+    if (locationStr.size() > 0) {
+        if (!state->_parsedLocation) {
+            state->_callback.ParseLocation(state);
+        }
+        assert(state->_parsedLocation);
+        if (state->_parsedLocation->getParseError() == nullptr) {
+            forceEmpty = false;
+        }
     }
-    uint64_t absdist = findMinDistance(docid, state, all_locations.best());
+    if (forceEmpty) return;
+
+    uint64_t absdist = findMinDistance(docid, state);
+
     if (type == RES_INT) {
         target.insertLong(absdist);
     } else {

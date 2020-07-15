@@ -2,26 +2,29 @@
 
 #pragma once
 
-#include <string>
-#include <vespa/searchlib/common/geo_location_spec.h>
-#include "point.h"
-#include "rectangle.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib { class asciistream; }
 namespace search::query {
+struct Point;
+struct Rectangle;
 
-class Location : public search::common::GeoLocation {
-    using Parent = search::common::GeoLocation;
+class Location {
+    vespalib::string _location_string;
+
 public:
-    Location() {}
-    Location(const Parent &spec) : Parent(spec) {}
-    ~Location() {}
+    Location() : _location_string() {}
     Location(const Point &p, uint32_t dist, uint32_t x_asp);
     Location(const Rectangle &rect);
     Location(const Rectangle &rect, const Point &p, uint32_t dist, uint32_t x_asp);
+    Location(const vespalib::string &s) : _location_string(s) {}
 
-    bool operator==(const Location &other) const;
-    std::string getOldFormatString() const;
+    bool operator==(const Location &other) const {
+        return _location_string == other._location_string;
+    }
+    const vespalib::string &getLocationString() const {
+        return _location_string;
+    }
 };
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc);

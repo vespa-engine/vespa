@@ -8,7 +8,6 @@ GetDocsumArgs::GetDocsumArgs()
     : _ranking(),
       _resultClassName(),
       _dumpFeatures(false),
-      _locations_possible(true),
       _stackItems(0),
       _stackDump(),
       _location(),
@@ -28,7 +27,6 @@ GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
     _stackItems        = req.stackItems;
     _stackDump         = req.stackDump;
     _location          = req.location;
-    _locations_possible = true;
     _timeout           = req.getTimeLeft();
     _propertiesMap     = req.propertiesMap;
 }

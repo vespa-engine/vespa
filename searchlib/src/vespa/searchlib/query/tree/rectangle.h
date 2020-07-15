@@ -5,14 +5,20 @@
 namespace search::query {
 
 struct Rectangle {
-    int32_t left;
-    int32_t top;
-    int32_t right;
-    int32_t bottom;
+    int64_t left;
+    int64_t top;
+    int64_t right;
+    int64_t bottom;
 
     Rectangle() : left(0), top(0), right(0), bottom(0) {}
-    Rectangle(int32_t l, int32_t t, int32_t r, int32_t b)
+    Rectangle(int64_t l, int64_t t, int64_t r, int64_t b)
         : left(l), top(t), right(r), bottom(b) {}
 };
 
+inline bool operator==(const Rectangle &r1, const Rectangle &r2) {
+    return r1.left == r2.left && r1.right == r2.right
+        && r1.top == r2.top && r1.bottom == r2.bottom;
 }
+
+}
+

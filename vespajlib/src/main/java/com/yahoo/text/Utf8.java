@@ -13,10 +13,10 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Utility class with functions for handling UTF-8
+ * utility class with functions for handling UTF-8
  *
  * @author arnej27959
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @author baldersheim
  *
  */

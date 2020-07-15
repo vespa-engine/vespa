@@ -58,9 +58,9 @@ public:
     /**
      * Obtain the location information associated with this query environment.
      *
-     * @return pointers to location objects.
+     * @return location object.
      **/
-    virtual std::vector<const Location *> getAllLocations() const = 0;
+    virtual const Location & getLocation() const = 0;
 
     /**
      * Returns the attribute context for this query.
