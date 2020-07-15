@@ -9,6 +9,7 @@ import java.util.List;
 
 /**
  * @author Tony Vaagenes
+ * @author gjoranv
  */
 public interface Osgi {
 

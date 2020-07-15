@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 /**
  * @author Tony Vaagenes
  * @author bratseth
+ * @author gjoranv
  */
 public class OsgiImpl implements Osgi {
     private static final Logger log = Logger.getLogger(OsgiImpl.class.getName());

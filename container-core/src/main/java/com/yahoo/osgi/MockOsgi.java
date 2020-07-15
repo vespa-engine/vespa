@@ -12,6 +12,7 @@ import java.util.List;
 
 /**
  * @author Tony Vaagenes
+ * @author gjoranv
  */
 public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
 
