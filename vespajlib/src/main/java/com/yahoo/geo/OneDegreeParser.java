@@ -3,7 +3,7 @@
 package com.yahoo.geo;
 
 /**
- * utility for parsing one geographical coordinate
+ * Utility for parsing one geographical coordinate
  *
  * @author arnej27959
  **/
