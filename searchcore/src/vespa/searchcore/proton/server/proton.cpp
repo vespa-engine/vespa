@@ -223,6 +223,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
+      _has_shut_down_config_and_state_components(false),
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp()
@@ -400,16 +401,8 @@ Proton::~Proton()
     if ( ! _initComplete ) {
         LOG(warning, "Initialization of proton was halted. Shutdown sequence has been initiated.");
     }
-    _protonConfigFetcher.close();
-    _protonConfigurer.setAllowReconfig(false);
+    shutdown_config_fetching_and_state_exposing_components_once();
     _executor.sync();
-    _customComponentRootToken.reset();
-    _customComponentBindToken.reset();
-    _stateServer.reset();
-    if (_metricsEngine) {
-        _metricsEngine->removeMetricsHook(_metricsHook);
-        _metricsEngine->stop();
-    }
     if (_matchEngine) {
         _matchEngine->close();
     }
@@ -460,6 +453,25 @@ Proton::~Proton()
     _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");
+}
+
+void
+Proton::shutdown_config_fetching_and_state_exposing_components_once() noexcept
+{
+    if (_has_shut_down_config_and_state_components) {
+        return;
+    }
+    _protonConfigFetcher.close();
+    _protonConfigurer.setAllowReconfig(false);
+    _executor.sync();
+    _customComponentRootToken.reset();
+    _customComponentBindToken.reset();
+    _stateServer.reset();
+    if (_metricsEngine) {
+        _metricsEngine->removeMetricsHook(_metricsHook);
+        _metricsEngine->stop();
+    }
+    _has_shut_down_config_and_state_components = true;
 }
 
 void
