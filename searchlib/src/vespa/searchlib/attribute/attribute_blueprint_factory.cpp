@@ -275,16 +275,16 @@ Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
     auto post_filter = std::make_unique<LocationPostFilterBlueprint>(field, attribute, loc);
     const common::Location &location = post_filter->location();
-    if (location.bounding_box.x.lo > location.bounding_box.x.hi ||
-        location.bounding_box.y.lo > location.bounding_box.y.hi)
+    if (location.bounding_box.x.low > location.bounding_box.x.high ||
+        location.bounding_box.y.low > location.bounding_box.y.high)
     {
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     ZCurve::RangeVector rangeVector = ZCurve::find_ranges(
-            location.bounding_box.x.lo,
-            location.bounding_box.y.lo,
-            location.bounding_box.x.hi,
-            location.bounding_box.y.hi);
+            location.bounding_box.x.low,
+            location.bounding_box.y.low,
+            location.bounding_box.x.high,
+            location.bounding_box.y.high);
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector);
     if (!pre_filter->should_use()) {
         return post_filter;

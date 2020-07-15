@@ -9,8 +9,8 @@ namespace search::common {
 namespace {
 
 ZCurve::BoundingBox to_z(GeoLocation::Box box) {
-    return ZCurve::BoundingBox(box.x.lo, box.x.hi,
-                               box.y.lo, box.y.hi);
+    return ZCurve::BoundingBox(box.x.low, box.x.high,
+                               box.y.low, box.y.high);
 }
 
 GeoLocation::Box
@@ -38,11 +38,11 @@ adjust_bounding_box(GeoLocation::Box orig, GeoLocation::Point point, uint32_t ra
     int64_t implied_max_y = int64_t(point.y) + int64_t(radius);
     int64_t implied_min_y = int64_t(point.y) - int64_t(radius);
 
-    int32_t max_x = orig.x.hi;
-    int32_t min_x = orig.x.lo;
+    int32_t max_x = orig.x.high;
+    int32_t min_x = orig.x.low;
 
-    int32_t max_y = orig.y.hi;
-    int32_t min_y = orig.y.lo;
+    int32_t max_y = orig.y.high;
+    int32_t min_y = orig.y.low;
 
     if (implied_max_x < max_x) max_x = implied_max_x;
     if (implied_min_x > min_x) min_x = implied_min_x;
@@ -171,11 +171,11 @@ uint64_t GeoLocation::sq_distance_to(Point p) const {
 }
 
 bool GeoLocation::inside_limit(Point p) const {
-    if (p.x < bounding_box.x.lo) return false;
-    if (p.x > bounding_box.x.hi) return false;
+    if (p.x < bounding_box.x.low) return false;
+    if (p.x > bounding_box.x.high) return false;
 
-    if (p.y < bounding_box.y.lo) return false;
-    if (p.y > bounding_box.y.hi) return false;
+    if (p.y < bounding_box.y.low) return false;
+    if (p.y > bounding_box.y.high) return false;
 
     uint64_t sq_dist = sq_distance_to(p);
     return sq_dist <= _sq_radius;
