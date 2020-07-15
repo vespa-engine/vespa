@@ -36,7 +36,7 @@ public class ApplicationBundleLoaderTest {
 
     @Test
     public void bundles_are_installed_and_started() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertEquals(1, osgi.getInstalledBundles().size());
 
         // The bundle is installed and started
@@ -51,8 +51,8 @@ public class ApplicationBundleLoaderTest {
 
     @Test
     public void new_bundle_can_be_installed_in_reconfig() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.use(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
 
         // No bundles are obsolete
         assertTrue(obsoleteBundles.isEmpty());
@@ -76,8 +76,8 @@ public class ApplicationBundleLoaderTest {
 
     @Test
     public void unused_bundle_is_marked_obsolete_after_reconfig() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.use(List.of(BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
 
         // The returned set of obsolete bundles contains bundle-1
         assertEquals(1, obsoleteBundles.size());

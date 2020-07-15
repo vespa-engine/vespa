@@ -48,7 +48,7 @@ public class ApplicationBundleLoader {
      * Installs the given set of bundles and returns the set of bundles that is no longer used
      * by the application, and should therefore be scheduled for uninstall.
      */
-    public synchronized Set<Bundle> use(List<FileReference> newFileReferences) {
+    public synchronized Set<Bundle> useBundles(List<FileReference> newFileReferences) {
 
         Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newFileReferences);
         Set<Bundle> bundlesToUninstall = getObsoleteBundles(obsoleteReferences);
