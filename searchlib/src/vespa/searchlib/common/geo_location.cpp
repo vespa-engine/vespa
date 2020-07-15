@@ -16,14 +16,22 @@ ZCurve::BoundingBox to_z(GeoLocation::Box box) {
 GeoLocation::Box
 adjust_bounding_box(GeoLocation::Box orig, GeoLocation::Point point, uint32_t radius, GeoLocation::Aspect x_aspect)
 {
+    if (radius == GeoLocation::radius_inf) {
+        // only happens if GeoLocation is explicitly constructed with "infinite" radius
+        return orig;
+    }
     uint32_t maxdx = radius;
     if (x_aspect.active()) {
+        // x_aspect is a 32-bit fixed-point number in range [0,1]
+        // so this implements maxdx = ceil(radius/x_aspect)
         uint64_t maxdx2 = ((static_cast<uint64_t>(radius) << 32) + 0xffffffffu) / x_aspect.multiplier;
-            if (maxdx2 >= 0xffffffffu)
-                maxdx = 0xffffffffu;
-            else
-                maxdx = static_cast<uint32_t>(maxdx2);
+        if (maxdx2 >= 0xffffffffu) {
+            maxdx = 0xffffffffu;
+        } else {
+            maxdx = static_cast<uint32_t>(maxdx2);
+        }
     }
+    // implied limits from radius and point:
     int64_t implied_max_x = int64_t(point.x) + int64_t(maxdx);
     int64_t implied_min_x = int64_t(point.x) - int64_t(maxdx);
 
@@ -152,6 +160,8 @@ uint64_t GeoLocation::sq_distance_to(Point p) const {
     if (has_point) {
         uint64_t dx = (p.x > point.x) ? (p.x - point.x) : (point.x - p.x);
         if (x_aspect.active()) {
+            // x_aspect is a 32-bit fixed-point number in range [0,1]
+            // this implements dx = (dx * x_aspect)
             dx = (dx * x_aspect.multiplier) >> 32;
         }
         uint64_t dy = (p.y > point.y) ? (p.y - point.y) : (point.y - p.y);
