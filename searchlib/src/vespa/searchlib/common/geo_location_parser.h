@@ -41,7 +41,7 @@ private:
     int32_t  _max_y;     /* Max Y coordinate */
 
     const char *_parseError;
-    bool getDimensionality(const char * &p);
+    bool correctDimensionalitySkip(const char * &p);
 };
 
 } // namespace

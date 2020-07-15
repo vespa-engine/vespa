@@ -43,7 +43,7 @@ GeoLocationParser::GeoLocationParser()
 {}
 
 bool
-GeoLocationParser::getDimensionality(const char * &p) {
+GeoLocationParser::correctDimensionalitySkip(const char * &p) {
     if (*p == '2') {
         p++;
         if (*p != ',') {
@@ -84,8 +84,9 @@ GeoLocationParser::parseOldFormat(const std::string &locStr)
                 return false;
             }
             foundBoundingBox = true;
-            if (!getDimensionality(p))
+            if (!correctDimensionalitySkip(p)) {
                 return false;
+            }
             _min_x = getInt(p);
             if (*p != ',') {
                 _parseError = "Missing ',' after minx";
@@ -117,8 +118,9 @@ GeoLocationParser::parseOldFormat(const std::string &locStr)
                 return false;
             }
             foundLoc = true;
-            if (!getDimensionality(p))
+            if (!correctDimensionalitySkip(p)) {
                 return false;
+            }
             _x = getInt(p);
             if (*p != ',') {
                 _parseError = "Missing ',' after x position";
