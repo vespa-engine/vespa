@@ -19,33 +19,33 @@ public class OneDegreeParserTestCase {
 
     private OneDegreeParser parser;
 
-    private void checkLat(boolean ans, String to_parse, double expected) {
-        parser = new OneDegreeParser(ans, to_parse);
+    private void checkLat(boolean assumeLatitude, String toParse, double expected) {
+        parser = new OneDegreeParser(assumeLatitude, toParse);
         assertEquals(expected, parser.latitude, delta);
         assertTrue(parser.foundLatitude);
         assertFalse(parser.foundLongitude);
     }
-    private void checkLon(boolean ans, String to_parse, double expected) {
-        parser = new OneDegreeParser(ans, to_parse);
+    private void checkLon(boolean assumeLatitude, String toParse, double expected) {
+        parser = new OneDegreeParser(assumeLatitude, toParse);
         assertEquals(expected, parser.longitude, delta);
         assertFalse(parser.foundLatitude);
         assertTrue(parser.foundLongitude);
     }
-    private void checkLat(String to_parse, double expected) {
-        checkLat(true, to_parse, expected);
-        checkLat(false, to_parse, expected);
+    private void checkLat(String toParse, double expected) {
+        checkLat(true, toParse, expected);
+        checkLat(false, toParse, expected);
     }
-    private void checkLon(String to_parse, double expected) {
-        checkLon(true, to_parse, expected);
-        checkLon(false, to_parse, expected);
-    }
-
-    private void checkZeroLat(boolean ans, String to_parse) {
-        checkLat(ans, to_parse, 0d);
+    private void checkLon(String toParse, double expected) {
+        checkLon(true, toParse, expected);
+        checkLon(false, toParse, expected);
     }
 
-    private void checkZeroLon(boolean ans, String to_parse) {
-        checkLon(ans, to_parse, 0d);
+    private void checkZeroLat(boolean assumeLatitude, String toParse) {
+        checkLat(assumeLatitude, toParse, 0d);
+    }
+
+    private void checkZeroLon(boolean assumeLatitude, String toParse) {
+        checkLon(assumeLatitude, toParse, 0d);
     }
 
     /**
@@ -140,10 +140,10 @@ public class OneDegreeParserTestCase {
         checkLon("W180\u00B00'0", -180d);
     }
 
-    private String parseException(boolean ans, String to_parse) {
+    private String parseException(boolean assumeLatitude, String toParse) {
         String message = "";
         try {
-            parser = new OneDegreeParser(ans, to_parse);
+            parser = new OneDegreeParser(assumeLatitude, toParse);
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             message = e.getMessage();

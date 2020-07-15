@@ -78,17 +78,17 @@ class OneDegreeParser {
      * "E10o25.982" and "N63o25.105" → same <br>
      * "N63.418417" and "E10.433033" → same <br>
      * "63N25.105" and "10E25.982" → same <br>
-     * @param assume_n_s Latitude assumed, otherwise longitude
-     * @param lat_or_lon Latitude or longitude
+     * @param assumeNorthSouth Latitude assumed, otherwise longitude
+     * @param toParse Latitude or longitude string to parse
      *
      **/
-    public OneDegreeParser(boolean assume_n_s, String lat_or_lon) throws IllegalArgumentException {
-        this.parseString = lat_or_lon;
+    public OneDegreeParser(boolean assumeNorthSouth, String toParse) throws IllegalArgumentException {
+        this.parseString = toParse;
         this.len = parseString.length();
-        consumeString(assume_n_s);
+        consumeString(assumeNorthSouth);
     }
 
-    private void consumeString(boolean assume_n_s)  throws IllegalArgumentException {
+    private void consumeString(boolean assumeNorthSouth)  throws IllegalArgumentException {
         char ch = getNextChar();
 
         double degrees = 0.0;
@@ -238,7 +238,7 @@ class OneDegreeParser {
             if (ch == 0) {
                 valid = true;
                 if (!dirSet) {
-                    if (assume_n_s) {
+                    if (assumeNorthSouth) {
                         findingLatitude = true;
                     } else {
                         findingLongitude = true;
