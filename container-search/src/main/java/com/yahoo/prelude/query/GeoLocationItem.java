@@ -97,6 +97,7 @@ public class GeoLocationItem extends TermItem {
     @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
+        // TODO: use a better format for encoding the location on the wire.
         putString(location.backendString(), buffer);
     }
 
