@@ -4,7 +4,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
@@ -15,14 +14,13 @@ import java.util.logging.Logger;
  *
  * @author gjoranv
  */
-// TODO: rename to ...Loader or ...Manager
-public class PlatformBundleInstaller {
-    private static final Logger log = Logger.getLogger(PlatformBundleInstaller.class.getName());
+public class PlatformBundleLoader {
+    private static final Logger log = Logger.getLogger(PlatformBundleLoader.class.getName());
 
     private final Osgi osgi;
     private final DiskBundleInstaller installer;
 
-    public PlatformBundleInstaller(Osgi osgi) {
+    public PlatformBundleLoader(Osgi osgi) {
         this.osgi = osgi;
         installer = new DiskBundleInstaller();
     }

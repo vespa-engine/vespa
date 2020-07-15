@@ -16,21 +16,21 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author gjoranv
  */
-public class BundleManagerTest {
+public class ApplicationBundleLoaderTest {
 
     private static final FileReference BUNDLE_1_REF = new FileReference("bundle-1");
     private static final Bundle BUNDLE_1 = new TestBundle(BUNDLE_1_REF.value());
     private static final FileReference BUNDLE_2_REF = new FileReference("bundle-2");
     private static final Bundle BUNDLE_2 = new TestBundle(BUNDLE_2_REF.value());
 
-    private BundleManager bundleLoader;
+    private ApplicationBundleLoader bundleLoader;
     private TestOsgi osgi;
 
     @Before
     public void setup() {
         osgi = new TestOsgi(testBundles());
         var bundleInstaller = new TestBundleInstaller();
-        bundleLoader = new BundleManager(osgi);
+        bundleLoader = new ApplicationBundleLoader(osgi);
         bundleLoader.useCustomBundleInstaller(bundleInstaller);
     }
 

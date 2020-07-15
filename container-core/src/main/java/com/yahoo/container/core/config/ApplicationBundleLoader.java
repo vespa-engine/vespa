@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class BundleManager {
+public class ApplicationBundleLoader {
 
     /* Map of file refs of active bundles (not scheduled for uninstall) to the installed bundle.
      *
@@ -34,13 +34,13 @@ public class BundleManager {
      */
     private final Map<FileReference, Bundle> reference2Bundle = new LinkedHashMap<>();
 
-    private final Logger log = Logger.getLogger(BundleManager.class.getName());
+    private final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
     private final Osgi osgi;
 
     // A custom bundle installer for non-disk bundles, to be used for testing
     private BundleInstaller customBundleInstaller = null;
 
-    public BundleManager(Osgi osgi) {
+    public ApplicationBundleLoader(Osgi osgi) {
         this.osgi = osgi;
     }
 
