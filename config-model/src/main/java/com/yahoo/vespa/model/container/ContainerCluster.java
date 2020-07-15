@@ -464,6 +464,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * Adds a bundle present at a known location at the target container nodes.
+     * Note that the set of platform bundles cannot change during the jdisc container's lifetime.
      *
      * @param bundlePath usually an absolute path, e.g. '$VESPA_HOME/lib/jars/foo.jar'
      */
