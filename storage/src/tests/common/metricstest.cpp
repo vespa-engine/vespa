@@ -175,16 +175,16 @@ void MetricsTest::createFakeLoad()
             thread.internalJoin.count.inc(3 * n);
 
             thread.mergeBuckets.count.inc(2 * n);
-            thread.bytesMerged.inc(1000 * n);
             thread.getBucketDiff.count.inc(4 * n);
             thread.getBucketDiffReply.inc(4 * n);
             thread.applyBucketDiff.count.inc(4 * n);
             thread.applyBucketDiffReply.inc(4 * n);
-            thread.mergeLatencyTotal.addValue(300 * n);
-            thread.mergeMetadataReadLatency.addValue(20 * n);
-            thread.mergeDataReadLatency.addValue(40 * n);
-            thread.mergeDataWriteLatency.addValue(50 * n);
-            thread.mergeAverageDataReceivedNeeded.addValue(0.8);
+            thread.merge_handler_metrics.bytesMerged.inc(1000 * n);
+            thread.merge_handler_metrics.mergeLatencyTotal.addValue(300 * n);
+            thread.merge_handler_metrics.mergeMetadataReadLatency.addValue(20 * n);
+            thread.merge_handler_metrics.mergeDataReadLatency.addValue(40 * n);
+            thread.merge_handler_metrics.mergeDataWriteLatency.addValue(50 * n);
+            thread.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(0.8);
         }
     }
     for (uint32_t i=0; i<_visitorMetrics->threads.size(); ++i) {

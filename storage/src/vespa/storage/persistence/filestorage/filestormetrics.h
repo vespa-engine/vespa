@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "merge_handler_metrics.h"
 #include <vespa/metrics/metrics.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
@@ -99,15 +100,9 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     Op mergeBuckets;
     Op getBucketDiff;
     Op applyBucketDiff;
-
-    metrics::LongCountMetric bytesMerged;
     metrics::LongCountMetric getBucketDiffReply;
     metrics::LongCountMetric applyBucketDiffReply;
-    metrics::DoubleAverageMetric mergeLatencyTotal;
-    metrics::DoubleAverageMetric mergeMetadataReadLatency;
-    metrics::DoubleAverageMetric mergeDataReadLatency;
-    metrics::DoubleAverageMetric mergeDataWriteLatency;
-    metrics::DoubleAverageMetric mergeAverageDataReceivedNeeded;
+    MergeHandlerMetrics merge_handler_metrics;
     metrics::LongAverageMetric batchingSize;
 
     FileStorThreadMetrics(const std::string& name, const std::string& desc, const metrics::LoadTypeSet& lt);
