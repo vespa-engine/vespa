@@ -42,42 +42,6 @@ GeoLocationParser::GeoLocationParser()
       _parseError(NULL)
 {}
 
-std::string
-GeoLocationParser::getOldFormatLocationString() const
-{
-    vespalib::asciistream loc;
-    if (hasPoint()) {
-        loc << "(2"  // dimensionality
-            << "," << _x
-            << "," << _y
-            << "," << _radius
-            << "," << "0"  // table id.
-            << "," << "1"  // rank multiplier.
-            << "," << "0" // rank only on distance.
-            << "," << _x_aspect // aspect multiplier
-            << ")";
-    }
-    if (hasBoundingBox()) {
-        loc << "[2," << _min_x
-            << "," << _min_y
-            << "," << _max_x
-            << "," << _max_y
-            << "]" ;
-    }
-    return loc.str();
-}
-
-std::string
-GeoLocationParser::getOldFormatLocationStringWithField() const
-{
-    if (hasFieldName()) {
-        return getFieldName() + ":" + getOldFormatLocationString();
-    } else {
-        return getOldFormatLocationString();
-    }
-}
-
-
 bool
 GeoLocationParser::getDimensionality(const char * &p) {
     if (*p == '2') {
