@@ -437,21 +437,21 @@ public class SelectParser implements Parser {
         if (arg3.type() != Type.STRING) {
            throw new IllegalArgumentException("Invalid geoLocation radius type "+arg3.type()+" for "+arg3);
         }
-        var radius = new DistanceParser(arg3.asString(), false);
+        double radius = DistanceParser.parse(arg3.asString());
         if (arg1.type() == Type.STRING && arg2.type() == Type.STRING) {
             var c1input = children.get(1).asString();
             var c2input = children.get(2).asString();
             var coord_1 = ParsedDegree.fromString(c1input, true, false);
             var coord_2 = ParsedDegree.fromString(c2input, false, true);
             if (coord_1.isLatitude && coord_2.isLongitude) {
-                loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius.degrees);
+                loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
             } else if (coord_2.isLatitude && coord_1.isLongitude) {
-                loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius.degrees);
+                loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
             } else {
                 throw new IllegalArgumentException("Invalid geoLocation coordinates '"+c1input+"' and '"+c2input+"'");
             }
         } else if (arg1.type() == Type.DOUBLE && arg2.type() == Type.DOUBLE) {
-            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius.degrees);
+            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinate types "+arg1.type()+" and "+arg2.type());
         }
