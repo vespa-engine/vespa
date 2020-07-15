@@ -109,7 +109,7 @@ public class Container {
                 } else {
                     throwIfPlatformBundlesChanged(snapshot);
                 }
-                Collection<Bundle> bundlesToRemove = installBundles(snapshot.configs());
+                Collection<Bundle> bundlesToRemove = installApplicationBundles(snapshot.configs());
                 obsoleteBundles.addAll(bundlesToRemove);
 
                 graph = createComponentsGraph(snapshot.configs(), getBootstrapGeneration(), fallbackInjector);
@@ -163,7 +163,7 @@ public class Container {
         componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
-    private Set<Bundle> installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
+    private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
         return osgi.useApplicationBundles(applicationBundlesConfig.bundles());
     }
