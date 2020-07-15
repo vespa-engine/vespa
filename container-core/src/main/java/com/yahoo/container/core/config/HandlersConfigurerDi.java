@@ -141,7 +141,7 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
+        public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
             log.info("Installing bundles from the latest application");
             return bundleManager.use(new ArrayList<>(bundles));
         }

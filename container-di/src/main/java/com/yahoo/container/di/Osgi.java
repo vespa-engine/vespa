@@ -33,7 +33,7 @@ public interface Osgi {
      * Returns the set of bundles that is not used by the current application generation,
      * and therefore should be scheduled for uninstalling.
      */
-    default Set<Bundle> useBundles(Collection<FileReference> bundles) {
+    default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
         System.out.println("useBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
         return emptySet();
     }

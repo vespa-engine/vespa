@@ -61,7 +61,7 @@ public class ContainerTestBase {
                         }
 
                         @Override
-                        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
+                        public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
                             return emptySet();
                         }
 
