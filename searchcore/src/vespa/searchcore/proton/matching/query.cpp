@@ -77,7 +77,7 @@ find_location_terms(Node *tree) {
     return retval;
 }
 
-GeoLocationSpec parseQueryLocationString(string str) {
+GeoLocationSpec parse_location_string(string str) {
     GeoLocationSpec empty;
     if (str.empty()) {
         return empty;
@@ -92,7 +92,7 @@ GeoLocationSpec parseQueryLocationString(string str) {
     return empty;
 }
 
-GeoLocationSpec process_query_term(ProtonLocationTerm &pterm) {
+GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
     auto old_view = pterm.getView();
     auto new_view = PositionDataType::getZCurveFieldName(old_view);
     pterm.setView(new_view);
@@ -100,18 +100,18 @@ GeoLocationSpec process_query_term(ProtonLocationTerm &pterm) {
     return GeoLocationSpec{new_view, loc};
 }
 
-void exchangeLocationNodes(const string &location_str,
+void exchange_location_nodes(const string &location_str,
                            Node::UP &query_tree,
                            std::vector<search::fef::Location> &fef_locations)
 {
     std::vector<GeoLocationSpec> locationSpecs;
 
-    auto parsed = parseQueryLocationString(location_str);
+    auto parsed = parse_location_string(location_str);
     if (parsed.location.valid()) {
         locationSpecs.push_back(parsed);
     }
     for (ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
-        auto spec = process_query_term(*pterm);
+        auto spec = process_location_term(*pterm);
         if (spec.location.valid()) {
             locationSpecs.push_back(spec);
         }
@@ -170,7 +170,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
-        exchangeLocationNodes(location, _query_tree, _locations);
+        exchange_location_nodes(location, _query_tree, _locations);
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
                 bool(_whiteListBlueprint), split_unpacking_iterators, delay_unpacking_iterators);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
