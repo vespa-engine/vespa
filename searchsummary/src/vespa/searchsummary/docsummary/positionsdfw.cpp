@@ -26,7 +26,7 @@ LocationAttrDFW::AllLocations
 LocationAttrDFW::getAllLocations(GetDocsumsState *state)
 {
     AllLocations retval;
-    if (state->_args.no_locations()) {
+    if (! state->_args.locations_possible()) {
         return retval;
     }
     if (state->_parsedLocations.empty()) {
@@ -45,7 +45,7 @@ LocationAttrDFW::getAllLocations(GetDocsumsState *state)
     }
     if (retval.empty()) {
         // avoid doing things twice
-        state->_args.no_locations(true);
+        state->_args.locations_possible(false);
     }
     return retval;
 }
