@@ -78,7 +78,7 @@ public class GeoLocationItem extends TermItem {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + 199 * location.hashCode();
+        return java.util.Objects.hash(super.hashCode(), location);
     }
 
     @Override
