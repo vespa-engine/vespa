@@ -901,7 +901,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
         EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
         // Casual, in-place testing of bug 6752085.
         // This will fail if we give NaN to the metric in question.
-        EXPECT_TRUE(std::isfinite(getEnv()._metrics.mergeAverageDataReceivedNeeded.getLast()));
+        EXPECT_TRUE(std::isfinite(getEnv()._metrics.merge_handler_metrics.mergeAverageDataReceivedNeeded.getLast()));
     }
 }
 
