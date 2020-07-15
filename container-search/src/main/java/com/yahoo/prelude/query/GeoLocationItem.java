@@ -1,4 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.prelude.query;
 
 import com.google.common.annotations.Beta;
@@ -6,10 +7,9 @@ import com.yahoo.prelude.Location;
 import java.nio.ByteBuffer;
 
 /**
- * This represents a geo-location for matching.
- * Note that this won't produce summary fields.
- *
- * @author  arnej
+ * This represents a geo-location in the query tree.
+ * Used for closeness(fieldname) and distance(fieldname) rank features.
+ * @author arnej
  */
 @Beta
 public class GeoLocationItem extends TermItem {
@@ -17,7 +17,8 @@ public class GeoLocationItem extends TermItem {
     private Location location;
 
     /**
-     */
+     * Construct from a Location, which must be geo circle with an attribute set.
+     **/
     public GeoLocationItem(Location location) {
         this(location, location.getAttribute());
         if (! location.hasAttribute()) {
@@ -26,11 +27,14 @@ public class GeoLocationItem extends TermItem {
     }
 
     /**
-     */
-    public GeoLocationItem(Location location, String indexName) {
-        super(indexName, false);
-        if (location.hasAttribute() && ! location.getAttribute().equals(indexName)) {
-            throw new IllegalArgumentException("inconsistent attribute on location: "+location.getAttribute()+" versus indexName: "+indexName);
+     * Construct from a Location and a field name.
+     * The Location must be a geo circle.
+     * If the Location has an attribute set, it must match the field name.
+     **/
+    public GeoLocationItem(Location location, String fieldName) {
+        super(fieldName, false);
+        if (location.hasAttribute() && ! location.getAttribute().equals(fieldName)) {
+            throw new IllegalArgumentException("inconsistent attribute on location: "+location.getAttribute()+" versus fieldName: "+fieldName);
         }
         if (! location.isGeoCircle()) {
             throw new IllegalArgumentException("GeoLocationItem only supports Geo Circles, got: "+location);
@@ -39,7 +43,7 @@ public class GeoLocationItem extends TermItem {
             throw new IllegalArgumentException("GeoLocationItem does not support bounding box yet, got: "+location);
         }
         this.location = new Location(location.toString());
-        this.location.setAttribute(null); // keep this in indexName only
+        this.location.setAttribute(null); // keep this in (superclass) indexName only
         setNormalizable(false);
     }
 
