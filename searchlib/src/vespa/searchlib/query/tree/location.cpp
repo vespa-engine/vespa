@@ -48,7 +48,6 @@ Location::getOldFormatString() const
 {
     // we need to product what search::common::GeoLocationParser can parse
     vespalib::asciistream buf;
-#if 1
     if (has_point) {
         buf << "(2"  // dimensionality
                         << "," << point.x
@@ -67,24 +66,6 @@ Location::getOldFormatString() const
             << "," << bounding_box.y.hi
             << "]" ;
     }
-#else
-    buf << "query::Location{";
-    if (has_point) {
-        buf << "point=[" << point.x << "," << point.y << "]";
-        if (has_radius()) {
-            buf << ",radius=" << radius;
-        }
-        if (x_aspect.active()) {
-            buf << ",x_aspect=" << x_aspect.multiplier;
-        }
-    }
-    if (bounding_box.active()) {
-        if (has_point) buf << ",";
-        buf << "bb.x=[" << bounding_box.x.lo << "," << bounding_box.x.hi << "],";
-        buf << "bb.y=[" << bounding_box.y.lo << "," << bounding_box.y.hi << "]";
-    }
-    buf << "}";
-#endif
     return buf.str();
 }
 
