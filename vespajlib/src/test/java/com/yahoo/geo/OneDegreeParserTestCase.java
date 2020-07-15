@@ -1,4 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.geo;
 
 import org.junit.Test;
@@ -139,59 +140,37 @@ public class OneDegreeParserTestCase {
         checkLon("W180\u00B00'0", -180d);
     }
 
+    private String parseException(boolean ans, String to_parse) {
+        String message = "";
+        try {
+            parser = new OneDegreeParser(ans, to_parse);
+            assertTrue(false);
+        } catch (IllegalArgumentException e) {
+            message = e.getMessage();
+        }
+        return message;
+    }
+
     /**
      * Tests inputs that are above latitude 90/-90 degrees and longitude 180/-180 degrees.
      */
     @Test
     public void testAboveBoundary() {
-        String message = "";
-        try {
-            parser = new OneDegreeParser(false, "N90.0001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        String message = parseException(false, "N90.0001");
         assertEquals("out of range [-90,+90]: 90.0001", message);
-        try {
-            parser = new OneDegreeParser(false, "S90.0001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "S90.0001");
         assertEquals("out of range [-90,+90]: -90.0001", message);
-        try {
-            parser = new OneDegreeParser(true, "E180.0001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(true, "E180.0001");
         assertEquals("out of range [-180,+180]: 180.0001", message);
-        try {
-            parser = new OneDegreeParser(true, "W180.0001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(true, "W180.0001");
         assertEquals("out of range [-180,+180]: -180.0001", message);
-        try {
-            parser = new OneDegreeParser(false, "N90.000001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "N90.000001");
         assertEquals("out of range [-90,+90]: 90.000001", message);
-        try {
-            parser = new OneDegreeParser(false, "S90.000001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "S90.000001");
         assertEquals("out of range [-90,+90]: -90.000001", message);
-        try {
-            parser = new OneDegreeParser(true, "E180.000001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(true, "E180.000001");
         assertEquals("out of range [-180,+180]: 180.000001", message);
-        try {
-            parser = new OneDegreeParser(true, "W180.000001");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(true, "W180.000001");
         assertEquals("out of range [-180,+180]: -180.000001", message);
     }
 
@@ -200,66 +179,25 @@ public class OneDegreeParserTestCase {
      */
     @Test
     public void testInputErrors() {
-        String message = "";
-        try {
-            parser = new OneDegreeParser(false, "N90S90");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        String message = parseException(false, "N90S90");
         assertEquals("already set direction once, cannot add direction: S", message);
-        try {
-            parser = new OneDegreeParser(false, "E120W120");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "E120W120");
         assertEquals("already set direction once, cannot add direction: W", message);
-        try {
-            parser = new OneDegreeParser(false, "E");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "E");
         assertEquals("end of field without any number seen", message);
-        try {
-            parser = new OneDegreeParser(false, "");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "");
         assertEquals("end of field without any number seen", message);
-        try {
-            parser = new OneDegreeParser(false, "NW25");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "NW25");
         assertEquals("already set direction once, cannot add direction: W", message);
-        try {
-            parser = new OneDegreeParser(false, "N16.25\u00B0");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "N16.25\u00B0");
         assertEquals("cannot have fractional degrees before degrees sign", message);
-        try {
-            parser = new OneDegreeParser(false, "N16\u00B022.40'");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "N16\u00B022.40'");
         assertEquals("cannot have fractional minutes before minutes sign", message);
-        try {
-            parser = new OneDegreeParser(false, "");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "");
         assertEquals("end of field without any number seen", message);
-        try {
-            parser = new OneDegreeParser(false, "Yahoo!");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "Yahoo!");
         assertEquals("invalid character: Y", message);
-        try {
-            parser = new OneDegreeParser(false, "N63O025.105");
-        } catch (IllegalArgumentException e) {
-            message = e.getMessage();
-        }
+        message = parseException(false, "N63O025.105");
         assertEquals("invalid character: O", message);
     }
 
