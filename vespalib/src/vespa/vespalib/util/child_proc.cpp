@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "guard.h"
-#include "slaveproc.h"
+#include "child_proc.h"
 #include <cstring>
 
 namespace vespalib {
 
-namespace slaveproc {
+namespace child_proc {
 
 using namespace std::chrono;
 
 /**
- * @brief SlaveProc internal timeout management.
+ * @brief ChildProc internal timeout management.
  **/
 class Timer
 {
@@ -54,14 +54,14 @@ public:
     }
 };
 
-} // namespace slaveproc
+} // namespace child_proc
 
-using slaveproc::Timer;
+using child_proc::Timer;
 
 //-----------------------------------------------------------------------------
 
 void
-SlaveProc::Reader::OnReceiveData(const void *data, size_t length)
+ChildProc::Reader::OnReceiveData(const void *data, size_t length)
 {
     const char *buf = (const char *) data;
     MonitorGuard lock(_cond);
@@ -80,7 +80,7 @@ SlaveProc::Reader::OnReceiveData(const void *data, size_t length)
 
 
 bool
-SlaveProc::Reader::hasData()
+ChildProc::Reader::hasData()
 {
     // NB: caller has lock on _cond
     return (!_data.empty() || !_queue.empty());
@@ -88,7 +88,7 @@ SlaveProc::Reader::hasData()
 
 
 bool
-SlaveProc::Reader::waitForData(Timer &timer, MonitorGuard &lock)
+ChildProc::Reader::waitForData(Timer &timer, MonitorGuard &lock)
 {
     // NB: caller has lock on _cond
     CounterGuard count(_waitCnt);
@@ -100,7 +100,7 @@ SlaveProc::Reader::waitForData(Timer &timer, MonitorGuard &lock)
 
 
 void
-SlaveProc::Reader::updateEOF()
+ChildProc::Reader::updateEOF()
 {
     // NB: caller has lock on _cond
     if (_data.empty() && _queue.empty() && _gotEOF) {
@@ -109,7 +109,7 @@ SlaveProc::Reader::updateEOF()
 }
 
 
-SlaveProc::Reader::Reader()
+ChildProc::Reader::Reader()
     : _cond(),
       _queue(),
       _data(),
@@ -120,13 +120,13 @@ SlaveProc::Reader::Reader()
 }
 
 
-SlaveProc::Reader::~Reader()
+ChildProc::Reader::~Reader()
 {
 }
 
 
 uint32_t
-SlaveProc::Reader::read(char *buf, uint32_t len, int msTimeout)
+ChildProc::Reader::read(char *buf, uint32_t len, int msTimeout)
 {
     if (eof()) {
         return 0;
@@ -156,7 +156,7 @@ SlaveProc::Reader::read(char *buf, uint32_t len, int msTimeout)
 
 
 bool
-SlaveProc::Reader::readLine(std::string &line, int msTimeout)
+ChildProc::Reader::readLine(std::string &line, int msTimeout)
 {
     line.clear();
     if (eof()) {
@@ -193,7 +193,7 @@ SlaveProc::Reader::readLine(std::string &line, int msTimeout)
 //-----------------------------------------------------------------------------
 
 void
-SlaveProc::checkProc()
+ChildProc::checkProc()
 {
     if (_running) {
         bool stillRunning;
@@ -205,7 +205,7 @@ SlaveProc::checkProc()
 }
 
 
-SlaveProc::SlaveProc(const char *cmd)
+ChildProc::ChildProc(const char *cmd)
     : _reader(),
       _proc(cmd, true, &_reader),
       _running(false),
@@ -217,11 +217,11 @@ SlaveProc::SlaveProc(const char *cmd)
 }
 
 
-SlaveProc::~SlaveProc() = default;
+ChildProc::~ChildProc() = default;
 
 
 bool
-SlaveProc::write(const char *buf, uint32_t len)
+ChildProc::write(const char *buf, uint32_t len)
 {
     if (len == 0) {
         return true;
@@ -231,28 +231,28 @@ SlaveProc::write(const char *buf, uint32_t len)
 
 
 bool
-SlaveProc::close()
+ChildProc::close()
 {
     return _proc.WriteStdin(nullptr, 0);
 }
 
 
 uint32_t
-SlaveProc::read(char *buf, uint32_t len, int msTimeout)
+ChildProc::read(char *buf, uint32_t len, int msTimeout)
 {
     return _reader.read(buf, len, msTimeout);
 }
 
 
 bool
-SlaveProc::readLine(std::string &line, int msTimeout)
+ChildProc::readLine(std::string &line, int msTimeout)
 {
     return _reader.readLine(line, msTimeout);
 }
 
 
 bool
-SlaveProc::wait(int msTimeout)
+ChildProc::wait(int msTimeout)
 {
     bool done = true;
     checkProc();
@@ -273,7 +273,7 @@ SlaveProc::wait(int msTimeout)
 
 
 bool
-SlaveProc::running()
+ChildProc::running()
 {
     checkProc();
     return _running;
@@ -281,24 +281,24 @@ SlaveProc::running()
 
 
 bool
-SlaveProc::failed()
+ChildProc::failed()
 {
     checkProc();
     return _failed;
 }
 
 int
-SlaveProc::getExitCode()
+ChildProc::getExitCode()
 {
     return _exitCode;
 }
 
 
 bool
-SlaveProc::run(const std::string &input, const char *cmd,
+ChildProc::run(const std::string &input, const char *cmd,
                std::string &output, int msTimeout)
 {
-    SlaveProc proc(cmd);
+    ChildProc proc(cmd);
     Timer timer(msTimeout);
     char buf[4096];
     proc.write(input.data(), input.length());
@@ -317,7 +317,7 @@ SlaveProc::run(const std::string &input, const char *cmd,
 
 
 bool
-SlaveProc::run(const char *cmd, std::string &output, int msTimeout)
+ChildProc::run(const char *cmd, std::string &output, int msTimeout)
 {
     std::string input;  // empty input
     return run(input, cmd, output, msTimeout);
@@ -325,7 +325,7 @@ SlaveProc::run(const char *cmd, std::string &output, int msTimeout)
 
 
 bool
-SlaveProc::run(const char *cmd, int msTimeout)
+ChildProc::run(const char *cmd, int msTimeout)
 {
     std::string input;  // empty input
     std::string output; // ignore output

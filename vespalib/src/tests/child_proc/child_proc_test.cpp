@@ -1,57 +1,57 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_proc.h>
 
-using vespalib::SlaveProc;
+using vespalib::ChildProc;
 
 TEST("simple run, ignore output") {        
-    EXPECT_TRUE(SlaveProc::run("echo foo"));
+    EXPECT_TRUE(ChildProc::run("echo foo"));
 }
 
 TEST("simple run, ignore output, failure") {
-    EXPECT_TRUE(!SlaveProc::run("false"));
+    EXPECT_TRUE(!ChildProc::run("false"));
 }
 
 TEST("simple run, ignore output, timeout") {
-    EXPECT_TRUE(!SlaveProc::run("exec sleep 60", 10));
+    EXPECT_TRUE(!ChildProc::run("exec sleep 60", 10));
 }
 
 TEST("simple run") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("/bin/echo -n foo", out));
+    EXPECT_TRUE(ChildProc::run("/bin/echo -n foo", out));
     EXPECT_EQUAL(out, "foo");
 }
 
 TEST("simple run, strip single-line trailing newline") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("echo foo", out));
+    EXPECT_TRUE(ChildProc::run("echo foo", out));
     EXPECT_EQUAL(out, "foo");
 }
 
 TEST("simple run, don't strip multi-line output") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("perl -e 'print \"foo\\n\\n\"'", out));
+    EXPECT_TRUE(ChildProc::run("perl -e 'print \"foo\\n\\n\"'", out));
     EXPECT_EQUAL(out, "foo\n\n");
 }
 
 TEST("simple run with input") {
     std::string in = "bar";
     std::string out;
-    EXPECT_TRUE(SlaveProc::run(in, "cat", out));
+    EXPECT_TRUE(ChildProc::run(in, "cat", out));
     EXPECT_EQUAL(out, "bar");
 }
 
 TEST("simple run with input, strip single-line trailing newline") {
     std::string in = "bar\n";
     std::string out;
-    EXPECT_TRUE(SlaveProc::run(in, "cat", out));
+    EXPECT_TRUE(ChildProc::run(in, "cat", out));
     EXPECT_EQUAL(out, "bar");
 }
 
 TEST("simple run with input, don't strip multi-line output") {
     std::string in = "bar\n\n";
     std::string out;
-    EXPECT_TRUE(SlaveProc::run(in, "cat", out));
+    EXPECT_TRUE(ChildProc::run(in, "cat", out));
     EXPECT_EQUAL("bar\n\n", out);
 }
 
@@ -64,11 +64,11 @@ TEST_MT("simple run, partial output due to timeout", 2) {
                 (thread_id == 0) ? "out" : "", timeout);
         if (thread_id == 0) {
             out.clear();
-            EXPECT_TRUE(!SlaveProc::run(my_cmd, out, timeout));
+            EXPECT_TRUE(!ChildProc::run(my_cmd, out, timeout));
         } else {
             out.clear();
             std::string in = "ignored\n";
-            EXPECT_TRUE(!SlaveProc::run(in, my_cmd, out, timeout));
+            EXPECT_TRUE(!ChildProc::run(in, my_cmd, out, timeout));
         }
         if (out == "foo") {
             break;
@@ -78,7 +78,7 @@ TEST_MT("simple run, partial output due to timeout", 2) {
 }
 
 TEST("proc failure") {
-    SlaveProc proc("false");
+    ChildProc proc("false");
     // read with length 0 will wait for output
     EXPECT_TRUE(proc.read(NULL, 0) == 0);
     EXPECT_TRUE(proc.wait(60000));
@@ -90,7 +90,7 @@ TEST("basic read/write") {
     int x;
     int read;
     char buf[64];
-    SlaveProc proc("cat");
+    ChildProc proc("cat");
 
     EXPECT_TRUE(proc.running());
     EXPECT_TRUE(!proc.failed());
@@ -117,7 +117,7 @@ TEST("basic read/write") {
 
 TEST("continuos run, readLine") {
     std::string str;
-    SlaveProc proc("cat");
+    ChildProc proc("cat");
 
     EXPECT_TRUE(proc.running());
     EXPECT_TRUE(!proc.failed());
@@ -142,7 +142,7 @@ TEST("continuos run, readLine") {
 
 TEST("readLine, eof flushes last line") {
     std::string str;
-    SlaveProc proc("cat");
+    ChildProc proc("cat");
 
     EXPECT_TRUE(proc.running());
     EXPECT_TRUE(!proc.failed());
@@ -166,7 +166,7 @@ TEST("readLine, eof flushes last line") {
 TEST("long continuos run, readLine") {
     std::string in;
     std::string out;
-    SlaveProc proc("cat");
+    ChildProc proc("cat");
 
     EXPECT_TRUE(proc.running());
     EXPECT_TRUE(!proc.failed());

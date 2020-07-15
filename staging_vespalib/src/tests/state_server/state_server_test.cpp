@@ -12,7 +12,7 @@
 #include <vespa/vespalib/net/simple_metrics_producer.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_proc.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/net/slime_explorer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
@@ -40,7 +40,7 @@ std::map<vespalib::string,vespalib::string> empty_params;
 
 vespalib::string run_cmd(const vespalib::string &cmd) {
     std::string out;
-    ASSERT_TRUE(SlaveProc::run(cmd.c_str(), out));
+    ASSERT_TRUE(ChildProc::run(cmd.c_str(), out));
     return out;
 }
 
