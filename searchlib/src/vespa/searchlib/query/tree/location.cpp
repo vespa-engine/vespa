@@ -60,10 +60,10 @@ Location::getOldFormatString() const
                         << ")";
     }
     if (bounding_box.active()) {
-        buf << "[2," << bounding_box.x.lo
-            << "," << bounding_box.y.lo
-            << "," << bounding_box.x.hi
-            << "," << bounding_box.y.hi
+        buf << "[2," << bounding_box.x.low
+            << "," << bounding_box.y.low
+            << "," << bounding_box.x.high
+            << "," << bounding_box.y.high
             << "]" ;
     }
     return buf.str();

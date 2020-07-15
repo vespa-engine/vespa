@@ -16,8 +16,8 @@ namespace search::common {
 struct GeoLocation
 {
     // contained structs and helper constants:
-    static constexpr int32_t range_lo = std::numeric_limits<int32_t>::min();
-    static constexpr int32_t range_hi = std::numeric_limits<int32_t>::max();
+    static constexpr int32_t range_low = std::numeric_limits<int32_t>::min();
+    static constexpr int32_t range_high = std::numeric_limits<int32_t>::max();
     static constexpr uint32_t radius_inf = std::numeric_limits<uint32_t>::max();
     struct Point {
         const int32_t x;
@@ -31,13 +31,13 @@ struct GeoLocation
         bool active() const { return multiplier != 0; }
     };
     struct Range {
-        const int32_t lo;
-        const int32_t hi;
+        const int32_t low;
+        const int32_t high;
         bool active() const {
-            return (lo != range_lo) || (hi != range_hi);
+            return (low != range_low) || (high != range_high);
         }
     };
-    static constexpr Range no_range = {range_lo, range_hi};
+    static constexpr Range no_range = {range_low, range_high};
     struct Box {
         const Range x;
         const Range y;
