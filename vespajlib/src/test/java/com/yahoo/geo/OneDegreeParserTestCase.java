@@ -157,21 +157,21 @@ public class OneDegreeParserTestCase {
     @Test
     public void testAboveBoundary() {
         String message = parseException(false, "N90.0001");
-        assertEquals("out of range [-90,+90]: 90.0001", message);
+        assertEquals("out of range [-90,+90]: 90.0001 when parsing <N90.0001>", message);
         message = parseException(false, "S90.0001");
-        assertEquals("out of range [-90,+90]: -90.0001", message);
+        assertEquals("out of range [-90,+90]: -90.0001 when parsing <S90.0001>", message);
         message = parseException(true, "E180.0001");
-        assertEquals("out of range [-180,+180]: 180.0001", message);
+        assertEquals("out of range [-180,+180]: 180.0001 when parsing <E180.0001>", message);
         message = parseException(true, "W180.0001");
-        assertEquals("out of range [-180,+180]: -180.0001", message);
+        assertEquals("out of range [-180,+180]: -180.0001 when parsing <W180.0001>", message);
         message = parseException(false, "N90.000001");
-        assertEquals("out of range [-90,+90]: 90.000001", message);
+        assertEquals("out of range [-90,+90]: 90.000001 when parsing <N90.000001>", message);
         message = parseException(false, "S90.000001");
-        assertEquals("out of range [-90,+90]: -90.000001", message);
+        assertEquals("out of range [-90,+90]: -90.000001 when parsing <S90.000001>", message);
         message = parseException(true, "E180.000001");
-        assertEquals("out of range [-180,+180]: 180.000001", message);
+        assertEquals("out of range [-180,+180]: 180.000001 when parsing <E180.000001>", message);
         message = parseException(true, "W180.000001");
-        assertEquals("out of range [-180,+180]: -180.000001", message);
+        assertEquals("out of range [-180,+180]: -180.000001 when parsing <W180.000001>", message);
     }
 
     /**
@@ -180,25 +180,25 @@ public class OneDegreeParserTestCase {
     @Test
     public void testInputErrors() {
         String message = parseException(false, "N90S90");
-        assertEquals("already set direction once, cannot add direction: S", message);
+        assertEquals("already set direction once, cannot add direction: S when parsing <N90S90>", message);
         message = parseException(false, "E120W120");
-        assertEquals("already set direction once, cannot add direction: W", message);
+        assertEquals("already set direction once, cannot add direction: W when parsing <E120W120>", message);
         message = parseException(false, "E");
-        assertEquals("end of field without any number seen", message);
+        assertEquals("end of field without any number seen when parsing <E>", message);
         message = parseException(false, "");
-        assertEquals("end of field without any number seen", message);
+        assertEquals("end of field without any number seen when parsing <>", message);
         message = parseException(false, "NW25");
-        assertEquals("already set direction once, cannot add direction: W", message);
+        assertEquals("already set direction once, cannot add direction: W when parsing <NW25>", message);
         message = parseException(false, "N16.25\u00B0");
-        assertEquals("cannot have fractional degrees before degrees sign", message);
+        assertEquals("cannot have fractional degrees before degrees sign when parsing <N16.25\u00B0>", message);
         message = parseException(false, "N16\u00B022.40'");
-        assertEquals("cannot have fractional minutes before minutes sign", message);
+        assertEquals("cannot have fractional minutes before minutes sign when parsing <N16\u00B022.40'>", message);
         message = parseException(false, "");
-        assertEquals("end of field without any number seen", message);
+        assertEquals("end of field without any number seen when parsing <>", message);
         message = parseException(false, "Yahoo!");
-        assertEquals("invalid character: Y", message);
+        assertEquals("invalid character: Y when parsing <Yahoo!>", message);
         message = parseException(false, "N63O025.105");
-        assertEquals("invalid character: O", message);
+        assertEquals("invalid character: O when parsing <N63O025.105>", message);
     }
 
 }

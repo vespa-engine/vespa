@@ -44,7 +44,7 @@ class OneDegreeParser {
             pos++;
             return 0;
         } else if (pos > len) {
-            throw new IllegalArgumentException("position after end of string");
+            throw new IllegalArgumentException("position after end of string when parsing <"+parseString+">");
         } else {
             return parseString.charAt(pos++);
         }
@@ -120,7 +120,7 @@ class OneDegreeParser {
             // did we find a valid char?
             boolean valid = false;
             if (pos == lastpos) {
-                throw new RuntimeException("internal logic error at '"+parseString+"' pos:"+pos);
+                throw new IllegalArgumentException("internal logic error at <"+parseString+"> pos:"+pos);
             } else {
                 lastpos = pos;
             }
@@ -131,7 +131,7 @@ class OneDegreeParser {
             if (isDigit(ch) || ch == '.') {
                 valid = true;
                 if (foundDigits) {
-                    throw new IllegalArgumentException("found digits after not consuming previous digits");
+                    throw new IllegalArgumentException("found digits after not consuming previous digits when parsing <"+parseString+">");
                 }
                 double divider = 1.0;
                 foundDot = false;
@@ -153,7 +153,7 @@ class OneDegreeParser {
                     }
                 }
                 if (!foundDigits) {
-                    throw new IllegalArgumentException("just a . is not a valid number");
+                    throw new IllegalArgumentException("just a . is not a valid number when parsing <"+parseString+">");
                 }
                 accum /= divider;
             }
@@ -163,23 +163,23 @@ class OneDegreeParser {
             if (ch == '\u00B0' || ch == 'o') {
                 valid = true;
                 if (degSet) {
-                    throw new IllegalArgumentException("degrees sign only valid just after degrees");
+                    throw new IllegalArgumentException("degrees sign only valid just after degrees when parsing <"+parseString+">");
                 }
                 if (!foundDigits) {
-                    throw new IllegalArgumentException("must have number before degrees sign");
+                    throw new IllegalArgumentException("must have number before degrees sign when parsing <"+parseString+">");
                 }
                 if (foundDot) {
-                    throw new IllegalArgumentException("cannot have fractional degrees before degrees sign");
+                    throw new IllegalArgumentException("cannot have fractional degrees before degrees sign when parsing <"+parseString+">");
                 }
                 ch = getNextChar();
             }
             // apostrophe is a separator after minutes, before seconds
             if (ch == '\'') {
                 if (minSet || !degSet || !foundDigits) {
-                    throw new IllegalArgumentException("minutes sign only valid just after minutes");
+                    throw new IllegalArgumentException("minutes sign only valid just after minutes when parsing <"+parseString+">");
                 }
                 if (foundDot) {
-                    throw new IllegalArgumentException("cannot have fractional minutes before minutes sign");
+                    throw new IllegalArgumentException("cannot have fractional minutes before minutes sign when parsing <"+parseString+">");
                 }
                 ch = getNextChar();
             }
@@ -190,7 +190,7 @@ class OneDegreeParser {
                 if (degSet) {
                     if (minSet) {
                         if (secSet) {
-                            throw new IllegalArgumentException("extra number after full field");
+                            throw new IllegalArgumentException("extra number after full field when parsing <"+parseString+">");
                         } else {
                             seconds = accum;
                             secSet = true;
@@ -218,7 +218,7 @@ class OneDegreeParser {
             if (isCompassDirection(ch)) {
                 valid = true;
                 if (dirSet) {
-                    throw new IllegalArgumentException("already set direction once, cannot add direction: "+ch);
+                    throw new IllegalArgumentException("already set direction once, cannot add direction: "+ch+" when parsing <"+parseString+">");
                 }
                 dirSet = true;
                 if (ch == 'S' || ch == 'W') {
@@ -245,7 +245,7 @@ class OneDegreeParser {
                     }
                 }
                 if (!degSet) {
-                    throw new IllegalArgumentException("end of field without any number seen");
+                    throw new IllegalArgumentException("end of field without any number seen when parsing <"+parseString+">");
                 }
                 degrees += minutes / 60.0;
                 degrees += seconds / 3600.0;
@@ -253,13 +253,13 @@ class OneDegreeParser {
 
                 if (findingLatitude) {
                     if (degrees < -90.0 || degrees > 90.0) {
-                        throw new IllegalArgumentException("out of range [-90,+90]: "+degrees);
+                        throw new IllegalArgumentException("out of range [-90,+90]: "+degrees+" when parsing <"+parseString+">");
                     }
                     latitude = degrees;
                     foundLatitude = true;
                 } else if (findingLongitude) {
                     if (degrees < -180.0 || degrees > 180.0) {
-                        throw new IllegalArgumentException("out of range [-180,+180]: "+degrees);
+                        throw new IllegalArgumentException("out of range [-180,+180]: "+degrees+" when parsing <"+parseString+">");
                     }
                     longitude = degrees;
                     foundLongitude = true;
@@ -267,7 +267,7 @@ class OneDegreeParser {
                 break;
             }
             if (!valid) {
-                throw new IllegalArgumentException("invalid character: "+ch);
+                throw new IllegalArgumentException("invalid character: "+ch+" when parsing <"+parseString+">");
             }
         } while (ch != 0);
         // everything parsed OK
