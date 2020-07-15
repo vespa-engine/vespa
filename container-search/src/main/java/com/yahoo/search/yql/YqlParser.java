@@ -426,12 +426,12 @@ public class YqlParser implements Parser {
         String field = fetchFieldRead(args.get(0));
         var coord_1 = ParsedDegree.fromString(fetchFieldRead(args.get(1)), true, false);
         var coord_2 = ParsedDegree.fromString(fetchFieldRead(args.get(2)), false, true);
-        var radius = new DistanceParser(fetchFieldRead(args.get(3)), false);
+        double radius = DistanceParser.parse(fetchFieldRead(args.get(3)));
         var loc = new Location();
         if (coord_1.isLatitude && coord_2.isLongitude) {
-            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius.degrees);
+            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
         } else if (coord_2.isLatitude && coord_1.isLongitude) {
-            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius.degrees);
+            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
         }
