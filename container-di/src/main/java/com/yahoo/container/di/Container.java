@@ -4,6 +4,7 @@ package com.yahoo.container.di;
 import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -22,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -46,6 +48,7 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever configurer;
+    private List<FileReference> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
@@ -98,14 +101,13 @@ public class Container {
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
-                log.log(FINE,
-                        String.format(
-                                "Got new bootstrap generation\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
-                                        + "previous generation: %d\n",
-                                getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration));
+                log.log(FINE, "Got new bootstrap generation\n" + configGenerationsString());
 
                 if (graph.generation() == 0) {
-                    installPlatformBundles(getConfig(platformBundlesConfigKey, snapshot.configs()));
+                    platformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+                    osgi.installPlatformBundles(platformBundles);
+                } else {
+                    throwIfPlatformBundlesChanged(snapshot);
                 }
                 Collection<Bundle> bundlesToRemove = installBundles(snapshot.configs());
                 obsoleteBundles.addAll(bundlesToRemove);
@@ -118,11 +120,7 @@ public class Container {
                 break;
             }
         }
-        log.log(FINE,
-                String.format(
-                        "Got components configs,\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
-                                + "previous generation: %d",
-                        getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration));
+        log.log(FINE, "Got components configs,\n" + configGenerationsString());
         return createAndConfigureComponentsGraph(snapshot.configs(), fallbackInjector);
     }
 
@@ -132,6 +130,17 @@ public class Container {
 
     private long getComponentsGeneration() {
         return configurer.getComponentsGeneration();
+    }
+
+    private String configGenerationsString() {
+        return String.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
+                             getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration);
+    }
+
+    private void throwIfPlatformBundlesChanged(ConfigSnapshot snapshot) {
+        var checkPlatformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+        if (! checkPlatformBundles.equals(platformBundles))
+            throw new RuntimeException("Platform bundles are not allowed to change!\nOld: " + platformBundles + "\nNew: " + checkPlatformBundles);
     }
 
     private ComponentGraph createAndConfigureComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> componentsConfigs,
@@ -152,10 +161,6 @@ public class Container {
         oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
         newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
         componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
-    }
-
-    private void installPlatformBundles(PlatformBundlesConfig platformBundlesConfig) {
-        osgi.installPlatformBundles(platformBundlesConfig.bundles());
     }
 
     private Set<Bundle> installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
