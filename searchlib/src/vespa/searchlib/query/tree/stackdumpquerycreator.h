@@ -6,6 +6,7 @@
 #include "querybuilder.h"
 #include "term.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/objects/hexdump.h>
 
 namespace search::query {
@@ -141,17 +142,15 @@ private:
                 t = &builder.addStringTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUFFIXTERM) {
                 t = &builder.addSuffixTerm(term, view, id, weight);
-            } else if (type == ParseItem::ITEM_LOCATION_TERM) {
-                Location loc(term);
+            } else if (type == ParseItem::ITEM_GEO_LOCATION_TERM) {
+                search::common::GeoLocationParser parser;
+                parser.parseOldFormat(term);
+                Location loc(parser.getGeoLocation());
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
                 if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
                     Range range(term);
                     t = &builder.addRangeTerm(range, view, id, weight);
-                } else if (term[0] == '(') {
-                    // TODO: handled above, should remove this block
-                    Location loc(term);
-                    t = &builder.addLocationTerm(loc, view, id, weight);
                 } else {
                     t = &builder.addNumberTerm(term, view, id, weight);
                 }

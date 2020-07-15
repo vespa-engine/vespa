@@ -339,29 +339,43 @@ TEST("requireThatPrefixTermsWork") {
 TEST("requireThatLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(0xcc));
-
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
+    {
+        SimpleLocationTerm node(Location(Point{10, 10}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{100, 100}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{13, 13}, 4, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{10, 13}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager));
+    }
 }
 
 TEST("requireThatOptimizedLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeFastSearchLongAttributeManager(int64_t(0xcc));
-
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager, true));
+    {
+        SimpleLocationTerm node(Location(Point{10, 10}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{100, 100}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{13, 13}, 4, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{10, 13}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager, true));
+    }
 }
 
 TEST("require that optimized location search works with wrapped bounding box (no hits)") {

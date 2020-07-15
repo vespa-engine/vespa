@@ -17,7 +17,6 @@
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/tree/location.h>
-#include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>

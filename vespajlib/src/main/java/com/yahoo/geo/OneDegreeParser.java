@@ -1,25 +1,29 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.geo;
 
 /**
- * Utility for parsing geographical coordinates
+ * Utility for parsing one geographical coordinate
  *
  * @author arnej27959
  **/
-public class DegreesParser {
+class OneDegreeParser {
     /**
      * the parsed latitude (degrees north if positive)
      **/
     public double latitude = 0;
+    public boolean foundLatitude = false;
+
     /**
      * the parsed longitude (degrees east if positive)
      **/
     public double longitude = 0;
+    public boolean foundLongitude = false;
 
-    private boolean isDigit(char ch) {
+    public static boolean isDigit(char ch) {
         return (ch >= '0' && ch <= '9');
     }
-    private boolean isCompassDirection(char ch) {
+    public static boolean isCompassDirection(char ch) {
         return (ch == 'N' || ch == 'S' || ch == 'E' || ch == 'W');
     }
 
@@ -27,12 +31,20 @@ public class DegreesParser {
     private int len = 0;
     private int pos = 0;
 
+    public String toString() {
+        if (foundLatitude) {
+            return parseString + " -> latitude(" + latitude + ")";
+        } else {
+            return parseString + " -> longitude(" + longitude + ")";
+        }
+    }
+
     private char getNextChar() throws IllegalArgumentException {
         if (pos == len) {
             pos++;
             return 0;
         } else if (pos > len) {
-            throw new IllegalArgumentException("position after end of string");
+            throw new IllegalArgumentException("position after end of string when parsing <"+parseString+">");
         } else {
             return parseString.charAt(pos++);
         }
@@ -41,12 +53,11 @@ public class DegreesParser {
     /**
      * Parse the given string.
      *
-     * The string must contain both a latitude and a longitude,
-     * separated by a semicolon, in any order.  A latitude must
-     * contain "N" or "S" and a number signifying degrees north or
-     * south.  A longitude must contain "E" or "W" and a number
-     * signifying degrees east or west.  No signs or spaces are
-     * allowed.
+     * The string must contain either a latitude or a longitude.
+     * A latitude should contain "N" or "S" and a number signifying
+     * degrees north or south, or a signed number.
+     * A longitude should contain "E" or "W" and a number
+     * signifying degrees east or west, or a signed number.
      * <br>
      * Fractional degrees are recommended as the main input format,
      * but degrees plus fractional minutes may be used for testing.
@@ -57,25 +68,28 @@ public class DegreesParser {
      * degrees sign.
      * <br>
      * Some valid input formats: <br>
-     * "N37.416383;W122.024683" → Sunnyvale <br>
-     * "37N24.983;122W01.481" → same <br>
-     * "N37\u00B024.983;W122\u00B001.481" → same <br>
-     * "N63.418417;E10.433033" → Trondheim <br>
-     * "N63o25.105;E10o25.982" → same <br>
-     * "E10o25.982;N63o25.105" → same <br>
-     * "N63.418417;E10.433033" → same <br>
-     * "63N25.105;10E25.982" → same <br>
-     * @param latandlong Latitude and longitude separated by semicolon.
+     * "37.416383" and "-122.024683" → Sunnyvale <br>
+     * "N37.416383" and "W122.024683" → Sunnyvale <br>
+     * "37N24.983" and "122W01.481" → same <br>
+     * "N37\u00B024.983" and "W122\u00B001.481" → same <br>
+     * "63.418417" and "10.433033" → Trondheim <br>
+     * "N63.418417" and "E10.433033" → same <br>
+     * "N63o25.105" and "E10o25.982" → same <br>
+     * "E10o25.982" and "N63o25.105" → same <br>
+     * "N63.418417" and "E10.433033" → same <br>
+     * "63N25.105" and "10E25.982" → same <br>
+     * @param assumeNorthSouth Latitude assumed, otherwise longitude
+     * @param toParse Latitude or longitude string to parse
      *
      **/
-    public DegreesParser(String latandlong) throws IllegalArgumentException {
-        this.parseString = latandlong;
+    public OneDegreeParser(boolean assumeNorthSouth, String toParse) throws IllegalArgumentException {
+        this.parseString = toParse;
         this.len = parseString.length();
+        consumeString(assumeNorthSouth);
+    }
 
+    private void consumeString(boolean assumeNorthSouth)  throws IllegalArgumentException {
         char ch = getNextChar();
-
-        boolean latSet = false;
-        boolean longSet = false;
 
         double degrees = 0.0;
         double minutes = 0.0;
@@ -90,14 +104,23 @@ public class DegreesParser {
         boolean findingLatitude = false;
         boolean findingLongitude = false;
 
-        double sign = 0.0;
+        double sign = +1.0;
 
         int lastpos = -1;
 
+        // sign must be first character in string if present:
+        if (ch == '+') {
+            // unary plus is a nop
+            ch = getNextChar();
+        } else if (ch == '-') {
+            sign = -1.0;
+            ch = getNextChar();
+        }
         do {
+            // did we find a valid char?
             boolean valid = false;
             if (pos == lastpos) {
-                throw new RuntimeException("internal logic error at '"+parseString+"' pos:"+pos);
+                throw new IllegalArgumentException("internal logic error at <"+parseString+"> pos:"+pos);
             } else {
                 lastpos = pos;
             }
@@ -108,7 +131,7 @@ public class DegreesParser {
             if (isDigit(ch) || ch == '.') {
                 valid = true;
                 if (foundDigits) {
-                    throw new IllegalArgumentException("found digits after not consuming previous digits");
+                    throw new IllegalArgumentException("found digits after not consuming previous digits when parsing <"+parseString+">");
                 }
                 double divider = 1.0;
                 foundDot = false;
@@ -130,7 +153,7 @@ public class DegreesParser {
                     }
                 }
                 if (!foundDigits) {
-                    throw new IllegalArgumentException("just a . is not a valid number");
+                    throw new IllegalArgumentException("just a . is not a valid number when parsing <"+parseString+">");
                 }
                 accum /= divider;
             }
@@ -140,23 +163,23 @@ public class DegreesParser {
             if (ch == '\u00B0' || ch == 'o') {
                 valid = true;
                 if (degSet) {
-                    throw new IllegalArgumentException("degrees sign only valid just after degrees");
+                    throw new IllegalArgumentException("degrees sign only valid just after degrees when parsing <"+parseString+">");
                 }
                 if (!foundDigits) {
-                    throw new IllegalArgumentException("must have number before degrees sign");
+                    throw new IllegalArgumentException("must have number before degrees sign when parsing <"+parseString+">");
                 }
                 if (foundDot) {
-                    throw new IllegalArgumentException("cannot have fractional degrees before degrees sign");
+                    throw new IllegalArgumentException("cannot have fractional degrees before degrees sign when parsing <"+parseString+">");
                 }
                 ch = getNextChar();
             }
             // apostrophe is a separator after minutes, before seconds
             if (ch == '\'') {
                 if (minSet || !degSet || !foundDigits) {
-                    throw new IllegalArgumentException("minutes sign only valid just after minutes");
+                    throw new IllegalArgumentException("minutes sign only valid just after minutes when parsing <"+parseString+">");
                 }
                 if (foundDot) {
-                    throw new IllegalArgumentException("cannot have fractional minutes before minutes sign");
+                    throw new IllegalArgumentException("cannot have fractional minutes before minutes sign when parsing <"+parseString+">");
                 }
                 ch = getNextChar();
             }
@@ -167,7 +190,7 @@ public class DegreesParser {
                 if (degSet) {
                     if (minSet) {
                         if (secSet) {
-                            throw new IllegalArgumentException("extra number after full field");
+                            throw new IllegalArgumentException("extra number after full field when parsing <"+parseString+">");
                         } else {
                             seconds = accum;
                             secSet = true;
@@ -191,11 +214,11 @@ public class DegreesParser {
                 foundDigits = false;
             }
 
-            // there needs to be a direction (NSEW) somewhere, too
+            // there may to be a direction (NSEW) somewhere, too
             if (isCompassDirection(ch)) {
                 valid = true;
                 if (dirSet) {
-                    throw new IllegalArgumentException("already set direction once, cannot add direction: "+ch);
+                    throw new IllegalArgumentException("already set direction once, cannot add direction: "+ch+" when parsing <"+parseString+">");
                 }
                 dirSet = true;
                 if (ch == 'S' || ch == 'W') {
@@ -211,74 +234,49 @@ public class DegreesParser {
                 ch = getNextChar();
             }
 
-            // lastly, did we find the end-of-string or a separator between lat and long?
-            if (ch == 0 || ch == ';' || ch == ' ') {
+            // lastly, did we find the end-of-string?
+            if (ch == 0) {
                 valid = true;
-
                 if (!dirSet) {
-                    throw new IllegalArgumentException("end of field without any compass direction seen");
+                    if (assumeNorthSouth) {
+                        findingLatitude = true;
+                    } else {
+                        findingLongitude = true;
+                    }
                 }
                 if (!degSet) {
-                    throw new IllegalArgumentException("end of field without any number seen");
+                    throw new IllegalArgumentException("end of field without any number seen when parsing <"+parseString+">");
                 }
                 degrees += minutes / 60.0;
                 degrees += seconds / 3600.0;
                 degrees *= sign;
 
                 if (findingLatitude) {
-                    if (latSet) {
-                        throw new IllegalArgumentException("found latitude (N or S) twice");
-                    }
                     if (degrees < -90.0 || degrees > 90.0) {
-                        throw new IllegalArgumentException("out of range [-90,+90]: "+degrees);
+                        throw new IllegalArgumentException("out of range [-90,+90]: "+degrees+" when parsing <"+parseString+">");
                     }
                     latitude = degrees;
-                    latSet = true;
+                    foundLatitude = true;
                 } else if (findingLongitude) {
-                    if (longSet) {
-                        throw new IllegalArgumentException("found longitude (E or W) twice");
-                    }
                     if (degrees < -180.0 || degrees > 180.0) {
-                        throw new IllegalArgumentException("out of range [-180,+180]: "+degrees);
+                        throw new IllegalArgumentException("out of range [-180,+180]: "+degrees+" when parsing <"+parseString+">");
                     }
                     longitude = degrees;
-                    longSet = true;
-                } else {
-                    throw new IllegalArgumentException("no direction found");
+                    foundLongitude = true;
                 }
-                // reset
-                degrees = 0.0;
-                minutes = 0.0;
-                seconds = 0.0;
-                degSet = false;
-                minSet = false;
-                secSet = false;
-                dirSet = false;
-                foundDot = false;
-                foundDigits = false;
-                findingLatitude = false;
-                findingLongitude = false;
-                sign = 0.0;
-
-                if (ch == 0) {
-                    break;
-                } else {
-                    ch = getNextChar();
-                }
+                break;
             }
-
             if (!valid) {
-                throw new IllegalArgumentException("invalid character: "+ch);
+                throw new IllegalArgumentException("invalid character: "+ch+" when parsing <"+parseString+">");
             }
-
         } while (ch != 0);
-
-        if (!latSet) {
-            throw new IllegalArgumentException("missing latitude");
-        }
-        if (!longSet) {
-            throw new IllegalArgumentException("missing longitude");
-        }
         // everything parsed OK
+        if (foundLatitude && foundLongitude) {
+            throw new IllegalArgumentException("found both latitude and longitude from: "+parseString);
+        }
+        if (foundLatitude || foundLongitude) {
+            return;
+        }
+        throw new IllegalArgumentException("found neither latitude nor longitude from: "+parseString);
     }
 }

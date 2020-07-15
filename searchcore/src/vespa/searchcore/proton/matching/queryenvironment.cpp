@@ -17,7 +17,7 @@ QueryEnvironment::QueryEnvironment(const IIndexEnvironment &indexEnv,
     : _indexEnv(indexEnv),
       _attrContext(attrContext),
       _properties(properties),
-      _locations(1),
+      _locations(),
       _terms(),
       _field_length_inspector(field_length_inspector)
 {
@@ -42,12 +42,6 @@ QueryEnvironment::getTerm(uint32_t idx) const
         return nullptr;
     }
     return _terms[idx];
-}
-
-const search::fef::Location &
-QueryEnvironment::getLocation() const
-{
-    return *_locations[0];
 }
 
 const IAttributeContext &
