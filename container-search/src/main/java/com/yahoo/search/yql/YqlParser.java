@@ -109,7 +109,7 @@ public class YqlParser implements Parser {
         public String expand(String leaf) { return leaf; }
     }
 
-    public static final Integer DEFAULT_HITS = 10;
+    private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
     public static final Integer DEFAULT_TARGET_NUM_HITS = 10;
     private static final String ACCENT_DROP_DESCRIPTION = "setting for whether to remove accents if field implies it";
