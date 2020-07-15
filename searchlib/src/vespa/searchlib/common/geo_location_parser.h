@@ -9,41 +9,21 @@
 
 namespace search::common {
 
+/**
+ * Parser for a geo-location string representation.
+ **/
 class GeoLocationParser
 {
 public:
     GeoLocationParser();
 
-    bool isValid()        const { return _valid; }
-    bool hasPoint()       const { return _has_point; }
-    bool hasBoundingBox() const { return _has_bounding_box; }
-    bool hasFieldName()   const { return ! _field_name.empty(); }
-
-    uint32_t getXAspect() const { return _x_aspect; }
-    int32_t getX()        const { return _x; }
-    int32_t getY()        const { return _y; }
-    uint32_t getRadius()  const { return _radius; }
-
-    int32_t getMinX() const { return _min_x; }
-    int32_t getMinY() const { return _min_y; }
-    int32_t getMaxX() const { return _max_x; }
-    int32_t getMaxY() const { return _max_y; }
-
-    std::string getOldFormatLocationString() const;
-    std::string getOldFormatLocationStringWithField() const;
-    std::string getFieldName() const { return _field_name; }
-
     bool parseOldFormat(const std::string &locStr);
-    void setFieldName(const std::string &name) { _field_name = name; }
     bool parseOldFormatWithField(const std::string &str);
-    GeoLocation getGeoLocation() const;
-#if 0
-    GeoLocationSpec spec() const {
-        return GeoLocationSpec{_field_name, getGeoLocation()};
-    }
-#endif
-    const char * getParseError() const { return _parseError; }
 
+    std::string getFieldName() const { return _field_name; }
+    GeoLocation getGeoLocation() const;
+
+    const char * getParseError() const { return _parseError; }
 private:
     bool _valid;
     bool _has_point;

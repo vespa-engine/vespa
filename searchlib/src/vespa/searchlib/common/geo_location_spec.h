@@ -8,6 +8,9 @@
 
 namespace search::common {
 
+/**
+ * Immutable specification of a geo-location query item.
+ **/
 struct GeoLocationSpec
 {
 public:
