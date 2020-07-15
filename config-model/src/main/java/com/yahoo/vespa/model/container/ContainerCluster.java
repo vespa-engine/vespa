@@ -12,7 +12,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -88,7 +87,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         ContainerDocumentConfig.Producer,
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
-        BundlesConfig.Producer,
         PlatformBundlesConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
@@ -471,12 +469,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     public final void addPlatformBundle(Path bundlePath) {
         platformBundles.add(bundlePath);
-    }
-
-    @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
-                .forEach(builder::bundle);
     }
 
     @Override

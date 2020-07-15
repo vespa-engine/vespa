@@ -8,7 +8,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ApplicationBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
@@ -48,7 +47,6 @@ import java.util.stream.Stream;
  */
 public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
         ApplicationBundlesConfig.Producer,
-        BundlesConfig.Producer,
         QrStartConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
@@ -188,13 +186,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
      * or empty if this is not specified by the application.
      */
     public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
-
-    @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        applicationBundles.stream().map(FileReference::value)
-                .forEach(builder::bundle);
-        super.getConfig(builder);
-    }
 
     @Override
     public void getConfig(ApplicationBundlesConfig.Builder builder) {

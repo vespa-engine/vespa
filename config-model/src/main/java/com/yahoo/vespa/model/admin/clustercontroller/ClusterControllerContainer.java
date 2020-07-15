@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -26,7 +25,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  */
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements
-        BundlesConfig.Producer,
         PlatformBundlesConfig.Producer,
         ZookeeperServerConfig.Producer
 {
@@ -101,13 +99,6 @@ public class ClusterControllerContainer extends Container implements
     private void addHandler(String id, String className, String binding) {
         addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)),
                    binding);
-    }
-
-    @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        for (String bundle : bundles) {
-            builder.bundle(bundle);
-        }
     }
 
     @Override
