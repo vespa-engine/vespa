@@ -106,7 +106,10 @@ public class BundleManager {
             try {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
                 List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
-                if (bundles.size() > 1) {
+
+                // Throw if more than one bundle was installed, which means that the X-JDisc-Preinstall-Bundle header was used.
+                // However, if the OSGi framework is only a test framework, this rule does not apply.
+                if (bundles.size() > 1  && osgi.hasFelixFramework()) {
                     throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install other bundles.");
                 }
                 reference2Bundle.put(reference, bundles.get(0));

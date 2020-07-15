@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.jdisc.core.FelixFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
@@ -148,6 +149,11 @@ public class OsgiImpl implements Osgi {
     @Override
     public void allowDuplicateBundles(Collection<Bundle> bundles) {
         jdiscOsgi.allowDuplicateBundles(bundles);
+    }
+
+    @Override
+    public boolean hasFelixFramework() {
+        return jdiscOsgi instanceof FelixFramework;
     }
 
     private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {

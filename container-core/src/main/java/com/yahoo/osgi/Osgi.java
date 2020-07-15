@@ -23,4 +23,7 @@ public interface Osgi {
 
     void allowDuplicateBundles(Collection<Bundle> bundles);
 
+    default boolean hasFelixFramework() {
+       return false;
+    }
 }
