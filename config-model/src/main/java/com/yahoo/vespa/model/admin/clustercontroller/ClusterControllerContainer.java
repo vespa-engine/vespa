@@ -5,8 +5,8 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -25,7 +25,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  */
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements
-        BundlesConfig.Producer,
+        PlatformBundlesConfig.Producer,
         ZookeeperServerConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
@@ -102,10 +102,8 @@ public class ClusterControllerContainer extends Container implements
     }
 
     @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        for (String bundle : bundles) {
-            builder.bundle(bundle);
-        }
+    public void getConfig(PlatformBundlesConfig.Builder builder) {
+        bundles.forEach(builder::bundles);
     }
 
     @Override
