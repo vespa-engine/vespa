@@ -58,7 +58,7 @@ public class ApplicationBundleLoader {
         removeInactiveFileReferences(obsoleteReferences);
 
         installBundles(newFileReferences);
-        startBundles();
+        BundleStarter.startBundles(reference2Bundle.values());
         log.info(installedBundlesMessage());
 
         return bundlesToUninstall;
@@ -118,29 +118,6 @@ public class ApplicationBundleLoader {
                 throw new RuntimeException("Could not install bundle with reference '" + reference + "'", e);
             }
         }
-    }
-
-    /**
-     * Resolves and starts (calls the Bundles BundleActivator) all bundles. Bundle resolution must take place
-     * after all bundles are installed to ensure that the framework can resolve dependencies between bundles.
-     */
-    private void startBundles() {
-        for (var bundle : reference2Bundle.values()) {
-            try {
-                if ( ! isFragment(bundle))
-                    bundle.start();  // NOP for already ACTIVE bundles
-            } catch(Exception e) {
-                throw new RuntimeException("Could not start bundle '" + bundle.getSymbolicName() + "'", e);
-            }
-        }
-    }
-
-    private boolean isFragment(Bundle bundle) {
-        BundleRevision bundleRevision = bundle.adapt(BundleRevision.class);
-        if (bundleRevision == null)
-            throw new NullPointerException("Null bundle revision means that bundle has probably been uninstalled: " +
-                                           bundle.getSymbolicName() + ":" + bundle.getVersion());
-        return (bundleRevision.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0;
     }
 
     private String installedBundlesMessage() {

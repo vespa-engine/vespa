@@ -4,8 +4,9 @@ import com.yahoo.config.FileReference;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
-import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -25,21 +26,29 @@ public class PlatformBundleLoader {
         installer = new DiskBundleInstaller();
     }
 
-    public void install(Collection<FileReference> bundlesToInstall) {
+    public void useBundles(List<FileReference> fileReferences) {
+        Set<Bundle> installedBundles = install(fileReferences);
+        BundleStarter.startBundles(installedBundles);
+    }
+
+    private Set<Bundle> install(List<FileReference> bundlesToInstall) {
+        var installedBundles = new LinkedHashSet<Bundle>();
         for (FileReference reference : bundlesToInstall) {
             try {
-                installBundleFromDisk(reference);
+                installedBundles.addAll(installBundleFromDisk(reference));
             }
             catch(Exception e) {
                 throw new RuntimeException("Could not install bundle '" + reference + "'", e);
             }
         }
+        return installedBundles;
     }
 
-    private void installBundleFromDisk(FileReference reference) {
+    private List<Bundle> installBundleFromDisk(FileReference reference) {
         log.info("Installing bundle from disk with reference '" + reference.value() + "'");
         List<Bundle> bundles = installer.installBundles(reference, osgi);
         log.fine("Installed " + bundles.size() + " bundles for file reference " + reference);
+        return bundles;
     }
 
 }
