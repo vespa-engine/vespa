@@ -747,18 +747,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private List<ApplicationId> activeApplications(TenantName tenantName) {
         return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
-    // ---------------- Metrics V2 ------------------------------------------------------------------------
+    // ---------------- Proton Metrics V1 ------------------------------------------------------------------------
 
-    public JsonResponse getMetricsV2(ApplicationId applicationId) {
+    public JsonResponse getProtonMetricsV1(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         ProtonMetricsV1Retriever protonMetricsV1Retriever = new ProtonMetricsV1Retriever();
         return protonMetricsV1Retriever.getMetrics(application);
     }
 
 
-    // ---------------- Metrics V1 ------------------------------------------------------------------------
+    // ---------------- Deployment Metrics V1 ------------------------------------------------------------------------
 
-    public MetricsResponse getMetricsV1(ApplicationId applicationId) {
+    public MetricsResponse getDeploymentMetricsV1(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         DeploymentMetricsV1Retriever deploymentMetricsV1Retriever = new DeploymentMetricsV1Retriever();
         return deploymentMetricsV1Retriever.getMetrics(application);
