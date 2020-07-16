@@ -9,6 +9,8 @@
 LOG_SETUP(".searchvisitor.queryenvironment");
 
 using search::IAttributeManager;
+using search::common::GeoLocationParser;
+using search::common::GeoLocationSpec;
 using search::fef::Properties;
 using vespalib::string;
 
@@ -16,28 +18,24 @@ namespace streaming {
 
 namespace {
 
-search::fef::Location
+std::vector<GeoLocationSpec>
 parseLocation(const string & location_str)
 {
-    search::fef::Location fefLocation;
+    std::vector<GeoLocationSpec> fefLocations;
     if (location_str.empty()) {
-        return fefLocation;
+        return fefLocations;
     }
-    search::common::GeoLocationParser locationParser;
+    GeoLocationParser locationParser;
     if (!locationParser.parseOldFormatWithField(location_str)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
                      location_str.c_str(), locationParser.getParseError());
-        return fefLocation;
+        return fefLocations;
     }
-    auto location = locationParser.getGeoLocation();
-    if (location.has_point) {
-        fefLocation.setAttribute(locationParser.getFieldName());
-        fefLocation.setXPosition(location.point.x);
-        fefLocation.setYPosition(location.point.y);
-        fefLocation.setXAspect(location.x_aspect.multiplier);
-        fefLocation.setValid(true);
+    auto loc = locationParser.getGeoLocation();
+    if (loc.has_point) {
+        fefLocations.push_back(GeoLocationSpec{locationParser.getFieldName(), loc});
     }
-    return fefLocation;
+    return fefLocations;
 }
 
 }
@@ -50,7 +48,7 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
     _properties(properties),
     _attrCtx(attrMgr->createContext()),
     _queryTerms(),
-    _location(parseLocation(location_str))
+    _locations(parseLocation(location_str))
 {
 }
 

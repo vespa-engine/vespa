@@ -22,9 +22,12 @@ private:
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
     Blueprint::UP           _whiteListBlueprint;
-    std::vector<search::fef::Location> _locations;
+    std::vector<search::common::GeoLocationSpec> _locations;
 
 public:
+    /** Convenience typedef. */
+    using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
+
     Query();
     ~Query();
     /**
@@ -65,7 +68,7 @@ public:
      *
      * @param locs where to collect locations
      **/
-    void extractLocations(std::vector<const search::fef::Location *> &locs);
+    void extractLocations(GeoLocationSpecPtrs &locs);
 
     /**
      * Reserve room for terms in the query in the given match data

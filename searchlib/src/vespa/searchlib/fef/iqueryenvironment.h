@@ -4,11 +4,11 @@
 
 #include "iindexenvironment.h"
 #include "objectstore.h"
+#include "location.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 
 namespace search::fef {
 
-class Location;
 class Properties;
 class ITermData;
 
@@ -23,6 +23,9 @@ public:
      * Convenience typedef.
      **/
     typedef std::shared_ptr<IQueryEnvironment> SP;
+
+    /** Convenience typedef. */
+    using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
 
     /**
      * Obtain the set of properties associated with this query
@@ -60,7 +63,7 @@ public:
      *
      * @return pointers to location objects.
      **/
-    virtual std::vector<const Location *> getAllLocations() const = 0;
+    virtual GeoLocationSpecPtrs getAllLocations() const = 0;
 
     /**
      * Returns the attribute context for this query.

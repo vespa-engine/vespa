@@ -2,6 +2,7 @@
 
 #include "distancefeature.h"
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -100,19 +101,10 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
     int32_t docy = 0;
     for (auto loc : _locations) {
         assert(loc);
-        assert(loc->isValid());
-        int32_t loc_x = loc->getXPosition();
-        int32_t loc_y = loc->getYPosition();
-        uint64_t loc_a = loc->getXAspect();
-        LOG(debug, "location: x=%u, y=%u, aspect=%zu", loc_x, loc_y, loc_a);
+        assert(loc->location.valid());
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
-            uint32_t dx = (loc_x > docx) ? (loc_x - docx) : (docx - loc_x);
-            if (loc_a != 0) {
-                dx = (uint64_t(dx) * loc_a) >> 32;
-            }
-            uint32_t dy = (loc_y > docy) ? (loc_y - docy) : (docy - loc_y);
-            uint64_t sqdist = (uint64_t) dx * dx + (uint64_t) dy * dy;
+            uint64_t sqdist = loc->location.sq_distance_to({docx, docy});
             if (sqdist < sqabsdist) {
                 sqabsdist = sqdist;
             }
@@ -121,7 +113,7 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
     return static_cast<feature_t>(std::sqrt(static_cast<feature_t>(sqabsdist)));
 }
 
-DistanceExecutor::DistanceExecutor(std::vector<const Location *> locations,
+DistanceExecutor::DistanceExecutor(GeoLocationSpecPtrs locations,
                                    const search::attribute::IAttributeVector * pos) :
     FeatureExecutor(),
     _locations(locations),
@@ -253,17 +245,17 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
     }
     // expect geo pos:
     const search::attribute::IAttributeVector * pos = nullptr;
-    std::vector<const search::fef::Location *> matching_locs;
-    std::vector<const search::fef::Location *> other_locs;
+    GeoLocationSpecPtrs matching_locs;
+    GeoLocationSpecPtrs other_locs;
 
     for (auto loc_ptr : env.getAllLocations()) {
-        if (_use_geo_pos && loc_ptr && loc_ptr->isValid()) {
-            if (loc_ptr->getAttribute() == _arg_string) {
+        if (_use_geo_pos && loc_ptr && loc_ptr->location.valid()) {
+            if (loc_ptr->field_name == _arg_string) {
                 LOG(debug, "found loc from query env matching '%s'", _arg_string.c_str());
                 matching_locs.push_back(loc_ptr);
             } else {
                 LOG(debug, "found loc(%s) from query env not matching arg(%s)",
-                    loc_ptr->getAttribute().c_str(), _arg_string.c_str());
+                    loc_ptr->field_name.c_str(), _arg_string.c_str());
                 other_locs.push_back(loc_ptr);
             }
         }

@@ -102,7 +102,7 @@ GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
 
 void exchange_location_nodes(const string &location_str,
                            Node::UP &query_tree,
-                           std::vector<search::fef::Location> &fef_locations)
+                           std::vector<GeoLocationSpec> &fef_locations)
 {
     std::vector<GeoLocationSpec> locationSpecs;
 
@@ -118,13 +118,7 @@ void exchange_location_nodes(const string &location_str,
     }
     for (const GeoLocationSpec &spec : locationSpecs) {
         if (spec.location.has_point) {
-            search::fef::Location fef_loc;
-            fef_loc.setAttribute(spec.field_name);
-            fef_loc.setXPosition(spec.location.point.x);
-            fef_loc.setYPosition(spec.location.point.y);
-            fef_loc.setXAspect(spec.location.x_aspect.multiplier);
-            fef_loc.setValid(true);
-            fef_locations.push_back(fef_loc);
+            fef_locations.push_back(spec);
         }
     }
     if (parsed.location.can_limit()) {
@@ -189,7 +183,7 @@ Query::extractTerms(vector<const ITermData *> &terms)
 }
 
 void
-Query::extractLocations(vector<const search::fef::Location *> &locations)
+Query::extractLocations(vector<const GeoLocationSpec *> &locations)
 {
     locations.clear();
     for (const auto & loc : _locations) {

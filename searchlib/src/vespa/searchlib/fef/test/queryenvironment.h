@@ -6,9 +6,12 @@
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <unordered_map>
 
 namespace search::fef::test {
+
+using search::common::GeoLocationSpec;
 
 /**
  * Implementation of the IQueryEnvironment interface used for testing.
@@ -22,7 +25,7 @@ private:
     IndexEnvironment           *_indexEnv;
     std::vector<SimpleTermData> _terms;
     Properties                  _properties;
-    Location                    _location;
+    std::vector<GeoLocationSpec> _locations;
     search::attribute::IAttributeContext::UP _attrCtx;
     std::unordered_map<std::string, double> _avg_field_lengths;
 
@@ -38,10 +41,12 @@ public:
     const Properties &getProperties() const override { return _properties; }
     uint32_t getNumTerms() const override { return _terms.size(); }
     const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
-    std::vector<const Location *> getAllLocations() const override {
-        std::vector<const Location *> retval;
-        retval.push_back(&_location);
-        return retval;
+    GeoLocationSpecPtrs getAllLocations() const override {
+        GeoLocationSpecPtrs locations;
+        for (const auto & loc : _locations) {
+            locations.push_back(&loc);
+        }
+        return locations;
     }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
     double get_average_field_length(const vespalib::string& field_name) const override {
@@ -86,7 +91,7 @@ public:
     Properties & getProperties() { return _properties; }
 
     /** Returns a reference to the location of this. */
-    Location & getLocation() { return _location; }
+    void addLocation(const GeoLocationSpec &spec) { _locations.push_back(spec); }
 
     std::unordered_map<std::string, double>& get_avg_field_lengths() { return _avg_field_lengths; }
 };

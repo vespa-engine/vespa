@@ -5,7 +5,6 @@
 
 using search::attribute::IAttributeContext;
 using search::fef::IIndexEnvironment;
-using search::fef::Location;
 using search::fef::Properties;
 
 namespace proton::matching {
