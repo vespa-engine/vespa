@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/properties.h>
 #include "indexenvironment.h"
 
@@ -23,7 +22,7 @@ private:
     const search::fef::Properties              &_properties;
     search::attribute::IAttributeContext::UP    _attrCtx;
     std::vector<const search::fef::ITermData *> _queryTerms;
-    search::fef::Location                       _location;
+    std::vector<search::common::GeoLocationSpec> _locations;
 
 public:
     typedef std::unique_ptr<QueryEnvironment> UP;
@@ -49,10 +48,10 @@ public:
     }
 
     // inherit documentation
-    std::vector<const search::fef::Location *> getAllLocations() const override {
-        std::vector<const search::fef::Location *> retval;
-        if (_location.isValid()) {
-            retval.push_back(&_location);
+    GeoLocationSpecPtrs getAllLocations() const override {
+        GeoLocationSpecPtrs retval;
+        for (const auto & loc : _locations) {
+            retval.push_back(&loc);
         }
         return retval;
     }

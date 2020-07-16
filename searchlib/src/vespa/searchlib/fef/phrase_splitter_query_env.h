@@ -73,7 +73,7 @@ public:
     }
 
     const Properties & getProperties() const override { return _queryEnv.getProperties(); }
-    std::vector<const Location *> getAllLocations() const override {
+    GeoLocationSpecPtrs getAllLocations() const override {
         return _queryEnv.getAllLocations();
     }
     const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }

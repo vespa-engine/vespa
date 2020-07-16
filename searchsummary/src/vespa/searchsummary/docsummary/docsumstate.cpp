@@ -15,6 +15,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchsummary.docsummary.docsumstate");
 
+using search::common::GeoLocationParser;
+using search::common::GeoLocationSpec;
+
 namespace search::docsummary {
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
@@ -72,11 +75,11 @@ GetDocsumsState::parse_locations()
     using document::PositionDataType;
     assert(_parsedLocations.empty()); // only allowed to call this once
     if (! _args.getLocation().empty()) {
-        search::common::GeoLocationParser parser;
+        GeoLocationParser parser;
         if (parser.parseOldFormatWithField(_args.getLocation())) {
             auto view = parser.getFieldName();
             auto attr_name = PositionDataType::getZCurveFieldName(view);
-            search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
+            GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
             _parsedLocations.push_back(spec);
         } else {
             LOG(warning, "could not parse location string '%s' from request",
@@ -90,10 +93,10 @@ GetDocsumsState::parse_locations()
             if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
                 vespalib::string view = iterator.getIndexName();
                 vespalib::string term = iterator.getTerm();
-                search::common::GeoLocationParser parser;                
+                GeoLocationParser parser;                
                 if (parser.parseOldFormat(term)) {
                     auto attr_name = PositionDataType::getZCurveFieldName(view);
-                    search::common::GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
+                    GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
                     _parsedLocations.push_back(spec);
                 } else {
                     LOG(warning, "could not parse location string '%s' from stack dump",

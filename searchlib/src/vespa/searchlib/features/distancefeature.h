@@ -7,12 +7,15 @@
 
 namespace search::features {
 
+/** Convenience typedef. */
+using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
+
 /**
  * Implements the executor for the distance feature.
  */
 class DistanceExecutor : public fef::FeatureExecutor {
 private:
-    std::vector<const fef::Location *>  _locations;
+    GeoLocationSpecPtrs                 _locations;
     const attribute::IAttributeVector * _pos;
     attribute::IntegerContent           _intBuf;
 
@@ -26,7 +29,7 @@ public:
      * @param locations location objects associated with the query environment.
      * @param pos the attribute to use for positions (expects zcurve encoding).
      */
-    DistanceExecutor(std::vector<const fef::Location *> locations,
+    DistanceExecutor(GeoLocationSpecPtrs locations,
                      const attribute::IAttributeVector * pos);
     void execute(uint32_t docId) override;
 
