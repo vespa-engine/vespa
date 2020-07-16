@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/location.h>
 
 namespace search::index { class IFieldLengthInspector; }
 

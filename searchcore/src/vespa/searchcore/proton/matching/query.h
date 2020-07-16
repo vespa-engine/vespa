@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/location.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>

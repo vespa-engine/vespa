@@ -4,7 +4,6 @@
 #include "indexenvironment.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <unordered_map>

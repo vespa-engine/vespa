@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/properties.h>
 #include "indexenvironment.h"
 

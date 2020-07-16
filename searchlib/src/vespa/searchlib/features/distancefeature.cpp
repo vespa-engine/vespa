@@ -3,7 +3,6 @@
 #include "distancefeature.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
-#include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/geo/zcurve.h>

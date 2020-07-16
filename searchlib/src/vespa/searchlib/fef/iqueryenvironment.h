@@ -4,8 +4,9 @@
 
 #include "iindexenvironment.h"
 #include "objectstore.h"
-#include "location.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+
+namespace search::common { class GeoLocationSpec; }
 
 namespace search::fef {
 
