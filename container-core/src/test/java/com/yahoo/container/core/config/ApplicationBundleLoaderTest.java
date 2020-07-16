@@ -16,27 +16,27 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author gjoranv
  */
-public class BundleManagerTest {
+public class ApplicationBundleLoaderTest {
 
     private static final FileReference BUNDLE_1_REF = new FileReference("bundle-1");
     private static final Bundle BUNDLE_1 = new TestBundle(BUNDLE_1_REF.value());
     private static final FileReference BUNDLE_2_REF = new FileReference("bundle-2");
     private static final Bundle BUNDLE_2 = new TestBundle(BUNDLE_2_REF.value());
 
-    private BundleManager bundleLoader;
+    private ApplicationBundleLoader bundleLoader;
     private TestOsgi osgi;
 
     @Before
     public void setup() {
         osgi = new TestOsgi(testBundles());
         var bundleInstaller = new TestBundleInstaller();
-        bundleLoader = new BundleManager(osgi);
+        bundleLoader = new ApplicationBundleLoader(osgi);
         bundleLoader.useCustomBundleInstaller(bundleInstaller);
     }
 
     @Test
     public void bundles_are_installed_and_started() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertEquals(1, osgi.getInstalledBundles().size());
 
         // The bundle is installed and started
@@ -51,8 +51,8 @@ public class BundleManagerTest {
 
     @Test
     public void new_bundle_can_be_installed_in_reconfig() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.use(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
 
         // No bundles are obsolete
         assertTrue(obsoleteBundles.isEmpty());
@@ -76,8 +76,8 @@ public class BundleManagerTest {
 
     @Test
     public void unused_bundle_is_marked_obsolete_after_reconfig() {
-        bundleLoader.use(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.use(List.of(BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
 
         // The returned set of obsolete bundles contains bundle-1
         assertEquals(1, obsoleteBundles.size());

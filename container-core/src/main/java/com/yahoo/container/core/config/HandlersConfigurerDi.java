@@ -101,12 +101,16 @@ public class HandlersConfigurerDi {
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
 
         private final OsgiFramework osgiFramework;
-        private final BundleManager bundleManager;
+        private final ApplicationBundleLoader applicationBundleLoader;
+        private final PlatformBundleLoader platformBundleLoader;
 
         public ContainerAndDiOsgi(OsgiFramework osgiFramework) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
-            bundleManager = new BundleManager(new OsgiImpl(osgiFramework));
+
+            OsgiImpl osgi = new OsgiImpl(osgiFramework);
+            applicationBundleLoader = new ApplicationBundleLoader(osgi);
+            platformBundleLoader = new PlatformBundleLoader(osgi);
         }
 
 
@@ -131,9 +135,15 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
+        public void installPlatformBundles(Collection<FileReference> bundles) {
+            log.fine("Installing platform bundles.");
+            platformBundleLoader.install(bundles);
+        }
+
+        @Override
+        public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
             log.info("Installing bundles from the latest application");
-            return bundleManager.use(new ArrayList<>(bundles));
+            return applicationBundleLoader.useBundles(new ArrayList<>(bundles));
         }
     }
 
