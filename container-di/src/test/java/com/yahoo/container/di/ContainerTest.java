@@ -267,7 +267,8 @@ public class ContainerTest extends ContainerTestBase {
                 "inject[0].forClass \"" + injectedClass.getName() + "\"\n";
 
         dirConfigSource.writeConfig("components", componentsConfig);
-        dirConfigSource.writeConfig("bundles", "");
+        dirConfigSource.writeConfig("platform-bundles", "");
+        dirConfigSource.writeConfig("application-bundles", "");
         dirConfigSource.writeConfig("jersey-bundles", "bundles[0].spec \"mock-entry-to-enforce-a-MockBundle\"");
         dirConfigSource.writeConfig("jersey-injection", injectionConfig);
 
