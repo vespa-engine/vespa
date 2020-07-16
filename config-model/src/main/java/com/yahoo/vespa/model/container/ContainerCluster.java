@@ -12,12 +12,12 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.di.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -87,7 +87,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         ContainerDocumentConfig.Producer,
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
-        PlatformBundlesConfig.Producer,
+        BundlesConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
@@ -464,7 +464,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * Adds a bundle present at a known location at the target container nodes.
-     * Note that the set of platform bundles cannot change during the jdisc container's lifetime.
      *
      * @param bundlePath usually an absolute path, e.g. '$VESPA_HOME/lib/jars/foo.jar'
      */
@@ -473,9 +472,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     @Override
-    public void getConfig(PlatformBundlesConfig.Builder builder) {
+    public void getConfig(BundlesConfig.Builder builder) {
         platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
-                .forEach(builder::bundles);
+                .forEach(builder::bundle);
     }
 
     private static String toFileReferenceString(Path path) {
