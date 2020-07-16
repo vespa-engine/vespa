@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.di.ApplicationBundlesConfig;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;

@@ -3,8 +3,8 @@ package com.yahoo.container.standalone;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.ComponentsConfig;
-import com.yahoo.container.di.ApplicationBundlesConfig;
-import com.yahoo.container.di.PlatformBundlesConfig;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Ignore;

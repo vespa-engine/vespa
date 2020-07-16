@@ -6,7 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.di.PlatformBundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
