@@ -919,7 +919,7 @@ PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage lock) {
 void
 PersistenceThread::run(framework::ThreadHandle& thread)
 {
-    LOG(debug, "Started persistence thread with pid %d", getpid());
+    LOG(debug, "Started persistence thread");
 
     while (!thread.interrupted() && !_env._fileStorHandler.closed(_env._partition)) {
         thread.registerTick();
@@ -933,7 +933,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);
         flushMonitorGuard.broadcast();
     }
-    LOG(debug, "Closing down persistence thread %d", getpid());
+    LOG(debug, "Closing down persistence thread");
     vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);
     _closed = true;
     flushMonitorGuard.broadcast();
