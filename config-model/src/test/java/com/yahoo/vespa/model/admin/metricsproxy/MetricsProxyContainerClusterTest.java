@@ -16,7 +16,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
-import com.yahoo.container.di.PlatformBundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
