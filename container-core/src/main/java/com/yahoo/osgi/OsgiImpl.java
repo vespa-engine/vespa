@@ -5,7 +5,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.application.OsgiFramework;
-import com.yahoo.jdisc.core.FelixFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
@@ -17,7 +16,6 @@ import java.util.logging.Logger;
 /**
  * @author Tony Vaagenes
  * @author bratseth
- * @author gjoranv
  */
 public class OsgiImpl implements Osgi {
     private static final Logger log = Logger.getLogger(OsgiImpl.class.getName());
@@ -41,6 +39,11 @@ public class OsgiImpl implements Osgi {
         if (alwaysCurrentBundle == null)
             throw new IllegalStateException("The initial bundles only contained the framework bundle!");
         log.info("Using " + alwaysCurrentBundle + " to lookup current bundles.");
+    }
+
+    @Override
+    public List<Bundle> getInitialBundles() {
+        return initialBundles;
     }
 
     @Override
@@ -150,11 +153,6 @@ public class OsgiImpl implements Osgi {
     @Override
     public void allowDuplicateBundles(Collection<Bundle> bundles) {
         jdiscOsgi.allowDuplicateBundles(bundles);
-    }
-
-    @Override
-    public boolean hasFelixFramework() {
-        return jdiscOsgi instanceof FelixFramework;
     }
 
     private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {

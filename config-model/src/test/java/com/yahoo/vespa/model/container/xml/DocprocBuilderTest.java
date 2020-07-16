@@ -3,16 +3,17 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
-import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostPorts;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
@@ -29,8 +30,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 
 /**
@@ -45,6 +46,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     private ContainerMbusConfig containerMbusConfig;
     private ComponentsConfig componentsConfig;
     private ChainsConfig chainsConfig;
+    private BundlesConfig bundlesConfig;
     private SchemamappingConfig schemamappingConfig;
     private DocprocConfig docprocConfig;
     private QrStartConfig qrStartConfig;
@@ -62,6 +64,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 cluster.getConfigId() + "/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler");
 
         documentmanagerConfig = root.getConfig(DocumentmanagerConfig.class, cluster.getConfigId());
+        bundlesConfig = root.getConfig(BundlesConfig.class, cluster.getConfigId());
         schemamappingConfig = root.getConfig(SchemamappingConfig.class, cluster.getContainers().get(0).getConfigId());
         qrStartConfig = root.getConfig(QrStartConfig.class, cluster.getConfigId());
         docprocConfig = root.getConfig(DocprocConfig.class, cluster.getConfigId());
@@ -201,6 +204,11 @@ public class DocprocBuilderTest extends DomBuilderTest {
         assertThat(chainsMap.get("chein").inherits().size(), is(0));
         assertThat(chainsMap.get("chein").excludes().size(), is(0));
         assertThat(chainsMap.get("chein").phases().size(), is(0));
+    }
+
+    @Test
+    public void testBundlesConfig() {
+        assertTrue(bundlesConfig.bundle().isEmpty());
     }
 
     @Test

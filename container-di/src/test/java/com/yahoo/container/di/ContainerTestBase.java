@@ -61,7 +61,7 @@ public class ContainerTestBase {
                         }
 
                         @Override
-                        public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
+                        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
                             return emptySet();
                         }
 
@@ -81,8 +81,7 @@ public class ContainerTestBase {
     }
 
     protected void writeBootstrapConfigs(ComponentEntry... componentEntries) {
-        dirConfigSource.writeConfig("platform-bundles", "");
-        dirConfigSource.writeConfig("application-bundles", "");
+        dirConfigSource.writeConfig("bundles", "");
         StringBuilder components = new StringBuilder();
         for (int i = 0; i < componentEntries.length; i++) {
             components.append(componentEntries[i].asConfig(i));
