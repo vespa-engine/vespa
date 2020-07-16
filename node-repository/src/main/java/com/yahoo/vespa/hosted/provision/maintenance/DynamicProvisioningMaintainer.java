@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -49,19 +50,21 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     DynamicProvisioningMaintainer(NodeRepository nodeRepository,
                                   Duration interval,
                                   HostProvisioner hostProvisioner,
-                                  FlagSource flagSource) {
-        super(nodeRepository, interval);
+                                  FlagSource flagSource,
+                                  Metric metric) {
+        super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.targetCapacityFlag = Flags.TARGET_CAPACITY.bindTo(flagSource);
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
             resumeProvisioning(nodes, lock);
             convergeToCapacity(nodes);
         }
+        return true;
     }
 
     /** Resume provisioning of already provisioned hosts and their children */

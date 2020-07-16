@@ -64,7 +64,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Inactive times out
         tester.advanceTime(Duration.ofMinutes(14));
-        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(0, tester.nodeRepository().getNodes(Node.State.inactive).size());
         List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
         assertEquals(2, dirty.size());
@@ -79,7 +79,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Dirty times out for the other one
         tester.advanceTime(Duration.ofMinutes(14));
-        new DirtyExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new DirtyExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(0, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.dirty).size());
         List<Node> failed = tester.nodeRepository().getNodes(NodeType.tenant, Node.State.failed);
         assertEquals(1, failed.size());
@@ -107,7 +107,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Inactive times out and node is moved to dirty
         tester.advanceTime(Duration.ofMinutes(14));
-        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
         assertEquals(2, dirty.size());
 
@@ -158,7 +158,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Inactive times out and one node is moved to parked
         tester.advanceTime(Duration.ofMinutes(11)); // Trigger InactiveExpirer
-        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.parked).size());
     }
 
@@ -180,7 +180,7 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(1, inactiveNodes.size());
 
         // See that nodes are moved to dirty immediately.
-        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(0, tester.nodeRepository().getNodes(Node.State.inactive).size());
         List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
         assertEquals(1, dirty.size());
@@ -207,7 +207,7 @@ public class InactiveAndFailedExpirerTest {
                                                    .map(node -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()))
                                                    .collect(Collectors.toList()), () -> {});
         tester.advanceTime(Duration.ofMinutes(11));
-        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(2, tester.nodeRepository().getNodes(Node.State.parked).size());
     }
 

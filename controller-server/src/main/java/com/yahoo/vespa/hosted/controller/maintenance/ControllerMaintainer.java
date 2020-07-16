@@ -1,12 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobMetrics;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -30,7 +34,8 @@ public abstract class ControllerMaintainer extends Maintainer {
     }
 
     public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems) {
-        super(name, interval, controller.clock().instant(), controller.jobControl(), controller.curator().cluster());
+        super(name, interval, controller.clock().instant(), controller.jobControl(),
+              jobMetrics(controller.clock(), controller.metric()), controller.curator().cluster());
         this.controller = controller;
         this.activeSystems = Set.copyOf(Objects.requireNonNull(activeSystems));
     }
@@ -41,6 +46,13 @@ public abstract class ControllerMaintainer extends Maintainer {
     public void run() {
         if (!activeSystems.contains(controller.system())) return;
         super.run();
+    }
+
+    private static JobMetrics jobMetrics(Clock clock, Metric metric) {
+        return new JobMetrics(clock, (job, instant) -> {
+            Duration sinceSuccess = Duration.between(instant, clock.instant());
+            metric.set("maintenance.secondsSinceSuccess", sinceSuccess.getSeconds(), metric.createContext(Map.of("job", job)));
+        });
     }
 
 }

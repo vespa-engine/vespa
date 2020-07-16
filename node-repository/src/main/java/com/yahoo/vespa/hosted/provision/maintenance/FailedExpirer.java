@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -56,8 +57,8 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     private final Duration defaultExpiry; // Grace period to allow recovery of data
     private final Duration containerExpiry; // Stateless nodes, no data to recover
 
-    FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval) {
-        super(nodeRepository, interval);
+    FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval, Metric metric) {
+        super(nodeRepository, interval, metric);
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.clock = clock;
@@ -74,7 +75,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         List<Node> remainingNodes = new ArrayList<>(nodeRepository.list()
                 .state(Node.State.failed)
                 .nodeType(NodeType.tenant, NodeType.host)
@@ -86,6 +87,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(containerExpiry)));
         recycleIf(remainingNodes, node ->
                 node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(defaultExpiry)));
+        return true;
     }
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -12,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
 import java.util.List;
@@ -31,16 +31,19 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
 
     public ScalingSuggestionsMaintainer(NodeRepository nodeRepository,
                                         NodeMetricsDb metricsDb,
-                                        Duration interval) {
-        super(nodeRepository, interval);
+                                        Duration interval,
+                                        Metric metric) {
+        super(nodeRepository, interval, metric);
         this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
     }
 
     @Override
-    protected void maintain() {
-        if ( ! nodeRepository().zone().environment().isProduction()) return;
+    protected boolean maintain() {
+        boolean success = true;
+        if ( ! nodeRepository().zone().environment().isProduction()) return success;
 
         activeNodesByApplication().forEach((applicationId, nodes) -> suggest(applicationId, nodes));
+        return success;
     }
 
     private void suggest(ApplicationId application, List<Node> applicationNodes) {

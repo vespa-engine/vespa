@@ -50,8 +50,9 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected void maintain() {
-        if (! distributeApplicationPackage.value()) return;
+    protected boolean maintain() {
+        boolean success = true;
+        if (! distributeApplicationPackage.value()) return success;
 
         try (var fileDownloader = new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
@@ -68,6 +69,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " - session " + sessionId);
 
                         if (fileDownloader.getFile(applicationPackage).isEmpty()) {
+                            success = false;
                             log.warning("Failed to download application package for application " + applicationId + " - session " + sessionId);
                             continue;
                         }
@@ -76,6 +78,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 }
             }
         }
+        return success;
     }
 
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {

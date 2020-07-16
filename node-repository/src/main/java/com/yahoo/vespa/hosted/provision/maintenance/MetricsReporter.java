@@ -50,7 +50,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     Supplier<Integer> pendingRedeploymentsSupplier,
                     Duration interval,
                     Clock clock) {
-        super(nodeRepository, interval);
+        super(nodeRepository, interval, metric);
         this.metric = metric;
         this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
@@ -59,7 +59,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     @Override
-    public void maintain() {
+    public boolean maintain() {
         NodeList nodes = nodeRepository().list();
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
@@ -68,6 +68,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
+        return true;
     }
 
     private void updateMaintenanceMetrics() {

@@ -2,8 +2,9 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.yolean.Exceptions;
 
@@ -26,14 +27,15 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
     public NodeMetricsDbMaintainer(NodeRepository nodeRepository,
                                    NodeMetrics nodeMetrics,
                                    NodeMetricsDb nodeMetricsDb,
-                                   Duration interval) {
-        super(nodeRepository, interval);
+                                   Duration interval,
+                                   Metric metric) {
+        super(nodeRepository, interval, metric);
         this.nodeMetrics = nodeMetrics;
         this.nodeMetricsDb = nodeMetricsDb;
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         int warnings = 0;
         for (ApplicationId application : activeNodesByApplication().keySet()) {
             try {
@@ -46,6 +48,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
             }
         }
         nodeMetricsDb.gc(nodeRepository().clock());
+        return warnings == 0;
     }
 
 }

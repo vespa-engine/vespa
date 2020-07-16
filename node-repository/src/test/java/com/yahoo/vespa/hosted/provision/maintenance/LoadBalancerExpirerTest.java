@@ -38,7 +38,8 @@ public class LoadBalancerExpirerTest {
     public void expire_inactive() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
-                                                              tester.loadBalancerService());
+                                                              tester.loadBalancerService(),
+                                                              new TestMetric());
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
         // Deploy two applications with a total of three load balancers
@@ -103,7 +104,8 @@ public class LoadBalancerExpirerTest {
     public void expire_reserved() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
-                                                              tester.loadBalancerService());
+                                                              tester.loadBalancerService(),
+                                                              new TestMetric());
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
 

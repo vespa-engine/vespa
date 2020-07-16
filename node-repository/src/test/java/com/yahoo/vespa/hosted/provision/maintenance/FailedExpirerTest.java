@@ -263,7 +263,7 @@ public class FailedExpirerTest {
                                                      false,
                                                      0);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
-            this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30));
+            this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30), new TestMetric());
         }
 
         public ManualClock clock() {

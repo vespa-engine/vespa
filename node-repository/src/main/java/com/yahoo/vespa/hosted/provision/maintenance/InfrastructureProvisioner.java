@@ -2,10 +2,11 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.InfraDeployer;
-import java.util.logging.Level;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -20,8 +21,8 @@ public class InfrastructureProvisioner extends NodeRepositoryMaintainer {
 
     private final InfraDeployer infraDeployer;
 
-    InfrastructureProvisioner(NodeRepository nodeRepository, InfraDeployer infraDeployer, Duration interval) {
-        super(nodeRepository, interval);
+    InfrastructureProvisioner(NodeRepository nodeRepository, InfraDeployer infraDeployer, Duration interval, Metric metric) {
+        super(nodeRepository, interval, metric);
         this.infraDeployer = infraDeployer;
     }
 
@@ -38,7 +39,9 @@ public class InfrastructureProvisioner extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         infraDeployer.activateAllSupportedInfraApplications(false);
+        return true;
     }
+
 }

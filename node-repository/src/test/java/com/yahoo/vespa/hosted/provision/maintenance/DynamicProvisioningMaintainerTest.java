@@ -233,7 +233,8 @@ public class DynamicProvisioningMaintainerTest {
             this.maintainer = new DynamicProvisioningMaintainer(nodeRepository,
                                                                 Duration.ofDays(1),
                                                                 hostProvisioner,
-                                                                flagSource);
+                                                                flagSource,
+                                                                new TestMetric());
         }
 
         private DynamicProvisioningTester addInitialNodes() {
