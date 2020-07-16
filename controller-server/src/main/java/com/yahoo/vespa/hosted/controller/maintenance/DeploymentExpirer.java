@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -24,7 +23,8 @@ public class DeploymentExpirer extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
+        boolean success = true;
         for (Application application : controller().applications().readable())
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values()) {
@@ -34,11 +34,13 @@ public class DeploymentExpirer extends ControllerMaintainer {
                         log.log(Level.INFO, "Expiring deployment of " + instance.id() + " in " + deployment.zone());
                         controller().applications().deactivate(instance.id(), deployment.zone());
                     } catch (Exception e) {
+                        success = false;
                         log.log(Level.WARNING, "Could not expire " + deployment + " of " + instance +
                                                ": " + Exceptions.toMessageString(e) + ". Retrying in " +
                                                interval());
                     }
                 }
+        return success;
     }
 
     /** Returns whether given deployment has expired according to its TTL */

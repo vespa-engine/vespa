@@ -39,7 +39,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                           Clock clock,
                           Duration maintenanceInterval,
                           Duration retiredExpiry) {
-        super(nodeRepository, maintenanceInterval);
+        super(nodeRepository, maintenanceInterval, metric);
         this.deployer = deployer;
         this.metric = metric;
         this.orchestrator = orchestrator;
@@ -48,7 +48,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
 
         Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
@@ -69,11 +69,12 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 nodeRepository().setRemovable(application, nodesToRemove);
 
                 boolean success = deployment.activate();
-                if ( ! success) return;
+                if ( ! success) return success;
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);
             }
         }
+        return true;
     }
 
     /**

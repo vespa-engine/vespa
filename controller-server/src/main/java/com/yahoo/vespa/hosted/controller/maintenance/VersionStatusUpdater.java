@@ -29,7 +29,7 @@ public class VersionStatusUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         try {
             VersionStatus newStatus = VersionStatus.compute(controller());
             controller().updateVersionStatus(newStatus);
@@ -37,10 +37,12 @@ public class VersionStatusUpdater extends ControllerMaintainer {
                 controller().serviceRegistry().systemMonitor().reportSystemVersion(version.versionNumber(),
                                                                                    convert(version.confidence()));
             });
+            return true;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
                                    ". Retrying in " + interval());
         }
+        return false;
     }
 
     static SystemMonitor.Confidence convert(VespaVersion.Confidence confidence) {

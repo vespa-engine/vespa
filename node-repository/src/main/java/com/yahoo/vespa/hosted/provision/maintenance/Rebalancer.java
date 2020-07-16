@@ -31,22 +31,24 @@ public class Rebalancer extends NodeRepositoryMaintainer {
                       Metric metric,
                       Clock clock,
                       Duration interval) {
-        super(nodeRepository, interval);
+        super(nodeRepository, interval, metric);
         this.deployer = deployer;
         this.metric = metric;
         this.clock = clock;
     }
 
     @Override
-    protected void maintain() {
-        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return; // Rebalancing not necessary
-        if (nodeRepository().zone().environment().isTest()) return; // Short lived deployments; no need to rebalance
+    protected boolean maintain() {
+        boolean success = true;
+        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return success; // Rebalancing not necessary
+        if (nodeRepository().zone().environment().isTest()) return success; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().list();
         updateSkewMetric(allNodes);
-        if ( ! zoneIsStable(allNodes)) return;
+        if ( ! zoneIsStable(allNodes)) return success;
         findBestMove(allNodes).execute(true, Agent.Rebalancer, deployer, metric, nodeRepository());
+        return success;
    }
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */

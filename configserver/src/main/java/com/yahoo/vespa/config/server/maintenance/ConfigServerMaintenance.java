@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.curator.Curator;
@@ -31,7 +32,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
                                    FileDistributionFactory fileDistributionFactory,
-                                   FlagSource flagSource) {
+                                   FlagSource flagSource,
+                                   Metric metric) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
         // TODO: Disabled until we have application metadata
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);

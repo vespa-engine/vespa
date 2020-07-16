@@ -28,8 +28,9 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
+        return true;
     }
 
 }

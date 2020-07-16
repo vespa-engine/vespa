@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
@@ -18,8 +17,9 @@ public class ReadyJobsTrigger extends ControllerMaintainer {
     }
 
     @Override
-    public void maintain() {
+    public boolean maintain() {
         controller().applications().deploymentTrigger().triggerReadyJobs();
+        return true;
     }
 
 }

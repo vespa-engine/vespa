@@ -206,6 +206,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.metric = metric;
     }
 
+    public Clock clock() {
+        return clock;
+    }
+
+    public Metric metric() {
+        return metric;
+    }
+
     // ---------------- Deploying ----------------------------------------------------------------
 
     public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {

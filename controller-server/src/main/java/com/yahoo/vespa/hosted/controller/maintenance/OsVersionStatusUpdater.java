@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.yolean.Exceptions;
@@ -19,14 +18,16 @@ public class OsVersionStatusUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         try {
             OsVersionStatus newStatus = OsVersionStatus.compute(controller());
             controller().updateOsVersionStatus(newStatus);
+            return true;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
                                    ". Retrying in " + interval());
         }
+        return false;
     }
 
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -32,8 +33,8 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     private final Duration expiryTime;
 
     Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository,
-            Clock clock, Duration expiryTime) {
-        super(nodeRepository, min(Duration.ofMinutes(10), expiryTime));
+            Clock clock, Duration expiryTime, Metric metric) {
+        super(nodeRepository, min(Duration.ofMinutes(10), expiryTime), metric);
         this.fromState = fromState;
         this.eventType = eventType;
         this.clock = clock;
@@ -41,7 +42,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         List<Node> expired = new ArrayList<>();
         for (Node node : nodeRepository().getNodes(fromState)) {
             if (isExpired(node))
@@ -50,6 +51,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
         if ( ! expired.isEmpty())
             log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
         expire(expired);
+        return true;
     }
 
     protected boolean isExpired(Node node) {

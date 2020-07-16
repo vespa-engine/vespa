@@ -75,25 +75,25 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
-        reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry);
+        reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry, metric);
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, clock, defaults.retiredInterval, defaults.retiredExpiry);
-        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, defaults.inactiveExpiry);
-        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, defaults.failedExpirerInterval);
-        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry);
-        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry);
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource);
+        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, defaults.inactiveExpiry, metric);
+        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, defaults.failedExpirerInterval, metric);
+        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry, metric);
+        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry, metric);
+        nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource, metric);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval, clock);
-        infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval);
+        infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval, metric);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService(nodeRepository).map(lbService ->
-                new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
+                new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric));
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
+                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric));
         spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval);
-        osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
+        osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric);
         rebalancer = new Rebalancer(deployer, nodeRepository, metric, clock, defaults.rebalancerInterval);
-        nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
+        nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval, metric);
         autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
-        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval);
+        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval, metric);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();

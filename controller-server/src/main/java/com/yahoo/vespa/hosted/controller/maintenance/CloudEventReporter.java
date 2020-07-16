@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * Automatically fetches and handles scheduled events from AWS:
  * 1. Deprovisions the affected hosts if applicable
  * 2. Submits an issue detailing the event if some hosts are not processed by 1.
+ *
  * @author mgimle
  */
 public class CloudEventReporter extends ControllerMaintainer {
@@ -44,8 +45,7 @@ public class CloudEventReporter extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
-        log.log(Level.INFO, "Fetching events for cloud hosts.");
+    protected boolean maintain() {
         for (var awsRegion : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(awsRegion);
             for (var event : events) {
@@ -56,6 +56,7 @@ public class CloudEventReporter extends ControllerMaintainer {
                 submitIssue(event, deprovisionedHosts);
             }
         }
+        return true;
     }
 
     private List<String> deprovisionHosts(String awsRegion, CloudEvent event) {

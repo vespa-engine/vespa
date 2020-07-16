@@ -3,7 +3,9 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.concurrent.maintenance.JobControlState;
+import com.yahoo.concurrent.maintenance.JobMetrics;
 import com.yahoo.concurrent.maintenance.Maintainer;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -12,7 +14,9 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -26,16 +30,25 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Duration initialDelay, Duration interval) {
-        super(null, interval, initialDelay, new JobControl(new JobControlFlags(curator, flagSource)));
+        super(null, interval, initialDelay, new JobControl(new JobControlFlags(curator, flagSource)),
+              jobMetrics(applicationRepository.clock(), applicationRepository.metric()));
         this.applicationRepository = applicationRepository;
+    }
+
+    private static JobMetrics jobMetrics(Clock clock, Metric metric) {
+        return new JobMetrics(clock, (job, instant) -> {
+            Duration sinceSuccess = Duration.between(instant, clock.instant());
+            metric.set("maintenance.secondsSinceSuccess", sinceSuccess.getSeconds(), metric.createContext(Map.of("job", job)));
+        });
     }
 
     private static class JobControlFlags implements JobControlState {
 
         private static final Path root = Path.fromString("/configserver/v1/");
-        private static final Path lockRoot = root.append("locks");
 
+        private static final Path lockRoot = root.append("locks");
         private final Curator curator;
+
         private final ListFlag<String> inactiveJobsFlag;
 
         public JobControlFlags(Curator curator, FlagSource flagSource) {

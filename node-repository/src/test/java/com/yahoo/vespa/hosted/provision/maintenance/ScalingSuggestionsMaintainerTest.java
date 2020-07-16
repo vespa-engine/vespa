@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the scaling suggestions maintainer integration.
@@ -66,7 +65,8 @@ public class ScalingSuggestionsMaintainerTest {
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
                                                                                    nodeMetricsDb,
-                                                                                   Duration.ofMinutes(1));
+                                                                                   Duration.ofMinutes(1),
+                                                                                   new TestMetric());
         maintainer.maintain();
 
         assertEquals("14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",

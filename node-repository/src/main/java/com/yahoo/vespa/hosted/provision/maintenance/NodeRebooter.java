@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -32,15 +33,15 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
     private final Clock clock;
     private final Random random;
 
-    NodeRebooter(NodeRepository nodeRepository, Clock clock, FlagSource flagSource) {
-        super(nodeRepository, Duration.ofMinutes(25));
+    NodeRebooter(NodeRepository nodeRepository, Clock clock, FlagSource flagSource, Metric metric) {
+        super(nodeRepository, Duration.ofMinutes(25), metric);
         this.rebootIntervalInDays = Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
         this.clock = clock;
         this.random = new Random(clock.millis()); // seed with clock for test determinism   
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
         List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
@@ -49,6 +50,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
 
         if (!nodesToReboot.isEmpty())
             nodeRepository().reboot(NodeListFilter.from(nodesToReboot));
+        return true;
     }
     
     private boolean shouldReboot(Node node) {

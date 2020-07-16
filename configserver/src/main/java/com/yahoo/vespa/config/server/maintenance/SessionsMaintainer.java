@@ -26,7 +26,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         applicationRepository.deleteExpiredLocalSessions();
 
         // Expired remote sessions are sessions that belong to an application that have external deployments that
@@ -41,5 +41,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
         int deleted = applicationRepository.deleteExpiredLocks(lockExpiryTime);
         if (deleted > 0)
             log.log(LogLevel.INFO, "Deleted " + deleted + " locks older than " + lockExpiryTime);
+
+        return true;
     }
 }
