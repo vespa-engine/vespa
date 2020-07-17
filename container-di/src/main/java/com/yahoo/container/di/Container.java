@@ -4,8 +4,8 @@ package com.yahoo.container.di;
 import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
@@ -14,6 +14,8 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentNode;
 import com.yahoo.container.di.componentgraph.core.JerseyNode;
 import com.yahoo.container.di.componentgraph.core.Node;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.RestApiContext;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
@@ -23,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -40,12 +43,14 @@ public class Container {
     private static final Logger log = Logger.getLogger(Container.class.getName());
 
     private final SubscriberFactory subscriberFactory;
-    private ConfigKey<BundlesConfig> bundlesConfigKey;
+    private ConfigKey<ApplicationBundlesConfig> applicationBundlesConfigKey;
+    private ConfigKey<PlatformBundlesConfig> platformBundlesConfigKey;
     private ConfigKey<ComponentsConfig> componentsConfigKey;
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
 
     private final ConfigRetriever configurer;
+    private List<FileReference> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
@@ -54,9 +59,10 @@ public class Container {
         this.componentDeconstructor = componentDeconstructor;
         this.osgi = osgi;
 
-        bundlesConfigKey = new ConfigKey<>(BundlesConfig.class, configId);
+        applicationBundlesConfigKey = new ConfigKey<>(ApplicationBundlesConfig.class, configId);
+        platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
-        var bootstrapKeys = Set.of(bundlesConfigKey, componentsConfigKey);
+        var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
         this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
     }
 
@@ -74,7 +80,6 @@ public class Container {
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
             return newGraph;
         } catch (Throwable t) {
-            // TODO: Wrap ComponentConstructorException in an Error when generation==0 (+ unit test that Error is thrown)
             invalidateGeneration(oldGraph.generation(), t);
             throw t;
         }
@@ -98,13 +103,15 @@ public class Container {
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
-                log.log(FINE,
-                        String.format(
-                                "Got new bootstrap generation\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
-                                        + "previous generation: %d\n",
-                                getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration));
+                log.log(FINE, "Got new bootstrap generation\n" + configGenerationsString());
 
-                Collection<Bundle> bundlesToRemove = installBundles(snapshot.configs());
+                if (graph.generation() == 0) {
+                    platformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+                    osgi.installPlatformBundles(platformBundles);
+                } else {
+                    throwIfPlatformBundlesChanged(snapshot);
+                }
+                Collection<Bundle> bundlesToRemove = installApplicationBundles(snapshot.configs());
                 obsoleteBundles.addAll(bundlesToRemove);
 
                 graph = createComponentsGraph(snapshot.configs(), getBootstrapGeneration(), fallbackInjector);
@@ -115,11 +122,7 @@ public class Container {
                 break;
             }
         }
-        log.log(FINE,
-                String.format(
-                        "Got components configs,\n" + "bootstrap generation = %d\n" + "components generation: %d\n"
-                                + "previous generation: %d",
-                        getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration));
+        log.log(FINE, "Got components configs,\n" + configGenerationsString());
         return createAndConfigureComponentsGraph(snapshot.configs(), fallbackInjector);
     }
 
@@ -129,6 +132,17 @@ public class Container {
 
     private long getComponentsGeneration() {
         return configurer.getComponentsGeneration();
+    }
+
+    private String configGenerationsString() {
+        return String.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
+                             getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration);
+    }
+
+    private void throwIfPlatformBundlesChanged(ConfigSnapshot snapshot) {
+        var checkPlatformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+        if (! checkPlatformBundles.equals(platformBundles))
+            throw new RuntimeException("Platform bundles are not allowed to change!\nOld: " + platformBundles + "\nNew: " + checkPlatformBundles);
     }
 
     private ComponentGraph createAndConfigureComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> componentsConfigs,
@@ -151,9 +165,9 @@ public class Container {
         componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
-    private Set<Bundle> installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
-        BundlesConfig bundlesConfig = getConfig(bundlesConfigKey, configsIncludingBootstrapConfigs);
-        return osgi.useBundles(bundlesConfig.bundle());
+    private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
+        ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
+        return osgi.useApplicationBundles(applicationBundlesConfig.bundles());
     }
 
     private ComponentGraph createComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
