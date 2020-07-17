@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * Platform bundles are allowed to pre-install other bundles on disk via the
  * X-JDisc-Preinstall-Bundle manifest header.
  *
- * After the first time, attempts to install additional bundles should be a NOP.
+ * Attempts to install additional bundles, after the first call, should be a NOP.
  *
  * @author gjoranv
  */
