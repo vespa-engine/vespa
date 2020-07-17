@@ -10,8 +10,13 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Installs all platform bundles, using the {@link DiskBundleInstaller}.
+ * Used to install the bundles that are added as platform bundles by the config-model.
+ *
  * All platform bundles reside on disk, and they are never uninstalled.
+ * Platform bundles are allowed to pre-install other bundles on disk via the
+ * X-JDisc-Preinstall-Bundle manifest header.
+ *
+ * After the first time, attempts to install additional bundles should be a NOP.
  *
  * @author gjoranv
  */
@@ -20,6 +25,9 @@ public class PlatformBundleLoader {
 
     private final Osgi osgi;
     private final DiskBundleInstaller installer;
+
+    private Set<Bundle> installedBundles;
+    private boolean hasLoadedBundles = false;
 
     public PlatformBundleLoader(Osgi osgi) {
         this(osgi, new DiskBundleInstaller());
@@ -31,21 +39,28 @@ public class PlatformBundleLoader {
     }
 
     public void useBundles(List<FileReference> fileReferences) {
-        Set<Bundle> installedBundles = install(fileReferences);
+        if (hasLoadedBundles) {
+            log.fine(() -> "Platform bundles have already been installed." +
+                    "\nInstalled bundles: " + installedBundles +
+                    "\nGiven files: " + fileReferences);
+            return;
+        }
+        installedBundles = install(fileReferences);
         BundleStarter.startBundles(installedBundles);
+        hasLoadedBundles = true;
     }
 
     private Set<Bundle> install(List<FileReference> bundlesToInstall) {
-        var installedBundles = new LinkedHashSet<Bundle>();
+        var allInstalled = new LinkedHashSet<Bundle>();
         for (FileReference reference : bundlesToInstall) {
             try {
-                installedBundles.addAll(installBundleFromDisk(reference));
+                allInstalled.addAll(installBundleFromDisk(reference));
             }
             catch(Exception e) {
                 throw new RuntimeException("Could not install bundle '" + reference + "'", e);
             }
         }
-        return installedBundles;
+        return allInstalled;
     }
 
     private List<Bundle> installBundleFromDisk(FileReference reference) {
