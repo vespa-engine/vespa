@@ -28,6 +28,8 @@ struct GeoLocation
         uint32_t multiplier;
         Aspect() : multiplier(0) {}
         Aspect(uint32_t multiplier_in) : multiplier(multiplier_in) {}
+        // for unit tests:
+        Aspect(double multiplier_in) : multiplier(multiplier_in*4294967296.0) {}
         bool active() const { return multiplier != 0; }
     };
     struct Range {
