@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/child_proc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <sys/wait.h>
 
 using namespace vespalib;
@@ -25,7 +25,7 @@ int Test::Main()
 
     fprintf(stderr, "argc=%d : Running '%s' expecting signal %d\n", _argc, _argv[2], retval);
 
-    ChildProc cmd(_argv[2]);
+    ChildProcess cmd(_argv[2]);
     for(std::string line; cmd.readLine(line, 60000);) {
         fprintf(stdout, "%s\n", line.c_str());
     }

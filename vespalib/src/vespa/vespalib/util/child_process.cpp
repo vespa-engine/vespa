@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "guard.h"
-#include "child_proc.h"
+#include "child_process.h"
 #include <cstring>
 
 namespace vespalib {
 
-namespace child_proc {
+namespace child_process {
 
 using namespace std::chrono;
 
 /**
- * @brief ChildProc internal timeout management.
+ * @brief ChildProcess internal timeout management.
  **/
 class Timer
 {
@@ -54,14 +54,14 @@ public:
     }
 };
 
-} // namespace child_proc
+} // namespace child_process
 
-using child_proc::Timer;
+using child_process::Timer;
 
 //-----------------------------------------------------------------------------
 
 void
-ChildProc::Reader::OnReceiveData(const void *data, size_t length)
+ChildProcess::Reader::OnReceiveData(const void *data, size_t length)
 {
     const char *buf = (const char *) data;
     MonitorGuard lock(_cond);
@@ -80,7 +80,7 @@ ChildProc::Reader::OnReceiveData(const void *data, size_t length)
 
 
 bool
-ChildProc::Reader::hasData()
+ChildProcess::Reader::hasData()
 {
     // NB: caller has lock on _cond
     return (!_data.empty() || !_queue.empty());
@@ -88,7 +88,7 @@ ChildProc::Reader::hasData()
 
 
 bool
-ChildProc::Reader::waitForData(Timer &timer, MonitorGuard &lock)
+ChildProcess::Reader::waitForData(Timer &timer, MonitorGuard &lock)
 {
     // NB: caller has lock on _cond
     CounterGuard count(_waitCnt);
@@ -100,7 +100,7 @@ ChildProc::Reader::waitForData(Timer &timer, MonitorGuard &lock)
 
 
 void
-ChildProc::Reader::updateEOF()
+ChildProcess::Reader::updateEOF()
 {
     // NB: caller has lock on _cond
     if (_data.empty() && _queue.empty() && _gotEOF) {
@@ -109,7 +109,7 @@ ChildProc::Reader::updateEOF()
 }
 
 
-ChildProc::Reader::Reader()
+ChildProcess::Reader::Reader()
     : _cond(),
       _queue(),
       _data(),
@@ -120,13 +120,13 @@ ChildProc::Reader::Reader()
 }
 
 
-ChildProc::Reader::~Reader()
+ChildProcess::Reader::~Reader()
 {
 }
 
 
 uint32_t
-ChildProc::Reader::read(char *buf, uint32_t len, int msTimeout)
+ChildProcess::Reader::read(char *buf, uint32_t len, int msTimeout)
 {
     if (eof()) {
         return 0;
@@ -156,7 +156,7 @@ ChildProc::Reader::read(char *buf, uint32_t len, int msTimeout)
 
 
 bool
-ChildProc::Reader::readLine(std::string &line, int msTimeout)
+ChildProcess::Reader::readLine(std::string &line, int msTimeout)
 {
     line.clear();
     if (eof()) {
@@ -193,7 +193,7 @@ ChildProc::Reader::readLine(std::string &line, int msTimeout)
 //-----------------------------------------------------------------------------
 
 void
-ChildProc::checkProc()
+ChildProcess::checkProc()
 {
     if (_running) {
         bool stillRunning;
@@ -205,7 +205,7 @@ ChildProc::checkProc()
 }
 
 
-ChildProc::ChildProc(const char *cmd)
+ChildProcess::ChildProcess(const char *cmd)
     : _reader(),
       _proc(cmd, true, &_reader),
       _running(false),
@@ -217,11 +217,11 @@ ChildProc::ChildProc(const char *cmd)
 }
 
 
-ChildProc::~ChildProc() = default;
+ChildProcess::~ChildProcess() = default;
 
 
 bool
-ChildProc::write(const char *buf, uint32_t len)
+ChildProcess::write(const char *buf, uint32_t len)
 {
     if (len == 0) {
         return true;
@@ -231,28 +231,28 @@ ChildProc::write(const char *buf, uint32_t len)
 
 
 bool
-ChildProc::close()
+ChildProcess::close()
 {
     return _proc.WriteStdin(nullptr, 0);
 }
 
 
 uint32_t
-ChildProc::read(char *buf, uint32_t len, int msTimeout)
+ChildProcess::read(char *buf, uint32_t len, int msTimeout)
 {
     return _reader.read(buf, len, msTimeout);
 }
 
 
 bool
-ChildProc::readLine(std::string &line, int msTimeout)
+ChildProcess::readLine(std::string &line, int msTimeout)
 {
     return _reader.readLine(line, msTimeout);
 }
 
 
 bool
-ChildProc::wait(int msTimeout)
+ChildProcess::wait(int msTimeout)
 {
     bool done = true;
     checkProc();
@@ -273,7 +273,7 @@ ChildProc::wait(int msTimeout)
 
 
 bool
-ChildProc::running()
+ChildProcess::running()
 {
     checkProc();
     return _running;
@@ -281,24 +281,24 @@ ChildProc::running()
 
 
 bool
-ChildProc::failed()
+ChildProcess::failed()
 {
     checkProc();
     return _failed;
 }
 
 int
-ChildProc::getExitCode()
+ChildProcess::getExitCode()
 {
     return _exitCode;
 }
 
 
 bool
-ChildProc::run(const std::string &input, const char *cmd,
+ChildProcess::run(const std::string &input, const char *cmd,
                std::string &output, int msTimeout)
 {
-    ChildProc proc(cmd);
+    ChildProcess proc(cmd);
     Timer timer(msTimeout);
     char buf[4096];
     proc.write(input.data(), input.length());
@@ -317,7 +317,7 @@ ChildProc::run(const std::string &input, const char *cmd,
 
 
 bool
-ChildProc::run(const char *cmd, std::string &output, int msTimeout)
+ChildProcess::run(const char *cmd, std::string &output, int msTimeout)
 {
     std::string input;  // empty input
     return run(input, cmd, output, msTimeout);
@@ -325,7 +325,7 @@ ChildProc::run(const char *cmd, std::string &output, int msTimeout)
 
 
 bool
-ChildProc::run(const char *cmd, int msTimeout)
+ChildProcess::run(const char *cmd, int msTimeout)
 {
     std::string input;  // empty input
     std::string output; // ignore output

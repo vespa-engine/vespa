@@ -46,7 +46,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
-    child_proc.cpp
+    child_process.cpp
     stash.cpp
     string_hash.cpp
     stringfmt.cpp

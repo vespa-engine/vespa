@@ -8,7 +8,7 @@
 #include <queue>
 #include "sync.h"
 
-namespace vespalib::child_proc { class Timer; }
+namespace vespalib::child_process { class Timer; }
 
 namespace vespalib {
 /**
@@ -18,7 +18,7 @@ namespace vespalib {
  * where you need to run, control and communicate with
  * some external program.
  **/
-class ChildProc
+class ChildProcess
 {
 private:
     class Reader : public FastOS_ProcessRedirectListener
@@ -33,7 +33,7 @@ private:
 
         void OnReceiveData(const void *data, size_t length) override;
         bool hasData();
-        bool waitForData(child_proc::Timer &timer, MonitorGuard &lock);
+        bool waitForData(child_process::Timer &timer, MonitorGuard &lock);
         void updateEOF();
 
     public:
@@ -54,8 +54,8 @@ private:
     void checkProc();
 
 public:
-    ChildProc(const ChildProc &) = delete;
-    ChildProc &operator=(const ChildProc &) = delete;
+    ChildProcess(const ChildProcess &) = delete;
+    ChildProcess &operator=(const ChildProcess &) = delete;
     
     /**
      * @brief Run a child process
@@ -63,10 +63,10 @@ public:
      * Starts a process running the given command
      * @param cmd A shell command line to run
      **/
-    explicit ChildProc(const char *cmd);
+    explicit ChildProcess(const char *cmd);
 
     /** @brief destructor doing cleanup if needed */
-    ~ChildProc();
+    ~ChildProcess();
 
     /**
      * @return process id
