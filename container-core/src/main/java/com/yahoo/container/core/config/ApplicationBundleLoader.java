@@ -113,7 +113,7 @@ public class ApplicationBundleLoader {
                 if (bundles.size() > 1  && osgi.hasFelixFramework()) {
                     // TODO: remove if-statement below when the last model with preinstall has rolled out of hosted
                     if (! bundles.get(0).getSymbolicName().equals("config-model-fat-amended"))
-                        throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install other bundles.");
+                        throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install bundles from disk.");
                 }
                 reference2Bundle.put(reference, bundles.get(0));
             }
