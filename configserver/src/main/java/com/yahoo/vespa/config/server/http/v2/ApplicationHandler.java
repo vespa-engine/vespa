@@ -237,12 +237,12 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isProtonMetricsV1Request(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
+        return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().endsWith("/metrics/proton");
     }
 
     private static boolean isDeploymentMetricsV1Request(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
+        return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().endsWith("/metrics/deployment");
     }
 
