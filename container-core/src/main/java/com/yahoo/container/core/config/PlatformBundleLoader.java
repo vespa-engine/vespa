@@ -22,8 +22,12 @@ public class PlatformBundleLoader {
     private final DiskBundleInstaller installer;
 
     public PlatformBundleLoader(Osgi osgi) {
+        this(osgi, new DiskBundleInstaller());
+    }
+
+    PlatformBundleLoader(Osgi osgi, DiskBundleInstaller installer) {
         this.osgi = osgi;
-        installer = new DiskBundleInstaller();
+        this.installer = installer;
     }
 
     public void useBundles(List<FileReference> fileReferences) {
