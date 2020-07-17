@@ -57,26 +57,43 @@ public class Binding implements Comparable<Binding> {
         return new Binding(generality, context);
     }
 
-    private Binding(int generality, Map<String, String> binding) {
+    /** Creates a binding from a map containing the exact bindings this will have */
+    private Binding(int generality, Map<String, String> bindings) {
         this.generality = generality;
 
         // Map -> arrays to limit memory consumption and speed up evaluation
-        dimensions = new String[binding.size()];
-        dimensionValues = new String[binding.size()];
+        dimensions = new String[bindings.size()];
+        dimensionValues = new String[bindings.size()];
 
         int i = 0;
-        int bindingHash = 0;
-        for (Map.Entry<String,String> entry : binding.entrySet()) {
+        for (Map.Entry<String,String> entry : bindings.entrySet()) {
             dimensions[i] = entry.getKey();
             dimensionValues[i] = entry.getValue();
-            bindingHash += i * entry.getKey().hashCode() +  11 * i * entry.getValue().hashCode();
             i++;
         }
-        this.hashCode = bindingHash;
+        this.hashCode = Arrays.hashCode(dimensions) + 11 * Arrays.hashCode(dimensionValues);
     }
+
+    Binding(DimensionalValue.BindingSpec spec, Map<String, String> bindings) {
+        this.generality = 0; // Not used here
+
+        // Map -> arrays to limit memory consumption and speed up evaluation
+        dimensions = spec.dimensions();
+        dimensionValues = new String[spec.dimensions().length];
+        for (int i = 0; i < dimensions.length; i++) {
+            dimensionValues[i] = bindings.get(dimensions[i]);
+        }
+        this.hashCode = Arrays.hashCode(dimensions) + 11 * Arrays.hashCode(dimensionValues);
+    }
+
 
     /** Returns true only if this binding is null (contains no values for its dimensions (if any) */
     public boolean isNull() { return dimensions.length == 0; }
+
+    /** Do not change the returtned array */
+    String[] dimensions() { return dimensions; }
+
+    String[] dimensionValues() { return dimensionValues; }
 
     @Override
     public String toString() {
@@ -116,7 +133,7 @@ public class Binding implements Comparable<Binding> {
     /**
      * Implements a partial ordering where more specific bindings come before less specific ones,
      * taking both the number of bindings and their positions into account (earlier dimensions
-     * take precedence over later ones.
+     * take precedence over later ones).
      * <p>
      * The order is not well defined for bindings in different dimensional spaces.
      */
