@@ -14,7 +14,6 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -30,37 +29,6 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class XmlReadingTestCase {
-
-    @Test
-    @Ignore
-    public void testTmp() {
-        QueryProfileRegistry registry =
-                new QueryProfileXMLReader().read("/Users/bratseth/development/slingstone/massmedia_serving/homerun/src/main/application/search/flattened");
-        long startTime = System.currentTimeMillis();
-        System.out.println("Compiling ...");
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
-        System.out.println("Done in " + (( System.currentTimeMillis() - startTime) / 1000) + " seconds");
-        System.out.println("");
-        CompiledQueryProfile cProfile = cRegistry.getComponent("megastream_unified");
-
-        Query q = new Query("?debug=true&clientId=default&langReg=en-US&format=xml&tracelevel=4&" +
-                            "trace.timestamps=true&site=frontpage&streamBucketId=ga&configId=default&" +
-                            "queryProfile=megastream_unified&lang=ENGLISH&region=US&", cProfile);
-        q.properties().listProperties();
-
-        // About 60 ms with tracelevel=4, a few ms with tracelevel=0
-        startTime = System.currentTimeMillis();
-        System.out.println("Creating query ...");
-        new Query("?debug=true&clientId=default&langReg=en-US&format=xml&tracelevel=0&" +
-                  "trace.timestamps=true&site=frontpage&streamBucketId=ga&configId=default&" +
-                  "queryProfile=megastream_unified&lang=ENGLISH&region=US&", cProfile);
-        System.out.println("Done in " + (System.currentTimeMillis() - startTime) + " ms");
-
-        startTime = System.currentTimeMillis();
-        System.out.println("listProperties() ...");
-        q.properties().listProperties().forEach((k, v) -> System.out.println("  " + k + "=" + v));
-        System.out.println("Done in " + (System.currentTimeMillis() - startTime) + " ms");
-    }
 
     @Test
     public void testInheritance() {
