@@ -12,13 +12,9 @@ import java.util.List;
 
 /**
  * @author Tony Vaagenes
+ * @author gjoranv
  */
 public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
-
-    @Override
-    public List<Bundle> getInitialBundles() {
-        return Collections.emptyList();
-    }
 
     @Override
     public Bundle[] getBundles() {
