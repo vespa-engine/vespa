@@ -57,12 +57,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     private String mainClass = null;
 
     @Parameter(defaultValue = "false")
-    private boolean buildLegacyVespaPlatformBundle;
+    private boolean buildVespaPlatformBundle;
 
     public void execute() throws MojoExecutionException {
         try {
-            if (discPreInstallBundle != null && !buildLegacyVespaPlatformBundle)
-                throw new MojoExecutionException("The 'discPreInstallBundle' parameter can only be used by legacy Vespa platform bundles.");
+            if (discPreInstallBundle != null && ! buildVespaPlatformBundle)
+                throw new MojoExecutionException("The 'discPreInstallBundle' parameter can only be used by Vespa platform bundles.");
 
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
