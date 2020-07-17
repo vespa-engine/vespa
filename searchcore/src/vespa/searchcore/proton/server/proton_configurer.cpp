@@ -184,7 +184,7 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
         if (bucketSpace != old_bucket_space) {
             vespalib::string old_bucket_space_name = document::FixedBucketSpaces::to_string(old_bucket_space);
             vespalib::string bucket_space_name = document::FixedBucketSpaces::to_string(bucketSpace);
-            LOG(fatal, "Bucket space for document type %s changed from %s to %s", docTypeName.getName().c_str(), old_bucket_space_name.c_str(), bucket_space_name.c_str());
+            LOG(fatal, "Bucket space for document type %s changed from %s to %s. This triggers undefined behavior on a running system. Restarting process immediately to fix it.", docTypeName.getName().c_str(), old_bucket_space_name.c_str(), bucket_space_name.c_str());
             std::_Exit(1);
         }
         documentDB->reconfigure(documentDBConfig);
