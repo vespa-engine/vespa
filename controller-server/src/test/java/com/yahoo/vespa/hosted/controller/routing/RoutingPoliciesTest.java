@@ -16,8 +16,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.RoutingController;
@@ -749,7 +747,6 @@ public class RoutingPoliciesTest {
             }
             tester.controllerTester().configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(),
                                                                SystemApplication.all());
-            ((InMemoryFlagSource) tester.controllerTester().controller().flagSource()).withBooleanFlag(Flags.WEIGHTED_DNS_PER_REGION.id(), true);
         }
 
         private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, boolean shared, ZoneId... zones) {
