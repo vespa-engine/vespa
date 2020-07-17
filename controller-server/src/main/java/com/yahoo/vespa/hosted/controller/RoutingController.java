@@ -5,6 +5,7 @@ import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -115,22 +116,23 @@ public class RoutingController {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .collect(Collectors.toList());
-            computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
+            computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()), rotation.clusterId(),
                                    application, deployments).requiresRotation()
                                                             .forEach(endpoints::add);
         }
         // Add global endpoints provided by routing policies
-        var deploymentsByRoutingId = new LinkedHashMap<RoutingId, List<DeploymentId>>();
+        var deploymentsByEndpointKey = new LinkedHashMap<EndpointKey, List<DeploymentId>>();
         for (var policy : routingPolicies.get(instance.id()).values()) {
             if (!policy.status().isActive()) continue;
             for (var endpointId : policy.endpoints()) {
-                var routingId = RoutingId.of(instance.id(), endpointId);
-                deploymentsByRoutingId.putIfAbsent(routingId, new ArrayList<>());
-                deploymentsByRoutingId.get(routingId).add(new DeploymentId(instance.id(), policy.id().zone()));
+                var endpointKey = new EndpointKey(RoutingId.of(instance.id(), endpointId), policy.id().cluster());
+                deploymentsByEndpointKey.computeIfAbsent(endpointKey, (k) -> new ArrayList<>())
+                                        .add(new DeploymentId(instance.id(), policy.id().zone()));
             }
         }
-        deploymentsByRoutingId.forEach((routingId, deployments) -> {
-            computeGlobalEndpoints(routingId, application, deployments).not().requiresRotation().forEach(endpoints::add);
+        deploymentsByEndpointKey.forEach((endpointKey, deployments) -> {
+            computeGlobalEndpoints(endpointKey.routingId, endpointKey.cluster, application,
+                                   deployments).not().requiresRotation().forEach(endpoints::add);
         });
         return EndpointList.copyOf(endpoints);
     }
@@ -294,30 +296,30 @@ public class RoutingController {
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
-    private EndpointList computeGlobalEndpoints(RoutingId routingId, Application application, List<DeploymentId> deployments) {
+    private EndpointList computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, Application application, List<DeploymentId> deployments) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
-        var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
+        var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
         for (var method : routingMethodsOfAll(deployments, application)) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
                                                    "direct methods");
             }
             endpoints.add(Endpoint.of(routingId.application())
-                                  .named(routingId.endpointId(), targets)
+                                  .target(routingId.endpointId(), cluster, zones)
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
             // TODO(mpolden): Remove this once all applications have migrated away from legacy endpoints
             if (method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())
-                                      .named(routingId.endpointId(), targets)
+                                      .target(routingId.endpointId(), cluster, zones)
                                       .on(Port.plain(4080))
                                       .legacy()
                                       .routingMethod(method)
                                       .in(controller.system()));
                 endpoints.add(Endpoint.of(routingId.application())
-                                      .named(routingId.endpointId(), targets)
+                                      .target(routingId.endpointId(), cluster, zones)
                                       .on(Port.tls(4443))
                                       .legacy()
                                       .routingMethod(method)
@@ -325,6 +327,32 @@ public class RoutingController {
             }
         }
         return EndpointList.copyOf(endpoints);
+    }
+
+    private static class EndpointKey {
+
+        private final RoutingId routingId;
+        private final ClusterSpec.Id cluster;
+
+        public EndpointKey(RoutingId routingId, ClusterSpec.Id cluster) {
+            this.routingId = routingId;
+            this.cluster = cluster;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EndpointKey that = (EndpointKey) o;
+            return routingId.equals(that.routingId) &&
+                   cluster.equals(that.cluster);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(routingId, cluster);
+        }
+
     }
 
 }
