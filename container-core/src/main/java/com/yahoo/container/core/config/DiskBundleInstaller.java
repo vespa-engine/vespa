@@ -8,8 +8,6 @@ import org.osgi.framework.Bundle;
 import java.io.File;
 import java.util.List;
 
-import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
-
 /**
  * @author gjoranv
  */
@@ -17,8 +15,10 @@ public class DiskBundleInstaller implements BundleInstaller {
 
     @Override
     public List<Bundle> installBundles(FileReference reference, Osgi osgi) {
-        assert(reference.value().startsWith(DISK_BUNDLE_PREFIX));
-        String referenceFileName = reference.value().substring(DISK_BUNDLE_PREFIX.length());
+        // TODO: remove when the last model producing 'file:' has rolled out of hosted
+        String referenceFileName = reference.value().startsWith("file:")
+                ? reference.value().substring("file:".length())
+                : reference.value();
 
         File file = new File(referenceFileName);
         if ( ! file.exists()) {

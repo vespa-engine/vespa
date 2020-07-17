@@ -14,7 +14,9 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -55,11 +57,12 @@ public class ClusterControllerContainer extends Container implements
         }
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
 
-        addFileBundle("lib/jars/clustercontroller-apps-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-apputil-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-core-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-utils-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/zookeeper-server-jar-with-dependencies.jar");
+        // TODO: Why are bundles added here instead of in the cluster?
+        addFileBundle("clustercontroller-apps");
+        addFileBundle("clustercontroller-apputil");
+        addFileBundle("clustercontroller-core");
+        addFileBundle("clustercontroller-utils");
+        addFileBundle("zookeeper-server");
     }
 
     @Override
@@ -82,8 +85,8 @@ public class ClusterControllerContainer extends Container implements
         super.addHandler(h);
     }
 
-    private void addFileBundle(String bundlePath) {
-        bundles.add("file:" + getDefaults().underVespaHome(bundlePath));
+    private void addFileBundle(String bundleName) {
+        bundles.add(PlatformBundles.absoluteBundlePath(bundleName).toString());
     }
 
     private ComponentModel createComponentModel(String id, String className, ComponentSpecification bundle) {

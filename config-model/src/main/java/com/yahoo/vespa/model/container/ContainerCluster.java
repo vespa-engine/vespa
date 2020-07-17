@@ -69,8 +69,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
-
 /**
  * Parent class for all container cluster types.
  *
@@ -474,12 +472,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(PlatformBundlesConfig.Builder builder) {
-        platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
+        platformBundles.stream()
+                .map(Path::toString)
                 .forEach(builder::bundles);
-    }
-
-    private static String toFileReferenceString(Path path) {
-        return DISK_BUNDLE_PREFIX + path.toString();
     }
 
     @Override
