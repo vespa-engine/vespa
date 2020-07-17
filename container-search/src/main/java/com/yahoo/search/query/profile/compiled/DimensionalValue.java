@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.DimensionBinding;
 import com.yahoo.search.query.profile.SubstituteString;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,20 +21,22 @@ import java.util.Set;
  */
 public class DimensionalValue<VALUE> {
 
-    private final List<Value<VALUE>> values;
+    private final Map<Binding, VALUE> indexedVariants;
+    private final List<BindingSpec> bindingSpecs;
 
-    /** Create a set of variants which is a single value regardless of dimensions */
-    public DimensionalValue(Value<VALUE> value) {
-        this.values = Collections.singletonList(value);
-    }
+    private DimensionalValue(List<Value<VALUE>> variants) {
+        Collections.sort(variants);
 
-    public DimensionalValue(List<Value<VALUE>> valueVariants) {
-        if (valueVariants.size() == 1) { // special cased for efficiency
-            this.values = Collections.singletonList(valueVariants.get(0));
-        }
-        else {
-            this.values = new ArrayList<>(valueVariants);
-            Collections.sort(this.values);
+        // If there are inconsistent definitions of the same property, we should pick the first in the sort order
+        this.indexedVariants = new HashMap<>();
+        for (Value<VALUE> variant : variants)
+            indexedVariants.putIfAbsent(variant.binding(), variant.value());
+
+        this.bindingSpecs = new ArrayList<>();
+        for (Value<VALUE> variant : variants) {
+            BindingSpec spec = new BindingSpec(variant.binding());
+            if ( ! bindingSpecs.contains(spec))
+                bindingSpecs.add(spec);
         }
     }
 
@@ -41,18 +44,21 @@ public class DimensionalValue<VALUE> {
     public VALUE get(Map<String, String> context) {
         if (context == null)
             context = Collections.emptyMap();
-        for (Value<VALUE> value : values) {
-            if (value.matches(context))
-                return value.value();
+
+        for (BindingSpec spec : bindingSpecs) {
+            if ( ! spec.matches(context)) continue;
+            VALUE value = indexedVariants.get(new Binding(spec, context));
+            if (value != null)
+                return value;
         }
         return null;
     }
 
-    public boolean isEmpty() { return values.isEmpty(); }
+    public boolean isEmpty() { return indexedVariants.isEmpty(); }
 
     @Override
     public String toString() {
-        return values.toString();
+        return indexedVariants.toString();
     }
 
     public static class Builder<VALUE> {
@@ -93,7 +99,7 @@ public class DimensionalValue<VALUE> {
     /** A value for a particular binding */
     private static class Value<VALUE> implements Comparable<Value> {
 
-        private VALUE value = null;
+        private VALUE value;
 
         /** The minimal binding this holds for */
         private Binding binding;
@@ -126,9 +132,6 @@ public class DimensionalValue<VALUE> {
             return " value '" + value + "' for " + binding;
         }
 
-        /**
-         * A single value with the minimal set of dimension combinations it holds for.
-         */
         private static class Builder<VALUE> {
 
             private final VALUE value;
@@ -208,6 +211,40 @@ public class DimensionalValue<VALUE> {
                 return null;
             }
 
+        }
+
+    }
+
+    /** A list of dimensions for which there exist one or more bindings in this */
+    static class BindingSpec {
+
+        /** The dimensions of this. Unenforced invariant: Content never changes. */
+        private final String[] dimensions;
+
+        public BindingSpec(Binding binding) {
+            this.dimensions = binding.dimensions();
+        }
+
+        /** Do not change the returned array */
+        String[] dimensions() { return dimensions; }
+
+        /** Returns whether this context contains all the keys of this */
+        public boolean matches(Map<String, String> context) {
+            for (int i = 0; i < dimensions.length; i++)
+                if ( ! context.containsKey(dimensions[i])) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(dimensions);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == this) return true;
+            if ( ! (other instanceof BindingSpec)) return false;
+            return Arrays.equals(((BindingSpec)other).dimensions, this.dimensions);
         }
 
     }
