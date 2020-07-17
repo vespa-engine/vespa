@@ -6147,8 +6147,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.query.profile.compiled.DimensionalValue$Value)",
-      "public void <init>(java.util.List)",
       "public java.lang.Object get(java.util.Map)",
       "public boolean isEmpty()",
       "public java.lang.String toString()"
@@ -6170,6 +6168,8 @@
       "public com.yahoo.search.query.profile.types.QueryProfileType queryProfileType()",
       "public com.yahoo.search.query.profile.compiled.ValueWithSource withValue(java.lang.Object)",
       "public java.util.Optional variant()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
     "fields": []
