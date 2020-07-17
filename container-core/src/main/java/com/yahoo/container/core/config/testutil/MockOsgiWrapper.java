@@ -16,6 +16,11 @@ import static java.util.Collections.emptyList;
 public class MockOsgiWrapper implements OsgiWrapper {
 
     @Override
+    public List<Bundle> getInitialBundles() {
+        return emptyList();
+    }
+
+    @Override
     public Bundle[] getBundles() {
         return new Bundle[0];
     }

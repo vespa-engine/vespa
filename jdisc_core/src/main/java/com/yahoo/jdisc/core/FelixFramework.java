@@ -169,11 +169,6 @@ public class FelixFramework implements OsgiFramework {
         collisionHook.allowDuplicateBundles(bundles);
     }
 
-    @Override
-    public boolean isFelixFramework() {
-        return true;
-    }
-
     private void installBundle(String bundleLocation, Set<String> mask, List<Bundle> out) throws BundleException {
         bundleLocation = BundleLocationResolver.resolve(bundleLocation);
         if (mask.contains(bundleLocation)) {
