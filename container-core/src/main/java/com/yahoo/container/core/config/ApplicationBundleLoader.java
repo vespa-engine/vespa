@@ -107,10 +107,13 @@ public class ApplicationBundleLoader {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
                 List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
 
-                // Throw if more than one bundle was installed, which means that the X-JDisc-Preinstall-Bundle header was used.
-                // However, if the OSGi framework is only a test framework, this rule does not apply.
+                // If more than one bundle was installed, and the OSGi framework is the real Felix one,
+                // it means that the X-JDisc-Preinstall-Bundle header was used.
+                // However, test osgi frameworks may return multiple bundles when installing a single bundle.
                 if (bundles.size() > 1  && osgi.hasFelixFramework()) {
-                    throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install other bundles.");
+                    // TODO: remove if-statement below when the last model with preinstall has rolled out of hosted
+                    if (! bundles.get(0).getSymbolicName().equals("config-model-fat-amended"))
+                        throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install other bundles.");
                 }
                 reference2Bundle.put(reference, bundles.get(0));
             }
