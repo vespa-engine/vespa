@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -294,7 +293,7 @@ public class ContainerClusterTest {
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
         var bundleBuilder = new PlatformBundlesConfig.Builder();
         cluster.getConfig(bundleBuilder);
-        List<String> installedBundles = bundleBuilder.build().bundles().stream().map(FileReference::value).collect(Collectors.toList());
+        List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
         assertEquals(expectedBundleNames.size(), installedBundles.size());
         assertThat(installedBundles, containsInAnyOrder(

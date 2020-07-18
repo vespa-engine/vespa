@@ -25,8 +25,8 @@ public interface Osgi {
         return new BundleClasses(new MockBundle(), Collections.emptySet());
     }
 
-    default void installPlatformBundles(Collection<FileReference> bundles) {
-        System.out.println("installPlatformBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
+    default void installPlatformBundles(Collection<String> bundlePaths) {
+        System.out.println("installPlatformBundles " + bundlePaths);
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.yahoo.container.core.config;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.osgi.Osgi;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,10 +16,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class PlatformBundleLoaderTest {
 
-    private static final FileReference BUNDLE_1_REF = new FileReference("bundle-1");
-    private static final Bundle BUNDLE_1 = new TestBundle(BUNDLE_1_REF.value());
-    private static final FileReference BUNDLE_2_REF = new FileReference("bundle-2");
-    private static final Bundle BUNDLE_2 = new TestBundle(BUNDLE_2_REF.value());
+    private static final String BUNDLE_1_REF = "bundle-1";
+    private static final Bundle BUNDLE_1 = new TestBundle(BUNDLE_1_REF);
+    private static final String BUNDLE_2_REF = "bundle-2";
+    private static final Bundle BUNDLE_2 = new TestBundle(BUNDLE_2_REF);
 
     private PlatformBundleLoader bundleLoader;
     private TestOsgi osgi;
@@ -52,14 +51,14 @@ public class PlatformBundleLoaderTest {
     }
 
     private static Map<String, Bundle> testBundles() {
-        return Map.of(BUNDLE_1_REF.value(), BUNDLE_1,
-                      BUNDLE_2_REF.value(), BUNDLE_2);
+        return Map.of(BUNDLE_1_REF, BUNDLE_1,
+                      BUNDLE_2_REF, BUNDLE_2);
     }
 
     static class TestBundleInstaller extends DiskBundleInstaller {
         @Override
-        public List<Bundle> installBundles(FileReference reference, Osgi osgi) {
-            return osgi.install(reference.value());
+        public List<Bundle> installBundles(String bundlePath, Osgi osgi) {
+            return osgi.install(bundlePath);
         }
     }
 }

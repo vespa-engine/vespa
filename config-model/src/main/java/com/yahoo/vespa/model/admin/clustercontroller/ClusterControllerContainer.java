@@ -16,11 +16,8 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
-
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Container implementation for cluster-controllers
@@ -106,7 +103,7 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public void getConfig(PlatformBundlesConfig.Builder builder) {
-        bundles.forEach(builder::bundles);
+        bundles.forEach(builder::bundlePaths);
     }
 
     @Override
