@@ -474,7 +474,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(PlatformBundlesConfig.Builder builder) {
         platformBundles.stream()
                 .map(Path::toString)
-                .forEach(builder::bundles);
+                .forEach(builder::bundlePaths);
     }
 
     @Override

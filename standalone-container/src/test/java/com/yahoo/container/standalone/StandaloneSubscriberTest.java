@@ -48,7 +48,7 @@ public class StandaloneSubscriberTest {
             ApplicationBundlesConfig applicationBundlesConfig = (ApplicationBundlesConfig) config.get(applicationBundlesKey);
             ComponentsConfig componentsConfig = (ComponentsConfig) config.get(componentsKey);
 
-            assertThat(platformBundlesConfig.bundles().size(), is(0));
+            assertThat(platformBundlesConfig.bundlePaths().size(), is(0));
             assertThat(applicationBundlesConfig.bundles().size(), is(0));
             assertThat(componentsConfig.components().size(), greaterThan(10));
             return null;

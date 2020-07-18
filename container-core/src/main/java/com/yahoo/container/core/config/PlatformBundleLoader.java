@@ -1,6 +1,5 @@
 package com.yahoo.container.core.config;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
@@ -38,35 +37,35 @@ public class PlatformBundleLoader {
         this.installer = installer;
     }
 
-    public void useBundles(List<FileReference> fileReferences) {
+    public void useBundles(List<String> bundlePaths) {
         if (hasLoadedBundles) {
             log.fine(() -> "Platform bundles have already been installed." +
                     "\nInstalled bundles: " + installedBundles +
-                    "\nGiven files: " + fileReferences);
+                    "\nGiven files: " + bundlePaths);
             return;
         }
-        installedBundles = install(fileReferences);
+        installedBundles = install(bundlePaths);
         BundleStarter.startBundles(installedBundles);
         hasLoadedBundles = true;
     }
 
-    private Set<Bundle> install(List<FileReference> bundlesToInstall) {
+    private Set<Bundle> install(List<String> bundlesToInstall) {
         var allInstalled = new LinkedHashSet<Bundle>();
-        for (FileReference reference : bundlesToInstall) {
+        for (String bundlePath : bundlesToInstall) {
             try {
-                allInstalled.addAll(installBundleFromDisk(reference));
+                allInstalled.addAll(installBundleFromDisk(bundlePath));
             }
             catch(Exception e) {
-                throw new RuntimeException("Could not install bundle '" + reference + "'", e);
+                throw new RuntimeException("Could not install bundle '" + bundlePath + "'", e);
             }
         }
         return allInstalled;
     }
 
-    private List<Bundle> installBundleFromDisk(FileReference reference) {
-        log.info("Installing bundle from disk with reference '" + reference.value() + "'");
-        List<Bundle> bundles = installer.installBundles(reference, osgi);
-        log.fine("Installed " + bundles.size() + " bundles for file reference " + reference);
+    private List<Bundle> installBundleFromDisk(String bundlePath) {
+        log.info("Installing bundle from disk: " + bundlePath);
+        List<Bundle> bundles = installer.installBundles(bundlePath, osgi);
+        log.fine("Installed " + bundles.size() + " bundles for file " + bundlePath);
         return bundles;
     }
 

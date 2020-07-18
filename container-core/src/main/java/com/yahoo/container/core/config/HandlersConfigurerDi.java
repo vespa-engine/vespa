@@ -135,9 +135,9 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public void installPlatformBundles(Collection<FileReference> bundles) {
+        public void installPlatformBundles(Collection<String> bundlePaths) {
             log.fine("Installing platform bundles.");
-            platformBundleLoader.useBundles(new ArrayList<>(bundles));
+            platformBundleLoader.useBundles(new ArrayList<>(bundlePaths));
         }
 
         @Override

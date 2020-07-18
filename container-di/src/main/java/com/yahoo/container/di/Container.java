@@ -4,11 +4,11 @@ package com.yahoo.container.di;
 import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
+import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentNode;
@@ -50,7 +50,7 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever configurer;
-    private List<FileReference> platformBundles;  // Used to verify that platform bundles don't change.
+    private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
@@ -106,7 +106,7 @@ public class Container {
                 log.log(FINE, "Got new bootstrap generation\n" + configGenerationsString());
 
                 if (graph.generation() == 0) {
-                    platformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+                    platformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundlePaths();
                     osgi.installPlatformBundles(platformBundles);
                 } else {
                     throwIfPlatformBundlesChanged(snapshot);
@@ -118,7 +118,7 @@ public class Container {
 
                 // Continues loop
 
-            } else if (snapshot instanceof ConfigRetriever.ComponentsConfigs) {
+            } else if (snapshot instanceof ComponentsConfigs) {
                 break;
             }
         }
@@ -140,7 +140,7 @@ public class Container {
     }
 
     private void throwIfPlatformBundlesChanged(ConfigSnapshot snapshot) {
-        var checkPlatformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundles();
+        var checkPlatformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundlePaths();
         if (! checkPlatformBundles.equals(platformBundles))
             throw new RuntimeException("Platform bundles are not allowed to change!\nOld: " + platformBundles + "\nNew: " + checkPlatformBundles);
     }
