@@ -6,7 +6,6 @@ import com.yahoo.container.Container;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.wiring.BundleRevision;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,6 +23,7 @@ import java.util.stream.Collectors;
  * @author Tony Vaagenes
  */
 public class ApplicationBundleLoader {
+    private static final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
 
     /* Map of file refs of active bundles (not scheduled for uninstall) to the installed bundle.
      *
@@ -34,11 +34,11 @@ public class ApplicationBundleLoader {
      */
     private final Map<FileReference, Bundle> reference2Bundle = new LinkedHashMap<>();
 
-    private final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
     private final Osgi osgi;
 
-    // A custom bundle installer for non-disk bundles, to be used for testing
-    private BundleInstaller customBundleInstaller = null;
+    // TODO: Take the bundle installer as a ctor argument instead. It's safe because the
+    //       file acquirer in the Container singleton is set up before this is created.
+    private FileAcquirerBundleInstaller customBundleInstaller = null;
 
     public ApplicationBundleLoader(Osgi osgi) {
         this.osgi = osgi;
@@ -101,7 +101,8 @@ public class ApplicationBundleLoader {
         }
     }
 
-    private void installWithFileDistribution(Set<FileReference> bundlesToInstall, BundleInstaller bundleInstaller) {
+    private void installWithFileDistribution(Set<FileReference> bundlesToInstall,
+                                             FileAcquirerBundleInstaller bundleInstaller) {
         for (FileReference reference : bundlesToInstall) {
             try {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
@@ -133,7 +134,7 @@ public class ApplicationBundleLoader {
     }
 
     // Only for testing
-    void useCustomBundleInstaller(BundleInstaller bundleInstaller) {
+    void useCustomBundleInstaller(FileAcquirerBundleInstaller bundleInstaller) {
         customBundleInstaller = bundleInstaller;
     }
 
