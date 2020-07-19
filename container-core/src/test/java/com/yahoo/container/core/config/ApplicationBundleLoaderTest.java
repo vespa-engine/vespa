@@ -9,11 +9,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,8 +34,7 @@ public class ApplicationBundleLoaderTest {
         osgi = new TestOsgi(testBundles());
         var bundleInstaller = new TestBundleInstaller(MockFileAcquirer.returnFile(null));
 
-        bundleLoader = new ApplicationBundleLoader(osgi);
-        bundleLoader.useCustomBundleInstaller(bundleInstaller);
+        bundleLoader = new ApplicationBundleLoader(osgi, bundleInstaller);
     }
 
     @Test

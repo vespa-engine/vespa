@@ -2,8 +2,6 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.container.Container;
-import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
@@ -35,13 +33,11 @@ public class ApplicationBundleLoader {
     private final Map<FileReference, Bundle> reference2Bundle = new LinkedHashMap<>();
 
     private final Osgi osgi;
+    private final FileAcquirerBundleInstaller bundleInstaller;
 
-    // TODO: Take the bundle installer as a ctor argument instead. It's safe because the
-    //       file acquirer in the Container singleton is set up before this is created.
-    private FileAcquirerBundleInstaller customBundleInstaller = null;
-
-    public ApplicationBundleLoader(Osgi osgi) {
+    public ApplicationBundleLoader(Osgi osgi, FileAcquirerBundleInstaller bundleInstaller) {
         this.osgi = osgi;
+        this.bundleInstaller = bundleInstaller;
     }
 
     /**
@@ -70,7 +66,6 @@ public class ApplicationBundleLoader {
         return obsoleteReferences;
     }
 
-
     /**
      * Returns the bundles that will not be retained by the new application generation.
      */
@@ -89,12 +84,8 @@ public class ApplicationBundleLoader {
         bundlesToInstall.removeAll(reference2Bundle.keySet());
 
         if (!bundlesToInstall.isEmpty()) {
-            FileAcquirer fileAcquirer = Container.get().getFileAcquirer();
-            boolean hasFileDistribution = (fileAcquirer != null);
-            if (hasFileDistribution) {
-                installWithFileDistribution(bundlesToInstall, new FileAcquirerBundleInstaller(fileAcquirer));
-            } else if (customBundleInstaller != null) {
-                installWithFileDistribution(bundlesToInstall, customBundleInstaller);
+            if (bundleInstaller.hasFileDistribution()) {
+                installWithFileDistribution(bundlesToInstall, bundleInstaller);
             } else {
                 log.warning("Can't retrieve bundles since file distribution is disabled.");
             }
@@ -131,11 +122,6 @@ public class ApplicationBundleLoader {
         sb.setLength(sb.length() - 2);
         sb.append("}");
         return sb.toString();
-    }
-
-    // Only for testing
-    void useCustomBundleInstaller(FileAcquirerBundleInstaller bundleInstaller) {
-        customBundleInstaller = bundleInstaller;
     }
 
     // Only for testing

@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
+ * Retrieves bundles with file distribution, and installs them to the OSGi framework.
+ *
  * @author gjoranv
  */
 public class FileAcquirerBundleInstaller {
@@ -43,6 +45,10 @@ public class FileAcquirerBundleInstaller {
         }
 
         return osgi.install(file.getAbsolutePath());
+    }
+
+    public boolean hasFileDistribution() {
+        return fileAcquirer != null;
     }
 
     private static boolean notReadable(File file) {

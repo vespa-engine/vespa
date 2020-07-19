@@ -16,6 +16,7 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.di.osgi.BundleClasses;
 import com.yahoo.container.di.osgi.OsgiUtil;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
@@ -68,7 +69,6 @@ public class HandlersConfigurerDi {
     }
 
     private final com.yahoo.container.Container vespaContainer;
-    private final OsgiWrapper osgiWrapper;
     private final Container container;
 
     private volatile ComponentGraph currentGraph = new ComponentGraph(0);
@@ -81,7 +81,7 @@ public class HandlersConfigurerDi {
                                 OsgiFramework osgiFramework) {
 
         this(subscriberFactory, vespaContainer, configId, deconstructor, discInjector,
-             new ContainerAndDiOsgi(osgiFramework));
+             new ContainerAndDiOsgi(osgiFramework, vespaContainer.getFileAcquirer()));
     }
 
     // Only public for testing
@@ -93,7 +93,6 @@ public class HandlersConfigurerDi {
                                 OsgiWrapper osgiWrapper) {
 
         this.vespaContainer = vespaContainer;
-        this.osgiWrapper = osgiWrapper;
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
         getNewComponentGraph(discInjector, false);
     }
@@ -104,12 +103,12 @@ public class HandlersConfigurerDi {
         private final ApplicationBundleLoader applicationBundleLoader;
         private final PlatformBundleLoader platformBundleLoader;
 
-        public ContainerAndDiOsgi(OsgiFramework osgiFramework) {
+        public ContainerAndDiOsgi(OsgiFramework osgiFramework, FileAcquirer fileAcquirer) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
 
             OsgiImpl osgi = new OsgiImpl(osgiFramework);
-            applicationBundleLoader = new ApplicationBundleLoader(osgi);
+            applicationBundleLoader = new ApplicationBundleLoader(osgi, new FileAcquirerBundleInstaller(fileAcquirer));
             platformBundleLoader = new PlatformBundleLoader(osgi);
         }
 
