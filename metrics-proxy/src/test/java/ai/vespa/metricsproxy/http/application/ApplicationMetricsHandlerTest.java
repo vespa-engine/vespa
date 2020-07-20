@@ -146,13 +146,12 @@ public class ApplicationMetricsHandlerTest {
     public void prometheus_response_contains_hostname() {
         String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
         Arrays.stream(response.split("\n"))
-                .filter(line -> !line.startsWith("#"))
+                .filter(line -> line.contains("{"))
                 .forEach(line -> assertTrue(line.contains("hostname")));
-        assertTrue(response.contains("hostname"));
     }
 
     @Test
-    public void prometheus_response_contains_obeys_format() {
+    public void prometheus_response_obeys_format() {
         String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
         Arrays.stream(response.split("\n"))
                 .filter(line -> !line.startsWith("#"))
