@@ -15,7 +15,7 @@ public class FileStatusHandlerComponent extends Handler implements VipStatusConf
 
     private final String fileName;
 
-    public FileStatusHandlerComponent(String id, String fileName, String... bindings) {
+    public FileStatusHandlerComponent(String id, String fileName, BindingPattern... bindings) {
         super(new ComponentModel(id, CLASS, null, null));
 
         this.fileName = fileName;

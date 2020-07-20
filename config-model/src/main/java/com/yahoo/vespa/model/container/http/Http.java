@@ -77,7 +77,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         for (FilterBinding binding : bindings) {
             builder.filter(new ServerConfig.Filter.Builder()
                     .id(binding.filterId().stringValue())
-                    .binding(binding.binding()));
+                    .binding(binding.binding().patternString()));
         }
     }
 

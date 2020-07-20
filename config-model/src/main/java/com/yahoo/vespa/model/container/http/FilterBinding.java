@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 
 import java.util.logging.Level;
 
@@ -12,15 +13,15 @@ import java.util.logging.Level;
 public class FilterBinding {
 
     private final ComponentSpecification filterId;
-    private final String binding;
+    private final BindingPattern binding;
 
-    private FilterBinding(ComponentSpecification filterId, String binding) {
+    private FilterBinding(ComponentSpecification filterId, BindingPattern binding) {
         this.filterId = filterId;
         this.binding = binding;
     }
 
-    public static FilterBinding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
-        if (binding.startsWith("https://")) {
+    public static FilterBinding create(ComponentSpecification filterId, BindingPattern binding, DeployLogger logger) {
+        if (binding.scheme().equals("https")) {
             logger.log(Level.WARNING, String.format("For binding '%s' on '%s': 'https' bindings are deprecated, " +
                                                     "use 'http' instead to bind to both http and https traffic.",
                                                     binding, filterId));
@@ -32,7 +33,7 @@ public class FilterBinding {
         return filterId;
     }
 
-    public String binding() {
+    public BindingPattern binding() {
         return binding;
     }
 

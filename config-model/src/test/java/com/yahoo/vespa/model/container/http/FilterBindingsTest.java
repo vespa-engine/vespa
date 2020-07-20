@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
@@ -21,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class FilterBindingsTest extends DomBuilderTest {
 
-    private static final String MY_CHAIN_BINDING = "http://*/my-chain-binding";
+    private static final BindingPattern MY_CHAIN_BINDING = BindingPattern.createUserGeneratedFromHttpPath("/my-chain-binding");
 
     private Http buildHttp(Element xml) {
         Http http = new HttpBuilder().build(root.getDeployState(), root, xml);
@@ -42,7 +43,7 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "<http>",
                 "  <filtering>",
                 "    <request-chain id='my-request-chain'>",
-                "      <binding>" + MY_CHAIN_BINDING + "</binding>",
+                "      <binding>" + MY_CHAIN_BINDING.patternString() + "</binding>",
                 "    </request-chain>",
                 "  </filtering>",
                 "</http>");
@@ -62,7 +63,7 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "<http>",
                 "  <filtering>",
                 "    <response-chain id='my-response-chain'>",
-                "      <binding>" + MY_CHAIN_BINDING + "</binding>",
+                "      <binding>" + MY_CHAIN_BINDING.patternString() + "</binding>",
                 "    </response-chain>",
                 "  </filtering>",
                 "</http>");
@@ -83,7 +84,7 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "  <http>",
                 "    <filtering>",
                 "      <request-chain id='my-request-chain'>",
-                "        <binding>" + MY_CHAIN_BINDING + "</binding>",
+                "        <binding>" + MY_CHAIN_BINDING.patternString() + "</binding>",
                 "      </request-chain>",
                 "    </filtering>",
                 "    <server id='server1' port='8000' />",
@@ -96,13 +97,13 @@ public class FilterBindingsTest extends DomBuilderTest {
             final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server1");
             assertEquals(1, config.filter().size());
             assertEquals("my-request-chain", config.filter(0).id());
-            assertEquals(MY_CHAIN_BINDING, config.filter(0).binding());
+            assertEquals(MY_CHAIN_BINDING.patternString(), config.filter(0).binding());
         }
         {
             final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server2");
             assertEquals(1, config.filter().size());
             assertEquals("my-request-chain", config.filter(0).id());
-            assertEquals(MY_CHAIN_BINDING, config.filter(0).binding());
+            assertEquals(MY_CHAIN_BINDING.patternString(), config.filter(0).binding());
         }
     }
 

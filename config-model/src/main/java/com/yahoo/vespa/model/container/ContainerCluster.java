@@ -39,6 +39,7 @@ import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
 import com.yahoo.vespa.model.container.component.ComponentsConfigGenerator;
@@ -107,7 +108,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * normal compatibility concerns only applies to libraries using the URIs in
      * question, not contents served from the URIs themselves.
      */
-    public static final String RESERVED_URI_PREFIX = "reserved-for-internal-use";
+    public static final String RESERVED_URI_PREFIX = "/reserved-for-internal-use";
 
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
@@ -117,13 +118,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
-    public static final String STATE_HANDLER_BINDING_1 = "http://*" + StateHandler.STATE_API_ROOT;
-    public static final String STATE_HANDLER_BINDING_2 = STATE_HANDLER_BINDING_1 + "/*";
+    public static final BindingPattern STATE_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(StateHandler.STATE_API_ROOT);
+    public static final BindingPattern STATE_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(StateHandler.STATE_API_ROOT + "/*");
 
     public static final String ROOT_HANDLER_PATH = "/";
-    public static final String ROOT_HANDLER_BINDING = "http://*" + ROOT_HANDLER_PATH;
+    public static final BindingPattern ROOT_HANDLER_BINDING = BindingPattern.createModelGeneratedFromHttpPath(ROOT_HANDLER_PATH);
 
-    public static final String VIP_HANDLER_BINDING = "http://*/status.html";
+    public static final BindingPattern VIP_HANDLER_BINDING = BindingPattern.createModelGeneratedFromHttpPath("/status.html");
 
     private final String name;
 
@@ -234,7 +235,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null), null));
-        statusHandler.addServerBindings("http://*/ApplicationStatus");
+        statusHandler.addServerBindings(BindingPattern.createModelGeneratedFromHttpPath("/ApplicationStatus"));
         addComponent(statusHandler);
     }
 
@@ -309,7 +310,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         containers.forEach(this::addContainer);
     }
 
-    public void setProcessingChains(ProcessingChains processingChains, String... serverBindings) {
+    public void setProcessingChains(ProcessingChains processingChains, BindingPattern... serverBindings) {
         if (this.processingChains != null)
             throw new IllegalStateException("ProcessingChains should only be set once.");
 
@@ -320,7 +321,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
                 processingChains,
                 "com.yahoo.processing.handler.ProcessingHandler");
 
-        for (String binding: serverBindings)
+        for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);
 
         addComponent(processingHandler);
