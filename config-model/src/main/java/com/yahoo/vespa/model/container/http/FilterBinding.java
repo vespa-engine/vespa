@@ -9,23 +9,23 @@ import java.util.logging.Level;
 /**
  * @author bjorncs
  */
-public class Binding {
+public class FilterBinding {
 
     private final ComponentSpecification filterId;
     private final String binding;
 
-    private Binding(ComponentSpecification filterId, String binding) {
+    private FilterBinding(ComponentSpecification filterId, String binding) {
         this.filterId = filterId;
         this.binding = binding;
     }
 
-    public static Binding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
+    public static FilterBinding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
         if (binding.startsWith("https://")) {
             logger.log(Level.WARNING, String.format("For binding '%s' on '%s': 'https' bindings are deprecated, " +
                                                     "use 'http' instead to bind to both http and https traffic.",
                                                     binding, filterId));
         }
-        return new Binding(filterId, binding);
+        return new FilterBinding(filterId, binding);
     }
 
     public ComponentSpecification filterId() {

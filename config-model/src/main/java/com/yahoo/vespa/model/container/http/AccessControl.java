@@ -104,7 +104,7 @@ public final class AccessControl {
         this.logger = logger;
     }
 
-    public List<Binding> getBindings() {
+    public List<FilterBinding> getBindings() {
         return Stream.concat(getHandlerBindings(), getServletBindings())
                 .collect(Collectors.toCollection(ArrayList::new));
     }
@@ -113,14 +113,14 @@ public final class AccessControl {
         return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
     }
 
-    private Stream<Binding> getHandlerBindings() {
+    private Stream<FilterBinding> getHandlerBindings() {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
                         .map(binding -> accessControlBinding(binding, logger));
     }
 
-    private Stream<Binding> getServletBindings() {
+    private Stream<FilterBinding> getServletBindings() {
         return servlets.stream()
                 .filter(this::shouldServletBeProtected)
                 .flatMap(AccessControl::servletBindings)
@@ -140,8 +140,8 @@ public final class AccessControl {
         return servletBindings(servlet).noneMatch(excludedBindings::contains);
     }
 
-    private static Binding accessControlBinding(String binding, DeployLogger logger) {
-        return Binding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding, logger);
+    private static FilterBinding accessControlBinding(String binding, DeployLogger logger) {
+        return FilterBinding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding, logger);
     }
 
     private static Stream<String> servletBindings(Servlet servlet) {
