@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
 
     private final FilterChains filterChains;
-    private final List<Binding> bindings = new CopyOnWriteArrayList<>();
+    private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
     private volatile JettyHttpServer httpServer;
     private volatile AccessControl accessControl;
 
@@ -64,7 +64,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         setHttpServer(null);
     }
 
-    public List<Binding> getBindings() {
+    public List<FilterBinding> getBindings() {
         return bindings;
     }
 
@@ -74,7 +74,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
     @Override
     public void getConfig(ServerConfig.Builder builder) {
-        for (Binding binding : bindings) {
+        for (FilterBinding binding : bindings) {
             builder.filter(new ServerConfig.Filter.Builder()
                     .id(binding.filterId().stringValue())
                     .binding(binding.binding()));
@@ -83,7 +83,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
     @Override
     public void validate() {
-        if (((Collection<Binding>) bindings).isEmpty()) return;
+        if (((Collection<FilterBinding>) bindings).isEmpty()) return;
 
         if (filterChains == null)
             throw new IllegalArgumentException("Null FilterChains are not allowed when there are filter bindings");
@@ -91,7 +91,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
         ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
 
-        for (Binding binding: bindings) {
+        for (FilterBinding binding: bindings) {
             if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
                 throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
         }

@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
-import com.yahoo.vespa.model.container.http.Binding;
+import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import org.w3c.dom.Element;
@@ -36,7 +36,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     @Override
     protected Http doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         FilterChains filterChains;
-        List<Binding> bindings = new ArrayList<>();
+        List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
 
         Element filteringElem = XML.getChild(spec, "filtering");
@@ -113,8 +113,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return Optional.of((ApplicationContainerCluster) currentProducer);
     }
 
-    private List<Binding> readFilterBindings(Element filteringSpec, DeployLogger logger) {
-        List<Binding> result = new ArrayList<>();
+    private List<FilterBinding> readFilterBindings(Element filteringSpec, DeployLogger logger) {
+        List<FilterBinding> result = new ArrayList<>();
 
         for (Element child: XML.getChildren(filteringSpec)) {
             String tagName = child.getTagName();
@@ -123,7 +123,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(Binding.create(chainId, binding, logger));
+                    result.add(FilterBinding.create(chainId, binding, logger));
                 }
             }
         }

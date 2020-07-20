@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.Binding;
+import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import org.junit.Test;
@@ -312,8 +312,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         return http;
     }
 
-    private boolean containsBinding(Collection<Binding> bindings, String binding) {
-        for (Binding b : bindings) {
+    private boolean containsBinding(Collection<FilterBinding> bindings, String binding) {
+        for (FilterBinding b : bindings) {
             if (b.binding().contains(binding))
                 return true;
         }
