@@ -5,6 +5,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
 
 import java.util.Collection;
@@ -24,7 +25,7 @@ public class ContainerDocumentApi {
     }
 
     private void setupHandlers(ContainerCluster cluster) {
-        cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "document/v1/*"));
+        cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "/document/v1/*"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"));
     }
 
@@ -32,9 +33,18 @@ public class ContainerDocumentApi {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(componentId, null, vespaClientBundleSpecification), ""));
 
-        for (String rootBinding : options.bindings) {
-            handler.addServerBindings(rootBinding + bindingSuffix,
-                    rootBinding + bindingSuffix + '/');
+        if (options.bindings.isEmpty()) {
+            handler.addServerBindings(
+                    BindingPattern.createModelGeneratedFromHttpPath(bindingSuffix),
+                    BindingPattern.createModelGeneratedFromHttpPath(bindingSuffix + '/'));
+        } else {
+            for (String rootBinding : options.bindings) {
+                String pathWithoutLeadingSlash = bindingSuffix.substring(1);
+                handler.addServerBindings(
+                        BindingPattern.createUserGeneratedFromPattern(rootBinding + pathWithoutLeadingSlash),
+                        BindingPattern.createUserGeneratedFromPattern(rootBinding + pathWithoutLeadingSlash + '/'));
+            }
+
         }
         return handler;
     }

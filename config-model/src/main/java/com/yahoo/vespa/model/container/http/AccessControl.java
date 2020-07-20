@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
@@ -43,7 +44,7 @@ public final class AccessControl {
         private String domain;
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
-        private final Set<String> excludeBindings = new LinkedHashSet<>();
+        private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
         private Collection<Servlet> servlets = Collections.emptyList();
         private final DeployLogger logger;
@@ -63,7 +64,7 @@ public final class AccessControl {
             return this;
         }
 
-        public Builder excludeBinding(String binding) {
+        public Builder excludeBinding(BindingPattern binding) {
             this.excludeBindings.add(binding);
             return this;
         }
@@ -83,7 +84,7 @@ public final class AccessControl {
     public final String domain;
     public final boolean readEnabled;
     public final boolean writeEnabled;
-    private final Set<String> excludedBindings;
+    private final Set<BindingPattern> excludedBindings;
     private final Collection<Handler<?>> handlers;
     private final Collection<Servlet> servlets;
     private final DeployLogger logger;
@@ -91,7 +92,7 @@ public final class AccessControl {
     private AccessControl(String domain,
                           boolean writeEnabled,
                           boolean readEnabled,
-                          Set<String> excludedBindings,
+                          Set<BindingPattern> excludedBindings,
                           Collection<Servlet> servlets,
                           Collection<Handler<?>> handlers,
                           DeployLogger logger) {
@@ -140,12 +141,12 @@ public final class AccessControl {
         return servletBindings(servlet).noneMatch(excludedBindings::contains);
     }
 
-    private static FilterBinding accessControlBinding(String binding, DeployLogger logger) {
+    private static FilterBinding accessControlBinding(BindingPattern binding, DeployLogger logger) {
         return FilterBinding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding, logger);
     }
 
-    private static Stream<String> servletBindings(Servlet servlet) {
-        return Stream.of("http://*/").map(protocol -> protocol + servlet.bindingPath);
+    private static Stream<BindingPattern> servletBindings(Servlet servlet) {
+        return Stream.of(BindingPattern.createModelGeneratedFromHttpPath("/" + servlet.bindingPath));
     }
 
     private static boolean handlerNeedsProtection(Handler<?> handler) {
@@ -153,7 +154,7 @@ public final class AccessControl {
     }
 
     private static boolean hasNonMbusBinding(Handler<?> handler) {
-        return handler.getServerBindings().stream().anyMatch(binding -> ! binding.startsWith("mbus"));
+        return handler.getServerBindings().stream().anyMatch(binding -> ! binding.scheme().equals("mbus"));
     }
 
 }

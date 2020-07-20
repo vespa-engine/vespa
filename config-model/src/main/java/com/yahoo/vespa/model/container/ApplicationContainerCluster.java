@@ -22,6 +22,7 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -55,12 +56,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         MetricsProxyApiConfig.Producer {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
-    public static final String METRICS_V2_HANDLER_BINDING_1 = "http://*" + MetricsV2Handler.V2_PATH;
-    public static final String METRICS_V2_HANDLER_BINDING_2 = METRICS_V2_HANDLER_BINDING_1 + "/*";
+    public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(MetricsV2Handler.V2_PATH);
+    public static final BindingPattern METRICS_V2_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(MetricsV2Handler.V2_PATH + "/*");
 
     public static final String PROMETHEUS_V1_HANDLER_CLASS = PrometheusV1Handler.class.getName();
-    private static final String PROMETHEUS_V1_HANDLER_BINDING_1 = "http://*" + PrometheusV1Handler.V1_PATH;
-    private static final String PROMETHEUS_V1_HANDLER_BINDING_2 = PROMETHEUS_V1_HANDLER_BINDING_1 + "/*";
+    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(PrometheusV1Handler.V1_PATH);
+    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
     public static final int heapSizePercentageOfTotalNodeMemory = 60;
     public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
@@ -125,7 +126,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addMetricsHandler(PROMETHEUS_V1_HANDLER_CLASS, PROMETHEUS_V1_HANDLER_BINDING_1, PROMETHEUS_V1_HANDLER_BINDING_2);
    }
 
-    private void addMetricsHandler(String handlerClass, String rootBinding, String innerBinding) {
+    private void addMetricsHandler(String handlerClass, BindingPattern rootBinding, BindingPattern innerBinding) {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(handlerClass, null, null, null));
         handler.addServerBindings(rootBinding, innerBinding);

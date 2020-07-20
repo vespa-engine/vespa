@@ -22,8 +22,8 @@ import java.util.Set;
  */
 public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<CHILD, ComponentModel> {
 
-    private Set<String> serverBindings = new LinkedHashSet<>();
-    private List<String> clientBindings = new ArrayList<>();
+    private final Set<BindingPattern> serverBindings = new LinkedHashSet<>();
+    private final List<BindingPattern> clientBindings = new ArrayList<>();
 
     public Handler(ComponentModel model) {
         super(model);
@@ -33,23 +33,23 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
         return new Handler<>(new ComponentModel(className, null, null, null));
     }
 
-    public void addServerBindings(String... bindings) {
+    public void addServerBindings(BindingPattern... bindings) {
         serverBindings.addAll(Arrays.asList(bindings));
     }
 
-    public void removeServerBinding(String binding) {
+    public void removeServerBinding(BindingPattern binding) {
         serverBindings.remove(binding);
     }
 
-    public void addClientBindings(String... bindings) {
+    public void addClientBindings(BindingPattern... bindings) {
         clientBindings.addAll(Arrays.asList(bindings));
     }
 
-    public final Set<String> getServerBindings() {
+    public final Set<BindingPattern> getServerBindings() {
         return Collections.unmodifiableSet(serverBindings);
     }
 
-    public final List<String> getClientBindings() {
+    public final List<BindingPattern> getClientBindings() {
         return Collections.unmodifiableList(clientBindings);
     }
 

@@ -37,6 +37,7 @@ import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
@@ -129,8 +130,9 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static Handler<AbstractConfigProducer<?>> createMetricsHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
         Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
                 new ComponentModel(clazz.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
-        metricsHandler.addServerBindings("http://*" + bindingPath,
-                                         "http://*" + bindingPath + "/*");
+        metricsHandler.addServerBindings(
+                BindingPattern.createModelGeneratedFromHttpPath(bindingPath),
+                BindingPattern.createModelGeneratedFromHttpPath(bindingPath + "/*"));
         return metricsHandler;
     }
 
