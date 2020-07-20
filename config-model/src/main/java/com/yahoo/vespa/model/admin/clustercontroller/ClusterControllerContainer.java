@@ -5,8 +5,8 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -14,18 +14,17 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.util.Set;
 import java.util.TreeSet;
-
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Container implementation for cluster-controllers
  */
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements
-        BundlesConfig.Producer,
+        PlatformBundlesConfig.Producer,
         ZookeeperServerConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
@@ -55,11 +54,12 @@ public class ClusterControllerContainer extends Container implements
         }
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
 
-        addFileBundle("lib/jars/clustercontroller-apps-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-apputil-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-core-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/clustercontroller-utils-jar-with-dependencies.jar");
-        addFileBundle("lib/jars/zookeeper-server-jar-with-dependencies.jar");
+        // TODO: Why are bundles added here instead of in the cluster?
+        addFileBundle("clustercontroller-apps");
+        addFileBundle("clustercontroller-apputil");
+        addFileBundle("clustercontroller-core");
+        addFileBundle("clustercontroller-utils");
+        addFileBundle("zookeeper-server");
     }
 
     @Override
@@ -82,8 +82,8 @@ public class ClusterControllerContainer extends Container implements
         super.addHandler(h);
     }
 
-    private void addFileBundle(String bundlePath) {
-        bundles.add("file:" + getDefaults().underVespaHome(bundlePath));
+    private void addFileBundle(String bundleName) {
+        bundles.add(PlatformBundles.absoluteBundlePath(bundleName).toString());
     }
 
     private ComponentModel createComponentModel(String id, String className, ComponentSpecification bundle) {
@@ -102,10 +102,8 @@ public class ClusterControllerContainer extends Container implements
     }
 
     @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        for (String bundle : bundles) {
-            builder.bundle(bundle);
-        }
+    public void getConfig(PlatformBundlesConfig.Builder builder) {
+        bundles.forEach(builder::bundlePaths);
     }
 
     @Override
