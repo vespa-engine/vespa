@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
-using vespalib::SlaveProc;
+using vespalib::ChildProcess;
 
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
@@ -32,7 +32,7 @@ void readUntil(Input &input, SimpleBuffer &buffer, const string &end) {
 
 TEST("dumpurl usage") {
     std::string out;
-    EXPECT_FALSE(SlaveProc::run("../../apps/dumpurl/vbench_dumpurl_app", out));
+    EXPECT_FALSE(ChildProcess::run("../../apps/dumpurl/vbench_dumpurl_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }
 
@@ -48,7 +48,7 @@ TEST_MT_F("run dumpurl", 2, ServerSocket()) {
         out.write("data");
     } else {
         std::string out;
-        EXPECT_TRUE(SlaveProc::run(strfmt("../../apps/dumpurl/vbench_dumpurl_app localhost %d /foo",
+        EXPECT_TRUE(ChildProcess::run(strfmt("../../apps/dumpurl/vbench_dumpurl_app localhost %d /foo",
                                           f1.port()).c_str(), out));
         fprintf(stderr, "%s\n", out.c_str());
     }
