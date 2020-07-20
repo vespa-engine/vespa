@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.osgi.provider.model.ComponentModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,10 +31,6 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
 
     public static Handler<AbstractConfigProducer<?>> fromClassName(String className) {
         return new Handler<>(new ComponentModel(className, null, null, null));
-    }
-
-    public static Handler<AbstractConfigProducer<?>> getVespaHandlerFromClassName(String className) {
-        return new Handler<>(new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(className, null), null));
     }
 
     public void addServerBindings(String... bindings) {
