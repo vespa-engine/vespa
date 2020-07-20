@@ -9,7 +9,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +24,8 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
     private final NodeRepository nodeRepository;
 
     public NodeRepositoryMaintainer(NodeRepository nodeRepository, Duration interval, Metric metric) {
-        super(null, interval, nodeRepository.clock().instant(), nodeRepository.jobControl(),
-              jobMetrics(nodeRepository.clock(), metric), nodeRepository.database().cluster());
+        super(null, interval, nodeRepository.clock().instant(), nodeRepository.jobControl(), jobMetrics(metric),
+              nodeRepository.database().cluster());
         this.nodeRepository = nodeRepository;
     }
 
@@ -45,10 +44,9 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
                                .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
     }
 
-    private static JobMetrics jobMetrics(Clock clock, Metric metric) {
-        return new JobMetrics(clock, (job, instant) -> {
-            Duration sinceSuccess = Duration.between(instant, clock.instant());
-            metric.set("maintenance.secondsSinceSuccess", sinceSuccess.getSeconds(), metric.createContext(Map.of("job", job)));
+    private static JobMetrics jobMetrics(Metric metric) {
+        return new JobMetrics((job, consecutiveFailures) -> {
+            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
         });
     }
 

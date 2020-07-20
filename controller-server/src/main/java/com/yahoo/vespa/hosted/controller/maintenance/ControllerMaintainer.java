@@ -7,7 +7,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Map;
@@ -35,7 +34,7 @@ public abstract class ControllerMaintainer extends Maintainer {
 
     public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems) {
         super(name, interval, controller.clock().instant(), controller.jobControl(),
-              jobMetrics(controller.clock(), controller.metric()), controller.curator().cluster());
+              jobMetrics(controller.metric()), controller.curator().cluster());
         this.controller = controller;
         this.activeSystems = Set.copyOf(Objects.requireNonNull(activeSystems));
     }
@@ -48,10 +47,9 @@ public abstract class ControllerMaintainer extends Maintainer {
         super.run();
     }
 
-    private static JobMetrics jobMetrics(Clock clock, Metric metric) {
-        return new JobMetrics(clock, (job, instant) -> {
-            Duration sinceSuccess = Duration.between(instant, clock.instant());
-            metric.set("maintenance.secondsSinceSuccess", sinceSuccess.getSeconds(), metric.createContext(Map.of("job", job)));
+    private static JobMetrics jobMetrics(Metric metric) {
+        return new JobMetrics((job, consecutiveFailures) -> {
+            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
         });
     }
 

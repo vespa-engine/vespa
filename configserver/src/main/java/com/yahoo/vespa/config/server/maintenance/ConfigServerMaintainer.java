@@ -14,7 +14,6 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -31,14 +30,13 @@ public abstract class ConfigServerMaintainer extends Maintainer {
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Duration initialDelay, Duration interval) {
         super(null, interval, initialDelay, new JobControl(new JobControlFlags(curator, flagSource)),
-              jobMetrics(applicationRepository.clock(), applicationRepository.metric()));
+              jobMetrics(applicationRepository.metric()));
         this.applicationRepository = applicationRepository;
     }
 
-    private static JobMetrics jobMetrics(Clock clock, Metric metric) {
-        return new JobMetrics(clock, (job, instant) -> {
-            Duration sinceSuccess = Duration.between(instant, clock.instant());
-            metric.set("maintenance.secondsSinceSuccess", sinceSuccess.getSeconds(), metric.createContext(Map.of("job", job)));
+    private static JobMetrics jobMetrics(Metric metric) {
+        return new JobMetrics((job, consecutiveFailures) -> {
+            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
         });
     }
 

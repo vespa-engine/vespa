@@ -1,10 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
@@ -15,26 +12,29 @@ import java.util.function.BiConsumer;
  */
 public class JobMetrics {
 
-    private final Clock clock;
-    private final BiConsumer<String, Instant> metricConsumer;
+    private final BiConsumer<String, Long> metricConsumer;
 
-    private final Map<String, Instant> successfulRuns = new ConcurrentHashMap<>();
+    private final Map<String, Long> incompleteRuns = new ConcurrentHashMap<>();
 
-    public JobMetrics(Clock clock, BiConsumer<String, Instant> metricConsumer) {
-        this.clock = Objects.requireNonNull(clock);
+    public JobMetrics(BiConsumer<String, Long> metricConsumer) {
         this.metricConsumer = metricConsumer;
+    }
+
+    /** Record a run for given job */
+    public void recordRunOf(String job) {
+        incompleteRuns.compute(job, (ignored, run) -> run == null ? 1 : ++run);
     }
 
     /** Record successful run of given job */
     public void recordSuccessOf(String job) {
-        successfulRuns.put(job, clock.instant());
+        incompleteRuns.put(job, 0L);
     }
 
     /** Forward metrics for given job to metric consumer */
     public void forward(String job) {
-        Instant lastSuccess = successfulRuns.get(job);
-        if (lastSuccess != null) {
-            metricConsumer.accept(job, lastSuccess);
+        Long incompleteRuns = this.incompleteRuns.get(job);
+        if (incompleteRuns != null) {
+            metricConsumer.accept(job, incompleteRuns);
         }
     }
 

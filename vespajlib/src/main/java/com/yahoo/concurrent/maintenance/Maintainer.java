@@ -85,6 +85,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     public final void lockAndMaintain() {
         try (var lock = jobControl.lockJob(name())) {
             try {
+                jobMetrics.recordRunOf(name());
                 if (maintain()) jobMetrics.recordSuccessOf(name());
             } finally {
                 // Always forward metrics

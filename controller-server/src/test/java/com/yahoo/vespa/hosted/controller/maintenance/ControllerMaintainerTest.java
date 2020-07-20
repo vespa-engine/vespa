@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import org.junit.Before;
@@ -28,28 +29,47 @@ public class ControllerMaintainerTest {
     @Test
     public void only_runs_in_permitted_systems() {
         AtomicInteger executions = new AtomicInteger();
-        maintainerIn(SystemName.cd, executions).run();
-        maintainerIn(SystemName.main, executions).run();
+        new TestControllerMaintainer(tester.controller(), SystemName.cd, executions).run();
+        new TestControllerMaintainer(tester.controller(), SystemName.main, executions).run();
         assertEquals(1, executions.get());
     }
 
     @Test
     public void records_metric() {
-        maintainerIn(SystemName.main, new AtomicInteger()).run();
-        MetricsMock metrics = (MetricsMock) tester.controller().metric();
-        assertEquals(0L, metrics.getMetric((context) -> "MockMaintainer".equals(context.get("job")),
-                                           "maintenance.secondsSinceSuccess").get());
+        TestControllerMaintainer maintainer = new TestControllerMaintainer(tester.controller(), SystemName.main, new AtomicInteger());
+        maintainer.run();
+        assertEquals(0L, consecutiveFailuresMetric());
+        maintainer.success = false;
+        maintainer.run();
+        maintainer.run();
+        assertEquals(2L, consecutiveFailuresMetric());
+        maintainer.success = true;
+        maintainer.run();;
+        assertEquals(0, consecutiveFailuresMetric());
     }
 
-    private ControllerMaintainer maintainerIn(SystemName system, AtomicInteger executions) {
-        return new ControllerMaintainer(tester.controller(), Duration.ofDays(1),
-                                        "MockMaintainer", EnumSet.of(system)) {
-            @Override
-            protected boolean maintain() {
-                executions.incrementAndGet();
-                return true;
-            }
-        };
+    private long consecutiveFailuresMetric() {
+        MetricsMock metrics = (MetricsMock) tester.controller().metric();
+        return metrics.getMetric((context) -> "TestControllerMaintainer".equals(context.get("job")),
+                                 "maintenance.consecutiveFailures").get().longValue();
+    }
+
+    private static class TestControllerMaintainer extends ControllerMaintainer {
+
+        private final AtomicInteger executions;
+        private boolean success = true;
+
+        public TestControllerMaintainer(Controller controller, SystemName system, AtomicInteger executions) {
+            super(controller, Duration.ofDays(1), null, EnumSet.of(system));
+            this.executions = executions;
+        }
+
+        @Override
+        protected boolean maintain() {
+            executions.incrementAndGet();
+            return success;
+        }
+
     }
 
 }
