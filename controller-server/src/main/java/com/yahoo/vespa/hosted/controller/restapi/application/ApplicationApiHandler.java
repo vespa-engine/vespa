@@ -971,7 +971,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : controller.routing().endpointsOf(deploymentId).scope(Endpoint.Scope.zone)) {
+        for (var endpoint : controller.routing().endpointsOf(deploymentId)
+                                      .scope(Endpoint.Scope.zone)
+                                      .not().legacy()) {
             toSlime(endpoint, endpoint.name(), endpointArray.addObject());
         }
         // Add global endpoints
@@ -979,8 +981,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                         .not().legacy()
                                         .targets(deploymentId.zoneId());
         for (var endpoint : globalEndpoints) {
-            // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
-            toSlime(endpoint, "", endpointArray.addObject());
+            toSlime(endpoint, endpoint.cluster().value(), endpointArray.addObject());
         }
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
