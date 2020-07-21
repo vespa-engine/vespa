@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -47,11 +46,9 @@ public final class AccessControl {
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
         private Collection<Servlet> servlets = Collections.emptyList();
-        private final DeployLogger logger;
 
-        public Builder(String domain, DeployLogger logger) {
+        public Builder(String domain) {
             this.domain = domain;
-            this.logger = logger;
         }
 
         public Builder readEnabled(boolean readEnabled) {
@@ -77,7 +74,7 @@ public final class AccessControl {
 
         public AccessControl build() {
             return new AccessControl(domain, writeEnabled, readEnabled,
-                                     excludeBindings, servlets, handlers, logger);
+                                     excludeBindings, servlets, handlers);
         }
     }
 
@@ -87,22 +84,19 @@ public final class AccessControl {
     private final Set<BindingPattern> excludedBindings;
     private final Collection<Handler<?>> handlers;
     private final Collection<Servlet> servlets;
-    private final DeployLogger logger;
 
     private AccessControl(String domain,
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<BindingPattern> excludedBindings,
                           Collection<Servlet> servlets,
-                          Collection<Handler<?>> handlers,
-                          DeployLogger logger) {
+                          Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
         this.handlers = handlers;
         this.servlets = servlets;
-        this.logger = logger;
     }
 
     public List<FilterBinding> getBindings() {
@@ -118,14 +112,14 @@ public final class AccessControl {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
-                        .map(binding -> accessControlBinding(binding, logger));
+                        .map(binding -> accessControlBinding(binding));
     }
 
     private Stream<FilterBinding> getServletBindings() {
         return servlets.stream()
                 .filter(this::shouldServletBeProtected)
                 .flatMap(AccessControl::servletBindings)
-                .map(binding -> accessControlBinding(binding, logger));
+                .map(binding -> accessControlBinding(binding));
     }
 
     private boolean shouldHandlerBeProtected(Handler<?> handler) {
@@ -141,8 +135,8 @@ public final class AccessControl {
         return servletBindings(servlet).noneMatch(excludedBindings::contains);
     }
 
-    private static FilterBinding accessControlBinding(BindingPattern binding, DeployLogger logger) {
-        return FilterBinding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding, logger);
+    private static FilterBinding accessControlBinding(BindingPattern binding) {
+        return FilterBinding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
     }
 
     private static Stream<BindingPattern> servletBindings(Servlet servlet) {

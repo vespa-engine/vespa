@@ -43,7 +43,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
             filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
-            bindings = readFilterBindings(filteringElem, deployState.getDeployLogger());
+            bindings = readFilterBindings(filteringElem);
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
@@ -64,7 +64,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
     private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
         AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
-        AccessControl.Builder builder = new AccessControl.Builder(domain.value(), deployState.getDeployLogger());
+        AccessControl.Builder builder = new AccessControl.Builder(domain.value());
 
         getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
@@ -114,7 +114,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return Optional.of((ApplicationContainerCluster) currentProducer);
     }
 
-    private List<FilterBinding> readFilterBindings(Element filteringSpec, DeployLogger logger) {
+    private List<FilterBinding> readFilterBindings(Element filteringSpec) {
         List<FilterBinding> result = new ArrayList<>();
 
         for (Element child: XML.getChildren(filteringSpec)) {
@@ -124,7 +124,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(FilterBinding.create(chainId, BindingPattern.createUserGeneratedFromPattern(binding), logger));
+                    result.add(FilterBinding.create(chainId, BindingPattern.createUserGeneratedFromPattern(binding)));
                 }
             }
         }
