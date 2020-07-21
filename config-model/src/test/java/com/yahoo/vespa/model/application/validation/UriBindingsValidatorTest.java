@@ -38,8 +38,8 @@ public class UriBindingsValidatorTest {
     @Test
     public void fails_on_user_handler_binding_with_non_http_scheme() throws IOException, SAXException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'https://*/my-handler': only 'http' is allowed as scheme");
-        runUriBindingValidator(true, createServicesXmlWithHandler("https://*/my-handler"));
+        exceptionRule.expectMessage("For binding 'ftp://*/my-handler': only 'http' is allowed as scheme");
+        runUriBindingValidator(true, createServicesXmlWithHandler("ftp://*/my-handler"));
     }
 
     @Test
