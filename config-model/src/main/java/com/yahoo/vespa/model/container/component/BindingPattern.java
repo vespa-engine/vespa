@@ -21,6 +21,8 @@ public class BindingPattern implements Comparable<BindingPattern> {
     private static final Pattern BINDING_PATTERN =
             Pattern.compile("([^:]+)://([^:/]+)(:((\\*)|([0-9]+)))?(/.*)", Pattern.UNICODE_CASE | Pattern.CANON_EQ);
 
+    public static final String WILDCARD_PATTERN = "*";
+
     private final String scheme;
     private final String host;
     private final String port;
