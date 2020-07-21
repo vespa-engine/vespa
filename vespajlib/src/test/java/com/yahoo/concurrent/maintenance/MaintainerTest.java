@@ -1,16 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author freva
@@ -41,37 +39,31 @@ public class MaintainerTest {
 
     @Test
     public void success_metric() {
-        ManualClock clock = new ManualClock();
-        AtomicReference<Instant> lastSuccess = new AtomicReference<>();
-        JobMetrics jobMetrics = new JobMetrics(clock, (job, instant) -> lastSuccess.set(instant));
+        AtomicLong consecutiveFailures = new AtomicLong();
+        JobMetrics jobMetrics = new JobMetrics((job, count) -> consecutiveFailures.set(count));
         TestMaintainer maintainer = new TestMaintainer(jobMetrics);
 
-        // Maintainer not successful yet
+        // Maintainer fails twice in a row
         maintainer.successOnNextRun(false).run();
-        assertNull(lastSuccess.get());
+        assertEquals(1, consecutiveFailures.get());
+        maintainer.successOnNextRun(false).run();
+        assertEquals(2, consecutiveFailures.get());
 
         // Maintainer runs successfully
-        clock.advance(Duration.ofHours(1));
-        Instant lastSuccess0 = clock.instant();
         maintainer.successOnNextRun(true).run();
-        assertEquals(lastSuccess0, lastSuccess.get());
+        assertEquals(0, consecutiveFailures.get());
 
         // Maintainer runs successfully again
-        clock.advance(Duration.ofHours(2));
-        Instant lastSuccess1 = clock.instant();
         maintainer.run();
-        assertEquals(lastSuccess1, lastSuccess.get());
+        assertEquals(0, consecutiveFailures.get());
 
         // Maintainer throws
-        clock.advance(Duration.ofHours(5));
         maintainer.throwOnNextRun(true).run();
-        assertEquals("Time of successful run is unchanged", lastSuccess1, lastSuccess.get());
+        assertEquals(1, consecutiveFailures.get());
 
         // Maintainer recovers
-        clock.advance(Duration.ofHours(3));
-        Instant lastSuccess2 = clock.instant();
         maintainer.throwOnNextRun(false).run();
-        assertEquals(lastSuccess2, lastSuccess.get());
+        assertEquals(0, consecutiveFailures.get());
     }
 
 }

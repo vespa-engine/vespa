@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import java.time.Clock;
 import java.time.Duration;
 
 /**
@@ -22,7 +21,7 @@ class TestMaintainer extends Maintainer {
     }
 
     public TestMaintainer(String name, JobControl jobControl) {
-        this(name, jobControl, new JobMetrics(Clock.systemUTC(), (job, instant) -> {}));
+        this(name, jobControl, new JobMetrics((job, instant) -> {}));
     }
 
     public int totalRuns() {
