@@ -264,12 +264,6 @@ public class Flags {
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
-            "publish-direct-routing-endpoint", true,
-            "Whether an application should receive a directly routed endpoint in its endpoint list",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,
             "Configure NLB to use proxy protocol",

@@ -10,9 +10,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -65,14 +62,12 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag allowDirectRouting;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.routingPolicies = new RoutingPolicies(controller);
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
-        this.allowDirectRouting = Flags.ALLOW_DIRECT_ROUTING.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -267,7 +262,7 @@ public class RoutingController {
     private boolean canRouteDirectlyTo(DeploymentId deploymentId, Application application) {
         if (controller.system().isPublic()) return true; // Public always supports direct routing
         if (controller.system().isCd()) return true; // CD deploys directly so we cannot enforce all requirements below
-        if(deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones does not include any use cases where direct routing is not supported
+        if (deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones always support direct routing
 
         // Check Athenz service presence. The test framework uses this identity when sending requests to the
         // deployment's container(s).
@@ -287,12 +282,7 @@ public class RoutingController {
                                      .or(() -> application.latestVersion().flatMap(ApplicationVersion::compileVersion));
         if (compileVersion.isEmpty()) return false;
         if (compileVersion.get().isBefore(DIRECT_ROUTING_MIN_VERSION)) return false;
-
-        // Check feature flag
-        // TODO(mpolden): Remove once we make this default
-        return this.allowDirectRouting.with(FetchVector.Dimension.APPLICATION_ID,
-                                            deploymentId.applicationId().serializedForm())
-                                      .value();
+        return true;
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
