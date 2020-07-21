@@ -63,7 +63,7 @@ class UriBindingsValidator extends Validator {
         if (!binding.host().equals(BindingPattern.WILDCARD_PATTERN)) {
             throw new IllegalArgumentException(createErrorMessage(binding, "only binding with wildcard ('*') for hostname is allowed"));
         }
-        if (!binding.scheme().equals("http")) {
+        if (!binding.scheme().equals("http") && !binding.scheme().equals("https")) {
             throw new IllegalArgumentException(createErrorMessage(binding, "only 'http' is allowed as scheme"));
         }
     }
