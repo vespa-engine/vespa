@@ -244,7 +244,7 @@ public class DeploymentContext {
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     Optional.empty(), projectId, applicationPackage, new byte[0]);
+                                     projectId, applicationPackage, new byte[0]);
         return this;
     }
 

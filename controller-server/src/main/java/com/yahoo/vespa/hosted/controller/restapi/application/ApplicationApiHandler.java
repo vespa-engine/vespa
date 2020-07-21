@@ -284,6 +284,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
@@ -1901,10 +1902,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             sourceUrl,
-                                                            commit,
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
+
+    private HttpResponse removeAllProdDeployments(String tenant, String application) {
+        JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
+                Optional.empty(), Optional.empty(), Optional.empty(), 1,
+                ApplicationPackage.deploymentRemoval(), new byte[0]);
+        return new MessageResponse("All deployments removed");
     }
 
     private static Map<String, byte[]> parseDataParts(HttpRequest request) {
