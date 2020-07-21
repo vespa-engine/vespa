@@ -70,11 +70,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -84,7 +82,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -972,6 +969,36 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               new File("instance1-metering.json"));
+    }
+
+    @Test
+    public void testRemovingAllDeployments() {
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
+                .region("us-west-1")
+                .region("us-east-3")
+                .region("eu-west-1")
+                .endpoint("eu", "default", "eu-west-1")
+                .endpoint("default", "default", "us-west-1", "us-east-3")
+                .build();
+
+        deploymentTester.controllerTester().createTenant("tenant1", ATHENZ_TENANT_DOMAIN.getName(), 432L);
+
+        // Create tenant and deploy
+        var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
+        app.submit(applicationPackage).deploy();
+        tester.controller().jobController().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+
+        assertEquals(Set.of(ZoneId.from("prod.us-west-1"), ZoneId.from("prod.us-east-3"), ZoneId.from("prod.eu-west-1"), ZoneId.from("dev.us-east-1")),
+                app.instance().deployments().keySet());
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", DELETE)
+                        .userIdentity(USER_ID)
+                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                "{\"message\":\"Application package version: 1.0.2-unknown\"}");
+
+        assertEquals(Set.of(ZoneId.from("dev.us-east-1")), app.instance().deployments().keySet());
     }
 
     @Test
