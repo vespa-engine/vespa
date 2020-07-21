@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationPackageTest {
     @Test
     public void test_createEmptyForDeploymentRemoval() {
-        ApplicationPackage app = ApplicationPackage.createEmptyForDeploymentRemoval();
+        ApplicationPackage app = ApplicationPackage.deploymentRemoval();
         assertEquals(DeploymentSpec.empty, app.deploymentSpec());
         assertEquals(List.of(), app.trustedCertificates());
 

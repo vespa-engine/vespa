@@ -996,7 +996,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", DELETE)
                         .userIdentity(USER_ID)
                         .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                "{\"message\":\"Application package version: 1.0.2-unknown\"}");
+                "{\"message\":\"All deployments removed\"}");
 
         assertEquals(Set.of(ZoneId.from("dev.us-east-1")), app.instance().deployments().keySet());
     }

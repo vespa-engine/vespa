@@ -190,7 +190,7 @@ public class ApplicationPackage {
     }
 
     /** Creates a valid application package that will remove all application's deployments */
-    public static ApplicationPackage createEmptyForDeploymentRemoval() {
+    public static ApplicationPackage deploymentRemoval() {
         DeploymentSpec deploymentSpec = DeploymentSpec.empty;
         ValidationOverrides validationOverrides = allValidationOverrides();
         try (ZipBuilder zipBuilder = new ZipBuilder(deploymentSpec.xmlForm().length() + validationOverrides.xmlForm().length() + 500)) {
