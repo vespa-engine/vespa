@@ -370,7 +370,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
         if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         AccessControl accessControl =
-                new AccessControl.Builder(tenantDomain.value(), deployState.getDeployLogger())
+                new AccessControl.Builder(tenantDomain.value())
                         .setHandlers(cluster)
                         .readEnabled(false)
                         .writeEnabled(false)
