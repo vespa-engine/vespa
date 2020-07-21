@@ -13,9 +13,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
+ * Retrieves bundles with file distribution, and installs them to the OSGi framework.
+ *
  * @author gjoranv
  */
-public class FileAcquirerBundleInstaller implements BundleInstaller {
+public class FileAcquirerBundleInstaller {
     private static Logger log = Logger.getLogger(FileAcquirerBundleInstaller.class.getName());
 
     private final FileAcquirer fileAcquirer;
@@ -24,7 +26,6 @@ public class FileAcquirerBundleInstaller implements BundleInstaller {
         this.fileAcquirer = fileAcquirer;
     }
 
-    @Override
     public List<Bundle> installBundles(FileReference reference, Osgi osgi) throws InterruptedException {
         File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
 
@@ -44,6 +45,10 @@ public class FileAcquirerBundleInstaller implements BundleInstaller {
         }
 
         return osgi.install(file.getAbsolutePath());
+    }
+
+    public boolean hasFileDistribution() {
+        return fileAcquirer != null;
     }
 
     private static boolean notReadable(File file) {

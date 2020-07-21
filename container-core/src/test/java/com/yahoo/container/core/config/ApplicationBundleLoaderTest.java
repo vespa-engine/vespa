@@ -2,6 +2,9 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
+import com.yahoo.osgi.Osgi;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
@@ -29,9 +32,9 @@ public class ApplicationBundleLoaderTest {
     @Before
     public void setup() {
         osgi = new TestOsgi(testBundles());
-        var bundleInstaller = new TestBundleInstaller();
-        bundleLoader = new ApplicationBundleLoader(osgi);
-        bundleLoader.useCustomBundleInstaller(bundleInstaller);
+        var bundleInstaller = new TestBundleInstaller(MockFileAcquirer.returnFile(null));
+
+        bundleLoader = new ApplicationBundleLoader(osgi, bundleInstaller);
     }
 
     @Test
@@ -101,6 +104,19 @@ public class ApplicationBundleLoaderTest {
     private static Map<String, Bundle> testBundles() {
         return Map.of(BUNDLE_1_REF.value(), BUNDLE_1,
                       BUNDLE_2_REF.value(), BUNDLE_2);
+    }
+
+    static class TestBundleInstaller extends FileAcquirerBundleInstaller {
+
+        TestBundleInstaller(FileAcquirer fileAcquirer) {
+            super(fileAcquirer);
+        }
+
+        @Override
+        public List<Bundle> installBundles(FileReference reference, Osgi osgi) {
+            return osgi.install(reference.value());
+        }
+
     }
 
 }
