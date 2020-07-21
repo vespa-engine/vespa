@@ -125,7 +125,7 @@ public class InstanceValidatorTest {
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
-        String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
+        String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
         assertTrue(instanceValidator.isValidRefresh(instanceConfirmation));
@@ -140,7 +140,7 @@ public class InstanceValidatorTest {
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
-        String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
+        String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
         // Add invalid ip to list of ip addresses
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp, "::ff"));

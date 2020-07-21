@@ -318,8 +318,8 @@ public class DynamicDockerAllocationTest {
         tester.activate(application, hosts);
 
         List<Node> activeNodes = tester.nodeRepository().getNodes(application);
-        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipAddresses());
-        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipConfig().primary());
+        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipConfig().primary());
     }
 
     @Test

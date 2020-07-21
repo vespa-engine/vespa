@@ -216,7 +216,7 @@ public class LoadBalancerProvisioner {
 
     /** Find IP addresses reachable by the load balancer service */
     private Set<String> reachableIpAddresses(Node node) {
-        Set<String> reachable = new LinkedHashSet<>(node.ipAddresses());
+        Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
         // Remove addresses unreachable by the load balancer service
         switch (service.protocol()) {
             case ipv4:

@@ -201,9 +201,9 @@ public class AclProvisioningTest {
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
         Iterator<Node> trustedNodes = nodeAcls.get(0).trustedNodes().iterator();
-        assertEquals(Set.of("127.0.1.1"), trustedNodes.next().ipAddresses());
-        assertEquals(Set.of("127.0.1.2"), trustedNodes.next().ipAddresses());
-        assertEquals(Set.of("127.0.1.3"), trustedNodes.next().ipAddresses());
+        assertEquals(Set.of("127.0.1.1"), trustedNodes.next().ipConfig().primary());
+        assertEquals(Set.of("127.0.1.2"), trustedNodes.next().ipConfig().primary());
+        assertEquals(Set.of("127.0.1.3"), trustedNodes.next().ipConfig().primary());
     }
 
     private List<Node> deploy(int nodeCount) {

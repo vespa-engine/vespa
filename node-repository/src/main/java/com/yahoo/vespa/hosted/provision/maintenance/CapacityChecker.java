@@ -142,12 +142,12 @@ public class CapacityChecker {
         for (var host : hosts) {
             NodeResources hostResources = host.flavor().resources();
             int occupiedIps = 0;
-            Set<String> ipPool = host.ipAddressPool().asSet();
+            Set<String> ipPool = host.ipConfig().pool().asSet();
             for (var child : nodeChildren.get(host)) {
                 hostResources = hostResources.subtract(child.resources().justNumbers());
-                occupiedIps += child.ipAddresses().stream().filter(ipPool::contains).count();
+                occupiedIps += child.ipConfig().primary().stream().filter(ipPool::contains).count();
             }
-            availableResources.put(host, new AllocationResources(hostResources, host.ipAddressPool().asSet().size() - occupiedIps));
+            availableResources.put(host, new AllocationResources(hostResources, host.ipConfig().pool().asSet().size() - occupiedIps));
         }
 
         return availableResources;

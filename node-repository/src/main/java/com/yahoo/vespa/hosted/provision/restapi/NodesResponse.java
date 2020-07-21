@@ -180,8 +180,8 @@ class NodesResponse extends HttpResponse {
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
-        ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.ipAddressPool().asSet(), object.setArray("additionalIpAddresses"));
+        ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
+        ipAddressesToSlime(node.ipConfig().pool().asSet(), object.setArray("additionalIpAddresses"));
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
     }
