@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
+import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import java.util.logging.Level;
 import com.yahoo.slime.ArrayTraverser;
@@ -84,32 +85,27 @@ public class ClusterDeploymentMetricsRetriever {
     }
 
     private static void getHostMetrics(URI hostURI, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
-            Slime responseBody = doMetricsRequest(hostURI);
-            var parseError = responseBody.get().field("error_message");
-
-            if (parseError.valid()) {
-                log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
-            }
-
-            Inspector services = responseBody.get().field("services");
-            services.traverse((ArrayTraverser) (i, servicesInspector) ->
-                parseService(servicesInspector, clusterMetricsMap)
-            );
-    }
-
-    static Slime doMetricsRequest(URI hostURI) {
-        HttpGet get = new HttpGet(hostURI);
-        try (CloseableHttpResponse response = httpClient.execute(get)) {
-            InputStream is = response.getEntity().getContent();
-            Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
-            is.close();
-            return slime;
+        Slime responseBody;
+        try {
+            responseBody = MetricsSlime.doMetricsRequest(hostURI, httpClient);
         } catch (IOException e) {
             // Usually caused by applications being deleted during metric retrieval
             log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
-            return new Slime();
+            responseBody = new Slime();
         }
+        var parseError = responseBody.get().field("error_message");
+
+        if (parseError.valid()) {
+            log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
+        }
+
+        Inspector services = responseBody.get().field("services");
+        services.traverse((ArrayTraverser) (i, servicesInspector) ->
+            parseService(servicesInspector, clusterMetricsMap)
+        );
     }
+
+
 
     private static void parseService(Inspector service, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
         String serviceName = service.field("name").asString();
@@ -121,7 +117,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
         if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
         Inspector values = metric.field("values");
-        ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
+        ClusterInfo clusterInfo = MetricsSlime.getClusterInfoFromDimensions(metric.field("dimensions"));
         MetricsAggregator metricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new MetricsAggregator());
 
         switch (serviceName) {
@@ -142,9 +138,5 @@ public class ClusterDeploymentMetricsRetriever {
                 metricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
                 break;
         }
-    }
-
-    static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
-        return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 }

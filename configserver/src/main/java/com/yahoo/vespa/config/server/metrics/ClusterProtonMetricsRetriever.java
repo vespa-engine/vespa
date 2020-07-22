@@ -1,7 +1,10 @@
 package com.yahoo.vespa.config.server.metrics;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.yolean.Exceptions;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
@@ -11,15 +14,27 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever.doMetricsRequest;
-import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever.getClusterInfoFromDimensions;
+import static com.yahoo.vespa.config.server.metrics.MetricsSlime.doMetricsRequest;
+import static com.yahoo.vespa.config.server.metrics.MetricsSlime.getClusterInfoFromDimensions;
 
 public class ClusterProtonMetricsRetriever {
 
     private static final Logger log = Logger.getLogger(ClusterProtonMetricsRetriever.class.getName());
+
+    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
+                                                            .create(PoolingHttpClientConnectionManager::new)
+                                                            .setDefaultRequestConfig(
+                                                                    RequestConfig.custom()
+                                                                            .setConnectTimeout(10 * 1000)
+                                                                            .setSocketTimeout(10 * 1000)
+                                                                            .build())
+                                                            .build();
 
     private static final List<String> DESIRED_METRICS = List.of(
             "content.proton.documentdb.matching.docs_matched.rate",
@@ -59,7 +74,13 @@ public class ClusterProtonMetricsRetriever {
     }
 
     private static void populateMetricsMapByHost(URI hostURI, Map<ClusterInfo, JSONObject> clusterMetricsMap) {
-        Slime hostResponseBody = doMetricsRequest(hostURI);
+        Slime hostResponseBody;
+        try {
+            hostResponseBody = doMetricsRequest(hostURI, httpClient);
+        } catch (IOException e) {
+            log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
+            hostResponseBody = new Slime();
+        }
         var parseError = hostResponseBody.get().field("error_message");
 
         if (parseError.valid()) {
