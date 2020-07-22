@@ -59,7 +59,7 @@ public class IdentityDocumentGenerator {
                     zone.environment().value(),
                     identityType);
 
-            Set<String> ips = new HashSet<>(node.ipAddresses());
+            Set<String> ips = new HashSet<>(node.ipConfig().primary());
 
             PrivateKey privateKey = keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
             AthenzService providerService = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
