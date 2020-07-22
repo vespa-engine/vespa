@@ -5,7 +5,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -16,8 +15,9 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -107,6 +107,8 @@ public class StorageMaintainer {
     }
 
     public boolean cleanDiskIfFull(NodeAgentContext context) {
+        if (context.isDisabled(NodeAgentTask.DiskCleanup)) return false;
+
         double totalBytes = context.node().diskSize().bytes();
         // Delete enough bytes to get below 70% disk usage, but only if we are already using more than 80% disk
         long bytesToRemove = diskUsageFor(context)
@@ -148,6 +150,7 @@ public class StorageMaintainer {
 
     /** Checks if container has any new coredumps, reports and archives them if so */
     public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container) {
+        if (context.isDisabled(NodeAgentTask.CoreDumps)) return;
         coredumpHandler.converge(context, () -> getCoredumpNodeAttributes(context, container));
     }
 

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import java.util.logging.Level;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -24,6 +23,7 @@ import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
@@ -46,6 +46,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -108,6 +109,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     public boolean converge(NodeAgentContext context) {
+        if (context.isDisabled(NodeAgentTask.CredentialsMaintainer)) return false;
+
         try {
             context.log(logger, Level.FINE, "Checking certificate");
             Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
