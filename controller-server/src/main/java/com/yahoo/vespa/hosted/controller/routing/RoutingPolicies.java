@@ -166,7 +166,7 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
             if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
-            Endpoint weighted = policy.weightedEndpointIn(controller.system(), routingMethod);
+            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
@@ -175,9 +175,9 @@ public class RoutingPolicies {
             }
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                          policy.id().zone(), weight);
-            endpoints.computeIfAbsent(weighted, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.from(weighted.dnsName()),
-                                                                                                 policy.dnsZone().get(),
-                                                                                                 policy.id().zone())))
+            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName()),
+                                                                                                       policy.dnsZone().get(),
+                                                                                                       policy.id().zone())))
                      .zoneTargets()
                      .add(weightedTarget);
         }

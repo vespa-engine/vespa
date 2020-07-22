@@ -785,16 +785,16 @@ public class RoutingPoliciesTest {
                          .collect(Collectors.toList());
         }
 
-        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id clusterId, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
+        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
             Set<String> latencyTargets = new HashSet<>();
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
-                Endpoint weighted = tester.controller().routing().endpointsOf(new DeploymentId(application, zone))
-                                          .scope(Endpoint.Scope.weighted)
-                                          .named(EndpointId.of(clusterId.value()))
-                                          .asList()
-                                          .get(0);
-                zonesByRegionEndpoint.computeIfAbsent(weighted.dnsName(), (k) -> new ArrayList<>())
+                Endpoint regionEndpoint = tester.controller().routing().endpointsOf(new DeploymentId(application, zone))
+                                                .scope(Endpoint.Scope.region)
+                                                .cluster(cluster)
+                                                .asList()
+                                                .get(0);
+                zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);
             }
             zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
@@ -803,7 +803,7 @@ public class RoutingPoliciesTest {
                                                                      application.serializedForm() + "--" + z.value() +
                                                                      "/dns-zone-1/" + z.value() + "/" + zoneWeights.get(z))
                                                            .collect(Collectors.toSet());
-                assertEquals("Weighted endpoint " + regionEndpoint + " points to load balancer",
+                assertEquals("Region endpoint " + regionEndpoint + " points to load balancer",
                              weightedTargets,
                              aliasDataOf(regionEndpoint));
                 ZoneId zone = zonesInRegion.get(0);
