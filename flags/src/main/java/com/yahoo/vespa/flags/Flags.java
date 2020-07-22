@@ -339,6 +339,13 @@ public class Flags {
             "Takes effect on next tick"
     );
 
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_LOCK = defineFeatureFlag(
+            "use-config-server-lock",
+            false,
+            "Whether the node-repository should take the same application lock as the config server when making changes to nodes",
+            "Takes effect on config server restart"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

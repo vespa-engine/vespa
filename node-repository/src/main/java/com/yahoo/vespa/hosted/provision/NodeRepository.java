@@ -18,6 +18,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -46,6 +47,7 @@ import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,6 +60,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,6 +96,8 @@ import java.util.stream.Stream;
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
 
+    private static final Logger log = Logger.getLogger(NodeRepository.class.getName());
+
     private final CuratorDatabaseClient db;
     private final Clock clock;
     private final Zone zone;
@@ -106,6 +112,7 @@ public class NodeRepository extends AbstractComponent {
     private final Applications applications;
     private final boolean canProvisionHosts;
     private final int spareCount;
+    private final boolean useConfigServerLock;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -146,7 +153,9 @@ public class NodeRepository extends AbstractComponent {
                           boolean useCuratorClientCache,
                           boolean canProvisionHosts,
                           int spareCount) {
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
+        // Flag is read once here as it shouldn't not change at runtime
+        this.useConfigServerLock = Flags.USE_CONFIG_SERVER_LOCK.bindTo(flagSource).value();
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, useConfigServerLock);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
@@ -160,13 +169,33 @@ public class NodeRepository extends AbstractComponent {
         this.applications = new Applications(db);
         this.canProvisionHosts = canProvisionHosts;
         this.spareCount = spareCount;
+        rewriteNodes();
+    }
 
-        // read and write all nodes to make sure they are stored in the latest version of the serialized format
-        for (State state : State.values())
-            // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
-            //                node state changes. Example: A redeployment on another config server which moves a node
-            //                to another state while this is constructed.
-            db.writeTo(state, db.readNodes(state), Agent.system, Optional.empty());
+    /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
+    private void rewriteNodes() {
+        Instant start = clock.instant();
+        int nodesWritten = 0;
+        if (useConfigServerLock) {
+            for (var state : State.values()) {
+                for (var node : db.readNodes(state)) {
+                    try (var lock = lock(node)) {
+                        var currentNode = db.readNode(node.hostname());
+                        if (currentNode.isEmpty()) continue; // Node disappeared while running this loop
+                        db.writeTo(currentNode.get().state(), currentNode.get(), Agent.system, Optional.empty());
+                        nodesWritten++;
+                    }
+                }
+            }
+        } else {
+            for (State state : State.values()) {
+                List<Node> nodes = db.readNodes(state);
+                db.writeTo(state, nodes, Agent.system, Optional.empty());
+                nodesWritten += nodes.size();
+            }
+        }
+        Instant end = clock.instant();
+        log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
 
     /** Returns the curator database client used by this */
@@ -829,10 +858,14 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application) { return db.legacyLock(application); }
+    public Mutex lock(ApplicationId application) {
+        return useConfigServerLock ? db.lock(application) : db.legacyLock(application);
+    }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) { return db.legacyLock(application, timeout); }
+    public Mutex lock(ApplicationId application, Duration timeout) {
+        return useConfigServerLock ? db.lock(application, timeout) : db.legacyLock(application, timeout);
+    }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
