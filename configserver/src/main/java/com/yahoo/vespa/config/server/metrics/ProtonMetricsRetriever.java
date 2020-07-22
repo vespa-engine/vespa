@@ -4,8 +4,10 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.http.v2.ProtonMetricsResponse;
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -24,32 +26,10 @@ public class ProtonMetricsRetriever {
         this.metricsRetriever = metricsRetriever;
     }
 
-    public JsonResponse getMetrics(Application application) {
+    public ProtonMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
-        var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        JSONObject jsonMetrics;
-        try {
-            jsonMetrics = buildJSONObject(clusterMetrics);
-        } catch (JSONException e) {
-            jsonMetrics = new JSONObject();
-        }
-        return new JsonResponse(200, jsonMetrics.toString());
-    }
-
-    public JSONObject buildJSONObject(Map<ClusterInfo, JSONObject> clusterMetrics) throws JSONException {
-        JSONObject response = new JSONObject();
-        response.put("name", "proton.metrics.aggregated");
-        JSONArray metrics = new JSONArray();
-
-        for (Map.Entry<ClusterInfo, JSONObject> entry : clusterMetrics.entrySet()) {
-            JSONObject jsonEntry = new JSONObject();
-            jsonEntry.put("cluster.id", entry.getKey().getClusterId());
-            jsonEntry.put("cluster.type", entry.getKey().getClusterType());
-            jsonEntry.put("metrics", entry.getValue());
-            metrics.put(jsonEntry);
-        }
-        response.put("metrics", metrics);
-        return response;
+        var clusterMetrics = metricsRetriever.requestMetrics(hosts);
+        return new ProtonMetricsResponse(200, application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {

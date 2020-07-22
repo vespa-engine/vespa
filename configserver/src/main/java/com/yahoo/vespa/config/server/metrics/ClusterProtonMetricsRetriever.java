@@ -6,10 +6,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,23 +37,21 @@ public class ClusterProtonMetricsRetriever {
                                                             .build();
 
     private static final List<String> DESIRED_METRICS = List.of(
-            "content.proton.documentdb.matching.docs_matched.rate",
             "content.proton.documentdb.documents.active.last",
             "content.proton.documentdb.documents.ready.last",
             "content.proton.documentdb.documents.total.last",
             "content.proton.documentdb.disk_usage.last",
             "content.proton.resource_usage.disk.average",
-            "content.proton.resource_usage.memory.average",
-            "content.proton.resource_usage.feeding_blocked.last"
+            "content.proton.resource_usage.memory.average"
     );
 
-    public Map<ClusterInfo, JSONObject> requestMetricsGroupedByCluster(Collection<URI> hosts) {
-        Map<ClusterInfo, JSONObject> clusterMetricsMap = new ConcurrentHashMap<>();
+    public List<ProtonMetricsAggregator> requestMetrics(Collection<URI> hosts) {
+        List<ProtonMetricsAggregator> protonMetrics = new ArrayList<>();
 
         long startTime = System.currentTimeMillis();
         Runnable retrieveMetricsJob = () ->
                 hosts.parallelStream().forEach(host ->
-                        populateMetricsMapByHost(host, clusterMetricsMap)
+                        addMetricsFromHost(host, protonMetrics)
                 );
 
         ForkJoinPool threadPool = new ForkJoinPool(10);
@@ -70,10 +68,10 @@ public class ClusterProtonMetricsRetriever {
                 String.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );
 
-        return clusterMetricsMap;
+        return protonMetrics;
     }
 
-    private static void populateMetricsMapByHost(URI hostURI, Map<ClusterInfo, JSONObject> clusterMetricsMap) {
+    private static void addMetricsFromHost(URI hostURI, List<ProtonMetricsAggregator> protonMetrics) {
         Slime hostResponseBody;
         try {
             hostResponseBody = doMetricsRequest(hostURI, httpClient);
@@ -88,18 +86,14 @@ public class ClusterProtonMetricsRetriever {
         }
 
 
-        Inspector services = hostResponseBody.get().field("services");
-        JSONObject metrics = new JSONObject();
-        for (String namedMetrics : DESIRED_METRICS) {
-            try {
-                metrics.put(namedMetrics, services.field(namedMetrics).asDouble());
-            } catch (JSONException ignored) {
-            }
-        }
+        Inspector metric = hostResponseBody.get().field("services").field(3);
+        ProtonMetricsAggregator aggregator = new ProtonMetricsAggregator();
+        addMetricsToAggregator(metric, aggregator);
+        protonMetrics.add(aggregator);
+    }
 
-        Inspector dimensions = services.field("metrics").field("values").field("dimensions");
-        clusterMetricsMap.put( getClusterInfoFromDimensions(dimensions), metrics);
-
-
+    private static void addMetricsToAggregator(Inspector metric, ProtonMetricsAggregator aggregator) {
+        Inspector values = metric.field("values");
+        aggregator.addAll(values);
     }
 }

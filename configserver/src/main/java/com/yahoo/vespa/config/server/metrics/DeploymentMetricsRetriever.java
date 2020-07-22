@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.DeploymentMetricsResponse;
 
 import java.net.URI;
 import java.util.Collection;
@@ -29,10 +29,10 @@ public class DeploymentMetricsRetriever {
         this.metricsRetriever = metricsRetriever;
     }
 
-    public MetricsResponse getMetrics(Application application) {
+    public DeploymentMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new MetricsResponse(200, application.getId(), clusterMetrics);
+        return new DeploymentMetricsResponse(200, application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {

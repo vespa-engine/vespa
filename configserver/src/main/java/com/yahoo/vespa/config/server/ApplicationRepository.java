@@ -45,7 +45,7 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
@@ -758,7 +758,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Deployment Metrics V1 ------------------------------------------------------------------------
 
-    public MetricsResponse getDeploymentMetrics(ApplicationId applicationId) {
+    public DeploymentMetricsResponse getDeploymentMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         DeploymentMetricsRetriever deploymentMetricsRetriever = new DeploymentMetricsRetriever();
         return deploymentMetricsRetriever.getMetrics(application);

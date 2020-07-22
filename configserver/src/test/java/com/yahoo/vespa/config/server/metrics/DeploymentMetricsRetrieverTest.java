@@ -62,14 +62,14 @@ public class DeploymentMetricsRetrieverTest {
         Collection<URI> hosts = new ArrayList<>();
 
         @Override
-        public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        public Map<ClusterInfo, DeploymentMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
             this.hosts = hosts;
 
             return Map.of(
                     new ClusterInfo("content_cluster_id", "content"),
-                    new MetricsAggregator().addDocumentCount(1000),
+                    new DeploymentMetricsAggregator().addDocumentCount(1000),
                     new ClusterInfo("container_cluster_id", "container"),
-                    new MetricsAggregator().addContainerLatency(123, 5)
+                    new DeploymentMetricsAggregator().addContainerLatency(123, 5)
             );
         }
     }
