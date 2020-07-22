@@ -69,7 +69,7 @@ public class RoutingPolicy {
         return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
     }
 
-    /** Returns the endpoint of this */
+    /** Returns the zone endpoint of this */
     public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
@@ -77,9 +77,9 @@ public class RoutingPolicy {
         return endpoint(routingMethod).target(id.cluster(), id.zone()).in(system);
     }
 
-    /** Returns the weighted endpoint of this */
-    public Endpoint weightedEndpointIn(SystemName system, RoutingMethod routingMethod) {
-        return endpoint(routingMethod).weighted(id.cluster(), id.zone()).in(system);
+    /** Returns the region endpoint of this */
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
+        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
     }
 
     @Override

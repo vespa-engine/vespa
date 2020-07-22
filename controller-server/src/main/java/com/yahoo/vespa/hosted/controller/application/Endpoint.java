@@ -205,7 +205,7 @@ public class Endpoint {
         if (scope == Scope.global) return "global";
         var zone = zones.get(0);
         var region = zone.region().value();
-        if (scope == Scope.weighted) region += "-w";
+        if (scope == Scope.region) region += "-w";
         if (!legacy && zone.environment().isProduction()) return region; // Skip prod environment for non-legacy endpoints
         return region + "." + zone.environment().value();
     }
@@ -276,14 +276,14 @@ public class Endpoint {
     /** An endpoint's scope */
     public enum Scope {
 
-        /** Endpoint points to all zones */
+        /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
+
+        /** Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones */
+        region,
 
         /** Endpoint points to a single zone */
         zone,
-
-        /** Endpoint points to a single region */
-        weighted,
 
     }
 
@@ -391,11 +391,11 @@ public class Endpoint {
             return target(ClusterSpec.Id.from("*"), zone);
         }
 
-        /** Sets the weighted target for this */
-        public EndpointBuilder weighted(ClusterSpec.Id cluster, ZoneId zone) {
+        /** Sets the region target for this, deduced from given zone */
+        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
             checkScope();
             this.cluster = cluster;
-            this.scope = Scope.weighted;
+            this.scope = Scope.region;
             this.zones = List.of(effectiveZone(zone));
             return this;
         }

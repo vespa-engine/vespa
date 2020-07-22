@@ -233,26 +233,26 @@ public class EndpointTest {
         Map<String, Endpoint> tests = Map.of(
                 "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .weighted(cluster, ZoneId.from("prod", "us-north-1a"))
+                        .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .weighted(cluster, ZoneId.from("prod", "us-north-2"))
+                        .targetRegion(cluster, ZoneId.from("prod", "us-north-2"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://a1.t1.us-north-2-w.test.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .weighted(cluster, ZoneId.from("test", "us-north-2"))
+                        .targetRegion(cluster, ZoneId.from("test", "us-north-2"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
         Endpoint endpoint = Endpoint.of(app1)
-                                    .weighted(cluster, ZoneId.from("prod", "us-north-1a"))
+                                    .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
                                     .routingMethod(RoutingMethod.exclusive)
                                     .on(Port.tls())
                                     .in(SystemName.main);

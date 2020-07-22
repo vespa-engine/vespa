@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Collection;
@@ -31,6 +32,11 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
     /** Returns the subset of endpoints named according to given ID */
     public EndpointList named(EndpointId id) {
         return matching(endpoint -> endpoint.name().equals(id.id()));
+    }
+
+    /** Returns the subset of endpoints pointing to given cluster */
+    public EndpointList cluster(ClusterSpec.Id cluster) {
+        return matching(endpoint -> endpoint.cluster().equals(cluster));
     }
 
     /** Returns the subset of endpoints which target all of the given zones */

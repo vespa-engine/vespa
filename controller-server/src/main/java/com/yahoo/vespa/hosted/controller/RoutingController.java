@@ -89,7 +89,7 @@ public class RoutingController {
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
-                endpoints.add(policy.weightedEndpointIn(controller.system(), routingMethod));
+                endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
             }
         }
         return EndpointList.copyOf(endpoints);

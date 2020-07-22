@@ -954,8 +954,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
               .ifPresent(version -> toSlime(version, object.setObject("revision")));
     }
 
-    private void toSlime(Endpoint endpoint, String cluster, Cursor object) {
-        object.setString("cluster", cluster);
+    private void toSlime(Endpoint endpoint, Cursor object) {
+        object.setString("cluster", endpoint.cluster().value());
         object.setBool("tls", endpoint.tls());
         object.setString("url", endpoint.url().toString());
         object.setString("scope", endpointScopeString(endpoint.scope()));
@@ -975,14 +975,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (var endpoint : controller.routing().endpointsOf(deploymentId)
                                       .scope(Endpoint.Scope.zone)
                                       .not().legacy()) {
-            toSlime(endpoint, endpoint.name(), endpointArray.addObject());
+            toSlime(endpoint, endpointArray.addObject());
         }
         // Add global endpoints
         var globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
                                         .not().legacy()
                                         .targets(deploymentId.zoneId());
         for (var endpoint : globalEndpoints) {
-            toSlime(endpoint, endpoint.cluster().value(), endpointArray.addObject());
+            toSlime(endpoint, endpointArray.addObject());
         }
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
@@ -1954,6 +1954,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
+            case region: return "region";
             case global: return "global";
             case zone: return "zone";
         }
