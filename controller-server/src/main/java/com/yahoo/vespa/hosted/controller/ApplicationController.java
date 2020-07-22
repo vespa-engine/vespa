@@ -46,6 +46,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -680,10 +681,10 @@ public class ApplicationController {
     /**
      * Tells config server to schedule a restart of all nodes in this deployment
      *
-     * @param hostname If non-empty, restart will only be scheduled for this host
+     * @param restartFilter Variables to filter which nodes to restart.
      */
-    public void restart(DeploymentId deploymentId, Optional<Hostname> hostname) {
-        configServer.restart(deploymentId, hostname);
+    public void restart(DeploymentId deploymentId, RestartFilter restartFilter) {
+        configServer.restart(deploymentId, restartFilter);
     }
 
     /**
