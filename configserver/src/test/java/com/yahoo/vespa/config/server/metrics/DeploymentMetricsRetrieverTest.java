@@ -27,16 +27,16 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class DeploymentMetricsV1RetrieverTest {
+public class DeploymentMetricsRetrieverTest {
 
     @Test
     public void getMetrics()  {
         MockModel mockModel = new MockModel(mockHosts());
-        MockDeploymentMetricsV1Retriever mockMetricsRetriever = new MockDeploymentMetricsV1Retriever();
+        MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
         Application application = new Application(mockModel, null, 0, false,
         null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
-        DeploymentMetricsV1Retriever clusterMetricsRetriever = new DeploymentMetricsV1Retriever(mockMetricsRetriever);
+        DeploymentMetricsRetriever clusterMetricsRetriever = new DeploymentMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
 
         assertEquals(2, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
@@ -57,7 +57,7 @@ public class DeploymentMetricsV1RetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    class MockDeploymentMetricsV1Retriever extends ClusterDeploymentMetricsV1Retriever {
+    class MockDeploymentMetricsRetriever extends ClusterDeploymentMetricsRetriever {
 
         Collection<URI> hosts = new ArrayList<>();
 

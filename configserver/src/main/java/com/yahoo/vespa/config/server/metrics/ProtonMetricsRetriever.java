@@ -13,14 +13,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProtonMetricsV1Retriever {
+public class ProtonMetricsRetriever {
 
-    private final ClusterProtonMetricsV1Retriever metricsRetriever;
-    public ProtonMetricsV1Retriever() {
-        this( new ClusterProtonMetricsV1Retriever());
+    private final ClusterProtonMetricsRetriever metricsRetriever;
+    public ProtonMetricsRetriever() {
+        this( new ClusterProtonMetricsRetriever());
     }
 
-    public ProtonMetricsV1Retriever(ClusterProtonMetricsV1Retriever metricsRetriever) {
+    public ProtonMetricsRetriever(ClusterProtonMetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
@@ -56,7 +56,7 @@ public class ProtonMetricsV1Retriever {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
-                .map(ProtonMetricsV1Retriever::createMetricsProxyURI)
+                .map(ProtonMetricsRetriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
     }
 

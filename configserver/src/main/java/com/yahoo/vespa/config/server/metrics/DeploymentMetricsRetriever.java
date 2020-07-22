@@ -17,15 +17,15 @@ import java.util.stream.Collectors;
  *
  * @author olaa
  */
-public class DeploymentMetricsV1Retriever {
+public class DeploymentMetricsRetriever {
 
-    private final ClusterDeploymentMetricsV1Retriever metricsRetriever;
+    private final ClusterDeploymentMetricsRetriever metricsRetriever;
 
-    public DeploymentMetricsV1Retriever() {
-        this(new ClusterDeploymentMetricsV1Retriever());
+    public DeploymentMetricsRetriever() {
+        this(new ClusterDeploymentMetricsRetriever());
     }
 
-    public DeploymentMetricsV1Retriever(ClusterDeploymentMetricsV1Retriever metricsRetriever) {
+    public DeploymentMetricsRetriever(ClusterDeploymentMetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
@@ -39,7 +39,7 @@ public class DeploymentMetricsV1Retriever {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
-                .map(DeploymentMetricsV1Retriever::createMetricsProxyURI)
+                .map(DeploymentMetricsRetriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
 
     }

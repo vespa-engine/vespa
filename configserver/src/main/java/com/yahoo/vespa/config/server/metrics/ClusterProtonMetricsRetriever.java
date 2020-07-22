@@ -14,12 +14,12 @@ import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsV1Retriever.doMetricsRequest;
-import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsV1Retriever.getClusterInfoFromDimensions;
+import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever.doMetricsRequest;
+import static com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever.getClusterInfoFromDimensions;
 
-public class ClusterProtonMetricsV1Retriever {
+public class ClusterProtonMetricsRetriever {
 
-    private static final Logger log = Logger.getLogger(ClusterProtonMetricsV1Retriever.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterProtonMetricsRetriever.class.getName());
 
     private static final List<String> DESIRED_METRICS = List.of(
             "content.proton.documentdb.matching.docs_matched.rate",

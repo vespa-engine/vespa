@@ -139,11 +139,11 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isProtonMetricsV1Request(request)) {
-            return applicationRepository.getProtonMetricsV1(applicationId);
+            return applicationRepository.getProtonMetrics(applicationId);
         }
 
         if (isDeploymentMetricsV1Request(request)) {
-            return applicationRepository.getDeploymentMetricsV1(applicationId);
+            return applicationRepository.getDeploymentMetrics(applicationId);
         }
 
         if (isIsSuspendedRequest(request)) {

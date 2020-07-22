@@ -33,9 +33,9 @@ import java.util.logging.Logger;
  * @author olaa
  * @author ogronnesby
  */
-public class ClusterDeploymentMetricsV1Retriever {
+public class ClusterDeploymentMetricsRetriever {
 
-    private static final Logger log = Logger.getLogger(ClusterDeploymentMetricsV1Retriever.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterDeploymentMetricsRetriever.class.getName());
 
     private static final String VESPA_CONTAINER = "vespa.container";
     private static final String VESPA_QRSERVER = "vespa.qrserver";

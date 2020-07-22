@@ -47,8 +47,8 @@ import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.DeploymentMetricsV1Retriever;
-import com.yahoo.vespa.config.server.metrics.ProtonMetricsV1Retriever;
+import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
+import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -749,19 +749,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
     // ---------------- Proton Metrics V1 ------------------------------------------------------------------------
 
-    public JsonResponse getProtonMetricsV1(ApplicationId applicationId) {
+    public JsonResponse getProtonMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ProtonMetricsV1Retriever protonMetricsV1Retriever = new ProtonMetricsV1Retriever();
-        return protonMetricsV1Retriever.getMetrics(application);
+        ProtonMetricsRetriever protonMetricsRetriever = new ProtonMetricsRetriever();
+        return protonMetricsRetriever.getMetrics(application);
     }
 
 
     // ---------------- Deployment Metrics V1 ------------------------------------------------------------------------
 
-    public MetricsResponse getDeploymentMetricsV1(ApplicationId applicationId) {
+    public MetricsResponse getDeploymentMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        DeploymentMetricsV1Retriever deploymentMetricsV1Retriever = new DeploymentMetricsV1Retriever();
-        return deploymentMetricsV1Retriever.getMetrics(application);
+        DeploymentMetricsRetriever deploymentMetricsRetriever = new DeploymentMetricsRetriever();
+        return deploymentMetricsRetriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
