@@ -234,14 +234,6 @@ public class ApplicationRepositoryTest {
         assertEquals(200, response.getStatus());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void refuseToGetLogsFromHostnameNotInApplication() {
-        applicationRepository = createApplicationRepository();
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
-        assertEquals(200, response.getStatus());
-    }
-
     @Test
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();

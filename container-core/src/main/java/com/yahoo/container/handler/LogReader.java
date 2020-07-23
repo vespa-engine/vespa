@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,7 +58,7 @@ class LogReader {
         this.logFilePattern = logFilePattern;
     }
 
-    void writeLogs(OutputStream out, Instant from, Instant to) {
+    void writeLogs(OutputStream out, Instant from, Instant to, Optional<String> hostname) {
         double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
         double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
@@ -67,7 +68,7 @@ class LogReader {
                 try {
                     // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading
                     for (Path log : logs)
-                        logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds));
+                        logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds, hostname));
 
                     Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                               Comparator.comparingDouble(LineWithTimestamp::timestamp));
@@ -96,14 +97,16 @@ class LogReader {
         private final BufferedReader reader;
         private final double from;
         private final double to;
+        private final Optional<String> hostname;
         private LineWithTimestamp next;
 
-        private LogLineIterator(Path log, double from, double to) throws IOException {
+        private LogLineIterator(Path log, double from, double to, Optional<String> hostname) throws IOException {
             boolean zipped = log.toString().endsWith(".gz");
             InputStream in = Files.newInputStream(log);
             this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
             this.from = from;
             this.to = to;
+            this.hostname = hostname;
             this.next = readNext();
         }
 
@@ -129,6 +132,9 @@ class LogReader {
                 for (String line; (line = reader.readLine()) != null; ) {
                     String[] parts = line.split("\t");
                     if (parts.length != 7)
+                        continue;
+
+                    if (hostname.map(host -> !host.equals(parts[1])).orElse(false))
                         continue;
 
                     double timestamp = Double.parseDouble(parts[0]);
