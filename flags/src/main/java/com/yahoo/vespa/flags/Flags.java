@@ -71,7 +71,8 @@ public class Flags {
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
-            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
+            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
+            "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 

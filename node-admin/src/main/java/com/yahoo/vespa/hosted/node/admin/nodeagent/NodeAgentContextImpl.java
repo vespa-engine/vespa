@@ -7,6 +7,10 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -18,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,10 +45,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final String vespaUser;
     private final String vespaUserOnHost;
     private final double cpuSpeedup;
+    private final Set<NodeAgentTask> disabledNodeAgentTasks;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 DockerNetworking dockerNetworking, ZoneApi zone,
-                                FileSystem fileSystem,
+                                FileSystem fileSystem, FlagSource flagSource,
                                 Path pathToContainerStorage, Path pathToVespaHome,
                                 String vespaUser, String vespaUserOnHost, double cpuSpeedup) {
         if (cpuSpeedup <= 0)
@@ -55,13 +61,15 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.identity = Objects.requireNonNull(identity);
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking);
         this.zone = Objects.requireNonNull(zone);
-        this.fileSystem = fileSystem;
+        this.fileSystem = Objects.requireNonNull(fileSystem);
         this.pathToNodeRootOnHost = requireValidPath(pathToContainerStorage).resolve(containerName.asString());
         this.pathToVespaHome = requireValidPath(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
         this.vespaUser = vespaUser;
         this.vespaUserOnHost = vespaUserOnHost;
         this.cpuSpeedup = cpuSpeedup;
+        this.disabledNodeAgentTasks = NodeAgentTask.fromString(
+                Flags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource).with(FetchVector.Dimension.HOSTNAME, node.hostname()).value());
     }
 
     @Override
@@ -102,6 +110,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public String vespaUserOnHost() {
         return vespaUserOnHost;
+    }
+
+    @Override
+    public boolean isDisabled(NodeAgentTask task) {
+        return disabledNodeAgentTasks.contains(task);
     }
 
     @Override
@@ -212,6 +225,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private String vespaUser;
         private String vespaUserOnHost;
         private FileSystem fileSystem = FileSystems.getDefault();
+        private FlagSource flagSource;
         private double cpuSpeedUp = 1;
 
         public Builder(NodeSpec node) {
@@ -268,6 +282,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
         public Builder cpuSpeedUp(double cpuSpeedUp) {
             this.cpuSpeedUp = cpuSpeedUp;
             return this;
@@ -301,6 +320,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         }
                     }),
                     fileSystem,
+                    Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
                     fileSystem.getPath("/home/docker/container-storage"),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(vespaUser).orElse("vespa"),

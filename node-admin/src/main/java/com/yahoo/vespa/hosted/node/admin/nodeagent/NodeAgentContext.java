@@ -44,6 +44,10 @@ public interface NodeAgentContext extends TaskContext {
 
     String vespaUserOnHost();
 
+    default boolean isDisabled(NodeAgentTask task) {
+        return false;
+    };
+
     /**
      * The vcpu value in NodeSpec is multiplied by the speedup factor per cpu core compared to a historical baseline
      * for a particular cpu generation of the host (see flavors.def cpuSpeedup).
@@ -52,7 +56,7 @@ public interface NodeAgentContext extends TaskContext {
      */
     double unscaledVcpu();
 
-    /** The file system used by the NodeAgentContext.  All paths must have the same provider. */
+    /** The file system used by the NodeAgentContext. All paths must have the same provider. */
     FileSystem fileSystem();
 
     /**
