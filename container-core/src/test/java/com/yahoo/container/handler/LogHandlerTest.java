@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertEquals;
@@ -47,7 +48,7 @@ public class LogHandlerTest {
         }
 
         @Override
-        protected void writeLogs(OutputStream out, Instant from, Instant to)  {
+        protected void writeLogs(OutputStream out, Instant from, Instant to, Optional<String> hostname)  {
             try {
                 if (to.isAfter(Instant.ofEpochMilli(1000))) {
                     out.write("newer log".getBytes());

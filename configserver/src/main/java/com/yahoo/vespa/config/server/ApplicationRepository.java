@@ -874,12 +874,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // We make no validation that the hostname is actually allocated to the given application since
         // most applications under hosted-vespa are not known to the model and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
-        if (hostname.isPresent()) {
-            if (HOSTED_VESPA_TENANT.equals(applicationId.tenant()))
-                return "http://" + hostname.get() + ":8080/logs";
-            else
-                throw new IllegalArgumentException("Using hostname parameter when getting logs is not supported for application "
-                                                   + applicationId);
+        if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
+            return "http://" + hostname.get() + ":8080/logs";
         }
 
         Application application = getApplication(applicationId);
