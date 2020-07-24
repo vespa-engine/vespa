@@ -7,10 +7,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.BindingPattern;
-import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Filter;
@@ -24,11 +20,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -133,6 +131,26 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void access_control_excluded_chain_does_not_contain_any_bindings_from_access_control_chain() {
+        Http http = createModelAndGetHttp(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <filtering>",
+                "      <access-control/>",
+                "    </filtering>",
+                "  </http>",
+                "</container>");
+
+        Set<String> bindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
+        Set<String> excludedBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
+
+        for (String binding : bindings) {
+            assertThat(excludedBindings, not(hasItem(binding)));
+        }
+    }
+
+
+    @Test
     public void access_control_excluded_filter_chain_has_user_provided_excluded_bindings() {
         Http http = createModelAndGetHttp(
                 "<container version='1.0'>",
@@ -166,7 +184,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "</container>");
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
-        assertThat(actualBindings, containsInAnyOrder("http://*:4443/", "http://*:4443/*"));
+        assertThat(actualBindings, containsInAnyOrder("http://*:4443/*"));
     }
 
     @Test
