@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 
+import java.util.Objects;
+
 /**
  * @author bjorncs
  */
@@ -29,4 +31,17 @@ public class FilterBinding {
         return binding;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FilterBinding that = (FilterBinding) o;
+        return Objects.equals(filterId, that.filterId) &&
+                Objects.equals(binding, that.binding);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filterId, binding);
+    }
 }
