@@ -165,33 +165,33 @@ public class LoadBalancerProvisioner {
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
 
         var force = loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
-        var instance = provisionInstance(application, clusterId, nodes, force);
+        var instance = provisionInstance(id, nodes, force);
         LoadBalancer newLoadBalancer;
         if (loadBalancer.isEmpty()) {
             newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
         } else {
             var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
             newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
+            if (loadBalancer.get().state() != newLoadBalancer.state()) {
+                log.log(logLevel(), "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
+            }
         }
         db.writeLoadBalancer(newLoadBalancer);
     }
 
-    private LoadBalancerInstance provisionInstance(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes,
-                                                   boolean force) {
+    private LoadBalancerInstance provisionInstance(LoadBalancerId id, List<Node> nodes, boolean force) {
         var reals = new LinkedHashSet<Real>();
         for (var node : nodes) {
             for (var ip : reachableIpAddresses(node)) {
                 reals.add(new Real(HostName.from(node.hostname()), ip));
             }
         }
-        log.log(Level.FINE, "Creating load balancer for " + cluster + " in " + application.toShortString() +
-                                ", targeting: " + reals);
+        log.log(logLevel(), "Creating " + id + ", targeting: " + reals);
         try {
-            return service.create(new LoadBalancerSpec(application, cluster, reals), force);
+            return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals), force);
         } catch (Exception e) {
-            throw new LoadBalancerServiceException("Failed to (re)configure load balancer for " + cluster + " in " +
-                                                   application + ", targeting: " + reals + ". The operation will be " +
-                                                   "retried on next deployment", e);
+            throw new LoadBalancerServiceException("Failed to (re)configure " + id + ", targeting: " +
+                                                   reals + ". The operation will be retried on next deployment", e);
         }
     }
 
@@ -231,6 +231,10 @@ public class LoadBalancerProvisioner {
 
     private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
+    }
+
+    private Level logLevel() {
+        return nodeRepository.zone().system().isCd() ? Level.INFO : Level.FINE;
     }
 
 }
