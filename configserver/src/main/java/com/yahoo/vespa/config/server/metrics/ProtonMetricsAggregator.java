@@ -14,10 +14,10 @@ public class ProtonMetricsAggregator {
     private Double documentActiveCount = 0.0;
     private Double documentReadyCount = 0.0;
     private Double documentTotalCount = 0.0;
-    private Double documentDiskUsage = 0.0;
+    private AverageMetric documentDiskUsage = new AverageMetric();
 
-    private Double resourceDiskUsageAverage = 0.0;
-    private Double resourceMemoryUsageAverage = 0.0;
+    private AverageMetric resourceDiskUsageAverage = new AverageMetric();
+    private AverageMetric resourceMemoryUsageAverage = new AverageMetric();
 
     public synchronized ProtonMetricsAggregator addAll(Inspector metric) {
         addDocumentActiveCount(metric.field(DOCUMENT_ACTIVE).asDouble());
@@ -33,9 +33,27 @@ public class ProtonMetricsAggregator {
         this.documentActiveCount += aggregator.aggregateDocumentActiveCount();
         this.documentReadyCount += aggregator.aggregateDocumentReadyCount();
         this.documentTotalCount += aggregator.aggregateDocumentTotalCount();
-        this.documentDiskUsage += aggregator.aggregateDocumentDiskUsage();
-        this.resourceDiskUsageAverage += aggregator.aggregateResourceDiskUsageAverage();
-        this.resourceMemoryUsageAverage += aggregator.aggregateResourceMemoryUsageAverage();
+        addDocumentDiskUsage(aggregator);
+        addResourceDiskUsageAverage(aggregator);
+        addResourceMemoryUsageAverage(aggregator);
+        return this;
+    }
+
+    public ProtonMetricsAggregator addDocumentDiskUsage(ProtonMetricsAggregator aggregator) {
+        this.documentDiskUsage.averageCount += aggregator.documentDiskUsage.averageCount;
+        this.documentDiskUsage.averageSum += aggregator.documentDiskUsage.averageSum;
+        return this;
+    }
+
+    public ProtonMetricsAggregator addResourceDiskUsageAverage(ProtonMetricsAggregator aggregator) {
+        this.resourceDiskUsageAverage.averageCount += aggregator.resourceDiskUsageAverage.averageCount;
+        this.resourceDiskUsageAverage.averageSum += aggregator.resourceDiskUsageAverage.averageSum;
+        return this;
+    }
+
+    public ProtonMetricsAggregator addResourceMemoryUsageAverage(ProtonMetricsAggregator aggregator) {
+        this.resourceMemoryUsageAverage.averageCount += aggregator.resourceMemoryUsageAverage.averageCount;
+        this.resourceMemoryUsageAverage.averageSum += aggregator.resourceMemoryUsageAverage.averageSum;
         return this;
     }
 
@@ -55,17 +73,20 @@ public class ProtonMetricsAggregator {
     }
 
     public synchronized ProtonMetricsAggregator addDocumentDiskUsage(double documentDiskUsage) {
-        this.documentDiskUsage += documentDiskUsage;
+        this.documentDiskUsage.averageCount++;
+        this.documentDiskUsage.averageSum += documentDiskUsage;
         return this;
     }
 
     public synchronized ProtonMetricsAggregator addResourceDiskUsageAverage(double resourceDiskUsageAverage) {
-        this.resourceDiskUsageAverage += resourceDiskUsageAverage;
+        this.resourceDiskUsageAverage.averageCount++;
+        this.resourceDiskUsageAverage.averageSum += resourceDiskUsageAverage;
         return this;
     }
 
     public synchronized ProtonMetricsAggregator addResourceMemoryUsageAverage(double resourceMemoryUsageAverage) {
-        this.resourceMemoryUsageAverage += resourceMemoryUsageAverage;
+        this.resourceMemoryUsageAverage.averageCount++;
+        this.resourceMemoryUsageAverage.averageSum += resourceMemoryUsageAverage;
         return this;
     }
 
@@ -82,15 +103,20 @@ public class ProtonMetricsAggregator {
     }
 
     public Double aggregateDocumentDiskUsage() {
-        return this.documentDiskUsage;
+        return this.documentDiskUsage.averageSum / this.documentDiskUsage.averageCount;
     }
 
     public Double aggregateResourceDiskUsageAverage() {
-        return this.resourceDiskUsageAverage;
+        return this.resourceDiskUsageAverage.averageSum / this.resourceDiskUsageAverage.averageCount;
     }
 
     public Double aggregateResourceMemoryUsageAverage() {
-        return this.resourceMemoryUsageAverage;
+        return this.resourceMemoryUsageAverage.averageSum / this.resourceMemoryUsageAverage.averageCount;
+    }
+
+    private static class AverageMetric {
+        double averageSum = 0.0;
+        double averageCount = 0.0;
     }
 
 }
