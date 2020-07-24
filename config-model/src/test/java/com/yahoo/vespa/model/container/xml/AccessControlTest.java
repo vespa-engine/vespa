@@ -16,9 +16,7 @@ import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import org.junit.Test;
-import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -44,15 +42,14 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void access_control_filter_chains_are_set_up() {
-        Element clusterElem = DomBuilderTest.parse(
+        Http http = createModelAndGetHttp(
+                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='foo' />",
+                "      <access-control domain='my-tenant-domain' />",
                 "    </filtering>",
-                "  </http>");
-
-        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
-        root.freezeModelTopology();
+                "  </http>",
+                "</container>");
 
         FilterChains filterChains = http.getFilterChains();
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
@@ -67,31 +64,30 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void properties_are_set_from_xml() {
-        Element clusterElem = DomBuilderTest.parse(
+        Http http = createModelAndGetHttp(
+                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='my-domain'/>",
+                "      <access-control domain='my-tenant-domain'/>",
                 "    </filtering>",
-                "  </http>");
+                "  </http>",
+                "</container>");
 
-        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
-        root.freezeModelTopology();
         AccessControl accessControl = http.getAccessControl().get();
 
-        assertEquals("Wrong domain.", "my-domain", accessControl.domain);
+        assertEquals("Wrong domain.", "my-tenant-domain", accessControl.domain);
     }
 
     @Test
     public void read_is_disabled_and_write_is_enabled_by_default() {
-        Element clusterElem = DomBuilderTest.parse(
+        Http http = createModelAndGetHttp(
+                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='foo' />",
+                "      <access-control domain='my-tenant-domain'/>",
                 "    </filtering>",
-                "  </http>");
-
-        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
-        root.freezeModelTopology();
+                "  </http>",
+                "</container>");
 
         assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
         assertTrue("Wrong default value for write.", http.getAccessControl().get().writeEnabled);
@@ -99,15 +95,14 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void read_and_write_can_be_overridden() {
-        Element clusterElem = DomBuilderTest.parse(
+        Http http = createModelAndGetHttp(
+                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='foo' read='true' write='false'/>",
+                "      <access-control domain='my-tenant-domain' read='true' write='false'/>",
                 "    </filtering>",
-                "  </http>");
-
-        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
-        root.freezeModelTopology();
+                "  </http>",
+                "</container>");
 
         assertTrue("Given read value not honoured.", http.getAccessControl().get().readEnabled);
         assertFalse("Given write value not honoured.", http.getAccessControl().get().writeEnabled);
@@ -176,29 +171,18 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void access_control_is_implicitly_added_for_hosted_apps() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "</container>" );
-        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
-        DeployState state = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setAthenzDomain(tenantDomain)
-                        .setHostedVespa(true))
-                .build();
-        createModel(root, state, null, clusterElem);
-        Optional<AccessControl> maybeAccessControl =
-                ((ApplicationContainer) root.getProducer("container/container.0")).getHttp().getAccessControl();
+        Http http = createModelAndGetHttp("<container version='1.0'/>");
+        Optional<AccessControl> maybeAccessControl = http.getAccessControl();
         assertThat(maybeAccessControl.isPresent(), is(true));
         AccessControl accessControl = maybeAccessControl.get();
         assertThat(accessControl.writeEnabled, is(false));
         assertThat(accessControl.readEnabled, is(false));
-        assertThat(accessControl.domain, equalTo(tenantDomain.value()));
+        assertThat(accessControl.domain, equalTo("my-tenant-domain"));
     }
 
     @Test
     public void access_control_is_implicitly_added_for_hosted_apps_with_existing_http_element() {
-        Element clusterElem = DomBuilderTest.parse(
+        Http http = createModelAndGetHttp(
                 "<container version='1.0'>",
                 "  <http>",
                 "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
@@ -209,16 +193,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "      </request-chain>",
                 "    </filtering>",
                 "  </http>",
-                nodesXml,
                 "</container>" );
-        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
-        DeployState state = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setAthenzDomain(tenantDomain)
-                        .setHostedVespa(true))
-                .build();
-        createModel(root, state, null, clusterElem);
-        Http http = ((ApplicationContainer) root.getProducer("container/container.0")).getHttp();
         assertThat(http.getAccessControl().isPresent(), is(true));
         assertThat(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID), is(true));
         assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
