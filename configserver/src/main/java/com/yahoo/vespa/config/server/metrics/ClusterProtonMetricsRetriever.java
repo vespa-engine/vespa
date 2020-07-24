@@ -9,7 +9,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -17,11 +16,8 @@ import java.util.logging.Logger;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import static com.yahoo.vespa.config.server.metrics.MetricsSlime.doMetricsRequest;
-import static com.yahoo.vespa.config.server.metrics.MetricsSlime.getClusterInfoFromDimensions;
 
 public class ClusterProtonMetricsRetriever {
 
@@ -36,14 +32,6 @@ public class ClusterProtonMetricsRetriever {
                                                                             .build())
                                                             .build();
 
-    private static final List<String> DESIRED_METRICS = List.of(
-            "content.proton.documentdb.documents.active.last",
-            "content.proton.documentdb.documents.ready.last",
-            "content.proton.documentdb.documents.total.last",
-            "content.proton.documentdb.disk_usage.last",
-            "content.proton.resource_usage.disk.average",
-            "content.proton.resource_usage.memory.average"
-    );
 
     public List<ProtonMetricsAggregator> requestMetrics(Collection<URI> hosts) {
         List<ProtonMetricsAggregator> protonMetrics = new ArrayList<>();

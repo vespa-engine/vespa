@@ -1,18 +1,15 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import com.yahoo.slime.Inspector;
-import java.util.List;
 
 public class ProtonMetricsAggregator {
 
-    private static final List<String> DESIRED_METRICS = List.of(
-            "content.proton.documentdb.documents.active.last",
-            "content.proton.documentdb.documents.ready.last",
-            "content.proton.documentdb.documents.total.last",
-            "content.proton.documentdb.disk_usage.last",
-            "content.proton.resource_usage.disk.average",
-            "content.proton.resource_usage.memory.average"
-    );
+    private static final String DOCUMENT_ACTIVE = "content.proton.documentdb.documents.active.last";
+    private static final String DOCUMENT_READY = "content.proton.documentdb.documents.ready.last";
+    private static final String DOCUMENT_TOTAL = "content.proton.documentdb.documents.total.last";
+    private static final String DOCUMENT_DISK_USAGE = "content.proton.documentdb.disk_usage.last";
+    private static final String RESOURCE_DISK_AVERAGE = "content.proton.resource_usage.disk.average";
+    private static final String RESOURCE_MEMORY_AVERAGE = "content.proton.resource_usage.memory.average";
 
     private Double documentActiveCount = 0.0;
     private Double documentReadyCount = 0.0;
@@ -23,12 +20,12 @@ public class ProtonMetricsAggregator {
     private Double resourceMemoryUsageAverage = 0.0;
 
     public synchronized ProtonMetricsAggregator addAll(Inspector metric) {
-        addDocumentActiveCount(metric.field(DESIRED_METRICS.get(0)).asDouble());
-        addDocumentReadyCount(metric.field(DESIRED_METRICS.get(1)).asDouble());
-        addDocumentTotalCount(metric.field(DESIRED_METRICS.get(2)).asDouble());
-        addDocumentDiskUsage(metric.field(DESIRED_METRICS.get(3)).asDouble());
-        addResourceDiskUsageAverage(metric.field(DESIRED_METRICS.get(4)).asDouble());
-        addResourceMemoryUsageAverage(metric.field(DESIRED_METRICS.get(5)).asDouble());
+        addDocumentActiveCount(metric.field(DOCUMENT_ACTIVE).asDouble());
+        addDocumentReadyCount(metric.field(DOCUMENT_READY).asDouble());
+        addDocumentTotalCount(metric.field(DOCUMENT_TOTAL).asDouble());
+        addDocumentDiskUsage(metric.field(DOCUMENT_DISK_USAGE).asDouble());
+        addResourceDiskUsageAverage(metric.field(RESOURCE_DISK_AVERAGE).asDouble());
+        addResourceMemoryUsageAverage(metric.field(RESOURCE_MEMORY_AVERAGE).asDouble());
         return this;
     }
 
