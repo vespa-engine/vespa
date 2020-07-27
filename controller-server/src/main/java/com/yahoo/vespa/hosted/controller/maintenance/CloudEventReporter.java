@@ -13,9 +13,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Issue;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -52,33 +52,40 @@ public class CloudEventReporter extends ControllerMaintainer {
                 log.info(String.format("Retrieved event %s, affecting the following instances: %s",
                         event.instanceEventId,
                         event.affectedInstances));
-                List<String> deprovisionedHosts = deprovisionHosts(awsRegion, event);
-                submitIssue(event, deprovisionedHosts);
+                List<Node> needsManualIntervention = handleInstances(awsRegion, event);
+                if (!needsManualIntervention.isEmpty())
+                    submitIssue(event);
             }
         }
         return true;
     }
 
-    private List<String> deprovisionHosts(String awsRegion, CloudEvent event) {
-        return zonesByCloudNativeRegion.get(awsRegion)
-                .stream()
-                .flatMap(zone ->
-                    nodeRepository.list(zone.getId())
-                            .stream()
-                            .filter(shouldDeprovisionHost(event))
-                            .map(node -> {
-                                if (!node.wantToDeprovision() || !node.wantToRetire())
-                                    log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", node.hostname().value()));
-                                    nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
-                                return node.hostname().value();
-                            })
-                )
-                .collect(Collectors.toList());
+    /**
+     * Handles affected instances in the following way:
+     *  1. Ignore if unknown instance, presumably belongs to different system
+     *  2. Retire and deprovision if tenant host
+     *  3. Submit issue if infrastructure host, as it requires manual intervention
+     */
+    private List<Node> handleInstances(String awsRegion, CloudEvent event) {
+        List<Node> needsManualIntervention = new ArrayList<>();
+        for (var zone : zonesByCloudNativeRegion.get(awsRegion)) {
+            for (var node : nodeRepository.list(zone.getId())) {
+                if (!isAffected(node, event)){
+                    continue;
+                }
+                if (node.type() == NodeType.host) {
+                    log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", node.hostname().value()));
+                    nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
+                }
+                else {
+                    needsManualIntervention.add(node);
+                }
+            }
+        }
+        return needsManualIntervention;
     }
 
-    private void submitIssue(CloudEvent event, List<String> deprovisionedHosts) {
-        if (event.affectedInstances.size() == deprovisionedHosts.size())
-            return;
+    private void submitIssue(CloudEvent event) {
         Issue issue = eventFetcher.createIssue(event);
         if (!issueHandler.issueExists(issue)) {
             issueHandler.file(issue);
@@ -86,11 +93,9 @@ public class CloudEventReporter extends ControllerMaintainer {
         }
     }
 
-    private Predicate<Node> shouldDeprovisionHost(CloudEvent event) {
-        return node ->
-                node.type() == NodeType.host &&
-                event.affectedInstances.stream()
-                        .anyMatch(instance -> node.hostname().value().contains(instance));
+    private boolean isAffected(Node node, CloudEvent event) {
+        return event.affectedInstances.stream()
+                .anyMatch(instance -> node.hostname().value().contains(instance));
     }
 
     private Map<String, List<ZoneApi>> getZonesByCloudNativeRegion() {
