@@ -16,7 +16,7 @@ import java.io.File;
 @SuppressWarnings("WeakerAccess")
 public class FileDistributionFactory {
 
-    private final ConfigserverConfig configserverConfig;
+    protected final ConfigserverConfig configserverConfig;
     private final Supervisor supervisor = new Supervisor(new Transport());
 
     @Inject
