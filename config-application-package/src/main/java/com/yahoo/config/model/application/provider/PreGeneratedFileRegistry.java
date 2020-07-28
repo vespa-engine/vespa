@@ -20,31 +20,28 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     private final String fileSourceHost;
     private final Map<String, String> path2Hash = new LinkedHashMap<>();
 
-    private static String entryDelimiter = "\t";
-    private static Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
+    private static final String entryDelimiter = "\t";
+    private static final Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
 
     private PreGeneratedFileRegistry(Reader readerArg) {
-        BufferedReader reader = new BufferedReader(readerArg);
-        try {
+        try (BufferedReader reader = new BufferedReader(readerArg)) {
             fileSourceHost = reader.readLine();
             if (fileSourceHost == null)
-                throw new RuntimeException("Error while reading pre generated file registry");
+                throw new RuntimeException("Error while reading pre-generated file registry");
 
             String line;
             while ((line = reader.readLine()) != null) {
                 addFromLine(line);
             }
-        } catch(IOException e) {
-            throw new RuntimeException("Error while reading pre generated file registry", e);
-        } finally {
-            try {
-                reader.close();
-            } catch(IOException e) {}
+        } catch (IOException e) {
+            throw new RuntimeException("Error while reading pre-generated file registry", e);
         }
     }
 
     private void addFromLine(String line) {
         String[] parts = entryDelimiterPattern.split(line);
+        if (parts.length < 2)
+            throw new IllegalArgumentException("Cannot split '" + line + "' into two parts");
         addEntry(parts[0], parts[1]);
     }
 
@@ -58,8 +55,7 @@ public class PreGeneratedFileRegistry implements FileRegistry {
 
         builder.append(registry.fileSourceHost()).append('\n');
         for (FileRegistry.Entry entry : entries) {
-            builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).
-                    append('\n');
+            builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).append('\n');
         }
 
         return builder.toString();

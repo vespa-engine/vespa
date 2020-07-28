@@ -93,8 +93,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
         try {
             return PreGeneratedFileRegistry.importRegistry(zkApplication.getDataReader(fileRegistryNode));
         } catch (Exception e) {
-            throw new RuntimeException("Could not determine which files to distribute. " +
-                                       "Please try redeploying the application", e);
+            throw new RuntimeException("Could not determine which files to distribute", e);
         }
     }
 
