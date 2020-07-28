@@ -164,7 +164,8 @@ public class SessionRepository {
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
                                                               getSessionAppDir(sessionId),
-                                                              session.getApplicationPackage(), sessionZooKeeperClient);
+                                                              session.getApplicationPackage(), sessionZooKeeperClient)
+                .getConfigChangeActions();
         session.setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
