@@ -119,7 +119,7 @@ public class LocalSessionTest {
                                        Optional<AllocatedHosts> allocatedHosts) throws Exception {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenant, sessionId, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false,
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(),
                                                        TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
