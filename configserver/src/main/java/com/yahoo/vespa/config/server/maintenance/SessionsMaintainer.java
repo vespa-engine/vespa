@@ -37,10 +37,9 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
             log.log(LogLevel.FINE, "Deleted " + deleted + " expired remote sessions, expiry time " + expiryTime);
         }
 
-        Duration lockExpiryTime = Duration.ofDays(1);
-        int deleted = applicationRepository.deleteExpiredLocks(lockExpiryTime);
-        if (deleted > 0)
-            log.log(LogLevel.INFO, "Deleted " + deleted + " locks older than " + lockExpiryTime);
+        Duration lockExpiryTime = Duration.ofHours(12);
+        if (applicationRepository.deleteExpiredLocks(lockExpiryTime) > 0)
+            log.log(LogLevel.INFO, "Deleted " + applicationRepository.deleteExpiredLocks(lockExpiryTime) + " locks older than " + lockExpiryTime);
 
         return true;
     }
