@@ -1,14 +1,15 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -33,13 +34,13 @@ public class ClusterProtonMetricsRetriever {
                                                             .build();
 
 
-    public List<ProtonMetricsAggregator> requestMetrics(Collection<URI> hosts) {
-        List<ProtonMetricsAggregator> protonMetrics = new ArrayList<>();
+    public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        Map<String, ProtonMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
 
         long startTime = System.currentTimeMillis();
         Runnable retrieveMetricsJob = () ->
                 hosts.parallelStream().forEach(host ->
-                        addMetricsFromHost(host, protonMetrics)
+                        addMetricsFromHost(host, clusterMetricsMap)
                 );
 
         ForkJoinPool threadPool = new ForkJoinPool(10);
@@ -56,10 +57,10 @@ public class ClusterProtonMetricsRetriever {
                 String.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );
 
-        return protonMetrics;
+        return clusterMetricsMap;
     }
 
-    private static void addMetricsFromHost(URI hostURI, List<ProtonMetricsAggregator> protonMetrics) {
+    private static void addMetricsFromHost(URI hostURI, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
         Slime hostResponseBody;
         try {
             hostResponseBody = doMetricsRequest(hostURI, httpClient);
@@ -73,15 +74,30 @@ public class ClusterProtonMetricsRetriever {
             log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
         }
 
-
-        Inspector metric = hostResponseBody.get().field("services").field(3);
-        ProtonMetricsAggregator aggregator = new ProtonMetricsAggregator();
-        addMetricsToAggregator(metric, aggregator);
-        protonMetrics.add(aggregator);
+        Inspector nodes = hostResponseBody.get().field("nodes");
+        nodes.traverse((ArrayTraverser) (i, nodesInspector) ->
+                parseNode(nodesInspector, clusterMetricsMap)
+        );
     }
 
-    private static void addMetricsToAggregator(Inspector metric, ProtonMetricsAggregator aggregator) {
-        Inspector values = metric.field("values");
-        aggregator.addAll(values);
+    private static void parseNode(Inspector node, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
+        String nodeRole = node.field("role").asString();
+        if(nodeRole.contains("content")) {
+            ProtonMetricsAggregator aggregator = new ProtonMetricsAggregator();
+            clusterMetricsMap.put(nodeRole, aggregator);
+            node.field("services").traverse((ArrayTraverser) (i, servicesInspector) ->
+                    addServicesToAggregator(servicesInspector, aggregator)
+            );
+        }
+    }
+
+    private static void addServicesToAggregator(Inspector services, ProtonMetricsAggregator aggregator) {
+        services.field("metrics").traverse((ArrayTraverser) (i, metricsInspector) ->
+                addMetricsToAggregator(metricsInspector, aggregator)
+        );
+    }
+
+    private static void addMetricsToAggregator(Inspector metrics, ProtonMetricsAggregator aggregator) {
+        aggregator.addAll(metrics);
     }
 }

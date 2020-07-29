@@ -14,18 +14,18 @@ public class ProtonMetricsAggregator {
     private Double documentActiveCount = 0.0;
     private Double documentReadyCount = 0.0;
     private Double documentTotalCount = 0.0;
-    private AverageMetric documentDiskUsage = new AverageMetric();
+    private final AverageMetric documentDiskUsage = new AverageMetric();
 
-    private AverageMetric resourceDiskUsageAverage = new AverageMetric();
-    private AverageMetric resourceMemoryUsageAverage = new AverageMetric();
+    private final AverageMetric resourceDiskUsageAverage = new AverageMetric();
+    private final AverageMetric resourceMemoryUsageAverage = new AverageMetric();
 
     public synchronized ProtonMetricsAggregator addAll(Inspector metric) {
-        addDocumentActiveCount(metric.field(DOCUMENT_ACTIVE).asDouble());
-        addDocumentReadyCount(metric.field(DOCUMENT_READY).asDouble());
-        addDocumentTotalCount(metric.field(DOCUMENT_TOTAL).asDouble());
-        addDocumentDiskUsage(metric.field(DOCUMENT_DISK_USAGE).asDouble());
-        addResourceDiskUsageAverage(metric.field(RESOURCE_DISK_AVERAGE).asDouble());
-        addResourceMemoryUsageAverage(metric.field(RESOURCE_MEMORY_AVERAGE).asDouble());
+        if (metric.field(DOCUMENT_ACTIVE).valid()) addDocumentActiveCount(metric.field(DOCUMENT_ACTIVE).asDouble());
+        if (metric.field(DOCUMENT_READY).valid()) addDocumentReadyCount(metric.field(DOCUMENT_READY).asDouble());
+        if (metric.field(DOCUMENT_TOTAL).valid()) addDocumentTotalCount(metric.field(DOCUMENT_TOTAL).asDouble());
+        if (metric.field(DOCUMENT_DISK_USAGE).valid()) addDocumentDiskUsage(metric.field(DOCUMENT_DISK_USAGE).asDouble());
+        if (metric.field(RESOURCE_DISK_AVERAGE).valid()) addResourceDiskUsageAverage(metric.field(RESOURCE_DISK_AVERAGE).asDouble());
+        if (metric.field(RESOURCE_MEMORY_AVERAGE).valid()) addResourceMemoryUsageAverage(metric.field(RESOURCE_MEMORY_AVERAGE).asDouble());
         return this;
     }
 
