@@ -10,16 +10,13 @@ import java.io.File;
 */
 public class MockFileDistributionFactory extends FileDistributionFactory {
 
-    public final MockFileDistributionProvider mockFileDistributionProvider;
-
     public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
         super(configserverConfig);
-        mockFileDistributionProvider = new MockFileDistributionProvider(new File(configserverConfig.fileReferencesDir()));
     }
 
     @Override
     public com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider createProvider(File applicationFile) {
-        return mockFileDistributionProvider;
+        return new MockFileDistributionProvider(applicationFile, new File(configserverConfig.fileReferencesDir()));
     }
 
 }

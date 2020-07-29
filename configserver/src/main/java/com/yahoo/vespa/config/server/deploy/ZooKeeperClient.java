@@ -36,16 +36,14 @@ public class ZooKeeperClient {
 
     private final ConfigCurator configCurator;
     private final DeployLogger logger;
-    private final boolean logFine;
     /* This is the generation that will be used for reading and writing application data. (1 more than last deployed application) */
     private final Path rootPath;
 
     private static final ApplicationFile.PathFilter xmlFilter = path -> path.getName().endsWith(".xml");
 
-    public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, boolean logFine, Path rootPath) {
+    public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, Path rootPath) {
         this.configCurator = configCurator;
         this.logger = logger;
-        this.logFine = logFine;
         this.rootPath = rootPath;
     }
 
@@ -62,7 +60,6 @@ public class ZooKeeperClient {
         try {
             while (retries > 0) {
                 try {
-                    logFine("Setting up ZooKeeper nodes for this application");
                     createZooKeeperNodes();
                     break;
                 } catch (RuntimeException e) {
@@ -105,16 +102,11 @@ public class ZooKeeperClient {
      * @param app the application package to feed to zookeeper
      */
     void write(ApplicationPackage app) {
-        logFine("Feeding application config into ZooKeeper");
         try {
-            logFine("Feeding user def files into ZooKeeper");
             writeUserDefs(app);
-            logFine("Feeding application package into ZooKeeper");
             writeSomeOf(app);
             writeSearchDefinitions(app);
             writeUserIncludeDirs(app, app.getUserIncludeDirs());
-            logFine("Feeding sd from docproc bundle into ZooKeeper");
-            logFine("Write application metadata into ZooKeeper");
             write(app.getMetaData());
         } catch (Exception e) {
             throw new IllegalStateException("Unable to write vespa model to config server(s) " + System.getProperty("configsources") + "\n" +
@@ -269,7 +261,6 @@ public class ZooKeeperClient {
     }
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
-        logFine("Feeding file registry data into ZooKeeper");
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
 
         configCurator.putData(getZooKeeperAppPath(null).append(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
@@ -288,7 +279,6 @@ public class ZooKeeperClient {
     }
 
     void cleanupZooKeeper() {
-        logFine("Exception occurred. Cleaning up ZooKeeper");
         try {
             for (String subPath : Arrays.asList(
                     ConfigCurator.DEFCONFIGS_ZK_SUBPATH,
@@ -314,12 +304,6 @@ public class ZooKeeperClient {
             return rootPath.append(trailingPath);
         } else {
             return rootPath;
-        }
-    }
-
-    private void logFine(String msg) {
-        if (logFine) {
-            logger.log(Level.FINE, msg);
         }
     }
 

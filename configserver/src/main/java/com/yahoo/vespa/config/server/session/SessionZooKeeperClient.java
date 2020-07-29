@@ -214,7 +214,7 @@ public class SessionZooKeeperClient {
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, true, sessionPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, sessionPath);
         return new ZooKeeperDeployer(zkClient);
     }
 

@@ -26,12 +26,11 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
-                               ConfigserverConfig configserverConfig,
                                FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, interval, interval);
         this.applicationRepository = applicationRepository;
-        this.maxUnusedFileReferenceAge = Duration.ofHours(configserverConfig.keepUnusedFileReferencesHours());
-        this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+        this.maxUnusedFileReferenceAge = Duration.ofHours(applicationRepository.configserverConfig().keepUnusedFileReferencesHours());
+        this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
     }
 
     @Override

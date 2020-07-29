@@ -3,17 +3,18 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.io.File;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author Ulf Lilleengen
@@ -28,12 +29,12 @@ public class SessionTest {
         }
 
         @Override
-        public ConfigChangeActions prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
-                                           Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
-                                           Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
-                                           SessionZooKeeperClient sessionZooKeeperClient) {
+        public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                                     Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
+                                     SessionZooKeeperClient sessionZooKeeperClient) {
             isPrepared = true;
-            return new ConfigChangeActions(new ArrayList<>());
+            return new PrepareResult(AllocatedHosts.withHosts(Set.of()), List.of());
         }
     }
 
