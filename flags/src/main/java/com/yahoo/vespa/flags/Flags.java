@@ -248,6 +248,11 @@ public class Flags {
             "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
             "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
 
+    public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(
+            "use-alternative-endpoint-certificate-provider", false,
+            "Whether to use an alternative CA when provisioning new certificates",
+            "Takes effect only on initial application deployment - not on later certificate refreshes!");
+
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
             "Override default docker image repo. Docker image version will be Vespa version.",
