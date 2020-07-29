@@ -70,8 +70,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         HostResource hostResource = hostname2host.get(name);
         if (hostResource == null) {
             // Create a new HostResource if this is the host this code is running on (as it is when running tests)
-            // TODO: please eliminate the ugly hack using "localhost.fortestingpurposesonly"
-            if (HostName.getLocalhost().equals(name) || "localhost.fortestingpurposesonly".equals(name)) {
+            if (HostName.getLocalhost().equals(name)) {
                 if (! getChildren().containsKey(localhost)) {
                     new Host(this, localhost);
                 }
