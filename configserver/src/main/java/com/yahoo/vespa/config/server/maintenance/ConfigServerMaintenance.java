@@ -4,9 +4,8 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -30,19 +29,18 @@ public class ConfigServerMaintenance extends AbstractComponent {
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
-                                   FileDistributionFactory fileDistributionFactory,
-                                   FlagSource flagSource) {
+                                   FlagSource flagSource,
+                                   Metric metric) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        // TODO: Disabled until we have application metadata
+        // TODO: Disabled until we have application metadata per tenant
         //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
-        fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig, flagSource);
+        fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
-        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofMinutes(1), configserverConfig, flagSource);
+        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
     }
 
     @Override
     public void deconstruct() {
-        //tenantsMaintainer.close();
         fileDistributionMaintainer.close();
         sessionsMaintainer.close();
         applicationPackageMaintainer.close();
@@ -55,16 +53,9 @@ public class ConfigServerMaintenance extends AbstractComponent {
     private static class DefaultTimes {
 
         private final Duration defaultInterval;
-        private final Duration tenantsMaintainerInterval;
 
         DefaultTimes(ConfigserverConfig configserverConfig) {
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
-            boolean isCd = configserverConfig.system().equals(SystemName.cd.value());
-            // TODO: Want job control or feature flag to control when to run this, for now use a very
-            // long interval to avoid running the maintainer except in CD
-            this.tenantsMaintainerInterval = isCd
-                    ? defaultInterval
-                    : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
         }
     }
 

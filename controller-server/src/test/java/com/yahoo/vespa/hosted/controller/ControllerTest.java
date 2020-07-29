@@ -18,8 +18,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -29,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -822,10 +821,16 @@ public class ControllerTest {
 
         context.submit(applicationPackage).deploy();
         var expectedRecords = List.of(
-                // The 'east' global endpoint, pointing to zone 2 with exclusive routing
+                // The weighted record for zone 2's region
+                new Record(Record.Type.ALIAS,
+                           RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                           new WeightedAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                                                   "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
+
+                // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           new LatencyAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                           new LatencyAliasTarget(HostName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
                                                   "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
@@ -861,26 +866,20 @@ public class ControllerTest {
                                                                   .stream()
                                                                   .map(Endpoint::routingMethod)
                                                                   .collect(Collectors.toSet());
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), false);
 
-        // Without everything
+        // Without satisfying any requirement
         context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
-        // Without Athenz service
+        // Without satisfying Athenz service requirement
         context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION).build())
                .deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
-        // Without feature flag
-        applicationPackageBuilder = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                                                             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
-        context.submit(applicationPackageBuilder.build()).deploy();
-        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
-
-        // With everything required
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), true);
-        context.submit(applicationPackageBuilder.build()).deploy();
+        // Satisfying all requirements
+        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                                                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                                                .build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());
 
         // Global endpoint is configured and includes directly routed endpoint name

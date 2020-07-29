@@ -149,10 +149,10 @@ public class MatchedElementsOnlyResolverTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For search 'test', document summary 'default', summary field 'my_field': " +
                 "'matched-elements-only' is not supported for this field type. " +
-                "Supported field types are: array attribute, weighted set attribute, " +
+                "Supported field types are: array of primitive, weighted set of primitive, " +
                 "array of simple struct, map of primitive type to simple struct, " +
                 "and map of primitive type to primitive type");
-        buildSearch(joinLines("field my_field type array<string> {",
+        buildSearch(joinLines("field my_field type string {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
                 "}"));

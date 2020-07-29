@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -39,17 +40,16 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     private final LoadBalancerService service;
     private final CuratorDatabaseClient db;
 
-    LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, LoadBalancerService service) {
-        super(nodeRepository, interval);
+    LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, LoadBalancerService service, Metric metric) {
+        super(nodeRepository, interval, metric);
         this.service = Objects.requireNonNull(service, "service must be non-null");
         this.db = nodeRepository.database();
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         expireReserved();
-        removeInactive();
-        pruneReals();
+        return removeInactive() & pruneReals();
     }
 
     /** Move reserved load balancer that have expired to inactive */
@@ -63,7 +63,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     }
 
     /** Deprovision inactive load balancers that have expired */
-    private void removeInactive() {
+    private boolean removeInactive() {
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
         var now = nodeRepository().clock().instant();
@@ -88,10 +88,11 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                     interval()),
                     lastException.get());
         }
+        return lastException.get() == null;
     }
 
     /** Remove reals from inactive load balancers */
-    private void pruneReals() {
+    private boolean pruneReals() {
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
         withLoadBalancersIn(State.inactive, lb -> {
@@ -109,13 +110,14 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
         });
         if (!failed.isEmpty()) {
             log.log(Level.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
-                                                    failed.size(),
-                                                    failed.stream()
-                                                          .map(LoadBalancerId::serializedForm)
-                                                          .collect(Collectors.joining(", ")),
-                                                    interval()),
+                                                 failed.size(),
+                                                 failed.stream()
+                                                       .map(LoadBalancerId::serializedForm)
+                                                       .collect(Collectors.joining(", ")),
+                                                 interval()),
                     lastException.get());
         }
+        return lastException.get() == null;
     }
 
     /** Apply operation to all load balancers that exist in given state, while holding lock */

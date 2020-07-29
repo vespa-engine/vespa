@@ -56,15 +56,16 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                                    Metric metric,
                                    Duration interval,
                                    int maxIterations) {
-        super(nodeRepository, interval);
+        super(nodeRepository, interval, metric);
         this.deployer = deployer;
         this.metric = metric;
         this.maxIterations = maxIterations;
     }
 
     @Override
-    protected void maintain() {
-        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return;
+    protected boolean maintain() {
+        boolean success = true;
+        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return success;
 
         CapacityChecker capacityChecker = new CapacityChecker(nodeRepository());
 
@@ -89,6 +90,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             metric.set("spareHostCapacity", spareHostCapacity, null);
         }
+        return success;
     }
 
     private boolean execute(List<Move> mitigation) {

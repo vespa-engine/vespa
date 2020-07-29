@@ -206,6 +206,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.metric = metric;
     }
 
+    public Clock clock() {
+        return clock;
+    }
+
+    public Metric metric() {
+        return metric;
+    }
+
     // ---------------- Deploying ----------------------------------------------------------------
 
     public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
@@ -677,7 +685,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
-        sessionsPerTenant.values().forEach(sessionList -> sessionList.forEach(s -> applicationIds.add(s.getApplicationId())));
+        sessionsPerTenant.values()
+                .forEach(sessionList -> sessionList.stream()
+                        .map(Session::getApplicationId)
+                        .filter(Objects::nonNull)
+                        .forEach(applicationIds::add));
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
         applicationIds.forEach(applicationId -> {
@@ -862,12 +874,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // We make no validation that the hostname is actually allocated to the given application since
         // most applications under hosted-vespa are not known to the model and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
-        if (hostname.isPresent()) {
-            if (HOSTED_VESPA_TENANT.equals(applicationId.tenant()))
-                return "http://" + hostname.get() + ":8080/logs";
-            else
-                throw new IllegalArgumentException("Using hostname parameter when getting logs is not supported for application "
-                                                   + applicationId);
+        if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
+            return "http://" + hostname.get() + ":8080/logs";
         }
 
         Application application = getApplication(applicationId);

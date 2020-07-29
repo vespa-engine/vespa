@@ -24,7 +24,7 @@ void assert_term_type(ParseItem::ItemType type) {
     assert(type == ParseItem::ITEM_TERM ||
            type == ParseItem::ITEM_NUMTERM ||
            type == ParseItem::ITEM_NEAREST_NEIGHBOR ||
-           type == ParseItem::ITEM_LOCATION_TERM ||
+           type == ParseItem::ITEM_GEO_LOCATION_TERM ||
            type == ParseItem::ITEM_PREFIXTERM ||
            type == ParseItem::ITEM_SUBSTRINGTERM ||
            type == ParseItem::ITEM_SUFFIXTERM ||
@@ -152,7 +152,7 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
         break;
     case ITEM_TERM:
     case ITEM_NUMTERM:
-    case ITEM_LOCATION_TERM:
+    case ITEM_GEO_LOCATION_TERM:
     case ITEM_PREFIXTERM:
     case ITEM_SUBSTRINGTERM:
     case ITEM_EXACTSTRINGTERM:

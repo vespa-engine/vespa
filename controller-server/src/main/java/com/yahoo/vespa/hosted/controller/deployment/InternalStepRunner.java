@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -38,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -244,10 +244,10 @@ public class InternalStepRunner implements StepRunner {
                                                                   .flatMap(action -> action.services.stream())
                                                                   .map(service -> service.hostName)
                                                                   .sorted().distinct()
-                                                                  .map(Hostname::new)
+                                                                  .map(HostName::from)
                                                                   .forEach(hostname -> {
-                                                                      controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), Optional.of(hostname));
-                                                                      logger.log("Schedule service restart on host " + hostname.id() + ".");
+                                                                      controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), new RestartFilter().withHostName(Optional.of(hostname)));
+                                                                      logger.log("Schedule service restart on host " + hostname.value() + ".");
                                                                   });
             logger.log("Deployment successful.");
             if (prepareResponse.message != null)

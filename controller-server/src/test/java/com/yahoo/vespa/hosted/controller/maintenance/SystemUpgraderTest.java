@@ -275,11 +275,12 @@ public class SystemUpgraderTest {
     }
 
     @Test
-    public void does_not_deploy_proxy_app_in_zones_without_proxy() {
+    public void does_not_deploy_proxy_app_in_zone_without_shared_routing() {
         var applications = List.of(SystemApplication.configServerHost, SystemApplication.configServer,
                                    SystemApplication.tenantHost);
         tester.configServer().bootstrap(List.of(zone1.getId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
+        tester.zoneRegistry().exclusiveRoutingIn(zone1);
         var systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // System begins upgrade
@@ -382,8 +383,7 @@ public class SystemUpgraderTest {
 
     private SystemUpgrader systemUpgrader(UpgradePolicy upgradePolicy) {
         tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
-        return new SystemUpgrader(tester.controller(), Duration.ofDays(1)
-        );
+        return new SystemUpgrader(tester.controller(), Duration.ofDays(1));
     }
 
 }

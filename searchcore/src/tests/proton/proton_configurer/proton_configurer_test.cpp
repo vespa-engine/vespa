@@ -19,7 +19,7 @@
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -119,12 +119,12 @@ struct ConfigFixture {
           _generation(1),
           _cachedConfigSnapshot()
     {
-        addDocType("_alwaysthere_");
+        addDocType("_alwaysthere_", "default");
     }
 
     ~ConfigFixture() { }
 
-    DBConfigFixture *addDocType(const std::string & name) {
+    DBConfigFixture *addDocType(const std::string & name, const std::string& bucket_space) {
         DocumenttypesConfigBuilder::Documenttype dt;
         dt.bodystruct = -1270491200;
         dt.headerstruct = 306916075;
@@ -140,7 +140,7 @@ struct ConfigFixture {
 
         BucketspacesConfigBuilder::Documenttype bsdt;
         bsdt.name = name;
-        bsdt.bucketspace = "default";
+        bsdt.bucketspace = bucket_space;
         _bucketspacesBuilder.documenttype.push_back(bsdt);
 
         DBConfigFixture::UP fixture = std::make_unique<DBConfigFixture>();
@@ -169,6 +169,12 @@ struct ConfigFixture {
             }
         }
         _dbConfig.erase(name);
+        for (auto it(_bucketspacesBuilder.documenttype.begin()), mt(_bucketspacesBuilder.documenttype.end()); it != mt; ++it) {
+            if (it->name == name) {
+                _bucketspacesBuilder.documenttype.erase(it);
+                break;
+            }
+        }
     }
 
     BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
@@ -212,17 +218,21 @@ struct MyProtonConfigurerOwner;
 struct MyDocumentDBConfigOwner : public DocumentDBConfigOwner
 {
     vespalib::string _name;
+    document::BucketSpace _bucket_space;
     MyProtonConfigurerOwner &_owner;
     MyDocumentDBConfigOwner(const vespalib::string &name,
+                            document::BucketSpace bucket_space,
                             MyProtonConfigurerOwner &owner)
         : DocumentDBConfigOwner(),
           _name(name),
+          _bucket_space(bucket_space),
           _owner(owner)
     {
     }
     ~MyDocumentDBConfigOwner() { }
 
     void reconfigure(const DocumentDBConfig::SP & config) override;
+    document::BucketSpace getBucketSpace() const override { return _bucket_space; }
 };
 
 struct MyLog
@@ -266,8 +276,8 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
         (void) configId;
         (void) bootstrapConfig;
         (void) initializeThreads;
-        ASSERT_TRUE(_dbs.find(docTypeName) == _dbs.end());
-        auto db = std::make_shared<MyDocumentDBConfigOwner>(docTypeName.getName(), *this);
+        EXPECT_TRUE(_dbs.find(docTypeName) == _dbs.end());
+        auto db = std::make_shared<MyDocumentDBConfigOwner>(docTypeName.getName(), bucketSpace, *this);
         _dbs.insert(std::make_pair(docTypeName, db));
         std::ostringstream os;
         os << "add db " << docTypeName.getName() << " " << documentDBConfig->getGeneration();
@@ -285,6 +295,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
         std::ostringstream os;
         os << "apply config " << bootstrapConfig->getGeneration();
         _log.push_back(os.str());
+        
     }
     void reconfigureDocumentDB(const vespalib::string &name, const DocumentDBConfig::SP &config)
     {
@@ -329,14 +340,15 @@ struct MyProtonDiskLayout : public IProtonDiskLayout
     }
 };
 
-struct Fixture
+class ProtonConfigurerTest : public ::testing::Test
 {
     MyProtonConfigurerOwner _owner;
     ConfigFixture _config;
     std::unique_ptr<IProtonDiskLayout> _diskLayout;
     ProtonConfigurer _configurer;
 
-    Fixture()
+protected:
+    ProtonConfigurerTest()
         : _owner(),
           _config("test"),
           _diskLayout(),
@@ -344,13 +356,13 @@ struct Fixture
     {
         _diskLayout = std::make_unique<MyProtonDiskLayout>(_owner);
     }
-    ~Fixture() { }
+    ~ProtonConfigurerTest() override;
 
     void assertLog(const std::vector<vespalib::string> &expLog) {
-        EXPECT_EQUAL(expLog, _owner._log);
+        EXPECT_EQ(expLog, _owner._log);
     }
     void sync() { _owner.sync(); }
-    void addDocType(const vespalib::string &name) { _config.addDocType(name); }
+    void addDocType(const vespalib::string &name, const std::string& bucket_space = "default") { _config.addDocType(name, bucket_space); }
     void removeDocType(const vespalib::string &name) { _config.removeDocType(name); }
     void applyConfig() {
         _configurer.reconfigure(_config.getConfigSnapshot());
@@ -375,91 +387,105 @@ struct Fixture
     }
 };
 
-TEST_F("require that nothing is applied before initial config", Fixture())
+ProtonConfigurerTest::~ProtonConfigurerTest() = default;
+
+TEST_F(ProtonConfigurerTest, require_that_nothing_is_applied_before_initial_config)
 {
-    f.applyConfig();
-    TEST_DO(f1.assertLog({}));
+    applyConfig();
+    assertLog({});
 }
 
-TEST_F("require that initial config is applied", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_initial_config_is_applied)
 {
-    f.applyInitialConfig();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
+    applyInitialConfig();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"});
 }
 
-TEST_F("require that new config is blocked", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_new_config_is_blocked)
 {
-    f.applyInitialConfig();
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
+    applyInitialConfig();
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"});
 }
 
-TEST_F("require that new config can be unblocked", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_new_config_can_be_unblocked)
 {
-    f.applyInitialConfig();
-    f.reconfigure();
-    f.allowReconfig();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
+    applyInitialConfig();
+    reconfigure();
+    allowReconfig();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"});
 }
 
-TEST_F("require that initial config is not reapplied due to config unblock", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_initial_config_is_not_reapplied_due_to_config_unblock)
 {
-    f.applyInitialConfig();
-    f.allowReconfig();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
+    applyInitialConfig();
+    allowReconfig();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"});
 }
 
-TEST_F("require that we can add document db", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_we_can_add_document_db)
 {
-    f.applyInitialConfig();
-    f.allowReconfig();
-    f.addDocType("foobar");
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3","reconf db _alwaysthere_ 3", "add db foobar 3"}));
+    applyInitialConfig();
+    allowReconfig();
+    addDocType("foobar");
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3","reconf db _alwaysthere_ 3", "add db foobar 3"});
 }
 
-TEST_F("require that we can remove document db", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_we_can_remove_document_db)
 {
-    f.addDocType("foobar");
-    f.applyInitialConfig();
-    f.allowReconfig();
-    f.removeDocType("foobar");
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "remove db foobar", "remove dbdir foobar"}));
+    addDocType("foobar");
+    applyInitialConfig();
+    allowReconfig();
+    removeDocType("foobar");
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "remove db foobar", "remove dbdir foobar"});
 }
 
-TEST_F("require that document db adds and reconfigs are intermingled", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_document_db_adds_and_reconfigs_are_intermingled)
 {
-    f.addDocType("foobar");
-    f.applyInitialConfig();
-    f.allowReconfig();
-    f.addDocType("abar");
-    f.removeDocType("foobar");
-    f.addDocType("foobar");
-    f.addDocType("zbar");
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"}));
+    addDocType("foobar");
+    applyInitialConfig();
+    allowReconfig();
+    addDocType("abar");
+    removeDocType("foobar");
+    addDocType("foobar");
+    addDocType("zbar");
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"});
 }
 
-TEST_F("require that document db removes are applied at end", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_document_db_removes_are_applied_at_end)
 {
-    f.addDocType("abar");
-    f.addDocType("foobar");
-    f.applyInitialConfig();
-    f.allowReconfig();
-    f.removeDocType("abar");
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,abar,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar", "remove dbdir abar"}));
+    addDocType("abar");
+    addDocType("foobar");
+    applyInitialConfig();
+    allowReconfig();
+    removeDocType("abar");
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_,abar,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar", "remove dbdir abar"});
 }
 
-TEST_F("require that new configs can be blocked again", Fixture())
+TEST_F(ProtonConfigurerTest, require_that_new_configs_can_be_blocked_again)
 {
-    f.applyInitialConfig();
-    f.reconfigure();
-    f.allowReconfig();
-    f.disableReconfig();
-    f.reconfigure();
-    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
+    applyInitialConfig();
+    reconfigure();
+    allowReconfig();
+    disableReconfig();
+    reconfigure();
+    assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"});
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_F(ProtonConfigurerTest, require_that_bucket_space_for_document_type_change_exits)
+{
+    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+    addDocType("globaldoc", "default");
+    applyInitialConfig();
+    removeDocType("globaldoc");
+    addDocType("globaldoc", "global");
+    allowReconfig();
+    EXPECT_EXIT(reconfigure(), ::testing::ExitedWithCode(1), "Bucket space for document type globaldoc changed from default to global");
+}
+
+
+GTEST_MAIN_RUN_ALL_TESTS()

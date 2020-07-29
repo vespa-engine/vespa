@@ -53,7 +53,7 @@ public class ZooKeeperClientTest {
     @Before
     public void setupZK() throws IOException {
         zk = ConfigCurator.create(new MockCurator());
-        ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), true, Path.fromString(appPath));
+        ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), Path.fromString(appPath));
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
                                                                                 new DeployData("foo",
                                                                                                "/bar/baz",
@@ -85,7 +85,7 @@ public class ZooKeeperClientTest {
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
         long generation = 1L;
-        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, true, Path.fromString("/1"));
+        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, Path.fromString("/1"));
         zooKeeperClient.setupZooKeeper();
         String appPath = "/";
         assertThat(zk.getChildren(appPath).size(), is(1));
@@ -120,7 +120,7 @@ public class ZooKeeperClientTest {
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
         Path app = Path.fromString("/1");
-        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, true, app);
+        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
         zooKeeperClient.setupZooKeeper();
 
         String currentAppPath = app.getAbsolute();
@@ -191,7 +191,7 @@ public class ZooKeeperClientTest {
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
         Path app = Path.fromString("/1");
-        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, true, app);
+        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
         zooKeeperClient.setupZooKeeper();
         HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList(), Optional.empty());
         HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList(), Optional.empty());

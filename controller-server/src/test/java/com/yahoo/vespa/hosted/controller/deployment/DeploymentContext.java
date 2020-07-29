@@ -13,8 +13,6 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -113,7 +111,6 @@ public class DeploymentContext {
         this.runner = tester.runner();
         this.tester = tester;
         createTenantAndApplication();
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), true);
     }
 
     private void createTenantAndApplication() {
@@ -247,7 +244,7 @@ public class DeploymentContext {
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     Optional.empty(), projectId, applicationPackage, new byte[0]);
+                                     projectId, applicationPackage, new byte[0]);
         return this;
     }
 

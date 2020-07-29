@@ -26,7 +26,7 @@ public class NodeRebooterTest {
         var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
         var tester = new MaintenanceTester();
         tester.createReadyHostNodes(15);
-        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource);
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource, new TestMetric());
 
         assertReadyHosts(15, tester, 0L);
 
@@ -69,7 +69,7 @@ public class NodeRebooterTest {
         var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
         var tester = new MaintenanceTester();
         tester.createReadyHostNodes(2);
-        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource);
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource, new TestMetric());
 
         assertReadyHosts(2, tester, 0L);
 

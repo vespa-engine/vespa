@@ -353,7 +353,9 @@ public class ApplicationHandlerTest {
         HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         String renderedString = SessionHandlerTest.getRenderedString(response);
-        assertEquals("{\"generation\":" + expectedGeneration + ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
+        assertEquals("{\"generation\":" + expectedGeneration +
+                     ",\"applicationPackageFileReference\":\"\"" +
+                     ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
     }
 
     private void assertApplicationExists(ApplicationId applicationId, Zone zone) throws IOException {

@@ -43,7 +43,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
         var firstProxyNode = proxyNodes.get(0);
         var networkNames = proxyNodes.stream()
-                                     .flatMap(node -> node.ipAddresses().stream())
+                                     .flatMap(node -> node.ipConfig().primary().stream())
                                      .map(SharedLoadBalancerService::withPrefixLength)
                                      .collect(Collectors.toSet());
 

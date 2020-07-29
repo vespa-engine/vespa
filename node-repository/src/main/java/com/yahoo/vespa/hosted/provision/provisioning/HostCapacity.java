@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
@@ -75,7 +74,7 @@ public class HostCapacity {
      * Number of free (not allocated) IP addresses assigned to the dockerhost.
      */
     int freeIPs(Node dockerHost) {
-        return dockerHost.ipAddressPool().findUnused(allNodes).size();
+        return dockerHost.ipConfig().pool().findUnused(allNodes).size();
     }
 
     /**

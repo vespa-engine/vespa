@@ -150,8 +150,8 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationId readApplicationId() {
-        if ( ! configCurator.exists(applicationIdPath())) return ApplicationId.defaultId();
-        return ApplicationId.fromSerializedForm(configCurator.getData(applicationIdPath()));
+        String idString = configCurator.getData(applicationIdPath());
+        return idString == null ? null : ApplicationId.fromSerializedForm(idString);
     }
 
     void writeApplicationPackageReference(FileReference applicationPackageReference) {
@@ -214,7 +214,7 @@ public class SessionZooKeeperClient {
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, true, sessionPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, sessionPath);
         return new ZooKeeperDeployer(zkClient);
     }
 

@@ -8,17 +8,17 @@
 #include <queue>
 #include "sync.h"
 
-namespace vespalib::slaveproc { class Timer; }
+namespace vespalib::child_process { class Timer; }
 
 namespace vespalib {
 /**
- * @brief Slave Process utility class for running external programs
+ * @brief Child Process utility class for running external programs
  *
  * Designed for use in unit tests and other places
  * where you need to run, control and communicate with
  * some external program.
  **/
-class SlaveProc
+class ChildProcess
 {
 private:
     class Reader : public FastOS_ProcessRedirectListener
@@ -33,7 +33,7 @@ private:
 
         void OnReceiveData(const void *data, size_t length) override;
         bool hasData();
-        bool waitForData(slaveproc::Timer &timer, MonitorGuard &lock);
+        bool waitForData(child_process::Timer &timer, MonitorGuard &lock);
         void updateEOF();
 
     public:
@@ -54,19 +54,19 @@ private:
     void checkProc();
 
 public:
-    SlaveProc(const SlaveProc &) = delete;
-    SlaveProc &operator=(const SlaveProc &) = delete;
+    ChildProcess(const ChildProcess &) = delete;
+    ChildProcess &operator=(const ChildProcess &) = delete;
     
     /**
-     * @brief Run a slave process
+     * @brief Run a child process
      *
      * Starts a process running the given command
      * @param cmd A shell command line to run
      **/
-    explicit SlaveProc(const char *cmd);
+    explicit ChildProcess(const char *cmd);
 
     /** @brief destructor doing cleanup if needed */
-    ~SlaveProc();
+    ~ChildProcess();
 
     /**
      * @return process id

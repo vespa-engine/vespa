@@ -22,6 +22,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import org.junit.Test;
@@ -791,7 +792,7 @@ public class ProvisioningTest {
         // Over 10 minutes pass since first reservation. First set of reserved nodes are not expired
         tester.clock().advance(Duration.ofMinutes(8).plus(Duration.ofSeconds(1)));
         ReservationExpirer expirer = new ReservationExpirer(tester.nodeRepository(), tester.clock(),
-                                                            Duration.ofMinutes(10));
+                                                            Duration.ofMinutes(10), new TestMetric());
         expirer.run();
         assertEquals("Nodes remain reserved", 4,
                      tester.getNodes(application, Node.State.reserved).size());

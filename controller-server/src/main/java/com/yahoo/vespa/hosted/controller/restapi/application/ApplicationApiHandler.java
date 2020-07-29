@@ -10,7 +10,9 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
@@ -42,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
@@ -54,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
@@ -284,6 +286,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
@@ -953,8 +956,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
               .ifPresent(version -> toSlime(version, object.setObject("revision")));
     }
 
-    private void toSlime(Endpoint endpoint, String cluster, Cursor object) {
-        object.setString("cluster", cluster);
+    private void toSlime(Endpoint endpoint, Cursor object) {
+        object.setString("cluster", endpoint.cluster().value());
         object.setBool("tls", endpoint.tls());
         object.setString("url", endpoint.url().toString());
         object.setString("scope", endpointScopeString(endpoint.scope()));
@@ -971,16 +974,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : controller.routing().endpointsOf(deploymentId).scope(Endpoint.Scope.zone)) {
-            toSlime(endpoint, endpoint.name(), endpointArray.addObject());
+        for (var endpoint : controller.routing().endpointsOf(deploymentId)
+                                      .scope(Endpoint.Scope.zone)
+                                      .not().legacy()) {
+            toSlime(endpoint, endpointArray.addObject());
         }
         // Add global endpoints
         var globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
                                         .not().legacy()
                                         .targets(deploymentId.zoneId());
         for (var endpoint : globalEndpoints) {
-            // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
-            toSlime(endpoint, "", endpointArray.addObject());
+            toSlime(endpoint, endpointArray.addObject());
         }
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
@@ -1385,11 +1389,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse restart(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      ZoneId.from(environment, region));
+        RestartFilter restartFilter = new RestartFilter()
+                .withHostName(Optional.ofNullable(request.getProperty("hostname")).map(HostName::from))
+                .withClusterType(Optional.ofNullable(request.getProperty("clusterType")).map(ClusterSpec.Type::from))
+                .withClusterId(Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from));
 
-        // TODO: Propagate all filters
-        Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
-        controller.applications().restart(deploymentId, hostname);
-
+        controller.applications().restart(deploymentId, restartFilter);
         return new MessageResponse("Requested restart of " + deploymentId);
     }
 
@@ -1900,10 +1905,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             sourceUrl,
-                                                            commit,
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
+
+    private HttpResponse removeAllProdDeployments(String tenant, String application) {
+        JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
+                Optional.empty(), Optional.empty(), Optional.empty(), 1,
+                ApplicationPackage.deploymentRemoval(), new byte[0]);
+        return new MessageResponse("All deployments removed");
     }
 
     private static Map<String, byte[]> parseDataParts(HttpRequest request) {
@@ -1946,6 +1957,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
+            case region: return "region";
             case global: return "global";
             case zone: return "zone";
         }

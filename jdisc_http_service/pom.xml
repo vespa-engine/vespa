@@ -140,6 +140,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+          <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
           <discPreInstallBundle>
             javax.servlet-api-3.1.0.jar,
             jetty-continuation-${jetty.version}.jar,

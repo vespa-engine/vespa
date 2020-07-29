@@ -5,7 +5,6 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,8 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,12 +25,12 @@ public class LogReaderTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Path logDirectory = fileSystem.getPath("/opt/vespa/logs");
 
-    private static final String logv11 = "3600.2\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tfourth\n";
-    private static final String logv   = "90000.1\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tlast\n";
-    private static final String log100 = "0.2\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tsecond\n";
-    private static final String log101 = "0.1\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n";
-    private static final String log110 = "3600.1\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tthird\n";
-    private static final String log200 = "86400.1\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)\n";
+    private static final String logv11 = "3600.2\tnode1.com\t5480\tcontainer\tstdout\tinfo\tfourth\n";
+    private static final String logv   = "90000.1\tnode1.com\t5480\tcontainer\tstdout\tinfo\tlast\n";
+    private static final String log100 = "0.2\tnode2.com\t5480\tcontainer\tstdout\tinfo\tsecond\n";
+    private static final String log101 = "0.1\tnode2.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n";
+    private static final String log110 = "3600.1\tnode1.com\t5480\tcontainer\tstderr\twarning\tthird\n";
+    private static final String log200 = "86400.1\tnode2.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)\n";
 
     @Before
     public void setup() throws IOException {
@@ -52,30 +51,39 @@ public class LogReaderTest {
     }
 
     @Test
-    public void testThatLogsOutsideRangeAreExcluded() throws Exception {
+    public void testThatLogsOutsideRangeAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050));
+        logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050), Optional.empty());
 
         assertEquals(log100 + logv11 + log110, baos.toString(UTF_8));
     }
 
     @Test
-    public void testThatLogsNotMatchingRegexAreExcluded() throws Exception {
+    public void testThatLogsNotMatchingRegexAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*-1.*"));
-        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)));
+        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
 
         assertEquals(log101 + logv11, baos.toString(UTF_8));
     }
 
     @Test
-    public void testZippedStreaming() throws IOException {
+    public void testZippedStreaming() {
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)));
+        logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
 
         assertEquals(log101 + log100 + logv11 + log110 + log200 + logv, zippedBaos.toString(UTF_8));
+    }
+
+    @Test
+    public void logsForSingeNodeIsRetrieved() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
+        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.of("node2.com"));
+
+        assertEquals(log101 + log100 + log200, baos.toString(UTF_8));
     }
 
     private byte[] compress(String input) throws IOException {

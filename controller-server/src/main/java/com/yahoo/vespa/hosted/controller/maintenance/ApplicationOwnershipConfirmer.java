@@ -17,6 +17,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -38,14 +39,15 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
-        confirmApplicationOwnerships();
-        ensureConfirmationResponses();
-        updateConfirmedApplicationOwners();
+    protected boolean maintain() {
+        return confirmApplicationOwnerships() &
+               ensureConfirmationResponses() &
+               updateConfirmedApplicationOwners();
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
-    private void confirmApplicationOwnerships() {
+    private boolean confirmApplicationOwnerships() {
+        AtomicBoolean success = new AtomicBoolean(true);
         applications()
                        .withProjectId()
                        .withProductionDeployment()
@@ -63,10 +65,11 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                }).ifPresent(newIssueId -> store(newIssueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
+                               success.set(false);
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
                            }
                        });
-
+        return success.get();
     }
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {
@@ -85,7 +88,8 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
-    private void ensureConfirmationResponses() {
+    private boolean ensureConfirmationResponses() {
+        AtomicBoolean success = new AtomicBoolean(true);
         for (Application application : applications())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
@@ -93,12 +97,14 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                     ownershipIssues.ensureResponse(issueId, tenant.contact());
                 }
                 catch (RuntimeException e) {
+                    success.set(false);
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                 }
             });
+        return success.get();
     }
 
-    private void updateConfirmedApplicationOwners() {
+    private boolean updateConfirmedApplicationOwners() {
         applications()
                        .withProjectId()
                        .withProductionDeployment()
@@ -112,6 +118,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                        controller().applications().store(lockedApplication.withOwner(owner)));
                            });
                        });
+        return true;
     }
 
     private ApplicationList applications() {

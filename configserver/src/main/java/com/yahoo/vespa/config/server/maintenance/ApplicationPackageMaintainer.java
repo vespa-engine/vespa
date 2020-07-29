@@ -16,11 +16,10 @@ import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -40,19 +39,19 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
                                  Duration interval,
-                                 ConfigserverConfig configserverConfig,
                                  FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, interval, interval);
         this.applicationRepository = applicationRepository;
-        this.configserverConfig = configserverConfig;
+        this.configserverConfig = applicationRepository.configserverConfig();
 
         distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
     }
 
     @Override
-    protected void maintain() {
-        if (! distributeApplicationPackage.value()) return;
+    protected boolean maintain() {
+        boolean success = true;
+        if (! distributeApplicationPackage.value()) return success;
 
         try (var fileDownloader = new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
@@ -65,10 +64,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 log.fine(() -> "Verifying application package file reference " + applicationPackage + " for session " + sessionId);
 
                 if (applicationPackage != null) {
-                    if (missingOnDisk(applicationPackage)) {
+                    if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " - session " + sessionId);
 
                         if (fileDownloader.getFile(applicationPackage).isEmpty()) {
+                            success = false;
                             log.warning("Failed to download application package for application " + applicationId + " - session " + sessionId);
                             continue;
                         }
@@ -77,6 +77,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 }
             }
         }
+        return success;
     }
 
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
@@ -84,11 +85,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         SessionRepository sessionRepository = tenant.getSessionRepository();
         if (sessionRepository.getLocalSession(sessionId) == null)
             sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
-    }
-
-    private boolean missingOnDisk(FileReference applicationPackageReference) {
-        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(downloadDirectory);
-        return ! fileReferencesOnDisk.contains(applicationPackageReference.value());
     }
 
 }

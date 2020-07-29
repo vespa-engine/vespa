@@ -8,8 +8,8 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
@@ -21,7 +21,6 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
@@ -29,9 +28,9 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.utils.FileSender;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -47,7 +46,7 @@ import java.util.stream.Stream;
  * @author gjoranv
  */
 public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
-        BundlesConfig.Producer,
+        ApplicationBundlesConfig.Producer,
         QrStartConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
@@ -135,11 +134,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
         if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) {
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vespa-testrunner-components-jar-with-dependencies.jar")));
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar")));
-            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/tenant-cd-api-jar-with-dependencies.jar")));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-testrunner-components"));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-osgi-testrunner"));
+            addPlatformBundle(PlatformBundles.absoluteBundlePath("tenant-cd-api"));
             if(deployState.zone().system().isPublic()) {
-                addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/cloud-tenant-cd-jar-with-dependencies.jar")));
+                addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-tenant-cd"));
             }
         }
     }
@@ -189,10 +188,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
 
     @Override
-    public void getConfig(BundlesConfig.Builder builder) {
+    public void getConfig(ApplicationBundlesConfig.Builder builder) {
         applicationBundles.stream().map(FileReference::value)
-                .forEach(builder::bundle);
-        super.getConfig(builder);
+                .forEach(builder::bundles);
     }
 
     @Override

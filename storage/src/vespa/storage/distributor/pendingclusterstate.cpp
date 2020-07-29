@@ -12,7 +12,7 @@
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <climits>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".pendingclusterstate");
 
 using document::BucketSpace;
@@ -248,7 +248,22 @@ PendingClusterState::Summary::Summary(const std::string& prevClusterState,
 
 PendingClusterState::Summary::Summary(const Summary &) = default;
 PendingClusterState::Summary & PendingClusterState::Summary::operator = (const Summary &) = default;
-PendingClusterState::Summary::~Summary() { }
+PendingClusterState::Summary::~Summary() = default;
+
+void PendingClusterState::update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source) {
+    auto transition_iter = _pendingTransitions.find(source.bucketSpace);
+    assert(transition_iter != _pendingTransitions.end());
+    auto& transition = *transition_iter->second;
+    transition.increment_request_failures(source.node);
+    // Edge triggered (rate limited) warning for content node bucket fetching failures
+    if (transition.request_failures(source.node) == RequestFailureWarningEdgeTriggerThreshold) {
+        LOGBP(warning, "Have failed multiple bucket info fetch requests towards node %u. Last received error is: %s",
+              source.node, result.toString().c_str());
+    }
+    if (result.getResult() == api::ReturnCode::REJECTED) {
+        transition.incrementRequestRejections(source.node);
+    }
+}
 
 bool
 PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& reply)
@@ -266,11 +281,7 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
         resendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(resendTime, bucketSpaceAndNode);
         _sentMessages.erase(iter);
-        if (result.getResult() == api::ReturnCode::REJECTED) {
-            auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
-            assert(transitionIter != _pendingTransitions.end());
-            transitionIter->second->incrementRequestRejections(bucketSpaceAndNode.node);
-        }
+        update_reply_failure_statistics(result, bucketSpaceAndNode);
         return true;
     }
 

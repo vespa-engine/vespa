@@ -71,7 +71,8 @@ public class Flags {
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
-            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
+            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
+            "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
@@ -264,12 +265,6 @@ public class Flags {
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
-            "publish-direct-routing-endpoint", true,
-            "Whether an application should receive a directly routed endpoint in its endpoint list",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,
             "Configure NLB to use proxy protocol",
@@ -321,7 +316,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag WEIGHTED_DNS_PER_REGION = defineFeatureFlag(
-            "weighted-dns-per-region", false,
+            "weighted-dns-per-region", true,
             "Whether to create weighted DNS records per region in global endpoints",
             "Takes effect on next deployment through controller",
             APPLICATION_ID
@@ -343,6 +338,13 @@ public class Flags {
             "container-outbound-blocked-ipv6", List.of(), String.class,
             "List of IPs or CIDRs that are blocked for outbound connections",
             "Takes effect on next tick"
+    );
+
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_LOCK = defineFeatureFlag(
+            "use-config-server-lock",
+            false,
+            "Whether the node-repository should take the same application lock as the config server when making changes to nodes",
+            "Takes effect on config server restart"
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

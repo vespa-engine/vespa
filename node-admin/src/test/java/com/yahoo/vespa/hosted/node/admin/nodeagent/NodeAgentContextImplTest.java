@@ -2,14 +2,19 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author freva
@@ -82,6 +87,23 @@ public class NodeAgentContextImplTest {
         assertRewrite("docker.tld/vespa/hosted:1.2.3", "/var/log", "/var/log");
         assertRewrite("docker.tld/vespa/hosted:1.2.3", "/home/y/log", "/home/y/log");
         assertRewrite("docker.tld/vespa/hosted:1.2.3", "/opt/vespa/log", "/opt/vespa/log");
+    }
+
+    @Test
+    public void disabledTasksTest() {
+        NodeAgentContext context1 = createContextWithDisabledTasks();
+        assertFalse(context1.isDisabled(NodeAgentTask.DiskCleanup));
+        assertFalse(context1.isDisabled(NodeAgentTask.CoreDumps));
+
+        NodeAgentContext context2 = createContextWithDisabledTasks("root>UpgradeTask", "DiskCleanup", "node>CoreDumps");
+        assertFalse(context2.isDisabled(NodeAgentTask.DiskCleanup));
+        assertTrue(context2.isDisabled(NodeAgentTask.CoreDumps));
+    }
+
+    private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        flagSource.withListFlag(Flags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
+        return new NodeAgentContextImpl.Builder("node123").flagSource(flagSource).build();
     }
 
     private static void assertRewrite(String dockerImage, String path, String expected) {

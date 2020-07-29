@@ -66,12 +66,12 @@ public class HostSystem extends AbstractConfigProducer<Host> {
      * @return the host with the given hostname, or null if no such host
      */
     public HostResource getHostByHostname(String name) {
-        System.out.println("Getting name=" + name + " all hosts: " + hostname2host);
+        String localhost = "localhost";
         HostResource hostResource = hostname2host.get(name);
         if (hostResource == null) {
-            // Create a new HostResource if this is the host this code is running on (as when running tests)
-            if (HostName.getLocalhost().equals(name)) {
-                String localhost = "localhost";
+            // Create a new HostResource if this is the host this code is running on (as it is when running tests)
+            // TODO: please eliminate the ugly hack using "localhost.fortestingpurposesonly"
+            if (HostName.getLocalhost().equals(name) || "localhost.fortestingpurposesonly".equals(name)) {
                 if (! getChildren().containsKey(localhost)) {
                     new Host(this, localhost);
                 }

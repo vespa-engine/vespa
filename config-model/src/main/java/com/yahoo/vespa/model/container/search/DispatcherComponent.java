@@ -5,7 +5,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.BundleMapper;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 
 /**
@@ -32,7 +32,7 @@ public class DispatcherComponent extends Component<AbstractConfigProducer<?>, Co
         String dispatcherComponentId = "dispatcher." + indexedSearchCluster.getClusterName(); // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
                                   com.yahoo.search.dispatch.Dispatcher.class.getName(),
-                                  BundleMapper.searchAndDocprocBundle);
+                                  PlatformBundles.searchAndDocprocBundle);
     }
 
     @Override

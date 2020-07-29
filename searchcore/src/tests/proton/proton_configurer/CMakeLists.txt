@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_proton_configurer_test_app TEST
     DEPENDS
     searchcore_server
     searchcore_fconfig
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_proton_configurer_test_app COMMAND searchcore_proton_configurer_test_app)

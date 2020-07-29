@@ -68,12 +68,13 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     @Override
-    public void maintain() {
+    public boolean maintain() {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
         reportInfrastructureUpgradeMetrics();
         reportAuditLog();
+        return true;
     }
 
     private void reportAuditLog() {

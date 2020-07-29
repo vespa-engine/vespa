@@ -239,6 +239,7 @@ public class SearchBuilder {
 
         var resolver = new DocumentReferenceResolver(searchList);
         sdocs.forEach(resolver::resolveReferences);
+        sdocs.forEach(resolver::resolveInheritedReferences);
         var importedFieldsEnumerator = new ImportedFieldsEnumerator(searchList);
         sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 

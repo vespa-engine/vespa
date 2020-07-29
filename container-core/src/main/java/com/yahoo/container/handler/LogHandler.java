@@ -35,11 +35,13 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         Instant to = Optional.ofNullable(request.getProperty("to"))
                              .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MAX);
 
+        Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
+
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) {
                 try {
-                    logReader.writeLogs(outputStream, from, to);
+                    logReader.writeLogs(outputStream, from, to, hostname);
                 }
                 catch (Throwable t) {
                     log.log(Level.WARNING, "Failed reading logs from " + from + " to " + to, t);

@@ -26,6 +26,9 @@ void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_con
         if (spec.name.substr(0, prefix.size()) == prefix) {
             fields.add_mapping(field_name, spec.name);
         }
+        if (spec.name == field_name) {
+            fields.add_field(field_name);
+        }
     }
 }
 

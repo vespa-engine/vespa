@@ -26,17 +26,19 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
 
     private final String name;
     private final JobControl jobControl;
+    private final JobMetrics jobMetrics;
     private final Duration interval;
     private final ScheduledExecutorService service;
 
-    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, List<String> clusterHostnames) {
-        this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl);
+    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
+        this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
     }
 
-    public Maintainer(String name, Duration interval, Duration initialDelay, JobControl jobControl) {
+    public Maintainer(String name, Duration interval, Duration initialDelay, JobControl jobControl, JobMetrics jobMetrics) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
+        this.jobMetrics = Objects.requireNonNull(jobMetrics);
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name(), this);
@@ -72,8 +74,8 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     @Override
     public final String toString() { return name(); }
 
-    /** Called once each time this maintenance job should run */
-    protected abstract void maintain();
+    /** Called once each time this maintenance job should run. Returns whether the maintenance run was succesful */
+    protected abstract boolean maintain();
 
     /** Returns the interval at which this job is set to run */
     protected Duration interval() { return interval; }
@@ -82,7 +84,13 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     @SuppressWarnings("unused")
     public final void lockAndMaintain() {
         try (var lock = jobControl.lockJob(name())) {
-            maintain();
+            try {
+                jobMetrics.recordRunOf(name());
+                if (maintain()) jobMetrics.recordSuccessOf(name());
+            } finally {
+                // Always forward metrics
+                jobMetrics.forward(name());
+            }
         }
     }
 

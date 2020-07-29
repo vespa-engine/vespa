@@ -78,7 +78,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric) {
         // check ping status every five minutes, but at least twice as often as the down time limit
-        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
+        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), metric);
         this.deployer = deployer;
         this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;
@@ -91,7 +91,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
@@ -131,9 +131,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             failActive(node, reason);
         }
 
-        metric.set(throttlingActiveMetric, Math.min( 1, throttledHostFailures + throttledNodeFailures), null);
+        int throttlingActive = Math.min(1, throttledHostFailures + throttledNodeFailures);
+        metric.set(throttlingActiveMetric, throttlingActive, null);
         metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
+        return throttlingActive == 0;
     }
 
     private void updateNodeLivenessEventsForReadyNodes(Mutex lock) {

@@ -124,6 +124,7 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
+    bool                            _has_shut_down_config_and_state_components;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
     std::mutex                      _nodeUpLock;
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
@@ -168,6 +169,15 @@ public:
      * 1st phase init: start cheap clock thread and get initial config
      */
     BootstrapConfig::SP init();
+
+    /**
+     * Shuts down metric manager and state server functionality to avoid
+     * calls to these during service layer component tear-down.
+     *
+     * Explicitly noexcept to avoid consistency issues between this and the
+     * destructor if something throws during shutdown.
+     */
+    void shutdown_config_fetching_and_state_exposing_components_once() noexcept;
 
     // 2nd phase init: setup data structures.
     void init(const BootstrapConfig::SP & configSnapshot);

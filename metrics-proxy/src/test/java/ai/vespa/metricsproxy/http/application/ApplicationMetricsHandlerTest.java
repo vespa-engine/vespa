@@ -11,6 +11,8 @@ import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -62,6 +64,8 @@ public class ApplicationMetricsHandlerTest {
 
     private static final String MOCK_METRICS_PATH = "/node0";
 
+    private static final Pattern PROMETHEUS_REGEX_FORMAT = Pattern.compile("[a-z_]+([{]([A-Za-z_]+=\"[A-Za-z.\\-\\/0.9_]+\",)*[}])?( [0-9E]+(\\.[0-9E]+)?){2}");
+
     private int port;
 
     private static RequestHandlerTestDriver testDriver;
@@ -112,11 +116,18 @@ public class ApplicationMetricsHandlerTest {
 
     @Ignore
     @Test
-    public void visually_inspect_values_response() throws Exception {
+    public void visually_inspect_values_response_metrics() throws Exception {
         String response = testDriver.sendRequest(METRICS_VALUES_URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericApplicationModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
+    }
+
+    @Ignore
+    @Test
+    public void visually_inspect_values_response_prometheus() throws Exception {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        System.out.println(response);
     }
 
     @Test
@@ -129,6 +140,23 @@ public class ApplicationMetricsHandlerTest {
         assertEquals(MOCK_METRICS_PATH, nodeModel.role);
         assertEquals(2, nodeModel.node.metrics.size());
         assertEquals(16.222, nodeModel.node.metrics.get(0).values.get(CPU_METRIC), 0.0001d);
+    }
+
+    @Test
+    public void prometheus_response_contains_hostname() {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        Arrays.stream(response.split("\n"))
+                .filter(line -> line.contains("{"))
+                .forEach(line -> assertTrue(line.contains("hostname")));
+    }
+
+    @Test
+    public void prometheus_response_obeys_format() {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        Arrays.stream(response.split("\n"))
+                .filter(line -> !line.startsWith("#"))
+                .filter(line -> !line.contains("{"))
+                .forEach(line -> assertTrue(PROMETHEUS_REGEX_FORMAT.matcher(line).find()));
     }
 
     @Test

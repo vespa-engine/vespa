@@ -240,7 +240,7 @@ public class NodeSerializerTest {
     public void serializes_multiple_ip_addresses() {
         byte[] nodeWithMultipleIps = createNodeJson("node4.yahoo.tld", "127.0.0.4", "::4");
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithMultipleIps);
-        assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipConfig().primary());
     }
 
     @Test
@@ -250,12 +250,12 @@ public class NodeSerializerTest {
         // Test round-trip with IP address pool
         node = node.with(node.ipConfig().with(IP.Pool.of(Set.of("::1", "::2", "::3"))));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool().asSet(), copy.ipAddressPool().asSet());
+        assertEquals(node.ipConfig().pool().asSet(), copy.ipConfig().pool().asSet());
 
         // Test round-trip without IP address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool().asSet(), copy.ipAddressPool().asSet());
+        assertEquals(node.ipConfig().pool().asSet(), copy.ipConfig().pool().asSet());
     }
 
     @Test

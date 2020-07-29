@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.concurrent.maintenance.JobMetrics;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -21,8 +23,9 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
 
     private final NodeRepository nodeRepository;
 
-    public NodeRepositoryMaintainer(NodeRepository nodeRepository, Duration interval) {
-        super(null, interval, nodeRepository.clock().instant(), nodeRepository.jobControl(), nodeRepository.database().cluster());
+    public NodeRepositoryMaintainer(NodeRepository nodeRepository, Duration interval, Metric metric) {
+        super(null, interval, nodeRepository.clock().instant(), nodeRepository.jobControl(), jobMetrics(metric),
+              nodeRepository.database().cluster());
         this.nodeRepository = nodeRepository;
     }
 
@@ -39,6 +42,12 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
                                .stream()
                                .filter(node -> ! node.allocation().get().owner().instance().isTester())
                                .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
+    }
+
+    private static JobMetrics jobMetrics(Metric metric) {
+        return new JobMetrics((job, consecutiveFailures) -> {
+            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
+        });
     }
 
 }

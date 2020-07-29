@@ -108,7 +108,6 @@ public:
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
     virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
-    virtual void ParseLocation(GetDocsumsState *) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 

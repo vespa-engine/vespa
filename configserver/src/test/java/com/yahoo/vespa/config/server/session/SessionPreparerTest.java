@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
@@ -59,7 +59,6 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +67,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.APPLICATION_PACKAGE_REFERENCE_PATH;
+import static com.yahoo.vespa.config.server.session.SessionPreparer.PrepareResult;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,27 +85,31 @@ public class SessionPreparerTest {
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
     private static final Version version321 = new Version(3, 2, 1);
-    private KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-    private X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
+    private final KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+    private final X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
             Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
-
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MockCurator curator;
     private ConfigCurator configCurator;
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
-    private MockFileDistributionFactory fileDistributionFactory;
-    private MockSecretStore secretStore = new MockSecretStore();
+    private final MockSecretStore secretStore = new MockSecretStore();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionProvider();
+        componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .fileReferencesDir(folder.newFolder().getAbsolutePath())
+                                            .configServerDBDir(folder.newFolder().getAbsolutePath())
+                                            .configDefinitionsDir(folder.newFolder().getAbsolutePath())
+                                            .build())
+                .build();
         preparer = createPreparer();
     }
 
@@ -115,7 +119,7 @@ public class SessionPreparerTest {
 
     private SessionPreparer createPreparer(HostProvisionerProvider hostProvisionerProvider) {
         ModelFactoryRegistry modelFactoryRegistry =
-                new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(version123), new TestModelFactory(version321)));
+                new ModelFactoryRegistry(List.of(new TestModelFactory(version123), new TestModelFactory(version321)));
         return createPreparer(modelFactoryRegistry, hostProvisionerProvider);
     }
 
@@ -123,7 +127,7 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                componentRegistry.getFileDistributionProvider(),
+                componentRegistry.getFileDistributionFactory(),
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(componentRegistry.getConfigserverConfig()),
                 componentRegistry.getConfigserverConfig(),
@@ -152,14 +156,13 @@ public class SessionPreparerTest {
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
-        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0));
+        PrepareResult result = prepare(testApp, new PrepareParams.Builder().dryRun(true).build());
+        assertTrue(result.getFileRegistries().get(version321).export().isEmpty());
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1)); // Only builds the newest version
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
@@ -327,11 +330,11 @@ public class SessionPreparerTest {
         prepare(app, new PrepareParams.Builder().build());
     }
 
-    private void prepare(File app, PrepareParams params) throws IOException {
+    private PrepareResult prepare(File app, PrepareParams params) throws IOException {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
-        preparer.prepare(new HostRegistry<>(), getLogger(), params,
-                         Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
-                         applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
+        return preparer.prepare(new HostRegistry<>(), getLogger(), params,
+                                Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
+                                applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Represents an application's endpoint. The endpoint scope can either be global or a specific zone. This is visible to
- * the tenant and is used by the tenant when accessing deployments.
+ * Represents an application's endpoint in hosted Vespa. This encapsulates all logic for building URLs and DNS names for
+ * application endpoints.
  *
  * @author mpolden
  */
@@ -29,7 +29,8 @@ public class Endpoint {
     private static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
-    private final String name;
+    private final EndpointId id;
+    private final ClusterSpec.Id cluster;
     private final URI url;
     private final List<ZoneId> zones;
     private final Scope scope;
@@ -37,16 +38,20 @@ public class Endpoint {
     private final RoutingMethod routingMethod;
     private final boolean tls;
 
-    private Endpoint(String name, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy, RoutingMethod routingMethod) {
-        Objects.requireNonNull(name, "name must be non-null");
+    private Endpoint(EndpointId id, ClusterSpec.Id cluster, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy, RoutingMethod routingMethod) {
+        Objects.requireNonNull(cluster, "cluster must be non-null");
         Objects.requireNonNull(zones, "zones must be non-null");
         Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
-        if ((scope == Scope.zone || scope == Scope.weighted) && zones.size() != 1) {
-            throw new IllegalArgumentException("A single zone must be given for " + scope + "-scoped endpoints");
+        if (scope == Scope.global) {
+            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for global endpoints");
+        } else {
+            if (id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
+            if (zones.size() != 1) throw new IllegalArgumentException("A single zone must be given for " + scope + " endpoints");
         }
-        this.name = name;
+        this.id = id;
+        this.cluster = cluster;
         this.url = url;
         this.zones = List.copyOf(zones);
         this.scope = scope;
@@ -55,10 +60,11 @@ public class Endpoint {
         this.tls = port.tls;
     }
 
-    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
+    private Endpoint(EndpointId id, ClusterSpec.Id cluster, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
                      Port port, boolean legacy, RoutingMethod routingMethod) {
-        this(name,
-             createUrl(name,
+        this(id,
+             cluster,
+             createUrl(endpointOrClusterAsString(id, cluster),
                        Objects.requireNonNull(application, "application must be non-null"),
                        zones,
                        scope,
@@ -70,14 +76,19 @@ public class Endpoint {
     }
 
     /**
-     * Returns the name of this endpoint (the first component of the DNS name). Depending on the endpoint type, this
-     * can be one of the following:
-     * - A wildcard (any scope)
-     * - A cluster name (only zone scope)
-     * - An endpoint ID (only global scope)
+     * Returns the name of this endpoint (the first component of the DNS name). This can be one of the following:
+     *
+     * - The wildcard character '*' (for wildcard endpoints, with any scope)
+     * - The cluster ID (zone scope)
+     * - The endpoint ID (global scope)
      */
     public String name() {
-        return name;
+        return endpointOrClusterAsString(id, cluster);
+    }
+
+    /** Returns the cluster ID to which this routes traffic */
+    public ClusterSpec.Id cluster() {
+        return cluster;
     }
 
     /** Returns the URL used to access this */
@@ -106,7 +117,7 @@ public class Endpoint {
         return legacy;
     }
 
-    /** Returns the routing used for this */
+    /** Returns the routing method used for this */
     public RoutingMethod routingMethod() {
         return routingMethod;
     }
@@ -125,7 +136,7 @@ public class Endpoint {
     public String upstreamIdOf(DeploymentId deployment) {
         if (scope != Scope.global) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
-        return upstreamIdOf(name, deployment.applicationId(), deployment.zoneId());
+        return upstreamIdOf(name(), deployment.applicationId(), deployment.zoneId());
     }
 
     @Override
@@ -149,6 +160,10 @@ public class Endpoint {
     /** Returns the DNS suffix used for endpoints in given system */
     public static String dnsSuffix(SystemName system) {
         return dnsSuffix(system, false);
+    }
+
+    private static String endpointOrClusterAsString(EndpointId id, ClusterSpec.Id cluster) {
+        return id == null ? cluster.value() : id.id();
     }
 
     private static URI createUrl(String name, ApplicationId application, List<ZoneId> zones, Scope scope,
@@ -190,7 +205,7 @@ public class Endpoint {
         if (scope == Scope.global) return "global";
         var zone = zones.get(0);
         var region = zone.region().value();
-        if (scope == Scope.weighted) region += "-w";
+        if (scope == Scope.region) region += "-w";
         if (!legacy && zone.environment().isProduction()) return region; // Skip prod environment for non-legacy endpoints
         return region + "." + zone.environment().value();
     }
@@ -261,14 +276,14 @@ public class Endpoint {
     /** An endpoint's scope */
     public enum Scope {
 
-        /** Endpoint points to all zones */
+        /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
+
+        /** Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones */
+        region,
 
         /** Endpoint points to a single zone */
         zone,
-
-        /** Endpoint points to a single region */
-        weighted,
 
     }
 
@@ -323,7 +338,7 @@ public class Endpoint {
         if (!systemApplication.hasEndpoint()) throw new IllegalArgumentException(systemApplication + " has no endpoint");
         RoutingMethod routingMethod = RoutingMethod.exclusive;
         Port port = url.getPort() == -1 ? Port.tls() : Port.tls(url.getPort()); // System application endpoints are always TLS
-        return new Endpoint("", url, List.of(zone), Scope.zone, port, false, routingMethod);
+        return new Endpoint(null, ClusterSpec.Id.from("admin"), url, List.of(zone), Scope.zone, port, false, routingMethod);
     }
 
     public static class EndpointBuilder {
@@ -337,60 +352,55 @@ public class Endpoint {
         private Port port;
         private RoutingMethod routingMethod = RoutingMethod.shared;
         private boolean legacy = false;
-        private boolean wildcard = false;
 
         private EndpointBuilder(ApplicationId application) {
             this.application = application;
         }
 
-        /** Sets the cluster target for this */
+        /** Sets the zone target for this */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
-            if (endpointId != null || wildcard) {
-                throw new IllegalArgumentException("Cannot set multiple target types");
-            }
+            checkScope();
             this.cluster = cluster;
             this.scope = Scope.zone;
             this.zones = List.of(zone);
             return this;
         }
 
-        /** Sets the endpoint target ID for this (as defined in deployments.xml) */
-        public EndpointBuilder named(EndpointId endpointId) {
-           return named(endpointId, List.of());
+        /** Sets the global target with given ID and pointing to the default cluster */
+        public EndpointBuilder target(EndpointId endpointId) {
+           return target(endpointId, ClusterSpec.Id.from("default"), List.of());
         }
 
-        /** Sets the endpoint ID for this (as defined in deployments.xml) */
-        public EndpointBuilder named(EndpointId endpointId, List<ZoneId> targets) {
-            if (cluster != null || wildcard) {
-                throw new IllegalArgumentException("Cannot set multiple target types");
-            }
+        /** Sets the global target with given ID, zones and cluster (as defined in deployments.xml) */
+        public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<ZoneId> zones) {
+            checkScope();
             this.endpointId = endpointId;
-            this.zones = targets;
+            this.cluster = cluster;
+            this.zones = zones;
             this.scope = Scope.global;
             return this;
         }
 
         /** Sets the global wildcard target for this */
         public EndpointBuilder wildcard() {
-            return wildcard(Scope.global, List.of());
+            return target(EndpointId.of("*"), ClusterSpec.Id.from("*"), List.of());
         }
 
         /** Sets the zone wildcard target for this */
         public EndpointBuilder wildcard(ZoneId zone) {
-            return wildcard(Scope.zone, List.of(zone));
+            return target(ClusterSpec.Id.from("*"), zone);
         }
 
-        private EndpointBuilder wildcard(Scope scope, List<ZoneId> zones) {
-            if (endpointId != null || cluster != null) {
-                throw new IllegalArgumentException("Cannot set multiple target types");
-            }
-            this.wildcard = true;
-            this.scope = scope;
-            this.zones = zones;
+        /** Sets the region target for this, deduced from given zone */
+        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
+            checkScope();
+            this.cluster = cluster;
+            this.scope = Scope.region;
+            this.zones = List.of(effectiveZone(zone));
             return this;
         }
 
-        /** Sets the port of this  */
+        /** Sets the port of this */
         public EndpointBuilder on(Port port) {
             this.port = port;
             return this;
@@ -408,35 +418,21 @@ public class Endpoint {
             return this;
         }
 
-        /** Make this a weighted endpoint */
-        public EndpointBuilder weighted() {
-            if (scope != Scope.zone && scope != Scope.weighted) {
-                throw new IllegalArgumentException("Endpoint must target zone before making it weighted");
-            }
-            this.scope = Scope.weighted;
-            this.zones = List.of(effectiveZone(zones.get(0)));
-            return this;
-        }
-
         /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
-            String name;
-            if (wildcard) {
-                name = "*";
-            } else if (endpointId != null) {
-                name = endpointId.id();
-            } else if (cluster != null) {
-                name = cluster.value();
-            } else {
-                throw new IllegalArgumentException("Must set either cluster, rotation or wildcard target");
-            }
             if (system.isPublic() && routingMethod != RoutingMethod.exclusive) {
                 throw new IllegalArgumentException("Public system only supports routing method " + RoutingMethod.exclusive);
             }
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(name, application, zones, scope, system, port, legacy, routingMethod);
+            return new Endpoint(endpointId, cluster, application, zones, scope, system, port, legacy, routingMethod);
+        }
+
+        private void checkScope() {
+            if (scope != null) {
+                throw new IllegalArgumentException("Cannot change endpoint scope. Already set to " + scope);
+            }
         }
 
     }

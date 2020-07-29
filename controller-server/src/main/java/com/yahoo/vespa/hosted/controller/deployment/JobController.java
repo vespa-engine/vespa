@@ -47,7 +47,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -58,7 +57,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -379,8 +377,8 @@ public class JobController {
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
     public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
-                                     Optional<String> sourceUrl, Optional<String> commit,
-                                     long projectId, ApplicationPackage applicationPackage, byte[] testPackageBytes) {
+                                     Optional<String> sourceUrl, long projectId, ApplicationPackage applicationPackage,
+                                     byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockApplicationOrThrow(id, application -> {
             long run = 1 + application.get().latestVersion()
@@ -390,7 +388,7 @@ public class JobController {
                                                 applicationPackage.compileVersion(),
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
-                                                commit));
+                                                revision.map(SourceRevision::commit)));
 
             controller.applications().applicationStore().put(id.tenant(),
                                                              id.application(),

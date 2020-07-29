@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,6 +35,35 @@ public class MaintainerTest {
         assertEquals(299, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
 
         assertEquals(300, Maintainer.staggeredDelay(interval, now, "cfg0", cluster).toMillis());
+    }
+
+    @Test
+    public void success_metric() {
+        AtomicLong consecutiveFailures = new AtomicLong();
+        JobMetrics jobMetrics = new JobMetrics((job, count) -> consecutiveFailures.set(count));
+        TestMaintainer maintainer = new TestMaintainer(jobMetrics);
+
+        // Maintainer fails twice in a row
+        maintainer.successOnNextRun(false).run();
+        assertEquals(1, consecutiveFailures.get());
+        maintainer.successOnNextRun(false).run();
+        assertEquals(2, consecutiveFailures.get());
+
+        // Maintainer runs successfully
+        maintainer.successOnNextRun(true).run();
+        assertEquals(0, consecutiveFailures.get());
+
+        // Maintainer runs successfully again
+        maintainer.run();
+        assertEquals(0, consecutiveFailures.get());
+
+        // Maintainer throws
+        maintainer.throwOnNextRun(true).run();
+        assertEquals(1, consecutiveFailures.get());
+
+        // Maintainer recovers
+        maintainer.throwOnNextRun(false).run();
+        assertEquals(0, consecutiveFailures.get());
     }
 
 }

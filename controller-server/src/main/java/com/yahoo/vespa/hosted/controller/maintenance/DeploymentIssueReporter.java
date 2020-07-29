@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -20,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
@@ -44,10 +44,10 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
-        maintainDeploymentIssues(applications());
-        maintainPlatformIssue(applications());
-        escalateInactiveDeploymentIssues(applications());
+    protected boolean maintain() {
+        return maintainDeploymentIssues(applications()) &
+               maintainPlatformIssue(applications()) &
+               escalateInactiveDeploymentIssues(applications());
     }
 
     /** Returns the applications to maintain issue status for. */
@@ -62,7 +62,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
      * and store the issue id for the filed issues. Also, clear the issueIds of applications
      * where deployment has not failed for this amount of time.
      */
-    private void maintainDeploymentIssues(List<Application> applications) {
+    private boolean maintainDeploymentIssues(List<Application> applications) {
         List<TenantAndApplicationId> failingApplications = controller().jobController().deploymentStatuses(ApplicationList.from(applications))
                                                                        .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
                                                                        .mapToList(status -> status.application().id());
@@ -72,6 +72,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
                 fileDeploymentIssueFor(application);
             else
                 store(application.id(), null);
+        return true;
     }
 
     /**
@@ -79,24 +80,26 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
      * applications that have been failing the upgrade to the system version for
      * longer than the set grace period, or update this list if the issue already exists.
      */
-    private void maintainPlatformIssue(List<Application> applications) {
+    private boolean maintainPlatformIssue(List<Application> applications) {
+        boolean success = true;
         if (controller().system() == SystemName.cd)
-            return;
+            return success;
         
         Version systemVersion = controller().systemVersion();
 
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
-            return;
+            return success;
 
         DeploymentStatusList statuses = controller().jobController().deploymentStatuses(ApplicationList.from(applications));
         if (statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod)).isEmpty())
-            return;
+            return success;
 
         List<ApplicationId> failingApplications = statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
                                                           .mapToList(status -> status.application().id().defaultInstance());
 
         // TODO jonmv: Send only tenant and application, here and elsewhere in this.
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
+        return success;
     }
 
     private Tenant ownerOf(TenantAndApplicationId applicationId) {
@@ -121,7 +124,8 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
     }
 
     /** Escalate issues for which there has been no activity for a certain amount of time. */
-    private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
+    private boolean escalateInactiveDeploymentIssues(Collection<Application> applications) {
+        AtomicBoolean success = new AtomicBoolean(true);
         applications.forEach(application -> application.deploymentIssueId().ifPresent(issueId -> {
             try {
                 Tenant tenant = ownerOf(application.id());
@@ -130,9 +134,11 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
                                                     tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
             }
             catch (RuntimeException e) {
+                success.set(false);
                 log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
             }
         }));
+        return success.get();
     }
 
     private void store(TenantAndApplicationId id, IssueId issueId) {

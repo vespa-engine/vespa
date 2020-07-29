@@ -9,6 +9,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.After;
@@ -763,7 +764,7 @@ public class NodesV2ApiTest {
 
         // Activate target
         var nodeRepository = (NodeRepository)tester.container().components().getComponent(MockNodeRepository.class.getName());
-        var osUpgradeActivator = new OsUpgradeActivator(nodeRepository, Duration.ofDays(1));
+        var osUpgradeActivator = new OsUpgradeActivator(nodeRepository, Duration.ofDays(1), new TestMetric());
         osUpgradeActivator.run();
 
         // Other node type does not return wanted OS version

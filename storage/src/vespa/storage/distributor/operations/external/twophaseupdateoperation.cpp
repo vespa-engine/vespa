@@ -277,8 +277,8 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     op.start(intermediate, _manager.getClock().getTimeInMillis());
     transitionTo(SendState::PUTS_SENT);
 
-    LOG(debug, "Update(%s): sending Put commands with doc %s",
-        update_doc_id().c_str(), doc->toString(true).c_str());
+    LOG(debug, "Update(%s): sending Puts at timestamp %" PRIu64, update_doc_id().c_str(), putTimestamp);
+    LOG(spam,  "Update(%s): Put document is: %s", update_doc_id().c_str(), doc->toString(true).c_str());
 
     if (intermediate._reply.get()) {
         sendReplyWithResult(sender, intermediate._reply->getResult());

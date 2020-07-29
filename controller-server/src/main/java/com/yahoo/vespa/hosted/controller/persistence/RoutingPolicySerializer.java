@@ -95,7 +95,6 @@ public class RoutingPolicySerializer {
     }
 
     public GlobalRouting globalRoutingFromSlime(Inspector object) {
-        if (!object.valid()) return GlobalRouting.DEFAULT_STATUS;
         var status = GlobalRouting.Status.valueOf(object.field(statusField).asString());
         var agent = GlobalRouting.Agent.valueOf(object.field(agentField).asString());
         var changedAt = Serializers.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);

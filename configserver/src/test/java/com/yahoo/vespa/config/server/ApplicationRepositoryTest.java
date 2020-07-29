@@ -121,14 +121,15 @@ public class ApplicationRepositoryTest {
     public void setup(FlagSource flagSource) throws IOException {
         Curator curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .flagSource(flagSource)
                 .clock(clock)
                 .build();
@@ -142,7 +143,11 @@ public class ApplicationRepositoryTest {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
                                                           orchestrator,
-                                                          clock);
+                                                          configserverConfig,
+                                                          new MockLogRetriever(),
+                                                          clock,
+                                                          new MockTesterClient(),
+                                                          new NullMetric());
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -231,14 +236,6 @@ public class ApplicationRepositoryTest {
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void refuseToGetLogsFromHostnameNotInApplication() {
-        applicationRepository = createApplicationRepository();
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
         assertEquals(200, response.getStatus());
     }
 

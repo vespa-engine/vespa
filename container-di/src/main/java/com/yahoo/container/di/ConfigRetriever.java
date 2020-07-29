@@ -74,9 +74,7 @@ public final class ConfigRetriever {
         return getConfigs(componentConfigKeys, leastGeneration, false);
     }
 
-    /**
-     * Try to get config just once
-     */
+    // TODO: duplicate code, let getConfigs call this.
     Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
                                             long leastGeneration,
                                             boolean restartOnRedeploy) {

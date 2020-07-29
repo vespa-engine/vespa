@@ -16,7 +16,6 @@ vespa_add_library(searchlib_fef OBJECT
     filetablefactory.cpp
     functiontablefactory.cpp
     indexproperties.cpp
-    location.cpp
     matchdata.cpp
     matchdatalayout.cpp
     objectstore.cpp

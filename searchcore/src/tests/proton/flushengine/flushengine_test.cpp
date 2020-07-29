@@ -162,7 +162,7 @@ public:
         return wrappedTargets;
     }
 
-    // Called once by flush engine slave thread for each task done
+    // Called once by flush engine thread for each task done
     void taskDone()
     {
         std::lock_guard<std::mutex> guard(_lock);

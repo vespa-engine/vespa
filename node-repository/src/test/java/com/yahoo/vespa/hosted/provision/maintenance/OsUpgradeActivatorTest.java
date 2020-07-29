@@ -34,7 +34,7 @@ public class OsUpgradeActivatorTest {
     @Test
     public void activates_upgrade() {
         var osVersions = tester.nodeRepository().osVersions();
-        var osUpgradeActivator = new OsUpgradeActivator(tester.nodeRepository(), Duration.ofDays(1));
+        var osUpgradeActivator = new OsUpgradeActivator(tester.nodeRepository(), Duration.ofDays(1), new TestMetric());
         var version0 = Version.fromString("7.0");
 
         // Create infrastructure nodes
