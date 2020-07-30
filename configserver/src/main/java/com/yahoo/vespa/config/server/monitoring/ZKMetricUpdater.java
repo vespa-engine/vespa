@@ -36,11 +36,11 @@ public class ZKMetricUpdater implements Runnable {
     public static final String METRIC_ZK_CONNECTIONS = getMetricName("zkConnections");
     public static final String METRIC_ZK_OUTSTANDING_REQUESTS = getMetricName("zkOutstandingRequests");
 
-    private static final int CONNECTION_TIMEOUT_MS = 500;
-    private static final int WRITE_TIMEOUT_MS = 250;
-    private static final int READ_TIMEOUT_MS = 500;
+    private static final int CONNECTION_TIMEOUT_MS = 1000;
+    private static final int WRITE_TIMEOUT_MS = 500;
+    private static final int READ_TIMEOUT_MS = 1000;
 
-    private AtomicReference<Map<String, Long>> zkMetrics = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<String, Long>> zkMetrics = new AtomicReference<>(new HashMap<>());
     private final ScheduledExecutorService executorService;
     private final int zkPort;
 
@@ -103,7 +103,7 @@ public class ZKMetricUpdater implements Runnable {
 
             return Optional.of(baos.toString(StandardCharsets.UTF_8));
         } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
-            log.warning("Failure in retrieving monitoring data: (" + e.getClass().getName() + ") " + e.getMessage());
+            log.warning("Failure in retrieving monitoring data: (" + e.getClass().getSimpleName() + ") " + e.getMessage());
             return Optional.empty();
         }
     }
