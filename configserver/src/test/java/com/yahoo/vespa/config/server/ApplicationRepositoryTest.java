@@ -365,7 +365,7 @@ public class ApplicationRepositoryTest {
         deployment3.get().prepare();  // session 4 (not activated)
 
         LocalSession deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
-        assertNotEquals(activeSessionId, deployment3session);
+        assertNotEquals(activeSessionId, deployment3session.getSessionId());
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         SessionRepository sessionRepository = tester.tenant().getSessionRepository();
@@ -678,7 +678,7 @@ public class ApplicationRepositoryTest {
     }
 
     private ApplicationId applicationId() {
-        return ApplicationId.from(tenant1, ApplicationName.from("testapp"), InstanceName.defaultName());
+        return applicationId(tenant1);
     }
 
     private ApplicationId applicationId(TenantName tenantName) {
