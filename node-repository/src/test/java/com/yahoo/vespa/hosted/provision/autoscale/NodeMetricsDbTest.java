@@ -5,7 +5,6 @@ import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +14,7 @@ public class NodeMetricsDbTest {
 
     @Test
     public void testNodeMetricsDb() {
-        ManualClock clock = new ManualClock(Instant.ofEpochSecond(1596102538L));
+        ManualClock clock = new ManualClock();
         NodeMetricsDb db = new NodeMetricsDb();
         List<NodeMetrics.MetricValue> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
