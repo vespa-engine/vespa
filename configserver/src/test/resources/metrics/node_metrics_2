@@ -1,0 +1,1100 @@
+{
+  "nodes": [
+    {
+      "hostname": "generic-hostname2.vespa.com",
+      "role": "container/container/0/0",
+      "node": {
+        "timestamp": 1596209314,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 12.5975799380776,
+              "cpu.sys.util": 2.0332717190388,
+              "cpu.vcpus": 2,
+              "disk.limit": 50000000000,
+              "disk.used": 433696768,
+              "disk.util": 0.867393536,
+              "mem.limit": 7890919424,
+              "mem.used": 3145351168,
+              "mem.util": 39.8603888722207,
+              "mem_total.used": 3183894528,
+              "mem_total.util": 40.3488409514901,
+              "bandwidth.limit": 300000000
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "container/container"
+            }
+          },
+          {
+            "values": {
+              "net.in.bytes": 18124900,
+              "net.in.errors": 0,
+              "net.in.dropped": 0,
+              "net.out.bytes": 36287181,
+              "net.out.errors": 0,
+              "net.out.dropped": 0
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "container/container"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "vespa.container",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 7054041088,
+                "memory_rss": 2710110208,
+                "cpu": 26.7355231967491
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 69.1666666666667
+              },
+              "dimensions": {
+                "gcName": "ParNew",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 3777189142.6666665
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "ConcurrentMarkSweep",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0.0300500834725
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "feed.operations.rate": 40.9666666666667
+              },
+              "dimensions": {
+                "api": "vespa.http.server",
+                "operation": "PUT",
+                "status": "OK",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0833333333333,
+                "http.status.4xx.rate": 0
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 8.55
+              },
+              "dimensions": {
+                "httpMethod": "POST",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 1.9166666666667
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container",
+                "clusterId": "container/container"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.slobrok",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 117727232,
+                "memory_rss": 13238272,
+                "cpu": 0.5756857433119
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "slobrok",
+                "clusterId": "container/container"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.metricsproxy-container",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1378344960,
+                "memory_rss": 379858944,
+                "cpu": 2.1334236369793
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 33796174.666666664
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0833333333333
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0.0484140233723
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 10.8333333333333
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.1333333333333
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "container/container"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.config-sentinel",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 0,
+                "memory_rss": 0,
+                "cpu": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "config-sentinel",
+                "clusterId": "container/container"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.logd",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 119803904,
+                "memory_rss": 12619776,
+                "cpu": 0.2709109380291
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logd",
+                "clusterId": "container/container"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hostname": "generic-hostname2.vespa.com",
+      "role": "admin/logserver/0/0",
+      "node": {
+        "timestamp": 1596209314,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 10.5295718706477,
+              "cpu.sys.util": 0.9157683869121,
+              "cpu.vcpus": 0.5,
+              "disk.limit": 50000000000,
+              "disk.used": 421539840,
+              "disk.util": 0.84307968,
+              "mem.limit": 3910524928,
+              "mem.used": 782209024,
+              "mem.util": 20.0026604714691,
+              "mem_total.used": 822915072,
+              "mem_total.util": 21.0435961194824,
+              "bandwidth.limit": 300000000
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "admin/logserver"
+            }
+          },
+          {
+            "values": {
+              "net.in.bytes": 3220153,
+              "net.in.errors": 0,
+              "net.in.dropped": 0,
+              "net.out.bytes": 1864260,
+              "net.out.errors": 0,
+              "net.out.dropped": 0
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "admin/logserver"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "vespa.logserver",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 876695552,
+                "memory_rss": 104443904,
+                "cpu": 0.1176866173504
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {},
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver",
+                "clusterId": "admin/logserver"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.logserver-container",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1191059456,
+                "memory_rss": 287436800,
+                "cpu": 0.9751176866174
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0666722226852
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 3
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 21640705.333333332
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logserver-container",
+                "clusterId": "admin/logserver"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.metricsproxy-container",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1366233088,
+                "memory_rss": 348016640,
+                "cpu": 1.4122394082044
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 33002172
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.06667889113
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0.0317725752508
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 8.3333333333333
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.033339445565
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "admin/logserver"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.config-sentinel",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 0,
+                "memory_rss": 0,
+                "cpu": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "config-sentinel",
+                "clusterId": "admin/logserver"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.logd",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 115531776,
+                "memory_rss": 12607488,
+                "cpu": 0.4034969737727
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logd",
+                "clusterId": "admin/logserver"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hostname": "generic-hostname2.vespa.com",
+      "role": "content/music/0/0",
+      "node": {
+        "timestamp": 1596209314,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 6.2395760990999,
+              "cpu.sys.util": 1.6980606847917,
+              "cpu.vcpus": 2,
+              "disk.limit": 50000000000,
+              "disk.used": 431521792,
+              "disk.util": 0.863043584,
+              "mem.limit": 7890911232,
+              "mem.used": 1030008832,
+              "mem.util": 13.0531037761901,
+              "mem_total.used": 1098739712,
+              "mem_total.util": 13.9241169960737,
+              "bandwidth.limit": 300000000
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "content/music"
+            }
+          },
+          {
+            "values": {
+              "net.in.bytes": 9170973,
+              "net.in.errors": 0,
+              "net.in.dropped": 0,
+              "net.out.bytes": 5858380,
+              "net.out.errors": 0,
+              "net.out.dropped": 0
+            },
+            "dimensions": {
+              "applicationId": "generic-tenant.generic-app.generic-deploy",
+              "host": "generic-host.vespa.com",
+              "zone": "generic.dev-generic-2",
+              "clusterId": "content/music"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "vespa.searchnode",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 399941632,
+                "memory_rss": 151085056,
+                "cpu": 3.8755736868944
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.docs_reranked.rate": 0,
+                "content.proton.documentdb.memory_usage.allocated_bytes.last": 8372852,
+                "content.proton.transactionlog.disk_usage.last": 1128681
+              },
+              "dimensions": {
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.rerank_time.average": 0,
+                "content.proton.documentdb.matching.rank_profile.query_latency.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "unranked",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.query_setup_time.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "unranked",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.rerank_time.average": 0,
+                "content.proton.documentdb.matching.rank_profile.query_latency.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "default",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.query_setup_time.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "default",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.query_setup_time.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "rank_albums",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.rerank_time.average": 0,
+                "content.proton.documentdb.matching.rank_profile.query_latency.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "rank_albums",
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.docs_matched.rate": 0,
+                "content.proton.documentdb.documents.active.last": 3008,
+                "content.proton.documentdb.documents.ready.last": 3008,
+                "content.proton.documentdb.documents.total.last": 3008,
+                "content.proton.documentdb.disk_usage.last": 331157
+              },
+              "dimensions": {
+                "documenttype": "music",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.resource_usage.disk.average": 0.0000152263558,
+                "content.proton.resource_usage.memory.average": 0.0156505524171,
+                "content.proton.resource_usage.feeding_blocked.last": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "content.proton.search_protocol.query.latency.average": 0,
+                "content.proton.search_protocol.docsum.latency.average": 0,
+                "content.proton.search_protocol.docsum.requested_documents.rate": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "searchnode",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.distributor",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 323338240,
+                "memory_rss": 110653440,
+                "cpu": 3.9945605983342
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "distributor",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.container-clustercontroller",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1384386560,
+                "memory_rss": 357957632,
+                "cpu": 0.6799252082271
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 39484545.333333336
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0833333333333
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0.6666666666667
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.metricsproxy-container",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1375203328,
+                "memory_rss": 406228992,
+                "cpu": 1.1558728539861
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 43048620
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0833333333333
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0.0433333333333
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 6.5
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.05
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.config-sentinel",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 0,
+                "memory_rss": 0,
+                "cpu": 0
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "config-sentinel",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.logd",
+          "timestamp": 1596209314,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 119803904,
+                "memory_rss": 12697600,
+                "cpu": 0.1699813020568
+              },
+              "dimensions": {
+                "zone": "generic.dev-generic-2",
+                "applicationId": "generic-tenant.generic-app.generic-deploy",
+                "serviceId": "logd",
+                "clusterId": "content/music"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

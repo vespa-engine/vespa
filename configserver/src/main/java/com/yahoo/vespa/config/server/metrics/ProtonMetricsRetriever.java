@@ -38,6 +38,6 @@ public class ProtonMetricsRetriever {
         return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("searchnode");
     }
     private static URI createMetricsProxyURI(String hostname) {
-        return URI.create("http://" + hostname + ":4080/metrics/v2/values");
+        return URI.create("http://" + hostname + ":19092/metrics/v2/values");
     }
 }

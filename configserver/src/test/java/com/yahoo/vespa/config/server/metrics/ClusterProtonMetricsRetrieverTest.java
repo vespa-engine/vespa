@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Rule;
@@ -27,17 +26,25 @@ public class ClusterProtonMetricsRetrieverTest {
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
 
+
     @Test
     public void testMetricAggregation() throws IOException {
-        Collection<URI> host = List.of(URI.create("http://localhost:" + wireMock.port() +"/metrics/v2/values"));
+        List<URI> hosts = Stream.of(1, 2)
+                .map(item -> URI.create("http://localhost:" + wireMock.port() + "/metrics" + item + "/v2/values"))
+                .collect(Collectors.toList());
 
-        stubFor(get(urlEqualTo("/metrics/v2/values"))
+        stubFor(get(urlEqualTo("/metrics1/v2/values"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(nodeMetrics())));
+                        .withBody(nodeMetrics("_1"))));
+
+        stubFor(get(urlEqualTo("/metrics2/v2/values"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(nodeMetrics("_2"))));
 
         String expectedClusterName = "content/content/0/0";
-        Map<String, ProtonMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(host);
+        Map<String, ProtonMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
                 new ProtonMetricsAggregator()
@@ -53,8 +60,8 @@ public class ClusterProtonMetricsRetrieverTest {
         wireMock.stop();
     }
 
-    private String nodeMetrics() throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics/node_metrics"));
+    private String nodeMetrics(String extension) throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/node_metrics_1" + extension));
     }
 
     // Same tolerance value as used internally in MetricsAggregator.isZero
