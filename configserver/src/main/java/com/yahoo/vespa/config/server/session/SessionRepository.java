@@ -622,7 +622,7 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
-            log.log(Level.INFO, "Creating local session for session id " + sessionId);
+            log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
             return Optional.of(localSession);
