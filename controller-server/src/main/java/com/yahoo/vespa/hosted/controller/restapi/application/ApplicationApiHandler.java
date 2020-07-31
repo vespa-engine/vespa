@@ -119,7 +119,6 @@ import java.util.Scanner;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import org.json.JSONObject;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
@@ -654,14 +653,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-        JSONObject protonMetrics = controller.serviceRegistry().configServer().getProtonMetricsV1(deployment);
-        return new HttpResponse(200) {
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                outputStream.write(protonMetrics.toString().getBytes(Charsets.UTF_8));
-                outputStream.flush();
-            }
-        };
+        ProtonMetricsResponse protonMetrics = controller.serviceRegistry().configServer().getProtonMetricsV1(deployment);
+        return protonMetrics;
     }
 
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
