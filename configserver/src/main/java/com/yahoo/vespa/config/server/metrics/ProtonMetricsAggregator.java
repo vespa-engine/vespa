@@ -14,7 +14,7 @@ public class ProtonMetricsAggregator {
     private Double documentActiveCount = 0.0;
     private Double documentReadyCount = 0.0;
     private Double documentTotalCount = 0.0;
-    private final AverageMetric documentDiskUsage = new AverageMetric();
+    private Double documentDiskUsage = 0.0;
 
     private final AverageMetric resourceDiskUsageAverage = new AverageMetric();
     private final AverageMetric resourceMemoryUsageAverage = new AverageMetric();
@@ -33,15 +33,9 @@ public class ProtonMetricsAggregator {
         this.documentActiveCount += aggregator.aggregateDocumentActiveCount();
         this.documentReadyCount += aggregator.aggregateDocumentReadyCount();
         this.documentTotalCount += aggregator.aggregateDocumentTotalCount();
-        addDocumentDiskUsage(aggregator);
+        this.documentDiskUsage += aggregator.aggregateDocumentDiskUsage();
         addResourceDiskUsageAverage(aggregator);
         addResourceMemoryUsageAverage(aggregator);
-        return this;
-    }
-
-    public ProtonMetricsAggregator addDocumentDiskUsage(ProtonMetricsAggregator aggregator) {
-        this.documentDiskUsage.averageCount += aggregator.documentDiskUsage.averageCount;
-        this.documentDiskUsage.averageSum += aggregator.documentDiskUsage.averageSum;
         return this;
     }
 
@@ -73,8 +67,7 @@ public class ProtonMetricsAggregator {
     }
 
     public synchronized ProtonMetricsAggregator addDocumentDiskUsage(double documentDiskUsage) {
-        this.documentDiskUsage.averageCount++;
-        this.documentDiskUsage.averageSum += documentDiskUsage;
+        this.documentDiskUsage += documentDiskUsage;
         return this;
     }
 
@@ -102,9 +95,7 @@ public class ProtonMetricsAggregator {
         return this.documentTotalCount;
     }
 
-    public Double aggregateDocumentDiskUsage() {
-        return this.documentDiskUsage.averageSum / this.documentDiskUsage.averageCount;
-    }
+    public Double aggregateDocumentDiskUsage() {return this.documentDiskUsage;}
 
     public Double aggregateResourceDiskUsageAverage() {
         return this.resourceDiskUsageAverage.averageSum / this.resourceDiskUsageAverage.averageCount;

@@ -47,6 +47,7 @@ import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.http.v2.ProtonMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -749,7 +750,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
     // ---------------- Proton Metrics V1 ------------------------------------------------------------------------
 
-    public JsonResponse getProtonMetrics(ApplicationId applicationId) {
+    public ProtonMetricsResponse getProtonMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         ProtonMetricsRetriever protonMetricsRetriever = new ProtonMetricsRetriever();
         return protonMetricsRetriever.getMetrics(application);

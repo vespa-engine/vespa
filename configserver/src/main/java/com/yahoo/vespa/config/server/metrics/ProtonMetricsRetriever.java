@@ -28,16 +28,15 @@ public class ProtonMetricsRetriever {
 
     private static Collection<URI> getHostsOfApplication(Application application) {
         return application.getModel().getHosts().stream()
-                .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
+                .filter(host -> host.getServices().stream().anyMatch(isSearchNode()))
                 .map(HostInfo::getHostname)
                 .map(ProtonMetricsRetriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
     }
 
-    private static Predicate<ServiceInfo> isLogserver() {
-        return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver");
+    private static Predicate<ServiceInfo> isSearchNode() {
+        return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("searchnode");
     }
-
     private static URI createMetricsProxyURI(String hostname) {
         return URI.create("http://" + hostname + ":4080/metrics/v2/values");
     }

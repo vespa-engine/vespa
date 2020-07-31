@@ -36,8 +36,10 @@ public class ClusterProtonMetricsRetriever {
 
     public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
         Map<String, ProtonMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
-
-        long startTime = System.currentTimeMillis();
+        for (URI uri : hosts) {
+            addMetricsFromHost(uri, clusterMetricsMap);
+        }
+/*        long startTime = System.currentTimeMillis();
         Runnable retrieveMetricsJob = () ->
                 hosts.parallelStream().forEach(host ->
                         addMetricsFromHost(host, clusterMetricsMap)
@@ -55,7 +57,7 @@ public class ClusterProtonMetricsRetriever {
 
         log.log(Level.FINE, () ->
                 String.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
-        );
+        );*/
 
         return clusterMetricsMap;
     }
@@ -98,6 +100,6 @@ public class ClusterProtonMetricsRetriever {
     }
 
     private static void addMetricsToAggregator(Inspector metrics, ProtonMetricsAggregator aggregator) {
-        aggregator.addAll(metrics);
+        aggregator.addAll(metrics.field("values"));
     }
 }
