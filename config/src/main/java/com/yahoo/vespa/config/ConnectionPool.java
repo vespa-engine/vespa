@@ -6,7 +6,7 @@ import com.yahoo.jrt.Supervisor;
 /**
  * @author hmusum
  */
-public interface ConnectionPool {
+public interface ConnectionPool extends AutoCloseable {
 
     void close();
 

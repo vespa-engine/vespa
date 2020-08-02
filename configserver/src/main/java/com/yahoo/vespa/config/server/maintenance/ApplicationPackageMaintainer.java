@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionRepository;
@@ -32,7 +33,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
 
     private final ApplicationRepository applicationRepository;
-    private final ConfigserverConfig configserverConfig;
+    private final ConnectionPool connectionPool;
     private final File downloadDirectory;
     private final BooleanFlag distributeApplicationPackage;
 
@@ -42,7 +43,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, interval, interval);
         this.applicationRepository = applicationRepository;
-        this.configserverConfig = applicationRepository.configserverConfig();
+        ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
+        connectionPool = createConnectionPool(configserverConfig);
 
         distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
@@ -53,7 +55,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         boolean success = true;
         if (! distributeApplicationPackage.value()) return success;
 
-        try (var fileDownloader = new FileDownloader(createConnectionPool(configserverConfig), downloadDirectory)) {
+        try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
                 log.fine(() -> "Verifying application package for " + applicationId);
                 RemoteSession session = applicationRepository.getActiveSession(applicationId);
@@ -78,6 +80,12 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
             }
         }
         return success;
+    }
+
+    @Override
+    public void close() {
+        connectionPool.close();
+        super.close();
     }
 
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
