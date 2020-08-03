@@ -43,7 +43,8 @@ public class ClusterProtonMetricsRetrieverTest {
                         .withStatus(200)
                         .withBody(nodeMetrics("_2"))));
 
-        String expectedClusterName = "content/content/0/0";
+        String expectedClusterNameContent = "content/content/0/0";
+        String expectedClusterNameMusic = "content/music/0/0";
         Map<String, ProtonMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
@@ -54,14 +55,25 @@ public class ClusterProtonMetricsRetrieverTest {
                 .addDocumentDiskUsage(14781856)
                 .addResourceDiskUsageAverage(0.0009083386306)
                 .addResourceMemoryUsageAverage(0.0183488434436),
-                aggregatorMap.get(expectedClusterName)
+                aggregatorMap.get(expectedClusterNameContent)
+        );
+
+        compareAggregators(
+                new ProtonMetricsAggregator()
+                .addDocumentReadyCount(3008)
+                .addDocumentActiveCount(3008)
+                .addDocumentTotalCount(3008)
+                .addDocumentDiskUsage(331157)
+                .addResourceDiskUsageAverage(0.0000152263558)
+                .addResourceMemoryUsageAverage(0.0156505524171),
+                aggregatorMap.get(expectedClusterNameMusic)
         );
 
         wireMock.stop();
     }
 
     private String nodeMetrics(String extension) throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics/node_metrics_1" + extension));
+        return Files.readString(Path.of("src/test/resources/metrics/node_metrics" + extension));
     }
 
     // Same tolerance value as used internally in MetricsAggregator.isZero
