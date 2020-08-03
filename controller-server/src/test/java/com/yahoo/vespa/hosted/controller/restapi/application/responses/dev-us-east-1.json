@@ -13,7 +13,7 @@
       "routingMethod": "shared"
     }
   ],
-  "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-east-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "(ignore)",
