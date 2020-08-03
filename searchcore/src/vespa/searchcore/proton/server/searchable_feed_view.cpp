@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/document/fieldvalue/document.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchable_feed_view");
@@ -58,7 +59,7 @@ SearchableFeedView::sync()
 }
 
 void
-SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
+SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     if (!hasIndexedFields()) {
@@ -86,7 +87,7 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
 }
 
 void
-SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &doc,
+SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc,
                                     bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);

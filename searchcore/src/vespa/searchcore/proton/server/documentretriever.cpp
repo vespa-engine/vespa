@@ -74,11 +74,13 @@ DocumentRetriever
             const vespalib::string &name = field->getName();
             AttributeGuard::UP attr = attr_manager.getAttribute(name);
             if (attr && attr->valid()) {
-                _attributeFields.emplace_back(name);
+                _attributeFields.emplace_back(field);
             }
         }
     }
 }
+
+DocumentRetriever::~DocumentRetriever() = default;
 
 namespace {
 
@@ -169,9 +171,13 @@ void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocument
 
 void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
 {
-    for (const auto &field : _attributeFields) {
-        AttributeGuard::UP attr = _attr_manager.getAttribute(field);
-        DocumentFieldRetriever::populate(lid, doc, field, **attr, _schema.isIndexField(field));
+    for (const document::Field * field : _attributeFields) {
+        AttributeGuard::UP attr = _attr_manager.getAttribute(field->getName());
+        if (lid < (*attr)->getCommittedDocIdLimit()) {
+            DocumentFieldRetriever::populate(lid, doc, *field, **attr, _schema.isIndexField(field->getName()));
+        } else {
+            doc.remove(*field);
+        }
     }
     fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);
 }

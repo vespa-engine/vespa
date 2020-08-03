@@ -5,8 +5,6 @@
 #include "storeonlyfeedview.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
-#include <vespa/searchlib/query/base.h>
-#include <vespa/document/fieldvalue/document.h>
 
 namespace proton {
 
@@ -39,7 +37,7 @@ private:
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;
 
-    void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+    void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
                        bool immediateCommit, OnPutDoneType onWriteDone) override;
 
     void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
