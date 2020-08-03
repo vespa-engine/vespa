@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
+import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
@@ -28,6 +29,7 @@ import static org.junit.Assert.*;
 public class CloudEventReporterTest {
 
     private final ControllerTester tester = new ControllerTester();
+    private final MetricsMock metrics = new MetricsMock();
     private final ZoneApiMock nonAwsZone = createZone("prod.zone3", "region-1", "other");
     private final ZoneApiMock awsZone1 = createZone("prod.zone1", "region-1", "aws");
     private final ZoneApiMock awsZone2 = createZone("prod.zone2", "region-2", "aws");
@@ -44,7 +46,7 @@ public class CloudEventReporterTest {
     @Test
     public void maintain() {
         setUpZones();
-        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15));
+        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15), metrics);
 
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(awsZone1.getId()));
@@ -61,7 +63,7 @@ public class CloudEventReporterTest {
         assertEquals(1, createdIssues.size());
         String description = createdIssues.get(IssueId.from("1")).issue().description();
         assertTrue(description.contains("confighost"));
-
+        assertEquals(1, metrics.getMetric("infrastructure_instance_events"));
     }
 
     private void mockEvents() {
