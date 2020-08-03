@@ -117,11 +117,11 @@ public class FileReferenceDownloader {
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
 
         connection.invokeSync(request, (double) rpcTimeout.getSeconds());
-        Level logLevel = (retryCount > 0 ? Level.INFO : Level.FINE);
+        Level logLevel = (retryCount > 50 ? Level.INFO : Level.FINE);
         if (validateResponse(request)) {
-            log.log(logLevel, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
+            log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(logLevel, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
+                log.log(Level.FINE, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
                 log.log(logLevel, "File reference '" + fileReference + "' not found for " + connection.getAddress());
