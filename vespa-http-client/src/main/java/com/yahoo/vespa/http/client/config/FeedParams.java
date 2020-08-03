@@ -178,10 +178,9 @@ public final class FeedParams {
         }
 
         /**
-         * Set what frequency to poll for async responses. Default is 10 (every 0.1s)
-         * If latency is important, or using it in a synchronous way (which is not recommended as throughput is priority),
-         * you can try increasing the frequency. Note that this will incur significantly higher cpu and bandwidth usage.
+         * Set what frequency to poll for async responses. Default is 10hz (every 0.1s), but 1000hz  when using SyncFeedClient
          */
+        @Beta
         public Builder setIdlePollFrequency(Double idlePollFrequency) {
             this.idlePollFrequency = idlePollFrequency;
             return this;

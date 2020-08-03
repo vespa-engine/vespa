@@ -30,7 +30,7 @@ public class SyncFeedClient implements AutoCloseable {
         if (params.getFeedParams().getIdlePollFrequency() == null) {
             params = params.toBuilder()
                            .setFeedParams(params.getFeedParams().toBuilder()
-                                                                .setIdlePollFrequency(200)
+                                                                .setIdlePollFrequency(1000)
                                                                 .build())
                            .build();
         }
