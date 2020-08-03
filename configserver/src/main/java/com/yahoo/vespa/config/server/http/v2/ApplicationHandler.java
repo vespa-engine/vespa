@@ -138,11 +138,11 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.getLogs(applicationId, hostname, apiParams);
         }
 
-        if (isProtonMetricsV1Request(request)) {
+        if (isProtonMetricsRequest(request)) {
             return applicationRepository.getProtonMetrics(applicationId);
         }
 
-        if (isDeploymentMetricsV1Request(request)) {
+        if (isDeploymentMetricsRequest(request)) {
             return applicationRepository.getDeploymentMetrics(applicationId);
         }
 
@@ -236,12 +236,12 @@ public class ApplicationHandler extends HttpHandler {
                request.getUri().getPath().endsWith("/suspended");
     }
 
-    private static boolean isProtonMetricsV1Request(HttpRequest request) {
+    private static boolean isProtonMetricsRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().endsWith("/metrics/proton");
     }
 
-    private static boolean isDeploymentMetricsV1Request(HttpRequest request) {
+    private static boolean isDeploymentMetricsRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().endsWith("/metrics/deployment");
     }
