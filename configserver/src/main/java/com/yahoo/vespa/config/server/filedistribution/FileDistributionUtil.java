@@ -60,9 +60,16 @@ public class FileDistributionUtil {
     }
 
     private static class EmptyConnectionPool implements ConnectionPool {
+        private Supervisor supervisor;
 
         @Override
-        public void close() {}
+        public void close() {
+            synchronized (this) {
+                if (supervisor != null) {
+                    supervisor.transport().shutdown().join();
+                }
+            }
+        }
 
         @Override
         public void setError(Connection connection, int i) {}
@@ -77,7 +84,14 @@ public class FileDistributionUtil {
         public int getSize() { return 0; }
 
         @Override
-        public Supervisor getSupervisor() { return new Supervisor(new Transport()); }
+        public Supervisor getSupervisor() {
+            synchronized (this) {
+                if (supervisor == null) {
+                    supervisor = new Supervisor(new Transport());
+                }
+            }
+            return supervisor;
+        }
     }
 
 }
