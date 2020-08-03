@@ -122,7 +122,6 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
      */
     Optional<String> findSlobrokServiceName(ServiceType serviceType, ConfigId configId) {
         switch (serviceType.s()) {
-            case "adminserver":
             case "config-sentinel":
             case "configproxy":
             case "configserver":
@@ -132,9 +131,6 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "slobrok":
             case "transactionlogserver":
                 return Optional.empty();
-
-            case "topleveldispatch":
-                return Optional.of(configId.s());
 
             case "qrserver":
             case "container":
