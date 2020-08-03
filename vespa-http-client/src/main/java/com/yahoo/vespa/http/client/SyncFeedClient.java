@@ -25,9 +25,16 @@ public class SyncFeedClient implements AutoCloseable {
     private final FeedClient wrappedClient;
     private final Callback callback;
 
-    public SyncFeedClient(SessionParams sessionParams) {
+    public SyncFeedClient(SessionParams params) {
         callback = new SyncFeedClient.Callback();
-        this.wrappedClient = FeedClientFactory.create(sessionParams, callback);
+        if (params.getFeedParams().getIdlePollFrequency() == null) {
+            params = params.toBuilder()
+                           .setFeedParams(params.getFeedParams().toBuilder()
+                                                                .setIdlePollFrequency(200)
+                                                                .build())
+                           .build();
+        }
+        this.wrappedClient = FeedClientFactory.create(params, callback);
     }
 
     /**

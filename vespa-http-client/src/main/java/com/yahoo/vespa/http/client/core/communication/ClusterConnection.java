@@ -56,6 +56,9 @@ public class ClusterConnection implements AutoCloseable {
         documentQueue = new DocumentQueue(clientQueueSizePerCluster);
         ioThreadGroup = operationProcessor.getIoThreadGroup();
         singleEndpoint = cluster.getEndpoints().size() == 1 ? cluster.getEndpoints().get(0) : null;
+        Double idlePollFrequency = feedParams.getIdlePollFrequency();
+        if (idlePollFrequency == null)
+            idlePollFrequency = 10.0;
         for (Endpoint endpoint : cluster.getEndpoints()) {
             EndpointResultQueue endpointResultQueue = new EndpointResultQueue(operationProcessor,
                                                                               endpoint,
@@ -84,7 +87,7 @@ public class ClusterConnection implements AutoCloseable {
                                                  feedParams.getLocalQueueTimeOut(),
                                                  documentQueue,
                                                  feedParams.getMaxSleepTimeMs(),
-                                                 connectionParams.getIdlePollFrequency() );
+                                                 idlePollFrequency);
                 ioThreads.add(ioThread);
             }
         }

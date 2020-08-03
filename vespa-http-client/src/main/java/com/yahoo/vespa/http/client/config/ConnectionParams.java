@@ -47,7 +47,6 @@ public final class ConnectionParams {
         private boolean printTraceToStdErr = true;
         private boolean useTlsConfigFromEnvironment = false;
         private Duration connectionTimeToLive = Duration.ofSeconds(15);
-        private double idlePollFrequency = 10;
         private Path privateKey;
         private Path certificate;
         private Path caCertificates;
@@ -259,15 +258,6 @@ public final class ConnectionParams {
             return this;
         }
 
-        /**
-         * Set what frequency to poll for async responses. Default is 10 (every 0.1s)
-         * If latency is important, or using it in a synchronous way (which is not recommended as throughput is priority),
-         * you can try increasing the frequency. Note that this will incur significantly higher cpu and bandwidth usage.
-         */
-        public void setIdlePollFrequency(double idlePollFrequency) {
-            this.idlePollFrequency = idlePollFrequency;
-        }
-
         public ConnectionParams build() {
             return new ConnectionParams(
                     sslContext,
@@ -288,8 +278,7 @@ public final class ConnectionParams {
                     traceEveryXOperation,
                     printTraceToStdErr,
                     useTlsConfigFromEnvironment,
-                    connectionTimeToLive,
-                    idlePollFrequency);
+                    connectionTimeToLive);
         }
 
         public int getNumPersistentConnectionsPerEndpoint() {
@@ -360,7 +349,6 @@ public final class ConnectionParams {
     private final boolean printTraceToStdErr;
     private final boolean useTlsConfigFromEnvironment;
     private final Duration connectionTimeToLive;
-    private final double idlePollFrequency;
 
     private ConnectionParams(
             SSLContext sslContext,
@@ -379,8 +367,7 @@ public final class ConnectionParams {
             int traceEveryXOperation,
             boolean printTraceToStdErr,
             boolean useTlsConfigFromEnvironment,
-            Duration connectionTimeToLive,
-            double idlePollFrequency) {
+            Duration connectionTimeToLive) {
         this.sslContext = sslContext;
         this.privateKey = privateKey;
         this.certificate = certificate;
@@ -400,7 +387,6 @@ public final class ConnectionParams {
         this.traceLevel = traceLevel;
         this.traceEveryXOperation = traceEveryXOperation;
         this.printTraceToStdErr = printTraceToStdErr;
-        this.idlePollFrequency = idlePollFrequency;
     }
 
     @JsonIgnore
@@ -468,8 +454,6 @@ public final class ConnectionParams {
     public Duration getConnectionTimeToLive() {
         return connectionTimeToLive;
     }
-
-    public double getIdlePollFrequency() { return idlePollFrequency; }
 
     /**
      * A header provider that provides a header value. {@link #getHeaderValue()} is called each time a new HTTP request

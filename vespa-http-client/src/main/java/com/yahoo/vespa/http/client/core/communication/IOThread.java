@@ -78,7 +78,6 @@ class IOThread implements Runnable, AutoCloseable {
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
         //Ensure that pollInterval is in the range [1us, 10s]
         this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency)));
-        
         this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
