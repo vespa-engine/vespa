@@ -7,8 +7,9 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 
 /**
  * A LocalSession is a session that has been created locally on this configserver. A local session can be edited and
@@ -56,8 +57,11 @@ public class LocalSession extends Session {
         sessionZooKeeperClient.writeStatus(newStatus);
     }
 
+    public CompletionWaiter createActiveWaiter() {
+        return sessionZooKeeperClient.createActiveWaiter();
+    }
+
     public Transaction createActivateTransaction() {
-        sessionZooKeeperClient.createActiveWaiter();
         Transaction transaction = createSetStatusTransaction(Status.ACTIVATE);
         transaction.add(applicationRepo.createPutTransaction(sessionZooKeeperClient.readApplicationId(), getSessionId()).operations());
         return transaction;
@@ -69,10 +73,6 @@ public class LocalSession extends Session {
 
     public long getActiveSessionAtCreate() {
         return applicationPackage.getMetaData().getPreviousActiveGeneration();
-    }
-
-    public void waitUntilActivated(TimeoutBudget timeoutBudget) {
-        sessionZooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }
 
     public enum Mode {
