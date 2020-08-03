@@ -20,7 +20,7 @@
       "routingMethod": "shared"
     }
   ],
-  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "1.0.1-commit1",

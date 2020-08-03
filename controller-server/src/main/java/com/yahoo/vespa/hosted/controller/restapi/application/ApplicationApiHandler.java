@@ -987,7 +987,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(endpoint, endpointArray.addObject());
         }
 
-        response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
+        response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.applicationVersion().id());
@@ -1693,14 +1693,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
     }
 
-    /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
-    private URI withPath(String newPath, URI uri) {
+    /** Returns a copy of the given URI with the host and port from the given URI, the path set to the given path and the query set to given query*/
+    private URI withPathAndQuery(String newPath, String newQuery, URI uri) {
         try {
-            return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), newPath, null, null);
+            return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), newPath, newQuery, null);
         }
         catch (URISyntaxException e) {
             throw new RuntimeException("Will not happen", e);
         }
+    }
+
+    /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
+    private URI withPath(String newPath, URI uri) {
+        return withPathAndQuery(newPath, null, uri);
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {
