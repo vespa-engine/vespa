@@ -41,7 +41,7 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  * applications. If that is done successfully the RPC server will start and the health status code will change from
  * 'initializing' to 'up'. If VIP status mode is VIP_STATUS_PROGRAMMATICALLY the config server
  * will be put into rotation (start serving status.html with 200 OK), if the mode is VIP_STATUS_FILE a VIP status
- * file is created or removed ny some external program based on the health status code.
+ * file is created or removed by some external program based on the health status code.
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -51,9 +51,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
 
     // INITIALIZE_ONLY is for testing only
-    enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY}
-    enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
-    enum VipStatusMode {VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY}
+    enum Mode { BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY }
+    enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
+    enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
@@ -208,12 +208,17 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private boolean redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
         Set<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
+        long failCount = 0;
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
-            if ( ! applicationsNotRedeployed.isEmpty()) {
+            if ( ! applicationsNotRedeployed.isEmpty() && ! sleepTimeWhenRedeployingFails.isZero()) {
+                failCount++;
+                Duration sleepTime = sleepTimeWhenRedeployingFails.multipliedBy(failCount);
+                if (sleepTime.compareTo(Duration.ofMinutes(10)) > 0)
+                    sleepTime = Duration.ofMinutes(10);
                 log.log(Level.INFO, "Redeployment of " + applicationsNotRedeployed +
-                        " failed, will retry in " + sleepTimeWhenRedeployingFails);
-                Thread.sleep(sleepTimeWhenRedeployingFails.toMillis());
+                                    " failed (" + failCount + " failures), will retry in " + sleepTime);
+                Thread.sleep(sleepTime.toMillis());
             }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
