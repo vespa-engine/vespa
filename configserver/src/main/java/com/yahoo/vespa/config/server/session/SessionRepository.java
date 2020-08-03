@@ -121,7 +121,7 @@ public class SessionRepository {
 
     // ---------------- Local sessions ----------------------------------------------------------------
 
-    public synchronized void addLocalSession(LocalSession session) {
+    private synchronized void addLocalSession(LocalSession session) {
         localSessionCache.addSession(session);
         long sessionId = session.getSessionId();
         RemoteSession remoteSession = createRemoteSession(sessionId);
@@ -262,7 +262,7 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public void addRemoteSession(RemoteSession session) {
+    private void addRemoteSession(RemoteSession session) {
         remoteSessionCache.addSession(session);
         metrics.incAddedSessions();
     }
@@ -487,6 +487,7 @@ public class SessionRepository {
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
         LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        addLocalSession(session);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -518,6 +519,7 @@ public class SessionRepository {
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
+        addLocalSession(session);
         return session;
     }
 
