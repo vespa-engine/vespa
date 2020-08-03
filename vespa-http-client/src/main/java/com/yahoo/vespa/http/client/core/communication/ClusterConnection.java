@@ -83,7 +83,8 @@ public class ClusterConnection implements AutoCloseable {
                                                  maxInFlightPerSession,
                                                  feedParams.getLocalQueueTimeOut(),
                                                  documentQueue,
-                                                 feedParams.getMaxSleepTimeMs());
+                                                 feedParams.getMaxSleepTimeMs(),
+                                                 connectionParams.getIdlePollFrequency() );
                 ioThreads.add(ioThread);
             }
         }

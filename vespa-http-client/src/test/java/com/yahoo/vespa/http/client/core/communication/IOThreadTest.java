@@ -85,6 +85,10 @@ public class IOThreadTest {
         }).when(endpointResultQueue).resultReceived(any(), eq(0));
     }
 
+    private IOThread createIOThread(int maxInFlightRequests, long localQueueTimeOut) {
+        return new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, maxInFlightRequests, localQueueTimeOut, documentQueue, 0, 10);
+    }
+
     @Test
     public void singleDocumentSuccess() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(true);
@@ -92,7 +96,7 @@ public class IOThreadTest {
                 (docId1 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
         when(apacheGatewayConnection.writeOperations(any())).thenReturn(serverResponse);
         setupEndpointResultQueueMock( "nope", docId1, true, exceptionMessage);
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10000, 10000L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10000, 10000)) {
             ioThread.post(doc1);
             assert (latch.await(120, TimeUnit.SECONDS));
         }
@@ -103,7 +107,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         when(apacheGatewayConnection.writeOperations(any())).thenThrow(new IOException(exceptionMessage));
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true, exceptionMessage);
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10000, 10000L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10000, 10000)) {
             ioThread.post(doc1);
             assert (latch.await(120, TimeUnit.SECONDS));
         }
@@ -120,7 +124,7 @@ public class IOThreadTest {
         latch = new CountDownLatch(2);
         setupEndpointResultQueueMock(doc1.getOperationId(), doc2.getDocumentId(), true, exceptionMessage);
 
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10000, 10000L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10000, 10000)) {
             ioThread.post(doc1);
             ioThread.post(doc2);
             assert (latch.await(120, TimeUnit.SECONDS));
@@ -136,7 +140,7 @@ public class IOThreadTest {
                 .thenReturn(serverResponse);
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true,
                 "java.lang.Exception: Not sending document operation, timed out in queue after");
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10, 10L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10, 10)) {
             ioThread.post(doc1);
             assert (latch.await(120, TimeUnit.SECONDS));
         }
@@ -151,7 +155,7 @@ public class IOThreadTest {
         doThrow(new ServerResponseException(errorCode, errorMessage)).when(apacheGatewayConnection).handshake();
         Future<FeedEndpointException> futureException = endpointErrorCapturer(endpointResultQueue);
 
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10, 10L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10, 10)) {
             ioThread.post(doc1);
             FeedEndpointException reportedException = futureException.get(120, TimeUnit.SECONDS);
             assertThat(reportedException, instanceOf(FeedProtocolException.class));
@@ -172,7 +176,7 @@ public class IOThreadTest {
         doThrow(cause).when(apacheGatewayConnection).handshake();
         Future<FeedEndpointException> futureException = endpointErrorCapturer(endpointResultQueue);
 
-        try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10, 10L, documentQueue, 0)) {
+        try (IOThread ioThread = createIOThread(10, 10)) {
             ioThread.post(doc1);
             FeedEndpointException reportedException = futureException.get(120, TimeUnit.SECONDS);
             assertThat(reportedException, instanceOf(FeedConnectException.class));
