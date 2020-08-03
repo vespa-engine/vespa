@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -11,8 +12,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
-import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -31,42 +30,47 @@ import static org.junit.Assert.assertThat;
  * @author Ulf Lilleengen
  */
 public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
-
-    private static final File testApp = new File("src/test/apps/content");
-    private static final File testApp2 = new File("src/test/apps/content2");
-
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
     private final Clock clock = componentRegistry.getClock();
 
-    private final TenantName tenantName1 = TenantName.from("mofet");
-    private final TenantName tenantName2 = TenantName.from("bla");
-    private final String baseServer = "http://foo:1337";
-
-    private final ApplicationId appId1 = new ApplicationId.Builder().tenant(tenantName1).applicationName("foo").instanceName("quux").build();
-    private final ApplicationId appId2 = new ApplicationId.Builder().tenant(tenantName2).applicationName("foo").instanceName("quux").build();
-
-    private TenantRepository tenantRepository;
-    private ApplicationRepository applicationRepository;
     private ApplicationHandler handler;
+    private TenantName tenantName1 = TenantName.from("mofet");
+    private TenantName tenantName2 = TenantName.from("bla");
+    private String baseServer = "http://foo:1337";
+
+    private ApplicationId idTenant1 = new ApplicationId.Builder()
+                                      .tenant(tenantName1)
+                                      .applicationName("foo").instanceName("quux").build();
+    private ApplicationId idTenant2 = new ApplicationId.Builder()
+                                      .tenant(tenantName2)
+                                      .applicationName("foo").instanceName("quux").build();
+    private MockLocalSession session2;
 
     @Before
     public void setupHandler() {
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          clock);
+        session2 = new MockLocalSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
+        Tenant tenant1 = tenantRepository.getTenant(tenantName1);
+        tenant1.getSessionRepository().addLocalSession(session2);
+        tenant1.getApplicationRepo().createApplication(idTenant1);
+        tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2).commit();
 
-        applicationRepository.deploy(testApp, prepareParams(appId1));
-        applicationRepository.deploy(testApp2, prepareParams(appId2));
+        MockLocalSession session3 = new MockLocalSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
+        Tenant tenant2 = tenantRepository.getTenant(tenantName2);
+        tenant2.getSessionRepository().addLocalSession(session3);
+        tenant2.getApplicationRepo().createApplication(idTenant2);
+        tenant2.getApplicationRepo().createPutTransaction(idTenant2, 3).commit();
 
         handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
                                          Zone.defaultZone(),
-                                         applicationRepository);
-        pathPrefix = createPath(appId1, Zone.defaultZone());
+                                         new ApplicationRepository(tenantRepository,
+                                                                   new MockProvisioner(),
+                                                                   new OrchestratorMock(),
+                                                                   clock));
+        pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }
 
@@ -99,17 +103,16 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     @Test
     public void require_that_multiple_tenants_are_handled() throws IOException {
         assertContent("/test.txt", "foo\n");
-        pathPrefix = createPath(appId2, Zone.defaultZone());
+        pathPrefix = createPath(idTenant2, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
         assertContent("/test.txt", "bar\n");
     }
 
     @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
-        Tenant tenant1 = tenantRepository.getTenant(tenantName1);
-        LocalSession session = applicationRepository.getActiveLocalSession(tenant1, appId1);
+        session2.status = Session.Status.PREPARE;
         assertContent("/test.txt", "foo\n");
-        assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
+        assertThat(session2.status, is(Session.Status.PREPARE));
     }
 
     private void assertNotFound(HttpRequest request) {
@@ -123,9 +126,4 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         HttpRequest request = HttpRequest.createTestRequest(baseUrl + path, method);
         return handler.handle(request);
     }
-
-    private PrepareParams prepareParams(ApplicationId applicationId) {
-        return new PrepareParams.Builder().applicationId(applicationId).build();
-    }
-
 }

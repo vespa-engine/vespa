@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -8,14 +10,22 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.session.DummyTransaction;
+import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.MockSessionZKClient;
+import com.yahoo.vespa.config.server.session.Session;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +77,52 @@ public class SessionHandlerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         return baos.toString(StandardCharsets.UTF_8);
+    }
+
+    public static class MockLocalSession extends LocalSession {
+
+        public Session.Status status;
+        private Instant createTime = Instant.now();
+        private ApplicationId applicationId;
+
+        public MockLocalSession(long sessionId, ApplicationPackage app) {
+            super(TenantName.defaultName(), sessionId, app, new MockSessionZKClient(app), null);
+        }
+
+        public MockLocalSession(long sessionId, ApplicationPackage app, ApplicationId applicationId) {
+            this(sessionId, app);
+            this.applicationId = applicationId;
+        }
+
+        public void setStatus(Session.Status status) {
+            this.status = status;
+        }
+
+        @Override
+        public Session.Status getStatus() {
+            return this.status;
+        }
+
+        @Override
+        public Transaction createActivateTransaction() {
+            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.ACTIVATE);
+        }
+
+        @Override
+        public ApplicationFile getApplicationFile(Path relativePath, Mode mode) {
+            return this.applicationPackage.getFile(relativePath);
+        }
+
+        @Override
+        public ApplicationId getApplicationId() {
+            return applicationId;
+        }
+
+        @Override
+        public Instant getCreateTime() {
+            return createTime;
+        }
+
     }
 
     public enum Cmd {

@@ -5,7 +5,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.SessionResponse;
-import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -34,20 +32,18 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 
 public class TenantHandlerTest {
 
-    private static final File testApp = new File("src/test/apps/app");
-
     private TenantRepository tenantRepository;
-    private ApplicationRepository applicationRepository;
     private TenantHandler handler;
     private final TenantName a = TenantName.from("a");
 
     @Before
     public void setup() {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        ApplicationRepository applicationRepository =
+                new ApplicationRepository(tenantRepository,
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          new OrchestratorMock(),
+                                          Clock.systemUTC());
         handler = new TenantHandler(TenantHandler.testOnlyContext(), applicationRepository);
     }
 
@@ -115,8 +111,9 @@ public class TenantHandlerTest {
         Tenant tenant = tenantRepository.getTenant(a);
         assertEquals(a, tenant.getName());
 
-        ApplicationId applicationId = ApplicationId.from(a, ApplicationName.from("foo"), InstanceName.defaultName());
-        applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
+        int sessionId = 1;
+        ApplicationId app = ApplicationId.from(a, ApplicationName.from("foo"), InstanceName.defaultName());
+        HostHandlerTest.addMockApplication(tenant, app, sessionId);
 
         try {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));

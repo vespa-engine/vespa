@@ -11,7 +11,7 @@
   </admin>
 
   <container version="1.0">
-    <document-api/>
+    <documentapi/>
     <search/>
     <nodes>
       <node hostalias="node1"/>
@@ -21,7 +21,7 @@
   <content version="1.0">
     <redundancy>1</redundancy>
     <documents>
-      <document type="music" mode="index"/>
+      <document name="music" mode="index"/>
     </documents>
     <nodes>
       <node hostalias="node1" distribution-key="0"/>
