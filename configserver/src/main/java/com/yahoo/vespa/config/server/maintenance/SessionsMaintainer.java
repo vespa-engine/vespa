@@ -9,7 +9,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import java.time.Duration;
 
 /**
- * Removes inactive sessions
+ * Removes expired sessions and locks
  * <p>
  * Note: Unit test is in ApplicationRepositoryTest
  *
@@ -29,18 +29,17 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     protected boolean maintain() {
         applicationRepository.deleteExpiredLocalSessions();
 
-        // Expired remote sessions are sessions that belong to an application that have external deployments that
-        // are no longer active
         if (hostedVespa) {
             Duration expiryTime = Duration.ofHours(12);
             int deleted = applicationRepository.deleteExpiredRemoteSessions(expiryTime);
-            log.log(LogLevel.FINE, "Deleted " + deleted + " expired remote sessions, expiry time " + expiryTime);
+            log.log(LogLevel.FINE, () -> "Deleted " + deleted + " expired remote sessions older than " + expiryTime);
         }
 
         Duration lockExpiryTime = Duration.ofHours(12);
-        if (applicationRepository.deleteExpiredLocks(lockExpiryTime) > 0)
-            log.log(LogLevel.INFO, "Deleted " + applicationRepository.deleteExpiredLocks(lockExpiryTime) + " locks older than " + lockExpiryTime);
+        int deleted = applicationRepository.deleteExpiredLocks(lockExpiryTime);
+        log.log(LogLevel.FINE, () -> "Deleted " + deleted + " locks older than " + lockExpiryTime);
 
         return true;
     }
+
 }
