@@ -768,7 +768,7 @@
         <curator.version>2.13.0</curator.version>
         <jna.version>4.5.2</jna.version>
         <commons.math3.version>3.6.1</commons.math3.version>
-        <junit.version>5.4.2</junit.version>
+        <junit.version>5.6.2</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>3.5.0</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
