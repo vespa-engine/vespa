@@ -10,7 +10,7 @@ import java.util.Optional;
  */
 public class ClusterMetrics {
 
-    // These field names originate from the MetricsResponse class
+    // These field names originate from the DeploymentMetricsResponse class
     public static final String QUERIES_PER_SECOND = "queriesPerSecond";
     public static final String FEED_PER_SECOND = "feedPerSecond";
     public static final String DOCUMENT_COUNT = "documentCount";
