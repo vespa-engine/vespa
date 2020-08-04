@@ -3,6 +3,7 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.document.fieldset.AllFields;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -23,7 +24,7 @@ public class CreateVisitorMessage extends DocumentMessage {
     private long fromTime = 0;
     private long toTime = 0;
     private boolean visitRemoves = false;
-    private String fieldSet = "[all]";
+    private String fieldSet = AllFields.NAME;
     private boolean visitInconsistentBuckets = false;
     private Map<String, byte[]> params = new TreeMap<>();
     private int maxBucketsPerVisitor = 1;

@@ -1,15 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
+import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for {@link CommandLineOptions}
@@ -45,7 +54,7 @@ public class CommandLineOptionsTest {
         assertFalse(params.help);
         assertFalse(params.documentIds.hasNext());
         assertFalse(params.printIdsOnly);
-        assertEquals("[all]", params.fieldSet);
+        assertEquals(AllFields.NAME, params.fieldSet);
         assertEquals("default-get", params.route);
         assertTrue(params.cluster.isEmpty());
         assertEquals("client", params.configId);
@@ -92,7 +101,7 @@ public class CommandLineOptionsTest {
     public void testInvalidCombination3() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Field set option can not be used in combination with print ids option.");
-        getParsedOptions("--printids", "--fieldset", "[all]");
+        getParsedOptions("--printids", "--fieldset", AllFields.NAME);
     }
 
     @Test
@@ -138,7 +147,7 @@ public class CommandLineOptionsTest {
     @Test
     public void testPrintids() {
         ClientParameters params = getParsedOptions("--printids");
-        assertEquals("[id]", params.fieldSet);
+        assertEquals(DocIdOnly.NAME, params.fieldSet);
     }
 
     @Test

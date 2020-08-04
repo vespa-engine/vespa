@@ -20,9 +20,9 @@ public class FieldSetRepo {
 
     FieldSet parseSpecialValues(String name)
     {
-        if (name.equals("[id]")) { return new DocIdOnly(); }
-        else if (name.equals("[all]")) { return (new AllFields()); }
-        else if (name.equals("[none]")) { return (new NoFields()); }
+        if (name.equals(DocIdOnly.NAME)) { return new DocIdOnly(); }
+        else if (name.equals(AllFields.NAME)) { return (new AllFields()); }
+        else if (name.equals(NoFields.NAME)) { return (new NoFields()); }
         else if (name.equals("[docid]")) { return (new DocIdOnly()); }
         else {
             throw new IllegalArgumentException(
@@ -93,11 +93,11 @@ public class FieldSetRepo {
 
             return buffer.toString();
         } else if (fieldSet instanceof AllFields) {
-            return "[all]";
+            return AllFields.NAME;
         } else if (fieldSet instanceof NoFields) {
-            return "[none]";
+            return NoFields.NAME;
         } else if (fieldSet instanceof DocIdOnly) {
-            return "[docid]";
+            return DocIdOnly.NAME;
         } else {
             throw new IllegalArgumentException("Unknown field set type " + fieldSet);
         }

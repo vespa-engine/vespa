@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class VisitorParametersTestCase {
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
-        params.setFieldSet("[all]");
+        params.setFieldSet(AllFields.NAME);
         params.setLoadType(loadType);
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
@@ -59,7 +60,7 @@ public class VisitorParametersTestCase {
         assertEquals("extraterrestrial/highway", copy.getRoute().toString());
         assertEquals(1337, copy.getTimeoutMs());
         assertEquals(111, copy.getMaxPending());
-        assertEquals("[all]", copy.getFieldSet());
+        assertEquals(AllFields.NAME, copy.getFieldSet());
         assertEquals(loadType, copy.getLoadType());
         assertEquals(true, copy.getVisitRemoves());
         assertEquals(true, copy.getVisitInconsistentBuckets());

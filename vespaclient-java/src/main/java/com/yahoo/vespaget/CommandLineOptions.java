@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
+import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -67,7 +69,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("f")
                 .hasArg(true)
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/documentation/documents.html#fieldsets) (default '[all]')")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/documentation/documents.html#fieldsets) (default '" + AllFields.NAME + "')")
                 .longOpt(FIELDSET_OPTION)
                 .argName("fieldset").build());
 
@@ -178,9 +180,9 @@ public class CommandLineOptions {
             }
 
             if (printIdsOnly) {
-                fieldSet = "[id]";
+                fieldSet = DocIdOnly.NAME;
             } else if (fieldSet.isEmpty()) {
-                fieldSet = "[all]";
+                fieldSet = AllFields.NAME;
             }
 
             if (!cluster.isEmpty() && !route.isEmpty()) {

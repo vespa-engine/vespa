@@ -4,6 +4,7 @@ package com.yahoo.document;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
@@ -34,7 +35,6 @@ import java.util.Set;
 // TODO: Remove header/body concept on Vespa 8
 public class DocumentType extends StructuredDataType {
 
-    private static final String ALL = "[all]";
     public static final String DOCUMENT = "[document]";
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
     private StructDataType headerType;
@@ -215,8 +215,8 @@ public class DocumentType extends StructuredDataType {
 
             this.fieldSets.put(entry.getKey(), ImmutableSet.copyOf(fields));
         }
-        if ( ! this.fieldSets.containsKey(ALL)) {
-            this.fieldSets.put(ALL, getAllUniqueFields());
+        if ( ! this.fieldSets.containsKey(AllFields.NAME)) {
+            this.fieldSets.put(AllFields.NAME, getAllUniqueFields());
         }
     }
 
@@ -454,7 +454,7 @@ public class DocumentType extends StructuredDataType {
      * @return an unmodifiable snapshot of the all fields in this type
      */
     public Set<Field> fieldSetAll() {
-        return fieldSet(ALL);
+        return fieldSet(AllFields.NAME);
     }
 
     public Set<Field> fieldSet(String name) {

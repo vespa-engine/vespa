@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.DocumentAccessException;
 import com.yahoo.documentapi.Response;
@@ -135,7 +136,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public Document get(DocumentId id, Duration timeout) {
-        return get(id, "[all]", DocumentProtocol.Priority.NORMAL_1, timeout);
+        return get(id, AllFields.NAME, DocumentProtocol.Priority.NORMAL_1, timeout);
     }
 
     @Override

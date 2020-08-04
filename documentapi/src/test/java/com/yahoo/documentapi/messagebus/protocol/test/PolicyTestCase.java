@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.protocol.ANDPolicy;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy;
@@ -368,7 +369,7 @@ public class PolicyTestCase {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
                 .addRecipient("foo").addRecipient("bar"));
-        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), "[all]"));
+        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), AllFields.NAME));
         List<RoutingNode> selected = frame.select(2);
         for (int i = 0, len = selected.size(); i < len; ++i) {
             Document doc = null;

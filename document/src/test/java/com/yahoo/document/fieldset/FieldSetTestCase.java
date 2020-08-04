@@ -31,9 +31,9 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     public void testParsing() {
         FieldSetRepo repo = new FieldSetRepo();
 
-        assertTrue(repo.parse(docMan, "[all]") instanceof AllFields);
-        assertTrue(repo.parse(docMan, "[none]") instanceof NoFields);
-        assertTrue(repo.parse(docMan, "[id]") instanceof DocIdOnly);
+        assertTrue(repo.parse(docMan, AllFields.NAME) instanceof AllFields);
+        assertTrue(repo.parse(docMan, NoFields.NAME) instanceof NoFields);
+        assertTrue(repo.parse(docMan, DocIdOnly.NAME) instanceof DocIdOnly);
 
         FieldCollection collection = (FieldCollection)repo.parse(docMan, "testdoc:stringattr,intattr");
         assertEquals(2, collection.size());
@@ -123,7 +123,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, AllFields.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doCopyFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -139,7 +139,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, AllFields.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doStripFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -147,9 +147,9 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     public void testSerialize() {
         String fieldSets[] =
                 {
-                        "[all]",
-                        "[none]",
-                        "[docid]",
+                        AllFields.NAME,
+                        NoFields.NAME,
+                        DocIdOnly.NAME,
                         "testdoc:rawattr",
                         "testdoc:rawattr,intattr"
                 };
