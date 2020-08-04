@@ -41,7 +41,7 @@ public class RotationStatusUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         var failures = new AtomicInteger(0);
         var attempts = new AtomicInteger(0);
         var lastException = new AtomicReference<Exception>(null);
@@ -78,6 +78,7 @@ public class RotationStatusUpdater extends ControllerMaintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return lastException.get() == null;
     }
 
     private RotationStatus getStatus(Instance instance) {

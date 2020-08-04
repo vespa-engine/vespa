@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -16,7 +15,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.container.BundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -292,9 +291,9 @@ public class ContainerClusterTest {
                 .zone(zone).build();
         MockRoot root = new MockRoot("foo", state);
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
-        BundlesConfig.Builder bundleBuilder = new BundlesConfig.Builder();
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
         cluster.getConfig(bundleBuilder);
-        List<String> installedBundles = bundleBuilder.build().bundle().stream().map(FileReference::value).collect(Collectors.toList());
+        List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
         assertEquals(expectedBundleNames.size(), installedBundles.size());
         assertThat(installedBundles, containsInAnyOrder(

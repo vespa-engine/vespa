@@ -181,7 +181,8 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
+            <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
+            <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
                 config-bundle-jar-with-dependencies.jar,

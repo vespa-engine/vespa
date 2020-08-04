@@ -2,9 +2,9 @@
 package com.yahoo.search.query.profile.compiled;
 
 import com.yahoo.search.query.profile.DimensionValues;
-import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -66,6 +66,24 @@ public class ValueWithSource {
 
     /** Returns the variant having this value, or empty if it's not in a variant */
     public Optional<DimensionValues> variant() { return Optional.ofNullable(variant); }
+
+    @Override
+    public int hashCode() {
+        // Value is always a value object. Don't include source in identity.
+        return Objects.hash(value, isUnoverridable, type);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof ValueWithSource)) return false;
+
+        ValueWithSource other = (ValueWithSource)o;
+        if ( ! Objects.equals(this.value, other.value)) return false;
+        if ( ! Objects.equals(this.isUnoverridable, other.isUnoverridable)) return false;
+        if ( ! Objects.equals(this.type, other.type)) return false;
+        return true;
+    }
 
     @Override
     public String toString() {

@@ -44,6 +44,7 @@ public final class FeedParams {
         private boolean denyIfBusyV3 = true;
         private long maxSleepTimeMs = 3000;
         private boolean silentUpgrade = true;
+        private Double idlePollFrequency = null;
 
         /**
          * Make server not throw 4xx/5xx for situations that are normal during upgrade as this can esily mask
@@ -177,6 +178,15 @@ public final class FeedParams {
         }
 
         /**
+         * Set what frequency to poll for async responses. Default is 10hz (every 0.1s), but 1000hz  when using SyncFeedClient
+         */
+        @Beta
+        public Builder setIdlePollFrequency(Double idlePollFrequency) {
+            this.idlePollFrequency = idlePollFrequency;
+            return this;
+        }
+
+        /**
          * Sets the messagebus priority. The allowed values are HIGHEST, VERY_HIGH, HIGH_[1-3],
          * NORMAL_[1-6], LOW_[1-3], VERY_LOW, and LOWEST..
          * @param priority messagebus priority of this message.
@@ -221,7 +231,7 @@ public final class FeedParams {
             return new FeedParams(
                     dataFormat, serverTimeout, clientTimeout, route,
                     maxChunkSizeBytes, maxInFlightRequests, localQueueTimeOut, priority,
-                    denyIfBusyV3, maxSleepTimeMs, silentUpgrade);
+                    denyIfBusyV3, maxSleepTimeMs, silentUpgrade, idlePollFrequency);
         }
 
         public long getClientTimeout(TimeUnit unit) {
@@ -263,11 +273,12 @@ public final class FeedParams {
     private final boolean denyIfBusyV3;
     private final long maxSleepTimeMs;
     private final boolean silentUpgrade;
+    private final Double idlePollFrequency;
 
     private FeedParams(DataFormat dataFormat, long serverTimeout, long clientTimeout, String route,
                        int maxChunkSizeBytes, final int maxInFlightRequests,
                        long localQueueTimeOut, String priority, boolean denyIfBusyV3, long maxSleepTimeMs,
-                       boolean silentUpgrade) {
+                       boolean silentUpgrade, Double idlePollFrequency) {
         this.dataFormat = dataFormat;
         this.serverTimeoutMillis = serverTimeout;
         this.clientTimeoutMillis = clientTimeout;
@@ -279,31 +290,17 @@ public final class FeedParams {
         this.denyIfBusyV3 = denyIfBusyV3;
         this.maxSleepTimeMs = maxSleepTimeMs;
         this.silentUpgrade = silentUpgrade;
+        this.idlePollFrequency = idlePollFrequency;
+
     }
 
-    public DataFormat getDataFormat() {
-        return dataFormat;
-    }
+    public DataFormat getDataFormat() { return dataFormat; }
+    public String getRoute() { return route; }
+    public long getServerTimeout(TimeUnit unit) { return unit.convert(serverTimeoutMillis, TimeUnit.MILLISECONDS); }
+    public long getClientTimeout(TimeUnit unit) { return unit.convert(clientTimeoutMillis, TimeUnit.MILLISECONDS); }
 
-    public String getRoute() {
-        return route;
-    }
-
-    public long getServerTimeout(TimeUnit unit) {
-        return unit.convert(serverTimeoutMillis, TimeUnit.MILLISECONDS);
-    }
-
-    public long getClientTimeout(TimeUnit unit) {
-        return unit.convert(clientTimeoutMillis, TimeUnit.MILLISECONDS);
-    }
-
-    public int getMaxChunkSizeBytes() {
-        return maxChunkSizeBytes;
-    }
-
-    public String getPriority() {
-        return priority;
-    }
+    public int getMaxChunkSizeBytes() { return maxChunkSizeBytes; }
+    public String getPriority() { return priority; }
 
     public String toUriParameters() {
         StringBuilder b = new StringBuilder();
@@ -311,13 +308,9 @@ public final class FeedParams {
         return b.toString();
     }
 
-    public int getMaxInFlightRequests() {
-        return maxInFlightRequests;
-    }
-
-    public long getLocalQueueTimeOut() {
-        return localQueueTimeOut;
-    }
+    public int getMaxInFlightRequests() { return maxInFlightRequests; }
+    public long getLocalQueueTimeOut() { return localQueueTimeOut; }
+    public Double getIdlePollFrequency() { return idlePollFrequency; }
 
     /** Returns a builder initialized to the values of this */
     public FeedParams.Builder toBuilder() {
@@ -332,6 +325,7 @@ public final class FeedParams {
         b.setDenyIfBusyV3(denyIfBusyV3);
         b.setMaxSleepTimeMs(maxSleepTimeMs);
         b.setSilentUpgrade(silentUpgrade);
+        b.setIdlePollFrequency(idlePollFrequency);
         return b;
     }
 

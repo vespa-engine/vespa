@@ -62,6 +62,8 @@ using search::StringAttribute;
 using search::SingleBoolAttribute;
 using search::WeightedSetStringExtAttribute;
 using search::attribute::WeightedEnumContent;
+using search::common::GeoLocation;
+using search::common::GeoLocationSpec;
 
 using AttributePtr = AttributeVector::SP;
 using AVC = search::attribute::Config;
@@ -507,8 +509,8 @@ Test::assertCloseness(feature_t exp, const vespalib::string & attr, double dista
     int32_t x = 0;
     positions.emplace_back(x, x);
     setupForDistanceTest(ft, "pos", positions, false);
-    ft.getQueryEnv().getLocation().setXPosition((int)distance);
-    ft.getQueryEnv().getLocation().setValid(true);
+    GeoLocation::Point p{int32_t(distance), 0};
+    ft.getQueryEnv().addLocation(GeoLocationSpec{attr, p});
     if (maxDistance > 0) {
         ft.getIndexEnv().getProperties().add(feature + ".maxDistance",
                                              vespalib::make_string("%u", (unsigned int)maxDistance));
@@ -857,13 +859,16 @@ Test::testDistance()
             { // non-existing attribute
                 FtFeatureTest ft(_factory, "distance(pos)");
                 ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
-                ft.getQueryEnv().getLocation().setValid(true);
+                GeoLocation::Point p{0, 0};
+                ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
+
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
             { // label
                 FtFeatureTest ft(_factory, "distance(label,foo)");
-                ft.getQueryEnv().getLocation().setValid(true);
+                GeoLocation::Point p{0, 0};
+                ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(label,foo)", std::numeric_limits<feature_t>::max())));
             }
@@ -873,7 +878,8 @@ Test::testDistance()
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
-                ft.getQueryEnv().getLocation().setValid(true);
+                GeoLocation::Point p{0, 0};
+                ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
@@ -883,7 +889,8 @@ Test::testDistance()
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
-                ft.getQueryEnv().getLocation().setValid(true);
+                GeoLocation::Point p{0, 0};
+                ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
@@ -893,7 +900,8 @@ Test::testDistance()
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, DataType::INT64, "pos");
-                ft.getQueryEnv().getLocation().setValid(true);
+                GeoLocation::Point p{0, 0};
+                ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
@@ -939,10 +947,9 @@ Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
         pos.emplace_back(x, y);
     }
     setupForDistanceTest(ft, "pos", pos, true);
-    ft.getQueryEnv().getLocation().setXPosition(xquery);
-    ft.getQueryEnv().getLocation().setYPosition(yquery);
-    ft.getQueryEnv().getLocation().setXAspect(xAspect);
-    ft.getQueryEnv().getLocation().setValid(true);
+    GeoLocation::Point p{xquery, yquery};
+    GeoLocation::Aspect aspect{xAspect};
+    ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", {p, aspect}});
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
                            addScore("distance(pos)", exp)));

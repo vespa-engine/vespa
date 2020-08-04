@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
@@ -32,7 +33,7 @@ public interface ConfigServer {
 
     PreparedApplication deploy(DeploymentData deployment);
 
-    void restart(DeploymentId deployment, Optional<Hostname> hostname);
+    void restart(DeploymentId deployment, RestartFilter restartFilter);
 
     void deactivate(DeploymentId deployment) throws NotFoundException;
 

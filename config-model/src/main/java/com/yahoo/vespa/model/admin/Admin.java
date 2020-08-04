@@ -264,7 +264,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         FileDistributor fileDistributor = fileDistribution.getFileDistributor();
         HostResource hostResource = hostSystem().getHostByHostname(fileDistributor.fileSourceHost());
         if (hostResource == null && ! multitenant)
-            throw new IllegalArgumentException("Could not find " + host + " in the application's " + hostSystem());
+            throw new IllegalArgumentException("Could not find " + fileDistributor.fileSourceHost() +
+                                               " in the application's " + hostSystem());
 
         FileDistributionConfigProvider configProvider =
                 new FileDistributionConfigProvider(fileDistribution,

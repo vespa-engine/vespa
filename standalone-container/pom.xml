@@ -81,6 +81,7 @@
         <extensions>true</extensions>
         <configuration>
           <discApplicationClass>com.yahoo.container.standalone.StandaloneContainerApplication</discApplicationClass>
+          <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
           <discPreInstallBundle>
             configdefinitions-jar-with-dependencies.jar,
             config-provisioning-jar-with-dependencies.jar,

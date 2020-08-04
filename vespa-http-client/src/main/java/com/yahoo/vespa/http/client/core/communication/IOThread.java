@@ -44,6 +44,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final int maxInFlightRequests;
     private final long localQueueTimeOut;
     private final GatewayThrottler gatewayThrottler;
+    private final long pollIntervalUS;
     private final Random random = new Random();
 
     private enum ThreadState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
@@ -65,7 +66,8 @@ class IOThread implements Runnable, AutoCloseable {
              int maxInFlightRequests,
              long localQueueTimeOut,
              DocumentQueue documentQueue,
-             long maxSleepTimeMs) {
+             long maxSleepTimeMs,
+             double idlePollFrequency) {
         this.documentQueue = documentQueue;
         this.endpoint = client.getEndpoint();
         this.client = client;
@@ -74,6 +76,8 @@ class IOThread implements Runnable, AutoCloseable {
         this.maxChunkSizeBytes = maxChunkSizeBytes;
         this.maxInFlightRequests = maxInFlightRequests;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
+        //Ensure that pollInterval is in the range [1us, 10s]
+        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency)));
         this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
@@ -278,13 +282,13 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
-    private ProcessResponse pullAndProcessData(long maxWaitTimeMs) throws ServerResponseException, IOException {
+    private ProcessResponse pullAndProcessData(long maxWaitTimeUS) throws ServerResponseException, IOException {
         int pendingResultQueueSize = resultQueue.getPendingSize();
         pendingDocumentStatusCount.set(pendingResultQueueSize);
 
         List<Document> nextDocsForFeeding = (pendingResultQueueSize > maxInFlightRequests)
                                             ? new ArrayList<>() // The queue is full, will not send more documents
-                                            : getNextDocsForFeeding(maxWaitTimeMs, TimeUnit.MILLISECONDS);
+                                            : getNextDocsForFeeding(maxWaitTimeUS, TimeUnit.MICROSECONDS);
 
         if (nextDocsForFeeding.isEmpty() && pendingResultQueueSize == 0) {
             //we have no unfinished business with the server now.
@@ -349,7 +353,7 @@ class IOThread implements Runnable, AutoCloseable {
                 return ThreadState.SESSION_SYNCED;
             case SESSION_SYNCED:
                 try {
-                    ProcessResponse processResponse = pullAndProcessData(1);
+                    ProcessResponse processResponse = pullAndProcessData(pollIntervalUS);
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {

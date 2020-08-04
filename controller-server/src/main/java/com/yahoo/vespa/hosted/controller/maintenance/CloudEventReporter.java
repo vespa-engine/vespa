@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
@@ -13,9 +14,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Issue;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
  * Automatically fetches and handles scheduled events from AWS:
  * 1. Deprovisions the affected hosts if applicable
  * 2. Submits an issue detailing the event if some hosts are not processed by 1.
+ *
  * @author mgimle
  */
 public class CloudEventReporter extends ControllerMaintainer {
@@ -34,50 +37,65 @@ public class CloudEventReporter extends ControllerMaintainer {
     private final AwsEventFetcher eventFetcher;
     private final Map<String, List<ZoneApi>> zonesByCloudNativeRegion;
     private final NodeRepository nodeRepository;
+    private final Metric metric;
 
-    CloudEventReporter(Controller controller, Duration interval) {
+    private static final String INFRASTRUCTURE_INSTANCE_EVENTS = "infrastructure_instance_events";
+
+    CloudEventReporter(Controller controller, Duration interval, Metric metric) {
         super(controller, interval);
         this.issueHandler = controller.serviceRegistry().issueHandler();
         this.eventFetcher = controller.serviceRegistry().eventFetcherService();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.zonesByCloudNativeRegion = getZonesByCloudNativeRegion();
+        this.metric = metric;
     }
 
     @Override
-    protected void maintain() {
-        log.log(Level.INFO, "Fetching events for cloud hosts.");
+    protected boolean maintain() {
+        int numberOfInfrastructureEvents = 0;
         for (var awsRegion : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(awsRegion);
             for (var event : events) {
                 log.info(String.format("Retrieved event %s, affecting the following instances: %s",
                         event.instanceEventId,
                         event.affectedInstances));
-                List<String> deprovisionedHosts = deprovisionHosts(awsRegion, event);
-                submitIssue(event, deprovisionedHosts);
+                List<Node> needsManualIntervention = handleInstances(awsRegion, event);
+                if (!needsManualIntervention.isEmpty()) {
+                    numberOfInfrastructureEvents += needsManualIntervention.size();
+                    submitIssue(event);
+                }
             }
         }
+        metric.set(INFRASTRUCTURE_INSTANCE_EVENTS, numberOfInfrastructureEvents, metric.createContext(Collections.emptyMap()));
+        return true;
     }
 
-    private List<String> deprovisionHosts(String awsRegion, CloudEvent event) {
-        return zonesByCloudNativeRegion.get(awsRegion)
-                .stream()
-                .flatMap(zone ->
-                    nodeRepository.list(zone.getId())
-                            .stream()
-                            .filter(shouldDeprovisionHost(event))
-                            .map(node -> {
-                                if (!node.wantToDeprovision() || !node.wantToRetire())
-                                    log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", node.hostname().value()));
-                                    nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
-                                return node.hostname().value();
-                            })
-                )
-                .collect(Collectors.toList());
+    /**
+     * Handles affected instances in the following way:
+     *  1. Ignore if unknown instance, presumably belongs to different system
+     *  2. Retire and deprovision if tenant host
+     *  3. Submit issue if infrastructure host, as it requires manual intervention
+     */
+    private List<Node> handleInstances(String awsRegion, CloudEvent event) {
+        List<Node> needsManualIntervention = new ArrayList<>();
+        for (var zone : zonesByCloudNativeRegion.get(awsRegion)) {
+            for (var node : nodeRepository.list(zone.getId())) {
+                if (!isAffected(node, event)){
+                    continue;
+                }
+                if (node.type() == NodeType.host) {
+                    log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", node.hostname().value()));
+                    nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
+                }
+                else {
+                    needsManualIntervention.add(node);
+                }
+            }
+        }
+        return needsManualIntervention;
     }
 
-    private void submitIssue(CloudEvent event, List<String> deprovisionedHosts) {
-        if (event.affectedInstances.size() == deprovisionedHosts.size())
-            return;
+    private void submitIssue(CloudEvent event) {
         Issue issue = eventFetcher.createIssue(event);
         if (!issueHandler.issueExists(issue)) {
             issueHandler.file(issue);
@@ -85,11 +103,9 @@ public class CloudEventReporter extends ControllerMaintainer {
         }
     }
 
-    private Predicate<Node> shouldDeprovisionHost(CloudEvent event) {
-        return node ->
-                node.type() == NodeType.host &&
-                event.affectedInstances.stream()
-                        .anyMatch(instance -> node.hostname().value().contains(instance));
+    private boolean isAffected(Node node, CloudEvent event) {
+        return event.affectedInstances.stream()
+                .anyMatch(instance -> node.hostname().value().contains(instance));
     }
 
     private Map<String, List<ZoneApi>> getZonesByCloudNativeRegion() {

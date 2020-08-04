@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -22,8 +23,8 @@ public class ReservationExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod) {
-        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod);
+    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod, Metric metric) {
+        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod, metric);
         this.nodeRepository = nodeRepository;
     }
 

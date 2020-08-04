@@ -102,7 +102,6 @@ public final class SessionParams {
          * @return the minimum number of requests to be used in throttler or zero if throttler is static.
          *
          * @param throttlerMinSize the value of the min size.
-         * @return pointer to the setter.
          */
         public Builder setThrottlerMinSize(int throttlerMinSize) {
             this.throttlerMinSize = throttlerMinSize;

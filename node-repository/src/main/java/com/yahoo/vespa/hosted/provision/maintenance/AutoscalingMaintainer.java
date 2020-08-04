@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
 import java.util.List;
@@ -38,17 +37,19 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                                  Deployer deployer,
                                  Metric metric,
                                  Duration interval) {
-        super(nodeRepository, interval);
+        super(nodeRepository, interval, metric);
         this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
         this.metric = metric;
         this.deployer = deployer;
     }
 
     @Override
-    protected void maintain() {
-        if ( ! nodeRepository().zone().environment().isProduction()) return;
+    protected boolean maintain() {
+        boolean success = true;
+        if ( ! nodeRepository().zone().environment().isProduction()) return success;
 
         activeNodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
+        return success;
     }
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {

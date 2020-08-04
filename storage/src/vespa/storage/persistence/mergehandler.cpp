@@ -5,7 +5,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
@@ -34,7 +33,7 @@ MergeHandler::MergeHandler(spi::PersistenceProvider& spi,
 
 namespace {
 
-int getDeleteFlag() {
+constexpr int getDeleteFlag() {
     // Referred into old slotfile code before. Where should this number come from?
     return 2;
 }
@@ -71,8 +70,7 @@ checkResult(const spi::Result& result,
 }
 
 
-class IteratorGuard
-{
+class IteratorGuard {
     spi::PersistenceProvider& _spi;
     spi::IteratorId _iteratorId;
     spi::Context& _context;
@@ -84,15 +82,13 @@ public:
           _iteratorId(iteratorId),
           _context(context)
     {}
-    ~IteratorGuard()
-    {
+    ~IteratorGuard() {
         assert(_iteratorId != 0);
         _spi.destroyIterator(_iteratorId, _context);
     }
 };
 
-struct IndirectDocEntryTimestampPredicate
-{
+struct IndirectDocEntryTimestampPredicate {
     bool operator()(const spi::DocEntry::UP& e1,
                     const spi::DocEntry::UP& e2) const
     {
@@ -106,8 +102,7 @@ struct IndirectDocEntryTimestampPredicate
     }
 };
 
-struct DiffEntryTimestampPredicate
-{
+struct DiffEntryTimestampPredicate {
     bool operator()(const api::ApplyBucketDiffCommand::Entry& e,
                     const api::Timestamp timestamp) const
     {
@@ -221,7 +216,6 @@ MergeHandler::buildBucketInfoList(
                         bucket.toString().c_str(),
                         providerInfo.toString().c_str(),
                         dbInfo.toString().c_str());
-                    DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
                 }
 
                 entry->setBucketInfo(providerInfo);
@@ -538,16 +532,14 @@ MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        checkResult(_spi.put(bucket, timestamp, std::move(doc), context),
-                    bucket,
-                    docId,
-                    "put");
+        framework::MilliSecTimer start_time(_env._component.getClock());
+        checkResult(_spi.put(bucket, timestamp, std::move(doc), context), bucket, docId, "put");
+        _env._metrics.merge_handler_metrics.put_latency.addValue(start_time.getElapsedTimeAsDouble());
     } else {
         DocumentId docId(e._docName);
-        checkResult(_spi.remove(bucket, timestamp, docId, context),
-                    bucket,
-                    docId,
-                    "remove");
+        framework::MilliSecTimer start_time(_env._component.getClock());
+        checkResult(_spi.remove(bucket, timestamp, docId, context), bucket, docId, "remove");
+        _env._metrics.merge_handler_metrics.remove_latency.addValue(start_time.getElapsedTimeAsDouble());
     }
 }
 
@@ -660,10 +652,10 @@ MergeHandler::applyDiffLocally(
     }
 
     if (byteCount + notNeededByteCount != 0) {
-        _env._metrics.mergeAverageDataReceivedNeeded.addValue(
+        _env._metrics.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(
                 static_cast<double>(byteCount) / (byteCount + notNeededByteCount));
     }
-    _env._metrics.bytesMerged.inc(byteCount);
+    _env._metrics.merge_handler_metrics.bytesMerged.inc(byteCount);
     LOG(debug, "Merge(%s): Applied %u entries locally from ApplyBucketDiff.",
         bucket.toString().c_str(), addedCount);
 
@@ -870,7 +862,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     if (applyDiffNeedLocalData(cmd->getDiff(), 0, true)) {
         framework::MilliSecTimer startTime(_env._component.getClock());
         fetchLocalData(bucket, cmd->getLoadType(), cmd->getDiff(), 0, context);
-        _env._metrics.mergeDataReadLatency.addValue(
+        _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     }
     status.pendingId = cmd->getMsgId();
@@ -966,7 +958,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
                      "Bucket not found in buildBucketInfo step");
         return tracker;
     }
-    _env._metrics.mergeMetadataReadLatency.addValue(s->startTime.getElapsedTimeAsDouble());
+    _env._metrics.merge_handler_metrics.mergeMetadataReadLatency.addValue(s->startTime.getElapsedTimeAsDouble());
     LOG(spam, "Sending GetBucketDiff %" PRIu64 " for %s to next node %u "
         "with diff of %u entries.",
         cmd2->getMsgId(),
@@ -1039,19 +1031,19 @@ namespace {
                 result.push_back(b);
                 ++j;
             } else {
-                    // If we find equal timestamped entries that are not the
-                    // same.. Flag an error. But there is nothing we can do
-                    // about it. Note it as if it is the same entry so we
-                    // dont try to merge them.
+                // If we find equal timestamped entries that are not the
+                // same.. Flag an error. But there is nothing we can do
+                // about it. Note it as if it is the same entry so we
+                // dont try to merge them.
                 if (!(a == b)) {
                     if (a._gid == b._gid && a._flags == b._flags) {
                         if ((a._flags & getDeleteFlag()) != 0 &&
                             (b._flags & getDeleteFlag()) != 0)
                         {
-                                // Unfortunately this can happen, for instance
-                                // if a remove comes to a bucket out of sync
-                                // and reuses different headers in the two
-                                // versions.
+                            // Unfortunately this can happen, for instance
+                            // if a remove comes to a bucket out of sync
+                            // and reuses different headers in the two
+                            // versions.
                             LOG(debug, "Found entries with equal timestamps of "
                                        "the same gid who both are remove "
                                        "entries: %s <-> %s.",
@@ -1071,9 +1063,9 @@ namespace {
                     } else if ((a._flags & getDeleteFlag())
                                != (b._flags & getDeleteFlag()))
                     {
-                            // If we find one remove and one put entry on the
-                            // same timestamp we are going to keep the remove
-                            // entry to make the copies consistent.
+                        // If we find one remove and one put entry on the
+                        // same timestamp we are going to keep the remove
+                        // entry to make the copies consistent.
                         const api::GetBucketDiffCommand::Entry& deletedEntry(
                                 (a._flags & getDeleteFlag()) != 0 ? a : b);
                         result.push_back(deletedEntry);
@@ -1146,7 +1138,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
         LOG(error, "Diffing %s found suspect entries.",
             bucket.toString().c_str());
     }
-    _env._metrics.mergeMetadataReadLatency.addValue(
+    _env._metrics.merge_handler_metrics.mergeMetadataReadLatency.addValue(
             startTime.getElapsedTimeAsDouble());
 
     // If last node in merge chain, we can send reply straight away
@@ -1243,7 +1235,6 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
         LOG(warning, "Got GetBucketDiffReply for %s which we have no "
                      "merge state for.",
             bucket.toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
 
@@ -1252,7 +1243,6 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
         LOG(warning, "Got GetBucketDiffReply for %s which had message "
                      "id %" PRIu64 " when we expected %" PRIu64 ". Ignoring reply.",
             bucket.toString().c_str(), reply.getMsgId(), s.pendingId);
-        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
     api::StorageReply::SP replyToSend;
@@ -1280,7 +1270,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
                     // We have sent something on, and shouldn't reply now.
                     clearState = false;
                 } else {
-                    _env._metrics.mergeLatencyTotal.addValue(
+                    _env._metrics.merge_handler_metrics.mergeLatencyTotal.addValue(
                             s.startTime.getElapsedTimeAsDouble());
                 }
             }
@@ -1327,7 +1317,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     if (applyDiffNeedLocalData(cmd.getDiff(), index, !lastInChain)) {
        framework::MilliSecTimer startTime(_env._component.getClock());
         fetchLocalData(bucket, cmd.getLoadType(), cmd.getDiff(), index, tracker->context());
-        _env._metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
+        _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Moving %zu entries, didn't need "
                   "local data on node %u (%u).",
@@ -1340,7 +1330,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
        framework::MilliSecTimer startTime(_env._component.getClock());
         api::BucketInfo info(applyDiffLocally(bucket, cmd.getLoadType(),
                                               cmd.getDiff(), index, tracker->context()));
-        _env._metrics.mergeDataWriteLatency.addValue(
+        _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
@@ -1409,7 +1399,6 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
         LOG(warning, "Got ApplyBucketDiffReply for %s which we have no "
                      "merge state for.",
             bucket.toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
 
@@ -1418,7 +1407,6 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
         LOG(warning, "Got ApplyBucketDiffReply for %s which had message "
                      "id %" PRIu64 " when we expected %" PRIu64 ". Ignoring reply.",
             bucket.toString().c_str(), reply.getMsgId(), s.pendingId);
-        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
     bool clearState = true;
@@ -1436,7 +1424,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                 framework::MilliSecTimer startTime(_env._component.getClock());
                 fetchLocalData(bucket, reply.getLoadType(), diff, index,
                                s.context);
-                _env._metrics.mergeDataReadLatency.addValue(
+                _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(
                         startTime.getElapsedTimeAsDouble());
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
@@ -1444,7 +1432,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                 api::BucketInfo info(
                         applyDiffLocally(bucket, reply.getLoadType(), diff,
                                          index, s.context));
-                _env._metrics.mergeDataWriteLatency.addValue(
+                _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                         startTime.getElapsedTimeAsDouble());
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
@@ -1491,7 +1479,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                     // We have sent something on and shouldn't reply now.
                     clearState = false;
                 } else {
-                    _env._metrics.mergeLatencyTotal.addValue(
+                    _env._metrics.merge_handler_metrics.mergeLatencyTotal.addValue(
                             s.startTime.getElapsedTimeAsDouble());
                 }
             }

@@ -121,14 +121,15 @@ public class ApplicationRepositoryTest {
     public void setup(FlagSource flagSource) throws IOException {
         Curator curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .flagSource(flagSource)
                 .clock(clock)
                 .build();
@@ -142,7 +143,11 @@ public class ApplicationRepositoryTest {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
                                                           orchestrator,
-                                                          clock);
+                                                          configserverConfig,
+                                                          new MockLogRetriever(),
+                                                          clock,
+                                                          new MockTesterClient(),
+                                                          new NullMetric());
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -231,14 +236,6 @@ public class ApplicationRepositoryTest {
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void refuseToGetLogsFromHostnameNotInApplication() {
-        applicationRepository = createApplicationRepository();
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
         assertEquals(200, response.getStatus());
     }
 
@@ -368,7 +365,7 @@ public class ApplicationRepositoryTest {
         deployment3.get().prepare();  // session 4 (not activated)
 
         LocalSession deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
-        assertNotEquals(activeSessionId, deployment3session);
+        assertNotEquals(activeSessionId, deployment3session.getSessionId());
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         SessionRepository sessionRepository = tester.tenant().getSessionRepository();
@@ -603,7 +600,7 @@ public class ApplicationRepositoryTest {
         assertEquals(1330, config2.intval());
 
         assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
-        assertThat(requestHandler.resolveApplicationId("doesnotexist"), Is.is(ApplicationId.defaultId()));
+        assertNull(requestHandler.resolveApplicationId("doesnotexist"));
         assertThat(requestHandler.resolveApplicationId("mytesthost"), Is.is(new ApplicationId.Builder()
                                                                                   .tenant(tenant1)
                                                                                   .applicationName("testapp").build())); // Host set in application package.
@@ -681,7 +678,7 @@ public class ApplicationRepositoryTest {
     }
 
     private ApplicationId applicationId() {
-        return ApplicationId.from(tenant1, ApplicationName.from("testapp"), InstanceName.defaultName());
+        return applicationId(tenant1);
     }
 
     private ApplicationId applicationId(TenantName tenantName) {

@@ -392,7 +392,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         if ("*".equals(request.getConfigKey().getConfigId())) {
             return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
         }
-        TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
+        // TODO: Look into if this fallback really is needed
+        TenantName tenant = optionalTenant.orElse(TenantName.defaultName());
         Optional<RequestHandler> requestHandler = getRequestHandler(tenant);
         if (requestHandler.isEmpty()) {
             String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant '" + tenant  +
@@ -404,6 +405,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
         RequestHandler handler = requestHandler.get();
         ApplicationId applicationId = handler.resolveApplicationId(request.getClientHostName());
+        // TODO: Look into if this fallback really is needed
+        if (applicationId == null && tenant.equals(TenantName.defaultName()))
+                applicationId = ApplicationId.defaultId();
         if (trace.shouldTrace(TRACELEVEL_DEBUG)) {
             trace.trace(TRACELEVEL_DEBUG, "Host '" + request.getClientHostName() + "' should have config from application '" + applicationId + "'");
         }

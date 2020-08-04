@@ -65,7 +65,7 @@ public class DynamicProvisioningMaintainerTest {
         Node host4 = tester.nodeRepository.getNode("host4").orElseThrow();
         Node host41 = tester.nodeRepository.getNode("host4-1").orElseThrow();
         assertTrue("No IP addresses assigned",
-                   Stream.of(host3, host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+                   Stream.of(host3, host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
 
         Node host3new = host3.with(host3.ipConfig().with(Set.of("::3:0")));
         Node host4new = host4.with(host4.ipConfig().with(Set.of("::4:0")));
@@ -83,7 +83,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.hostProvisioner.with(Behaviour.failProvisioning);
         Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned);
         Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.reserved, DynamicProvisioningTester.tenantApp);
-        assertTrue("No IP addresses assigned", Stream.of(host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+        assertTrue("No IP addresses assigned", Stream.of(host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
 
         tester.maintainer.maintain();
         assertEquals(Set.of("host4", "host4-1"),
@@ -233,7 +233,8 @@ public class DynamicProvisioningMaintainerTest {
             this.maintainer = new DynamicProvisioningMaintainer(nodeRepository,
                                                                 Duration.ofDays(1),
                                                                 hostProvisioner,
-                                                                flagSource);
+                                                                flagSource,
+                                                                new TestMetric());
         }
 
         private DynamicProvisioningTester addInitialNodes() {

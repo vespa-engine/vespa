@@ -23,6 +23,9 @@ public class NodeMetricsDbTest {
         }
         db.add(values);
 
+        // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
+        clock.advance(Duration.ofMinutes(1));
+
         assertEquals(29, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
         assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.memory, List.of("host0")).measurementCount());
         db.gc(clock);

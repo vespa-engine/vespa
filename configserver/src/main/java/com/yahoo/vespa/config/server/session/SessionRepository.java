@@ -164,7 +164,8 @@ public class SessionRepository {
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               currentActiveApplicationSet, tenantPath, now,
                                                               getSessionAppDir(sessionId),
-                                                              session.getApplicationPackage(), sessionZooKeeperClient);
+                                                              session.getApplicationPackage(), sessionZooKeeperClient)
+                .getConfigChangeActions();
         session.setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
@@ -571,11 +572,18 @@ public class SessionRepository {
             throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
 
         // Copy app atomically: Copy to a temp dir and move to destination
-        java.nio.file.Path tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
-        log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
-        IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
-        log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
-        Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        java.nio.file.Path tempDestinationDir = null;
+        try {
+            tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
+            log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
+            IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
+            log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+            Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        } finally {
+            // In case some of the operations above fail
+            if (tempDestinationDir != null)
+                IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
+        }
     }
 
     /**
@@ -614,7 +622,7 @@ public class SessionRepository {
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId();
-            log.log(Level.INFO, "Creating local session for session id " + sessionId);
+            log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
             return Optional.of(localSession);

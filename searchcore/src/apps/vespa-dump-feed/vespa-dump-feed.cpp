@@ -13,7 +13,7 @@
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/config/common/exceptions.h>
@@ -207,7 +207,7 @@ App::Main()
                                                   route.c_str(), feedFile.c_str()));
         fprintf(stderr, "running feed command: %s\n", feedCmd.c_str());
         std::string feederOutput;
-        bool feedingOk = vespalib::SlaveProc::run(feedCmd.c_str(), feederOutput);
+        bool feedingOk = vespalib::ChildProcess::run(feedCmd.c_str(), feederOutput);
         if (!feedingOk) {
             fprintf(stderr, "error: feed command failed\n");
             fprintf(stderr, "feed command output:\n-----\n%s\n-----\n", feederOutput.c_str());

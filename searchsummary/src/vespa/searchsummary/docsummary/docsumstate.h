@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchsummary/docsummary/getdocsumargs.h>
 #include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 
 namespace juniper {
@@ -34,7 +35,6 @@ class GetDocsumsStateCallback
 public:
     virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
-    virtual void ParseLocation(GetDocsumsState * state) = 0;
     virtual std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &matching_elems_fields) = 0;
     virtual ~GetDocsumsStateCallback(void) { }
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
@@ -80,7 +80,8 @@ public:
     vespalib::JSONStringer        _jsonStringer;
 
     // used by AbsDistanceDFW
-    std::unique_ptr<search::common::Location> _parsedLocation;
+    std::vector<search::common::GeoLocationSpec> _parsedLocations;
+    void parse_locations();
 
     // used by SummaryFeaturesDFW
     FeatureSet::SP _summaryFeatures;

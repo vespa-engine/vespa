@@ -27,6 +27,7 @@ vespa_add_library(searchcore_matching STATIC
     querynodes.cpp
     ranking_constants.cpp
     requestcontext.cpp
+    resolveviewvisitor.cpp
     result_processor.cpp
     same_element_builder.cpp
     sameelementmodifier.cpp

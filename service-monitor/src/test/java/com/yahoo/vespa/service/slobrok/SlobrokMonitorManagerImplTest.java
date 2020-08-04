@@ -49,21 +49,21 @@ public class SlobrokMonitorManagerImplTest {
     @Test
     public void testGetStatus_ApplicationNotInSlobrok() {
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(true);
-        assertEquals(ServiceStatus.DOWN, getStatus("topleveldispatch"));
+        assertEquals(ServiceStatus.DOWN, getStatus("container"));
     }
 
     @Test
     public void testGetStatus_ApplicationInSlobrok() {
         slobrokMonitorManager.applicationActivated(application);
-        when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(true);
-        assertEquals(ServiceStatus.UP, getStatus("topleveldispatch"));
+        when(slobrokMonitor.registeredInSlobrok("vespa/service/config.id")).thenReturn(true);
+        assertEquals(ServiceStatus.UP, getStatus("container"));
     }
 
     @Test
     public void testGetStatus_ServiceNotInSlobrok() {
         slobrokMonitorManager.applicationActivated(application);
-        when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(false);
-        assertEquals(ServiceStatus.DOWN, getStatus("topleveldispatch"));
+        when(slobrokMonitor.registeredInSlobrok("storage/cluster.config.id")).thenReturn(false);
+        assertEquals(ServiceStatus.DOWN, getStatus("storagenode"));
     }
 
     @Test
@@ -82,12 +82,12 @@ public class SlobrokMonitorManagerImplTest {
     @Test
     public void testLookup() {
         assertEquals(
-                Optional.of("config.id"),
-                findSlobrokServiceName("topleveldispatch", "config.id"));
+                Optional.of("vespa/service/config.id"),
+                findSlobrokServiceName("container", "config.id"));
 
         assertEquals(
                 Optional.empty(),
-                findSlobrokServiceName("adminserver", "config.id"));
+                findSlobrokServiceName("logserver", "config.id"));
     }
 
     private Optional<String> findSlobrokServiceName(String serviceType, String configId) {

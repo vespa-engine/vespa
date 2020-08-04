@@ -69,7 +69,7 @@ public class ControllerMaintenance extends AbstractComponent {
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10));
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), controller.serviceRegistry().costReportConsumer());
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(1), metric, controller.serviceRegistry().meteringService());
-        cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1));
+        cloudEventReporter = new CloudEventReporter(controller, Duration.ofMinutes(30), metric);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval);
         resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), controller.serviceRegistry().resourceTagger());
         systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, Duration.ofMinutes(10));

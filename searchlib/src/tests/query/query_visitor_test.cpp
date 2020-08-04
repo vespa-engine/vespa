@@ -90,7 +90,7 @@ void Test::requireThatAllNodesCanBeVisited() {
     checkVisit<WandTerm>(new SimpleWandTerm("field", 0, Weight(42), 57, 67, 77.7));
     checkVisit<Rank>(new SimpleRank);
     checkVisit<NumberTerm>(new SimpleNumberTerm("0.42", "field", 0, Weight(0)));
-    const Location location(Point(10, 10), 20, 0);
+    const Location location(Point{10, 10}, 20, 0);
     checkVisit<LocationTerm>(new SimpleLocationTerm(location, "field", 0, Weight(0)));
     checkVisit<PrefixTerm>(new SimplePrefixTerm("t", "field", 0, Weight(0)));
     checkVisit<RangeTerm>(new SimpleRangeTerm(Range(0, 1), "field", 0, Weight(0)));

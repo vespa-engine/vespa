@@ -395,11 +395,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
-        ApplicationId applicationId = hostRegistry.getKeyForHost(hostName);
-        if (applicationId == null) {
-            applicationId = ApplicationId.defaultId();
-        }
-        return applicationId;
+        return hostRegistry.getKeyForHost(hostName);
     }
 
     @Override

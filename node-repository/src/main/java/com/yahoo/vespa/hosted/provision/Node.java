@@ -94,15 +94,6 @@ public final class Node {
             throw new IllegalArgumentException("Only hosts can be reserved to a tenant");
     }
 
-    /** Returns the IP addresses of this node */
-    // TODO: Remove and make callers access this through ipConfig()
-    public Set<String> ipAddresses() { return ipConfig.primary(); }
-
-    /** Returns the IP address pool available on this node. These IP addresses are available for use by containers
-     * running on this node */
-    // TODO: Remove and make callers access this through ipConfig()
-    public IP.Pool ipAddressPool() { return ipConfig.pool(); }
-
     /** Returns the IP config of this node */
     public IP.Config ipConfig() { return ipConfig; }
 

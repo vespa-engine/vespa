@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -36,8 +37,8 @@ public class InactiveExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    InactiveExpirer(NodeRepository nodeRepository, Clock clock, Duration inactiveTimeout) {
-        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, clock, inactiveTimeout);
+    InactiveExpirer(NodeRepository nodeRepository, Clock clock, Duration inactiveTimeout, Metric metric) {
+        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, clock, inactiveTimeout, metric);
         this.nodeRepository = nodeRepository;
     }
 

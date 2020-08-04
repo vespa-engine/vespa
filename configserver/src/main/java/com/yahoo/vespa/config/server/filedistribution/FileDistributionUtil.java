@@ -1,6 +1,7 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -50,14 +51,25 @@ public class FileDistributionUtil {
         return configServers.size() > 0 ? new JRTConnectionPool(new ConfigSourceSet(configServers)) : emptyConnectionPool();
     }
 
+    public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {
+        return getFileReferencesOnDisk(downloadDirectory).contains(applicationPackageReference.value());
+    }
+
     static ConnectionPool emptyConnectionPool() {
         return new EmptyConnectionPool();
     }
 
     private static class EmptyConnectionPool implements ConnectionPool {
+        private Supervisor supervisor;
 
         @Override
-        public void close() {}
+        public void close() {
+            synchronized (this) {
+                if (supervisor != null) {
+                    supervisor.transport().shutdown().join();
+                }
+            }
+        }
 
         @Override
         public void setError(Connection connection, int i) {}
@@ -72,7 +84,14 @@ public class FileDistributionUtil {
         public int getSize() { return 0; }
 
         @Override
-        public Supervisor getSupervisor() { return new Supervisor(new Transport()); }
+        public Supervisor getSupervisor() {
+            synchronized (this) {
+                if (supervisor == null) {
+                    supervisor = new Supervisor(new Transport());
+                }
+            }
+            return supervisor;
+        }
     }
 
 }

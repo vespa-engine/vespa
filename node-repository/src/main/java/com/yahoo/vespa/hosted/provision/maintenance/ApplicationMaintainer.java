@@ -35,14 +35,15 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
                                                                                  new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository, Duration interval) {
-        super(nodeRepository, interval);
+        super(nodeRepository, interval, metric);
         this.deployer = deployer;
         this.metric = metric;
     }
 
     @Override
-    protected final void maintain() {
+    protected final boolean maintain() {
         applicationsNeedingMaintenance().forEach(this::deploy);
+        return true;
     }
 
     /** Returns the number of deployments that are pending execution */

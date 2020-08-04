@@ -16,14 +16,14 @@
       "routingMethod": "shared"
     },
     {
-      "cluster": "",
+      "cluster": "foo",
       "tls": true,
       "url": "https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/",
       "scope": "global",
       "routingMethod": "shared"
     }
   ],
-  "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-central-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "(ignore)",

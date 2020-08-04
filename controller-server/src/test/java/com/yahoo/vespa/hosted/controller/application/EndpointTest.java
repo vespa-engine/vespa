@@ -29,43 +29,43 @@ public class EndpointTest {
         Map<String, Endpoint> tests = Map.of(
                 // Legacy endpoint
                 "http://a1.t1.global.vespa.yahooapis.com:4080/",
-                Endpoint.of(app1).named(endpointId).on(Port.plain(4080)).legacy().in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.plain(4080)).legacy().in(SystemName.main),
 
                 // Legacy endpoint with TLS
                 "https://a1--t1.global.vespa.yahooapis.com:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).legacy().in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).legacy().in(SystemName.main),
 
                 // Main endpoint
                 "https://a1--t1.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).in(SystemName.main),
 
                 // Main endpoint in CD
                 "https://cd--a1--t1.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
                 // Main endpoint in CD
                 "https://cd--i2--a2--t2.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app2).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+                Endpoint.of(app2).target(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
                 // Main endpoint with direct routing and default TLS port
                 "https://a1.t1.global.vespa.oath.cloud/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint with custom rotation name
                 "https://r1.a1.t1.global.vespa.oath.cloud/",
-                Endpoint.of(app1).named(EndpointId.of("r1")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app1).target(EndpointId.of("r1")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint for custom instance in default rotation
                 "https://i2.a2.t2.global.vespa.oath.cloud/",
-                Endpoint.of(app2).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app2).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint for custom instance with custom rotation name
                 "https://r2.i2.a2.t2.global.vespa.oath.cloud/",
-                Endpoint.of(app2).named(EndpointId.of("r2")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app2).target(EndpointId.of("r2")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint in public system
                 "https://a1.t1.global.public.vespa.oath.cloud/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
@@ -77,43 +77,43 @@ public class EndpointTest {
         Map<String, Endpoint> tests = Map.of(
                 // Legacy endpoint
                 "http://a1.t1.global.vespa.yahooapis.com:4080/",
-                Endpoint.of(app1).named(endpointId).on(Port.plain(4080)).legacy().in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.plain(4080)).legacy().in(SystemName.main),
 
                 // Legacy endpoint with TLS
                 "https://a1--t1.global.vespa.yahooapis.com:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).legacy().in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).legacy().in(SystemName.main),
 
                 // Main endpoint
                 "https://a1--t1.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).in(SystemName.main),
 
                 // Main endpoint in CD
                 "https://cd--i2--a2--t2.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app2).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+                Endpoint.of(app2).target(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
                 // Main endpoint in CD
                 "https://cd--a1--t1.global.vespa.oath.cloud:4443/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+                Endpoint.of(app1).target(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
                 // Main endpoint with direct routing and default TLS port
                 "https://a1.t1.global.vespa.oath.cloud/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint with custom rotation name
                 "https://r1.a1.t1.global.vespa.oath.cloud/",
-                Endpoint.of(app1).named(EndpointId.of("r1")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app1).target(EndpointId.of("r1")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint for custom instance in default rotation
                 "https://i2.a2.t2.global.vespa.oath.cloud/",
-                Endpoint.of(app2).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app2).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint for custom instance with custom rotation name
                 "https://r2.i2.a2.t2.global.vespa.oath.cloud/",
-                Endpoint.of(app2).named(EndpointId.of("r2")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
+                Endpoint.of(app2).target(EndpointId.of("r2")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.main),
 
                 // Main endpoint in public system
                 "https://a1.t1.global.public.vespa.oath.cloud/",
-                Endpoint.of(app1).named(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
@@ -178,7 +178,7 @@ public class EndpointTest {
                 // Default rotation
                 "https://a1.t1.global.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .named(EndpointId.defaultId())
+                        .target(EndpointId.defaultId())
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
@@ -233,30 +233,26 @@ public class EndpointTest {
         Map<String, Endpoint> tests = Map.of(
                 "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .target(cluster, ZoneId.from("prod", "us-north-1a"))
-                        .weighted()
+                        .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .target(cluster, ZoneId.from("prod", "us-north-2"))
-                        .weighted()
+                        .targetRegion(cluster, ZoneId.from("prod", "us-north-2"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://a1.t1.us-north-2-w.test.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .target(cluster, ZoneId.from("test", "us-north-2"))
-                        .weighted()
+                        .targetRegion(cluster, ZoneId.from("test", "us-north-2"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
         Endpoint endpoint = Endpoint.of(app1)
-                                    .target(cluster, ZoneId.from("prod", "us-north-1a"))
-                                    .weighted()
+                                    .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
                                     .routingMethod(RoutingMethod.exclusive)
                                     .on(Port.tls())
                                     .in(SystemName.main);
@@ -271,20 +267,20 @@ public class EndpointTest {
         var tests1 = Map.of(
                 // With default cluster
                 "a1.t1.us-north-1.prod",
-                Endpoint.of(app1).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
+                Endpoint.of(app1).target(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
 
                 // With non-default cluster
                 "c1.a1.t1.us-north-1.prod",
-                Endpoint.of(app1).named(EndpointId.of("c1")).on(Port.tls(4443)).in(SystemName.main)
+                Endpoint.of(app1).target(EndpointId.of("c1")).on(Port.tls(4443)).in(SystemName.main)
         );
         var tests2 = Map.of(
                 // With non-default instance
                 "i2.a2.t2.us-north-1.prod",
-                Endpoint.of(app2).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
+                Endpoint.of(app2).target(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
 
                 // With non-default instance and cluster
                 "c2.i2.a2.t2.us-north-1.prod",
-                Endpoint.of(app2).named(EndpointId.of("c2")).on(Port.tls(4443)).in(SystemName.main)
+                Endpoint.of(app2).target(EndpointId.of("c2")).on(Port.tls(4443)).in(SystemName.main)
         );
         tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app1, zone))));
         tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app2, zone))));

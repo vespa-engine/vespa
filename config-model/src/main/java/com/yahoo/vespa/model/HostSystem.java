@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.net.HostName;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
@@ -31,7 +32,7 @@ import static java.util.logging.Level.FINE;
  */
 public class HostSystem extends AbstractConfigProducer<Host> {
 
-    private static Logger log = Logger.getLogger(HostSystem.class.getName());
+    private static final Logger log = Logger.getLogger(HostSystem.class.getName());
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
@@ -65,15 +66,18 @@ public class HostSystem extends AbstractConfigProducer<Host> {
      * @return the host with the given hostname, or null if no such host
      */
     public HostResource getHostByHostname(String name) {
-        // TODO: please eliminate the following ugly hack
-        if ("localhost.fortestingpurposesonly".equals(name)) {
-            String localhost = "localhost";
-            if ( ! getChildren().containsKey(localhost)) {
-                new Host(this, localhost);
+        String localhost = "localhost";
+        HostResource hostResource = hostname2host.get(name);
+        if (hostResource == null) {
+            // Create a new HostResource if this is the host this code is running on (as it is when running tests)
+            if (HostName.getLocalhost().equals(name)) {
+                if (! getChildren().containsKey(localhost)) {
+                    new Host(this, localhost);
+                }
+                hostResource = new HostResource(getChildren().get(localhost));
             }
-            return new HostResource(getChildren().get(localhost));
         }
-        return hostname2host.get(name);
+        return hostResource;
     }
 
     @Override

@@ -30,6 +30,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
+
 /**
  * The process of deploying an application.
  * Deployments are created by an {@link ApplicationRepository}.
@@ -134,15 +136,17 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+            validateSessionStatus(session);
             ApplicationId applicationId = session.getApplicationId();
 
             if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
 
             RemoteSession previousActiveSession;
+            CompletionWaiter waiter;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
-                validateSessionStatus(session);
-                NestedTransaction transaction = new NestedTransaction();
                 previousActiveSession = applicationRepository.getActiveSession(applicationId);
+                waiter = session.createActiveWaiter();
+                NestedTransaction transaction = new NestedTransaction();
                 transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
                 hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
                 transaction.commit();
@@ -154,11 +158,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 throw new InternalServerException("Error activating application", e);
             }
 
-            session.waitUntilActivated(timeoutBudget);
+            waiter.awaitCompletion(timeoutBudget.timeLeft());
             log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
                                 hostProvisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
                                 ". Config generation " + session.getMetaData().getGeneration() +
-                                (previousActiveSession != null ? ". Based on previous active session " + previousActiveSession.getSessionId() : "") +
+                                (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
         }
     }

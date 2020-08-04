@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -39,7 +38,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         AtomicInteger failures = new AtomicInteger(0);
         AtomicInteger attempts = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
@@ -91,6 +90,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return lastException.get() == null;
     }
 
 }

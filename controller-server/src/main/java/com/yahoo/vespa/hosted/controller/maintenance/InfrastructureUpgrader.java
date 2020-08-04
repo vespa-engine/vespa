@@ -35,8 +35,9 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         targetVersion().ifPresent(target -> upgradeAll(target, SystemApplication.all()));
+        return true;
     }
 
     /** Deploy a list of system applications until they converge on the given version */

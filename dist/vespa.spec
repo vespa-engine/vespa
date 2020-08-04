@@ -247,7 +247,7 @@ Requires: vespa-openssl >= 1.1.1g-1
 Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-zstd >= 1.4.5-2
+Requires: vespa-libzstd >= 1.4.5-2
 
 %description base-libs
 

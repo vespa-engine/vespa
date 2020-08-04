@@ -130,9 +130,9 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
         _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
-        uint32_t numResposeThreads = computeNumResponseThreads(_config->numResponseThreads);
-        if (numResposeThreads > 0) {
-            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResposeThreads, 10000, selectSequencer(_config->responseSequencerType));
+        uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
+        if (numResponseThreads > 0) {
+            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
         }
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {

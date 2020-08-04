@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -17,17 +18,18 @@ import java.time.Duration;
  */
 public class OsUpgradeActivator extends NodeRepositoryMaintainer {
 
-    public OsUpgradeActivator(NodeRepository nodeRepository, Duration interval) {
-        super(nodeRepository, interval);
+    public OsUpgradeActivator(NodeRepository nodeRepository, Duration interval, Metric metric) {
+        super(nodeRepository, interval, metric);
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         for (var nodeType : NodeType.values()) {
             if (!nodeType.isHost()) continue;
             var active = canUpgradeOsOf(nodeType);
             nodeRepository().osVersions().resumeUpgradeOf(nodeType, active);
         }
+        return true;
     }
 
     /** Returns whether to allow OS upgrade of nodes of given type */

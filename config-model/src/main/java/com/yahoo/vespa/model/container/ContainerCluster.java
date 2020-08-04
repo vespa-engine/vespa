@@ -12,13 +12,13 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -70,8 +70,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
-
 /**
  * Parent class for all container cluster types.
  *
@@ -88,7 +86,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         ContainerDocumentConfig.Producer,
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
-        BundlesConfig.Producer,
+        PlatformBundlesConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
@@ -465,6 +463,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * Adds a bundle present at a known location at the target container nodes.
+     * Note that the set of platform bundles cannot change during the jdisc container's lifetime.
      *
      * @param bundlePath usually an absolute path, e.g. '$VESPA_HOME/lib/jars/foo.jar'
      */
@@ -473,13 +472,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     @Override
-    public void getConfig(BundlesConfig.Builder builder) {
-        platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
-                .forEach(builder::bundle);
-    }
-
-    private static String toFileReferenceString(Path path) {
-        return DISK_BUNDLE_PREFIX + path.toString();
+    public void getConfig(PlatformBundlesConfig.Builder builder) {
+        platformBundles.stream()
+                .map(Path::toString)
+                .forEach(builder::bundlePaths);
     }
 
     @Override

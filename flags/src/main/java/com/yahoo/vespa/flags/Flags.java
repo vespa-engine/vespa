@@ -71,7 +71,8 @@ public class Flags {
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
-            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
+            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
+            "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
@@ -247,6 +248,11 @@ public class Flags {
             "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
             "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
 
+    public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(
+            "use-alternative-endpoint-certificate-provider", false,
+            "Whether to use an alternative CA when provisioning new certificates",
+            "Takes effect only on initial application deployment - not on later certificate refreshes!");
+
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
             "Override default docker image repo. Docker image version will be Vespa version.",
@@ -263,12 +269,6 @@ public class Flags {
             "Should 'implicit phrases' in queries we parsed to a phrase or and?",
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
-            "publish-direct-routing-endpoint", true,
-            "Whether an application should receive a directly routed endpoint in its endpoint list",
-            "Takes effect immediately",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,
@@ -350,6 +350,13 @@ public class Flags {
             "Number of core threads in threadpool for feeding APIs as factor of max pool size",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_LOCK = defineFeatureFlag(
+            "use-config-server-lock",
+            false,
+            "Whether the node-repository should take the same application lock as the config server when making changes to nodes",
+            "Takes effect on config server restart"
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

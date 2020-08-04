@@ -525,13 +525,12 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
                                        Optional<SourceRevision> sourceRevision, Optional<String> authorEmail,
-                                       Optional<String> sourceUrl, Optional<String> commit, long projectId,
+                                       Optional<String> sourceUrl, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
         ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
                                                           sourceRevision,
                                                           authorEmail,
                                                           sourceUrl,
-                                                          commit,
                                                           projectId,
                                                           applicationPackage,
                                                           testPackage);

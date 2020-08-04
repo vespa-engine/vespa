@@ -152,23 +152,9 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       mergeBuckets("mergebuckets", "Number of times buckets have been merged.", this),
       getBucketDiff("getbucketdiff", "Number of getbucketdiff commands that have been processed.", this),
       applyBucketDiff("applybucketdiff", "Number of applybucketdiff commands that have been processed.", this),
-      bytesMerged("bytesmerged", {}, "Total number of bytes merged into this node.", this),
       getBucketDiffReply("getbucketdiffreply", {}, "Number of getbucketdiff replies that have been processed.", this),
       applyBucketDiffReply("applybucketdiffreply", {}, "Number of applybucketdiff replies that have been processed.", this),
-      mergeLatencyTotal("mergelatencytotal", {},
-             "Latency of total merge operation, from master node receives "
-             "it, until merge is complete and master node replies.", this),
-      mergeMetadataReadLatency("mergemetadatareadlatency", {},
-             "Latency of time used in a merge step to check metadata of "
-             "current node to see what data it has.", this),
-      mergeDataReadLatency("mergedatareadlatency", {},
-             "Latency of time used in a merge step to read data other "
-             "nodes need.", this),
-      mergeDataWriteLatency("mergedatawritelatency", {},
-            "Latency of time used in a merge step to write data needed to "
-            "current node.", this),
-      mergeAverageDataReceivedNeeded("mergeavgdatareceivedneeded", {}, "Amount of data transferred from previous node "
-                                     "in chain that we needed to apply locally.", this),
+      merge_handler_metrics(this),
       batchingSize("batchingsize", {}, "Number of operations batched per bucket (only counts "
                    "batches of size > 1)", this)
 { }

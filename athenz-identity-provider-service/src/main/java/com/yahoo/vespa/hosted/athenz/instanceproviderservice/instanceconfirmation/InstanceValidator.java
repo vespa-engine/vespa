@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
+
 import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
@@ -155,9 +156,9 @@ public class InstanceValidator {
                 .map(InetAddresses::forString)
                 .collect(Collectors.toList());
 
-        List<InetAddress> nodeIpAddresses = node.ipAddresses().stream()
-                .map(InetAddresses::forString)
-                .collect(Collectors.toList());
+        List<InetAddress> nodeIpAddresses = node.ipConfig().primary().stream()
+                                                .map(InetAddresses::forString)
+                                                .collect(Collectors.toList());
 
         // Validate that ipaddresses in request are valid for node
 

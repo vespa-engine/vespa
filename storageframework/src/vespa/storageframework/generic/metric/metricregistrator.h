@@ -22,7 +22,7 @@ namespace storage::framework {
 struct MetricUpdateHook;
 
 struct MetricRegistrator {
-    virtual ~MetricRegistrator() {}
+    virtual ~MetricRegistrator() = default;
 
     virtual void registerMetric(metrics::Metric&) = 0;
     virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) = 0;

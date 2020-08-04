@@ -120,10 +120,10 @@ public class SessionPreparer {
      * @param tenantPath                  Zookeeper path for the tenant for this session
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
-    public ConfigChangeActions prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
-                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
-                                       Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
-                                       SessionZooKeeperClient sessionZooKeeperClient) {
+    public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                                 Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                                 Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
+                                 SessionZooKeeperClient sessionZooKeeperClient) {
         Preparation preparation = new Preparation(hostValidator, logger, params, currentActiveApplicationSet,
                                                   tenantPath, serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
 
@@ -313,8 +313,8 @@ public class SessionPreparer {
             checkTimeout("distribute files");
         }
 
-        ConfigChangeActions result() {
-            return prepareResult.getConfigChangeActions();
+        PrepareResult result() {
+            return prepareResult;
         }
 
         private List<ContainerEndpoint> readEndpointsIfNull(List<ContainerEndpoint> endpoints) {
@@ -352,7 +352,7 @@ public class SessionPreparer {
     }
 
     /** The result of preparation over all model versions */
-    private static class PrepareResult {
+    static class PrepareResult {
 
         private final AllocatedHosts allocatedHosts;
         private final ImmutableList<PreparedModelsBuilder.PreparedModelResult> results;

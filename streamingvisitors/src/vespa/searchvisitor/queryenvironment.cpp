@@ -1,12 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryenvironment.h"
-#include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/geo_location.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.queryenvironment");
 
 using search::IAttributeManager;
+using search::common::GeoLocationParser;
+using search::common::GeoLocationSpec;
 using search::fef::Properties;
 using vespalib::string;
 
@@ -14,34 +18,24 @@ namespace streaming {
 
 namespace {
 
-search::fef::Location
+std::vector<GeoLocationSpec>
 parseLocation(const string & location_str)
 {
-    search::fef::Location fefLocation;
+    std::vector<GeoLocationSpec> fefLocations;
     if (location_str.empty()) {
-        return fefLocation;
+        return fefLocations;
     }
-    string::size_type pos = location_str.find(':');
-    if (pos == string::npos) {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'. Location ignored.",
-                     location_str.c_str());
-        return fefLocation;
-    }
-    string attr = location_str.substr(0, pos);
-    const string location = location_str.substr(pos + 1);
-
-    search::common::Location locationSpec;
-    if (!locationSpec.parse(location)) {
+    GeoLocationParser locationParser;
+    if (!locationParser.parseOldFormatWithField(location_str)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
-                     location.c_str(), locationSpec.getParseError());
-        return fefLocation;
+                     location_str.c_str(), locationParser.getParseError());
+        return fefLocations;
     }
-    fefLocation.setAttribute(attr);
-    fefLocation.setXPosition(locationSpec.getX());
-    fefLocation.setYPosition(locationSpec.getY());
-    fefLocation.setXAspect(locationSpec.getXAspect());
-    fefLocation.setValid(true);
-    return fefLocation;
+    auto loc = locationParser.getGeoLocation();
+    if (loc.has_point) {
+        fefLocations.push_back(GeoLocationSpec{locationParser.getFieldName(), loc});
+    }
+    return fefLocations;
 }
 
 }
@@ -54,7 +48,7 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
     _properties(properties),
     _attrCtx(attrMgr->createContext()),
     _queryTerms(),
-    _location(parseLocation(location_str))
+    _locations(parseLocation(location_str))
 {
 }
 

@@ -51,7 +51,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final TenantListener tenantListener;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
-    private final FileDistributionFactory fileDistributionProvider;
+    private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
@@ -65,7 +65,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
-                                  FileDistributionFactory fileDistributionProvider,
+                                  FileDistributionFactory fileDistributionFactory,
                                   HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
@@ -86,7 +86,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
-        this.fileDistributionProvider = fileDistributionProvider;
+        this.fileDistributionFactory = fileDistributionFactory;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
         this.sessionPreparer = sessionPreparer;
@@ -247,6 +247,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         return secretStore;
     }
 
-    public FileDistributionFactory getFileDistributionProvider() { return fileDistributionProvider; }
+    public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
 }

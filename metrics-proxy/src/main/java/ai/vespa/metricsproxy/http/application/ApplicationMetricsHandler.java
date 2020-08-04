@@ -5,10 +5,9 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
+import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
-import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
-import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 import com.google.inject.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toMetricsPackets;
 import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
@@ -84,7 +82,9 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
         List<GenericJsonModel> genericNodes = toGenericApplicationModel(metricsByNode).nodes;
         List<MetricsPacket> metricsForAllNodes = genericNodes.stream()
-                .flatMap(element -> toMetricsPackets(element).stream()
+                .flatMap(element -> toMetricsPackets(element)
+                        .stream()
+                        .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
                         .map(MetricsPacket.Builder::build))
                 .collect(Collectors.toList());
         return new TextResponse(200, toPrometheusModel(metricsForAllNodes).serialize());

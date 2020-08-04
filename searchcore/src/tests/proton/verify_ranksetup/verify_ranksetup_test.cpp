@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -154,7 +154,7 @@ struct Model {
     }
     bool verify() {
         generate();
-        return vespalib::SlaveProc::run(vespalib::make_string("%s dir:%s", prog, gen_dir.c_str()).c_str());
+        return vespalib::ChildProcess::run(vespalib::make_string("%s dir:%s", prog, gen_dir.c_str()).c_str());
     }
     void verify_valid(std::initializer_list<std::string> features) {
         for (const std::string &f: features) {
@@ -207,12 +207,12 @@ struct ShadowModel : Model {
 };
 
 TEST_F("print usage", Model()) {
-    EXPECT_TRUE(!vespalib::SlaveProc::run(vespalib::make_string("%s", prog).c_str()));
+    EXPECT_TRUE(!vespalib::ChildProcess::run(vespalib::make_string("%s", prog).c_str()));
 }
 
 TEST_F("setup output directory", Model()) {
-    ASSERT_TRUE(vespalib::SlaveProc::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
-    ASSERT_TRUE(vespalib::SlaveProc::run(vespalib::make_string("mkdir %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("mkdir %s", gen_dir.c_str()).c_str()));
 }
 
 //-----------------------------------------------------------------------------
@@ -317,7 +317,7 @@ TEST_F("require that imported attribute field can be used by rank feature", Simp
 //-----------------------------------------------------------------------------
 
 TEST_F("cleanup files", Model()) {
-    ASSERT_TRUE(vespalib::SlaveProc::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }

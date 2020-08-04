@@ -50,13 +50,15 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected boolean maintain() {
         try {
             collectResourceSnapshots();
+            return true;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to collect resource snapshots. Retrying in " + interval() + ". Error: " +
                                    Exceptions.toMessageString(e));
         }
+        return false;
     }
 
     private void collectResourceSnapshots() {

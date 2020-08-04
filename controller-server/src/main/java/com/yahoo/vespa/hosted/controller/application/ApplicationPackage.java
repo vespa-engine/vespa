@@ -5,11 +5,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
@@ -19,7 +21,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -184,4 +189,27 @@ public class ApplicationPackage {
 
     }
 
+    /** Creates a valid application package that will remove all application's deployments */
+    public static ApplicationPackage deploymentRemoval() {
+        DeploymentSpec deploymentSpec = DeploymentSpec.empty;
+        ValidationOverrides validationOverrides = allValidationOverrides();
+        try (ZipBuilder zipBuilder = new ZipBuilder(deploymentSpec.xmlForm().length() + validationOverrides.xmlForm().length() + 500)) {
+            zipBuilder.add("validation-overrides.xml", validationOverrides.xmlForm().getBytes(UTF_8));
+            zipBuilder.add("deployment.xml", deploymentSpec.xmlForm().getBytes(UTF_8));
+
+            zipBuilder.close();
+            return new ApplicationPackage(zipBuilder.toByteArray());
+        }
+    }
+
+    private static ValidationOverrides allValidationOverrides() {
+        String until = DateTimeFormatter.ISO_LOCAL_DATE.format(Instant.now().plus(Duration.ofDays(25)).atZone(ZoneOffset.UTC));
+        StringBuilder validationOverridesContents = new StringBuilder(1000);
+        validationOverridesContents.append("<validation-overrides version=\"1.0\">\n");
+        for (ValidationId validationId: ValidationId.values())
+            validationOverridesContents.append("\t<allow until=\"").append(until).append("\">").append(validationId.value()).append("</allow>\n");
+        validationOverridesContents.append("</validation-overrides>\n");
+
+        return ValidationOverrides.fromXml(validationOverridesContents.toString());
+    }
 }
