@@ -114,7 +114,11 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         } else if (enabledCredentials.contains(ROLE_TOKEN)
                 && isRoleTokenPresent(request)) {
             return checkAccessWithRoleToken(request, resourceAndAction);
-        } else {
+        } else if (!isRoleTokenPresent(request)) {
+            throw new IllegalArgumentException(
+                    "Not authorized - request did not contain the header 'Authorization: Bearer token.'");
+        }
+        else {
             throw new IllegalArgumentException(
                     "Not authorized - request did not contain any of the allowed credentials: " + toPrettyString(enabledCredentials));
         }

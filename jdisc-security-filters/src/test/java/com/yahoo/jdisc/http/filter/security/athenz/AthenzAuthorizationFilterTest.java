@@ -111,6 +111,18 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
+    public void returns_unauthorized_for_request_without_role_token() {
+        AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
+
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        DiscFilterRequest request = createRequest(null, null, null);
+        filter.filter(request, responseHandler);
+
+        assertStatusCode(responseHandler, 401);
+        assertErrorMessage(responseHandler, "Not authorized - request did not contain the header 'Authorization: Bearer <token>.");
+    }
+
+    @Test
     public void returns_unauthorized_for_request_with_disabled_credential_type() {
         AthenzAuthorizationFilter filter =
                 createFilter(new AllowingZpe(), List.of(EnabledCredentials.ROLE_CERTIFICATE, EnabledCredentials.ACCESS_TOKEN));
