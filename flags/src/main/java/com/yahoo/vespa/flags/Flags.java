@@ -345,6 +345,12 @@ public class Flags {
             "Takes effect on next tick"
     );
 
+    public static final UnboundDoubleFlag FEED_CORE_THREAD_POOL_SIZE_FACTOR = defineDoubleFlag(
+            "feed-core-thread-pool-size-factor", 1.0,
+            "Number of core threads in threadpool for feeding APIs as factor of max pool size",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_LOCK = defineFeatureFlag(
             "use-config-server-lock",
             false,
