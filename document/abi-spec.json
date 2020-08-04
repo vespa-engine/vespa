@@ -3376,22 +3376,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.document.fieldset.BodyFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.fieldset.DocIdOnly": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -3451,22 +3435,6 @@
       "public java.lang.String serialize(com.yahoo.document.fieldset.FieldSet)",
       "public void copyFields(com.yahoo.document.Document, com.yahoo.document.Document, com.yahoo.document.fieldset.FieldSet)",
       "public void stripFields(com.yahoo.document.Document, com.yahoo.document.fieldset.FieldSet)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.document.fieldset.HeaderFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
   },

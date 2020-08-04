@@ -1245,8 +1245,7 @@ createIterator(DummyStorageLink& link,
                const document::BucketId& bucketId,
                const std::string& docSel,
                framework::MicroSecTime fromTime = framework::MicroSecTime(0),
-               framework::MicroSecTime toTime = framework::MicroSecTime::max(),
-               bool headerOnly = false)
+               framework::MicroSecTime toTime = framework::MicroSecTime::max())
 {
     spi::Bucket bucket(makeSpiBucket(bucketId));
 
@@ -1256,7 +1255,7 @@ createIterator(DummyStorageLink& link,
     selection.setToTimestamp(spi::Timestamp(toTime.getTime()));
     auto createIterCmd = std::make_shared<CreateIteratorCommand>(
             makeDocumentBucket(bucket), selection,
-            headerOnly ? "[header]" : "[all]",
+            "[all]",
             spi::NEWEST_DOCUMENT_ONLY);
     link.sendDown(createIterCmd);
     link.waitForMessages(1, FileStorManagerTest::LONG_WAITTIME);
@@ -1358,7 +1357,7 @@ TEST_F(FileStorManagerTest, visiting) {
         }
         EXPECT_EQ(27u, totalDocs);
     }
-    // Visit bucket with min and max timestamps set, headers only
+    // Visit bucket with min and max timestamps set
     {
         document::BucketId bucket(16, 2);
         spi::IteratorId iterId(
@@ -1366,8 +1365,7 @@ TEST_F(FileStorManagerTest, visiting) {
                                ids[1],
                                "",
                                framework::MicroSecTime(30),
-                               framework::MicroSecTime(40),
-                               true));
+                               framework::MicroSecTime(40)));
         uint32_t totalDocs = 0;
         while (true) {
             auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);

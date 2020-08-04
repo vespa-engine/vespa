@@ -23,7 +23,7 @@ public class VisitorParametersTestCase {
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
-        params.setFieldSet("[header]");
+        params.setFieldSet("[all]");
         params.setLoadType(loadType);
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
@@ -59,7 +59,7 @@ public class VisitorParametersTestCase {
         assertEquals("extraterrestrial/highway", copy.getRoute().toString());
         assertEquals(1337, copy.getTimeoutMs());
         assertEquals(111, copy.getMaxPending());
-        assertEquals("[header]", copy.getFieldSet());
+        assertEquals("[all]", copy.getFieldSet());
         assertEquals(loadType, copy.getLoadType());
         assertEquals(true, copy.getVisitRemoves());
         assertEquals(true, copy.getVisitInconsistentBuckets());
@@ -98,7 +98,7 @@ public class VisitorParametersTestCase {
                 "  Visitor library parameters:\n" +
                 "    groovy : dudes\n" +
                 "    ninja : turtles\n" +
-                "  Field set:          [header]\n" +
+                "  Field set:          [all]\n" +
                 "  Route:              extraterrestrial/highway\n" +
                 "  Weight:             1.0\n" +
                 "  Max firstpass hits: 555\n" +

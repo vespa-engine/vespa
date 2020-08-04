@@ -7,27 +7,27 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 
-import java.lang.String;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * TODO: Move to document and implement
  */
 public class FieldSetRepo {
 
-    @SuppressWarnings("deprecation")
     FieldSet parseSpecialValues(String name)
     {
         if (name.equals("[id]")) { return new DocIdOnly(); }
         else if (name.equals("[all]")) { return (new AllFields()); }
         else if (name.equals("[none]")) { return (new NoFields()); }
-        else if (name.equals("[header]")) { return (new HeaderFields()); }
         else if (name.equals("[docid]")) { return (new DocIdOnly()); }
-        else if (name.equals("[body]")) { return (new BodyFields()); }
         else {
             throw new IllegalArgumentException(
                     "The only special names (enclosed in '[]') allowed are " +
-                    "id, all, none, header, body");
+                    "id, all, none");
         }
     }
 
@@ -40,7 +40,7 @@ public class FieldSetRepo {
         StringTokenizer tokenizer = new StringTokenizer(fieldNames, ",");
         FieldCollection collection = new FieldCollection(type);
 
-        for (; tokenizer.hasMoreTokens(); ) {
+        while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();
             Field f = type.getField(token);
             if (f == null) {
@@ -74,14 +74,13 @@ public class FieldSetRepo {
         return parseFieldCollection(docMan, type, fields);
     }
 
-    @SuppressWarnings("deprecation")
     public String serialize(FieldSet fieldSet) {
         if (fieldSet instanceof Field) {
             return ((Field)fieldSet).getName();
         } else if (fieldSet instanceof FieldCollection) {
             FieldCollection c = ((FieldCollection)fieldSet);
 
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             for (Field f : c) {
                 if (buffer.length() == 0) {
                     buffer.append(c.getDocumentType().getName());
@@ -97,10 +96,6 @@ public class FieldSetRepo {
             return "[all]";
         } else if (fieldSet instanceof NoFields) {
             return "[none]";
-        } else if (fieldSet instanceof BodyFields) {
-            return "[body]";
-        } else if (fieldSet instanceof HeaderFields) {
-            return "[header]";
         } else if (fieldSet instanceof DocIdOnly) {
             return "[docid]";
         } else {
@@ -127,7 +122,7 @@ public class FieldSetRepo {
      * Strips all fields not wanted by the given field set from the document.
      */
     public void stripFields(Document target, FieldSet fieldSet) {
-        List<Field> toStrip = new ArrayList<Field>();
+        List<Field> toStrip = new ArrayList<>();
         for (Iterator<Map.Entry<Field, FieldValue>> i = target.iterator(); i.hasNext();) {
             Map.Entry<Field, FieldValue> v = i.next();
 

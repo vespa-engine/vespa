@@ -92,7 +92,7 @@ public class CommandLineOptionsTest {
     public void testInvalidCombination3() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Field set option can not be used in combination with print ids option.");
-        getParsedOptions("--printids", "--fieldset", "[header]");
+        getParsedOptions("--printids", "--fieldset", "[all]");
     }
 
     @Test

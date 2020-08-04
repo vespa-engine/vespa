@@ -712,14 +712,13 @@ public class MessageBusVisitorSessionTestCase {
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
-        params.setFieldSet("[header]");
+        params.setFieldSet("[id]");
         params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3));
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);
 
-        MessageBusVisitorSession visitorSession = createVisitorSession(
-                sender, receiver, executor, params);
+        MessageBusVisitorSession visitorSession = createVisitorSession(sender, receiver, executor, params);
         visitorSession.start();
 
         // Process initial task which sends a single CreateVisitor.
@@ -735,7 +734,7 @@ public class MessageBusVisitorSessionTestCase {
                 "from timestamp=9001\n" +
                 "to timestamp=10001\n" +
                 "max pending=111\n" +
-                "fieldset=[header]\n" +
+                "fieldset=[id]\n" +
                 "visit inconsistent=true\n" +
                 "visit removes=true\n" +
                 "parameters=[\n" +
