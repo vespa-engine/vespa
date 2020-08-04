@@ -161,7 +161,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
-        private final double feedCoreThreadPoolSizeFactor;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -216,8 +215,6 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();;
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
-            feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -300,7 +297,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
-        @Override public double feedCoreThreadPoolSizeFactor() { return feedCoreThreadPoolSizeFactor; }
     }
 
 }
