@@ -600,7 +600,7 @@ public class ApplicationRepositoryTest {
         assertEquals(1330, config2.intval());
 
         assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
-        assertThat(requestHandler.resolveApplicationId("doesnotexist"), Is.is(ApplicationId.defaultId()));
+        assertNull(requestHandler.resolveApplicationId("doesnotexist"));
         assertThat(requestHandler.resolveApplicationId("mytesthost"), Is.is(new ApplicationId.Builder()
                                                                                   .tenant(tenant1)
                                                                                   .applicationName("testapp").build())); // Host set in application package.
