@@ -22,6 +22,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import javax.ws.rs.ForbiddenException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.*;
@@ -36,13 +38,13 @@ public class CloudAccessControl implements AccessControl {
 
     private final UserManagement userManagement;
     private final BooleanFlag enablePublicSignup;
-    private final BillingController planController;
+    private final BillingController billingController;
 
     @Inject
     public CloudAccessControl(UserManagement userManagement, FlagSource flagSource, ServiceRegistry serviceRegistry) {
         this.userManagement = userManagement;
         this.enablePublicSignup = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
-        planController = serviceRegistry.billingController();
+        billingController = serviceRegistry.billingController();
     }
 
     @Override
@@ -101,15 +103,17 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
-        if(!(allowedByPrivilegedRole((Auth0Credentials) credentials) || isTrial(tenant)))
-            throw new ForbiddenException("Please contact the Vespa team for assistance in deleting non-trial tenants");
+        if(!(allowedByPrivilegedRole((Auth0Credentials) credentials) || noOutstandingCharges(tenant)))
+            throw new ForbiddenException("Please contact the Vespa team for assistance in deleting tenants with outstanding charges");
 
         for (TenantRole role : Roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
     }
 
-    private boolean isTrial(TenantName tenant) {
-        return planController.getPlan(tenant).value().equals("trial");
+    private boolean noOutstandingCharges(TenantName tenant) {
+        return billingController.createUncommittedInvoice(tenant, LocalDate.now()).sum().compareTo(BigDecimal.ZERO) == 0 &&
+                billingController.getUnusedLineItems(tenant).size() == 0 &&
+                billingController.getPlan(tenant).value().equals("trial");
     }
 
     @Override

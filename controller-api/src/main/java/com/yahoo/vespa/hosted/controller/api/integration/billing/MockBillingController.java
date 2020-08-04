@@ -25,7 +25,7 @@ public class MockBillingController implements BillingController {
 
     @Override
     public PlanId getPlan(TenantName tenant) {
-        return plans.get(tenant);
+        return plans.getOrDefault(tenant, PlanId.from("trial"));
     }
 
     @Override
@@ -50,7 +50,7 @@ public class MockBillingController implements BillingController {
 
     @Override
     public Invoice createUncommittedInvoice(TenantName tenant, LocalDate until) {
-        return uncommittedInvoices.get(tenant);
+        return uncommittedInvoices.getOrDefault(tenant, emptyInvoice());
     }
 
     @Override
@@ -102,7 +102,10 @@ public class MockBillingController implements BillingController {
 
     @Override
     public void deleteLineItem(String lineItemId) {
-
+        unusedLineItems.values()
+                .forEach(lineItems -> lineItems.
+                        removeIf(lineItem -> lineItem.id().equals(lineItemId))
+                );
     }
 
     @Override
@@ -144,5 +147,9 @@ public class MockBillingController implements BillingController {
                     .add(invoice);
         else
             uncommittedInvoices.put(tenantName, invoice);
+    }
+
+    private Invoice emptyInvoice() {
+        return new Invoice(Invoice.Id.of("empty"), Invoice.StatusHistory.open(), List.of(), ZonedDateTime.now(), ZonedDateTime.now());
     }
 }
