@@ -167,9 +167,9 @@ public class TransportThread {
         return true;
     }
 
-    TransportThread(Transport transport) {
+    TransportThread(Transport transport, int index) {
         parent    = transport;
-        thread    = new Thread(new Run(), "<jrt-transport>");
+        thread    = new Thread(new Run(), transport.getName() + ".jrt-transport." + index);
         queue     = new Queue();
         myQueue   = new Queue();
         scheduler = new Scheduler(System.currentTimeMillis());

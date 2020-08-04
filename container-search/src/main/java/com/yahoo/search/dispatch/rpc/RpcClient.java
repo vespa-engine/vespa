@@ -25,8 +25,8 @@ class RpcClient implements Client {
 
     private final Supervisor supervisor;
 
-    public RpcClient(int transportThreads) {
-        supervisor = new Supervisor(new Transport(transportThreads));
+    public RpcClient(String name, int transportThreads) {
+        supervisor = new Supervisor(new Transport(name, transportThreads));
     }
 
     @Override

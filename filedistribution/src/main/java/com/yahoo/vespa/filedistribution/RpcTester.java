@@ -52,7 +52,7 @@ public class RpcTester {
         log.log(Level.INFO, "Read blob from " + file.getAbsolutePath());
 
 
-        Supervisor supervisor = new Supervisor(new Transport());
+        Supervisor supervisor = new Supervisor(new Transport("rpctester"));
 
         Spec spec = new Spec("tcp/localhost:19090");
         log.log(Level.INFO, "Connecting to " + spec);

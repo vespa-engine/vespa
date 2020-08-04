@@ -34,7 +34,7 @@ public class ProxyServer implements Runnable {
 
     private final static Logger log = Logger.getLogger(ProxyServer.class.getName());
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
-    private final Supervisor supervisor = new Supervisor(new Transport(JRT_TRANSPORT_THREADS));
+    private final Supervisor supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS));
 
     private final ConfigProxyRpcServer rpcServer;
     private ConfigSourceSet configSource;

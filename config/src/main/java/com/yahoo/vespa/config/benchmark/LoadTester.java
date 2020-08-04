@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class LoadTester {
 
     private static boolean debug = false;
-    private Transport transport = new Transport();
+    private Transport transport = new Transport("rpc-client");
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();

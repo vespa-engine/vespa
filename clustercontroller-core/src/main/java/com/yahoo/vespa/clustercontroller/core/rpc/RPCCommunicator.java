@@ -54,7 +54,7 @@ public class RPCCommunicator implements Communicator {
     private final int fleetControllerIndex;
 
     public static Supervisor createRealSupervisor() {
-        return new Supervisor(new Transport());
+        return new Supervisor(new Transport("rpc-communicator"));
     }
 
     public RPCCommunicator(Supervisor supervisor,

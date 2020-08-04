@@ -29,7 +29,7 @@ public class JRTConnectionPool implements ConnectionPool {
 
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final Map<String, JRTConnection> connections = new LinkedHashMap<>();
 
     // The config sources used by this connection pool.
@@ -39,6 +39,7 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
+        supervisor = new Supervisor(new Transport("config-jrtpool-" + sourceSet.hashCode()));
         addSources(sourceSet);
     }
 

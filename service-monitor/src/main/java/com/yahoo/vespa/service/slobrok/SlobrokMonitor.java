@@ -37,7 +37,7 @@ public class SlobrokMonitor implements AutoCloseable {
     }
 
     private SlobrokMonitor(SlobrokList slobrokList) {
-        this(slobrokList, new Mirror(new Supervisor(new Transport()), slobrokList));
+        this(slobrokList, new Mirror(new Supervisor(new Transport("slobrok-monitor")), slobrokList));
     }
 
     void updateSlobrokList(ApplicationInfo application) {

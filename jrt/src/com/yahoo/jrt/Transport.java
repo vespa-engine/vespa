@@ -20,6 +20,7 @@ public class Transport {
 
     private static final Logger log = Logger.getLogger(Transport.class.getName());
 
+    private final String name;
     private final FatalErrorHandler fatalHandler; // NB: this must be set first
     private final CryptoEngine      cryptoEngine;
     private final Connector         connector;
@@ -37,11 +38,13 @@ public class Transport {
      * error handler is registered, the default action is to log the
      * error and exit with exit code 1.
      *
+     * @param name used for identifying threads
      * @param fatalHandler fatal error handler
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
      **/
-    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay) {
+    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay) {
+        this.name = name;
         this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
         this.tcpNoDelay = tcpNoDelay;
@@ -49,13 +52,15 @@ public class Transport {
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
         for (int i = 0; i < numThreads; ++i) {
-            threads.add(new TransportThread(this));
+            threads.add(new TransportThread(this, i));
         }
     }
-    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads, true); }
-    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads, true); }
-    public Transport(int numThreads, boolean tcpNoDelay) { this(null, CryptoEngine.createDefault(), numThreads, tcpNoDelay); }
-    public Transport() { this(null, CryptoEngine.createDefault(), 1, true); }
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads) { this(name, null, cryptoEngine, numThreads, true); }
+    public Transport(String name, int numThreads) { this(name, null, CryptoEngine.createDefault(), numThreads, true); }
+    public Transport(String name, int numThreads, boolean tcpNoDelay) { this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay); }
+    public Transport(String name) { this(name, null, CryptoEngine.createDefault(), 1, true); }
+    // Only for testing
+    public Transport() { this("default"); }
 
     /**
      * Select a random transport thread
@@ -67,6 +72,8 @@ public class Transport {
     }
 
     boolean getTcpNoDelay() { return tcpNoDelay; }
+
+    String getName() { return name; }
 
     /**
      * Use the underlying CryptoEngine to create a CryptoSocket for
