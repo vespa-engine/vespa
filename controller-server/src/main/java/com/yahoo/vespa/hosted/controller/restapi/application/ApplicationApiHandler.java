@@ -664,7 +664,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private JsonResponse buildResponseFromProtonMetrics(List<ProtonMetrics> protonMetrics) {
         try {
             var jsonObject = new JSONObject();
-            jsonObject.put("name", "proton.metrics.application");
             var jsonArray = new JSONArray();
             for (ProtonMetrics metrics : protonMetrics) {
                 jsonArray.put(metrics);

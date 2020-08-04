@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.json.JSONObject;
 
 /**
  * The API controllers use when communicating with config servers.
