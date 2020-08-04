@@ -2,21 +2,19 @@
 package com.yahoo.config.model;
 
 import com.google.common.io.Files;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.path.Path;
 import com.yahoo.document.DataType;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.DocumentOnlySearch;
+import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
@@ -38,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -134,28 +130,6 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testSdFromDocprocBundle() throws IOException, SAXException {
-        String appDir = "src/test/cfg/application/app_sdbundles";
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir);
-        VespaModel model = new VespaModel(tester.app());
-        DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
-        model.getConfig(b, VespaModel.ROOT_CONFIGID);
-        DocumentmanagerConfig dc = b.build();
-        String docMan=ConfigInstance.serialize(dc).toString();
-        int pFlags = Pattern.MULTILINE + Pattern.DOTALL;
-        Pattern base = Pattern.compile(".*name.*base\\.header.*", pFlags);
-        Pattern book = Pattern.compile(".*name.*book\\.header.*", pFlags);
-        Pattern music = Pattern.compile(".*name.*music\\.header.*", pFlags);
-        Pattern video = Pattern.compile(".*name.*video\\.header.*", pFlags);
-        Pattern muzak = Pattern.compile(".*name.*muzak\\.header.*", pFlags);
-        assertTrue(base.matcher(docMan).matches());
-        assertTrue(book.matcher(docMan).matches());
-        assertTrue(music.matcher(docMan).matches());
-        assertTrue(video.matcher(docMan).matches());
-        assertTrue(muzak.matcher(docMan).matches());
-    }
-
-    @Test
     public void include_dirs_are_included() {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "include_dirs");
 
@@ -231,22 +205,6 @@ public class ApplicationDeployTest {
         } catch (IllegalArgumentException e) {
             assertEquals("XML error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
         }
-    }
-
-    @Test
-    public void testGetJars() throws IOException {
-        String jarName = "src/test/cfg/application/app_sdbundles/components/testbundle.jar";
-        JarFile jar = new JarFile(jarName);
-        Map<String, String> payloads = ApplicationPackage.getBundleSdFiles("", jar);
-        assertEquals(payloads.size(), 4);
-        assertTrue(payloads.get("base.sd").startsWith("search base"));
-        assertTrue(payloads.get("book.sd").startsWith("search book"));
-        assertTrue(payloads.get("music.sd").startsWith("search music"));
-        assertTrue(payloads.get("video.sd").startsWith("search video"));
-        assertTrue(payloads.get("base.sd").endsWith("}"));
-        assertTrue(payloads.get("book.sd").endsWith("}\n"));
-        assertTrue(payloads.get("music.sd").endsWith("}\n"));
-        assertTrue(payloads.get("video.sd").endsWith("}\n"));
     }
 
     @Test

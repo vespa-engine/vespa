@@ -6,29 +6,27 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import java.util.logging.Level;
+import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -41,15 +39,28 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
-import java.net.JarURLConnection;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.security.MessageDigest;
-import java.util.*;
-import java.util.jar.JarFile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -301,10 +312,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 fileSds.add(f.getName());
                 ret.put(f.getName(), new NamedReader(f.getName(), new FileReader(f)));
             }
-            for (Map.Entry<String, String> e : allSdsFromDocprocBundlesAndClasspath(appDir).entrySet()) {
-                bundleSds.add(e.getKey());
-                ret.put(e.getKey(), new NamedReader(e.getKey(), new StringReader(e.getValue())));
-            }
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't get search definition contents.", e);
         }
@@ -326,85 +333,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
             		                           "docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
         }
     }
-
-    /**
-     * Returns sdName→payload for all SDs in all docproc bundles and on local classpath.
-     * Throws {@link IllegalArgumentException} if there are multiple sd files of same name.
-     * @param appDir application package directory
-     * @return a map from search definition name to search definition content
-     * @throws IOException if reading a search definition fails
-     */
-    public static Map<String, String> allSdsFromDocprocBundlesAndClasspath(File appDir) throws IOException {
-        File dpChains = new File(appDir, ApplicationPackage.COMPONENT_DIR);
-        if (!dpChains.exists() || !dpChains.isDirectory()) return Collections.emptyMap();
-        Set<String> usedNames = new HashSet<>();
-        Map<String, String> schemas = new LinkedHashMap<>();
-
-        // try classpath first
-        allSdsOnClassPath(usedNames, schemas);
-
-        for (File bundle : dpChains.listFiles((File dir, String name) -> name.endsWith(".jar"))) {
-            for(Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", new JarFile(bundle)).entrySet()) {
-                String sdName = entry.getKey();
-                if (usedNames.contains(sdName)) {
-                    throw new IllegalArgumentException("The search definition name '" + sdName + "' used in bundle '"+
-                                                       bundle.getName()+ "' is already used in classpath or previous bundle.");
-                }
-                usedNames.add(sdName);
-                String sdPayload = entry.getValue();
-                schemas.put(sdName, sdPayload);
-            }
-        }
-        return schemas;
-    }
-
-	private static void allSdsOnClassPath(Set<String> usedNames, Map<String, String> schemas) {
-        ClassLoader cl = FilesApplicationPackage.class.getClassLoader();
-        Stream<URL> resources = Stream.concat(cl.resources(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative()),
-                                              cl.resources(ApplicationPackage.SCHEMAS_DIR.getRelative()));
-        resources.forEach(resource -> addSchemaFrom(resource, schemas, usedNames));
-    }
-
-    private static void addSchemaFrom(URL resource, Map<String, String> schemas, Set<String> usedNames) {
-        try {
-            switch (resource.getProtocol()) {
-                case "file":
-                    File file = new File(resource.toURI());
-                    if (file.isDirectory()) {
-                        List<File> sdFiles = getSearchDefinitionFiles(file);
-                        for (File sdFile : sdFiles) {
-                            String sdName = sdFile.getName();
-                            if (usedNames.contains(sdName)) {
-                                throw new IllegalArgumentException("The search definition name '" + sdName +
-                                                                   "' found in classpath already used earlier in classpath.");
-                            }
-                            usedNames.add(sdName);
-                            String contents = IOUtils.readAll(new FileReader(sdFile));
-                            schemas.put(sdFile.getName(), contents);
-                        }
-                    }
-                    break;
-                case "jar":
-                    JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-                    JarFile jarFile = jarConnection.getJarFile();
-                    for (Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", jarFile).entrySet()) {
-                        String sdName = entry.getKey();
-                        if (usedNames.contains(sdName)) {
-                            throw new IllegalArgumentException("The search definitions name '" + sdName +
-                                                               "' used in bundle '" + jarFile.getName() + "' " +
-                                                               "is already used in classpath or previous bundle.");
-                        }
-                        usedNames.add(sdName);
-                        String sdPayload = entry.getValue();
-                        schemas.put(sdName, sdPayload);
-                    }
-                    break;
-            }
-        }
-        catch (IOException | URISyntaxException e) {
-            throw new IllegalArgumentException("Could not read schema from '" + resource + "'", e);
-        }
-	}
 
     /**
      * Creates a reader for a config definition

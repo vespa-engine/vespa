@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -100,36 +99,16 @@ public class ZooKeeperClientTest {
         String defsPath = appPath + ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
         assertTrue(zk.exists(appPath, ConfigCurator.DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", "")));
         List<String> children = zk.getChildren(defsPath);
-        assertEquals(defsPath + " children", 2, children.size());
+        assertEquals(defsPath + " children", 1, children.size());
         Collections.sort(children);
         assertThat(children.get(0), is("a.b.test2"));
 
         assertTrue(zk.exists(appPath, ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", "")));
         String userDefsPath = appPath + ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
         children = zk.getChildren(userDefsPath);
-        assertThat(children.size(), is(2));
+        assertThat(children.size(), is(1));
         Collections.sort(children);
         assertThat(children.get(0), is("a.b.test2"));
-    }
-
-    // TODO: Evaluate if we want this or not
-    @Test
-    @Ignore
-    public void testFeedComponentsFileReferencesToZooKeeper() {
-        final String appDir = "src/test/apps/app_sdbundles";
-        ConfigCurator zk = ConfigCurator.create(new MockCurator());
-        BaseDeployLogger logger = new BaseDeployLogger();
-        Path app = Path.fromString("/1");
-        ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
-        zooKeeperClient.setupZooKeeper();
-
-        String currentAppPath = app.getAbsolute();
-        assertTrue(zk.exists(currentAppPath, ConfigCurator.USERAPP_ZK_SUBPATH.replaceFirst("/", "")));
-        assertTrue(zk.exists(currentAppPath + ConfigCurator.USERAPP_ZK_SUBPATH, "components"));
-        assertTrue(zk.exists(currentAppPath + ConfigCurator.USERAPP_ZK_SUBPATH + "/components", "testbundle.jar"));
-        assertTrue(zk.exists(currentAppPath + ConfigCurator.USERAPP_ZK_SUBPATH + "/components", "testbundle2.jar"));
-        String data = zk.getData(currentAppPath + ConfigCurator.USERAPP_ZK_SUBPATH + "/components", "testbundle2.jar");
-        assertThat(data, is(new File(appDir + "/components/testbundle2.jar").getAbsolutePath()));
     }
 
     @Test
@@ -166,20 +145,6 @@ public class ZooKeeperClientTest {
         assertTrue(zk.exists(appPath().append("search").append("chains").append("dir1").append("default.xml").getAbsolute()));
         assertTrue(zk.exists(appPath().append("search").append("chains").append("dir2").append("chain2.xml").getAbsolute()));
         assertTrue(zk.exists(appPath().append("search").append("chains").append("dir2").append("chain3.xml").getAbsolute()));
-    }
-
-    @Test
-    public void search_definitions_written_to_ZK() {
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("music.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("base.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("video.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("book.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("pc.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("laptop.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("product.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("sock.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("foo.expression").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("bar.expression").getAbsolute()));
     }
 
     private Path appPath() {
