@@ -30,26 +30,26 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     private final QueryProfileType type;
 
     /** The values of this */
-    private final DimensionalMap<CompoundName, ValueWithSource> entries;
+    private final DimensionalMap<ValueWithSource> entries;
 
     /** Keys which have a type in this */
-    private final DimensionalMap<CompoundName, QueryProfileType> types;
+    private final DimensionalMap<QueryProfileType> types;
 
     /** Keys which are (typed or untyped) references to other query profiles in this. Used as a set. */
-    private final DimensionalMap<CompoundName, Object> references;
+    private final DimensionalMap<Object> references;
 
     /** Values which are not overridable in this. Used as a set. */
-    private final DimensionalMap<CompoundName, Object> unoverridables;
+    private final DimensionalMap<Object> unoverridables;
 
     /**
      * Creates a new query profile from an id.
      */
     public CompiledQueryProfile(ComponentId id,
                                 QueryProfileType type,
-                                DimensionalMap<CompoundName, ValueWithSource> entries,
-                                DimensionalMap<CompoundName, QueryProfileType> types,
-                                DimensionalMap<CompoundName, Object> references,
-                                DimensionalMap<CompoundName, Object> unoverridables,
+                                DimensionalMap<ValueWithSource> entries,
+                                DimensionalMap<QueryProfileType> types,
+                                DimensionalMap<Object> references,
+                                DimensionalMap<Object> unoverridables,
                                 CompiledQueryProfileRegistry registry) {
         super(id);
         this.registry = registry;
@@ -91,10 +91,10 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     }
 
     /** Returns the types reachable from this, or an empty map (never null) if none */
-    public DimensionalMap<CompoundName, QueryProfileType> getTypes() { return types; }
+    public DimensionalMap<QueryProfileType> getTypes() { return types; }
 
     /** Returns the references reachable from this, or an empty map (never null) if none */
-    public DimensionalMap<CompoundName, Object> getReferences() { return references; }
+    public DimensionalMap<Object> getReferences() { return references; }
 
     /**
      * Return all objects that start with the given prefix path using no context. Use "" to list all.

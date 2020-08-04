@@ -54,7 +54,7 @@ public class QueryProfileSubstitutionTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Invalid query profile 'test': Could not resolve local substitution 'world' in variant DimensionBinding []",
+            assertEquals("Invalid query profile 'test': Could not resolve local substitution 'world' in variant []",
                          Exceptions.toMessageString(e));
         }
     }

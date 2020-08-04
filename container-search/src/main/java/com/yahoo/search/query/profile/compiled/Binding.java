@@ -86,6 +86,27 @@ public class Binding implements Comparable<Binding> {
         this.hashCode = Arrays.hashCode(dimensions) + 11 * Arrays.hashCode(dimensionValues);
     }
 
+    /**
+     * Returns whether this binding is a proper generalization of the given binding:
+     * Meaning it contains a proper subset of the given bindings.
+     */
+    public boolean generalizes(Binding binding) {
+        if ( dimensions.length >= binding.dimensions.length) return false;
+        for (int i = 0; i < dimensions.length; i++) {
+            int indexOfDimension = indexOf(dimensions[i], binding.dimensions);
+            if (indexOfDimension < 0) return false;
+            if ( ! binding.dimensionValues[i].equals(binding.dimensionValues[indexOfDimension])) return false;
+        }
+        return true;
+    }
+
+    private int indexOf(String value, String[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value))
+                return i;
+        }
+        return -1;
+    }
 
     /** Returns true only if this binding is null (contains no values for its dimensions (if any) */
     public boolean isNull() { return dimensions.length == 0; }

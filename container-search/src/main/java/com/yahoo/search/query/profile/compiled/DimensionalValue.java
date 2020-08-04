@@ -63,11 +63,11 @@ public class DimensionalValue<VALUE> {
 
     public static class Builder<VALUE> {
 
-        /** The minimal set of variants needed to capture all values at this key */
-        private Map<VALUE, Value.Builder<VALUE>> buildableVariants = new HashMap<>();
+        /** The variants of the value of this key */
+        private final Map<VALUE, Value.Builder<VALUE>> buildableVariants = new HashMap<>();
 
         /** Returns the value for the given binding, or null if none */
-        public VALUE valueFor(DimensionBinding variantBinding) {
+        public VALUE valueFor(Binding variantBinding) {
             for (var entry : buildableVariants.entrySet()) {
                 if (entry.getValue().variants.contains(variantBinding))
                     return entry.getKey();
@@ -77,8 +77,8 @@ public class DimensionalValue<VALUE> {
 
         public void add(VALUE value, DimensionBinding variantBinding) {
             // Note: We know we can index by the value because its possible types are constrained
-            // to what query profiles allow: String, primitives and query profiles
-            Value.Builder variant = buildableVariants.get(value);
+            // to what query profiles allow: String, primitives and query profiles (wrapped as a ValueWithSource)
+            Value.Builder<VALUE> variant = buildableVariants.get(value);
             if (variant == null) {
                 variant = new Value.Builder<>(value);
                 buildableVariants.put(value, variant);
@@ -86,23 +86,29 @@ public class DimensionalValue<VALUE> {
             variant.addVariant(variantBinding);
         }
 
-        public DimensionalValue<VALUE> build(Map<?, DimensionalValue.Builder<VALUE>> entries) {
-            List<Value> variants = new ArrayList<>();
-            for (Value.Builder buildableVariant : buildableVariants.values()) {
+        public DimensionalValue<VALUE> build(Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
+            List<Value<VALUE>> variants = new ArrayList<>();
+            if (buildableVariants.size() == 1) {
+                // Compact size 1 as it is common and easy to do. To compact size > 1 we would need to
+                // compact within generic intervals having the same value
+                for (Value.Builder<VALUE> buildableVariant : buildableVariants.values())
+                    buildableVariant.compact();
+            }
+            for (Value.Builder<VALUE> buildableVariant : buildableVariants.values()) {
                 variants.addAll(buildableVariant.build(entries));
             }
-            return new DimensionalValue(variants);
+            return new DimensionalValue<>(variants);
         }
 
     }
 
     /** A value for a particular binding */
-    private static class Value<VALUE> implements Comparable<Value> {
+    private static class Value<VALUE> implements Comparable<Value<VALUE>> {
 
-        private VALUE value;
+        private final VALUE value;
 
         /** The minimal binding this holds for */
-        private Binding binding;
+        private final Binding binding;
 
         public Value(VALUE value, Binding binding) {
             this.value = value;
@@ -141,7 +147,7 @@ public class DimensionalValue<VALUE> {
              * Some of these are more general versions of others.
              * We need to keep both to allow interleaving a different value with medium generality.
              */
-            private Set<DimensionBinding> variants = new HashSet<>();
+            private List<Binding> variants = new ArrayList<>();
 
             public Builder(VALUE value) {
                 this.value = value;
@@ -149,20 +155,44 @@ public class DimensionalValue<VALUE> {
 
             /** Add a binding this holds for */
             public void addVariant(DimensionBinding binding) {
-                variants.add(binding);
+                variants.add(Binding.createFrom(binding));
+            }
+
+            /** Remove variants that are specializations of other variants in this */
+            void compact() {
+                Collections.sort(variants);
+                List<Binding> compacted = new ArrayList<>();
+                if (variants.get(variants.size() - 1).dimensions().length == 0) { // Shortcut
+                    variants = List.of(variants.get(variants.size() - 1));
+                }
+                else {
+                    for (int i = variants.size() - 1; i >= 0; i--) {
+                        if (!containsGeneralizationOf(variants.get(i), compacted))
+                            compacted.add(variants.get(i));
+                    }
+                    Collections.reverse(compacted);
+                    variants = compacted;
+                }
+            }
+
+            private boolean containsGeneralizationOf(Binding binding, List<Binding> bindings) {
+                for (Binding candidate : bindings) {
+                    if (candidate.generalizes(binding))
+                        return true;
+                }
+                return false;
             }
 
             /** Build a separate value object for each dimension combination which has this value */
             public List<Value<VALUE>> build(Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
-                // Shortcut for efficiency of the normal case
-                if (variants.size() == 1) {
-                    return Collections.singletonList(new Value<>(substituteIfRelative(value, variants.iterator().next(), entries),
-                                                                 Binding.createFrom(variants.iterator().next())));
+                if (variants.size() == 1) { // Shortcut
+                    return List.of(new Value<>(substituteIfRelative(value, variants.iterator().next(), entries),
+                                               variants.iterator().next()));
                 }
 
                 List<Value<VALUE>> values = new ArrayList<>(variants.size());
-                for (DimensionBinding variant : variants) {
-                    values.add(new Value<>(substituteIfRelative(value, variant, entries), Binding.createFrom(variant)));
+                for (Binding variant : variants) {
+                    values.add(new Value<>(substituteIfRelative(value, variant, entries), variant));
                 }
                 return values;
             }
@@ -174,7 +204,7 @@ public class DimensionalValue<VALUE> {
             // TODO: Move this
             @SuppressWarnings("unchecked")
             private VALUE substituteIfRelative(VALUE value,
-                                               DimensionBinding variant,
+                                               Binding variant,
                                                Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
                 if (value instanceof ValueWithSource && ((ValueWithSource)value).value() instanceof SubstituteString) {
                     ValueWithSource valueWithSource = (ValueWithSource)value;
@@ -188,7 +218,7 @@ public class DimensionalValue<VALUE> {
                                 if (substituteValues == null)
                                     throw new IllegalArgumentException("Could not resolve local substitution '" +
                                                                        relativeComponent.fieldName() + "' in variant " +
-                                                                       variant);
+                                                                       Arrays.toString(variant.dimensionValues()));
                                 ValueWithSource resolved = (ValueWithSource)substituteValues.valueFor(variant);
                                 resolvedComponents.add(new SubstituteString.StringComponent(resolved.value().toString()));
                             }
