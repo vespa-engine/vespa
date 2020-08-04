@@ -52,7 +52,7 @@ public class SlobrokClient implements NodeLookup {
         if (equalsExistingSpec(slobrokConnectionSpecs)) return;
         this.connectionSpecs = slobrokConnectionSpecs;
         shutdown();
-        supervisor = new Supervisor(new Transport());
+        supervisor = new Supervisor(new Transport("slobrok-client"));
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         mirror = new Mirror(supervisor, slist);

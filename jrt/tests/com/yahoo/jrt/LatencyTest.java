@@ -18,8 +18,8 @@ public class LatencyTest {
         private final Supervisor client;
         private final Acceptor acceptor;
         public Network(CryptoEngine crypto, int threads) throws ListenFailedException {
-            server = new Supervisor(new Transport(crypto, threads));
-            client = new Supervisor(new Transport(crypto, threads));
+            server = new Supervisor(new Transport("server", crypto, threads));
+            client = new Supervisor(new Transport("client", crypto, threads));
             server.addMethod(new Method("inc", "i", "i", this::rpc_inc));
             acceptor = server.listen(new Spec(0));
         }

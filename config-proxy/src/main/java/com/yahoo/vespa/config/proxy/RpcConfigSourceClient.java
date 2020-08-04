@@ -41,7 +41,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
     private static final double timingValuesRatio = 0.8;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("config-source-client"));
 
     private final RpcServer rpcServer;
     private final ConfigSourceSet configSourceSet;

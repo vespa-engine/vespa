@@ -39,7 +39,7 @@ public class FileDistributionStatus extends AbstractComponent {
     enum Status {UNKNOWN, FINISHED, IN_PROGRESS}
 
     private final ExecutorService rpcExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("filedistribution status"));
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-status"));
 
     public StatusAllHosts status(Application application, Duration timeout) {
         List<HostStatus> hostStatuses = new ArrayList<>();

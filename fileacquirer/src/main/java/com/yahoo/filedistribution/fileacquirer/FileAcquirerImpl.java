@@ -36,7 +36,7 @@ class FileAcquirerImpl implements FileAcquirer {
 
     private static final Logger log = Logger.getLogger(FileAcquirerImpl.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("fileaquirer"));
     private final ConfigSubscriber configSubscriber;
 
     private class Connection implements ConfigSubscriber.SingleSubscriber<FiledistributorrpcConfig> {

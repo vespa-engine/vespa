@@ -17,7 +17,7 @@ import java.io.File;
 public class FileDistributionFactory {
 
     protected final ConfigserverConfig configserverConfig;
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
     @Inject
     public FileDistributionFactory(ConfigserverConfig configserverConfig) {

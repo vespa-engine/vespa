@@ -45,7 +45,7 @@ public class RpcResourcePool extends AbstractComponent {
     @Inject
     public RpcResourcePool(DispatchConfig dispatchConfig) {
         super();
-        var client = new RpcClient(dispatchConfig.numJrtTransportThreads());
+        var client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();

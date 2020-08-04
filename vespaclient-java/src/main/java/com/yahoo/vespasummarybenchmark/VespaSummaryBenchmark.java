@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class VespaSummaryBenchmark {
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("client"));
     private static final LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
 
     private VespaSummaryBenchmark() { }

@@ -23,10 +23,11 @@ import static java.util.logging.Level.INFO;
 public class RpcConnector extends AbstractComponent {
     private static final Logger log = Logger.getLogger(RpcConnector.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final Acceptor acceptor;
 
     public RpcConnector(RpcConnectorConfig config) {
+        supervisor = new Supervisor(new Transport("rpc-" + config.port()));
         Spec spec = new Spec(config.port());
         try {
             acceptor = supervisor.listen(spec);

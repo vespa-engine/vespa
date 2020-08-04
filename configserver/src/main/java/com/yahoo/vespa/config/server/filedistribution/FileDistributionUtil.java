@@ -87,7 +87,7 @@ public class FileDistributionUtil {
         public Supervisor getSupervisor() {
             synchronized (this) {
                 if (supervisor == null) {
-                    supervisor = new Supervisor(new Transport());
+                    supervisor = new Supervisor(new Transport("empty-connectionpool"));
                 }
             }
             return supervisor;

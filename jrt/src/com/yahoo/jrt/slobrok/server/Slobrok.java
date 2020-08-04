@@ -1,7 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.server;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.MethodHandler;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringArray;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.TargetWatcher;
+import com.yahoo.jrt.Task;
+import com.yahoo.jrt.Transport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,11 +24,11 @@ import java.util.Map;
 
 public class Slobrok {
 
-    Supervisor             orb;
-    Acceptor               listener;
+    Supervisor orb;
+    Acceptor listener;
     private Map<String,String> services = new HashMap<>();
     List<FetchMirror> pendingFetch = new ArrayList<>();
-    Map<String,Target> targets = new HashMap<>();
+    Map<String, Target> targets = new HashMap<>();
     TargetMonitor          monitor      = new TargetMonitor();
     int                    gencnt       = 1;
 
@@ -25,7 +39,7 @@ public class Slobrok {
 
     public Slobrok(int port) throws ListenFailedException {
         // NB: rpc must be single-threaded
-        orb = new Supervisor(new Transport(1));
+        orb = new Supervisor(new Transport("slobrok-" + port, 1));
         registerMethods();
         try {
             listener = orb.listen(new Spec(port));
@@ -241,7 +255,7 @@ public class Slobrok {
 
     private class FetchMirror implements Runnable {
         public final Request req;
-        public final Task    task;
+        public final Task task;
 
         public FetchMirror(Request req, int timeout) {
             req.detach();

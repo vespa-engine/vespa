@@ -15,11 +15,12 @@ import com.yahoo.jrt.Transport;
  */
 public class RpcServer implements AutoCloseable {
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final int listenPort;
     private Acceptor acceptor;
 
     public RpcServer(int listenPort) {
+        supervisor = new Supervisor(new Transport("logserver-" + listenPort));
         this.listenPort = listenPort;
     }
 

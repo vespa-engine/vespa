@@ -82,7 +82,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private static final long SHUTDOWN_TIMEOUT = 60;
     private static final int JRT_RPC_TRANSPORT_THREADS = threadsToUse();
 
-    private final Supervisor supervisor = new Supervisor(new Transport(JRT_RPC_TRANSPORT_THREADS));
+    private final Supervisor supervisor = new Supervisor(new Transport("rpc", JRT_RPC_TRANSPORT_THREADS));
     private final Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;

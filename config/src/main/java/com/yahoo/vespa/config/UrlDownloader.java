@@ -28,7 +28,7 @@ public class UrlDownloader {
     public  static final int INTERNAL_ERROR = BASE_ERROR_CODE + 2;
     public  static final int HTTP_ERROR = BASE_ERROR_CODE + 3;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("url-downloader"));
     private final Spec spec;
     private Target target;
 
