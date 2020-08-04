@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
@@ -17,12 +16,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -204,27 +200,9 @@ public interface ApplicationPackage {
      */
     Reader getRankingExpression(String name);
 
-    /**
-     * Returns the name-payload pairs of any sd files under path/schemas and path/searchdefinitions/
-     * in the given jar bundle.
-     *
-     * @param bundle the jar file, which will be closed afterwards by this method
-     * @param path for example 'complex/'
-     * @return map of the SD payloads
-     * @throws IOException if it is reading sd files fails
-     */
+    // TODO: Unused, remove when 7.264 is latest version in use
     static Map<String, String> getBundleSdFiles(String path, JarFile bundle) throws IOException {
-        Map<String, String> schemas = new LinkedHashMap<>();
-        for (Enumeration<JarEntry> e = bundle.entries(); e.hasMoreElements();) {
-            JarEntry entry = e.nextElement();
-            if ((entry.getName().startsWith(path + SCHEMAS_DIR + "/") || entry.getName().startsWith(path + SEARCH_DEFINITIONS_DIR + "/"))
-                && entry.getName().endsWith(SD_NAME_SUFFIX)) {
-                String contents = IOUtils.readAll(new InputStreamReader(bundle.getInputStream(entry)));
-                schemas.put(getFileName(entry), contents);
-            }
-        }
-        bundle.close();
-        return schemas;
+        return Map.of();
     }
 
     /**
