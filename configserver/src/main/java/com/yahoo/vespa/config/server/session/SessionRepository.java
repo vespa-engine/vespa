@@ -172,13 +172,13 @@ public class SessionRepository {
     }
 
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
-        log.log(Level.FINE, "Purging old sessions");
+        log.log(Level.FINE, "Purging old sessions for tenant '" + tenantName + "'");
         try {
             for (LocalSession candidate : localSessionCache.getSessions()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
-                // Sessions with state other than ACTIVATED
+                // Sessions with state other than ACTIVATE
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
                     deleteLocalSession(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
