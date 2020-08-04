@@ -18,6 +18,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -119,6 +120,9 @@ import java.util.Scanner;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
@@ -654,7 +658,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
         List<ProtonMetrics> protonMetrics = controller.serviceRegistry().configServer().getProtonMetrics(deployment);
-        return controller.metrics().buildResponseFromProtonMetrics(protonMetrics);
+        return buildResponseFromProtonMetrics(protonMetrics);
+    }
+
+    private JsonResponse buildResponseFromProtonMetrics(List<ProtonMetrics> protonMetrics) {
+        try {
+            var jsonObject = new JSONObject();
+            jsonObject.put("name", "proton.metrics.application");
+            var jsonArray = new JSONArray();
+            for (ProtonMetrics metrics : protonMetrics) {
+                jsonArray.put(metrics);
+            }
+            jsonObject.put("metrics", jsonArray);
+            return new JsonResponse(200, jsonObject.toString());
+        } catch (JSONException e) {
+            log.severe("Unable to build JsonResponse with Proton data");
+            return new JsonResponse(500, "");
+        }
     }
 
 
