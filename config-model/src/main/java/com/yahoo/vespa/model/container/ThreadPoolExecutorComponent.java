@@ -2,15 +2,15 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.time.Duration;
 
 /**
- * Component definition for a {@link java.util.concurrent.Executor} using {@link ContainerThreadPool}.
+ * Component definition for a {@link java.util.concurrent.Executor} using {@link ThreadPoolProvider}.
  *
  * @author bjorncs
  */
@@ -26,8 +26,8 @@ public class ThreadPoolExecutorComponent extends SimpleComponent implements Thre
     private ThreadPoolExecutorComponent(Builder builder) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
-                        "threadpool@" + builder.name,
-                        ContainerThreadPool.class.getName(),
+                        "threadpool-provider@" + builder.name,
+                        ThreadPoolProvider.class.getName(),
                         null)));
         this.name = builder.name;
         this.maxPoolSize = builder.maxPoolSize;
