@@ -3374,7 +3374,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.DocIdOnly": {
     "superClass": "java.lang.Object",
@@ -3390,7 +3392,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.FieldCollection": {
     "superClass": "java.util.ArrayList",
@@ -3452,7 +3456,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.idstring.IdIdString": {
     "superClass": "com.yahoo.document.idstring.IdString",
