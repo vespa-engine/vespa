@@ -329,7 +329,7 @@ Test::testExternSend()
     mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
     // Send message from local node to remote cluster and resolve route there.
-    mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+    mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
     msg->getTrace().setLevel(9);
     msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:tcp/localhost:%d;itr/session] default", slobrok.port())));
 
@@ -365,7 +365,7 @@ Test::testExternMultipleSlobroks()
                              std::make_shared<DocumentProtocol>(_loadTypes, _repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+        mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
         ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
@@ -381,7 +381,7 @@ Test::testExternMultipleSlobroks()
                              std::make_shared<DocumentProtocol>(_loadTypes, _repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+        mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
         ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
@@ -615,7 +615,7 @@ Test::testDocumentRouteSelector()
                  .addRecipient("foo")
                  .addRecipient("bar"));
 
-    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"), 0));
+    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::")));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     mbus::Message::UP put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::")));

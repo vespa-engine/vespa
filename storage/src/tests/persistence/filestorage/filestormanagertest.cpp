@@ -6,6 +6,7 @@
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/persistence/persistencethread.h>
@@ -20,7 +21,6 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <atomic>
 #include <thread>
@@ -281,7 +281,7 @@ TEST_F(FileStorManagerTest, header_only_put) {
     }
     // Getting it
     {
-        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bid), doc->getId(), "[all]");
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bid), doc->getId(), document::AllFields::NAME);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
@@ -870,7 +870,7 @@ TEST_F(FileStorManagerTest, split1) {
             document::BucketId bucket(
                         17, i % 3 == 0 ? 0x10001 : 0x0100001);
             auto cmd = std::make_shared<api::GetCommand>(
-                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+                    makeDocumentBucket(bucket), documents[i]->getId(), document::AllFields::NAME);
             api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
@@ -906,7 +906,7 @@ TEST_F(FileStorManagerTest, split1) {
                                     documents[i]->getId()).getRawId());
             }
             auto cmd = std::make_shared<api::GetCommand>(
-                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+                    makeDocumentBucket(bucket), documents[i]->getId(), document::AllFields::NAME);
             api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
@@ -993,7 +993,7 @@ TEST_F(FileStorManagerTest, split_single_group) {
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(17, state ? 0x10001 : 0x00001);
             auto cmd = std::make_shared<api::GetCommand>
-                    (makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+                    (makeDocumentBucket(bucket), documents[i]->getId(), document::AllFields::NAME);
             api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
@@ -1221,7 +1221,7 @@ TEST_F(FileStorManagerTest, join) {
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(16, 1);
             auto cmd = std::make_shared<api::GetCommand>(
-                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+                    makeDocumentBucket(bucket), documents[i]->getId(), document::AllFields::NAME);
             api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
@@ -1255,7 +1255,7 @@ createIterator(DummyStorageLink& link,
     selection.setToTimestamp(spi::Timestamp(toTime.getTime()));
     auto createIterCmd = std::make_shared<CreateIteratorCommand>(
             makeDocumentBucket(bucket), selection,
-            "[all]",
+            document::AllFields::NAME,
             spi::NEWEST_DOCUMENT_ONLY);
     link.sendDown(createIterCmd);
     link.waitForMessages(1, FileStorManagerTest::LONG_WAITTIME);
@@ -2044,7 +2044,7 @@ TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), "[all]");
+            makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), document::AllFields::NAME);
 
     assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->get[defaultLoadType]);
 }

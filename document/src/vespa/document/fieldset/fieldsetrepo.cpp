@@ -85,7 +85,6 @@ FieldSetRepo::serialize(const FieldSet& fieldSet)
     switch (fieldSet.getType()) {
     case FieldSet::FIELD:
         return static_cast<const Field&>(fieldSet).getName();
-        break;
     case FieldSet::SET:
     {
         const FieldCollection& collection = static_cast<const FieldCollection&>(fieldSet);
@@ -105,11 +104,11 @@ FieldSetRepo::serialize(const FieldSet& fieldSet)
         return stream.str();
     }
     case FieldSet::ALL:
-        return "[all]";
+        return AllFields::NAME;
     case FieldSet::NONE:
-        return "[none]";
+        return NoFields::NAME;
     case FieldSet::DOCID:
-        return "[docid]";
+        return DocIdOnly::NAME;
     default:
         return "";
     }

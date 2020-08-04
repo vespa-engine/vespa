@@ -8,6 +8,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -157,13 +158,13 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommand(const vespalib::string& id) const {
-    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), "[all]");
+    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), document::AllFields::NAME);
 }
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id) const {
     DocumentId docId(vespalib::make_string("id:foo:test:n=%" PRIu64 ":bar", id));
-    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
+    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, document::AllFields::NAME);
 }
 
 std::shared_ptr<api::UpdateCommand> ExternalOperationHandlerTest::makeUpdateCommand(

@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".persistencequeuetest");
 
@@ -80,7 +79,7 @@ std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bu
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createGet(uint64_t bucket) const {
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(document::BucketId(16, bucket)),
-            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":0", bucket)), "[all]");
+            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":0", bucket)), document::AllFields::NAME);
     cmd->setAddress(makeSelfAddress());
     return cmd;
 }

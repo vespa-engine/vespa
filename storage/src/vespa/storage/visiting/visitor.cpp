@@ -7,6 +7,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/document/select/node.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -165,7 +166,7 @@ Visitor::VisitorOptions::VisitorOptions()
       _maxParallel(1),
       _maxParallelOneBucket(2),
       _maxPending(1),
-      _fieldSet("[all]"),
+      _fieldSet(document::AllFields::NAME),
       _visitRemoves(false)
 {
 }

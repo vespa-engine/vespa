@@ -40,9 +40,9 @@ TEST_F(FieldSetTest, testParsing)
 
     FieldSetRepo repo;
 
-    (void) dynamic_cast<AllFields&>(*repo.parse(docRepo, "[all]"));
-    (void) dynamic_cast<NoFields&>(*repo.parse(docRepo, "[none]"));
-    (void) dynamic_cast<DocIdOnly&>(*repo.parse(docRepo, "[id]"));
+    (void) dynamic_cast<AllFields&>(*repo.parse(docRepo, AllFields::NAME));
+    (void) dynamic_cast<NoFields&>(*repo.parse(docRepo, NoFields::NAME));
+    (void) dynamic_cast<DocIdOnly&>(*repo.parse(docRepo, DocIdOnly::NAME));
 
     FieldSet::UP set = repo.parse(docRepo, "testdoctype1:headerval,content");
     FieldCollection& coll = dynamic_cast<FieldCollection&>(*set);
@@ -195,11 +195,11 @@ TEST_F(FieldSetTest, testCopyDocumentFields)
     Document::UP src(createTestDocument(testDocMan));
 
     EXPECT_EQ(std::string(""),
-              doCopyFields(*src, repo, "[none]"));
+              doCopyFields(*src, repo, NoFields::NAME));
     EXPECT_EQ(std::string("content: megafoo megabar\n"
                           "headerval: 5678\n"
                           "hstringval: hello fantastic world\n"),
-              doCopyFields(*src, repo, "[all]"));
+              doCopyFields(*src, repo, AllFields::NAME));
     EXPECT_EQ(std::string("content: megafoo megabar\n"
                           "hstringval: hello fantastic world\n"),
               doCopyFields(*src, repo, "testdoctype1:hstringval,content"));
@@ -236,13 +236,13 @@ TEST_F(FieldSetTest, testDocumentSubsetCopy)
         EXPECT_TRUE(doc.get());
         EXPECT_EQ(src->getId(), doc->getId());
         EXPECT_EQ(src->getType(), doc->getType());
-        EXPECT_EQ(doCopyFields(*src, repo, "[all]"),
+        EXPECT_EQ(doCopyFields(*src, repo, AllFields::NAME),
                   stringifyFields(*doc));
     }
 
     const char* fieldSets[] = {
-        "[all]",
-        "[none]",
+        AllFields::NAME,
+        NoFields::NAME,
         "testdoctype1:hstringval,content"
     };
     for (size_t i = 0; i < sizeof(fieldSets) / sizeof(fieldSets[0]); ++i) {
@@ -257,9 +257,9 @@ TEST_F(FieldSetTest, testSerialize)
     const DocumentTypeRepo& docRepo = testDocMan.getTypeRepo();
 
     const char* fieldSets[] = {
-        "[all]",
-        "[none]",
-        "[docid]",
+        AllFields::NAME,
+        NoFields::NAME,
+        DocIdOnly::NAME,
         "testdoctype1:content",
         "testdoctype1:content,hstringval"
     };
@@ -278,13 +278,13 @@ TEST_F(FieldSetTest, testStripFields)
     Document::UP src(createTestDocument(testDocMan));
 
     EXPECT_EQ(std::string(""),
-              doStripFields(*src, repo, "[none]"));
+              doStripFields(*src, repo, NoFields::NAME));
     EXPECT_EQ(std::string(""),
-              doStripFields(*src, repo, "[id]"));
+              doStripFields(*src, repo, DocIdOnly::NAME));
     EXPECT_EQ(std::string("content: megafoo megabar\n"
                           "headerval: 5678\n"
                           "hstringval: hello fantastic world\n"),
-              doStripFields(*src, repo, "[all]"));
+              doStripFields(*src, repo, AllFields::NAME));
     EXPECT_EQ(std::string("content: megafoo megabar\n"
                           "hstringval: hello fantastic world\n"),
               doStripFields(*src, repo, "testdoctype1:hstringval,content"));

@@ -10,6 +10,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -122,7 +123,7 @@ std::shared_ptr<api::StorageCommand> create_dummy_get_message() {
     return std::make_shared<api::GetCommand>(
             document::Bucket(document::FixedBucketSpaces::default_space(), document::BucketId(0)),
             document::DocumentId("id:ns:foo::bar"),
-            "[all]");
+            document::AllFields::NAME);
 }
 
 TEST_F(BouncerTest, future_timestamp) {

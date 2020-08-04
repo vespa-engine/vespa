@@ -5,6 +5,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <sstream>
@@ -96,8 +97,7 @@ FileStorTestFixture::TestFileStorComponents::sendDummyGet(
 {
     std::ostringstream id;
     id << "id:foo:testdoctype1:n=" << bid.getId() << ":0";
-    std::shared_ptr<api::GetCommand> cmd(
-            new api::GetCommand(makeDocumentBucket(bid), document::DocumentId(id.str()), "[all]"));
+    auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bid), document::DocumentId(id.str()), document::AllFields::NAME);
     cmd->setAddress(makeSelfAddress());
     cmd->setPriority(255);
     top.sendDown(cmd);

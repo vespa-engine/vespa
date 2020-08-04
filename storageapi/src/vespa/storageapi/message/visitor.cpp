@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <climits>
-#include <ostream>
 
 namespace storage::api {
 
@@ -32,7 +32,7 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
       _instanceId(instanceId),
       _visitorId(0),
       _visitRemoves(false),
-      _fieldSet("[all]"),
+      _fieldSet(document::AllFields::NAME),
       _visitInconsistentBuckets(false),
       _queueTimeout(2000ms),
       _maxPendingReplyCount(2),
