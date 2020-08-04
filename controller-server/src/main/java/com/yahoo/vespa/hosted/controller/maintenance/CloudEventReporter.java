@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandl
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -35,17 +37,22 @@ public class CloudEventReporter extends ControllerMaintainer {
     private final AwsEventFetcher eventFetcher;
     private final Map<String, List<ZoneApi>> zonesByCloudNativeRegion;
     private final NodeRepository nodeRepository;
+    private final Metric metric;
 
-    CloudEventReporter(Controller controller, Duration interval) {
+    private static final String INFRASTRUCTURE_INSTANCE_EVENTS = "infrastructure_instance_events";
+
+    CloudEventReporter(Controller controller, Duration interval, Metric metric) {
         super(controller, interval);
         this.issueHandler = controller.serviceRegistry().issueHandler();
         this.eventFetcher = controller.serviceRegistry().eventFetcherService();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.zonesByCloudNativeRegion = getZonesByCloudNativeRegion();
+        this.metric = metric;
     }
 
     @Override
     protected boolean maintain() {
+        int numberOfInfrastructureEvents = 0;
         for (var awsRegion : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(awsRegion);
             for (var event : events) {
@@ -53,10 +60,13 @@ public class CloudEventReporter extends ControllerMaintainer {
                         event.instanceEventId,
                         event.affectedInstances));
                 List<Node> needsManualIntervention = handleInstances(awsRegion, event);
-                if (!needsManualIntervention.isEmpty())
+                if (!needsManualIntervention.isEmpty()) {
+                    numberOfInfrastructureEvents += needsManualIntervention.size();
                     submitIssue(event);
+                }
             }
         }
+        metric.set(INFRASTRUCTURE_INSTANCE_EVENTS, numberOfInfrastructureEvents, metric.createContext(Collections.emptyMap()));
         return true;
     }
 
