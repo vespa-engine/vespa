@@ -17,6 +17,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -83,7 +84,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
-    private JSONObject protonMetrics;
+    private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -264,7 +265,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.clusterMetrics.put(deployment, clusterMetrics);
     }
 
-    public void setProtonMetrics(JSONObject protonMetrics) {
+    public void setProtonMetrics(List<ProtonMetrics> protonMetrics) {
         this.protonMetrics = protonMetrics;
     }
 
@@ -451,12 +452,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<ClusterMetrics> getDeploymentMetricsV1(DeploymentId deployment) {
+    public List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment) {
         return Collections.unmodifiableList(clusterMetrics.getOrDefault(deployment, List.of()));
     }
 
     @Override
-    public JSONObject getProtonMetricsV1(DeploymentId deployment) {
+    public List<ProtonMetrics> getProtonMetrics(DeploymentId deployment) {
         return this.protonMetrics;
     }
 
