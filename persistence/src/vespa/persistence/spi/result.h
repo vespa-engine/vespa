@@ -180,7 +180,11 @@ public:
     GetResult(DocumentUP doc, Timestamp timestamp);
 
     static GetResult make_for_tombstone(Timestamp removed_at_ts) {
-        return GetResult(removed_at_ts);
+        return GetResult(removed_at_ts, true);
+    }
+
+    static GetResult make_for_metadata_only(Timestamp removed_at_ts) {
+        return GetResult(removed_at_ts, false);
     }
 
     ~GetResult() override;
@@ -210,12 +214,12 @@ public:
     }
 
 private:
-    // Explicitly creates a tombstone (remove entry) GetResult with no document.
-    explicit GetResult(Timestamp removed_at_ts);
+    // Explicitly creates a metadata only GetResult with no document, optionally a tombstone (remove entry).
+    GetResult(Timestamp removed_at_ts, bool is_tombstone);
 
     Timestamp  _timestamp;
     DocumentSP _doc;
-    bool _is_tombstone;
+    bool       _is_tombstone;
 };
 
 class BucketIdListResult : public Result {
