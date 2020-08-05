@@ -4,7 +4,6 @@ package com.yahoo.search.query.profile.config.test;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.compiled.DimensionalValue;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
@@ -15,7 +14,6 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;

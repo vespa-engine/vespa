@@ -682,7 +682,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
          * Called for fields which are available as UTF-8 instead of accept(String, Object).
          *
          * @param fieldName the name of the field
-         * @param utf8Data raw utf-8 data. The reciver <b>must not</b> modify this data
+         * @param utf8Data raw utf-8 data. The receiver <b>must not</b> modify this data
          * @param offset the start index in the utf8Data array of the data to accept
          * @param length the length starting from offset in the utf8Data array of the data to accept
          */
