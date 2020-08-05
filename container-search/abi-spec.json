@@ -6168,6 +6168,8 @@
       "public boolean isQueryProfile()",
       "public com.yahoo.search.query.profile.types.QueryProfileType queryProfileType()",
       "public com.yahoo.search.query.profile.compiled.ValueWithSource withValue(java.lang.Object)",
+      "public com.yahoo.search.query.profile.compiled.ValueWithSource withSource(java.lang.String)",
+      "public com.yahoo.search.query.profile.compiled.ValueWithSource withVariant(java.util.Optional)",
       "public java.util.Optional variant()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",

@@ -64,6 +64,14 @@ public class ValueWithSource {
         return new ValueWithSource(value, source, isUnoverridable, isQueryProfile, type, variant);
     }
 
+    public ValueWithSource withSource(String source) {
+        return new ValueWithSource(value, source, isUnoverridable, isQueryProfile, type, variant);
+    }
+
+    public ValueWithSource withVariant(Optional<DimensionValues> variant) {
+        return new ValueWithSource(value, source, isUnoverridable, isQueryProfile, type, variant.orElse(null));
+    }
+
     /** Returns the variant having this value, or empty if it's not in a variant */
     public Optional<DimensionValues> variant() { return Optional.ofNullable(variant); }
 
@@ -87,10 +95,12 @@ public class ValueWithSource {
 
     @Override
     public String toString() {
-        return value +
-               " (from query profile '" + source + "'" +
+        if (source == null && variant == null) return value.toString();
+
+        return value + " (" +
+               ( source != null ? "from query profile '" + source + "'" : "") +
                ( variant != null ? " variant " + variant : "") +
-               ")";
+                ")";
     }
 
 }
