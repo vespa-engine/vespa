@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -83,7 +84,7 @@ public class DimensionalValue<VALUE> {
                 variant = new Value.Builder<>(value);
                 buildableVariants.put(value, variant);
             }
-            variant.addVariant(variantBinding);
+            variant.addVariant(variantBinding, value);
         }
 
         public DimensionalValue<VALUE> build(Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
@@ -140,7 +141,7 @@ public class DimensionalValue<VALUE> {
 
         private static class Builder<VALUE> {
 
-            private final VALUE value;
+            private VALUE value;
 
             /**
              * The set of bindings this value is for.
@@ -154,8 +155,24 @@ public class DimensionalValue<VALUE> {
             }
 
             /** Add a binding this holds for */
-            public void addVariant(DimensionBinding binding) {
+            @SuppressWarnings("unchecked")
+            public void addVariant(DimensionBinding binding, VALUE newValue) {
                 variants.add(Binding.createFrom(binding));
+
+                // We're combining values for efficiency, so remove incorrect provenance info
+                if (value instanceof ValueWithSource) {
+                    ValueWithSource v1 = (ValueWithSource)value;
+                    ValueWithSource v2 = (ValueWithSource)newValue;
+
+                    if (v1.source() != null && ! v1.source().equals(v2.source()))
+                        v1 = v1.withSource(null);
+
+                    // We could keep the more general variant here (when matching), but that situation is rare
+                    if (v1.variant().isPresent() && ! v1.variant().equals(v2.variant()))
+                        v1 = v1.withVariant(Optional.empty());
+
+                    value = (VALUE)v1;
+                }
             }
 
             /** Remove variants that are specializations of other variants in this */
