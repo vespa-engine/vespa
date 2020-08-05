@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
@@ -96,7 +96,7 @@ public class DocumentRetrieverTest {
                 .setCluster("")
                 .setRoute("default")
                 .setConfigId("client")
-                .setFieldSet("[all]")
+                .setFieldSet(AllFields.NAME)
                 .setPrintIdsOnly(false)
                 .setHelp(false)
                 .setShowDocSize(false)
@@ -180,7 +180,7 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    public void testJsonOutput() throws DocumentRetrieverException, JsonParseException, IOException {
+    public void testJsonOutput() throws DocumentRetrieverException, IOException {
         ClientParameters params = createParameters()
                 .setDocumentIds(asIterator(DOC_ID_1, DOC_ID_2, DOC_ID_3))
                 .setJsonOutput(true)

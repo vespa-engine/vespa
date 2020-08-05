@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi;
 
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.SyncParameters;
@@ -419,7 +420,7 @@ public class OperationHandlerImplTest {
     @Test
     public void api_root_visiting_uses_all_fieldset_by_default() throws Exception {
         VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").build());
-        assertEquals("[all]", parameters.getFieldSet());
+        assertEquals(AllFields.NAME, parameters.getFieldSet());
     }
 
     @Test

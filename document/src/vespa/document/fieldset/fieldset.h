@@ -20,14 +20,12 @@ public:
         SET,
         ALL,
         NONE,
-        HEADER, // Special collection used by VDS
-        BODY,   // Special collection used by VDS
         DOCID
     };
 
     typedef std::unique_ptr<FieldSet> UP;
 
-    virtual ~FieldSet() {};
+    virtual ~FieldSet() = default;
 
     /**
      * @return Return true if all the fields in "fields" are contained in
@@ -54,9 +52,7 @@ public:
      * needs to only contain fields matching a given field set and can
      * readily be modified in-place.
      */
-    static void copyFields(Document& dest,
-                           const Document& src,
-                           const FieldSet& fields);
+    static void copyFields(Document& dest, const Document& src, const FieldSet& fields);
 
     /**
      * Creates a copy of document src containing only the fields given by
@@ -64,16 +60,13 @@ public:
      * See comment for copyFields() for performance notes.
      * @return The new, (partially) copied document instance.
      */
-    static std::unique_ptr<Document> createDocumentSubsetCopy(
-            const Document& src,
-            const FieldSet& fields);
+    static std::unique_ptr<Document> createDocumentSubsetCopy(const Document& src, const FieldSet& fields);
 
     /**
      * Strip all fields _except_ the ones that are contained within the
      * fieldsToKeep fieldset. Modifies original document in-place.
      */
-    static void stripFields(Document& doc,
-                            const FieldSet& fieldsToKeep);
+    static void stripFields(Document& doc, const FieldSet& fieldsToKeep);
 };
 
 }

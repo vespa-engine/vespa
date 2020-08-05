@@ -8,6 +8,7 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.documentapi.AsyncParameters;
@@ -183,7 +184,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
                      ((StringFieldValue) doc3.getFieldValue("artist")).getString());
 
         // Visit the documents again, retrieving none of the document fields
-        parameters.setFieldSet("[id]");
+        parameters.setFieldSet(DocIdOnly.NAME);
         received.clear();
         access.createVisitorSession(parameters).waitUntilDone(0);
         assertSame(VisitorControlHandler.CompletionCode.SUCCESS,

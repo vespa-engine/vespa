@@ -219,15 +219,11 @@ spi::GetResult
 PersistenceTestUtils::doGetOnDisk(
         uint16_t disk,
         const document::BucketId& bucketId,
-        const document::DocumentId& docId,
-        bool headerOnly)
+        const document::DocumentId& docId)
 {
-    document::FieldSet::UP fieldSet(new document::AllFields());
+    auto fieldSet = std::make_unique<document::AllFields>();
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
-    if (headerOnly) {
-        fieldSet.reset(new document::HeaderFields());
-    }
     return getPersistenceProvider().get(makeSpiBucket(
             bucketId, spi::PartitionId(disk)), *fieldSet, docId, context);
 }

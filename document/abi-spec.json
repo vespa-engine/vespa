@@ -3374,23 +3374,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
-  },
-  "com.yahoo.document.fieldset.BodyFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.DocIdOnly": {
     "superClass": "java.lang.Object",
@@ -3406,7 +3392,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.FieldCollection": {
     "superClass": "java.util.ArrayList",
@@ -3454,22 +3442,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.document.fieldset.HeaderFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.fieldset.NoFields": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -3484,7 +3456,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.idstring.IdIdString": {
     "superClass": "com.yahoo.document.idstring.IdString",

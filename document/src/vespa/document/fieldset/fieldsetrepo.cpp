@@ -22,16 +22,12 @@ parseSpecialValues(vespalib::stringref name)
         fs.reset(new AllFields());
     } else if ((name.size() == 6) && (name[1] == 'n') && (name[2] == 'o') && (name[3] == 'n') && (name[4] == 'e') && (name[5] == ']')) {
         fs.reset(new NoFields());
-    } else if ((name.size() == 8) && (name[1] == 'h') && (name[2] == 'e') && (name[3] == 'a') && (name[4] == 'd') && (name[5] == 'e') && (name[6] == 'r') && (name[7] == ']')) {
-        fs.reset(new HeaderFields());
     } else if ((name.size() == 7) && (name[1] == 'd') && (name[2] == 'o') && (name[3] == 'c') && (name[4] == 'i') && (name[5] == 'd') && (name[6] == ']')) {
         fs.reset(new DocIdOnly());
-    } else if ((name.size() == 6) && (name[1] == 'b') && (name[2] == 'o') && (name[3] == 'd') && (name[4] == 'y') && (name[5] == ']')) {
-        fs.reset(new BodyFields());
     } else {
         throw vespalib::IllegalArgumentException(
                 "The only special names (enclosed in '[]') allowed are "
-                "id, all, none, header, body, not '" + name + "'.");
+                "id, all, none, not '" + name + "'.");
     }
     return fs;
 }
@@ -43,8 +39,7 @@ parseFieldCollection(const DocumentTypeRepo& repo,
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
-        throw vespalib::IllegalArgumentException(
-                "Unknown document type " + docType);
+        throw vespalib::IllegalArgumentException("Unknown document type " + docType);
     }
     const DocumentType& type(*typePtr);
 
@@ -90,7 +85,6 @@ FieldSetRepo::serialize(const FieldSet& fieldSet)
     switch (fieldSet.getType()) {
     case FieldSet::FIELD:
         return static_cast<const Field&>(fieldSet).getName();
-        break;
     case FieldSet::SET:
     {
         const FieldCollection& collection = static_cast<const FieldCollection&>(fieldSet);
@@ -110,15 +104,11 @@ FieldSetRepo::serialize(const FieldSet& fieldSet)
         return stream.str();
     }
     case FieldSet::ALL:
-        return "[all]";
+        return AllFields::NAME;
     case FieldSet::NONE:
-        return "[none]";
-    case FieldSet::HEADER:
-        return "[header]";
-    case FieldSet::BODY:
-        return "[body]";
+        return NoFields::NAME;
     case FieldSet::DOCID:
-        return "[docid]";
+        return DocIdOnly::NAME;
     default:
         return "";
     }

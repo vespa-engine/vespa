@@ -5,6 +5,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentIdResponse;
@@ -114,7 +115,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result get(DocumentId id, DocumentProtocol.Priority pri) {
-        GetDocumentMessage msg = new GetDocumentMessage(id, "[all]");
+        GetDocumentMessage msg = new GetDocumentMessage(id, AllFields.NAME);
         msg.setPriority(pri);
         return send(msg);
     }

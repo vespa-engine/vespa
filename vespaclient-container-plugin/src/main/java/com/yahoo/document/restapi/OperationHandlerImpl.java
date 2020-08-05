@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.documentapi.DocumentAccess;
@@ -424,7 +425,7 @@ public class OperationHandlerImpl implements OperationHandler {
         // document types in which case we can't explicitly state a single document type.
         // This matches legacy /visit API and vespa-visit tool behavior.
         params.fieldSet(options.fieldSet.orElse(
-                restUri.isRootOnly() ? "[all]" : restUri.getDocumentType() + ":[document]"));
+                restUri.isRootOnly() ? AllFields.NAME : restUri.getDocumentType() + ":[document]"));
         params.setMaxBucketsPerVisitor(1);
         params.setMaxPending(32);
         params.setMaxFirstPassHits(1);

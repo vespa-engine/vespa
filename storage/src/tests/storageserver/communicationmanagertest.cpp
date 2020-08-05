@@ -11,11 +11,11 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -35,7 +35,7 @@ struct CommunicationManagerTest : Test {
     {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
                                                      document::DocumentId("id:ns:mytype::mydoc"),
-                                                     "[all]");
+                                                     document::AllFields::NAME);
         cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
@@ -71,7 +71,7 @@ TEST_F(CommunicationManagerTest, simple) {
 
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), "[all]");
+            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
     cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);

@@ -43,8 +43,7 @@ PersistenceProvider::UP getSpi(ConformanceTest::PersistenceFactory &factory,
 enum SELECTION_FIELDS
 {
     METADATA_ONLY = 0,
-    FIELDS_HEADER = 1,
-    FIELDS_BODY   = 2
+    ALL_FIELDS = 1
 };
 
 CreateIteratorResult
@@ -52,13 +51,11 @@ createIterator(PersistenceProvider& spi,
                const Bucket& b,
                const Selection& sel,
                IncludedVersions versions = NEWEST_DOCUMENT_ONLY,
-               int fields = FIELDS_HEADER | FIELDS_BODY)
+               int fields = ALL_FIELDS)
 {
     document::FieldSet::UP fieldSet;
-    if (fields & FIELDS_BODY) {
+    if (fields & ALL_FIELDS) {
         fieldSet.reset(new document::AllFields());
-    } else if (fields & FIELDS_HEADER) {
-        fieldSet.reset(new document::HeaderFields());
     } else {
         fieldSet.reset(new document::DocIdOnly());
     }

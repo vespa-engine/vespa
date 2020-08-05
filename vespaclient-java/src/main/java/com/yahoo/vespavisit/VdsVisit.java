@@ -2,6 +2,7 @@
 package com.yahoo.vespavisit;
 
 import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -479,7 +480,7 @@ public class VdsVisit {
             }
             if (line.hasOption("i")) {
                 allParams.setPrintIdsOnly(true);
-                params.fieldSet("[id]");
+                params.fieldSet(DocIdOnly.NAME);
             }
             if (line.hasOption("p")) {
                 params.setResumeFileName(line.getOptionValue("p"));
@@ -512,7 +513,7 @@ public class VdsVisit {
 
             if (line.hasOption("statistics")) {
                 allParams.setStatisticsParts(line.getOptionValue("statistics"));
-                params.fieldSet("[id]");
+                params.fieldSet(DocIdOnly.NAME);
                 params.setVisitorLibrary("CountVisitor");
             }
 

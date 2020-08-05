@@ -3,6 +3,7 @@
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
@@ -53,7 +54,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
     }
 
     void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
-        auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, "[all]");
+        auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
         op = std::make_unique<GetOperation>(
                 getExternalOperationHandler(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),

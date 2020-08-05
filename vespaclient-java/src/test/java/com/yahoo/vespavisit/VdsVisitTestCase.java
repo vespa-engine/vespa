@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespavisit;
 
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -83,7 +84,7 @@ public class VdsVisitTestCase {
         assertNotNull(params);
         assertEquals(654321, allParams.getFullTimeout());
         assertEquals(654321, params.getTimeoutMs());
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
     }
 
     @Test
@@ -98,7 +99,7 @@ public class VdsVisitTestCase {
 
         VisitorParameters params = allParams.getVisitorParameters();
         assertNotNull(params);
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
         assertTrue(allParams.isPrintIdsOnly());
     }
 
@@ -295,7 +296,7 @@ public class VdsVisitTestCase {
         VisitorParameters params = allParams.getVisitorParameters();
         assertNotNull(params);
         assertEquals("foo", allParams.getStatisticsParts());
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
         assertEquals("CountVisitor", params.getVisitorLibrary());
     }
 

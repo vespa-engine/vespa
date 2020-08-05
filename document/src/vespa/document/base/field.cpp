@@ -62,8 +62,6 @@ Field::contains(const FieldSet& fields) const
     case NONE:
     case DOCID:
         return true;
-    case HEADER:
-    case BODY:
     case ALL:
         return false;
     }

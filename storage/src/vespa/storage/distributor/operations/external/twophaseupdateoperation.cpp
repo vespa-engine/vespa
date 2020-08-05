@@ -9,6 +9,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/fieldset//fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -205,7 +206,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
 std::shared_ptr<GetOperation>
 TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
-    const char* field_set = _use_initial_cheap_metadata_fetch_phase ? "[none]" : "[all]";
+    const char* field_set = _use_initial_cheap_metadata_fetch_phase ? document::NoFields::NAME : document::AllFields::NAME;
     auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), field_set);
     copyMessageSettings(*_updateCmd, *get);
     // Metadata-only Gets just look at the data in the meta-store, not any fields.
@@ -345,7 +346,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
                 _updateReply = intermediate._reply;
                 _fast_path_repair_source_node = bestNode.second;
                 document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), bestNode.first);
-                auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), "[all]");
+                auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), document::AllFields::NAME);
                 copyMessageSettings(*_updateCmd, *cmd);
 
                 sender.sendToNode(lib::NodeType::STORAGE, _fast_path_repair_source_node, cmd);
@@ -471,7 +472,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
         update_doc_id().c_str(), bucket.toString().c_str(),
         newest_replica->node, newest_replica->timestamp);
-    auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), "[all]");
+    auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), document::AllFields::NAME);
     copyMessageSettings(*_updateCmd, *cmd);
     sender.sendToNode(lib::NodeType::STORAGE, newest_replica->node, cmd);
 

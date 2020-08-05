@@ -8,6 +8,7 @@
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
@@ -755,7 +756,7 @@ auto make_dummy_get_command_for_bucket_1() {
     return std::make_shared<api::GetCommand>(
             makeDocumentBucket(document::BucketId(0)),
             document::DocumentId("id:foo:testdoctype1:n=1:foo"),
-            "[all]");
+            document::AllFields::NAME);
 }
 
 }

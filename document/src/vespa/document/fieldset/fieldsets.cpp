@@ -6,70 +6,7 @@
 
 namespace document {
 
-bool
-HeaderFields::contains(const FieldSet& fields) const
-{
-    switch (fields.getType()) {
-    case FIELD:
-        return static_cast<const Field&>(fields).isHeaderField();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
-        for (Field::Set::const_iterator iter = coll.getFields().begin();
-             iter != coll.getFields().end();
-             ++iter) {
-            if (!(*iter)->isHeaderField()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    case NONE:
-    case DOCID:
-    case HEADER:
-        return true;
-    case BODY:
-    case ALL:
-        return false;
-    }
-
-    return false;
-}
-
-bool
-BodyFields::contains(const FieldSet& fields) const
-{
-    switch (fields.getType()) {
-    case FIELD:
-        return !static_cast<const Field&>(fields).isHeaderField();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
-        for (Field::Set::const_iterator iter = coll.getFields().begin();
-             iter != coll.getFields().end();
-             ++iter) {
-            if ((*iter)->isHeaderField()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    case NONE:
-    case DOCID:
-    case BODY:
-        return true;
-    case HEADER:
-    case ALL:
-        return false;
-    }
-
-    return false;
-}
-
-FieldCollection::FieldCollection(const DocumentType& type,
-                                 const Field::Set& s)
+FieldCollection::FieldCollection(const DocumentType& type, const Field::Set& s)
     : _set(s),
       _docType(type)
 {
@@ -104,8 +41,6 @@ FieldCollection::contains(const FieldSet& fields) const
     case NONE:
     case DOCID:
         return true;
-    case BODY:
-    case HEADER:
     case ALL:
         return false;
     }
@@ -126,9 +61,7 @@ FieldCollection::insert(const Field::Set& c)
 }
 
 void
-FieldSet::copyFields(Document& dest,
-                     const Document& src,
-                     const FieldSet& fields)
+FieldSet::copyFields(Document& dest, const Document& src, const FieldSet& fields)
 {
     if (fields.getType() == ALL) {
         dest.getFields() = src.getFields();
@@ -146,8 +79,7 @@ FieldSet::copyFields(Document& dest,
 }
 
 Document::UP
-FieldSet::createDocumentSubsetCopy(const Document& src,
-                                   const FieldSet& fields)
+FieldSet::createDocumentSubsetCopy(const Document& src, const FieldSet& fields)
 {
     auto ret = std::make_unique<Document>(src.getType(), src.getId());
     copyFields(*ret, src, fields);
@@ -155,8 +87,7 @@ FieldSet::createDocumentSubsetCopy(const Document& src,
 }
 
 void
-FieldSet::stripFields(Document& doc,
-                      const FieldSet& fieldsToKeep)
+FieldSet::stripFields(Document& doc, const FieldSet& fieldsToKeep)
 {
     if (fieldsToKeep.getType() == ALL) {
         return;

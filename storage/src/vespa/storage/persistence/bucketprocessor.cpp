@@ -48,7 +48,7 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
         = spi::Selection(spi::DocumentSelection(documentSelection));
     spi::CreateIteratorResult createIterResult(provider.createIterator(
                                                        bucket,
-                                                       document::HeaderFields(),
+                                                       document::AllFields(),
                                                        sel,
                                                        versions,
                                                        context));
@@ -64,8 +64,7 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
     IteratorGuard iteratorGuard(provider, iteratorId, context);
 
     while (true) {
-        spi::IterateResult result(
-                provider.iterate(iteratorId, UINT64_MAX, context));
+        spi::IterateResult result(provider.iterate(iteratorId, UINT64_MAX, context));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             vespalib::asciistream ss;
             ss << "Failed: " << result.getErrorMessage();

@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/helper/configgetter.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
-#include <iomanip>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -1100,13 +1098,13 @@ TEST_F(ThreePhaseUpdateTest, metadata_only_gets_are_sent_if_3phase_update_enable
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     {
         auto& get_cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(0));
-        EXPECT_EQ("[none]", get_cmd.getFieldSet());
+        EXPECT_EQ(document::NoFields::NAME, get_cmd.getFieldSet());
         EXPECT_EQ(get_cmd.internal_read_consistency(), api::InternalReadConsistency::Weak);
         checkMessageSettingsPropagatedTo(_sender.command(0));
     }
     {
         auto& get_cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(1));
-        EXPECT_EQ("[none]", get_cmd.getFieldSet());
+        EXPECT_EQ(document::NoFields::NAME, get_cmd.getFieldSet());
         EXPECT_EQ(get_cmd.internal_read_consistency(), api::InternalReadConsistency::Weak);
         checkMessageSettingsPropagatedTo(_sender.command(1));
     }
@@ -1125,7 +1123,7 @@ TEST_F(ThreePhaseUpdateTest, full_document_get_sent_to_replica_with_highest_time
     ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
     {
         auto& get_cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(2));
-        EXPECT_EQ("[all]", get_cmd.getFieldSet());
+        EXPECT_EQ(document::AllFields::NAME, get_cmd.getFieldSet());
         EXPECT_EQ(get_cmd.internal_read_consistency(), api::InternalReadConsistency::Strong);
     }
 }

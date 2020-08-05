@@ -9,11 +9,9 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <tests/common/dummystoragelink.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <ostream>
 
 using namespace document;
 using namespace storage::api;
@@ -57,7 +55,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
                 makeBucketSpace(), libraryName, instanceId, docSelection);
         cmd->setControlDestination("controldestination");
         cmd->setDataDestination("datadestination");
-        cmd->setFieldSet("[header]");
+        cmd->setFieldSet(document::AllFields::NAME);
         if (visitRemoves) {
             cmd->setVisitRemoves();
         }
@@ -176,7 +174,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     msg->setToTime(0);
     msg->addBucketToBeVisited(id);
     msg->addBucketToBeVisited(nullId);
-    msg->setFieldSet("[header]");
+    msg->setFieldSet(document::AllFields::NAME);
     msg->setVisitRemoves();
     msg->setTimeout(1234ms);
     msg->getTrace().setLevel(7);
@@ -201,7 +199,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     EXPECT_EQ(1, cvc->getBuckets().size());
     EXPECT_EQ(api::Timestamp(10), cvc->getFromTime());
     EXPECT_GT(cvc->getToTime(), 0);
-    EXPECT_EQ("[header]", cvc->getFieldSet());
+    EXPECT_EQ(document::AllFields::NAME, cvc->getFieldSet());
     EXPECT_TRUE(cvc->visitRemoves());
     EXPECT_EQ(1234ms, cvc->getTimeout());
     EXPECT_EQ(7, cvc->getTrace().getLevel());

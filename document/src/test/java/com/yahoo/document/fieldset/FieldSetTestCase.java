@@ -13,6 +13,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test for field sets
@@ -20,25 +21,19 @@ import static org.junit.Assert.assertTrue;
 public class FieldSetTestCase extends DocumentTestCaseBase {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testClone() throws Exception {
         assertTrue(new AllFields().clone() instanceof AllFields);
         assertTrue(new NoFields().clone() instanceof NoFields);
-        assertTrue(new HeaderFields().clone() instanceof HeaderFields);
-        assertTrue(new BodyFields().clone() instanceof BodyFields);
         assertTrue(new DocIdOnly().clone() instanceof DocIdOnly);
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testParsing() {
         FieldSetRepo repo = new FieldSetRepo();
 
-        assertTrue(repo.parse(docMan, "[all]") instanceof AllFields);
-        assertTrue(repo.parse(docMan, "[none]") instanceof NoFields);
-        assertTrue(repo.parse(docMan, "[id]") instanceof DocIdOnly);
-        assertTrue(repo.parse(docMan, "[header]") instanceof HeaderFields);
-        assertTrue(repo.parse(docMan, "[body]") instanceof BodyFields);
+        assertTrue(repo.parse(docMan, AllFields.NAME) instanceof AllFields);
+        assertTrue(repo.parse(docMan, NoFields.NAME) instanceof NoFields);
+        assertTrue(repo.parse(docMan, DocIdOnly.NAME) instanceof DocIdOnly);
 
         FieldCollection collection = (FieldCollection)repo.parse(docMan, "testdoc:stringattr,intattr");
         assertEquals(2, collection.size());
@@ -61,50 +56,37 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     void assertError(String str) {
         try {
             new FieldSetRepo().parse(docMan, str);
-            assertTrue(false);
+            fail();
         } catch (Exception e) {
         }
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testContains() throws Exception {
-        Field headerField = testDocType.getField("intattr");
-        Field bodyField = testDocType.getField("rawattr");
+        Field intAttr = testDocType.getField("intattr");
+        Field rawAttr = testDocType.getField("rawattr");
 
-        assertFalse(headerField.contains(testDocType.getField("byteattr")));
-        assertTrue(headerField.contains(testDocType.getField("intattr")));
-        assertFalse(headerField.contains(bodyField));
-        assertTrue(headerField.contains(new DocIdOnly()));
-        assertTrue(headerField.contains(new NoFields()));
-        assertFalse(headerField.contains(new AllFields()));
-        assertFalse(headerField.contains(new HeaderFields()));
-        assertFalse(headerField.contains(new BodyFields()));
+        assertFalse(intAttr.contains(testDocType.getField("byteattr")));
+        assertTrue(intAttr.contains(testDocType.getField("intattr")));
+        assertFalse(intAttr.contains(rawAttr));
+        assertTrue(intAttr.contains(new DocIdOnly()));
+        assertTrue(intAttr.contains(new NoFields()));
+        assertFalse(intAttr.contains(new AllFields()));
 
-        assertFalse(new NoFields().contains(headerField));
+        assertFalse(new NoFields().contains(intAttr));
         assertFalse(new NoFields().contains(new AllFields()));
         assertFalse(new NoFields().contains(new DocIdOnly()));
 
-        assertTrue(new AllFields().contains(new HeaderFields()));
-        assertTrue(new AllFields().contains(headerField));
-        assertTrue(new AllFields().contains(bodyField));
-        assertTrue(new AllFields().contains(new BodyFields()));
+        assertTrue(new AllFields().contains(intAttr));
+        assertTrue(new AllFields().contains(rawAttr));
         assertTrue(new AllFields().contains(new DocIdOnly()));
         assertTrue(new AllFields().contains(new NoFields()));
         assertTrue(new AllFields().contains(new AllFields()));
 
         assertTrue(new DocIdOnly().contains(new NoFields()));
         assertTrue(new DocIdOnly().contains(new DocIdOnly()));
-        assertFalse(new DocIdOnly().contains(headerField));
+        assertFalse(new DocIdOnly().contains(intAttr));
 
-        assertTrue(new HeaderFields().contains(headerField));
-        assertTrue(new HeaderFields().contains(bodyField));
-        assertTrue(new HeaderFields().contains(new DocIdOnly()));
-        assertTrue(new HeaderFields().contains(new NoFields()));
-
-        assertNotContains("[body]", "testdoc:rawattr");
-        assertContains("[header]", "testdoc:intattr");
-        assertContains("[header]", "testdoc:rawattr");
         assertContains("testdoc:rawattr,intattr", "testdoc:intattr");
         assertNotContains("testdoc:intattr", "testdoc:rawattr,intattr");
         assertContains("testdoc:intattr,rawattr", "testdoc:rawattr,intattr");
@@ -116,17 +98,17 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     }
 
     String stringifyFields(Document doc) {
-        String retVal = "";
+        StringBuilder retVal = new StringBuilder();
         for (Iterator<Map.Entry<Field, FieldValue>> i = doc.iterator(); i.hasNext(); ) {
             Map.Entry<Field, FieldValue> v = i.next();
 
             if (retVal.length() > 0) {
-                retVal += ",";
+                retVal.append(",");
             }
-            retVal += v.getKey().getName() + ":" + v.getValue().toString();
+            retVal.append(v.getKey().getName()).append(":").append(v.getValue().toString());
         }
 
-        return retVal;
+        return retVal.toString();
     }
 
     String doCopyFields(Document source, String fieldSet) {
@@ -141,9 +123,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("", doCopyFields(doc, "[body]"));
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[header]"));
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, AllFields.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doCopyFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -159,9 +139,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         Document doc = getTestDocument();
         doc.removeFieldValue("rawattr");
 
-        assertEquals("", doStripFields(doc, "[body]"));
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[header]"));
-        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, "[all]"));
+        assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, AllFields.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doStripFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -169,11 +147,9 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     public void testSerialize() {
         String fieldSets[] =
                 {
-                        "[all]",
-                        "[none]",
-                        "[header]",
-                        "[docid]",
-                        "[body]",
+                        AllFields.NAME,
+                        NoFields.NAME,
+                        DocIdOnly.NAME,
                         "testdoc:rawattr",
                         "testdoc:rawattr,intattr"
                 };

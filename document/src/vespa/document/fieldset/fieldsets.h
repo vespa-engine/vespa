@@ -10,6 +10,7 @@ class DocumentType;
 class AllFields final : public FieldSet
 {
 public:
+    static constexpr const char * NAME = "[all]";
     bool contains(const FieldSet&) const override { return true; }
     Type getType() const override { return ALL; }
     FieldSet* clone() const override { return new AllFields(); }
@@ -18,6 +19,7 @@ public:
 class NoFields final : public FieldSet
 {
 public:
+    static constexpr const char * NAME = "[none]";
     bool contains(const FieldSet& f) const override { return f.getType() == NONE; }
     Type getType() const override { return NONE; }
     FieldSet* clone() const override { return new NoFields(); }
@@ -26,27 +28,12 @@ public:
 class DocIdOnly final : public FieldSet
 {
 public:
+    static constexpr const char * NAME = "[id]";
     bool contains(const FieldSet& fields) const override {
         return fields.getType() == DOCID || fields.getType() == NONE;
     }
     Type getType() const override { return DOCID; }
     FieldSet* clone() const override { return new DocIdOnly(); }
-};
-
-class HeaderFields final : public FieldSet
-{
-public:
-    bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return HEADER; }
-    FieldSet* clone() const override { return new HeaderFields(); }
-};
-
-class BodyFields final : public FieldSet
-{
-public:
-    bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return BODY; }
-    FieldSet* clone() const override { return new BodyFields(); }
 };
 
 class FieldCollection : public FieldSet

@@ -190,14 +190,12 @@ public:
     spi::GetResult doGetOnDisk(
             uint16_t disk,
             const document::BucketId& bucketId,
-            const document::DocumentId& docId,
-            bool headerOnly);
+            const document::DocumentId& docId);
 
     spi::GetResult doGet(
             const document::BucketId& bucketId,
-            const document::DocumentId& docId,
-            bool headerOnly)
-        { return doGetOnDisk(0, bucketId, docId, headerOnly); }
+            const document::DocumentId& docId)
+        { return doGetOnDisk(0, bucketId, docId); }
 
     std::shared_ptr<document::DocumentUpdate> createBodyUpdate(
             const document::DocumentId& id,

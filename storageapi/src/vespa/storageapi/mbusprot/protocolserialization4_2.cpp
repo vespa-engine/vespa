@@ -10,11 +10,13 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/fieldset/fieldsets.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.api.mbusprot.serialization.4_2");
 
 using document::BucketSpace;
+using document::AllFields;
 
 namespace storage::mbusprot {
 
@@ -29,7 +31,7 @@ void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::GetCommand& msg) 
     buf.putString(msg.getDocumentId().toString());
     putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getBeforeTimestamp());
-    buf.putBoolean(msg.getFieldSet() == "[header]");
+    buf.putBoolean(false);
     onEncodeCommand(buf, msg);
 }
 
@@ -39,8 +41,9 @@ ProtocolSerialization4_2::onDecodeGetCommand(BBuf& buf) const
     document::DocumentId did(SH::getString(buf));
     document::Bucket bucket = getBucket(buf);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
-    bool headerOnly(SH::getBoolean(buf));
-    auto msg = std::make_unique<api::GetCommand>(bucket, did, headerOnly ? "[header]" : "[all]", beforeTimestamp);
+    bool headerOnly(SH::getBoolean(buf)); // Ignored header only flag
+    (void) headerOnly;
+    auto msg = std::make_unique<api::GetCommand>(bucket, did, AllFields::NAME, beforeTimestamp);
     onDecodeCommand(buf, *msg);
     return msg;
 }
@@ -371,7 +374,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::CreateVisitorCommand& 
     }
 
     buf.putBoolean(msg.visitRemoves());
-    buf.putBoolean(msg.getFieldSet() == "[header]");
+    buf.putBoolean(false);
     buf.putBoolean(msg.visitInconsistentBuckets());
     buf.putInt(vespalib::count_ms(msg.getQueueTimeout()));
     msg.getParameters().serialize(buf);
@@ -409,7 +412,7 @@ ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
         msg->setVisitRemoves();
     }
     if (SH::getBoolean(buf)) {
-        msg->setFieldSet("[header]");
+        msg->setFieldSet(AllFields::NAME);
     }
     if (SH::getBoolean(buf)) {
         msg->setVisitInconsistentBuckets();

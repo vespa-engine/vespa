@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
 #include <functional>
 
@@ -252,7 +253,7 @@ TestAndSetTest::createTestDocument()
 
 document::Document::SP TestAndSetTest::retrieveTestDocument()
 {
-    auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, "[all]");
+    auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::AllFields::NAME);
     auto tracker = thread->handleGet(*get, createTracker(get, BUCKET));
     assert(tracker->getResult() == api::ReturnCode::Result::OK);
 

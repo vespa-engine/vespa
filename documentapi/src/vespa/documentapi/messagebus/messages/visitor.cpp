@@ -5,6 +5,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <climits>
 
 using document::FixedBucketSpaces;
@@ -24,7 +25,7 @@ CreateVisitorMessage::CreateVisitorMessage() :
     _fromTime(0),
     _toTime(0),
     _visitRemoves(false),
-    _fieldSet("[all]"),
+    _fieldSet(document::AllFields::NAME),
     _visitInconsistentBuckets(false),
     _params(),
     _version(42),
@@ -47,7 +48,7 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _fromTime(0),
     _toTime(0),
     _visitRemoves(false),
-    _fieldSet("[all]"),
+    _fieldSet(document::AllFields::NAME),
     _visitInconsistentBuckets(false),
     _params(),
     _version(42),
