@@ -171,7 +171,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     }
 
     Document::UP
-    getDocument(DocumentIdT lid) const override
+    getDocumentByLidOnly(DocumentIdT lid) const override
     {
         return _subDB.getDocument(lid);
     }

@@ -3,14 +3,30 @@
 #include "i_document_retriever.h"
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldset/fieldsets.h>
 
 namespace proton {
 
-void DocumentRetrieverBaseForTest::visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const {
+document::Document::UP
+IDocumentRetriever::getDocument(search::DocumentIdT lid, const document::DocumentId & docId) const {
+    return getDocument(lid, docId, document::AllFields());
+}
+
+void
+DocumentRetrieverBaseForTest::visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const {
     (void) readConsistency;
     for (uint32_t lid : lids) {
-        visitor.visit(lid, getDocument(lid));
+        visitor.visit(lid, getDocumentByLidOnly(lid));
     }
+}
+
+document::Document::UP
+DocumentRetrieverBaseForTest::getDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet & fieldSet) const {
+    auto doc = getDocumentByLidOnly(lid);
+    if (doc) {
+        document::FieldSet::stripFields(*doc, fieldSet);
+    }
+    return doc;
 }
 
 }

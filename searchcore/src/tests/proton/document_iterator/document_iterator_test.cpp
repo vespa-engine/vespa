@@ -133,7 +133,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    document::Document::UP getDocument(DocumentIdT lid) const override {
+    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
         return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
 
@@ -145,7 +145,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, repo);
         return res;
     }
@@ -154,7 +154,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
 };
 
 UnitDR::UnitDR()
-    : repo(), document(new Document(*DataType::DOCUMENT, DocumentId())), timestamp(0),
+    : repo(), document(std::make_unique<Document>(*DataType::DOCUMENT, DocumentId())), timestamp(0),
       bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
 UnitDR::UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
@@ -179,11 +179,11 @@ struct VisitRecordingUnitDR : UnitDR {
     {
     }
 
-    document::Document::UP getDocument(DocumentIdT lid) const override {
+    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
         if (lid == docid) {
             visited_lids.insert(lid);
         }
-        return UnitDR::getDocument(lid);
+        return UnitDR::getDocumentByLidOnly(lid);
     }
 };
 
@@ -238,7 +238,7 @@ struct AttrUnitDR : public UnitDR
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, "foo", Document(document->getType(), DocumentId()), repo, &_amgr, true);
         return res;
     }
@@ -262,13 +262,13 @@ struct PairDR : DocumentRetrieverBaseForTest {
         DocumentMetaData ret = first->getDocumentMetaData(id);
         return (ret.valid()) ? ret : second->getDocumentMetaData(id);
     }
-    document::Document::UP getDocument(DocumentIdT lid) const override {
-        Document::UP ret = first->getDocument(lid);
-        return ret ? std::move(ret) : second->getDocument(lid);
+    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
+        Document::UP ret = first->getDocumentByLidOnly(lid);
+        return ret ? std::move(ret) : second->getDocumentByLidOnly(lid);
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, getDocumentTypeRepo());
         return res;
     }
@@ -296,16 +296,26 @@ size_t getSize(const document::DocumentId &id) {
     return id.getSerializedSize() + getSize();
 }
 
-IDocumentRetriever::SP nil() { return IDocumentRetriever::SP(new UnitDR()); }
+IDocumentRetriever::SP nil() { return std::make_unique<UnitDR>(); }
 
-IDocumentRetriever::SP doc(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(*DataType::DOCUMENT, DocumentId(id)));
-    return IDocumentRetriever::SP(new UnitDR(std::move(d), t, b, false));
+IDocumentRetriever::SP
+doc(const DocumentId &id, Timestamp t, Bucket b) {
+    return std::make_shared<UnitDR>(std::make_unique<Document>(*DataType::DOCUMENT, id), t, b, false);
 }
 
-IDocumentRetriever::SP rem(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(*DataType::DOCUMENT, DocumentId(id)));
-    return IDocumentRetriever::SP(new UnitDR(std::move(d), t, b, true));
+IDocumentRetriever::SP
+doc(const std::string &id, Timestamp t, Bucket b) {
+    return doc(DocumentId(id), t, b);
+}
+
+IDocumentRetriever::SP
+rem(const DocumentId &id, Timestamp t, Bucket b) {
+    return std::make_shared<UnitDR>(std::make_unique<Document>(*DataType::DOCUMENT, id), t, b, true);
+}
+
+IDocumentRetriever::SP
+rem(const std::string &id, Timestamp t, Bucket b) {
+    return rem(DocumentId(id), t, b);
 }
 
 IDocumentRetriever::SP cat(IDocumentRetriever::SP first, IDocumentRetriever::SP second) {
@@ -337,15 +347,14 @@ const DocumentType &getAttrDocType() {
 }
 
 IDocumentRetriever::SP doc_with_fields(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(getDocType(), DocumentId(id)));
+    auto d = std::make_unique<Document>(getDocType(), DocumentId(id));
     d->set("header", "foo");
     d->set("body", "bar");
-    return IDocumentRetriever::SP(new UnitDR(getDocType(), std::move(d), t, b, false));
+    return std::make_shared<UnitDR>(getDocType(), std::move(d), t, b, false);
 }
 
 IDocumentRetriever::SP doc_with_null_fields(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(getAttrDocType(), DocumentId(id)));
-    return IDocumentRetriever::SP(new AttrUnitDR(std::move(d), t, b, false));
+    return std::make_unique<AttrUnitDR>(std::make_unique<Document>(getAttrDocType(), DocumentId(id)), t, b, false);
 }
 
 IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
@@ -355,35 +364,32 @@ IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
                                             const vespalib::string &ss,
                                             const vespalib::string &attr_ss)
 {
-    Document::UP d(new Document(getAttrDocType(), DocumentId(id)));
+    auto d = std::make_unique<Document>(getAttrDocType(), DocumentId(id));
     d->set("header", "foo");
     d->set("body", "bar");
     d->set("aa", aa);
     d->set("ab", ab);
     d->set("dd", dd);
     d->set("ss", ss);
-    return IDocumentRetriever::SP(new AttrUnitDR(std::move(d), t, b, false,
-                                                 attr_aa, attr_dd, attr_ss));
+    return std::make_shared<AttrUnitDR>(std::move(d), t, b, false, attr_aa, attr_dd, attr_ss);
 }
 
-auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids,
-             const std::string &id, Timestamp t, Bucket b)
+auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids, const std::string &id, Timestamp t, Bucket b)
 {
-    Document::UP d(new Document(getDocType(), DocumentId(id)));
-    return std::make_shared<VisitRecordingUnitDR>(
-            visited_lids, std::move(d), t, b, false);
+    return std::make_shared<VisitRecordingUnitDR>(visited_lids, std::make_unique<Document>(getAttrDocType(), DocumentId(id)), t, b, false);
 }
 
 void checkDoc(const IDocumentRetriever &dr, const std::string &id,
               size_t timestamp, size_t bucket, bool removed)
 {
-    DocumentMetaData dmd = dr.getDocumentMetaData(DocumentId(id));
+    DocumentId documentId(id);
+    DocumentMetaData dmd = dr.getDocumentMetaData(documentId);
     EXPECT_TRUE(dmd.valid());
     EXPECT_EQUAL(timestamp, dmd.timestamp);
     EXPECT_EQUAL(bucket, dmd.bucketId.getId());
     EXPECT_EQUAL(DocumentId(id).getGlobalId(), dmd.gid);
     EXPECT_EQUAL(removed, dmd.removed);
-    Document::UP doc = dr.getDocument(dmd.lid);
+    Document::UP doc = dr.getDocument(dmd.lid, documentId);
     ASSERT_TRUE(doc);
     EXPECT_TRUE(DocumentId(id) == doc->getId());
 }
@@ -415,15 +421,18 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
 }
 
 TEST("require that custom retrievers work as expected") {
+    DocumentId id1("id:ns:document::1");
+    DocumentId id2("id:ns:document::2");
+    DocumentId id3("id:ns:document::3");
     IDocumentRetriever::SP dr =
-        cat(cat(doc("id:ns:document::1", Timestamp(2), bucket(5)),
-                rem("id:ns:document::2", Timestamp(3), bucket(5))),
-            cat(doc("id:ns:document::3", Timestamp(7), bucket(6)),
+        cat(cat(doc(id1, Timestamp(2), bucket(5)),
+                rem(id2, Timestamp(3), bucket(5))),
+            cat(doc(id3, Timestamp(7), bucket(6)),
                 nil()));
     EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("id:ns:document::bogus")).valid());
-    EXPECT_FALSE(dr->getDocument(1));
-    EXPECT_FALSE(dr->getDocument(2));
-    EXPECT_TRUE(dr->getDocument(3));
+    EXPECT_FALSE(dr->getDocument(1, id1));
+    EXPECT_FALSE(dr->getDocument(2, id2));
+    EXPECT_TRUE(dr->getDocument(3, id3));
     TEST_DO(checkDoc(*dr, "id:ns:document::1", 2, 5, false));
     TEST_DO(checkDoc(*dr, "id:ns:document::2", 3, 5, true));
     TEST_DO(checkDoc(*dr, "id:ns:document::3", 7, 6, false));

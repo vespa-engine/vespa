@@ -24,7 +24,7 @@ DocumentBucketMover::moveDocument(DocumentIdT lid,
                                   const document::GlobalId &gid,
                                   Timestamp timestamp)
 {
-    Document::SP doc(_source->retriever()->getDocument(lid).release());
+    Document::SP doc(_source->retriever()->getDocumentByLidOnly(lid).release());
     if (!doc || doc->getId().getGlobalId() != gid)
         return; // Failed to retrieve document, removed or changed identity
     // TODO(geirst): what if doc is NULL?

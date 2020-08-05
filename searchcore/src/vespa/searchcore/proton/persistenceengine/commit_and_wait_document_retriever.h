@@ -4,7 +4,6 @@
 
 #include "i_document_retriever.h"
 #include <vespa/searchcore/proton/common/icommitable.h>
-#include <vespa/document/fieldvalue/document.h>
 
 namespace proton {
 
@@ -22,38 +21,15 @@ public:
     CommitAndWaitDocumentRetriever(IDocumentRetriever::SP retriever, ICommitable &commit);
     ~CommitAndWaitDocumentRetriever() override;
 
-    const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
-        return _retriever->getDocumentTypeRepo();
-    }
-
-    void getBucketMetaData(const Bucket &bucket, search::DocumentMetaData::Vector &result) const override {
-        return _retriever->getBucketMetaData(bucket, result);
-    }
-
-    search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override {
-        return _retriever->getDocumentMetaData(id);
-    }
-    document::Document::UP getDocument(search::DocumentIdT lid) const override {
-        // Ensure that attribute vectors are committed
-        _commit.commitAndWait();
-        return _retriever->getDocument(lid);
-    }
-    void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor,
-                        ReadConsistency readConsistency) const override
-    {
-        _commit.commitAndWait();
-        _retriever->visitDocuments(lids, visitor, readConsistency);
-    }
-
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        return _retriever->parseSelect(selection);
-    }
-    ReadGuard getReadGuard() const override {
-        return _retriever->getReadGuard();
-    }
-    uint32_t getDocIdLimit() const override {
-        return _retriever->getDocIdLimit();
-    }
+    const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
+    void getBucketMetaData(const Bucket &bucket, search::DocumentMetaData::Vector &result) const override;
+    search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override;
+    DocumentUP getDocumentByLidOnly(search::DocumentIdT lid) const override;
+    DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;
+    void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
+    CachedSelect::SP parseSelect(const vespalib::string &selection) const override;
+    ReadGuard getReadGuard() const override;
+    uint32_t getDocIdLimit() const override;
 };
 
 } // namespace proton

@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
-namespace document { class Document; }
+namespace document { class FieldSet; }
 
 namespace proton {
 
@@ -32,10 +32,17 @@ public:
 
     virtual ~IDocumentRetriever() = default;
 
-    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const = 0;
+    virtual const document::DocumentTypeRepo & getDocumentTypeRepo() const = 0;
     virtual void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const = 0;
     virtual search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const = 0;
-    virtual DocumentUP getDocument(search::DocumentIdT lid) const = 0;
+    /**
+     * Extracts the full document based on the LID
+     */
+    virtual DocumentUP getDocumentByLidOnly(search::DocumentIdT lid) const = 0;
+    /**
+     * Fetches the necessary set of fields, allowing for more optimal fetch when combining only from attributes.
+     */
+    virtual DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const = 0;
     virtual ReadGuard getReadGuard() const = 0;
     virtual uint32_t getDocIdLimit() const = 0;
     /**
@@ -47,6 +54,9 @@ public:
     virtual void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const = 0;
 
     virtual CachedSelect::SP parseSelect(const vespalib::string &selection) const = 0;
+
+    // Convenience to get all fields
+    DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId) const;
 };
 
 class DocumentRetrieverBaseForTest : public IDocumentRetriever {
@@ -54,6 +64,7 @@ public:
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
     ReadGuard getReadGuard() const override { return ReadGuard(); }
     uint32_t getDocIdLimit() const override { return std::numeric_limits<uint32_t>::max(); }
+    DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet &) const override;
 };
 
 } // namespace proton

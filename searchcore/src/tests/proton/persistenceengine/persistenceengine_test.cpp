@@ -127,7 +127,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    document::Document::UP getDocument(search::DocumentIdT) const override {
+    document::Document::UP getDocumentByLidOnly(search::DocumentIdT) const override {
         if (document != nullptr) {
             return Document::UP(document->clone());
         }

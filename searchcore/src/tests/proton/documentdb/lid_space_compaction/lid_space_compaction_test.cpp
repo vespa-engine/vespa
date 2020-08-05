@@ -217,7 +217,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override { return *repo; }
     void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override { abort(); }
     DocumentMetaData getDocumentMetaData(const DocumentId&) const override { abort(); }
-    Document::UP getDocument(DocumentIdT lid) const override {
+    Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
         return store.read(lid, *repo);
     }
     CachedSelect::SP parseSelect(const vespalib::string&) const override { abort(); }
