@@ -78,12 +78,10 @@ public class TenantSerializerTest {
     @Test
     public void cloud_tenant() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
-                                             new BillingInfo("old cat lady", "vespa"),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
-        assertEquals(tenant.billingInfo(), serialized.billingInfo());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
     }
 
