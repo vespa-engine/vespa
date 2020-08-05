@@ -71,6 +71,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String METHOD_DIMENSION = "httpMethod";
         String SCHEME_DIMENSION = "scheme";
         String REQUEST_TYPE_DIMENSION = "requestType";
+        String CLIENT_IP_DIMENSION = "clientIp";
 
         String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
         String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
