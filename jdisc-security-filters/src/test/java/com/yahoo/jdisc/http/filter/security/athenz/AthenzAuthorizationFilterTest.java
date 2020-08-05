@@ -119,7 +119,7 @@ public class AthenzAuthorizationFilterTest {
         filter.filter(request, responseHandler);
 
         assertStatusCode(responseHandler, 401);
-        assertErrorMessage(responseHandler, "Not authorized - request did not contain the header 'Authorization: Bearer <token>.");
+        assertErrorMessage(responseHandler, "Not authorized - request did not contain the header 'Authorization: Bearer <token>'.");
     }
 
     @Test
