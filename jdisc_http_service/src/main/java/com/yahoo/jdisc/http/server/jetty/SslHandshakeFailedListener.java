@@ -6,6 +6,7 @@ import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.io.ssl.SslHandshakeListener;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -38,11 +39,16 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
         String metricName = SslHandshakeFailure.fromSslHandshakeException((SSLHandshakeException) throwable)
                 .map(SslHandshakeFailure::metricName)
                 .orElse(Metrics.SSL_HANDSHAKE_FAILURE_UNKNOWN);
-        metric.add(metricName, 1L, metric.createContext(createDimensions()));
+        metric.add(metricName, 1L, metric.createContext(createDimensions(event)));
     }
 
-    private Map<String, Object> createDimensions() {
-        return Map.of(Metrics.NAME_DIMENSION, connectorName, Metrics.PORT_DIMENSION, listenPort);
+    private Map<String, Object> createDimensions(Event event) {
+        Map<String, Object> dimensions = new HashMap<>();
+        dimensions.put(Metrics.NAME_DIMENSION, connectorName);
+        dimensions.put(Metrics.PORT_DIMENSION, listenPort);
+        Optional.ofNullable(event.getSSLEngine().getPeerHost())
+                .ifPresent(clientIp -> dimensions.put(Metrics.CLIENT_IP_DIMENSION, clientIp));
+        return Map.copyOf(dimensions);
     }
 
     private enum SslHandshakeFailure {
