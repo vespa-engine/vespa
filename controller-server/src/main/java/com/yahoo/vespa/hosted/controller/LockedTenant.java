@@ -100,26 +100,20 @@ public abstract class LockedTenant {
     /** A locked CloudTenant. */
     public static class Cloud extends LockedTenant {
 
-        private final BillingInfo billingInfo;
         private final BiMap<PublicKey, Principal> developerKeys;
 
-        private Cloud(TenantName name, BillingInfo billingInfo, BiMap<PublicKey, Principal> developerKeys) {
+        private Cloud(TenantName name, BiMap<PublicKey, Principal> developerKeys) {
             super(name);
-            this.billingInfo = billingInfo;
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.billingInfo(), tenant.developerKeys());
+            this(tenant.name(), tenant.developerKeys());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, billingInfo, developerKeys);
-        }
-
-        public Cloud with(BillingInfo billingInfo) {
-            return new Cloud(name, billingInfo, developerKeys);
+            return new CloudTenant(name, developerKeys);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -127,13 +121,13 @@ public abstract class LockedTenant {
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
             keys.put(key, principal);
-            return new Cloud(name, billingInfo, keys);
+            return new Cloud(name, keys);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, billingInfo, keys);
+            return new Cloud(name, keys);
         }
 
     }

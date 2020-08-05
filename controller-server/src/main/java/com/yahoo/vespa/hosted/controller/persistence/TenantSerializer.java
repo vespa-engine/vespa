@@ -84,8 +84,12 @@ public class TenantSerializer {
     }
 
     private void toSlime(CloudTenant tenant, Cursor root) {
+        // BillingInfo was never used and always just a static default value.  To retire this
+        // field we continue to write the default value and stop reading it.
+        // TODO(ogronnesby, 2020-08-05): Remove when a version where we do not read the field has propagated.
+        var legacyBillingInfo = new BillingInfo("customer", "Vespa");
         developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
-        toSlime(tenant.billingInfo(), root.setObject(billingInfoField));
+        toSlime(legacyBillingInfo, root.setObject(billingInfoField));
     }
 
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
@@ -124,9 +128,8 @@ public class TenantSerializer {
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        BillingInfo billingInfo = billingInfoFrom(tenantObject.field(billingInfoField));
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        return new CloudTenant(name, billingInfo, developerKeys);
+        return new CloudTenant(name, developerKeys);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {

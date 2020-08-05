@@ -34,8 +34,6 @@ import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.*;
  */
 public class CloudAccessControl implements AccessControl {
 
-    private static final BillingInfo defaultBillingInfo = new BillingInfo("customer", "Vespa");
-
     private final UserManagement userManagement;
     private final BooleanFlag enablePublicSignup;
     private final BillingController billingController;
@@ -52,7 +50,7 @@ public class CloudAccessControl implements AccessControl {
         requireTenantCreationAllowed((Auth0Credentials) credentials);
 
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
-        CloudTenant tenant = CloudTenant.create(spec.tenant(), defaultBillingInfo);
+        CloudTenant tenant = CloudTenant.create(spec.tenant());
 
         for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);
