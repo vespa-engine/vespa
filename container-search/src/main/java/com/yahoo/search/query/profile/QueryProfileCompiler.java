@@ -32,10 +32,10 @@ public class QueryProfileCompiler {
 
     public static CompiledQueryProfile compile(QueryProfile in, CompiledQueryProfileRegistry registry) {
         try {
-            DimensionalMap.Builder<CompoundName, ValueWithSource> values = new DimensionalMap.Builder<>();
-            DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
-            DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
-            DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<ValueWithSource> values = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<QueryProfileType> types = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<Object> references = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<Object> unoverridables = new DimensionalMap.Builder<>();
 
             // Resolve values for each existing variant and combine into a single data structure
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);

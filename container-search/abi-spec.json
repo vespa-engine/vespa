@@ -6037,6 +6037,7 @@
     ],
     "methods": [
       "public static com.yahoo.search.query.profile.compiled.Binding createFrom(com.yahoo.search.query.profile.DimensionBinding)",
+      "public boolean generalizes(com.yahoo.search.query.profile.compiled.Binding)",
       "public boolean isNull()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
@@ -6108,7 +6109,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void put(java.lang.Object, com.yahoo.search.query.profile.DimensionBinding, java.lang.Object)",
+      "public void put(com.yahoo.processing.request.CompoundName, com.yahoo.search.query.profile.DimensionBinding, java.lang.Object)",
       "public com.yahoo.search.query.profile.compiled.DimensionalMap build()"
     ],
     "fields": []
@@ -6120,7 +6121,7 @@
       "public"
     ],
     "methods": [
-      "public java.lang.Object get(java.lang.Object, java.util.Map)",
+      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public java.util.Set entrySet()",
       "public boolean isEmpty()"
     ],
@@ -6134,7 +6135,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public java.lang.Object valueFor(com.yahoo.search.query.profile.DimensionBinding)",
+      "public java.lang.Object valueFor(com.yahoo.search.query.profile.compiled.Binding)",
       "public void add(java.lang.Object, com.yahoo.search.query.profile.DimensionBinding)",
       "public com.yahoo.search.query.profile.compiled.DimensionalValue build(java.util.Map)"
     ],
