@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
-#include <vespa/searchcore/proton/server/icommitable.h>
+#include "i_document_retriever.h"
+#include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/document/fieldvalue/document.h>
 
 namespace proton {
@@ -19,12 +19,8 @@ class CommitAndWaitDocumentRetriever : public IDocumentRetriever
     ICommitable           &_commit;
     using Bucket = storage::spi::Bucket;
 public:
-    CommitAndWaitDocumentRetriever(const IDocumentRetriever::SP &retriever, ICommitable &commit)
-        : _retriever(retriever),
-          _commit(commit)
-    { }
-
-    ~CommitAndWaitDocumentRetriever() {}
+    CommitAndWaitDocumentRetriever(IDocumentRetriever::SP retriever, ICommitable &commit);
+    ~CommitAndWaitDocumentRetriever() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return _retriever->getDocumentTypeRepo();

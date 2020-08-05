@@ -3,8 +3,8 @@
 #pragma once
 
 #include "ifeedview.h"
-#include "icommitable.h"
 #include "igetserialnum.h"
+#include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
@@ -25,6 +25,7 @@ public:
     VisibilityHandler(const IGetSerialNum &serial,
                       IThreadingService &threadingService,
                       const FeedViewHolder &feedView);
+    ~VisibilityHandler() override;
     void setVisibilityDelay(vespalib::duration visibilityDelay) { _visibilityDelay = visibilityDelay; }
     vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }

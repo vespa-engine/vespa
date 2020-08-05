@@ -12,7 +12,7 @@ public:
     virtual void commit() = 0;
     virtual void commitAndWait() = 0;
 protected:
-    virtual ~ICommitable() { }
+    virtual ~ICommitable() = default;
 };
 
 }

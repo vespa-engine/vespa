@@ -21,6 +21,8 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
 {
 }
 
+VisibilityHandler::~VisibilityHandler() = default;
+
 void VisibilityHandler::commit()
 {
     if (hasVisibilityDelay()) {

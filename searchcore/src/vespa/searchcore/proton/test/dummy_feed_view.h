@@ -10,8 +10,8 @@ struct DummyFeedView : public IFeedView
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
 
     DummyFeedView();
-    DummyFeedView(const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo);
-    virtual ~DummyFeedView() override;
+    explicit DummyFeedView(std::shared_ptr<const document::DocumentTypeRepo> docTypeRepo);
+    ~DummyFeedView() override;
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override {
         return _docTypeRepo;
     }

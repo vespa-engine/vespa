@@ -30,7 +30,7 @@ public:
     using LidVector = search::IDocumentStore::LidVector;
     using DocumentUP = std::unique_ptr<document::Document>;
 
-    virtual ~IDocumentRetriever() {}
+    virtual ~IDocumentRetriever() = default;
 
     virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const = 0;
     virtual void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const = 0;

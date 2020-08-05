@@ -56,7 +56,7 @@ const uint32_t SECOND_SCAN_PASS = 2;
 struct MyMoveOperationLimiter : public IMoveOperationLimiter {
     uint32_t beginOpCount;
     MyMoveOperationLimiter() : beginOpCount(0) {}
-    virtual IDestructorCallback::SP beginOperation() override {
+    IDestructorCallback::SP beginOperation() override {
         ++beginOpCount;
         return IDestructorCallback::SP();
     }
@@ -76,7 +76,7 @@ struct MyMoveHandler : public IDocumentMoveHandler
           _storeMoveDoneContexts(storeMoveDoneContext),
           _moveDoneContexts()
     {}
-    virtual void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override {
+    void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override {
         _moves.push_back(op);
         if (_bucketDb.takeGuard()->isCachedBucket(op.getBucketId())) {
             ++_numCachedBuckets;
@@ -98,20 +98,17 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumentVector       _docs;
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo) : _repo(repo), _docs() {
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo) : _repo(std::move(repo)), _docs() {
         _docs.push_back(Document::SP()); // lid 0 invalid
     }
-    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
-    virtual void getBucketMetaData(const storage::spi::Bucket &,
-                                   DocumentMetaData::Vector &) const override {}
-    virtual DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
-    virtual Document::UP getDocument(DocumentIdT lid) const override {
+    const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
+    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override {}
+    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
+    Document::UP getDocument(DocumentIdT lid) const override {
         return Document::UP(_docs[lid]->clone());
     }
 
-    virtual CachedSelect::SP
-    parseSelect(const vespalib::string &) const override
-    {
+    CachedSelect::SP parseSelect(const vespalib::string &) const override {
         return CachedSelect::SP();
     }
 };
@@ -119,7 +116,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 struct MyBucketModifiedHandler : public IBucketModifiedHandler
 {
     BucketIdVector _modified;
-    virtual void notifyBucketModified(const BucketId &bucket) override {
+    void notifyBucketModified(const BucketId &bucket) override {
         BucketIdVector::const_iterator itr = std::find(_modified.begin(), _modified.end(), bucket);
         ASSERT_TRUE(itr == _modified.end());
         _modified.push_back(bucket);
@@ -186,7 +183,7 @@ MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::share
     : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
                                                        DocumentMetaStore::getFixedName(),
                                                        search::GrowStrategy(),
-                                                       documentmetastore::IGidCompare::SP(new documentmetastore::DefaultGidCompare),
+                                                       std::make_shared<documentmetastore::DefaultGidCompare>(),
                                                        subDbType)),
       _metaStore(*_metaStoreSP),
       _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
@@ -507,8 +504,7 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     {
     }
 
-    virtual ~MyFrozenBucketHandler()
-    {
+    ~MyFrozenBucketHandler() override {
         assert(_listeners.empty());
     }
 
@@ -523,14 +519,14 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
         }
         return *this;
     }
-    virtual void addListener(IBucketFreezeListener *listener) override {
+    void addListener(IBucketFreezeListener *listener) override {
         _listeners.insert(listener);
     }
-    virtual void removeListener(IBucketFreezeListener *listener) override {
+    void removeListener(IBucketFreezeListener *listener) override {
         _listeners.erase(listener);
     }
 
-    virtual ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override {
+    ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override {
         return (_frozen.count(bucket) != 0)
             ? ExclusiveBucketGuard::UP()
             : std::make_unique<ExclusiveBucketGuard>(bucket);
@@ -539,10 +535,10 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
 
 struct MyCountJobRunner : public IMaintenanceJobRunner {
     uint32_t runCount;
-    MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
+    explicit MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
         job.registerRunner(this);
     }
-    virtual void run() override { ++runCount; }
+    void run() override { ++runCount; }
 };
 
 struct ControllerFixtureBase
@@ -618,7 +614,7 @@ struct ControllerFixtureBase
 
 ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts)
     : _builder(),
-      _calc(new test::BucketStateCalculator),
+      _calc(std::make_shared<test::BucketStateCalculator>()),
       _bucketHandler(),
       _modifiedHandler(),
       _bucketDB(std::make_shared<BucketDBOwner>()),

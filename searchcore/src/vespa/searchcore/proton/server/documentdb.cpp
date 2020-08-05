@@ -2,7 +2,6 @@
 
 #include "bootstrapconfig.h"
 #include "combiningfeedview.h"
-#include "commit_and_wait_document_retriever.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
 #include "documentdb.h"
@@ -12,6 +11,7 @@
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>

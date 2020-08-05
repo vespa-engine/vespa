@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
@@ -49,13 +48,11 @@ struct MyScanIterator : public IDocumentScanIterator {
     LidVector _lids;
     LidVector::const_iterator _itr;
     bool _validItr;
-    MyScanIterator(const LidVector &lids) : _lids(lids), _itr(_lids.begin()), _validItr(true) {}
-    virtual bool valid() const override {
+    explicit MyScanIterator(const LidVector &lids) : _lids(lids), _itr(_lids.begin()), _validItr(true) {}
+    bool valid() const override {
         return _validItr;
     }
-    virtual search::DocumentMetaData next(uint32_t compactLidLimit,
-                                          uint32_t maxDocsToScan,
-                                          bool retry) override {
+    search::DocumentMetaData next(uint32_t compactLidLimit, uint32_t maxDocsToScan, bool retry) override {
         if (!retry && _itr != _lids.begin()) {
             ++_itr;
         }
@@ -86,8 +83,8 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     documentmetastore::OperationListener::SP _op_listener;
     RemoveOperationsRateTracker* _rm_listener;
 
-    MyHandler(bool storeMoveDoneContexts = false);
-    ~MyHandler();
+    explicit MyHandler(bool storeMoveDoneContexts = false);
+    ~MyHandler() override;
     void clearMoveDoneContexts() { _moveDoneContexts.clear(); }
     void run_remove_ops(bool remove_batch) {
         // This ensures to max out the threshold time in the operation rate tracker.
@@ -101,45 +98,45 @@ struct MyHandler : public ILidSpaceCompactionHandler {
             _op_listener->notify_remove();
         }
     }
-    void stop_remove_ops(bool remove_batch) {
+    void stop_remove_ops(bool remove_batch) const {
         if (remove_batch) {
             _rm_listener->get_remove_batch_tracker().reset(vespalib::steady_clock::now());
         } else {
             _rm_listener->get_remove_tracker().reset(vespalib::steady_clock::now());
         }
     }
-    virtual vespalib::string getName() const override {
+    vespalib::string getName() const override {
         return "myhandler";
     }
-    virtual void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
+    void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
         auto* rm_listener = dynamic_cast<RemoveOperationsRateTracker*>(op_listener.get());
         assert(rm_listener != nullptr);
         _op_listener = std::move(op_listener);
         _rm_listener = rm_listener;
     }
-    virtual uint32_t getSubDbId() const override { return 2; }
-    virtual LidUsageStats getLidStatus() const override {
+    uint32_t getSubDbId() const override { return 2; }
+    LidUsageStats getLidStatus() const override {
         assert(_handleMoveCnt < _stats.size());
         return _stats[_handleMoveCnt];
     }
-    virtual IDocumentScanIterator::UP getIterator() const override {
+    IDocumentScanIterator::UP getIterator() const override {
         assert(_iteratorCnt < _lids.size());
-        return IDocumentScanIterator::UP(new MyScanIterator(_lids[_iteratorCnt++]));
+        return std::make_unique<MyScanIterator>(_lids[_iteratorCnt++]);
     }
-    virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
-                                                  uint32_t moveToLid) const override {
+    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
+                                          uint32_t moveToLid) const override {
         assert(document.lid > moveToLid);
         _moveFromLid = document.lid;
         _moveToLid = moveToLid;
-        return MoveOperation::UP(new MoveOperation());
+        return std::make_unique<MoveOperation>();
     }
-    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override {
+    void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override {
         ++_handleMoveCnt;
         if (_storeMoveDoneContexts) {
             _moveDoneContexts.push_back(std::move(moveDoneCtx));
         }
     }
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
         _wantedSubDbId = op.getSubDbId();
         _wantedLidLimit = op.getLidLimit();
     }
@@ -159,7 +156,7 @@ MyHandler::MyHandler(bool storeMoveDoneContexts)
       _rm_listener()
 {}
 
-MyHandler::~MyHandler() {}
+MyHandler::~MyHandler() = default;
 
 struct MyStorer : public IOperationStorer {
     uint32_t _moveCnt;
@@ -180,17 +177,17 @@ struct MyStorer : public IOperationStorer {
 struct MyFrozenBucketHandler : public IFrozenBucketHandler {
     BucketId _bucket;
     MyFrozenBucketHandler() : _bucket() {}
-    virtual ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override {
+    ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override {
         return (_bucket == bucket)
                ? ExclusiveBucketGuard::UP()
                : std::make_unique<ExclusiveBucketGuard>(bucket);
     }
-    virtual void addListener(IBucketFreezeListener *) override { }
-    virtual void removeListener(IBucketFreezeListener *) override { }
+    void addListener(IBucketFreezeListener *) override { }
+    void removeListener(IBucketFreezeListener *) override { }
 };
 
 struct MyFeedView : public test::DummyFeedView {
-    MyFeedView(std::shared_ptr<const DocumentTypeRepo> repo)
+    explicit MyFeedView(std::shared_ptr<const DocumentTypeRepo> repo)
         : test::DummyFeedView(std::move(repo))
     {
     }
@@ -200,7 +197,7 @@ struct MyDocumentStore : public test::DummyDocumentStore {
     Document::SP _readDoc;
     mutable uint32_t _readLid;
     MyDocumentStore() : _readDoc(), _readLid(0) {}
-    ~MyDocumentStore();
+    ~MyDocumentStore() override;
     document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         _readLid = lid;
         return Document::UP(_readDoc->clone());
@@ -213,7 +210,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     std::shared_ptr<const DocumentTypeRepo> repo;
     const MyDocumentStore& store;
     MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in)
-        : repo(repo_in),
+        : repo(std::move(repo_in)),
           store(store_in)
     {
     }
@@ -229,11 +226,11 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 struct MySubDb {
     test::DummyDocumentSubDb sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
-    MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, std::shared_ptr<const DocumentTypeRepo> repo);
+    MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
     ~MySubDb();
 };
 
-MySubDb::MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, std::shared_ptr<const DocumentTypeRepo> repo)
+MySubDb::MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo)
     : sub_db(std::move(bucket_db), SUBDB_ID),
       maintenance_sub_db(sub_db.getName(), sub_db.getSubDbId(), sub_db.getDocumentMetaStoreContext().getSP(),
                          std::make_shared<MyDocumentRetriever>(repo, store),
@@ -245,20 +242,20 @@ MySubDb::~MySubDb() = default;
 
 struct MyDirectJobRunner : public IMaintenanceJobRunner {
     IMaintenanceJob &_job;
-    MyDirectJobRunner(IMaintenanceJob &job)
+    explicit MyDirectJobRunner(IMaintenanceJob &job)
         : _job(job)
     {
         _job.registerRunner(this);
     }
-    virtual void run() override { _job.run(); }
+    void run() override { _job.run(); }
 };
 
 struct MyCountJobRunner : public IMaintenanceJobRunner {
     uint32_t runCnt;
-    MyCountJobRunner(IMaintenanceJob &job) : runCnt(0) {
+    explicit MyCountJobRunner(IMaintenanceJob &job) : runCnt(0) {
         job.registerRunner(this);
     }
-    virtual void run() override { ++runCnt; }
+    void run() override { ++runCnt; }
 };
 
 struct JobTestBase : public ::testing::Test {
@@ -296,7 +293,7 @@ struct JobTestBase : public ::testing::Test {
                                                        BlockableMaintenanceJobConfig(resourceLimitFactor, maxOutstandingMoveOps),
                                                        _clusterStateHandler, nodeRetired);
     }
-    ~JobTestBase();
+    ~JobTestBase() override;
     JobTestBase &addStats(uint32_t docIdLimit,
                           const LidVector &usedLids,
                           const LidPairVector &usedFreePairs) {
@@ -309,8 +306,7 @@ struct JobTestBase : public ::testing::Test {
         for (auto pair : usedFreePairs) {
             uint32_t highestUsedLid = pair.first;
             uint32_t lowestFreeLid = pair.second;
-            _handler->_stats.push_back(LidUsageStats
-                    (docIdLimit, usedLids, lowestFreeLid, highestUsedLid));
+            _handler->_stats.emplace_back(docIdLimit, usedLids, lowestFreeLid, highestUsedLid);
         }
         _handler->_lids = usedLidsVector;
         return *this;
@@ -319,11 +315,10 @@ struct JobTestBase : public ::testing::Test {
                           uint32_t numDocs,
                           uint32_t lowestFreeLid,
                           uint32_t highestUsedLid) {
-        _handler->_stats.push_back(LidUsageStats
-                (docIdLimit, numDocs, lowestFreeLid, highestUsedLid));
+        _handler->_stats.emplace_back(docIdLimit, numDocs, lowestFreeLid, highestUsedLid);
         return *this;
     }
-    bool run() {
+    bool run() const {
         return _job->run();
     }
     JobTestBase &endScan() {
@@ -343,7 +338,7 @@ struct JobTestBase : public ::testing::Test {
                           uint32_t moveFromLid,
                           uint32_t handleMoveCnt,
                           uint32_t wantedLidLimit,
-                          uint32_t compactStoreCnt)
+                          uint32_t compactStoreCnt) const
     {
         EXPECT_EQ(moveToLid, _handler->_moveToLid);
         EXPECT_EQ(moveFromLid, _handler->_moveFromLid);
@@ -352,7 +347,7 @@ struct JobTestBase : public ::testing::Test {
         EXPECT_EQ(wantedLidLimit, _handler->_wantedLidLimit);
         EXPECT_EQ(compactStoreCnt, _storer._compactCnt);
     }
-    void assertNoWorkDone() {
+    void assertNoWorkDone() const {
         assertJobContext(0, 0, 0, 0, 0);
     }
     JobTestBase &setupOneDocumentToCompact() {

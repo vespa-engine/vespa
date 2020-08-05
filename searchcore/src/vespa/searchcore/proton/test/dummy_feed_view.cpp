@@ -9,8 +9,8 @@ DummyFeedView::DummyFeedView()
 {
 }
 
-DummyFeedView::DummyFeedView(const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo)
-    : _docTypeRepo(docTypeRepo)
+DummyFeedView::DummyFeedView(std::shared_ptr<const document::DocumentTypeRepo> docTypeRepo)
+    : _docTypeRepo(std::move(docTypeRepo))
 {
 }
 
