@@ -456,35 +456,35 @@ public:
     small_string& replace ( size_t p1, size_t n1, size_t n2, char c );
     */
 
-    bool operator  <         (const char * s) const { return compare(s, strlen(s)) < 0; }
-    bool operator  <  (const std::string & s) const { return compare(s.data(), s.size()) < 0; }
-    bool operator  < (const small_string & s) const { return compare(s.data(), s.size()) < 0; }
-    bool operator  <    (stringref s) const { return compare(s.data(), s.size()) < 0; }
-    bool operator <=         (const char * s) const { return compare(s, strlen(s)) <= 0; }
-    bool operator <=  (const std::string & s) const { return compare(s.data(), s.size()) <= 0; }
-    bool operator <= (const small_string & s) const { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=    (stringref s) const { return compare(s.data(), s.size()) <= 0; }
-    bool operator ==         (const char * s) const { return compare(s, strlen(s)) == 0; }
-    bool operator ==  (const std::string & s) const { return compare(s.data(), s.size()) == 0; }
-    bool operator == (const small_string & s) const { return compare(s.data(), s.size()) == 0; }
-    bool operator ==    (stringref s) const { return compare(s.data(), s.size()) == 0; }
-    bool operator !=         (const char * s) const { return compare(s, strlen(s)) != 0; }
-    bool operator !=  (const std::string & s) const { return compare(s.data(), s.size()) != 0; }
-    bool operator != (const small_string & s) const { return compare(s.data(), s.size()) != 0; }
-    bool operator !=    (stringref s) const { return compare(s.data(), s.size()) != 0; }
-    bool operator >=         (const char * s) const { return compare(s, strlen(s)) >= 0; }
-    bool operator >=  (const std::string & s) const { return compare(s.data(), s.size()) >= 0; }
-    bool operator >= (const small_string & s) const { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=    (stringref s) const { return compare(s.data(), s.size()) >= 0; }
-    bool operator  >         (const char * s) const { return compare(s, strlen(s)) > 0; }
-    bool operator  >  (const std::string & s) const { return compare(s.data(), s.size()) > 0; }
-    bool operator  > (const small_string & s) const { return compare(s.data(), s.size()) > 0; }
-    bool operator  >    (stringref s) const { return compare(s.data(), s.size()) > 0; }
+    bool operator  <         (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
+    bool operator  <  (const std::string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
+    bool operator  < (const small_string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
+    bool operator  <            (stringref s) const noexcept { return compare(s.data(), s.size()) < 0; }
+    bool operator <=         (const char * s) const noexcept { return compare(s, strlen(s)) <= 0; }
+    bool operator <=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
+    bool operator <= (const small_string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
+    bool operator <=            (stringref s) const noexcept { return compare(s.data(), s.size()) <= 0; }
+    bool operator ==         (const char * s) const noexcept { return compare(s, strlen(s)) == 0; }
+    bool operator ==  (const std::string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
+    bool operator == (const small_string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
+    bool operator ==            (stringref s) const noexcept { return compare(s.data(), s.size()) == 0; }
+    bool operator !=         (const char * s) const noexcept { return compare(s, strlen(s)) != 0; }
+    bool operator !=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
+    bool operator != (const small_string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
+    bool operator !=            (stringref s) const noexcept { return compare(s.data(), s.size()) != 0; }
+    bool operator >=         (const char * s) const noexcept { return compare(s, strlen(s)) >= 0; }
+    bool operator >=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
+    bool operator >= (const small_string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
+    bool operator >=            (stringref s) const noexcept { return compare(s.data(), s.size()) >= 0; }
+    bool operator  >         (const char * s) const noexcept { return compare(s, strlen(s)) > 0; }
+    bool operator  >  (const std::string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    bool operator  > (const small_string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    bool operator  >            (stringref s) const noexcept { return compare(s.data(), s.size()) > 0; }
 
-    template<typename T> bool operator != (const T& s) const { return ! operator == (s); }
+    template<typename T> bool operator != (const T& s) const noexcept { return ! operator == (s); }
 
-    int compare(const small_string & s) const { return compare(s.c_str(), s.size()); }
-    int compare(const char *s, size_t sz) const {
+    int compare(const small_string & s) const noexcept { return compare(s.c_str(), s.size()); }
+    int compare(const char *s, size_t sz) const noexcept {
         int diff(memcmp(buffer(), s, std::min(sz, size())));
         return (diff != 0) ? diff : (size() - sz);
     }

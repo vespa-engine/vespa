@@ -21,7 +21,7 @@
 // Used to use anonymous namespaces, but they fail miserably in gdb 5.3
 
 #define LOG_SETUP(...)                          \
-static ns_log::Logger logger(__VA_ARGS__)
+static ns_log::Logger logger(__VA_ARGS__)  // NOLINT
 
 #define LOG_SETUP_INDIRECT(x, id)               \
 static ns_log::Logger *logger=NULL;             \

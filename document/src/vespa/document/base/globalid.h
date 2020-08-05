@@ -77,7 +77,7 @@ public:
     /**
      * Constructs a new global id with all 0 bits.
      */
-    GlobalId() { set("\0\0\0\0\0\0\0\0\0\0\0\0"); }
+    GlobalId() noexcept { set("\0\0\0\0\0\0\0\0\0\0\0\0"); }
 
 
 
@@ -87,7 +87,7 @@ public:
      *
      * @param gid The address to the data to copy.
      */
-    explicit GlobalId(const void *gid) { set(gid); }
+    explicit GlobalId(const void *gid) noexcept { set(gid); }
 
     GlobalId(const GlobalId &rhs) = default;
 
@@ -130,7 +130,7 @@ public:
      *
      * @param id The bytes to set.
      */
-    void set(const void *id) { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
+    void set(const void *id) noexcept { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
 
     /**
      * Returns the raw byte array that constitutes this global id.

@@ -49,11 +49,11 @@ public:
     using Type = uint64_t;
     using List = bucket::BucketIdList;
     /** Create an initially unset bucket id. */
-    BucketId() : _id(0) {}
+    BucketId() noexcept : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */
-    explicit BucketId(Type id) : _id(id) {}
+    explicit BucketId(Type id) noexcept : _id(id) {}
     /** Create a bucket id using a set of bits from a raw unchecked value. */
-    BucketId(uint32_t useBits, Type id) : _id(createUsedBits(useBits, id)) { }
+    BucketId(uint32_t useBits, Type id) noexcept : _id(createUsedBits(useBits, id)) { }
 
     bool operator<(const BucketId& id) const {
         return getId() < id.getId();
@@ -175,7 +175,7 @@ private:
         return _stripMasks[getUsedBits()];
     }
 
-    static Type createUsedBits(uint32_t used, Type id) {
+    static Type createUsedBits(uint32_t used, Type id) noexcept {
         uint32_t availBits = maxNumBits;
         Type usedCount(used);
         usedCount <<= availBits;

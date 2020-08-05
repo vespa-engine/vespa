@@ -24,8 +24,8 @@ class Bucket {
     PartitionId _partition;
 
 public:
-    Bucket() : _bucket(document::BucketSpace::invalid(), document::BucketId(0)), _partition(0) {}
-    Bucket(const document::Bucket& b, PartitionId p)
+    Bucket() noexcept : _bucket(document::BucketSpace::invalid(), document::BucketId(0)), _partition(0) {}
+    Bucket(const document::Bucket& b, PartitionId p) noexcept
         : _bucket(b), _partition(p) {}
 
     const document::Bucket &getBucket() const { return _bucket; }
