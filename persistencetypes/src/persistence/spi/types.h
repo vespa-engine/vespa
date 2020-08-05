@@ -27,8 +27,8 @@ namespace document {
       type _value; \
   public: \
       typedef type Type; \
-      name() : _value() {} \
-      explicit name(type v) : _value(v) {} \
+      name() noexcept : _value() {} \
+      explicit name(type v) noexcept : _value(v) {} \
       operator type() const { return _value; } \
       operator type&() { return _value; } \
       type getValue() const { return _value; } \
