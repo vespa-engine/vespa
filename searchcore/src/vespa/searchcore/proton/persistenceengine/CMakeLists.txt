@@ -2,6 +2,7 @@
 vespa_add_library(searchcore_persistenceengine STATIC
     SOURCES
     document_iterator.cpp
+    commit_and_wait_document_retriever.cpp
     i_document_retriever.cpp
     persistenceengine.cpp
     persistence_handler_map.cpp

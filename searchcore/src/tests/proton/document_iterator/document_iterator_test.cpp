@@ -10,7 +10,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
-#include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
@@ -116,7 +116,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     UnitDR();
     UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r);
     UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r);
-    ~UnitDR();
+    ~UnitDR() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
@@ -134,7 +134,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         return DocumentMetaData();
     }
     document::Document::UP getDocument(DocumentIdT lid) const override {
-        return Document::UP((lid == docid) ? document->clone() : 0);
+        return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
 
     uint32_t getDocIdLimit() const override {
@@ -165,7 +165,7 @@ UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Times
     : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
       docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
-UnitDR::~UnitDR() {}
+UnitDR::~UnitDR() = default;
 
 
 struct VisitRecordingUnitDR : UnitDR {
@@ -250,7 +250,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
     IDocumentRetriever::SP first;
     IDocumentRetriever::SP second;
     PairDR(IDocumentRetriever::SP f, IDocumentRetriever::SP s)
-        : first(f), second(s) {}
+        : first(std::move(f)), second(std::move(s)) {}
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
@@ -264,7 +264,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
     }
     document::Document::UP getDocument(DocumentIdT lid) const override {
         Document::UP ret = first->getDocument(lid);
-        return (ret.get() != 0) ? std::move(ret) : second->getDocument(lid);
+        return ret ? std::move(ret) : second->getDocument(lid);
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
@@ -309,13 +309,13 @@ IDocumentRetriever::SP rem(const std::string &id, Timestamp t, Bucket b) {
 }
 
 IDocumentRetriever::SP cat(IDocumentRetriever::SP first, IDocumentRetriever::SP second) {
-    return IDocumentRetriever::SP(new PairDR(first, second));
+    return std::make_unique<PairDR>(std::move(first), std::move(second));
 }
 
 const DocumentType &getDocType() {
     static DocumentType::UP doc_type;
-    if (!doc_type.get()) {
-        doc_type.reset(new DocumentType("foo", 42));
+    if (!doc_type) {
+        doc_type = std::make_unique<DocumentType>("foo", 42);
         doc_type->addField(Field("header", 43, *DataType::STRING, true));
         doc_type->addField(Field("body", 44, *DataType::STRING, false));
     }
@@ -324,8 +324,8 @@ const DocumentType &getDocType() {
 
 const DocumentType &getAttrDocType() {
     static DocumentType::UP doc_type;
-    if (!doc_type.get()) {
-        doc_type.reset(new DocumentType("foo", 42));
+    if (!doc_type) {
+        doc_type = std::make_unique<DocumentType>("foo", 42);
         doc_type->addField(Field("header", 43, *DataType::STRING, true));
         doc_type->addField(Field("body", 44, *DataType::STRING, false));
         doc_type->addField(Field("aa", 45, *DataType::INT, false));
@@ -384,7 +384,7 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
     EXPECT_EQUAL(DocumentId(id).getGlobalId(), dmd.gid);
     EXPECT_EQUAL(removed, dmd.removed);
     Document::UP doc = dr.getDocument(dmd.lid);
-    ASSERT_TRUE(doc.get() != 0);
+    ASSERT_TRUE(doc);
     EXPECT_TRUE(DocumentId(id) == doc->getId());
 }
 
@@ -421,9 +421,9 @@ TEST("require that custom retrievers work as expected") {
             cat(doc("id:ns:document::3", Timestamp(7), bucket(6)),
                 nil()));
     EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("id:ns:document::bogus")).valid());
-    EXPECT_TRUE(dr->getDocument(1).get() == 0);
-    EXPECT_TRUE(dr->getDocument(2).get() == 0);
-    EXPECT_TRUE(dr->getDocument(3).get() != 0);
+    EXPECT_FALSE(dr->getDocument(1));
+    EXPECT_FALSE(dr->getDocument(2));
+    EXPECT_TRUE(dr->getDocument(3));
     TEST_DO(checkDoc(*dr, "id:ns:document::1", 2, 5, false));
     TEST_DO(checkDoc(*dr, "id:ns:document::2", 3, 5, true));
     TEST_DO(checkDoc(*dr, "id:ns:document::3", 7, 6, false));
@@ -489,7 +489,7 @@ TEST("require that iterator ignoring maxbytes stops at the end, and does not aut
 
 void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    IDocumentRetriever::SP commitAndWaitRetriever(new CommitAndWaitDocumentRetriever(retriever, committer));
+    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, committer);
     itr.add(commitAndWaitRetriever);
 
     IterateResult res = itr.iterate(largeNum);
@@ -517,7 +517,7 @@ TEST("require that readconsistency::strong does commit") {
 
 TEST("require that docid limit is honoured") {
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    UnitDR & udr = dynamic_cast<UnitDR &>(*retriever);
+    auto & udr = dynamic_cast<UnitDR &>(*retriever);
     udr.docid = 7;
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
     itr.add(retriever);
@@ -642,7 +642,7 @@ TEST("require that at least one document is returned by visit") {
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(0);
-    EXPECT_TRUE(1u <= res1.getEntries().size());
+    EXPECT_TRUE( ! res1.getEntries().empty());
     TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT,DocumentId("id:ns:document::1")), Timestamp(2)));
 }
 

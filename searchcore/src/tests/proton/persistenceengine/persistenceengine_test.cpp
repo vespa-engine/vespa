@@ -59,7 +59,7 @@ createDocType(const vespalib::string &name, int32_t id)
 document::Document::SP
 createDoc(const DocumentType &docType, const DocumentId &docId)
 {
-    return document::Document::SP(new document::Document(docType, docId));
+    return std::make_shared<document::Document>(docType, docId);
 }
 
 
@@ -116,19 +116,19 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         return repo;
     }
     void getBucketMetaData(const storage::spi::Bucket &, search::DocumentMetaData::Vector &v) const override {
-        if (document != 0) {
+        if (document != nullptr) {
             v.push_back(getDocumentMetaData(document->getId()));
         }
     }
     DocumentMetaData getDocumentMetaData(const DocumentId &id) const override {
         last_doc_id = id;
-        if (document != 0) {
+        if (document != nullptr) {
             return DocumentMetaData(1, timestamp, document::BucketId(1), document->getId().getGlobalId());
         }
         return DocumentMetaData();
     }
     document::Document::UP getDocument(search::DocumentIdT) const override {
-        if (document != 0) {
+        if (document != nullptr) {
             return Document::UP(document->clone());
         }
         return Document::UP();
@@ -155,9 +155,9 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     Result                       _splitResult;
     Result                       _joinResult;
     Result                       _createBucketResult;
-    const Document *document;
-    std::multiset<uint64_t> frozen;
-    std::multiset<uint64_t> was_frozen;
+    const Document              *document;
+    std::multiset<uint64_t>      frozen;
+    std::multiset<uint64_t>      was_frozen;
 
     MyHandler()
         : initialized(false),
@@ -165,7 +165,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
           lastTimestamp(),
           lastDocId(),
           existingTimestamp(),
-          lastCalc(NULL),
+          lastCalc(nullptr),
           lastBucketState(),
           bucketList(),
           bucketStateResult(),
@@ -175,7 +175,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
           _splitResult(),
           _joinResult(),
           _createBucketResult(),
-          document(0),
+          document(nullptr),
           frozen(),
           was_frozen()
     {
@@ -188,7 +188,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         document = &doc;
         setExistingTimestamp(ts);
     }
-    void handle(FeedToken token, const Bucket &bucket, Timestamp timestamp, const DocumentId &docId) {
+    void handle(const FeedToken & token, const Bucket &bucket, Timestamp timestamp, const DocumentId &docId) {
         (void) token;
         lastBucket = bucket;
         lastTimestamp = timestamp;
@@ -199,20 +199,20 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     void handlePut(FeedToken token, const Bucket& bucket,
                    Timestamp timestamp, DocumentSP doc) override {
-        token->setResult(ResultUP(new storage::spi::Result()), false);
+        token->setResult(std::make_unique<Result>(), false);
         handle(token, bucket, timestamp, doc->getId());
     }
 
     void handleUpdate(FeedToken token, const Bucket& bucket,
                       Timestamp timestamp, const document::DocumentUpdate::SP& upd) override {
-        token->setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)), existingTimestamp > 0);
+        token->setResult(std::make_unique<UpdateResult>(existingTimestamp), existingTimestamp > 0);
         handle(token, bucket, timestamp, upd->getId());
     }
 
     void handleRemove(FeedToken token, const Bucket& bucket,
                       Timestamp timestamp, const DocumentId& id) override {
         bool wasFound = existingTimestamp > 0;
-        token->setResult(ResultUP(new storage::spi::RemoveResult(wasFound)), wasFound);
+        token->setResult(std::make_unique<RemoveResult>(wasFound), wasFound);
         handle(token, bucket, timestamp, id);
     }
 
@@ -237,11 +237,11 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleCreateBucket(FeedToken token, const storage::spi::Bucket &) override {
-        token->setResult(ResultUP(new Result(_createBucketResult)), true);
+        token->setResult(std::make_unique<Result>(_createBucketResult), true);
     }
 
     void handleDeleteBucket(FeedToken token, const storage::spi::Bucket &) override {
-        token->setResult(ResultUP(new Result(deleteBucketResult)), true);
+        token->setResult(std::make_unique<Result>(deleteBucketResult), true);
     }
 
     void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler) override {
@@ -251,24 +251,24 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     void handleSplit(FeedToken token, const storage::spi::Bucket &, const storage::spi::Bucket &,
                      const storage::spi::Bucket &) override
     {
-        token->setResult(ResultUP(new Result(_splitResult)), true);
+        token->setResult(std::make_unique<Result>(_splitResult), true);
     }
 
     void handleJoin(FeedToken token, const storage::spi::Bucket &, const storage::spi::Bucket &,
                const storage::spi::Bucket &) override
     {
-        token->setResult(ResultUP(new Result(_joinResult)), true);
+        token->setResult(std::make_unique<Result>(_joinResult), true);
     }
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
         RetrieversSP ret(new std::vector<IDocumentRetriever::SP>);
-        ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(0, Timestamp(), lastDocId)));
+        ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(nullptr, Timestamp(), lastDocId)));
         ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(document, existingTimestamp, lastDocId)));
         return ret;
     }
 
     BucketGuard::UP lockBucket(const storage::spi::Bucket &b) override {
-        return BucketGuard::UP(new BucketGuard(b.getBucketId(), *this));
+        return std::make_unique<BucketGuard>(b.getBucketId(), *this);
     }
 
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override {
@@ -286,7 +286,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         was_frozen.insert(bucket.getId());
     }
     void thawBucket(BucketId bucket) override {
-        std::multiset<uint64_t>::iterator it = frozen.find(bucket.getId());
+        auto it = frozen.find(bucket.getId());
         ASSERT_TRUE(it != frozen.end());
         frozen.erase(it);
     }
@@ -311,10 +311,10 @@ struct HandlerSet {
 };
 
 HandlerSet::HandlerSet()
-    : phandler1(new MyHandler()),
-      phandler2(new MyHandler()),
-      handler1(static_cast<MyHandler &>(*phandler1.get())),
-      handler2(static_cast<MyHandler &>(*phandler2.get()))
+    : phandler1(std::make_shared<MyHandler>()),
+      phandler2(std::make_shared<MyHandler>()),
+      handler1(dynamic_cast<MyHandler &>(*phandler1.get())),
+      handler2(dynamic_cast<MyHandler &>(*phandler2.get()))
 {}
 HandlerSet::~HandlerSet() = default;
 
@@ -398,7 +398,7 @@ struct SimpleFixture {
     SimpleResourceWriteFilter _writeFilter;
     PersistenceEngine engine;
     HandlerSet hset;
-    SimpleFixture(BucketSpace bucketSpace2)
+    explicit SimpleFixture(BucketSpace bucketSpace2)
         : _owner(),
           engine(_owner, _writeFilter, -1, false),
           hset()

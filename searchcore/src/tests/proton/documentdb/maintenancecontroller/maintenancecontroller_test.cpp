@@ -104,7 +104,7 @@ public:
     Document::UP
     getDocument(DocumentIdT lid) const
     {
-        DocMap::const_iterator it(_docs.find(lid));
+        auto it(_docs.find(lid));
         if (it != _docs.end()) {
             return Document::UP(it->second->clone());
         } else {
@@ -133,7 +133,7 @@ MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const st
     : _docs(),
       _subDBId(subDBId),
       _metaStoreSP(std::make_shared<DocumentMetaStore>(
-              bucketDB, DocumentMetaStore::getFixedName(), search::GrowStrategy(),
+              std::move(bucketDB), DocumentMetaStore::getFixedName(), search::GrowStrategy(),
               DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare), subDbType)),
       _metaStore(*_metaStoreSP),
       _repo(repo),
@@ -141,42 +141,42 @@ MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const st
 {
     _metaStore.constructFreeList();
 }
-MyDocumentSubDB::~MyDocumentSubDB() {}
+MyDocumentSubDB::~MyDocumentSubDB() = default;
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     MyDocumentSubDB &_subDB;
 
-    MyDocumentRetriever(MyDocumentSubDB &subDB)
+    explicit MyDocumentRetriever(MyDocumentSubDB &subDB)
         : _subDB(subDB)
     {
     }
 
-    virtual const document::DocumentTypeRepo &
+    const document::DocumentTypeRepo &
     getDocumentTypeRepo() const override
     {
         LOG_ABORT("should not be reached");
     }
 
-    virtual void
+    void
     getBucketMetaData(const storage::spi::Bucket &,
                       DocumentMetaData::Vector &) const override
     {
         LOG_ABORT("should not be reached");
     }
-    virtual DocumentMetaData
+    DocumentMetaData
     getDocumentMetaData(const DocumentId &) const override
     {
         return DocumentMetaData();
     }
 
-    virtual Document::UP
+    Document::UP
     getDocument(DocumentIdT lid) const override
     {
         return _subDB.getDocument(lid);
     }
 
-    virtual CachedSelect::SP
+    CachedSelect::SP
     parseSelect(const vespalib::string &) const override
     {
         return CachedSelect::SP();
@@ -187,7 +187,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 struct MyBucketModifiedHandler : public IBucketModifiedHandler
 {
     BucketIdVector _modified;
-    virtual void notifyBucketModified(const BucketId &bucket) override {
+    void notifyBucketModified(const BucketId &bucket) override {
         BucketIdVector::const_iterator itr = std::find(_modified.begin(), _modified.end(), bucket);
         if (itr == _modified.end()) {
             _modified.push_back(bucket);
@@ -218,17 +218,14 @@ class MyFeedHandler : public IDocumentMoveHandler,
     SerialNum                      _serialNum;
     uint32_t                       _heartBeats;
 public:
-    MyFeedHandler(FastOS_ThreadId &executorThreadId);
+    explicit MyFeedHandler(FastOS_ThreadId &executorThreadId);
 
-    virtual~MyFeedHandler();
+    ~MyFeedHandler() override;
 
-    bool isExecutorThread();
-
-    virtual void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override;
-
-    virtual void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
-
-    virtual void heartBeat() override;
+    bool isExecutorThread() const;
+    void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override;
+    void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
+    void heartBeat() override;
 
     void setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
 
@@ -237,9 +234,9 @@ public:
     }
 
     // Implements IOperationStorer
-    virtual void storeOperation(const FeedOperation &op, DoneCallback) override;
+    void storeOperation(const FeedOperation &op, DoneCallback) override;
 
-    uint32_t getHeartBeats() {
+    uint32_t getHeartBeats() const {
         return _heartBeats;
     }
 };
@@ -252,7 +249,7 @@ public:
 
     MyExecutor();
 
-    ~MyExecutor();
+    ~MyExecutor() override;
 
     bool isIdle();
     bool waitIdle(vespalib::duration timeout);
@@ -294,7 +291,7 @@ struct MySimpleJob : public BlockableMaintenanceJob
     {
     }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
-    virtual bool run() override {
+    bool run() override {
         LOG(info, "MySimpleJob::run()");
         _latch.countDown();
         ++_runCnt;
@@ -310,7 +307,7 @@ struct MySplitJob : public MySimpleJob
         : MySimpleJob(delay, interval, finishCount)
     {
     }
-    virtual bool run() override {
+    bool run() override {
         LOG(info, "MySplitJob::run()");
         _latch.countDown();
         ++_runCnt;
@@ -329,7 +326,7 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
     {
     }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
-    virtual bool run() override {
+    bool run() override {
         _firstRun.countDown();
         usleep(10000);
         return false;
@@ -342,15 +339,15 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 {
     vespalib::string name;
 
-    MockLidSpaceCompactionHandler(const vespalib::string &name_) : name(name_) {}
-    virtual vespalib::string getName() const override { return name; }
-    virtual void set_operation_listener(documentmetastore::OperationListener::SP) override {}
-    virtual uint32_t getSubDbId() const override { return 0; }
-    virtual search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
-    virtual IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
-    virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
-    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override {}
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
+    explicit MockLidSpaceCompactionHandler(const vespalib::string &name_) : name(name_) {}
+    vespalib::string getName() const override { return name; }
+    void set_operation_listener(documentmetastore::OperationListener::SP) override {}
+    uint32_t getSubDbId() const override { return 0; }
+    search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
+    IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
+    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
+    void handleMove(const MoveOperation &, IDestructorCallback::SP) override {}
+    void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
 };
 
 
@@ -385,7 +382,7 @@ public:
 
     MaintenanceControllerFixture();
 
-    virtual ~MaintenanceControllerFixture();
+    ~MaintenanceControllerFixture() override;
 
     void syncSubDBs();
     void commit() override { }
@@ -507,8 +504,7 @@ MyDocumentSubDB::getSubDB()
 
 
 void
-MyDocumentSubDB::handlePruneRemovedDocuments(
-        const PruneRemovedDocumentsOperation &op)
+MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op)
 {
     assert(_subDBId == 1u);
     typedef LidVectorContext::LidVector LidVector;
@@ -518,10 +514,7 @@ MyDocumentSubDB::handlePruneRemovedDocuments(
     _metaStore.removeBatch(lidsToRemove, lidCtx.getDocIdLimit());
     _metaStore.removeBatchComplete(lidsToRemove);
     _metaStore.commit(serialNum);
-    for (LidVector::const_iterator it = lidsToRemove.begin(),
-                                  ite = lidsToRemove.end();
-         it != ite; ++it) {
-        search::DocumentIdT lid(*it);
+    for (auto lid : lidsToRemove) {
         _docs.erase(lid);
     }
 }
@@ -689,13 +682,11 @@ MyFeedHandler::MyFeedHandler(FastOS_ThreadId &executorThreadId)
 }
 
 
-MyFeedHandler::~MyFeedHandler()
-{
-}
+MyFeedHandler::~MyFeedHandler() = default;
 
 
 bool
-MyFeedHandler::isExecutorThread()
+MyFeedHandler::isExecutorThread() const
 {
     FastOS_ThreadId threadId(FastOS_Thread::GetCurrentThreadId());
     return FastOS_Thread::CompareThreadIds(_executorThreadId, threadId);
@@ -934,10 +925,9 @@ void
 MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs, MyDocumentSubDB &subDb)
 {
 
-    for (auto itr = docs.begin(); itr != docs.end(); ++itr) {
-        const test::BucketDocuments &bucketDocs = itr->second;
-        for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
-            const test::Document &testDoc = bucketDocs.getDocs()[i];
+    for (const auto & entry : docs) {
+        const test::BucketDocuments &bucketDocs = entry.second;
+        for (const test::Document &testDoc : bucketDocs.getDocs()) {
             PutOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc());
             op.setDbDocumentId(DbDocumentId(subDb.getSubDBId(), testDoc.getLid()));
             _fh.storeOperation(op, std::make_shared<search::IgnoreCallback>());
@@ -948,14 +938,12 @@ MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs, MyDocu
 
 
 void
-MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs,
-        Timestamp timestamp)
+MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timestamp timestamp)
 {
 
-    for (auto itr = docs.begin(); itr != docs.end(); ++itr) {
-        const test::BucketDocuments &bucketDocs = itr->second;
-        for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
-            const test::Document &testDoc = bucketDocs.getDocs()[i];
+    for (const auto & entry : docs) {
+        const test::BucketDocuments &bucketDocs = entry.second;
+        for (const test::Document &testDoc : bucketDocs.getDocs()) {
             RemoveOperationWithDocId op(testDoc.getBucket(), timestamp, testDoc.getDoc()->getId());
             op.setDbDocumentId(DbDocumentId(_removed.getSubDBId(), testDoc.getLid()));
             _fh.storeOperation(op, std::make_shared<search::IgnoreCallback>());
@@ -1020,7 +1008,7 @@ TEST_F("require that document pruner is active",
        MaintenanceControllerFixture)
 {
     uint64_t tshz = 1000000;
-    uint64_t now = static_cast<uint64_t>(time(0)) * tshz;
+    uint64_t now = static_cast<uint64_t>(time(nullptr)) * tshz;
     Timestamp remTime(static_cast<Timestamp::Type>(now - 3600 * tshz));
     Timestamp keepTime(static_cast<Timestamp::Type>(now + 3600 * tshz));
     f._builder.createDocs(1, 1, 4); // 3 docs
@@ -1162,8 +1150,8 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
 
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySimpleJob(200ms, 200ms, 3));
-    MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
+    auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 3);
+    MySimpleJob &myJob = *job;
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
@@ -1174,8 +1162,8 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
 
 TEST_F("require that a split maintenance job is executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySplitJob(200ms, TIMEOUT_SEC * 2, 3));
-    MySplitJob &myJob = static_cast<MySplitJob &>(*job);
+    auto job = std::make_unique<MySplitJob>(200ms, TIMEOUT_SEC * 2, 3);
+    MySplitJob &myJob = *job;
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
@@ -1187,10 +1175,10 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
 TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
         MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job1(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 1));
-    MySimpleJob &myJob1 = static_cast<MySimpleJob &>(*job1);
-    IMaintenanceJob::UP job2(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
-    MySimpleJob &myJob2 = static_cast<MySimpleJob &>(*job2);
+    auto job1 = std::make_unique<MySimpleJob>(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 1);
+    MySimpleJob &myJob1 = *job1;
+    auto job2 = std::make_unique< MySimpleJob>(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0);
+    MySimpleJob &myJob2 = *job2;
     f._mc.registerJobInMasterThread(std::move(job1));
     f._mc.registerJobInMasterThread(std::move(job2));
     f._injectDefaultJobs = false;
@@ -1219,8 +1207,8 @@ TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
 
 TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySimpleJob(200ms, 200ms, 0));
-    MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
+    auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 0);
+    MySimpleJob &myJob = *job;
     myJob.block();
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
@@ -1234,7 +1222,7 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
     {
         IMaintenanceJob::UP job1(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
         IMaintenanceJob::UP job2(new MyLongRunningJob(200ms, 200ms));
-        MyLongRunningJob &longRunningJob = static_cast<MyLongRunningJob &>(*job2);
+        auto &longRunningJob = dynamic_cast<MyLongRunningJob &>(*job2);
         f._mc.registerJobInMasterThread(std::move(job1));
         f._mc.registerJobInMasterThread(std::move(job2));
         f._injectDefaultJobs = false;
