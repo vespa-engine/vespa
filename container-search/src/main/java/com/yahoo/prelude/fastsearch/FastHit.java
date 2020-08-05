@@ -42,7 +42,7 @@ public class FastHit extends Hit {
     private byte [] globalId;
 
     private transient byte[] sortData = null;
-    // TODO I supect this one can be dropped.
+    // TODO I suspect this one can be dropped.
     private transient Sorting sortDataSorting = null;
 
     /**
@@ -186,6 +186,11 @@ public class FastHit extends Hit {
             removedFields.removeAll(docsumDef.fieldNames());
         if ( ! (summaries instanceof ArrayList) ) summaries = new ArrayList<>(8);
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
+    }
+
+    /** Returns the raw summary data available in this as an unmodifiable list */
+    public List<SummaryData> summaryData() {
+        return Collections.unmodifiableList(summaries);
     }
 
     /**
