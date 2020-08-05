@@ -62,33 +62,29 @@ class LogReader {
         double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
         double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
-        try {
-            for (List<Path> logs : getMatchingFiles(from, to)) {
-                List<LogLineIterator> logLineIterators = new ArrayList<>();
-                try {
-                    // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading
-                    for (Path log : logs)
-                        logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds, hostname));
+        for (List<Path> logs : getMatchingFiles(from, to)) {
+            List<LogLineIterator> logLineIterators = new ArrayList<>();
+            try {
+                // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading
+                for (Path log : logs)
+                    logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds, hostname));
 
-                    Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
-                                                                              Comparator.comparingDouble(LineWithTimestamp::timestamp));
-                    while (lines.hasNext()) {
-                        writer.write(lines.next().line());
-                        writer.newLine();
-                    }
-                }
-                catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                finally {
-                    for (LogLineIterator ll : logLineIterators) {
-                        try { ll.close(); } catch (IOException ignored) { }
-                    }
+                Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
+                                                                          Comparator.comparingDouble(LineWithTimestamp::timestamp));
+                while (lines.hasNext()) {
+                    writer.write(lines.next().line());
+                    writer.newLine();
                 }
             }
-        }
-        finally {
-            Exceptions.uncheck(writer::flush);
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            finally {
+                for (LogLineIterator ll : logLineIterators) {
+                    try { ll.close(); } catch (IOException ignored) { }
+                }
+                Exceptions.uncheck(writer::flush);
+            }
         }
     }
 
