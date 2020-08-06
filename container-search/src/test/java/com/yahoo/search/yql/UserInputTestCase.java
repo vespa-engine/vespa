@@ -195,6 +195,15 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"));", query.yqlRepresentation());
     }
 
+    @Test
+    public void testReferenceInComparison() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("varref", "1980");
+        builder.setParameter("yql", "select * from sources * where year > @varref;");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where year > 1980;", query.yqlRepresentation());
+    }
+
     private Query searchAndAssertNoErrors(URIBuilder builder) {
         Query query = new Query(builder.toString());
         Result r = execution.search(query);

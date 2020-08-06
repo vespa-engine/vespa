@@ -13,9 +13,7 @@ import java.util.Map;
 
 /**
  * Represents a use of an operator against concrete arguments. The types of arguments depend on the operator.
- * <p>
  * The extension point of this scheme is the Operator rather than new types of Nodes.
- * <p>
  * Operators SHOULD take a fixed number of arguments -- wrap variable argument counts in Lists.
  */
 final class OperatorNode<T extends Operator> {

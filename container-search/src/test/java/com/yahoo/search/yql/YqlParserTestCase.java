@@ -767,12 +767,12 @@ public class YqlParserTestCase {
                 "select foo from bar where title contains \"madonna\""
                         + " order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc"
                         + " limit 600" + " timeout 3;", "title:madonna");
-        final FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
+        FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
         assertEquals("other", fieldOrder.getFieldName());
         assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
-        final AttributeSorter sorter = fieldOrder.getSorter();
+        AttributeSorter sorter = fieldOrder.getSorter();
         assertEquals(UcaSorter.class, sorter.getClass());
-        final UcaSorter uca = (UcaSorter) sorter;
+        UcaSorter uca = (UcaSorter) sorter;
         assertEquals("en_US", uca.getLocale());
         assertEquals(UcaSorter.Strength.IDENTICAL, uca.getStrength());
     }
@@ -785,22 +785,20 @@ public class YqlParserTestCase {
                         + " [{\"function\": \"lowercase\"}]something asc"
                         + " limit 600" + " timeout 3;", "title:madonna");
         {
-            final FieldOrder fieldOrder = parser.getSorting().fieldOrders()
-                    .get(0);
+            FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
             assertEquals("other", fieldOrder.getFieldName());
             assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
-            final AttributeSorter sorter = fieldOrder.getSorter();
+            AttributeSorter sorter = fieldOrder.getSorter();
             assertEquals(UcaSorter.class, sorter.getClass());
-            final UcaSorter uca = (UcaSorter) sorter;
+            UcaSorter uca = (UcaSorter) sorter;
             assertEquals("en_US", uca.getLocale());
             assertEquals(UcaSorter.Strength.IDENTICAL, uca.getStrength());
         }
         {
-            final FieldOrder fieldOrder = parser.getSorting().fieldOrders()
-                    .get(1);
+            FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(1);
             assertEquals("something", fieldOrder.getFieldName());
             assertEquals(Order.ASCENDING, fieldOrder.getSortOrder());
-            final AttributeSorter sorter = fieldOrder.getSorter();
+            AttributeSorter sorter = fieldOrder.getSorter();
             assertEquals(LowerCaseSorter.class, sorter.getClass());
         }
     }
