@@ -6,11 +6,10 @@ import com.yahoo.config.application.api.DeployLogger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
- * Only logs to a normal {@link Logger}
- * @author vegardh
+ * Logs to a normal {@link Logger}
  *
+ * @author vegardh
  */
 public final class BaseDeployLogger implements DeployLogger {
 

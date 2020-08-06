@@ -39,14 +39,11 @@ public abstract class Derived implements Exportable {
     protected void derive(Search search) {
         setName(search.getName());
         derive(search.getDocument(), search);
-        for (Index index : search.getExplicitIndices()) {
+        for (Index index : search.getExplicitIndices())
             derive(index, search);
-        }
-        for (SDField field : search.allExtraFields() ) {
+        for (SDField field : search.allExtraFields())
             derive(field, search);
-        }
-        search.allImportedFields()
-                .forEach(importedField -> derive(importedField, search));
+        search.allImportedFields().forEach(importedField -> derive(importedField, search));
     }
 
 
@@ -54,10 +51,10 @@ public abstract class Derived implements Exportable {
      * Derives the content of this configuration. This
      * default calls derive(SDField) for each document field
      */
-    protected void derive(SDDocumentType document,Search search) {
+    protected void derive(SDDocumentType document, Search search) {
         for (Field field : document.fieldSet()) {
             SDField sdField = (SDField) field;
-            if (!sdField.isExtraField()) {
+            if ( ! sdField.isExtraField()) {
                 derive(sdField, search);
             }
         }

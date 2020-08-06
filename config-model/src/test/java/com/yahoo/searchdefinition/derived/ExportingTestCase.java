@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests exporting
@@ -158,7 +159,14 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testRankProfileInheritance() throws IOException, ParseException {
-        assertCorrectDeriving("rankprofileinheritance", "child");
+        assertCorrectDeriving("rankprofileinheritance", "child", new TestableDeployLogger());
+    }
+
+    @Test
+    public void testLanguage() throws IOException, ParseException {
+        TestableDeployLogger logger = new TestableDeployLogger();
+        assertCorrectDeriving("language", logger);
+        assertEquals(0, logger.warnings.size());
     }
 
 }

@@ -1,0 +1,19 @@
+schema language {
+    document language {
+        field language type string {
+            indexing: summary | index |set_language
+        }
+        field title type string {
+            indexing: summary | index
+        }
+    }
+    field titlenone type string {
+        indexing: input title | index
+        stemming: none
+    }
+    field titlebest type string {
+        indexing: input title | index
+        stemming: best
+    }
+
+}

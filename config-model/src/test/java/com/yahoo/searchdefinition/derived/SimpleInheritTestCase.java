@@ -45,10 +45,8 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
     private void checkDir(String toDirName, String expectedResultsDirName) throws IOException {
         File[] files = new File(expectedResultsDirName).listFiles();
         for (File file : files) {
-            if (!file.getName().endsWith(".cfg")) {
-                continue;
-            }
-            assertEqualFiles(file.getPath(), toDirName + "/" + file.getName());
+            if ( ! file.getName().endsWith(".cfg")) continue;
+            assertEqualFiles(file.getPath(), toDirName + "/" + file.getName(), false);
         }
     }
 }

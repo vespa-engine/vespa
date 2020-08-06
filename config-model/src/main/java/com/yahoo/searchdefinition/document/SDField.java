@@ -465,9 +465,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     @Override
-    public ScriptExpression getIndexingScript() {
-        return indexingScript;
-    }
+    public ScriptExpression getIndexingScript() { return indexingScript; }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -477,7 +475,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             stemming=Stemming.NONE;
         }
         this.dataType = type;
-        if (!idOverride) {
+        if ( ! idOverride) {
             this.fieldId = calculateIdV7(null);
         }
     }

@@ -27,7 +27,6 @@ public class Processing {
                 IndexFieldNames::new,
                 IntegerIndex2Attribute::new,
                 MakeAliases::new,
-                SetLanguage::new,
                 UriHack::new,
                 LiteralBoost::new,
                 TagType::new,

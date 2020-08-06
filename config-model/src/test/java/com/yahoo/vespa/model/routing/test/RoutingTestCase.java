@@ -159,7 +159,7 @@ public class RoutingTestCase {
             fail("Expected file '" + fileName + "' not found.");
             return;
         }
-        assertSerializedConfigEquals(IOUtils.readFile(files.get(fileName)), configString);
+        assertSerializedConfigEquals(IOUtils.readFile(files.get(fileName)), configString, false);
     }
 
     /**

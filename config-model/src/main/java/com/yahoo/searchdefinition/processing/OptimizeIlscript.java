@@ -29,7 +29,7 @@ public class OptimizeIlscript extends Processor {
 
             field.setIndexingScript((ScriptExpression)new ExpressionOptimizer().convert(script));
             if ( ! field.getIndexingScript().toString().equals(script.toString())) {
-                warn(search, field, "Rewrote ilscript from:\n" + script.toString() +
+                info(search, field, "Rewrote ilscript from:\n" + script.toString() +
                                     "\nto\n" + field.getIndexingScript().toString());
             }
         }

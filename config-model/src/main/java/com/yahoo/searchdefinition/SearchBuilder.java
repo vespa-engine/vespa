@@ -396,23 +396,25 @@ public class SearchBuilder {
         return builder;
     }
 
-    public static SearchBuilder createFromDirectory(String dir) throws IOException, ParseException {
-        return createFromDirectory(dir, new RankProfileRegistry());
-    }
-    public static SearchBuilder createFromDirectory(String dir,
-                                                    RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
-        return createFromDirectory(dir, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir));
+    public static SearchBuilder createFromDirectory(String dir, DeployLogger logger) throws IOException, ParseException {
+        return createFromDirectory(dir, new RankProfileRegistry(), logger);
     }
     public static SearchBuilder createFromDirectory(String dir,
                                                     RankProfileRegistry rankProfileRegistry,
-                                                    QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
+                                                    DeployLogger logger) throws IOException, ParseException {
+        return createFromDirectory(dir, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir), logger);
+    }
+    public static SearchBuilder createFromDirectory(String dir,
+                                                    RankProfileRegistry rankProfileRegistry,
+                                                    QueryProfileRegistry queryProfileRegistry,
+                                                    DeployLogger logger) throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.fromSearchDefinitionDirectory(dir),
                                                   rankProfileRegistry,
                                                   queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
-        builder.build(true, new BaseDeployLogger());
+        builder.build(true, logger);
         return builder;
     }
 

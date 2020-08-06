@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -26,21 +26,25 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";
 
-    private DerivedConfiguration derive(String dirName, String searchDefinitionName, TestProperties properties) throws IOException, ParseException {
+    private DerivedConfiguration derive(String dirName,
+                                        String searchDefinitionName,
+                                        TestProperties properties,
+                                        DeployLogger logger) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
         deleteContent(toDir);
 
-        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/");
-        return derive(dirName, searchDefinitionName, properties, builder);
+        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", logger);
+        return derive(dirName, searchDefinitionName, properties, builder, logger);
     }
 
     private DerivedConfiguration derive(String dirName,
                                         String searchDefinitionName,
                                         TestProperties properties,
-                                        SearchBuilder builder) throws IOException {
+                                        SearchBuilder builder,
+                                        DeployLogger logger) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
-                                                               new BaseDeployLogger(),
+                                                               logger,
                                                                properties,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
@@ -80,15 +84,23 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
      * @throws IOException    if file access failed.
      */
     protected DerivedConfiguration assertCorrectDeriving(String dirName) throws IOException, ParseException {
-        return assertCorrectDeriving(dirName, null);
+        return assertCorrectDeriving(dirName, new TestableDeployLogger());
+    }
+    protected DerivedConfiguration assertCorrectDeriving(String dirName, DeployLogger logger) throws IOException, ParseException {
+        return assertCorrectDeriving(dirName, null, logger);
     }
 
-    protected DerivedConfiguration assertCorrectDeriving(String dirName, String searchDefinitionName) throws IOException, ParseException {
-        return assertCorrectDeriving(dirName, searchDefinitionName, new TestProperties());
+    protected DerivedConfiguration assertCorrectDeriving(String dirName,
+                                                         String searchDefinitionName,
+                                                         DeployLogger logger) throws IOException, ParseException {
+        return assertCorrectDeriving(dirName, searchDefinitionName, new TestProperties(), logger);
     }
 
-    protected DerivedConfiguration assertCorrectDeriving(String dirName, String searchDefinitionName, TestProperties properties) throws IOException, ParseException {
-        DerivedConfiguration derived = derive(dirName, searchDefinitionName, properties);
+    protected DerivedConfiguration assertCorrectDeriving(String dirName,
+                                                         String searchDefinitionName,
+                                                         TestProperties properties,
+                                                         DeployLogger logger) throws IOException, ParseException {
+        DerivedConfiguration derived = derive(dirName, searchDefinitionName, properties, logger);
         assertCorrectConfigFiles(dirName);
         return derived;
     }
@@ -97,9 +109,9 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
      * Asserts config is correctly derived given a builder.
      * This will fail if the builder contains multiple search definitions.
      */
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName) throws IOException {
+    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName, DeployLogger logger) throws IOException {
         builder.build();
-        DerivedConfiguration derived = derive(dirName, null, new TestProperties(), builder);
+        DerivedConfiguration derived = derive(dirName, null, new TestProperties(), builder, logger);
         assertCorrectConfigFiles(dirName);
         return derived;
     }
@@ -121,13 +133,14 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
         if (files == null) return;
         for (File file : files) {
             if ( ! file.getName().endsWith(".cfg")) continue;
-            assertEqualFiles(file.getPath(), tempDir + name + "/" + file.getName());
+            boolean orderMatters = file.getName().equals("ilscripts.cfg");
+            assertEqualFiles(file.getPath(), tempDir + name + "/" + file.getName(), orderMatters);
         }
     }
 
-    static void assertEqualFiles(String correctFileName, String checkFileName) throws IOException {
+    static void assertEqualFiles(String correctFileName, String checkFileName, boolean orderMatters) throws IOException {
         // Set updateOnAssert to true if you want update the files with correct answer.
-        assertConfigFiles(correctFileName, checkFileName, false);
+        assertConfigFiles(correctFileName, checkFileName, orderMatters, false);
     }
 
     void deleteContent(File dir) {
