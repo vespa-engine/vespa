@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -66,6 +67,7 @@ public class SignatureFilterTest {
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+                                                     Optional.empty(),
                                                      ImmutableBiMap.of()));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
@@ -104,6 +106,7 @@ public class SignatureFilterTest {
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+                                                     Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user")));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("user"),
