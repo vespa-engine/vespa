@@ -1,6 +1,7 @@
 {
   "tenant": "my-tenant",
   "type": "CLOUD",
+  "creator": "administrator@tenant",
   "pemDeveloperKeys": [],
   "applications": []
 }

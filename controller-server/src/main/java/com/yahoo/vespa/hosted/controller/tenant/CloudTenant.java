@@ -16,18 +16,26 @@ import java.util.Optional;
  */
 public class CloudTenant extends Tenant {
 
+    private final Optional<Principal> creator;
     private final BiMap<PublicKey, Principal> developerKeys;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, BiMap<PublicKey, Principal> developerKeys) {
+    public CloudTenant(TenantName name, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys) {
         super(name, Optional.empty());
+        this.creator = creator;
         this.developerKeys = developerKeys;
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
-    public static CloudTenant create(TenantName tenantName) {
+    public static CloudTenant create(TenantName tenantName, Principal creator) {
         return new CloudTenant(requireName(tenantName),
+                               Optional.ofNullable(creator),
                                ImmutableBiMap.of());
+    }
+
+    /** The user that created the tenant */
+    public Optional<Principal> creator() {
+        return creator;
     }
 
     /** Returns the set of developer keys and their corresponding developers for this tenant. */

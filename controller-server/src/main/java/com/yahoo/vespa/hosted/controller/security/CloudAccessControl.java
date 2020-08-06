@@ -50,7 +50,7 @@ public class CloudAccessControl implements AccessControl {
         requireTenantCreationAllowed((Auth0Credentials) credentials);
 
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
-        CloudTenant tenant = CloudTenant.create(spec.tenant());
+        CloudTenant tenant = CloudTenant.create(spec.tenant(), credentials.user());
 
         for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);

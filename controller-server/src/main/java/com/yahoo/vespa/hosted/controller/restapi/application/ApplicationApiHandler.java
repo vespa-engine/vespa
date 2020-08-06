@@ -1635,6 +1635,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case cloud: {
                 CloudTenant cloudTenant = (CloudTenant) tenant;
 
+                cloudTenant.creator().ifPresent(creator -> object.setString("creator", creator.getName()));
                 Cursor pemDeveloperKeysArray = object.setArray("pemDeveloperKeys");
                 cloudTenant.developerKeys().forEach((key, user) -> {
                     Cursor keyObject = pemDeveloperKeysArray.addObject();

@@ -46,6 +46,8 @@ public class TenantSerializer {
     private static final String athenzDomainField = "athenzDomain";
     private static final String propertyField = "property";
     private static final String propertyIdField = "propertyId";
+    private static final String creatorField = "creator";
+    private static final String createdAtField = "createdAt";
     private static final String contactField = "contact";
     private static final String contactUrlField = "contactUrl";
     private static final String propertyUrlField = "propertyUrl";
@@ -88,6 +90,7 @@ public class TenantSerializer {
         // field we continue to write the default value and stop reading it.
         // TODO(ogronnesby, 2020-08-05): Remove when a version where we do not read the field has propagated.
         var legacyBillingInfo = new BillingInfo("customer", "Vespa");
+        tenant.creator().ifPresent(creator -> root.setString(creatorField, creator.getName()));
         developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
         toSlime(legacyBillingInfo, root.setObject(billingInfoField));
     }
@@ -128,8 +131,13 @@ public class TenantSerializer {
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+
+        Optional<Principal> creator = tenantObject.field(creatorField).valid() ?
+                Optional.of(new SimplePrincipal(tenantObject.field(creatorField).asString())) :
+                Optional.empty();
+
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        return new CloudTenant(name, developerKeys);
+        return new CloudTenant(name, creator, developerKeys);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
