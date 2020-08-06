@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface BillingController {
 
@@ -45,5 +47,7 @@ public interface BillingController {
     InstrumentList listInstruments(TenantName tenant, String userId);
 
     List<Invoice> getInvoices(TenantName tenant);
+
+    void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
 
 }
