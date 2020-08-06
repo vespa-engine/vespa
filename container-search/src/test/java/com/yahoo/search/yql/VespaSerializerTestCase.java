@@ -252,10 +252,11 @@ public class VespaSerializerTestCase {
         AndSegmentItem andSegment = new AndSegmentItem("abc", true, false);
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));
         andSegment.addItem(new WordItem("b", "indexNamePlaceholder"));
+        andSegment.setIndexName("someIndexName");
         andSegment.setLabel("labeled");
         andSegment.lock();
         String q = VespaSerializer.serialize(andSegment);
-        assertEquals("indexNamePlaceholder contains ([{\"origin\": {\"original\": \"abc\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"a\", \"b\"))", q);
+        assertEquals("someIndexName contains ([{\"origin\": {\"original\": \"abc\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"a\", \"b\"))", q);
     }
 
     @Test

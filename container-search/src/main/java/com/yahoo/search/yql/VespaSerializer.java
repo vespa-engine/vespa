@@ -1393,8 +1393,7 @@ public class VespaSerializer {
     }
 
     private static String leafAnnotations(TaggableItem item) {
-        // TODO there is no usable API for the general annotations map in the
-        // Item instances
+        // TODO there is no usable API for the general annotations map in the Item instances
         StringBuilder annotation = new StringBuilder();
         int initLen = annotation.length();
         {

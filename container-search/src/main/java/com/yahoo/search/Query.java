@@ -818,9 +818,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             return "Query currently a placeholder, NullItem encountered.";
         } catch (IllegalArgumentException e) {
             return "Invalid query: " + Exceptions.toMessageString(e);
-        } catch (RuntimeException e) {
+        }
+        /*
+        catch (RuntimeException e) {
             return "Unexpected error parsing or serializing query: " + Exceptions.toMessageString(e);
         }
+         */
     }
 
     private void commaSeparated(StringBuilder yql, Set<String> fields) {

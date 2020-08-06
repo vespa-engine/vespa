@@ -313,7 +313,7 @@
     "fields": []
   },
   "com.yahoo.prelude.query.AndSegmentItem": {
-    "superClass": "com.yahoo.prelude.query.SegmentItem",
+    "superClass": "com.yahoo.prelude.query.IndexedSegmentItem",
     "interfaces": [
       "com.yahoo.prelude.query.BlockItem"
     ],
@@ -327,6 +327,9 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getIndexName()",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void setIndexName(java.lang.String)",
+      "public java.lang.String getIndexedString()",
       "public void setWeight(int)"
     ],
     "fields": []

@@ -9,8 +9,6 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.regex.PatternSyntaxException;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.yahoo.prelude.query.Item.ItemType;
@@ -18,20 +16,12 @@ import com.yahoo.prelude.query.Item.ItemType;
 /**
  * Check basic contracts common to "many" item implementations.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ItemsCommonStuffTestCase {
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-    }
-
     @Test
-    public final void testLoops() {
+    public void testLoops() {
         AndSegmentItem as = new AndSegmentItem("farmyards", false, false);
         boolean caught = false;
         try {
@@ -52,33 +42,24 @@ public class ItemsCommonStuffTestCase {
         a.addItem(as);
         try {
             as.addItem(a);
-        } catch (QueryException e) {
-            caught = true;
-        }
-        assertTrue(caught);
-        caught = false;
-        a.removeItem(as);
-        as.addItem(a);
-        try {
-            a.addItem(as);
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught = true;
         }
         assertTrue(caught);
     }
 
     @Test
-    public final void testIndexName() {
+    public void testIndexName() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         a.addItem(w);
-        final String expected = "mobil";
+        String expected = "mobil";
         a.setIndexName(expected);
         assertEquals(expected, w.getIndexName());
     }
 
     @Test
-    public final void testBoundaries() {
+    public void testBoundaries() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         boolean caught = false;
@@ -112,7 +93,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testRemoving() {
+    public void testRemoving() {
         AndItem other = new AndItem();
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
@@ -127,7 +108,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testGeneralMutability() {
+    public void testGeneralMutability() {
         AndItem a = new AndItem();
         assertFalse(a.isLocked());
         a.lock();
@@ -135,7 +116,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testCounting() {
+    public void testCounting() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         WordItem v = new WordItem("bamse");
@@ -149,7 +130,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testIteratorJuggling() {
+    public void testIteratorJuggling() {
         AndItem a = new AndItem();
         WordItem w0 = new WordItem("nalle");
         WordItem w1 = new WordItem("bamse");
@@ -178,9 +159,9 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testIdStuff() {
+    public void testIdStuff() {
         Item i;
-        final String expected = "i";
+        String expected = "i";
         i = new ExactStringItem(expected);
         assertEquals(ItemType.EXACT, i.getItemType());
         assertEquals("EXACTSTRING", i.getName());
@@ -206,7 +187,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testEquivBuilding() {
+    public void testEquivBuilding() {
         WordItem w = new WordItem("nalle");
         WordItem v = new WordItem("bamse");
         w.setConnectivity(v, 1.0);
@@ -220,8 +201,8 @@ public class ItemsCommonStuffTestCase {
         WordItem w = new WordItem("nalle");
         WordItem v = new WordItem("bamse");
         w.setConnectivity(v, 1.0);
-        final String expected = "puppy";
-        final String expected2 = "kvalp";
+        String expected = "puppy";
+        String expected2 = "kvalp";
         EquivItem e = new EquivItem(w, Arrays.asList(new String[] { expected, expected2 }));
         assertEquals(1.0, e.getConnectivity(), 1e-9);
         assertSame(v, e.getConnectedItem());
@@ -230,12 +211,12 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testSegment() {
+    public void testSegment() {
         AndSegmentItem as = new AndSegmentItem("farmyards", false, false);
         assertFalse(as.isLocked());
-        final WordItem firstItem = new WordItem("nalle");
+        WordItem firstItem = new WordItem("nalle");
         as.addItem(firstItem);
-        final WordItem item = new WordItem("bamse");
+        WordItem item = new WordItem("bamse");
         as.addItem(1, item);
         assertTrue(as.removeItem(item));
         assertFalse(as.isFromUser());
@@ -266,7 +247,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testMarkersVsWords() {
+    public void testMarkersVsWords() {
         WordItem mw0 = MarkerWordItem.createEndOfHost();
         WordItem mw1 = MarkerWordItem.createStartOfHost();
         WordItem w0 = new WordItem("$");
@@ -279,11 +260,11 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testNumberBasics() {
-        final String expected = "12";
+    public void testNumberBasics() {
+        String expected = "12";
         IntItem i = new IntItem(expected, "num");
         assertEquals(expected, i.stringValue());
-        final String expected2 = "34";
+        String expected2 = "34";
         i.setNumber(expected2);
         assertEquals(expected2, i.stringValue());
         String expected3 = "56";
@@ -297,7 +278,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testNullItemFailsProperly() {
+    public void testNullItemFailsProperly() {
         NullItem n = new NullItem();
         n.setIndexName("nalle");
         boolean caught = false;
@@ -324,7 +305,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testNearisNotAnd() {
+    public void testNearisNotAnd() {
         AndItem a = new AndItem();
         NearItem n = new NearItem();
         n.setDistance(2);
@@ -343,7 +324,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testPhraseSegmentBasics() {
+    public void testPhraseSegmentBasics() {
         AndSegmentItem a = new AndSegmentItem("gnurk", "gurk", false, false);
         fill(a);
         a.lock();
@@ -365,7 +346,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testPhraseConnectivity() {
+    public void testPhraseConnectivity() {
         WordItem w = new WordItem("a");
         PhraseItem p = new PhraseItem();
         fill(p);
@@ -375,7 +356,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testBaseClassPhraseSegments() {
+    public void testBaseClassPhraseSegments() {
         PhraseSegmentItem p = new PhraseSegmentItem("g", false, true);
         fill(p);
         assertEquals(4, p.encode(ByteBuffer.allocate(5000)));
@@ -386,7 +367,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testTermTypeBasic() {
+    public void testTermTypeBasic() {
         assertFalse(TermType.AND.equals(TermType.DEFAULT));
         assertFalse(TermType.AND.equals(Integer.valueOf(10)));
         assertTrue(TermType.AND.equals(TermType.AND));
@@ -397,7 +378,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testRegexp() {
+    public void testRegexp() {
         RegExpItem empty = new RegExpItem("a", true, "");
         assertTrue(empty.isFromQuery());
         assertTrue(empty.isStemmed());
@@ -416,5 +397,6 @@ public class ItemsCommonStuffTestCase {
         }
         assertEquals("Dangling meta character '*' near index 0\n" + "*\n" + "^", last.getMessage());
     }
+
 }
 

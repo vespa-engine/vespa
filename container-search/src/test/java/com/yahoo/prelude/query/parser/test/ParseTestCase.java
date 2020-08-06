@@ -1665,6 +1665,7 @@ public class ParseTestCase {
         AndSegmentItem segment = (AndSegmentItem) item;
 
         assertEquals(3, segment.getItemCount());
+        System.out.println("segment is " + segment + ", indexname of first item: " + ((WordItem) segment.getItem(0)).getIndexName());
         assertEquals("name:first", segment.getItem(0).toString());
         assertEquals("name:second", segment.getItem(1).toString());
         assertEquals("name:third", segment.getItem(2).toString());

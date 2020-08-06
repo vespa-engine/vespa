@@ -9,7 +9,7 @@ import java.util.Iterator;
  *
  * @author Steinar Knutsen
  */
-public class AndSegmentItem extends SegmentItem implements BlockItem {
+public class AndSegmentItem extends IndexedSegmentItem implements BlockItem {
 
     public AndSegmentItem(String rawWord, boolean isFromQuery, boolean stemmed) {
         super(rawWord, rawWord, isFromQuery, stemmed, null);
@@ -50,7 +50,50 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         }
     }
 
+    /**
+     * Adds a word subitem. The word will have its index name set to the index name of this phrase.
+     *
+     * @throws IllegalArgumentException if the given item is not a WordItem
+     */
+    @Override
+    public void addItem(Item item) {
+        if (item instanceof WordItem) {
+            addWordItem((WordItem) item);
+        } else {
+            throw new IllegalArgumentException("Can not add " + item + " to a segment phrase");
+        }
+    }
+
+    private void addWordItem(WordItem word) {
+        word.setIndexName(this.getIndexName());
+        super.addItem(word);
+    }
+
+    @Override
+    public void setIndexName(String index) {
+        super.setIndexName(index);
+        for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
+            WordItem word = (WordItem) i.next();
+            word.setIndexName(index);
+        }
+    }
+
     // TODO: Is it necessary to override equals?
+
+    @Override
+    public String getIndexedString() {
+        StringBuilder b = new StringBuilder();
+
+        for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
+            IndexedItem indexedItem = (IndexedItem) i.next();
+
+            b.append(indexedItem.getIndexedString());
+            if (i.hasNext()) {
+                b.append(' ');
+            }
+        }
+        return b.toString();
+    }
 
     public void setWeight(int w) {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {

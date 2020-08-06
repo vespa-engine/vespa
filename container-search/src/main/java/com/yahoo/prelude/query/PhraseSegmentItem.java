@@ -63,6 +63,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         return "SPHRASE";
     }
 
+    @Override
     public void setIndexName(String index) {
         super.setIndexName(index);
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
@@ -81,11 +82,9 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     /**
-     * Adds subitem. The word will have its index name set to the index name
-     * of this phrase. If the item is a word, it will simply be added,
-     * if the item is a phrase, each of the words of the phrase will be added.
+     * Adds a word subitem. The word will have its index name set to the index name of this phrase.
      *
-     * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
+     * @throws IllegalArgumentException if the given item is not a WordItem
      */
     @Override
     public void addItem(Item item) {
@@ -180,17 +179,17 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
 
     @Override
     public String getIndexedString() {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder b = new StringBuilder();
 
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             IndexedItem indexedItem = (IndexedItem) i.next();
 
-            buf.append(indexedItem.getIndexedString());
+            b.append(indexedItem.getIndexedString());
             if (i.hasNext()) {
-                buf.append(' ');
+                b.append(' ');
             }
         }
-        return buf.toString();
+        return b.toString();
     }
 
     public boolean isExplicit() {
