@@ -1004,40 +1004,52 @@ public class YqlParser implements Parser {
     private String fetchConditionIndex(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
-        if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
+        if (isNumber(lhs))
             return getIndex(rhs);
-        }
-        if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
+        else if (isNumber(rhs))
             return getIndex(lhs);
-        }
-        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD/PROPREF, got " + lhs.getOperator() +
-                                           " and " + rhs.getOperator() + ".");
+        else
+            throw new IllegalArgumentException("Expected LITERAL/VARREF and READ_FIELD/PROPREF, got " + lhs.getOperator() +
+                                               " and " + rhs.getOperator() + ".");
     }
 
-    private static String getNumberAsString(OperatorNode<ExpressionOperator> ast) {
+    private boolean isNumber(OperatorNode<ExpressionOperator> ast) {
+        return ast.getOperator() == ExpressionOperator.NEGATE ||
+               ast.getOperator() == ExpressionOperator.LITERAL || ast.getOperator() == ExpressionOperator.VARREF;
+    }
+
+    private String getNumberAsString(OperatorNode<ExpressionOperator> ast) {
         String negative = "";
-        OperatorNode<ExpressionOperator> currentAst = ast;
-        if (currentAst.getOperator() == ExpressionOperator.NEGATE) {
+        if (ast.getOperator() == ExpressionOperator.NEGATE) {
             negative = "-";
-            currentAst = currentAst.getArgument(0);
+            ast = ast.getArgument(0);
         }
-        assertHasOperator(currentAst, ExpressionOperator.LITERAL);
-        return negative + currentAst.getArgument(0).toString();
+        switch (ast.getOperator()) {
+            case VARREF:
+                Preconditions.checkState(userQuery != null,
+                                         "properties must be available when trying to fetch user input");
+                return negative + userQuery.properties().getString(ast.getArgument(0, String.class));
+            case LITERAL:
+                return negative + ast.getArgument(0).toString();
+            default:
+                throw new IllegalArgumentException("Expected VARREF or LITERAL, got " + ast.getOperator());
+        }
     }
 
-    private static String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
+    private String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
-        if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
+        if (isNumber(lhs)) {
             assertFieldName(rhs);
             return getNumberAsString(lhs);
         }
-        if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
+        else if (isNumber(rhs)) {
             assertFieldName(lhs);
             return getNumberAsString(rhs);
         }
-        throw new IllegalArgumentException("Expected LITERAL/NEGATE and READ_FIELD/PROPREF, got "
-                        + lhs.getOperator() + " and " + rhs.getOperator() + ".");
+        else
+            throw new IllegalArgumentException("Expected LITERAL/NEGATE and READ_FIELD/PROPREF, got " +
+                                               lhs.getOperator() + " and " + rhs.getOperator() + ".");
     }
 
     private static boolean isIndexOnLeftHandSide(OperatorNode<ExpressionOperator> ast) {
