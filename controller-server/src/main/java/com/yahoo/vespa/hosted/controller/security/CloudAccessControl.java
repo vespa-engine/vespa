@@ -10,7 +10,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
@@ -22,9 +21,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import javax.ws.rs.ForbiddenException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.*;
 
@@ -101,17 +99,9 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
-        if(!(allowedByPrivilegedRole((Auth0Credentials) credentials) || noOutstandingCharges(tenant)))
-            throw new ForbiddenException("Please contact the Vespa team for assistance in deleting tenants with outstanding charges");
-
+        deleteBillingInfo(tenant, credentials);
         for (TenantRole role : Roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
-    }
-
-    private boolean noOutstandingCharges(TenantName tenant) {
-        return billingController.createUncommittedInvoice(tenant, LocalDate.now()).sum().compareTo(BigDecimal.ZERO) == 0 &&
-                billingController.getUnusedLineItems(tenant).size() == 0 &&
-                billingController.getPlan(tenant).value().equals("trial");
     }
 
     @Override
@@ -124,6 +114,15 @@ public class CloudAccessControl implements AccessControl {
     public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
+    }
+
+    private void deleteBillingInfo(TenantName tenant, Credentials credentials) {
+        var users = Roles.tenantRoles(tenant)
+                .stream()
+                .flatMap(role -> userManagement.listUsers(role).stream())
+                .collect(Collectors.toSet());
+        var isPrivileged = allowedByPrivilegedRole((Auth0Credentials) credentials);
+        billingController.deleteBillingInfo(tenant, users, isPrivileged);
     }
 
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author olaa
@@ -124,6 +126,9 @@ public class MockBillingController implements BillingController {
     public List<Invoice> getInvoices(TenantName tenant) {
         return committedInvoices.getOrDefault(tenant, List.of());
     }
+
+    @Override
+    public void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged) {}
 
     private PaymentInstrument createInstrument(String id) {
         return new PaymentInstrument(id,
