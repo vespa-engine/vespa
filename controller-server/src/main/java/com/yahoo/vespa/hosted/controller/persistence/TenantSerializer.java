@@ -131,11 +131,7 @@ public class TenantSerializer {
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-
-        Optional<Principal> creator = tenantObject.field(creatorField).valid() ?
-                Optional.of(new SimplePrincipal(tenantObject.field(creatorField).asString())) :
-                Optional.empty();
-
+        Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
         return new CloudTenant(name, creator, developerKeys);
     }
