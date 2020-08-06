@@ -35,10 +35,10 @@ GetResult::GetResult(Document::UP doc, Timestamp timestamp)
 {
 }
 
-GetResult::GetResult(Timestamp removed_at_ts)
+GetResult::GetResult(Timestamp removed_at_ts, bool is_tombstone)
     : _timestamp(removed_at_ts),
       _doc(),
-      _is_tombstone(true)
+      _is_tombstone(is_tombstone)
 {
 }
 
