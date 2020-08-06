@@ -16,13 +16,14 @@ namespace proton {
 class DocumentRetriever : public DocumentRetrieverBase {
 public:
     typedef std::vector<std::pair<const document::Field *, vespalib::string>> PositionFields;
-    using AttributeFields = std::vector<std::string>;
+    using AttributeFields = std::vector<const document::Field *>;
     DocumentRetriever(const DocTypeName &docTypeName,
                       const document::DocumentTypeRepo &repo,
                       const search::index::Schema &schema,
                       const IDocumentMetaStoreContext &meta_store,
                       const search::IAttributeManager &attr_manager,
                       const search::IDocumentStore &doc_store);
+    ~DocumentRetriever() override;
 
     document::Document::UP getDocument(search::DocumentIdT lid) const override;
     void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;

@@ -21,11 +21,15 @@ MinimalDocumentRetriever::MinimalDocumentRetriever(
       _doc_store(doc_store) {
 }
 
-Document::UP MinimalDocumentRetriever::getDocument(DocumentIdT lid) const {
+MinimalDocumentRetriever::~MinimalDocumentRetriever() = default;
+
+Document::UP
+MinimalDocumentRetriever::getDocument(DocumentIdT lid) const {
     return _doc_store.read(lid, *_repo);
 }
 
-void MinimalDocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const {
+void
+MinimalDocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const {
     _doc_store.visit(lids, getDocumentTypeRepo(), visitor);
 }
 

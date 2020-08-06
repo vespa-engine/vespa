@@ -34,10 +34,10 @@ private:
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
                          bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &doc,
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc,
                          bool immediateCommit, OnOperationDoneType onWriteDone);
     void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
                          bool immediateCommit, OnOperationDoneType onWriteDone);
@@ -55,7 +55,7 @@ private:
     void performSync();
     void heartBeatIndexedFields(SerialNum serialNum) override;
 
-    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc,
                           bool immediateCommit, OnOperationDoneType onWriteDone) override;
 
     void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc,

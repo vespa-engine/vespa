@@ -35,7 +35,7 @@ template <typename T>
 void
 setValue(DocumentIdT lid,
          Document &doc,
-         const vespalib::string &fieldName,
+         const document::Field & field,
          const IAttributeVector &attr)
 {
     switch (attr.getCollectionType()) {
@@ -44,9 +44,9 @@ setValue(DocumentIdT lid,
         if ( ! attr.isUndefined(lid) ) {
             AttributeContent<T> content;
             content.fill(attr, lid);
-            doc.set(fieldName, content[0]);
+            doc.set(field, content[0]);
         } else {
-            doc.remove(fieldName);
+            doc.remove(field);
         }
         break;
     }
@@ -54,35 +54,33 @@ setValue(DocumentIdT lid,
     {
         AttributeContent<T> content;
         content.fill(attr, lid);
-        Field f = doc.getField(fieldName);
         if (content.size() == 0) {
-            doc.remove(f);
+            doc.remove(field);
             break;
         }
-        FieldValue::UP fv = f.getDataType().createFieldValue();
+        FieldValue::UP fv = field.getDataType().createFieldValue();
         if (fv.get() && fv->getClass().id() != ArrayFieldValue::classId) {
-            throw IllegalStateException("Field " + fieldName + " does not contain an array.", VESPA_STRLOC);
+            throw IllegalStateException("Field " + field.getName() + " does not contain an array.", VESPA_STRLOC);
         }
         ArrayFieldValue &array = static_cast<ArrayFieldValue &>(*fv.get());
         array.resize(content.size());
         for (uint32_t j(0); j < content.size(); ++j) {
             array[j] = content[j];
         }
-        doc.setValue(f, *fv);
+        doc.setValue(field, *fv);
         break;
     }
     case CollectionType::WSET:
     {
         AttributeContent<WeightedType<T> > content;
         content.fill(attr, lid);
-        Field f = doc.getField(fieldName);
         if (content.size() == 0) {
-            doc.remove(f);
+            doc.remove(field);
             break;
         }
-        FieldValue::UP fv = f.getDataType().createFieldValue();
+        FieldValue::UP fv = field.getDataType().createFieldValue();
         if (fv.get() && fv->getClass().id() != WeightedSetFieldValue::classId) {
-            throw IllegalStateException("Field " + fieldName + " does not contain a wset.", VESPA_STRLOC);
+            throw IllegalStateException("Field " + field.getName() + " does not contain a wset.", VESPA_STRLOC);
         }
         WeightedSetFieldValue & wset(static_cast<WeightedSetFieldValue &>(*fv.get()));
         wset.resize(content.size());
@@ -91,7 +89,7 @@ setValue(DocumentIdT lid,
             *it->first = content[j].getValue();
             *it->second = content[j].getWeight();
         }
-        doc.setValue(f, *fv);
+        doc.setValue(field, *fv);
         break;
     }
     default:
@@ -102,17 +100,17 @@ setValue(DocumentIdT lid,
 
 void
 setTensorValue(DocumentIdT lid, Document &doc,
-               const vespalib::string &fieldName,
+               const document::Field &field,
                const IAttributeVector &attr)
 {
     const auto &tensorAttribute = static_cast<const TensorAttribute &>(attr);
     auto tensor = tensorAttribute.getTensor(lid);
     if (tensor) {
-        auto tensorField = doc.getField(fieldName).createValue(); 
+        auto tensorField = field.createValue();
         dynamic_cast<TensorFieldValue &>(*tensorField) = std::move(tensor);
-        doc.setValue(fieldName, *tensorField);
+        doc.setValue(field, *tensorField);
     } else {
-        doc.remove(fieldName);
+        doc.remove(field);
     }
 }
 
@@ -121,7 +119,7 @@ setTensorValue(DocumentIdT lid, Document &doc,
 void
 DocumentFieldRetriever::populate(DocumentIdT lid,
                                  Document &doc,
-                                 const vespalib::string &fieldName,
+                                 const document::Field & field,
                                  const IAttributeVector &attr,
                                  bool isIndexField)
 {
@@ -133,11 +131,11 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
     case BasicType::INT16:
     case BasicType::INT32:
     case BasicType::INT64:
-        setValue<IAttributeVector::largeint_t>(lid, doc, fieldName, attr);
+        setValue<IAttributeVector::largeint_t>(lid, doc, field, attr);
         break;
     case BasicType::FLOAT:
     case BasicType::DOUBLE:
-        setValue<double>(lid, doc, fieldName, attr);
+        setValue<double>(lid, doc, field, attr);
         break;
     case BasicType::STRING:
         // If it is a stringfield we also need to check if
@@ -146,13 +144,13 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
         if (isIndexField) {
             break;
         }
-        setValue<const char *>(lid, doc, fieldName, attr);
+        setValue<const char *>(lid, doc, field, attr);
         break;
     case BasicType::PREDICATE:
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
     case BasicType::TENSOR:
-        setTensorValue(lid, doc, fieldName, attr);
+        setTensorValue(lid, doc, field, attr);
         break;
     case BasicType::REFERENCE:
         // Reference attribute doesn't store full document id.

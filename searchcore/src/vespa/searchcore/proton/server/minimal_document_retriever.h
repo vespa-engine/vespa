@@ -25,6 +25,7 @@ public:
                              const IDocumentMetaStoreContext &meta_store,
                              const search::IDocumentStore &doc_store,
                              bool hasFields);
+    ~MinimalDocumentRetriever() override;
 
     document::Document::UP getDocument(search::DocumentIdT lid) const override;
     void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;
