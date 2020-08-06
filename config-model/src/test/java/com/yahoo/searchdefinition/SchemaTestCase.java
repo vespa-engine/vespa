@@ -16,9 +16,12 @@ public abstract class SchemaTestCase {
         assertSerializedConfigFileEquals(filename, cfg);
     }
 
-    protected static void assertConfigFiles(String expectedFile, String cfgFile, boolean updateOnAssert) throws IOException {
+    protected static void assertConfigFiles(String expectedFile,
+                                            String cfgFile,
+                                            boolean orderMatters,
+                                            boolean updateOnAssert) throws IOException {
         try {
-            assertSerializedConfigEquals(readAndCensorIndexes(expectedFile), readAndCensorIndexes(cfgFile));
+            assertSerializedConfigEquals(readAndCensorIndexes(expectedFile), readAndCensorIndexes(cfgFile), orderMatters);
         } catch (AssertionError e) {
             if (updateOnAssert) {
                 BufferedWriter writer = IOUtils.createWriter(expectedFile, false);

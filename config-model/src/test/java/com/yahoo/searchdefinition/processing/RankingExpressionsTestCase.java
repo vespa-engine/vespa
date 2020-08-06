@@ -9,6 +9,7 @@ import com.yahoo.searchdefinition.*;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
@@ -25,7 +26,8 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     public void testFunctions() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction",
-                                                          rankProfileRegistry).getSearch();
+                                                          rankProfileRegistry,
+                                                          new TestableDeployLogger()).getSearch();
         RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
         assertEquals(2, functions.get("titlematch$").function().arguments().size());
@@ -63,7 +65,9 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile", registry).getSearch();
+        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
+                                                          registry,
+                                                          new TestableDeployLogger()).getSearch();
         new DerivedConfiguration(search, new BaseDeployLogger(), new TestProperties(), registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 
