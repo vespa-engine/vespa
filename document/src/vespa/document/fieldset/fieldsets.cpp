@@ -28,6 +28,8 @@ FieldCollection::FieldCollection(const DocumentType& type)
 {
 }
 
+FieldCollection::FieldCollection(const FieldCollection&) = default;
+
 FieldCollection::~FieldCollection() = default;
 
 bool
@@ -65,10 +67,13 @@ FieldCollection::contains(const FieldSet& fields) const
     return false;
 }
 
-void
-FieldCollection::insert(const Field& f)
-{
+FieldCollection &
+FieldCollection::insertField(const Field& f) {
     _set.insert(&f);
+    return *this;
+}
+void
+FieldCollection::complete() {
     _hash = computeHash(_set);
 }
 

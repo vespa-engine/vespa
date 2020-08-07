@@ -42,6 +42,8 @@ public:
     typedef std::unique_ptr<FieldCollection> UP;
 
     FieldCollection(const DocumentType& docType);
+    FieldCollection(const FieldCollection &);
+    FieldCollection(FieldCollection&&) = default;
     ~FieldCollection() override;
 
     bool contains(const FieldSet& fields) const override;
@@ -57,7 +59,11 @@ public:
     /**
      * Inserts the given field into the collection.
      */
-    void insert(const Field& f);
+    FieldCollection & insertField(const Field& f);
+    /**
+     * Must be called after all fields are inserted
+     */
+    void complete();
 
     /**
      * Returns all the fields contained in this collection.

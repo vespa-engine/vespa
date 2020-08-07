@@ -19,14 +19,15 @@ private:
     document::FieldCollection _fields;
     
 public:
-    FieldVisitor(const document::DocumentType & docType)
+    explicit FieldVisitor(const document::DocumentType & docType)
         : _docType(docType),
           _fields(_docType)
     {}
-    ~FieldVisitor();
+    ~FieldVisitor() override;
 
-    const document::FieldSet & getFieldSet() {
-        return _fields;
+    document::FieldCollection getFieldSet() {
+        _fields.complete();
+        return std::move(_fields);
     }
 
     void visitFieldValueNode(const document::select::FieldValueNode &) override;

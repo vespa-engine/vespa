@@ -50,13 +50,13 @@ parseFieldCollection(const DocumentTypeRepo& repo,
         const DocumentType::FieldSet * fs = type.getFieldSet(token);
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
-                collection->insert(type.getField(fieldName));
+                collection->insertField(type.getField(fieldName));
             }
         } else {
-            collection->insert(type.getField(token));
+            collection->insertField(type.getField(token));
         }
     }
-
+    collection->complete();
     return collection;
 }
 

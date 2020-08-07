@@ -749,7 +749,7 @@ TEST("require that document selection and timestamp range works together") {
 
 TEST("require that fieldset limits fields returned") {
     document::FieldCollection limited(getDocType());
-    limited.insert(getDocType().getField("header"));
+    limited.insertField(getDocType().getField("header")).complete();
     DocumentIterator itr(bucket(5), limited, selectAll(), newestV(), -1, false);
     itr.add(doc_with_fields("id:ns:foo::xxx1", Timestamp(1),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
