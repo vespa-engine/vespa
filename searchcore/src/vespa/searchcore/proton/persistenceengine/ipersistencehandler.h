@@ -30,10 +30,7 @@ public:
     IPersistenceHandler(const IPersistenceHandler &) = delete;
     IPersistenceHandler & operator = (const IPersistenceHandler &) = delete;
 
-    /**
-     * Virtual destructor to allow inheritance.
-     */
-    virtual ~IPersistenceHandler() { }
+    virtual ~IPersistenceHandler() = default;
 
     /**
      * Called before all other functions so that the persistence handler
@@ -45,7 +42,7 @@ public:
                            storage::spi::Timestamp timestamp, DocumentSP doc) = 0;
 
     virtual void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
-                              storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) = 0;
+                              storage::spi::Timestamp timestamp, DocumentUpdateSP upd) = 0;
 
     virtual void handleRemove(FeedToken token, const storage::spi::Bucket &bucket,
                               storage::spi::Timestamp timestamp, const document::DocumentId &id) = 0;

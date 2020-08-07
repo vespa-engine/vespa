@@ -45,10 +45,10 @@ private:
 template<class FunctionType>
 class LambdaResultTask : public ResultTask {
 public:
-    LambdaResultTask(FunctionType && func)
+    explicit LambdaResultTask(FunctionType && func)
         : _func(std::move(func))
     {}
-    ~LambdaResultTask() override {}
+    ~LambdaResultTask() override = default;
     void run() override {
         handle(*_result);
         _func(std::move(_result));
@@ -215,7 +215,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
     } else {
         // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
         auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-            const spi::RemoveResult & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
+            auto & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
             if (tracker->checkForError(response)) {
                 tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
             }
@@ -253,7 +253,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trac
     } else {
         // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
         auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-            const spi::UpdateResult & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
+            auto & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
             if (tracker->checkForError(response)) {
                 auto reply = std::make_shared<api::UpdateReply>(cmd);
                 reply->setOldTimestamp(response.getExistingTimestamp());
@@ -569,30 +569,30 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
     _env._fileStorHandler.remapQueueAfterSplit(source, targets[0].second, targets[1].second);
     bool ownershipChanged(!_bucketOwnershipNotifier->distributorOwns(cmd.getSourceIndex(), cmd.getBucket()));
     // Now release all the bucketdb locks.
-    for (uint32_t i = 0; i < targets.size(); i++) {
+    for (auto & target : targets) {
         if (ownershipChanged) {
-            notifyGuard.notifyAlways(targets[i].second.bucket, targets[i].first->getBucketInfo());
+            notifyGuard.notifyAlways(target.second.bucket, target.first->getBucketInfo());
         }
         // The entries vector has the source bucket in element zero, so indexing
         // that with i+1
-        if (targets[i].second.foundInQueue || targets[i].first->getMetaCount() > 0) {
-            if (targets[i].first->getMetaCount() == 0) {
+        if (target.second.foundInQueue || target.first->getMetaCount() > 0) {
+            if (target.first->getMetaCount() == 0) {
                 // Fake that the bucket has content so it is not deleted.
-                targets[i].first->info.setMetaCount(1);
+                target.first->info.setMetaCount(1);
                 // Must make sure target bucket exists when we have pending ops
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
-                spi::Bucket createTarget(spi::Bucket(targets[i].second.bucket,
-                                                     spi::PartitionId(targets[i].second.diskIndex)));
+                spi::Bucket createTarget(spi::Bucket(target.second.bucket,
+                                                     spi::PartitionId(target.second.diskIndex)));
                 LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
                 _spi.createBucket(createTarget, tracker->context());
             }
-            splitReply.getSplitInfo().emplace_back(targets[i].second.bucket.getBucketId(),
-                                                   targets[i].first->getBucketInfo());
-            targets[i].first.write();
+            splitReply.getSplitInfo().emplace_back(target.second.bucket.getBucketId(),
+                                                   target.first->getBucketInfo());
+            target.first.write();
         } else {
-            targets[i].first.remove();
+            target.first.remove();
         }
     }
     if (sourceEntry.exist()) {
