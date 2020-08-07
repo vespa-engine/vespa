@@ -28,7 +28,7 @@ public:
                    storage::spi::Timestamp timestamp, DocumentSP doc) override;
 
     void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
-                      storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) override;
+                      storage::spi::Timestamp timestamp, DocumentUpdateSP upd) override;
 
     void handleRemove(FeedToken token, const storage::spi::Bucket &bucket,
                       storage::spi::Timestamp timestamp,

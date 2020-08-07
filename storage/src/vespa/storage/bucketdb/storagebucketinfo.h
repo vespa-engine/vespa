@@ -23,7 +23,7 @@ struct StorageBucketInfo {
         info.setTotalDocumentSize(0);
     }
     bool verifyLegal() const { return (disk != 0xff); }
-    uint32_t getMetaCount() { return info.getMetaCount(); }
+    uint32_t getMetaCount() const { return info.getMetaCount(); }
     void setChecksum(uint32_t crc) { info.setChecksum(crc); }
     bool operator == (const StorageBucketInfo & b) const;
     bool operator != (const StorageBucketInfo & b) const;

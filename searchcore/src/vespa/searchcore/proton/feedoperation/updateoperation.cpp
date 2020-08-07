@@ -31,17 +31,19 @@ UpdateOperation::UpdateOperation(Type type)
 
 
 UpdateOperation::UpdateOperation(Type type, const BucketId &bucketId,
-                                 const Timestamp &timestamp, const DocumentUpdate::SP &upd)
+                                 const Timestamp &timestamp, DocumentUpdate::SP upd)
     : DocumentOperation(type, bucketId, timestamp),
-      _upd(upd)
+      _upd(std::move(upd))
 {
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId, const Timestamp &timestamp, const DocumentUpdate::SP &upd)
-    : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, upd)
+UpdateOperation::UpdateOperation(const BucketId &bucketId, const Timestamp &timestamp, DocumentUpdate::SP upd)
+    : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, std::move(upd))
 {
 }
+
+UpdateOperation::~UpdateOperation() = default;
 
 void
 UpdateOperation::serializeUpdate(vespalib::nbostream &os) const

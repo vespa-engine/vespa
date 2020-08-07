@@ -44,9 +44,9 @@ PersistenceHandlerProxy::handlePut(FeedToken token, const Bucket &bucket, Timest
 }
 
 void
-PersistenceHandlerProxy::handleUpdate(FeedToken token, const Bucket &bucket, Timestamp timestamp, const DocumentUpdateSP &upd)
+PersistenceHandlerProxy::handleUpdate(FeedToken token, const Bucket &bucket, Timestamp timestamp, DocumentUpdateSP upd)
 {
-    auto op = std::make_unique<UpdateOperation>(bucket.getBucketId().stripUnused(), timestamp, upd);
+    auto op = std::make_unique<UpdateOperation>(bucket.getBucketId().stripUnused(), timestamp, std::move(upd));
     _feedHandler.handleOperation(std::move(token), std::move(op));
 }
 

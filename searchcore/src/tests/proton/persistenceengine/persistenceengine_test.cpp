@@ -204,7 +204,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleUpdate(FeedToken token, const Bucket& bucket,
-                      Timestamp timestamp, const document::DocumentUpdate::SP& upd) override {
+                      Timestamp timestamp, DocumentUpdateSP upd) override {
         token->setResult(std::make_unique<UpdateResult>(existingTimestamp), existingTimestamp > 0);
         handle(token, bucket, timestamp, upd->getId());
     }

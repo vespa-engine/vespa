@@ -17,7 +17,7 @@ private:
     DocumentUpdateSP _upd;
     UpdateOperation(Type type, const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
-                    const DocumentUpdateSP &upd);
+                    DocumentUpdateSP upd);
     void serializeUpdate(vespalib::nbostream &os) const;
     void deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo);
 public:
@@ -25,8 +25,8 @@ public:
     UpdateOperation(Type type);
     UpdateOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
-                    const DocumentUpdateSP &upd);
-    ~UpdateOperation() override {}
+                    DocumentUpdateSP upd);
+    ~UpdateOperation() override;
     const DocumentUpdateSP &getUpdate() const { return _upd; }
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
