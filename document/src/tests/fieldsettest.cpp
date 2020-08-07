@@ -289,23 +289,14 @@ TEST(FieldCollectionTest, testHash ) {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
     const DocumentType & type = *repo.getDocumentType("testdoctype1");
-    FieldCollection fc(type);
-    EXPECT_EQ(0ul, fc.hash());
-    fc.insert(type.getField("headerval"));
-    EXPECT_EQ(0x548599858c77ef83ul, fc.hash());
-    fc.insert(type.getField("hstringval"));
-    EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
-    fc.insert(type.getField("headerval"));
-    EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
-
-    FieldCollection fc2(type);
-    EXPECT_EQ(0ul, fc2.hash());
-    fc2.insert(type.getField("hstringval"));
-    EXPECT_EQ(0x1e0918531b19734ul, fc2.hash());
-    fc2.insert(type.getField("headerval"));
-    EXPECT_EQ(fc.hash(), fc2.hash());
-    fc2.insert(type.getField("headerval"));
-    EXPECT_EQ(fc.hash(), fc2.hash());
+    Field::Set set;
+    EXPECT_EQ(0ul, FieldCollection(type, set).hash());
+    set.insert(&type.getField("headerval"));
+    EXPECT_EQ(0x548599858c77ef83ul, FieldCollection(type, set).hash());
+    set.insert(&type.getField("hstringval"));
+    EXPECT_EQ(0x4a7ff2406d36a9b0ul, FieldCollection(type, set).hash());
+    set.erase(&type.getField("headerval"));
+    EXPECT_EQ(0x1e0918531b19734ul, FieldCollection(type, set).hash());
 }
 
 } // document
