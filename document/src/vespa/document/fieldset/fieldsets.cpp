@@ -3,46 +3,63 @@
 #include "fieldsets.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <xxhash.h>
 
 namespace document {
 
-FieldCollection::FieldCollection(const DocumentType& type, const Field::Set& s)
-    : _set(s),
+namespace {
+
+uint64_t
+computeHash(const Field::Set & set) {
+    vespalib::asciistream os;
+    for (const Field * field : set) {
+        os << field->getName() << ':';
+    }
+    return XXH64(os.c_str(), os.size(), 0);
+}
+
+}
+
+FieldCollection::FieldCollection(const DocumentType& type)
+    : _set(),
+      _hash(0),
       _docType(type)
 {
 }
+
+FieldCollection::~FieldCollection() = default;
 
 bool
 FieldCollection::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
-    case FIELD:
-        return _set.find(static_cast<const Field*>(&fields)) != _set.end();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
+        case Type::FIELD:
+            return _set.find(static_cast<const Field*>(&fields)) != _set.end();
+        case Type::SET: {
+            const auto & coll = static_cast<const FieldCollection&>(fields);
 
-        if (_set.size() < coll._set.size()) {
-            return false;
-        }
-
-        Field::Set::const_iterator iter = coll.getFields().begin();
-
-        while (iter != coll.getFields().end()) {
-            if (_set.find(*iter) == _set.end()) {
+            if (_set.size() < coll._set.size()) {
                 return false;
             }
 
-            ++iter;
-        }
+            auto iter = coll.getFields().begin();
 
-        return true;
-    }
-    case NONE:
-    case DOCID:
-        return true;
-    case ALL:
-        return false;
+            while (iter != coll.getFields().end()) {
+                if (_set.find(*iter) == _set.end()) {
+                    return false;
+                }
+
+                ++iter;
+            }
+
+            return true;
+        }
+        case Type::NONE:
+        case Type::DOCID:
+            return true;
+        case Type::ALL:
+            return false;
     }
 
     return false;
@@ -52,18 +69,13 @@ void
 FieldCollection::insert(const Field& f)
 {
     _set.insert(&f);
-}
-
-void
-FieldCollection::insert(const Field::Set& c)
-{
-    _set.insert(c.begin(), c.end());
+    _hash = computeHash(_set);
 }
 
 void
 FieldSet::copyFields(Document& dest, const Document& src, const FieldSet& fields)
 {
-    if (fields.getType() == ALL) {
+    if (fields.getType() == Type::ALL) {
         dest.getFields() = src.getFields();
         return;
     }
@@ -89,10 +101,10 @@ FieldSet::createDocumentSubsetCopy(const Document& src, const FieldSet& fields)
 void
 FieldSet::stripFields(Document& doc, const FieldSet& fieldsToKeep)
 {
-    if (fieldsToKeep.getType() == ALL) {
+    if (fieldsToKeep.getType() == Type::ALL) {
         return;
-    } else if (fieldsToKeep.getType() == DOCID
-               || fieldsToKeep.getType() == NONE)
+    } else if (fieldsToKeep.getType() == Type::DOCID
+               || fieldsToKeep.getType() == Type::NONE)
     {
         doc.clear();
         return;
@@ -106,8 +118,8 @@ FieldSet::stripFields(Document& doc, const FieldSet& fieldsToKeep)
             fieldsToRemove.push_back(&f);
         }
     }
-    for (size_t i = 0; i < fieldsToRemove.size(); ++i) {
-        doc.remove(*fieldsToRemove[i]);
+    for (const Field * field : fieldsToRemove) {
+        doc.remove(*field);
     }
 }
 

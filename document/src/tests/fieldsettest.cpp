@@ -2,17 +2,12 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/document/datatype/annotationreferencedatatype.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 #include <gtest/gtest.h>
 
 using vespalib::nbostream;
-
-using namespace document::config_builder;
 
 namespace document {
 
@@ -288,6 +283,29 @@ TEST_F(FieldSetTest, testStripFields)
     EXPECT_EQ(std::string("content: megafoo megabar\n"
                           "hstringval: hello fantastic world\n"),
               doStripFields(*src, repo, "testdoctype1:hstringval,content"));
+}
+
+TEST(FieldCollectionTest, testHash ) {
+    TestDocMan testDocMan;
+    const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
+    const DocumentType & type = *repo.getDocumentType("testdoctype1");
+    FieldCollection fc(type);
+    EXPECT_EQ(0ul, fc.hash());
+    fc.insert(type.getField("headerval"));
+    EXPECT_EQ(0x548599858c77ef83ul, fc.hash());
+    fc.insert(type.getField("hstringval"));
+    EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
+    fc.insert(type.getField("headerval"));
+    EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
+
+    FieldCollection fc2(type);
+    EXPECT_EQ(0ul, fc2.hash());
+    fc2.insert(type.getField("hstringval"));
+    EXPECT_EQ(0x1e0918531b19734ul, fc2.hash());
+    fc2.insert(type.getField("headerval"));
+    EXPECT_EQ(fc.hash(), fc2.hash());
+    fc2.insert(type.getField("headerval"));
+    EXPECT_EQ(fc.hash(), fc2.hash());
 }
 
 } // document

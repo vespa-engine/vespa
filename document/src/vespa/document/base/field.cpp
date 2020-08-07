@@ -3,6 +3,7 @@
 #include "field.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/bobhash.h>
@@ -52,17 +53,16 @@ bool
 Field::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
-    case FIELD:
-        return static_cast<const Field&>(fields).getId() == getId();
-    case SET:
-    {
-        // Go through each.
-        return false;
-    }
-    case NONE:
-    case DOCID:
+        case Type::FIELD:
+            return static_cast<const Field&>(fields).getId() == getId();
+        case Type::SET: {
+            const auto & set = static_cast<const FieldCollection &>(fields);
+            return (set.getFields().size() == 1) && ((*set.getFields().begin())->getId() == getId());
+        }
+        case Type::NONE:
+        case Type::DOCID:
         return true;
-    case ALL:
+        case Type::ALL:
         return false;
     }
 
@@ -92,7 +92,7 @@ Field::validateId(int newId) {
                     getName().data(), newId));
     }
 
-    if ((newId & 0x80000000) != 0) // Highest bit must not be set
+    if ((uint32_t(newId) & 0x80000000u) != 0) // Highest bit must not be set
     {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d"

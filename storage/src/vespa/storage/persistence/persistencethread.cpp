@@ -292,7 +292,7 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
 
     if (tracker->checkForError(result)) {
-        if (!result.hasDocument() && (document::FieldSet::NONE != fieldSet->getType())) {
+        if (!result.hasDocument() && (document::FieldSet::Type::NONE != fieldSet->getType())) {
             _env._metrics.get[cmd.getLoadType()].notFound.inc();
         }
         tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp(),

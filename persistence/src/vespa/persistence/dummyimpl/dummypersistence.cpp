@@ -294,9 +294,7 @@ BucketContent::eraseEntry(Timestamp t)
     }
 }
 
-DummyPersistence::DummyPersistence(
-        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-        uint16_t partitionCount)
+DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo, uint16_t partitionCount)
     : _initialized(false),
       _repo(repo),
       _partitions(partitionCount),
@@ -314,8 +312,7 @@ DummyPersistence::parseDocumentSelection(const string& documentSelection, bool a
 {
     document::select::Node::UP ret;
     try {
-        document::select::Parser parser(
-                *_repo, document::BucketIdFactory());
+        document::select::Parser parser(*_repo, document::BucketIdFactory());
         ret = parser.parse(documentSelection);
     } catch (document::select::ParsingFailedException& e) {
         return document::select::Node::UP();
@@ -539,7 +536,7 @@ DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const
             return GetResult::make_for_tombstone(entry->getTimestamp());
         } else {
             Document::UP doc(entry->getDocument()->clone());
-            if (fieldSet.getType() != document::FieldSet::ALL) {
+            if (fieldSet.getType() != document::FieldSet::Type::ALL) {
                 document::FieldSet::stripFields(*doc, fieldSet);
             }
             return GetResult(std::move(doc), entry->getTimestamp());
@@ -562,10 +559,7 @@ DummyPersistence::createIterator(
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::unique_ptr<document::select::Node> docSelection;
     if (!s.getDocumentSelection().getDocumentSelection().empty()) {
-        docSelection.reset(
-                parseDocumentSelection(
-                        s.getDocumentSelection().getDocumentSelection(),
-                        true).release());
+        docSelection = parseDocumentSelection(s.getDocumentSelection().getDocumentSelection(), true);
         if (!docSelection.get()) {
             return CreateIteratorResult(
                     Result::ErrorType::PERMANENT_ERROR,
@@ -678,7 +672,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
             if (currentSize != 0 && currentSize + size > maxByteSize) break;
             currentSize += size;
             if (!entry->isRemove()
-                && it->_fieldSet->getType() != document::FieldSet::ALL)
+                && it->_fieldSet->getType() != document::FieldSet::Type::ALL)
             {
                 assert(entry->getDocument());
                 // Create new document with only wanted fields.
