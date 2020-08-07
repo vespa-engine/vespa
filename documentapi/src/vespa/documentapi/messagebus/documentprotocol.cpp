@@ -7,7 +7,6 @@
 #include "replymerger.h"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
@@ -97,7 +96,7 @@ DocumentProtocol::createPolicy(const mbus::string &name, const mbus::string &par
 DocumentProtocol &
 DocumentProtocol::putRoutingPolicyFactory(const string &name, IRoutingPolicyFactory::SP factory)
 {
-    _routingPolicyRepository->putFactory(name, factory);
+    _routingPolicyRepository->putFactory(name, std::move(factory));
     return *this;
 }
 
@@ -140,7 +139,7 @@ DocumentProtocol &
 DocumentProtocol::putRoutableFactory(uint32_t type, IRoutableFactory::SP factory,
                                      const vespalib::VersionSpecification &version)
 {
-    _routableRepository->putFactory(version, type, factory);
+    _routableRepository->putFactory(version, type, std::move(factory));
     return *this;
 }
 
@@ -215,7 +214,7 @@ DocumentProtocol::merge(mbus::RoutingContext& ctx,
         ctx.setReply(ctx.getChildIterator().skip(okIdx).removeReply()); 
     } else {
         assert(res.hasGeneratedReply());
-        ctx.setReply(mbus::Reply::UP(res.releaseGeneratedReply().release()));
+        ctx.setReply(res.releaseGeneratedReply());
     }
 }
 

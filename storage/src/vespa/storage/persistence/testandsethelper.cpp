@@ -5,6 +5,7 @@
 #include <vespa/storage/persistence/testandsethelper.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace std::string_literals;
 
@@ -45,6 +46,7 @@ TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAn
       _component(thread._env._component),
       _cmd(cmd),
       _docId(cmd.getDocumentId()),
+      _docTypePtr(nullptr),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
     getDocumentType();
@@ -66,7 +68,10 @@ TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
     if (result.hasDocument()) {
         auto docPtr = result.getDocumentPtr();
         if (_docSelectionUp->contains(*docPtr) != document::select::Result::True) {
-            return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "Condition did not match document");
+            return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                   vespalib::make_string("Condition did not match document partition=%d, nodeIndex=%d bucket=%lx %s",
+                                                         _thread._env._partition, _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
+                                                         _cmd.hasBeenRemapped() ? "remapped" : ""));
         }
 
         // Document matches
@@ -75,7 +80,10 @@ TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
         return api::ReturnCode();
     }
 
-    return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "Document does not exist");
+    return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                           vespalib::make_string("Document does not exist partition=%d, nodeIndex=%d bucket=%lx %s",
+                                                 _thread._env._partition, _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
+                                                 _cmd.hasBeenRemapped() ? "remapped" : ""));
 }
 
 } // storage

@@ -14,15 +14,17 @@ public:
         std::unique_ptr<mbus::Reply> _generatedReply;
         uint32_t _successIdx;
 
-        Result(uint32_t successIdx,
-               std::unique_ptr<mbus::Reply> generatedReply);
+        Result(uint32_t successIdx, std::unique_ptr<mbus::Reply> generatedReply);
     public:
-        Result(Result&&);
+        Result(Result&& o) noexcept
+            : _generatedReply(std::move(o._generatedReply)),
+              _successIdx(o._successIdx)
+        { }
 
         bool hasGeneratedReply() const;
         bool isSuccessful() const;
         std::unique_ptr<mbus::Reply> releaseGeneratedReply();
-        uint32_t getSuccessfulReplyIndex();
+        uint32_t getSuccessfulReplyIndex() const;
     };
 private:
     std::unique_ptr<mbus::Reply> _error;
@@ -38,8 +40,8 @@ private:
     void setCurrentBestReply(uint32_t idx, const mbus::Reply& r);
     void updateStateWithSuccessfulReply(uint32_t idx, const mbus::Reply& r);
     bool successfullyMergedAtLeastOneReply() const;
-    Result createEmptyReplyResult() const;
-    bool resourceWasFound(const mbus::Reply& r) const;
+    static Result createEmptyReplyResult();
+    static bool resourceWasFound(const mbus::Reply& r);
 public:
     ReplyMerger();
     ~ReplyMerger();
