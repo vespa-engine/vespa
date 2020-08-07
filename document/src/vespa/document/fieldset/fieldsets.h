@@ -41,7 +41,7 @@ class FieldCollection : public FieldSet
 public:
     typedef std::unique_ptr<FieldCollection> UP;
 
-    FieldCollection(const DocumentType& docType);
+    FieldCollection(const DocumentType& docType, Field::Set set);
     FieldCollection(const FieldCollection &);
     FieldCollection(FieldCollection&&) = default;
     ~FieldCollection() override;
@@ -55,15 +55,6 @@ public:
     const DocumentType& getDocumentType() const {
         return _docType;
     }
-
-    /**
-     * Inserts the given field into the collection.
-     */
-    FieldCollection & insertField(const Field& f);
-    /**
-     * Must be called after all fields are inserted
-     */
-    void complete();
 
     /**
      * Returns all the fields contained in this collection.

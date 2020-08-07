@@ -16,18 +16,17 @@ namespace storage {
 class FieldVisitor : public document::select::Visitor {
 private:
     document::DocumentType _docType;
-    document::FieldCollection _fields;
+    document::Field::Set _fields;
     
 public:
     explicit FieldVisitor(const document::DocumentType & docType)
         : _docType(docType),
-          _fields(_docType)
+          _fields()
     {}
     ~FieldVisitor() override;
 
     document::FieldCollection getFieldSet() {
-        _fields.complete();
-        return std::move(_fields);
+        return document::FieldCollection(_docType, std::move(_fields));
     }
 
     void visitFieldValueNode(const document::select::FieldValueNode &) override;

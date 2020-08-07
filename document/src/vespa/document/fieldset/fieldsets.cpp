@@ -12,6 +12,8 @@ namespace {
 
 uint64_t
 computeHash(const Field::Set & set) {
+    if (set.empty()) return 0ul;
+
     vespalib::asciistream os;
     for (const Field * field : set) {
         os << field->getName() << ':';
@@ -21,12 +23,11 @@ computeHash(const Field::Set & set) {
 
 }
 
-FieldCollection::FieldCollection(const DocumentType& type)
-    : _set(),
-      _hash(0),
+FieldCollection::FieldCollection(const DocumentType& type, Field::Set set)
+    : _set(std::move(set)),
+      _hash(computeHash(_set)),
       _docType(type)
-{
-}
+{ }
 
 FieldCollection::FieldCollection(const FieldCollection&) = default;
 
@@ -65,16 +66,6 @@ FieldCollection::contains(const FieldSet& fields) const
     }
 
     return false;
-}
-
-FieldCollection &
-FieldCollection::insertField(const Field& f) {
-    _set.insert(&f);
-    return *this;
-}
-void
-FieldCollection::complete() {
-    _hash = computeHash(_set);
 }
 
 void
