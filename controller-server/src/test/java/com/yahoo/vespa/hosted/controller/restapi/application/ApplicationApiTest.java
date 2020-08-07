@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -493,6 +494,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-central-1/instance/default/logs?from=1233&to=3214", GET)
                         .userIdentity(USER_ID),
                 "INFO - All good");
+
+        updateMetrics();
+
+        // GET metrics
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/metrics", GET)
+                        .userIdentity(USER_ID),
+                                new File("proton-metrics.json"));
 
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
@@ -1582,6 +1590,25 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                   List.of(Collections.singletonList("alice"),
                                                                                    Collections.singletonList("bob")),
                                                                                   "queue", Optional.empty()));
+    }
+
+    private void updateMetrics() {
+        tester.serviceRegistry().configServerMock().setProtonMetrics(List.of(
+                (new ProtonMetrics("content/doc/"))
+                        .addMetric(ProtonMetrics.DOCUMENTS_ACTIVE_COUNT, 11430)
+                        .addMetric(ProtonMetrics.DOCUMENTS_READY_COUNT, 11430)
+                        .addMetric(ProtonMetrics.DOCUMENTS_TOTAL_COUNT, 11430)
+                        .addMetric(ProtonMetrics.DOCUMENT_DISK_USAGE, 44021)
+                        .addMetric(ProtonMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.0168421)
+                        .addMetric(ProtonMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.103482),
+                (new ProtonMetrics("content/music/"))
+                        .addMetric(ProtonMetrics.DOCUMENTS_ACTIVE_COUNT, 32210)
+                        .addMetric(ProtonMetrics.DOCUMENTS_READY_COUNT, 32000)
+                        .addMetric(ProtonMetrics.DOCUMENTS_TOTAL_COUNT, 32210)
+                        .addMetric(ProtonMetrics.DOCUMENT_DISK_USAGE, 90113)
+                        .addMetric(ProtonMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.23912)
+                        .addMetric(ProtonMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.00912)
+        ));
     }
 
     private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
